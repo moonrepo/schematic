@@ -1,6 +1,5 @@
-use std::path::PathBuf;
-
 use schematic::*;
+use std::path::PathBuf;
 
 #[derive(Debug, Config)]
 pub struct Config {
@@ -25,6 +24,32 @@ async fn loads_json_files() {
         .file(root.join("four.json"))
         .unwrap()
         .file(root.join("five.json"))
+        .unwrap()
+        .load()
+        .await
+        .unwrap();
+
+    assert_eq!(result.config.boolean, false);
+    assert_eq!(result.config.string, "bar");
+    assert_eq!(result.config.number, 123);
+    assert_eq!(result.config.vector, vec!["x", "y", "z"]);
+}
+
+#[tokio::test]
+async fn loads_toml_files() {
+    let root =
+        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/toml");
+
+    let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
+        .file(root.join("one.toml"))
+        .unwrap()
+        .file(root.join("two.toml"))
+        .unwrap()
+        .file(root.join("three.toml"))
+        .unwrap()
+        .file(root.join("four.toml"))
+        .unwrap()
+        .file(root.join("five.toml"))
         .unwrap()
         .load()
         .await

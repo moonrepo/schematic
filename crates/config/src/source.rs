@@ -9,6 +9,9 @@ pub enum SourceFormat {
     #[cfg(feature = "json")]
     Json,
 
+    #[cfg(feature = "toml")]
+    Toml,
+
     #[cfg(feature = "yaml")]
     Yaml,
 }
@@ -23,6 +26,9 @@ impl SourceFormat {
             SourceFormat::Json => {
                 serde_json::from_str(&content).map_err(ConfigError::JsonParseFailed)?
             }
+
+            #[cfg(feature = "toml")]
+            SourceFormat::Toml => toml::from_str(&content).map_err(ConfigError::TomlParseFailed)?,
 
             #[cfg(feature = "yaml")]
             SourceFormat::Yaml => {

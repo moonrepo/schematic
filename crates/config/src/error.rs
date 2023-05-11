@@ -31,6 +31,12 @@ pub enum ConfigError {
     #[error("Failed to parse JSON source.")]
     JsonParseFailed(#[source] serde_json::Error),
 
+    // TOML
+    #[cfg(feature = "toml")]
+    #[diagnostic(code(config::toml::parse_failed))]
+    #[error("Failed to parse TOML source.")]
+    TomlParseFailed(#[source] toml::de::Error),
+
     // YAML
     #[cfg(feature = "yaml")]
     #[diagnostic(code(config::yaml::parse_failed))]
