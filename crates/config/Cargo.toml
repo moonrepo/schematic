@@ -1,0 +1,22 @@
+[package]
+name = "schematic"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A serde-based layered configuration crate."
+repository = "https://github.com/moonrepo/schematic"
+
+[dependencies]
+schematic_macros = { path = "../macros" }
+serde = { workspace = true }
+
+# json schema
+schemars = { version = "0.8.12", optional = true }
+
+# typescript
+ts-rs = { version = "6.2.1", optional = true }
+
+[features]
+default = []
+json_schema = ["dep:schemars"]
+typescript = ["dep:ts-rs"]
