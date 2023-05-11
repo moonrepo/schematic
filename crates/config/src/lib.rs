@@ -1,11 +1,11 @@
 mod config;
-mod config_loader;
 mod error;
+mod loader;
 mod source;
 
 pub use config::*;
-pub use config_loader::*;
 pub use error::*;
+pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;
 

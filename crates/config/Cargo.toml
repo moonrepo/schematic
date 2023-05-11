@@ -15,8 +15,14 @@ starbase_utils = { version = "0.2.9", default-features = false }
 thiserror = "1.0.40"
 tokio = "1.28.0"
 
+# json
+serde_json = { version = "1.0.95", optional = true }
+
 # json schema
 schemars = { version = "0.8.12", optional = true }
+
+# toml
+toml = { version = "0.7.3", optional = true }
 
 # typescript
 ts-rs = { version = "6.2.1", optional = true }
@@ -25,7 +31,8 @@ ts-rs = { version = "6.2.1", optional = true }
 serde_yaml = { version = "0.9.21", optional = true }
 
 [features]
-default = ["yaml"]
+default = ["json", "yaml"]
+json = ["dep:serde_json"]
 json_schema = ["dep:schemars"]
 typescript = ["dep:ts-rs"]
 yaml = ["dep:serde_yaml"]

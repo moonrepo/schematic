@@ -25,6 +25,12 @@ pub enum ConfigError {
     #[error("Only secure URLs are allowed.")]
     HttpsOnly,
 
+    // JSON
+    #[cfg(feature = "json")]
+    #[diagnostic(code(config::json::parse_failed))]
+    #[error("Failed to parse JSON source.")]
+    JsonParseFailed(#[source] serde_json::Error),
+
     // YAML
     #[cfg(feature = "yaml")]
     #[diagnostic(code(config::yaml::parse_failed))]

@@ -6,6 +6,9 @@ use std::path::PathBuf;
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SourceFormat {
+    #[cfg(feature = "json")]
+    Json,
+
     #[cfg(feature = "yaml")]
     Yaml,
 }
@@ -16,9 +19,20 @@ impl SourceFormat {
         D: DeserializeOwned,
     {
         let data: D = match self {
+            #[cfg(feature = "json")]
+            SourceFormat::Json => {
+                serde_json::from_str(&content).map_err(ConfigError::JsonParseFailed)?
+            }
+
             #[cfg(feature = "yaml")]
             SourceFormat::Yaml => {
-                serde_yaml::from_str(&content).map_err(ConfigError::YamlParseFailed)?
+                let mut value: serde_yaml::Value =
+                    serde_yaml::from_str(&content).map_err(ConfigError::YamlParseFailed)?;
+
+                // Applies anchors/aliases/references
+                value.apply_merge().map_err(ConfigError::YamlParseFailed)?;
+
+                D::deserialize(value).map_err(ConfigError::YamlParseFailed)?
             }
         };
 
