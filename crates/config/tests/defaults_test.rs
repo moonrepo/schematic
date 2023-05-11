@@ -15,7 +15,7 @@ async fn uses_native_defaults() {
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "");
     assert_eq!(result.config.number, 0);
     assert_eq!(result.config.vector, Vec::<String>::new());
@@ -40,7 +40,7 @@ async fn uses_custom_setting_defaults() {
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, true);
+    assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec![1, 2, 3, 4]);

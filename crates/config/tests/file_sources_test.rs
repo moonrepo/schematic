@@ -30,7 +30,7 @@ async fn loads_json_files() {
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "bar");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
@@ -57,7 +57,7 @@ async fn loads_toml_files() {
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "bar");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
@@ -83,7 +83,7 @@ async fn loads_yaml_files() {
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "bar");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);

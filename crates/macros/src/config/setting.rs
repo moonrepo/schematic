@@ -46,12 +46,8 @@ impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
 
-        if args.nested {
-            if args.default_fn.is_some() || args.default.is_some() {
-                panic!("Cannot use `default` or `default_fn` with nested configs.");
-            }
-
-            // Others
+        if args.nested && (args.default_fn.is_some() || args.default.is_some()) {
+            panic!("Cannot use `default` or `default_fn` with nested configs.");
         }
 
         if args.default_fn.is_some() && args.default.is_some() {

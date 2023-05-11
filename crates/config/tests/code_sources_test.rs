@@ -21,7 +21,7 @@ string: foo
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 0);
     assert_eq!(result.config.vector, Vec::<String>::new());
@@ -45,7 +45,7 @@ vector: [a, b, c]
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 0);
     assert_eq!(result.config.vector, vec!["a", "b", "c"]);
@@ -86,7 +86,7 @@ vector: [x, y, z]
         .await
         .unwrap();
 
-    assert_eq!(result.config.boolean, false);
+    assert!(!result.config.boolean);
     assert_eq!(result.config.string, "bar");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
