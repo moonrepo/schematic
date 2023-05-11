@@ -13,6 +13,15 @@ mod private {
     }
 }
 
+config_enum!(
+    pub enum SomeEnum {
+        #[default]
+        A,
+        B,
+        C,
+    }
+);
+
 #[derive(Config)]
 struct ValueTypes {
     boolean: bool,
@@ -20,6 +29,7 @@ struct ValueTypes {
     number: usize,
     vector: Vec<OsString>,
     map: HashMap<String, u64>,
+    enums: SomeEnum,
 }
 
 #[derive(Config)]
@@ -40,6 +50,8 @@ struct DefaultValues {
     array: [u8; 4],
     #[setting(default = (1, 2, 3, 4))]
     tuple: (u8, u8, u8, u8),
+    #[setting(default_fn = SomeEnum::default)]
+    enums: SomeEnum,
     // Invalid
     // #[setting(default = true, default_fn = default_bool)]
     // invalid: bool,
