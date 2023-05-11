@@ -6,13 +6,13 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
-    pub default: Option<Expr>,
-    pub default_fn: Option<ExprPath>,
-    pub nested: bool,
+    default: Option<Expr>,
+    default_fn: Option<ExprPath>,
+    nested: bool,
 
     // serde
-    pub rename: Option<String>,
-    pub skip: Option<bool>,
+    rename: Option<String>,
+    skip: Option<bool>,
 }
 
 impl SettingArgs {
@@ -46,20 +46,30 @@ impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
 
-        if args.nested && (args.default_fn.is_some() || args.default.is_some()) {
-            panic!("Cannot use `default` or `default_fn` with nested configs.");
-        }
-
         if args.default_fn.is_some() && args.default.is_some() {
             panic!("Cannot provide both `default` and `default_fn`.");
         }
 
-        Setting {
+        let setting = Setting {
             args,
             comment: extract_comment(field),
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
+        };
+
+        if setting.is_nested() && setting.has_default() {
+            panic!("Cannot use `default` or `default_fn` with nested configs.");
         }
+
+        setting
+    }
+
+    pub fn has_default(&self) -> bool {
+        self.args.default.is_some() || self.args.default_fn.is_some()
+    }
+
+    pub fn is_nested(&self) -> bool {
+        self.args.nested
     }
 
     pub fn get_default_value(&self) -> TokenStream {

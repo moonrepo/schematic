@@ -67,7 +67,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .map(|f| {
             let name = &f.name;
 
-            if f.args.nested {
+            if f.is_nested() {
                 let struct_name = f.get_nested_struct_name();
 
                 quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
