@@ -45,11 +45,16 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    pub async fn load(&mut self) -> Result<(), ConfigError> {
+    pub async fn load(mut self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let (partial_layers, resolved_sources) = self.parse_into_layers().await?;
         let partial = self.merge_layers(partial_layers);
+        let config = T::from_partial(partial)?;
 
-        Ok(())
+        Ok(ConfigLoadResult {
+            config,
+            format: self.format,
+            sources: resolved_sources,
+        })
     }
 
     fn merge_layers(&self, layers: Vec<T::Partial>) -> T::Partial {

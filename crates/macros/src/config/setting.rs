@@ -6,13 +6,13 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
-    default: Option<Expr>,
-    default_fn: Option<ExprPath>,
-    nested: bool,
+    pub default: Option<Expr>,
+    pub default_fn: Option<ExprPath>,
+    pub nested: bool,
 
     // serde
-    rename: Option<String>,
-    skip: Option<bool>,
+    pub rename: Option<String>,
+    pub skip: Option<bool>,
 }
 
 impl SettingArgs {
@@ -68,7 +68,7 @@ impl<'l> Setting<'l> {
 
     pub fn get_default_value(&self) -> TokenStream {
         if self.args.nested {
-            let struct_name = self.get_nested_struct_name();
+            let struct_name = format_ident!("Partial{}", self.get_nested_struct_name());
 
             return quote! { Some(#struct_name::default_values()) };
         };
@@ -105,7 +105,7 @@ impl<'l> Setting<'l> {
                 let segments = &path.path.segments;
                 let last_segment = segments.last().unwrap();
 
-                format_ident!("Partial{}", &last_segment.ident)
+                last_segment.ident.clone()
             }
             _ => panic!("Only structs are supported for nested settings."),
         }

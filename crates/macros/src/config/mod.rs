@@ -48,8 +48,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let struct_name = input.ident;
-    let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
     let partial_struct_name = format_ident!("Partial{}", struct_name);
+    let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
+    let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
 
     // Attributes
     let serde_meta = args.get_serde_meta();
@@ -59,8 +60,24 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
     ];
 
+    // Config implementation
+
+    let from_values = struct_fields
+        .iter()
+        .map(|f| {
+            let name = &f.name;
+
+            if f.args.nested {
+                let struct_name = f.get_nested_struct_name();
+
+                quote! { #struct_name::from_partial(partial.#name.unwrap_or_default())? }
+            } else {
+                quote! { partial.#name.unwrap_or_default() }
+            }
+        })
+        .collect::<Vec<_>>();
+
     // Partial implementation
-    let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
 
     let default_values = struct_fields
         .iter()
@@ -103,6 +120,12 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl schematic::Config for #struct_name {
             type Partial = #partial_struct_name;
+
+            fn from_partial(partial: Self::Partial) -> Result<Self, schematic::ConfigError> {
+                Ok(Self {
+                    #(#field_names: #from_values),*
+                })
+            }
         }
     }
     .into()
