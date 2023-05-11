@@ -8,9 +8,11 @@ struct NestedConfig {
 #[derive(Config)]
 struct TestConfig {
     // test comment
+    #[setting(rename = "required")]
     required_field: String,
 
     /// and another
+    #[setting(skip)]
     optional_field: Option<String>,
 
     /* what about */

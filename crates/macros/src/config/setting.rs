@@ -1,5 +1,5 @@
 use darling::FromAttributes;
-use proc_macro2::Ident;
+use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Expr, ExprLit, Field, Lit, Meta, Type};
 
@@ -7,6 +7,11 @@ use syn::{Expr, ExprLit, Field, Lit, Meta, Type};
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
     nested: bool,
+
+    // serde
+    // default: ...
+    rename: Option<String>,
+    skip: Option<bool>,
 }
 
 pub struct Setting<'l> {
@@ -37,32 +42,52 @@ impl<'l> Setting<'l> {
             _ => panic!("Only structs are supported for nested settings."),
         }
     }
+
+    pub fn get_serde_attributes(&self) -> TokenStream {
+        let mut attrs = vec![];
+
+        if let Some(rename) = &self.args.rename {
+            attrs.push(quote! { rename = #rename });
+        }
+
+        if self.args.skip.unwrap_or_default() {
+            attrs.push(quote! { skip });
+        }
+
+        attrs.push(quote! { skip_serializing_if = "Option::is_none"});
+
+        quote! {
+            #(#attrs),*
+        }
+    }
 }
 
 impl<'l> ToTokens for Setting<'l> {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
+
         let comment = if let Some(cmt) = &self.comment {
             quote! { #[doc = #cmt] }
         } else {
             quote! {}
         };
 
-        if self.args.nested {
+        let value = if self.args.nested {
             let ident = self.get_nested_struct_name();
-
-            tokens.extend(quote! {
-                #comment
-                pub #name: Option<#ident>,
-            });
+            quote! { #ident}
         } else {
             let value = self.value;
+            quote! { #value }
+        };
 
-            tokens.extend(quote! {
-                #comment
-                pub #name: Option<#value>,
-            });
-        }
+        let serde_attrs = self.get_serde_attributes();
+        let attrs = quote! { #[serde(#serde_attrs)] };
+
+        tokens.extend(quote! {
+            #comment
+            #attrs
+            pub #name: Option<#value>,
+        });
     }
 }
 
