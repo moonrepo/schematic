@@ -115,6 +115,7 @@ impl<'l> Setting<'l> {
 impl<'l> ToTokens for Setting<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
+        let value = self.value;
 
         let comment = if let Some(cmt) = &self.comment {
             quote! { #[doc = #cmt] }
@@ -123,10 +124,8 @@ impl<'l> ToTokens for Setting<'l> {
         };
 
         let value = if self.args.nested {
-            let ident = self.get_nested_struct_name();
-            quote! { #ident }
+            quote! { <#value as schematic::Config>::Partial }
         } else {
-            let value = self.value;
             quote! { #value }
         };
 

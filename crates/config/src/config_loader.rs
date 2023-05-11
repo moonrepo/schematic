@@ -47,8 +47,20 @@ impl<T: Config> ConfigLoader<T> {
 
     pub async fn load(&mut self) -> Result<(), ConfigError> {
         let (partial_layers, resolved_sources) = self.parse_into_layers().await?;
+        let partial = self.merge_layers(partial_layers);
 
         Ok(())
+    }
+
+    fn merge_layers(&self, layers: Vec<T::Partial>) -> T::Partial {
+        // All `None` by default
+        let mut merged = T::Partial::default();
+
+        for layer in layers {
+            merged.merge(layer);
+        }
+
+        merged
     }
 
     async fn parse_into_layers(&mut self) -> Result<(Vec<T::Partial>, Vec<Source>), ConfigError> {
@@ -58,7 +70,7 @@ impl<T: Config> ConfigLoader<T> {
         // First layer should be the defaults
         layers.push(T::Partial::default_values());
 
-        // Sources would then overrides the defaults in sequence
+        // Sources would then override the defaults in sequence
         for source in self.sources.drain(0..) {
             let partial: T::Partial = source.parse(self.format).await?;
 

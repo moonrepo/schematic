@@ -23,7 +23,7 @@ config_enum!(
 );
 
 #[derive(Config)]
-struct ValueTypes {
+pub struct ValueTypes {
     boolean: bool,
     string: String,
     number: usize,
@@ -61,6 +61,9 @@ struct DefaultValues {
 struct Nested {
     #[setting(nested)]
     one: ValueTypes,
+    // Invalid
+    // #[setting(nested)]
+    // two: bool,
     // #[setting(nested, default = true)]
     // no_defualt: ValueTypes,
 }

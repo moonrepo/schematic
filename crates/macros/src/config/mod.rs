@@ -59,11 +59,25 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
     ];
 
-    // Fields
+    // Partial implementation
     let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
+
     let default_values = struct_fields
         .iter()
         .map(|f| f.get_default_value())
+        .collect::<Vec<_>>();
+
+    let merge_values = struct_fields
+        .iter()
+        .map(|f| {
+            let name = &f.name;
+
+            quote! {
+                if next.#name.is_some() {
+                    self.#name = next.#name;
+                }
+            }
+        })
         .collect::<Vec<_>>();
 
     quote! {
@@ -79,6 +93,10 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 Self {
                     #(#field_names: #default_values),*
                 }
+            }
+
+            fn merge(&mut self, next: Self) {
+                #(#merge_values)*
             }
         }
 
