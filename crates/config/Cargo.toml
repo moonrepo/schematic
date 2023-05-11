@@ -17,6 +17,6 @@ schemars = { version = "0.8.12", optional = true }
 ts-rs = { version = "6.2.1", optional = true }
 
 [features]
-default = ["json_schema", "typescript"]
+default = []
 json_schema = ["dep:schemars"]
 typescript = ["dep:ts-rs"]

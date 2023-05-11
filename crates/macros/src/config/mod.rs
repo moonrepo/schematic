@@ -11,14 +11,33 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 #[darling(default, attributes(config))]
 struct ConfigArgs {
     // serde
+    rename: Option<String>,
     rename_all: Option<String>,
+}
+
+impl ConfigArgs {
+    pub fn get_serde_meta(&self) -> proc_macro2::TokenStream {
+        let mut meta = vec![quote! { default }, quote! { deny_unknown_fields }];
+
+        if let Some(rename) = &self.rename {
+            meta.push(quote! { rename = #rename });
+        }
+
+        let rename_all = self.rename_all.as_deref().unwrap_or("camelCase");
+
+        meta.push(quote! { rename_all = #rename_all });
+
+        quote! {
+            #(#meta),*
+        }
+    }
 }
 
 // #[derive(Config)]
 // #[config]
 pub fn macro_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
-    let _ = ConfigArgs::from_derive_input(&input).expect("Failed to parse arguments.");
+    let args = ConfigArgs::from_derive_input(&input).expect("Failed to parse arguments.");
 
     let Data::Struct(data) = input.data else {
         panic!("Only structs are supported.");
@@ -30,14 +49,17 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let struct_name = input.ident;
     let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
+    let partial_struct_name = format_ident!("Partial{}", struct_name);
+
+    // Attributes
+    let serde_meta = args.get_serde_meta();
     let struct_attrs = vec![
-        quote! { #[serde(default, deny_unknown_fields, rename_all = "camelCase") ]},
+        quote! { #[serde(#serde_meta) ]},
         quote! { #[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))] },
         quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
     ];
 
-    // Partial
-    let partial_struct_name = format_ident!("Partial{}", struct_name);
+    // Fields
     let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
     let default_values = struct_fields
         .iter()

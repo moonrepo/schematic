@@ -15,6 +15,26 @@ pub struct SettingArgs {
     skip: Option<bool>,
 }
 
+impl SettingArgs {
+    pub fn get_serde_meta(&self) -> TokenStream {
+        let mut meta = vec![];
+
+        if let Some(rename) = &self.rename {
+            meta.push(quote! { rename = #rename });
+        }
+
+        if self.skip.unwrap_or_default() {
+            meta.push(quote! { skip });
+        }
+
+        meta.push(quote! { skip_serializing_if = "Option::is_none" });
+
+        quote! {
+            #(#meta),*
+        }
+    }
+}
+
 pub struct Setting<'l> {
     pub args: SettingArgs,
     pub comment: Option<String>,
@@ -30,6 +50,8 @@ impl<'l> Setting<'l> {
             if args.default_fn.is_some() || args.default.is_some() {
                 panic!("Cannot use `default` or `default_fn` with nested configs.");
             }
+
+            // Others
         }
 
         if args.default_fn.is_some() && args.default.is_some() {
@@ -88,24 +110,6 @@ impl<'l> Setting<'l> {
             _ => panic!("Only structs are supported for nested settings."),
         }
     }
-
-    pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![];
-
-        if let Some(rename) = &self.args.rename {
-            meta.push(quote! { rename = #rename });
-        }
-
-        if self.args.skip.unwrap_or_default() {
-            meta.push(quote! { skip });
-        }
-
-        meta.push(quote! { skip_serializing_if = "Option::is_none"});
-
-        quote! {
-            #(#meta),*
-        }
-    }
 }
 
 impl<'l> ToTokens for Setting<'l> {
@@ -126,7 +130,7 @@ impl<'l> ToTokens for Setting<'l> {
             quote! { #value }
         };
 
-        let serde_meta = self.get_serde_meta();
+        let serde_meta = self.args.get_serde_meta();
         let attrs = quote! { #[serde(#serde_meta)] };
 
         tokens.extend(quote! {
