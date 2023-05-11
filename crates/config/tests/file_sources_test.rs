@@ -9,6 +9,7 @@ pub struct Config {
     vector: Vec<String>,
 }
 
+#[cfg(feature = "json")]
 #[tokio::test]
 async fn loads_json_files() {
     let root =
@@ -35,6 +36,7 @@ async fn loads_json_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
+#[cfg(feature = "toml")]
 #[tokio::test]
 async fn loads_toml_files() {
     let root =

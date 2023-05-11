@@ -31,7 +31,7 @@ ts-rs = { version = "6.2.1", optional = true }
 serde_yaml = { version = "0.9.21", optional = true }
 
 [features]
-default = ["json", "toml", "yaml"]
+default = ["yaml"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars"]
 toml = ["dep:toml"]
@@ -39,4 +39,5 @@ typescript = ["dep:ts-rs"]
 yaml = ["dep:serde_yaml"]
 
 [dev-dependencies]
+schematic = { path = ".", features = ["json", "yaml", "toml"] }
 tokio = { version = "1.28.0", features = ["full"] }

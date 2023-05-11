@@ -666,6 +666,7 @@ dependencies = [
  "miette",
  "reqwest",
  "schemars",
+ "schematic",
  "schematic_macros",
  "serde",
  "serde_json",
