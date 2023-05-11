@@ -1,33 +1,79 @@
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Expr, ExprLit, Field, Lit, Meta, Type};
+use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
+    default: Option<Expr>,
+    default_fn: Option<ExprPath>,
     nested: bool,
 
     // serde
-    // default: ...
     rename: Option<String>,
     skip: Option<bool>,
 }
 
 pub struct Setting<'l> {
-    args: SettingArgs,
-    comment: Option<String>,
-    name: &'l Ident,
-    value: &'l Type,
+    pub args: SettingArgs,
+    pub comment: Option<String>,
+    pub name: &'l Ident,
+    pub value: &'l Type,
 }
 
 impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
+        let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
+
+        if args.nested {
+            if args.default_fn.is_some() || args.default.is_some() {
+                panic!("Cannot use `default` or `default_fn` with nested configs.");
+            }
+        }
+
+        if args.default_fn.is_some() && args.default.is_some() {
+            panic!("Cannot provide both `default` and `default_fn`.");
+        }
+
         Setting {
-            args: SettingArgs::from_attributes(&field.attrs).unwrap_or_default(),
+            args,
             comment: extract_comment(field),
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
+        }
+    }
+
+    pub fn get_default_value(&self) -> TokenStream {
+        if self.args.nested {
+            let struct_name = self.get_nested_struct_name();
+
+            return quote! { Some(#struct_name::default_values()) };
+        };
+
+        if let Some(func) = self.args.default_fn.as_ref() {
+            return quote! { Some(#func()) };
+        };
+
+        let Some(expr) = self.args.default.as_ref() else {
+            return quote! { None };
+        };
+
+        match expr {
+            Expr::Array(_) | Expr::Lit(_) | Expr::Tuple(_) => {
+                quote! { Some(#expr) }
+            }
+            // Strings are `Path` for some reason instead of `Lit`...
+            Expr::Path(inner) => {
+                let string = format!("{}", inner.to_token_stream());
+                quote! { Some(#string.into()) }
+            }
+            invalid => {
+                let name = self.name.to_string();
+                let info = format!("{:?}", invalid);
+
+                panic!("Unsupported default value for {name} ({info}). May only provide literals, arrays, or tuples. Use `default_fn` for more complex defaults.");
+            }
         }
     }
 
@@ -43,21 +89,21 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_serde_attributes(&self) -> TokenStream {
-        let mut attrs = vec![];
+    pub fn get_serde_meta(&self) -> TokenStream {
+        let mut meta = vec![];
 
         if let Some(rename) = &self.args.rename {
-            attrs.push(quote! { rename = #rename });
+            meta.push(quote! { rename = #rename });
         }
 
         if self.args.skip.unwrap_or_default() {
-            attrs.push(quote! { skip });
+            meta.push(quote! { skip });
         }
 
-        attrs.push(quote! { skip_serializing_if = "Option::is_none"});
+        meta.push(quote! { skip_serializing_if = "Option::is_none"});
 
         quote! {
-            #(#attrs),*
+            #(#meta),*
         }
     }
 }
@@ -74,14 +120,14 @@ impl<'l> ToTokens for Setting<'l> {
 
         let value = if self.args.nested {
             let ident = self.get_nested_struct_name();
-            quote! { #ident}
+            quote! { #ident }
         } else {
             let value = self.value;
             quote! { #value }
         };
 
-        let serde_attrs = self.get_serde_attributes();
-        let attrs = quote! { #[serde(#serde_attrs)] };
+        let serde_meta = self.get_serde_meta();
+        let attrs = quote! { #[serde(#serde_meta)] };
 
         tokens.extend(quote! {
             #comment
@@ -100,7 +146,7 @@ fn extract_comment(field: &Field) -> Option<String> {
                     ..
                 }) = &meta.value
                 {
-                    return Some(value.value().trim().to_string());
+                    return Some(value.value());
                 }
             }
         }

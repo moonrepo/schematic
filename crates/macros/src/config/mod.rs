@@ -33,12 +33,17 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let struct_name = input.ident;
-    let partial_struct_name = format_ident!("Partial{}", struct_name);
-
     let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
-
     let struct_attrs =
         vec![quote! { #[serde(default, deny_unknown_fields, rename_all = "camelCase") ]}];
+
+    // Partial
+    let partial_struct_name = format_ident!("Partial{}", struct_name);
+    let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
+    let default_values = struct_fields
+        .iter()
+        .map(|f| f.get_default_value())
+        .collect::<Vec<_>>();
 
     quote! {
         #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -49,6 +54,11 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
         #[automatically_derived]
         impl schematic::PartialConfig for #partial_struct_name {
+            fn default_values() -> Self {
+                Self {
+                    #(#field_names: #default_values),*
+                }
+            }
         }
 
         #[automatically_derived]
