@@ -1,7 +1,6 @@
+use crate::error::ConfigError;
 use serde::de::DeserializeOwned;
 use starbase_utils::fs;
-
-use crate::error::ConfigError;
 use std::path::PathBuf;
 
 #[derive(Clone, Copy)]
@@ -59,10 +58,18 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        format.parse(match self {
+        let content = match self {
             Source::Code(code) => code.to_owned(),
-            Source::File(path) => fs::read_file(path)?,
+            Source::File(path) => {
+                if path.exists() {
+                    fs::read_file(path)?
+                } else {
+                    return Err(ConfigError::MissingFile(path.to_path_buf()));
+                }
+            }
             Source::Url(url) => reqwest::get(url).await?.text().await?,
-        })
+        };
+
+        format.parse(content)
     }
 }

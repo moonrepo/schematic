@@ -1,18 +1,19 @@
-use crate::config::Config;
+use crate::config::{Config, PartialConfig};
 use crate::error::ConfigError;
 use crate::source::{Source, SourceFormat};
+use std::marker::PhantomData;
 use std::path::PathBuf;
 
 pub struct ConfigLoader<T: Config> {
-    marker: std::marker::PhantomData<T>,
+    _config: PhantomData<T>,
     source_format: SourceFormat,
     sources: Vec<Source>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     pub fn new(source_format: SourceFormat) -> Self {
-        Self {
-            marker: std::marker::PhantomData,
+        ConfigLoader {
+            _config: PhantomData,
             source_format,
             sources: vec![],
         }
@@ -36,9 +37,26 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    // pub fn load() -> T {
-    //     T::default()
-    // }
+    pub async fn load(&self) -> Result<(), ConfigError> {
+        let partial_layers = self.parse_into_layers().await?;
+
+        Ok(())
+    }
+
+    async fn parse_into_layers(&self) -> Result<Vec<T::Partial>, ConfigError> {
+        let mut layers: Vec<T::Partial> = vec![];
+
+        // First layer should be the defaults
+        layers.push(T::Partial::default_values());
+
+        // Sources would then overrides the defaults in sequence
+        for source in &self.sources {
+            let partial: T::Partial = source.parse(self.source_format).await?;
+            layers.push(partial);
+        }
+
+        Ok(layers)
+    }
 }
 
 // fn test() {

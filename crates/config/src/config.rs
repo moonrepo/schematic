@@ -1,7 +1,9 @@
-pub trait PartialConfig {
+use serde::de::DeserializeOwned;
+
+pub trait PartialConfig: DeserializeOwned + Sized {
     fn default_values() -> Self;
 }
 
-pub trait Config {
+pub trait Config: Sized {
     type Partial: PartialConfig;
 }
