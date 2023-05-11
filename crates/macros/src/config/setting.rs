@@ -82,7 +82,7 @@ impl<'l> Setting<'l> {
         };
 
         match expr {
-            Expr::Array(_) | Expr::Lit(_) | Expr::Tuple(_) => {
+            Expr::Array(_) | Expr::Call(_) | Expr::Lit(_) | Expr::Tuple(_) => {
                 quote! { Some(#expr) }
             }
             // Strings are `Path` for some reason instead of `Lit`...

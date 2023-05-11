@@ -1,4 +1,3 @@
-use crate::error::ConfigError;
 use serde::de::DeserializeOwned;
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
@@ -9,5 +8,6 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    fn from_partial(partial: Self::Partial) -> Result<Self, ConfigError>;
+    fn from_defaults() -> Self;
+    fn from_partial(partial: Self::Partial) -> Self;
 }

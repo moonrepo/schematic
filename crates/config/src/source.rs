@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use starbase_utils::fs;
 use std::path::PathBuf;
 
-#[derive(Clone, Copy, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SourceFormat {
     #[cfg(feature = "yaml")]
@@ -26,7 +26,7 @@ impl SourceFormat {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Source {
     Code { code: String },

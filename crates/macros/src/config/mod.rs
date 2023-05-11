@@ -70,7 +70,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
             if f.args.nested {
                 let struct_name = f.get_nested_struct_name();
 
-                quote! { #struct_name::from_partial(partial.#name.unwrap_or_default())? }
+                quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
             } else {
                 quote! { partial.#name.unwrap_or_default() }
             }
@@ -121,10 +121,14 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl schematic::Config for #struct_name {
             type Partial = #partial_struct_name;
 
-            fn from_partial(partial: Self::Partial) -> Result<Self, schematic::ConfigError> {
-                Ok(Self {
+            fn from_defaults() -> Self {
+                Self::from_partial(<Self::Partial as schematic::PartialConfig>::default_values())
+            }
+
+            fn from_partial(partial: Self::Partial) -> Self {
+                Self {
                     #(#field_names: #from_values),*
-                })
+                }
             }
         }
     }
