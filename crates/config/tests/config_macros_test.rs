@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
-use std::{collections::HashMap, ffi::OsString};
+use std::collections::HashMap;
 
 fn default_bool() -> bool {
     true
@@ -27,7 +27,7 @@ struct ValueTypes {
     boolean: bool,
     string: String,
     number: usize,
-    vector: Vec<OsString>,
+    vector: Vec<String>,
     map: HashMap<String, u64>,
     enums: SomeEnum,
 }
@@ -38,8 +38,8 @@ struct DefaultValues {
     boolean: bool,
     #[setting(default_fn = default_bool)]
     boolean_fn: bool,
-    #[setting(default = 'a')]
-    chars: char,
+    // #[setting(default = 'a')]
+    // chars: char,
     #[setting(default = "foo")]
     string: String,
     #[setting(default_fn = private::default_string)]

@@ -30,8 +30,11 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let struct_name = input.ident;
     let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
-    let struct_attrs =
-        vec![quote! { #[serde(default, deny_unknown_fields, rename_all = "camelCase") ]}];
+    let struct_attrs = vec![
+        quote! { #[serde(default, deny_unknown_fields, rename_all = "camelCase") ]},
+        quote! { #[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))] },
+        quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
+    ];
 
     // Partial
     let partial_struct_name = format_ident!("Partial{}", struct_name);
