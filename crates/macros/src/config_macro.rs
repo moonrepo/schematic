@@ -1,20 +1,15 @@
-use convert_case::{Case, Casing};
+// use convert_case::{Case, Casing};
+use crate::config::setting::Setting;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, Data, DataStruct, DeriveInput, Fields, FieldsNamed};
+use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 #[derive(FromDeriveInput, Default)]
 #[darling(default, attributes(config))]
 struct ConfigArgs {
     json_schemas: Option<bool>,
     typescript: Option<bool>,
-}
-
-fn convert_to_optional_fields(fields: &FieldsNamed) {
-    for field in &fields.named {
-        // match field {}
-    }
 }
 
 // #[derive(Config)]
@@ -34,21 +29,21 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let struct_name = input.ident;
     let partial_struct_name = format_ident!("Partial{}", struct_name);
-    let partial_namespace =
-        format_ident!("partial_{}", struct_name.to_string().to_case(Case::Snake));
+    let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
 
     quote! {
-        pub mod #partial_namespace {
-            pub struct #partial_struct_name {}
+        #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+        pub struct #partial_struct_name {
+            #(#struct_fields)*
+        }
 
-            #[automatically_derived]
-            impl schematic::PartialConfig for #partial_struct_name {
-            }
+        #[automatically_derived]
+        impl schematic::PartialConfig for #partial_struct_name {
         }
 
         #[automatically_derived]
         impl schematic::Config for #struct_name {
-            type Partial = #partial_namespace::#partial_struct_name;
+            type Partial = #partial_struct_name;
         }
     }
     .into()

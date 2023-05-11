@@ -8,3 +8,4 @@ repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
 schematic_macros = { path = "../macros" }
+serde = { workspace = true }
