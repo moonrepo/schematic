@@ -7,8 +7,12 @@ description = "A serde-based layered configuration crate."
 repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
+miette = "5.8.0"
+reqwest = { version = "0.11.17", default-features = false }
 schematic_macros = { path = "../macros" }
 serde = { workspace = true }
+starbase_utils = { version = "0.2.9", default-features = false }
+thiserror = "1.0.40"
 
 # json schema
 schemars = { version = "0.8.12", optional = true }
@@ -16,7 +20,11 @@ schemars = { version = "0.8.12", optional = true }
 # typescript
 ts-rs = { version = "6.2.1", optional = true }
 
+# yaml
+serde_yaml = { version = "0.9.21", optional = true }
+
 [features]
-default = []
+default = ["yaml"]
 json_schema = ["dep:schemars"]
 typescript = ["dep:ts-rs"]
+yaml = ["dep:serde_yaml"]
