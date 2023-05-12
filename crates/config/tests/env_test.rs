@@ -1,4 +1,5 @@
 use schematic::*;
+use serial_test::serial;
 use std::{env, path::PathBuf};
 
 #[derive(Debug, Config)]
@@ -31,6 +32,7 @@ fn reset_vars() {
 }
 
 #[test]
+#[serial]
 fn defaults_to_env_var() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
@@ -49,6 +51,7 @@ fn defaults_to_env_var() {
 }
 
 #[test]
+#[serial]
 #[should_panic(expected = "InvalidEnvVar(\"ENV_NUMBER\"")]
 fn errors_on_parse_fail() {
     reset_vars();
@@ -60,6 +63,7 @@ fn errors_on_parse_fail() {
 }
 
 #[test]
+#[serial]
 fn parses_into_env_vars() {
     reset_vars();
     env::set_var("ENV_VEC_STRING", "1,2,3");
@@ -74,6 +78,7 @@ fn parses_into_env_vars() {
 }
 
 #[test]
+#[serial]
 #[should_panic(
     expected = "InvalidEnvVar(\"ENV_VEC_NUMBER\", \"Failed to parse \\\"a\\\" into the correct type.\")"
 )]
