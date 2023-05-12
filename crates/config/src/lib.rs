@@ -1,7 +1,13 @@
 mod config;
+mod error;
+mod loader;
+mod source;
 
 pub use config::*;
+pub use error::*;
+pub use loader::*;
 pub use schematic_macros::*;
+pub use source::*;
 
 // We can't put this in a proc-macro crate!
 #[macro_export]

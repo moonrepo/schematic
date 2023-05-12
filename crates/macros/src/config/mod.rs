@@ -48,8 +48,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let struct_name = input.ident;
-    let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
     let partial_struct_name = format_ident!("Partial{}", struct_name);
+    let struct_fields = fields.named.iter().map(Setting::from).collect::<Vec<_>>();
+    let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
 
     // Attributes
     let serde_meta = args.get_serde_meta();
@@ -59,11 +60,41 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
     ];
 
-    // Fields
-    let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
+    // Config implementation
+
+    let from_values = struct_fields
+        .iter()
+        .map(|f| {
+            let name = &f.name;
+
+            if f.is_nested() {
+                let struct_name = f.get_nested_struct_name();
+
+                quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+            } else {
+                quote! { partial.#name.unwrap_or_default() }
+            }
+        })
+        .collect::<Vec<_>>();
+
+    // Partial implementation
+
     let default_values = struct_fields
         .iter()
         .map(|f| f.get_default_value())
+        .collect::<Vec<_>>();
+
+    let merge_values = struct_fields
+        .iter()
+        .map(|f| {
+            let name = &f.name;
+
+            quote! {
+                if next.#name.is_some() {
+                    self.#name = next.#name;
+                }
+            }
+        })
         .collect::<Vec<_>>();
 
     quote! {
@@ -80,11 +111,25 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     #(#field_names: #default_values),*
                 }
             }
+
+            fn merge(&mut self, next: Self) {
+                #(#merge_values)*
+            }
         }
 
         #[automatically_derived]
         impl schematic::Config for #struct_name {
             type Partial = #partial_struct_name;
+
+            fn from_defaults() -> Self {
+                Self::from_partial(<Self::Partial as schematic::PartialConfig>::default_values())
+            }
+
+            fn from_partial(partial: Self::Partial) -> Self {
+                Self {
+                    #(#field_names: #from_values),*
+                }
+            }
         }
     }
     .into()

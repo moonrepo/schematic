@@ -46,29 +46,35 @@ impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
 
-        if args.nested {
-            if args.default_fn.is_some() || args.default.is_some() {
-                panic!("Cannot use `default` or `default_fn` with nested configs.");
-            }
-
-            // Others
-        }
-
         if args.default_fn.is_some() && args.default.is_some() {
             panic!("Cannot provide both `default` and `default_fn`.");
         }
 
-        Setting {
+        let setting = Setting {
             args,
             comment: extract_comment(field),
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
+        };
+
+        if setting.is_nested() && setting.has_default() {
+            panic!("Cannot use `default` or `default_fn` with nested configs.");
         }
+
+        setting
+    }
+
+    pub fn has_default(&self) -> bool {
+        self.args.default.is_some() || self.args.default_fn.is_some()
+    }
+
+    pub fn is_nested(&self) -> bool {
+        self.args.nested
     }
 
     pub fn get_default_value(&self) -> TokenStream {
         if self.args.nested {
-            let struct_name = self.get_nested_struct_name();
+            let struct_name = format_ident!("Partial{}", self.get_nested_struct_name());
 
             return quote! { Some(#struct_name::default_values()) };
         };
@@ -82,7 +88,7 @@ impl<'l> Setting<'l> {
         };
 
         match expr {
-            Expr::Array(_) | Expr::Lit(_) | Expr::Tuple(_) => {
+            Expr::Array(_) | Expr::Call(_) | Expr::Lit(_) | Expr::Tuple(_) => {
                 quote! { Some(#expr) }
             }
             // Strings are `Path` for some reason instead of `Lit`...
@@ -105,7 +111,7 @@ impl<'l> Setting<'l> {
                 let segments = &path.path.segments;
                 let last_segment = segments.last().unwrap();
 
-                format_ident!("Partial{}", &last_segment.ident)
+                last_segment.ident.clone()
             }
             _ => panic!("Only structs are supported for nested settings."),
         }
@@ -115,6 +121,7 @@ impl<'l> Setting<'l> {
 impl<'l> ToTokens for Setting<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
+        let value = self.value;
 
         let comment = if let Some(cmt) = &self.comment {
             quote! { #[doc = #cmt] }
@@ -123,10 +130,8 @@ impl<'l> ToTokens for Setting<'l> {
         };
 
         let value = if self.args.nested {
-            let ident = self.get_nested_struct_name();
-            quote! { #ident }
+            quote! { <#value as schematic::Config>::Partial }
         } else {
-            let value = self.value;
             quote! { #value }
         };
 
