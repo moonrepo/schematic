@@ -126,6 +126,8 @@ struct EnvVars {
     basic: String,
     #[setting(env = "BAR", parse_env = vec_from_env)]
     advanced: Vec<String>,
+    // #[setting(parse_env = vec_from_env)]
+    // invalid: Vec<String>,
 }
 
 #[derive(Config)]

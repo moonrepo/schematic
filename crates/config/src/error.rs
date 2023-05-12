@@ -5,6 +5,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
+    #[error("{0}")]
+    Message(String),
+
     #[diagnostic(code(config::code::extends))]
     #[error("Unable to extend from a code based source.")]
     ExtendsFromNoCode,
