@@ -116,6 +116,18 @@ struct ExtendsEnum {
     extends: ExtendsFrom,
 }
 
+fn vec_from_env(_: String) -> Result<Vec<String>, ConfigError> {
+    Ok(vec![])
+}
+
+#[derive(Config)]
+struct EnvVars {
+    #[setting(env = "FOO")]
+    basic: String,
+    #[setting(env = "BAR", parse_env = vec_from_env)]
+    advanced: Vec<String>,
+}
+
 #[derive(Config)]
 struct Comments {
     // Normal
