@@ -18,9 +18,15 @@ pub trait Config: Sized {
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ExtendsFrom {
     String(String),
     List(Vec<String>),
+}
+
+impl Default for ExtendsFrom {
+    fn default() -> Self {
+        Self::List(vec![])
+    }
 }

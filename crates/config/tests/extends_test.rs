@@ -19,6 +19,14 @@ struct ExtendsList {
     value: Vec<usize>,
 }
 
+#[derive(Config)]
+struct ExtendsEnum {
+    #[setting(extends)]
+    extends: schematic::ExtendsFrom,
+    #[setting(merge = merge::append_vec)]
+    value: Vec<usize>,
+}
+
 #[test]
 fn extends_from_chain_in_order() {
     let root = get_fixture_path("extending");
@@ -75,6 +83,44 @@ fn extends_from_chain_in_order_using_list() {
             },
             Source::File {
                 path: root.join("./base-list.yml")
+            }
+        ]
+    );
+}
+
+#[test]
+fn extends_from_chain_in_order_using_both_enum() {
+    let root = get_fixture_path("extending");
+
+    let result = ConfigLoader::<ExtendsEnum>::new(SourceFormat::Yaml)
+        .file(root.join("base-both.yml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.extends, ExtendsFrom::default());
+    assert_eq!(result.config.value, vec![3, 2, 3, 2, 4, 1]);
+
+    assert_eq!(
+        result.sources,
+        vec![
+            Source::File {
+                path: root.join("./string2.yml")
+            },
+            Source::File {
+                path: root.join("./list1.yml")
+            },
+            Source::File {
+                path: root.join("./string2.yml")
+            },
+            Source::File {
+                path: root.join("./string1.yml")
+            },
+            Source::File {
+                path: root.join("list2.yml")
+            },
+            Source::File {
+                path: root.join("./base-both.yml")
             }
         ]
     );

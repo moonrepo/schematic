@@ -111,6 +111,12 @@ struct ExtendsList {
 }
 
 #[derive(Config)]
+struct ExtendsEnum {
+    #[setting(extends)]
+    extends: ExtendsFrom,
+}
+
+#[derive(Config)]
 struct Comments {
     // Normal
     normal: bool,

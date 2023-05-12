@@ -60,26 +60,35 @@ impl<'l> Config<'l> {
                 let name = setting.name;
                 let type_of = format!("{}", setting.value.to_token_stream());
 
-                if type_of == "String" {
-                    return quote! {
-                        if let Some(value) = self.#name.as_ref() {
-                            return Some(schematic::ExtendsFrom::String(value.clone()));
-                        }
-                    };
-                }
-
                 // Janky but works!
-                if type_of == "Vec<String>" || type_of == "Vec < String >" {
-                    return quote! {
-                        if let Some(value) = self.#name.as_ref() {
-                            return Some(schematic::ExtendsFrom::List(value.clone()));
-                        }
-                    };
-                }
-
-                panic!(
-                    "Only `String` and `Vec<String>` are supported when using `extends` for {name}."
-                );
+                match type_of.as_str() {
+                    "String" => {
+                        return quote! {
+                            if let Some(value) = self.#name.as_ref() {
+                                return Some(schematic::ExtendsFrom::String(value.clone()));
+                            }
+                        };
+                    }
+                    "Vec<String>" | "Vec < String >" => {
+                        return quote! {
+                            if let Some(value) = self.#name.as_ref() {
+                                return Some(schematic::ExtendsFrom::List(value.clone()));
+                            }
+                        };
+                    }
+                    "ExtendsFrom" | "schematic::ExtendsFrom" | "schematic :: ExtendsFrom" => {
+                        return quote! {
+                            if let Some(value) = self.#name.as_ref() {
+                                return Some(value.clone());
+                            }
+                        };
+                    }
+                    _ => {
+                        panic!(
+                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extends` for {name}."
+                        );
+                    }
+                };
             }
         }
 

@@ -140,6 +140,10 @@ pub fn is_file_like(value: &str) -> bool {
         || value.starts_with('.')
         || value.contains('/')
         || value.contains('\\')
+        || value.ends_with(".json")
+        || value.ends_with(".toml")
+        || value.ends_with(".yaml")
+        || value.ends_with(".yml")
 }
 
 pub fn is_url_like(value: &str) -> bool {
