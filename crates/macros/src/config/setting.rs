@@ -10,6 +10,7 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
+    merge: Option<ExprPath>,
     nested: bool,
 
     // serde
@@ -134,9 +135,19 @@ impl<'l> Setting<'l> {
     pub fn get_merge_statement(&self) -> TokenStream {
         let name = self.name;
 
-        quote! {
-            if next.#name.is_some() {
-                self.#name = next.#name;
+        if let Some(func) = self.args.merge.as_ref() {
+            quote! {
+                if let (Some(p), Some(n)) = (self.#name.take(), next.#name.take()) {
+                    self.#name = #func(p, n);
+                } else if next.#name.is_some() {
+                    self.#name = next.#name;
+                }
+            }
+        } else {
+            quote! {
+                if next.#name.is_some() {
+                    self.#name = next.#name;
+                }
             }
         }
     }

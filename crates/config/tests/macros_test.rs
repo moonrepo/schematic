@@ -84,6 +84,16 @@ struct Serde {
     all: bool,
 }
 
+fn merge_basic(_: String, _: String) -> Option<String> {
+    None
+}
+
+#[derive(Config)]
+struct Merging {
+    #[setting(merge = merge_basic)]
+    basic: String,
+}
+
 #[derive(Config)]
 struct Comments {
     // Normal
