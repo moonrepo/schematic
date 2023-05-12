@@ -1,6 +1,6 @@
 [package]
 name = "schematic"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "A serde-based layered configuration crate."
@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/schematic"
 [dependencies]
 miette = "5.8.0"
 reqwest = { version = "0.11.17", default-features = false, features = ["blocking"] }
-schematic_macros = { version = "0.1.0", path = "../macros" }
+schematic_macros = { version = "0.1.1", path = "../macros" }
 serde = { version = "1.0.159", features = ["derive"] }
 starbase_utils = { version = "0.2.9", default-features = false }
 thiserror = "1.0.40"
