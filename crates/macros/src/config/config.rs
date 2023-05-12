@@ -77,23 +77,14 @@ impl<'l> ToTokens for Config<'l> {
         // Generate implementations
         let mut field_names = vec![];
         let mut default_values = vec![];
-        let mut merge_values = vec![];
         let mut from_values = vec![];
+        let mut merge_stmts = vec![];
 
         for setting in &self.settings {
-            let setting_name = setting.name;
-
-            field_names.push(setting_name);
-
+            field_names.push(setting.name);
             default_values.push(setting.get_default_value());
-
             from_values.push(setting.get_from_value());
-
-            merge_values.push(quote! {
-                if next.#setting_name.is_some() {
-                    self.#setting_name = next.#setting_name;
-                }
-            });
+            merge_stmts.push(setting.get_merge_statement());
         }
 
         let token = quote! {
@@ -106,7 +97,7 @@ impl<'l> ToTokens for Config<'l> {
                 }
 
                 fn merge(&mut self, next: Self) {
-                    #(#merge_values)*
+                    #(#merge_stmts)*
                 }
             }
         };

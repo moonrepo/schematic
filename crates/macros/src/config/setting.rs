@@ -131,6 +131,16 @@ impl<'l> Setting<'l> {
         }
     }
 
+    pub fn get_merge_statement(&self) -> TokenStream {
+        let name = self.name;
+
+        quote! {
+            if next.#name.is_some() {
+                self.#name = next.#name;
+            }
+        }
+    }
+
     pub fn get_nested_struct_name(&self) -> Ident {
         match &self.value {
             Type::Path(path) => {
