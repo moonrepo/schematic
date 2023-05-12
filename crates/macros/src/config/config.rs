@@ -63,7 +63,7 @@ impl<'l> Config<'l> {
                 if type_of == "String" {
                     return quote! {
                         if let Some(value) = self.#name.as_ref() {
-                            return Some(schematic::ExtendsFrom::String(value));
+                            return Some(schematic::ExtendsFrom::String(value.clone()));
                         }
                     };
                 }
@@ -72,7 +72,7 @@ impl<'l> Config<'l> {
                 if type_of == "Vec<String>" || type_of == "Vec < String >" {
                     return quote! {
                         if let Some(value) = self.#name.as_ref() {
-                            return Some(schematic::ExtendsFrom::List(value));
+                            return Some(schematic::ExtendsFrom::List(value.clone()));
                         }
                     };
                 }

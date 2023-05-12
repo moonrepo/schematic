@@ -1,3 +1,6 @@
+mod utils;
+
+use crate::utils::get_fixture_path;
 use schematic::*;
 use std::path::PathBuf;
 
@@ -94,8 +97,7 @@ fn can_create_file_source_with_parent() {
 #[cfg(feature = "json")]
 #[test]
 fn loads_json_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/json");
+    let root = get_fixture_path("json");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Json)
         .file(root.join("one.json"))
@@ -120,8 +122,7 @@ fn loads_json_files() {
 #[cfg(feature = "toml")]
 #[test]
 fn loads_toml_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/toml");
+    let root = get_fixture_path("toml");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
         .file(root.join("one.toml"))
@@ -145,8 +146,7 @@ fn loads_toml_files() {
 
 #[test]
 fn loads_yaml_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/yaml");
+    let root = get_fixture_path("yaml");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
         .file(root.join("one.yml"))

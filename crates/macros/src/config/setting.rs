@@ -130,6 +130,8 @@ impl<'l> Setting<'l> {
             let struct_name = self.get_nested_struct_name();
 
             quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+        // } else if self.is_extendable() {
+        //     quote! { Default::default() }
         } else if self.is_optional() {
             quote! { partial.#name }
         } else {
@@ -141,9 +143,16 @@ impl<'l> Setting<'l> {
         let name = self.name;
 
         if let Some(func) = self.args.merge.as_ref() {
+            // quote! {
+            //     if let (Some(p), Some(n)) = (self.#name.take(), next.#name.take()) {
+            //         self.#name = #func(p, n);
+            //     } else if next.#name.is_some() {
+            //         self.#name = next.#name;
+            //     }
+            // }
             quote! {
-                if let (Some(p), Some(n)) = (self.#name.take(), next.#name.take()) {
-                    self.#name = #func(p, n);
+                if self.#name.is_some() && next.#name.is_some() {
+                    self.#name = #func(self.#name.take().unwrap(), next.#name.take().unwrap());
                 } else if next.#name.is_some() {
                     self.#name = next.#name;
                 }

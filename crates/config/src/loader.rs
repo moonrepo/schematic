@@ -83,7 +83,7 @@ impl<T: Config> ConfigLoader<T> {
     fn extend_additional_layers(
         &mut self,
         parent_source: &Source,
-        extends_from: &ExtendsFrom<'_>,
+        extends_from: &ExtendsFrom,
     ) -> Result<(Vec<T::Partial>, Vec<Source>), ConfigError> {
         let mut sources = vec![];
 

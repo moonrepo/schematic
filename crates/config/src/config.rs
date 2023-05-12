@@ -1,4 +1,4 @@
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
     fn default_values() -> Self;
@@ -18,7 +18,9 @@ pub trait Config: Sized {
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
-pub enum ExtendsFrom<'partial> {
-    String(&'partial String),
-    List(&'partial Vec<String>),
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum ExtendsFrom {
+    String(String),
+    List(Vec<String>),
 }
