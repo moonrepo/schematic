@@ -10,7 +10,6 @@ repository = "https://github.com/moonrepo/schematic"
 proc-macro = true
 
 [dependencies]
-convert_case = "0.6.0"
 darling = "0.20.1"
 proc-macro2 = "1.0.56"
 quote = "1.0.26"
