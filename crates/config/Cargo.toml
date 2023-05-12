@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/schematic"
 [dependencies]
 miette = "5.8.0"
 reqwest = { version = "0.11.17", default-features = false, features = ["blocking"] }
-schematic_macros = { path = "../macros" }
+schematic_macros = { version = "0.1.0", path = "../macros" }
 serde = { version = "1.0.159", features = ["derive"] }
 starbase_utils = { version = "0.2.9", default-features = false }
 thiserror = "1.0.40"
