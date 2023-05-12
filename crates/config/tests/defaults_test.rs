@@ -45,3 +45,40 @@ async fn uses_custom_setting_defaults() {
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec![1, 2, 3, 4]);
 }
+
+#[derive(Debug, Config)]
+pub struct ReqOptDefaults {
+    required: usize,
+    #[setting(default = 123)]
+    required_with_default: usize,
+
+    optional: Option<usize>,
+    // #[setting(default = 123)]
+    // optional_with_default: Option<usize>,
+}
+
+#[tokio::test]
+async fn handles_required_optional_defaults() {
+    let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
+        .load()
+        .await
+        .unwrap();
+
+    assert_eq!(result.config.required, 0);
+    assert_eq!(result.config.required_with_default, 123);
+    assert_eq!(result.config.optional, None);
+}
+
+#[tokio::test]
+async fn can_overwrite_optional_fields() {
+    let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
+        .code("required: 789\noptional: 456")
+        .unwrap()
+        .load()
+        .await
+        .unwrap();
+
+    assert_eq!(result.config.required, 789);
+    assert_eq!(result.config.required_with_default, 123);
+    assert_eq!(result.config.optional, Some(456));
+}

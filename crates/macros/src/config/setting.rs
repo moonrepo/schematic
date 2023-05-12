@@ -1,8 +1,10 @@
+use crate::utils::unwrap_option;
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 
+// #[setting()]
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
@@ -12,7 +14,7 @@ pub struct SettingArgs {
 
     // serde
     rename: Option<String>,
-    skip: Option<bool>,
+    skip: bool,
 }
 
 impl SettingArgs {
@@ -23,7 +25,7 @@ impl SettingArgs {
             meta.push(quote! { rename = #rename });
         }
 
-        if self.skip.unwrap_or_default() {
+        if self.skip {
             meta.push(quote! { skip });
         }
 
@@ -57,8 +59,14 @@ impl<'l> Setting<'l> {
             value: &field.ty,
         };
 
-        if setting.is_nested() && setting.has_default() {
-            panic!("Cannot use `default` or `default_fn` with nested configs.");
+        if setting.has_default() {
+            if setting.is_nested() {
+                panic!("Cannot use `default` or `default_fn` with nested configs.");
+            }
+
+            if setting.is_optional() {
+                panic!("Cannot use `default` or `default_fn` with optional settings.");
+            }
         }
 
         setting
@@ -70,6 +78,10 @@ impl<'l> Setting<'l> {
 
     pub fn is_nested(&self) -> bool {
         self.args.nested
+    }
+
+    pub fn is_optional(&self) -> bool {
+        unwrap_option(self.value).is_some()
     }
 
     pub fn get_default_value(&self) -> TokenStream {
@@ -105,6 +117,30 @@ impl<'l> Setting<'l> {
         }
     }
 
+    pub fn get_from_value(&self) -> TokenStream {
+        let name = self.name;
+
+        if self.is_nested() {
+            let struct_name = self.get_nested_struct_name();
+
+            quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+        } else if self.is_optional() {
+            quote! { partial.#name }
+        } else {
+            quote! { partial.#name.unwrap_or_default() }
+        }
+    }
+
+    pub fn get_merge_statement(&self) -> TokenStream {
+        let name = self.name;
+
+        quote! {
+            if next.#name.is_some() {
+                self.#name = next.#name;
+            }
+        }
+    }
+
     pub fn get_nested_struct_name(&self) -> Ident {
         match &self.value {
             Type::Path(path) => {
@@ -123,25 +159,28 @@ impl<'l> ToTokens for Setting<'l> {
         let name = self.name;
         let value = self.value;
 
-        let comment = if let Some(cmt) = &self.comment {
-            quote! { #[doc = #cmt] }
-        } else {
-            quote! {}
-        };
-
-        let value = if self.args.nested {
+        // Wrap value based on current state
+        let mut value = if self.is_nested() {
             quote! { <#value as schematic::Config>::Partial }
         } else {
             quote! { #value }
         };
 
+        if !self.is_optional() {
+            value = quote! { Option<#value> };
+        }
+
+        // Gather all attributes
         let serde_meta = self.args.get_serde_meta();
-        let attrs = quote! { #[serde(#serde_meta)] };
+        let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
+
+        if let Some(cmt) = &self.comment {
+            attrs.push(quote! { #[doc = #cmt] });
+        };
 
         tokens.extend(quote! {
-            #comment
-            #attrs
-            pub #name: Option<#value>,
+             #(#attrs)*
+            pub #name: #value,
         });
     }
 }

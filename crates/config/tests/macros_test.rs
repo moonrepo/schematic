@@ -33,6 +33,12 @@ pub struct ValueTypes {
 }
 
 #[derive(Config)]
+pub struct OptionalValues {
+    required: bool,
+    optional: Option<String>,
+}
+
+#[derive(Config)]
 struct DefaultValues {
     #[setting(default = true)]
     boolean: bool,
