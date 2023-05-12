@@ -10,6 +10,7 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
+    extends: bool,
     merge: Option<ExprPath>,
     nested: bool,
 
@@ -75,6 +76,10 @@ impl<'l> Setting<'l> {
 
     pub fn has_default(&self) -> bool {
         self.args.default.is_some() || self.args.default_fn.is_some()
+    }
+
+    pub fn is_extendable(&self) -> bool {
+        self.args.extends
     }
 
     pub fn is_nested(&self) -> bool {

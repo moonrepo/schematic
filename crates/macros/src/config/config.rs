@@ -37,6 +37,55 @@ pub struct Config<'l> {
 }
 
 impl<'l> Config<'l> {
+    pub fn extends_from(&self) -> TokenStream {
+        // Validate only 1 setting is using it
+        let mut names = vec![];
+
+        for setting in &self.settings {
+            if setting.is_extendable() {
+                names.push(setting.name.to_string());
+            }
+        }
+
+        if names.len() > 1 {
+            panic!(
+                "Only 1 setting may use `extends`, found: {}",
+                names.join(", ")
+            );
+        }
+
+        // Loop again and generate the necessary code
+        for setting in &self.settings {
+            if setting.is_extendable() {
+                let name = setting.name;
+                let type_of = format!("{}", setting.value.to_token_stream());
+
+                if type_of == "String" {
+                    return quote! {
+                        if let Some(value) = self.#name.as_ref() {
+                            return Some(schematic::ExtendsFrom::String(value));
+                        }
+                    };
+                }
+
+                // Janky but works!
+                if type_of == "Vec<String>" || type_of == "Vec < String >" {
+                    return quote! {
+                        if let Some(value) = self.#name.as_ref() {
+                            return Some(schematic::ExtendsFrom::List(value));
+                        }
+                    };
+                }
+
+                panic!(
+                    "Only `String` and `Vec<String>` are supported when using `extends` for {name}."
+                );
+            }
+        }
+
+        quote! {}
+    }
+
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
         let attrs = vec![quote! { #[serde(#serde_meta) ]}];
@@ -79,6 +128,7 @@ impl<'l> ToTokens for Config<'l> {
         let mut default_values = vec![];
         let mut from_values = vec![];
         let mut merge_stmts = vec![];
+        let extends_from = self.extends_from();
 
         for setting in &self.settings {
             field_names.push(setting.name);
@@ -94,6 +144,11 @@ impl<'l> ToTokens for Config<'l> {
                     Self {
                         #(#field_names: #default_values),*
                     }
+                }
+
+                fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+                    #extends_from
+                    None
                 }
 
                 fn merge(&mut self, mut next: Self) {
