@@ -63,8 +63,8 @@ impl Source {
 
         // Extending from a file is only allowed from file parent sources
         if is_file_like(value) {
-            let value = if value.starts_with("file://") {
-                &value[7..]
+            let value = if let Some(stripped) = value.strip_prefix("file://") {
+                stripped
             } else {
                 value
             };

@@ -126,14 +126,21 @@ impl<'l> Setting<'l> {
     pub fn get_from_value(&self) -> TokenStream {
         let name = self.name;
 
+        // Recursively build nested from partial
         if self.is_nested() {
             let struct_name = self.get_nested_struct_name();
 
             quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
-        // } else if self.is_extendable() {
-        //     quote! { Default::default() }
+
+            // Reset extendable values since we don't have the entire resolved list
+        } else if self.is_extendable() {
+            quote! { Default::default() }
+
+            // Use optional values as-is as they're already wrapped in `Option`
         } else if self.is_optional() {
             quote! { partial.#name }
+
+            // Otherwise unwrap the resolved value or use the type default
         } else {
             quote! { partial.#name.unwrap_or_default() }
         }
@@ -143,13 +150,6 @@ impl<'l> Setting<'l> {
         let name = self.name;
 
         if let Some(func) = self.args.merge.as_ref() {
-            // quote! {
-            //     if let (Some(p), Some(n)) = (self.#name.take(), next.#name.take()) {
-            //         self.#name = #func(p, n);
-            //     } else if next.#name.is_some() {
-            //         self.#name = next.#name;
-            //     }
-            // }
             quote! {
                 if self.#name.is_some() && next.#name.is_some() {
                     self.#name = #func(self.#name.take().unwrap(), next.#name.take().unwrap());

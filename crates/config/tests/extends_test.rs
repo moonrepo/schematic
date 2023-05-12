@@ -29,7 +29,7 @@ fn extends_from_chain_in_order() {
         .load()
         .unwrap();
 
-    assert_eq!(result.config.extends, "./string1.yml");
+    assert_eq!(result.config.extends, "");
     assert_eq!(result.config.value, vec![3, 2, 1]);
 
     assert_eq!(
@@ -58,7 +58,7 @@ fn extends_from_chain_in_order_using_list() {
         .load()
         .unwrap();
 
-    assert_eq!(result.config.extends, vec!["./list1.yml", "./list2.yml"]);
+    assert_eq!(result.config.extends, Vec::<String>::new());
     assert_eq!(result.config.value, vec![3, 2, 4, 1]);
 
     assert_eq!(
