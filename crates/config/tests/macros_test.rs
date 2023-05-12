@@ -95,6 +95,28 @@ struct Merging {
 }
 
 #[derive(Config)]
+struct ExtendsString {
+    #[setting(extends)]
+    extends: String,
+    // #[setting(extends)]
+    // extends2: String,
+    // #[setting(extends)]
+    // extends_int: usize,
+}
+
+#[derive(Config)]
+struct ExtendsList {
+    #[setting(extends)]
+    extends: Vec<String>,
+}
+
+#[derive(Config)]
+struct ExtendsEnum {
+    #[setting(extends)]
+    extends: ExtendsFrom,
+}
+
+#[derive(Config)]
 struct Comments {
     // Normal
     normal: bool,

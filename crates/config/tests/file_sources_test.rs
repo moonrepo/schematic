@@ -1,3 +1,6 @@
+mod utils;
+
+use crate::utils::get_fixture_path;
 use schematic::*;
 use std::path::PathBuf;
 
@@ -9,11 +12,92 @@ pub struct Config {
     vector: Vec<String>,
 }
 
+#[test]
+fn can_create_file_source() {
+    let source = Source::new("file://some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("./some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("./some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("/some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("some/path/config.yml"),
+        }
+    );
+}
+
+#[test]
+fn can_create_file_source_with_parent() {
+    let parent = Source::File {
+        path: PathBuf::from("/root/config.yml"),
+    };
+
+    let source = Source::new("file://some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("./some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("/some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+}
+
 #[cfg(feature = "json")]
-#[tokio::test]
-async fn loads_json_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/json");
+#[test]
+fn loads_json_files() {
+    let root = get_fixture_path("json");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Json)
         .file(root.join("one.json"))
@@ -27,7 +111,6 @@ async fn loads_json_files() {
         .file(root.join("five.json"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -37,10 +120,9 @@ async fn loads_json_files() {
 }
 
 #[cfg(feature = "toml")]
-#[tokio::test]
-async fn loads_toml_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/toml");
+#[test]
+fn loads_toml_files() {
+    let root = get_fixture_path("toml");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
         .file(root.join("one.toml"))
@@ -54,7 +136,6 @@ async fn loads_toml_files() {
         .file(root.join("five.toml"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -63,10 +144,9 @@ async fn loads_toml_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
-#[tokio::test]
-async fn loads_yaml_files() {
-    let root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/yaml");
+#[test]
+fn loads_yaml_files() {
+    let root = get_fixture_path("yaml");
 
     let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
         .file(root.join("one.yml"))
@@ -80,7 +160,6 @@ async fn loads_yaml_files() {
         .file(root.join("five.yml"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);

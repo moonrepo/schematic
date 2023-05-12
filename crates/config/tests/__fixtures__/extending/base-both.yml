@@ -1,0 +1,5 @@
+extends:
+  - ./list1.yml
+  - ./string1.yml
+  - list2.yml
+value: [1]

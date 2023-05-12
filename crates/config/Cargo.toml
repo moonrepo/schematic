@@ -8,12 +8,11 @@ repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
 miette = "5.8.0"
-reqwest = { version = "0.11.17", default-features = false }
+reqwest = { version = "0.11.17", default-features = false, features = ["blocking"] }
 schematic_macros = { path = "../macros" }
 serde = { version = "1.0.159", features = ["derive"] }
 starbase_utils = { version = "0.2.9", default-features = false }
 thiserror = "1.0.40"
-tokio = "1.28.0"
 
 # json
 serde_json = { version = "1.0.95", optional = true }
@@ -40,4 +39,3 @@ yaml = ["dep:serde_yaml"]
 
 [dev-dependencies]
 schematic = { path = ".", features = ["json", "yaml", "toml"] }
-tokio = { version = "1.28.0", features = ["full"] }
