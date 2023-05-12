@@ -1,8 +1,14 @@
 use crate::utils::unwrap_option;
-use darling::FromAttributes;
+use darling::{FromAttributes, FromMeta};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
+
+#[derive(Debug, Clone, FromMeta)]
+enum EnvSetting {
+    Key(String),
+    Func(ExprPath),
+}
 
 // #[setting()]
 #[derive(FromAttributes, Default)]
@@ -10,6 +16,7 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
+    env: Option<EnvSetting>,
     extends: bool,
     merge: Option<ExprPath>,
     nested: bool,
@@ -94,7 +101,7 @@ impl<'l> Setting<'l> {
         if self.args.nested {
             let struct_name = format_ident!("Partial{}", self.get_nested_struct_name());
 
-            return quote! { Some(#struct_name::default_values()) };
+            return quote! { Some(#struct_name::default_values()?) };
         };
 
         if let Some(func) = self.args.default_fn.as_ref() {

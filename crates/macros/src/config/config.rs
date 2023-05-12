@@ -149,10 +149,10 @@ impl<'l> ToTokens for Config<'l> {
         let token = quote! {
             #[automatically_derived]
             impl schematic::PartialConfig for #partial_name {
-                fn default_values() -> Self {
-                    Self {
+                fn default_values() -> Result<Self, schematic::ConfigError> {
+                    Ok(Self {
                         #(#field_names: #default_values),*
-                    }
+                    })
                 }
 
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
