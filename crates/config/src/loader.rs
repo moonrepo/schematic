@@ -43,19 +43,25 @@ impl<T: Config> ConfigLoader<T> {
         ConfigLoader::new(SourceFormat::Yaml)
     }
 
-    pub fn code<P: TryInto<String>>(&mut self, code: P) -> Result<&mut Self, ConfigError> {
+    pub fn code<S: TryInto<String>>(&mut self, code: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::code(code)?);
 
         Ok(self)
     }
 
-    pub fn file<P: TryInto<PathBuf>>(&mut self, path: P) -> Result<&mut Self, ConfigError> {
+    pub fn file<S: TryInto<PathBuf>>(&mut self, path: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::file(path)?);
 
         Ok(self)
     }
 
-    pub fn url<P: TryInto<String>>(&mut self, url: P) -> Result<&mut Self, ConfigError> {
+    pub fn source<S: AsRef<str>>(&mut self, value: S) -> Result<&mut Self, ConfigError> {
+        self.sources.push(Source::new(value.as_ref(), None)?);
+
+        Ok(self)
+    }
+
+    pub fn url<S: TryInto<String>>(&mut self, url: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::url(url)?);
 
         Ok(self)
@@ -81,13 +87,26 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<(Vec<T::Partial>, Vec<Source>), ConfigError> {
         let mut sources = vec![];
 
+        let mut extend_source = |value: &str| {
+            let source = Source::new(value, Some(parent_source))?;
+
+            // Extending from code is not possible
+            if matches!(source, Source::Code { .. }) {
+                return Err(ConfigError::ExtendsFromNoCode);
+            }
+
+            sources.push(source);
+
+            Ok(())
+        };
+
         match extends_from {
             ExtendsFrom::String(value) => {
-                sources.push(Source::new(value, Some(parent_source))?);
+                extend_source(value)?;
             }
             ExtendsFrom::List(values) => {
                 for value in values.iter() {
-                    sources.push(Source::new(value, Some(parent_source))?);
+                    extend_source(value)?;
                 }
             }
         };

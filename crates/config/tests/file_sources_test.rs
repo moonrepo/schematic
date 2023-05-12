@@ -9,6 +9,88 @@ pub struct Config {
     vector: Vec<String>,
 }
 
+#[test]
+fn can_create_file_source() {
+    let source = Source::new("file://some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("./some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("./some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("/some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("some/path/config.yml", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("some/path/config.yml"),
+        }
+    );
+}
+
+#[test]
+fn can_create_file_source_with_parent() {
+    let parent = Source::File {
+        path: PathBuf::from("/root/config.yml"),
+    };
+
+    let source = Source::new("file://some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("./some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("/some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/some/path/config.yml"),
+        }
+    );
+
+    let source = Source::new("some/path/config.yml", Some(&parent)).unwrap();
+
+    assert_eq!(
+        source,
+        Source::File {
+            path: PathBuf::from("/root/some/path/config.yml"),
+        }
+    );
+}
+
 #[cfg(feature = "json")]
 #[test]
 fn loads_json_files() {

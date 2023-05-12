@@ -46,7 +46,7 @@ impl SourceFormat {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Source {
     Code { code: String },
@@ -63,6 +63,12 @@ impl Source {
 
         // Extending from a file is only allowed from file parent sources
         if is_file_like(value) {
+            let value = if value.starts_with("file://") {
+                &value[7..]
+            } else {
+                value
+            };
+
             if parent_source.is_none() {
                 return Source::file(value);
             }
@@ -84,8 +90,7 @@ impl Source {
             }
         }
 
-        // Extending from code is not possible
-        Err(ConfigError::ExtendsFromNoCode)
+        Source::code(value)
     }
 
     pub fn code<T: TryInto<String>>(code: T) -> Result<Source, ConfigError> {
@@ -96,10 +101,6 @@ impl Source {
 
     pub fn file<T: TryInto<PathBuf>>(path: T) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
-
-        if !path.exists() {
-            return Err(ConfigError::MissingFile(path));
-        }
 
         Ok(Source::File { path })
     }
@@ -120,7 +121,13 @@ impl Source {
     {
         format.parse(match self {
             Source::Code { code } => code.to_owned(),
-            Source::File { path } => fs::read_file(path)?,
+            Source::File { path } => {
+                if !path.exists() {
+                    return Err(ConfigError::MissingFile(path.to_path_buf()));
+                }
+
+                fs::read_file(path)?
+            }
             Source::Url { url } => reqwest::blocking::get(url)?.text()?,
         })
     }

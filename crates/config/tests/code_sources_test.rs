@@ -9,6 +9,18 @@ pub struct Config {
 }
 
 #[test]
+fn can_create_code_source() {
+    let source = Source::new("string: foo", None).unwrap();
+
+    assert_eq!(
+        source,
+        Source::Code {
+            code: "string: foo".to_owned(),
+        }
+    );
+}
+
+#[test]
 fn handles_one_layer() {
     let a = r"
 string: foo
