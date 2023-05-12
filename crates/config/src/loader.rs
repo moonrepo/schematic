@@ -27,6 +27,21 @@ impl<T: Config> ConfigLoader<T> {
         }
     }
 
+    #[cfg(feature = "json")]
+    pub fn json() -> Self {
+        ConfigLoader::new(SourceFormat::Json)
+    }
+
+    #[cfg(feature = "toml")]
+    pub fn toml() -> Self {
+        ConfigLoader::new(SourceFormat::Toml)
+    }
+
+    #[cfg(feature = "yaml")]
+    pub fn yaml() -> Self {
+        ConfigLoader::new(SourceFormat::Yaml)
+    }
+
     pub fn code<P: TryInto<String>>(&mut self, code: P) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::code(code)?);
 

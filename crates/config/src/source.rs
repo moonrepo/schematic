@@ -64,6 +64,10 @@ impl Source {
     pub fn file<T: TryInto<PathBuf>>(path: T) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
+        if !path.exists() {
+            return Err(ConfigError::MissingFile(path));
+        }
+
         Ok(Source::File { path })
     }
 
@@ -81,18 +85,10 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        let content = match self {
+        format.parse(match self {
             Source::Code { code } => code.to_owned(),
-            Source::File { path } => {
-                if path.exists() {
-                    fs::read_file(path)?
-                } else {
-                    return Err(ConfigError::MissingFile(path.to_path_buf()));
-                }
-            }
+            Source::File { path } => fs::read_file(path)?,
             Source::Url { url } => reqwest::get(url).await?.text().await?,
-        };
-
-        format.parse(content)
+        })
     }
 }
