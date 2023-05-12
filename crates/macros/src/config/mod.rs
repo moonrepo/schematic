@@ -33,6 +33,23 @@ impl ConfigArgs {
     }
 }
 
+fn get_config_attrs(args: &ConfigArgs) -> Vec<proc_macro2::TokenStream> {
+    let serde_meta = args.get_serde_meta();
+    let attrs = vec![quote! { #[serde(#serde_meta) ]}];
+
+    #[cfg(feature = "json_schema")]
+    {
+        attrs.push(quote! { #[derive(schemars::JsonSchema)] });
+    }
+
+    #[cfg(feature = "typescript")]
+    {
+        attrs.push(quote! { #[derive(ts_rs::TS)] });
+    }
+
+    attrs
+}
+
 // #[derive(Config)]
 // #[config]
 pub fn macro_impl(item: TokenStream) -> TokenStream {
@@ -53,12 +70,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let field_names = struct_fields.iter().map(|f| &f.name).collect::<Vec<_>>();
 
     // Attributes
-    let serde_meta = args.get_serde_meta();
-    let struct_attrs = vec![
-        quote! { #[serde(#serde_meta) ]},
-        quote! { #[cfg_attr(feature = "json_schema", derive(schemars::JsonSchema))] },
-        quote! { #[cfg_attr(feature = "typescript", derive(ts_rs::TS))] },
-    ];
+    let struct_attrs = get_config_attrs(&args);
 
     // Config implementation
 
@@ -71,6 +83,8 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 let struct_name = f.get_nested_struct_name();
 
                 quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+            } else if f.is_optional() {
+                quote! { partial.#name }
             } else {
                 quote! { partial.#name.unwrap_or_default() }
             }

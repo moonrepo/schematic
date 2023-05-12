@@ -1,3 +1,4 @@
+use crate::utils::unwrap_option;
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -57,8 +58,14 @@ impl<'l> Setting<'l> {
             value: &field.ty,
         };
 
-        if setting.is_nested() && setting.has_default() {
-            panic!("Cannot use `default` or `default_fn` with nested configs.");
+        if setting.has_default() {
+            if setting.is_nested() {
+                panic!("Cannot use `default` or `default_fn` with nested configs.");
+            }
+
+            if setting.is_optional() {
+                panic!("Cannot use `default` or `default_fn` with optional settings.");
+            }
         }
 
         setting
@@ -70,6 +77,10 @@ impl<'l> Setting<'l> {
 
     pub fn is_nested(&self) -> bool {
         self.args.nested
+    }
+
+    pub fn is_optional(&self) -> bool {
+        unwrap_option(self.value).is_some()
     }
 
     pub fn get_default_value(&self) -> TokenStream {
@@ -123,16 +134,20 @@ impl<'l> ToTokens for Setting<'l> {
         let name = self.name;
         let value = self.value;
 
+        let mut value = if self.is_nested() {
+            quote! { <#value as schematic::Config>::Partial }
+        } else {
+            quote! { #value }
+        };
+
+        if !self.is_optional() {
+            value = quote! { Option<#value> }
+        };
+
         let comment = if let Some(cmt) = &self.comment {
             quote! { #[doc = #cmt] }
         } else {
             quote! {}
-        };
-
-        let value = if self.args.nested {
-            quote! { <#value as schematic::Config>::Partial }
-        } else {
-            quote! { #value }
         };
 
         let serde_meta = self.args.get_serde_meta();
@@ -141,7 +156,7 @@ impl<'l> ToTokens for Setting<'l> {
         tokens.extend(quote! {
             #comment
             #attrs
-            pub #name: Option<#value>,
+            pub #name: #value,
         });
     }
 }
