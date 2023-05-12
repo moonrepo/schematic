@@ -55,6 +55,39 @@ pub enum Source {
 }
 
 impl Source {
+    pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {
+        // Extending from a URL is allowed from any parent source
+        if is_url_like(value) {
+            return Source::url(value);
+        }
+
+        // Extending from a file is only allowed from file parent sources
+        if is_file_like(value) {
+            if parent_source.is_none() {
+                return Source::file(value);
+            }
+
+            if let Source::File {
+                path: parent_path, ..
+            } = parent_source.unwrap()
+            {
+                let mut path = PathBuf::from(value);
+
+                // Not absolute, so prefix with parent
+                if !path.has_root() {
+                    path = parent_path.parent().unwrap().join(path);
+                }
+
+                return Source::file(path);
+            } else {
+                return Err(ConfigError::ExtendsFromParentFileOnly);
+            }
+        }
+
+        // Extending from code is not possible
+        Err(ConfigError::ExtendsFromNoCode)
+    }
+
     pub fn code<T: TryInto<String>>(code: T) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
@@ -81,14 +114,27 @@ impl Source {
         Ok(Source::Url { url })
     }
 
-    pub async fn parse<D>(&self, format: SourceFormat) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, format: SourceFormat) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
         format.parse(match self {
             Source::Code { code } => code.to_owned(),
             Source::File { path } => fs::read_file(path)?,
-            Source::Url { url } => reqwest::get(url).await?.text().await?,
+            Source::Url { url } => reqwest::blocking::get(url)?.text()?,
         })
     }
+}
+
+pub fn is_file_like(value: &str) -> bool {
+    value.starts_with("file://")
+        || value.starts_with('/')
+        || value.starts_with('\\')
+        || value.starts_with('.')
+        || value.contains('/')
+        || value.contains('\\')
+}
+
+pub fn is_url_like(value: &str) -> bool {
+    value.starts_with("https://") || value.starts_with("http://") || value.starts_with("www")
 }

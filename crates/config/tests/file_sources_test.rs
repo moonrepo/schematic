@@ -10,8 +10,8 @@ pub struct Config {
 }
 
 #[cfg(feature = "json")]
-#[tokio::test]
-async fn loads_json_files() {
+#[test]
+fn loads_json_files() {
     let root =
         PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/json");
 
@@ -27,7 +27,6 @@ async fn loads_json_files() {
         .file(root.join("five.json"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -37,8 +36,8 @@ async fn loads_json_files() {
 }
 
 #[cfg(feature = "toml")]
-#[tokio::test]
-async fn loads_toml_files() {
+#[test]
+fn loads_toml_files() {
     let root =
         PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/toml");
 
@@ -54,7 +53,6 @@ async fn loads_toml_files() {
         .file(root.join("five.toml"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -63,8 +61,8 @@ async fn loads_toml_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
-#[tokio::test]
-async fn loads_yaml_files() {
+#[test]
+fn loads_yaml_files() {
     let root =
         PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("tests/__fixtures__/yaml");
 
@@ -80,7 +78,6 @@ async fn loads_yaml_files() {
         .file(root.join("five.yml"))
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);

@@ -8,8 +8,8 @@ pub struct Config {
     vector: Vec<String>,
 }
 
-#[tokio::test]
-async fn handles_one_layer() {
+#[test]
+fn handles_one_layer() {
     let a = r"
 string: foo
 ";
@@ -18,7 +18,6 @@ string: foo
         .code(a)
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -27,8 +26,8 @@ string: foo
     assert_eq!(result.config.vector, Vec::<String>::new());
 }
 
-#[tokio::test]
-async fn merges_two_layers() {
+#[test]
+fn merges_two_layers() {
     let a = r"
 string: foo
 ";
@@ -42,7 +41,6 @@ vector: [a, b, c]
         .code(b)
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -51,8 +49,8 @@ vector: [a, b, c]
     assert_eq!(result.config.vector, vec!["a", "b", "c"]);
 }
 
-#[tokio::test]
-async fn merges_many_layers() {
+#[test]
+fn merges_many_layers() {
     let a = r"
 string: foo
 ";
@@ -83,7 +81,6 @@ vector: [x, y, z]
         .code(e)
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);

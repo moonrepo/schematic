@@ -8,11 +8,10 @@ pub struct NativeDefaults {
     vector: Vec<String>,
 }
 
-#[tokio::test]
-async fn uses_native_defaults() {
+#[test]
+fn uses_native_defaults() {
     let result = ConfigLoader::<NativeDefaults>::new(SourceFormat::Yaml)
         .load()
-        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -33,11 +32,10 @@ pub struct CustomDefaults {
     vector: Vec<usize>,
 }
 
-#[tokio::test]
-async fn uses_custom_setting_defaults() {
+#[test]
+fn uses_custom_setting_defaults() {
     let result = ConfigLoader::<CustomDefaults>::new(SourceFormat::Yaml)
         .load()
-        .await
         .unwrap();
 
     assert!(result.config.boolean);
@@ -57,11 +55,10 @@ pub struct ReqOptDefaults {
     // optional_with_default: Option<usize>,
 }
 
-#[tokio::test]
-async fn handles_required_optional_defaults() {
+#[test]
+fn handles_required_optional_defaults() {
     let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
         .load()
-        .await
         .unwrap();
 
     assert_eq!(result.config.required, 0);
@@ -69,13 +66,12 @@ async fn handles_required_optional_defaults() {
     assert_eq!(result.config.optional, None);
 }
 
-#[tokio::test]
-async fn can_overwrite_optional_fields() {
+#[test]
+fn can_overwrite_optional_fields() {
     let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
         .code("required: 789\noptional: 456")
         .unwrap()
         .load()
-        .await
         .unwrap();
 
     assert_eq!(result.config.required, 789);
