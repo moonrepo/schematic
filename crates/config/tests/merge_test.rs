@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 #[derive(Config)]
 pub struct MergeNormal {
@@ -72,4 +72,85 @@ fn custom_merge_with_funcs() {
     assert_eq!(base.string.unwrap(), "foo-bar");
     assert_eq!(base.vector.unwrap(), vec![4, 5, 6, 1, 2, 3]);
     assert_eq!(base.map, None);
+}
+
+mod helpers {
+    use super::*;
+
+    #[test]
+    fn discard() {
+        assert_eq!(merge::discard(1, 2), None);
+    }
+
+    #[test]
+    fn preserve() {
+        assert_eq!(merge::preserve(1, 2), Some(1));
+    }
+
+    #[test]
+    fn replace() {
+        assert_eq!(merge::replace(1, 2), Some(2));
+    }
+
+    #[test]
+    fn append_vec() {
+        assert_eq!(merge::append_vec(vec![1], vec![2]), Some(vec![1, 2]));
+    }
+
+    #[test]
+    fn prepend_vec() {
+        assert_eq!(merge::prepend_vec(vec![1], vec![2]), Some(vec![2, 1]));
+    }
+
+    #[test]
+    fn merge_btreemap() {
+        assert_eq!(
+            merge::merge_btreemap(
+                BTreeMap::from_iter([("a".to_string(), 1), ("b".to_string(), 2)]),
+                BTreeMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)])
+            ),
+            Some(BTreeMap::from_iter([
+                ("a".to_string(), 1),
+                ("b".to_string(), 3),
+                ("c".to_string(), 4),
+            ]))
+        );
+    }
+
+    #[test]
+    fn merge_btreeset() {
+        assert_eq!(
+            merge::merge_btreeset(
+                BTreeSet::from_iter(["a", "b"]),
+                BTreeSet::from_iter(["a", "b", "c", "d"])
+            ),
+            Some(BTreeSet::from_iter(["a", "b", "c", "d"]))
+        );
+    }
+
+    #[test]
+    fn merge_hashmap() {
+        assert_eq!(
+            merge::merge_hashmap(
+                HashMap::from_iter([("a".to_string(), 1), ("b".to_string(), 2)]),
+                HashMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)])
+            ),
+            Some(HashMap::from_iter([
+                ("a".to_string(), 1),
+                ("b".to_string(), 3),
+                ("c".to_string(), 4),
+            ]))
+        );
+    }
+
+    #[test]
+    fn merge_hashset() {
+        assert_eq!(
+            merge::merge_hashset(
+                HashSet::from_iter(["a", "b"]),
+                HashSet::from_iter(["a", "b", "c", "d"])
+            ),
+            Some(HashSet::from_iter(["a", "b", "c", "d"]))
+        );
+    }
 }

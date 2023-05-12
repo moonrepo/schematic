@@ -1,6 +1,7 @@
 mod config;
 mod error;
 mod loader;
+pub mod merge;
 mod source;
 
 pub use config::*;
