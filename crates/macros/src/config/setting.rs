@@ -4,6 +4,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 
+// #[setting()]
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
@@ -113,6 +114,20 @@ impl<'l> Setting<'l> {
 
                 panic!("Unsupported default value for {name} ({info}). May only provide literals, arrays, or tuples. Use `default_fn` for more complex defaults.");
             }
+        }
+    }
+
+    pub fn get_from_value(&self) -> TokenStream {
+        let name = self.name;
+
+        if self.is_nested() {
+            let struct_name = self.get_nested_struct_name();
+
+            quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+        } else if self.is_optional() {
+            quote! { partial.#name }
+        } else {
+            quote! { partial.#name.unwrap_or_default() }
         }
     }
 
