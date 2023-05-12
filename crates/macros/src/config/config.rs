@@ -134,25 +134,25 @@ impl<'l> ToTokens for Config<'l> {
 
         // Generate implementations
         let mut field_names = vec![];
-        let mut default_values = vec![];
-        let mut from_values = vec![];
+        let mut default_stmts = vec![];
+        let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
         let extends_from = self.extends_from();
 
         for setting in &self.settings {
             field_names.push(setting.name);
-            default_values.push(setting.get_default_value());
-            from_values.push(setting.get_from_value());
+            default_stmts.push(setting.get_default_statement());
+            from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
         }
 
         let token = quote! {
             #[automatically_derived]
             impl schematic::PartialConfig for #partial_name {
-                fn default_values() -> Self {
-                    Self {
-                        #(#field_names: #default_values),*
-                    }
+                fn default_values() -> Result<Self, schematic::ConfigError> {
+                    Ok(Self {
+                        #(#field_names: #default_stmts),*
+                    })
                 }
 
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
@@ -175,7 +175,7 @@ impl<'l> ToTokens for Config<'l> {
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {
-                        #(#field_names: #from_values),*
+                        #(#field_names: #from_stmts),*
                     }
                 }
             }

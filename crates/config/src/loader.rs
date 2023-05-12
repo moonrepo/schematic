@@ -70,7 +70,7 @@ impl<T: Config> ConfigLoader<T> {
     pub fn load(&mut self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let sources_to_parse = mem::take(&mut self.sources);
         let (partial_layers, resolved_sources) = self.parse_into_layers(sources_to_parse)?;
-        let partial = self.merge_layers(partial_layers);
+        let partial = self.merge_layers(partial_layers)?;
         let config = T::from_partial(partial);
 
         Ok(ConfigLoadResult {
@@ -114,19 +114,19 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(sources)
     }
 
-    fn merge_layers(&self, layers: Vec<T::Partial>) -> T::Partial {
+    fn merge_layers(&self, layers: Vec<T::Partial>) -> Result<T::Partial, ConfigError> {
         // All `None` by default
         let mut merged = T::Partial::default();
 
         // First layer should be the defaults
-        merged.merge(T::Partial::default_values());
+        merged.merge(T::Partial::default_values()?);
 
         // Then apply other layers in order
         for layer in layers {
             merged.merge(layer);
         }
 
-        merged
+        Ok(merged)
     }
 
     fn parse_into_layers(

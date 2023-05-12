@@ -10,9 +10,11 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
+    env: Option<String>,
     extends: bool,
     merge: Option<ExprPath>,
     nested: bool,
+    parse_env: Option<ExprPath>,
 
     // serde
     rename: Option<String>,
@@ -54,6 +56,10 @@ impl<'l> Setting<'l> {
             panic!("Cannot provide both `default` and `default_fn`.");
         }
 
+        if args.parse_env.is_some() && args.env.is_none() {
+            panic!("Cannot use `parse_env` without `env`.");
+        }
+
         let setting = Setting {
             args,
             comment: extract_comment(field),
@@ -90,11 +96,29 @@ impl<'l> Setting<'l> {
         unwrap_option(self.value).is_some()
     }
 
+    pub fn get_default_statement(&self) -> TokenStream {
+        let value = self.get_default_value();
+
+        match (&self.args.env, &self.args.parse_env) {
+            (Some(env), Some(parse_env)) => {
+                quote! {
+                    schematic::internal::parse_from_env_var(#env, #parse_env, #value)?
+                }
+            }
+            (Some(env), None) => {
+                quote! {
+                    schematic::internal::default_from_env_var(#env, #value)?
+                }
+            }
+            _ => value,
+        }
+    }
+
     pub fn get_default_value(&self) -> TokenStream {
         if self.args.nested {
             let struct_name = format_ident!("Partial{}", self.get_nested_struct_name());
 
-            return quote! { Some(#struct_name::default_values()) };
+            return quote! { Some(#struct_name::default_values()?) };
         };
 
         if let Some(func) = self.args.default_fn.as_ref() {
@@ -123,7 +147,7 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_from_value(&self) -> TokenStream {
+    pub fn get_from_statement(&self) -> TokenStream {
         let name = self.name;
 
         // Recursively build nested from partial

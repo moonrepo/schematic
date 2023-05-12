@@ -1,7 +1,8 @@
+use crate::error::ConfigError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
-    fn default_values() -> Self;
+    fn default_values() -> Result<Self, ConfigError>;
 
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
@@ -11,8 +12,10 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    fn from_defaults() -> Self {
-        Self::from_partial(<Self::Partial as PartialConfig>::default_values())
+    fn from_defaults() -> Result<Self, ConfigError> {
+        Ok(Self::from_partial(
+            <Self::Partial as PartialConfig>::default_values()?,
+        ))
     }
 
     fn from_partial(partial: Self::Partial) -> Self;

@@ -39,3 +39,4 @@ yaml = ["dep:serde_yaml"]
 
 [dev-dependencies]
 schematic = { path = ".", features = ["json", "yaml", "toml"] }
+serial_test = "2.0.0"
