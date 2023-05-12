@@ -14,25 +14,13 @@ fn merge_string(prev: String, next: String) -> Option<String> {
     Some(format!("{}-{}", prev, next))
 }
 
-fn merge_vec(prev: Vec<usize>, next: Vec<usize>) -> Option<Vec<usize>> {
-    let mut new = vec![];
-    new.extend(next);
-    new.extend(prev);
-
-    Some(new)
-}
-
-fn merge_map<T>(_: T, _: T) -> Option<T> {
-    None
-}
-
 #[derive(Config)]
 pub struct MergeFunc {
     #[setting(merge = merge_string)]
     string: String,
-    #[setting(merge = merge_vec)]
+    #[setting(merge = merge::prepend_vec)]
     vector: Vec<usize>,
-    #[setting(merge = merge_map)]
+    #[setting(merge = merge::discard)]
     map: HashMap<String, usize>,
 }
 
