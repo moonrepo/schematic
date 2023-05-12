@@ -13,7 +13,7 @@ pub struct SettingArgs {
 
     // serde
     rename: Option<String>,
-    skip: Option<bool>,
+    skip: bool,
 }
 
 impl SettingArgs {
@@ -24,7 +24,7 @@ impl SettingArgs {
             meta.push(quote! { rename = #rename });
         }
 
-        if self.skip.unwrap_or_default() {
+        if self.skip {
             meta.push(quote! { skip });
         }
 
@@ -134,6 +134,7 @@ impl<'l> ToTokens for Setting<'l> {
         let name = self.name;
         let value = self.value;
 
+        // Wrap value based on current state
         let mut value = if self.is_nested() {
             quote! { <#value as schematic::Config>::Partial }
         } else {
@@ -141,21 +142,19 @@ impl<'l> ToTokens for Setting<'l> {
         };
 
         if !self.is_optional() {
-            value = quote! { Option<#value> }
-        };
+            value = quote! { Option<#value> };
+        }
 
-        let comment = if let Some(cmt) = &self.comment {
-            quote! { #[doc = #cmt] }
-        } else {
-            quote! {}
-        };
-
+        // Gather all attributes
         let serde_meta = self.args.get_serde_meta();
-        let attrs = quote! { #[serde(#serde_meta)] };
+        let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
+
+        if let Some(cmt) = &self.comment {
+            attrs.push(quote! { #[doc = #cmt] });
+        };
 
         tokens.extend(quote! {
-            #comment
-            #attrs
+             #(#attrs)*
             pub #name: #value,
         });
     }

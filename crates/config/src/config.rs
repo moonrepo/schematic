@@ -8,6 +8,9 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    fn from_defaults() -> Self;
+    fn from_defaults() -> Self {
+        Self::from_partial(<Self::Partial as PartialConfig>::default_values())
+    }
+
     fn from_partial(partial: Self::Partial) -> Self;
 }

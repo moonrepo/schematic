@@ -135,10 +135,6 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl schematic::Config for #struct_name {
             type Partial = #partial_struct_name;
 
-            fn from_defaults() -> Self {
-                Self::from_partial(<Self::Partial as schematic::PartialConfig>::default_values())
-            }
-
             fn from_partial(partial: Self::Partial) -> Self {
                 Self {
                     #(#field_names: #from_values),*
