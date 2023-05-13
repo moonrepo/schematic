@@ -1,5 +1,4 @@
 use miette::Diagnostic;
-use starbase_utils::fs::FsError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -58,10 +57,10 @@ pub enum ConfigError {
     #[error("Failed to parse YAML source.")]
     YamlParseFailed(#[source] serde_yaml::Error),
 
-    // FS
+    // IO
     #[diagnostic(code(config::fs))]
-    #[error(transparent)]
-    Fs(#[from] FsError),
+    #[error("Failed to read file.")]
+    Io(#[from] std::io::Error),
 
     // HTTP
     #[diagnostic(code(config::http))]

@@ -1,6 +1,6 @@
 use crate::error::ConfigError;
 use serde::{de::DeserializeOwned, Serialize};
-use starbase_utils::fs;
+use std::fs;
 use std::path::PathBuf;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -126,7 +126,7 @@ impl Source {
                     return Err(ConfigError::MissingFile(path.to_path_buf()));
                 }
 
-                fs::read_file(path)?
+                fs::read_to_string(path)?
             }
             Source::Url { url } => reqwest::blocking::get(url)?.text()?,
         })
