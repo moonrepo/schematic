@@ -66,7 +66,7 @@ pub enum ParseError {
 
     #[cfg(feature = "toml")]
     #[diagnostic(code(parse::toml::failed))]
-    #[error("Failed to parse TOML source `{path}`.")]
+    #[error("Failed to parse TOML setting `{path}`.")]
     Toml {
         #[source]
         error: toml::de::Error,
@@ -75,7 +75,7 @@ pub enum ParseError {
 
     #[cfg(feature = "yaml")]
     #[diagnostic(code(parse::yaml::failed))]
-    #[error("Failed to parse YAML source `{path}`.")]
+    #[error("Failed to parse YAML setting `{path}`.")]
     Yaml {
         #[source]
         error: serde_yaml::Error,
