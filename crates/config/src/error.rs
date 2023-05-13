@@ -39,24 +39,6 @@ pub enum ConfigError {
     #[error("Only secure URLs are allowed.")]
     HttpsOnly,
 
-    // JSON
-    #[cfg(feature = "json")]
-    #[diagnostic(code(config::json::parse_failed))]
-    #[error("Failed to parse JSON source.")]
-    JsonParseFailed(#[source] serde_json::Error),
-
-    // TOML
-    #[cfg(feature = "toml")]
-    #[diagnostic(code(config::toml::parse_failed))]
-    #[error("Failed to parse TOML source.")]
-    TomlParseFailed(#[source] toml::de::Error),
-
-    // YAML
-    #[cfg(feature = "yaml")]
-    #[diagnostic(code(config::yaml::parse_failed))]
-    #[error("Failed to parse YAML source.")]
-    YamlParseFailed(#[source] serde_yaml::Error),
-
     // IO
     #[diagnostic(code(config::fs))]
     #[error("Failed to read file.")]
@@ -66,4 +48,45 @@ pub enum ConfigError {
     #[diagnostic(code(config::http))]
     #[error("Failed to download source from URL.")]
     Http(#[from] reqwest::Error),
+
+    #[error(transparent)]
+    Parse(#[from] ParseError),
+}
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum ParseError {
+    #[cfg(feature = "json")]
+    #[diagnostic(code(parse::json::failed))]
+    #[error("Failed to parse JSON setting `{path}`.")]
+    Json {
+        #[source]
+        error: serde_json::Error,
+        path: String,
+    },
+
+    #[cfg(feature = "toml")]
+    #[diagnostic(code(parse::toml::failed))]
+    #[error("Failed to parse TOML source `{path}`.")]
+    Toml {
+        #[source]
+        error: toml::de::Error,
+        path: String,
+    },
+
+    #[cfg(feature = "yaml")]
+    #[diagnostic(code(parse::yaml::failed))]
+    #[error("Failed to parse YAML source `{path}`.")]
+    Yaml {
+        #[source]
+        error: serde_yaml::Error,
+        path: String,
+    },
+
+    #[cfg(feature = "yaml")]
+    #[diagnostic(code(parse::yaml::extended))]
+    #[error("Failed to apply YAML anchors and references.")]
+    YamlExtended {
+        #[source]
+        error: serde_yaml::Error,
+    },
 }

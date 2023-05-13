@@ -1,4 +1,4 @@
-use crate::error::ConfigError;
+use crate::error::{ConfigError, ParseError};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -17,31 +17,64 @@ pub enum SourceFormat {
 }
 
 impl SourceFormat {
-    pub fn parse<D>(&self, content: String) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, content: String) -> Result<D, ParseError>
     where
         D: DeserializeOwned,
     {
         let data: D = match self {
             #[cfg(feature = "json")]
-            SourceFormat::Json => serde_json::from_str(&content).map_err(|e| {
-                dbg!(e.classify(), e.code());
-                ConfigError::JsonParseFailed(e)
-            })?,
+            SourceFormat::Json => {
+                let de = &mut serde_json::Deserializer::from_str(&content);
+                let result: Result<D, _> = serde_path_to_error::deserialize(de);
+
+                match result {
+                    Ok(value) => value,
+                    Err(error) => {
+                        return Err(ParseError::Json {
+                            path: error.path().to_string(),
+                            error: error.into_inner(),
+                        });
+                    }
+                }
+            }
 
             #[cfg(feature = "toml")]
-            SourceFormat::Toml => toml::from_str(&content).map_err(ConfigError::TomlParseFailed)?,
+            SourceFormat::Toml => {
+                let de = toml::Deserializer::new(&content);
+                let result: Result<D, _> = serde_path_to_error::deserialize(de);
+
+                match result {
+                    Ok(value) => value,
+                    Err(error) => {
+                        return Err(ParseError::Toml {
+                            path: error.path().to_string(),
+                            error: error.into_inner(),
+                        });
+                    }
+                }
+            }
 
             #[cfg(feature = "yaml")]
             SourceFormat::Yaml => {
-                let mut value: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| {
-                    dbg!(&e);
-                    ConfigError::YamlParseFailed(e)
-                })?;
+                let de = serde_yaml::Deserializer::from_str(&content);
+                let result: Result<serde_yaml::Value, _> = serde_path_to_error::deserialize(de);
 
-                // Applies anchors/aliases/references
-                value.apply_merge().map_err(ConfigError::YamlParseFailed)?;
+                match result {
+                    Ok(mut value) => {
+                        // Applies anchors/aliases/references
+                        value
+                            .apply_merge()
+                            .map_err(|error| ParseError::YamlExtended { error })?;
 
-                D::deserialize(value).map_err(ConfigError::YamlParseFailed)?
+                        D::deserialize(value).map_err(|error| ParseError::YamlExtended { error })?
+                    }
+                    Err(error) => {
+                        return Err(ParseError::Yaml {
+                            path: error.path().to_string(),
+                            error: error.into_inner(),
+                        });
+                    }
+                }
             }
         };
 
@@ -122,7 +155,7 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        format.parse(match self {
+        Ok(format.parse(match self {
             Source::Code { code } => code.to_owned(),
             Source::File { path } => {
                 if !path.exists() {
@@ -132,7 +165,7 @@ impl Source {
                 fs::read_to_string(path)?
             }
             Source::Url { url } => reqwest::blocking::get(url)?.text()?,
-        })
+        })?)
     }
 }
 
