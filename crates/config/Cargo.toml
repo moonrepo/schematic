@@ -3,7 +3,7 @@ name = "schematic"
 version = "0.1.1"
 edition = "2021"
 license = "MIT"
-description = "A serde-based layered configuration crate."
+description = "derive(Config)"
 repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]

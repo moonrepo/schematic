@@ -23,17 +23,20 @@ impl SourceFormat {
     {
         let data: D = match self {
             #[cfg(feature = "json")]
-            SourceFormat::Json => {
-                serde_json::from_str(&content).map_err(ConfigError::JsonParseFailed)?
-            }
+            SourceFormat::Json => serde_json::from_str(&content).map_err(|e| {
+                dbg!(e.classify(), e.code());
+                ConfigError::JsonParseFailed(e)
+            })?,
 
             #[cfg(feature = "toml")]
             SourceFormat::Toml => toml::from_str(&content).map_err(ConfigError::TomlParseFailed)?,
 
             #[cfg(feature = "yaml")]
             SourceFormat::Yaml => {
-                let mut value: serde_yaml::Value =
-                    serde_yaml::from_str(&content).map_err(ConfigError::YamlParseFailed)?;
+                let mut value: serde_yaml::Value = serde_yaml::from_str(&content).map_err(|e| {
+                    dbg!(&e);
+                    ConfigError::YamlParseFailed(e)
+                })?;
 
                 // Applies anchors/aliases/references
                 value.apply_merge().map_err(ConfigError::YamlParseFailed)?;
