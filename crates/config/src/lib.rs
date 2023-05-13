@@ -5,6 +5,7 @@ pub mod internal;
 mod loader;
 pub mod merge;
 mod source;
+pub mod validate;
 
 pub use config::*;
 pub use error::*;

@@ -2,6 +2,8 @@ use miette::Diagnostic;
 use std::path::PathBuf;
 use thiserror::Error;
 
+pub use serde_valid::Error as ValidateError;
+
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
     #[error("{0}")]

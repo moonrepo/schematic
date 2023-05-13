@@ -97,7 +97,7 @@ impl<'l> Config<'l> {
 
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
-        let attrs = vec![quote! { #[serde(#serde_meta) ]}];
+        let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
         #[cfg(feature = "json_schema")]
         {
@@ -107,6 +107,10 @@ impl<'l> Config<'l> {
         #[cfg(feature = "typescript")]
         {
             attrs.push(quote! { #[derive(ts_rs::TS)] });
+        }
+
+        if self.settings.iter().any(|s| s.has_validation()) {
+            attrs.push(quote! { #[derive(schematic::validate::Validate)] });
         }
 
         attrs

@@ -1,5 +1,5 @@
 use crate::utils::unwrap_option;
-use darling::FromAttributes;
+use darling::{util::Override, FromAttributes};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
@@ -15,6 +15,7 @@ pub struct SettingArgs {
     merge: Option<ExprPath>,
     nested: bool,
     parse_env: Option<ExprPath>,
+    validate: Option<Override<Meta>>,
 
     // serde
     rename: Option<String>,
@@ -82,6 +83,10 @@ impl<'l> Setting<'l> {
 
     pub fn has_default(&self) -> bool {
         self.args.default.is_some() || self.args.default_fn.is_some()
+    }
+
+    pub fn has_validation(&self) -> bool {
+        self.args.validate.is_some()
     }
 
     pub fn is_extendable(&self) -> bool {
@@ -222,6 +227,15 @@ impl<'l> ToTokens for Setting<'l> {
         // Gather all attributes
         let serde_meta = self.args.get_serde_meta();
         let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
+
+        if let Some(validate_meta) = &self.args.validate {
+            match validate_meta {
+                Override::Inherit => {}
+                Override::Explicit(meta) => {
+                    attrs.push(quote! { #[validate(#meta)] });
+                }
+            };
+        };
 
         if let Some(cmt) = &self.comment {
             attrs.push(quote! { #[doc = #cmt] });

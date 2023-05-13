@@ -131,6 +131,12 @@ struct EnvVars {
 }
 
 #[derive(Config)]
+struct Validations {
+    #[setting(validate(custom(vec_from_env)))]
+    basic: String,
+}
+
+#[derive(Config)]
 struct Comments {
     // Normal
     normal: bool,
