@@ -11,10 +11,11 @@ pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
     env: Option<String>,
-    extends: bool,
+    extend: bool,
     merge: Option<ExprPath>,
     nested: bool,
     parse_env: Option<ExprPath>,
+    validate: Option<ExprPath>,
 
     // serde
     rename: Option<String>,
@@ -60,6 +61,10 @@ impl<'l> Setting<'l> {
             panic!("Cannot use `parse_env` without `env`.");
         }
 
+        if args.validate.is_some() && args.nested {
+            panic!("Cannot use `validate` for `nested` configs.");
+        }
+
         let setting = Setting {
             args,
             comment: extract_comment(field),
@@ -69,7 +74,7 @@ impl<'l> Setting<'l> {
 
         if setting.has_default() {
             if setting.is_nested() {
-                panic!("Cannot use `default` or `default_fn` with nested configs.");
+                panic!("Cannot use `default` or `default_fn` with `nested` configs.");
             }
 
             if setting.is_optional() {
@@ -85,7 +90,7 @@ impl<'l> Setting<'l> {
     }
 
     pub fn is_extendable(&self) -> bool {
-        self.args.extends
+        self.args.extend
     }
 
     pub fn is_nested(&self) -> bool {
@@ -187,6 +192,30 @@ impl<'l> Setting<'l> {
                     self.#name = next.#name;
                 }
             }
+        }
+    }
+
+    pub fn get_validate_statement(&self) -> TokenStream {
+        let name = self.name;
+        let name_quoted = format!("{}", self.name);
+
+        if self.is_nested() {
+            quote! {
+                if let Err(nested_error) = self.#name.validate_with_path(path.join_key(#name_quoted)) {
+                    errors.push(schematic::ValidateErrorType::nested(nested_error));
+                }
+            }
+        } else if let Some(func) = self.args.validate.as_ref() {
+            quote! {
+                if let Err(error) = #func(&self.#name) {
+                    errors.push(schematic::ValidateErrorType::setting(
+                        path.join_key(#name_quoted),
+                        error,
+                    ));
+                }
+            }
+        } else {
+            quote! {}
         }
     }
 

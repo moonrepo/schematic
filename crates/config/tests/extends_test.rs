@@ -5,7 +5,7 @@ use schematic::*;
 
 #[derive(Debug, Config)]
 struct ExtendsString {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: String,
     #[setting(merge = merge::append_vec)]
     value: Vec<usize>,
@@ -13,7 +13,7 @@ struct ExtendsString {
 
 #[derive(Config)]
 struct ExtendsList {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: Vec<String>,
     #[setting(merge = merge::append_vec)]
     value: Vec<usize>,
@@ -21,7 +21,7 @@ struct ExtendsList {
 
 #[derive(Config)]
 struct ExtendsEnum {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: schematic::ExtendsFrom,
     #[setting(merge = merge::append_vec)]
     value: Vec<usize>,

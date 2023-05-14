@@ -27,7 +27,10 @@ mod json {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse JSON setting `setting`")
+        assert_eq!(
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting setting:\n  invalid type: integer `123`, expected a boolean at line 1 column 16"
+        )
     }
 
     #[test]
@@ -40,8 +43,8 @@ mod json {
             .unwrap();
 
         assert_eq!(
-            error.to_string(),
-            "Failed to parse JSON setting `nested.setting`"
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting nested.setting:\n  invalid type: integer `123`, expected a boolean at line 1 column 28"
         )
     }
 }
@@ -59,7 +62,10 @@ mod toml {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse TOML setting `setting`")
+        assert_eq!(
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting setting:\n  invalid type: integer `123`, expected a boolean"
+        )
     }
 
     #[test]
@@ -72,8 +78,8 @@ mod toml {
             .unwrap();
 
         assert_eq!(
-            error.to_string(),
-            "Failed to parse TOML setting `nested.setting`"
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting nested.setting:\n  invalid type: integer `123`, expected a boolean"
         )
     }
 }
@@ -91,7 +97,10 @@ mod yaml {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse YAML setting `setting`")
+        assert_eq!(
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting setting:\n  invalid type: integer `123`, expected a boolean"
+        )
     }
 
     #[test]
@@ -104,8 +113,8 @@ mod yaml {
             .unwrap();
 
         assert_eq!(
-            error.to_string(),
-            "Failed to parse YAML setting `nested.setting`"
+            error.to_full_string(),
+            "Failed to parse config. Invalid setting nested.setting:\n  invalid type: integer `123`, expected a boolean"
         )
     }
 }

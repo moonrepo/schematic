@@ -1,4 +1,6 @@
+use crate::validator::ValidatorError;
 use miette::Diagnostic;
+use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -20,7 +22,7 @@ pub enum ConfigError {
     InvalidCode,
 
     #[diagnostic(code(config::env::invalid))]
-    #[error("Invalid environment variable {0}. {1}")]
+    #[error("Invalid environment variable {}. {1}", .0.style(Style::Symbol))]
     InvalidEnvVar(String, String),
 
     #[diagnostic(code(config::file::invalid))]
@@ -28,7 +30,7 @@ pub enum ConfigError {
     InvalidFile,
 
     #[diagnostic(code(config::file::missing), help("Ensure the path is absolute?"))]
-    #[error("File path {0} does not exist.")]
+    #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
     #[diagnostic(code(config::url::invalid))]
@@ -50,16 +52,57 @@ pub enum ConfigError {
     Http(#[from] reqwest::Error),
 
     // Parser
-    #[diagnostic(code(config::parse))]
-    #[error(transparent)]
-    Parse(#[from] ParseError),
+    #[diagnostic(code(config::parse::failed))]
+    #[error("Failed to parse config.")]
+    Parser(
+        #[diagnostic_source]
+        #[source]
+        ParserError,
+    ),
+
+    // Validator
+    #[diagnostic(code(config::validate::failed))]
+    #[error("Failed to validate config.")]
+    Validator(
+        #[diagnostic_source]
+        #[source]
+        ValidatorError,
+    ),
+}
+
+impl ConfigError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = self.to_string();
+
+        match self {
+            ConfigError::Io(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_string());
+            }
+            ConfigError::Http(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_string());
+            }
+            ConfigError::Parser(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_full_string());
+            }
+            ConfigError::Validator(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_full_string());
+            }
+            _ => {}
+        };
+
+        message
+    }
 }
 
 #[derive(Error, Debug, Diagnostic)]
-pub enum ParseError {
+pub enum ParserError {
     #[cfg(feature = "json")]
     #[diagnostic(code(parse::json::failed))]
-    #[error("Failed to parse JSON setting `{path}`")]
+    #[error("Invalid setting {}:", .path.style(Style::Id))]
     Json {
         #[source]
         error: serde_json::Error,
@@ -68,7 +111,7 @@ pub enum ParseError {
 
     #[cfg(feature = "toml")]
     #[diagnostic(code(parse::toml::failed))]
-    #[error("Failed to parse TOML setting `{path}`")]
+    #[error("Invalid setting {}:", .path.style(Style::Id))]
     Toml {
         #[source]
         error: toml::de::Error,
@@ -77,7 +120,7 @@ pub enum ParseError {
 
     #[cfg(feature = "yaml")]
     #[diagnostic(code(parse::yaml::failed))]
-    #[error("Failed to parse YAML setting `{path}`")]
+    #[error("Invalid setting {}:", .path.style(Style::Id))]
     Yaml {
         #[source]
         error: serde_yaml::Error,
@@ -91,4 +134,28 @@ pub enum ParseError {
         #[source]
         error: serde_yaml::Error,
     },
+}
+
+impl ParserError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = self.to_string();
+        message.push_str("\n  ");
+
+        match self {
+            #[cfg(feature = "json")]
+            ParserError::Json { error, .. } => {
+                message.push_str(&error.to_string());
+            }
+            #[cfg(feature = "toml")]
+            ParserError::Toml { error, .. } => {
+                message.push_str(error.message());
+            }
+            #[cfg(feature = "yaml")]
+            ParserError::Yaml { error, .. } | ParserError::YamlExtended { error } => {
+                message.push_str(&error.to_string());
+            }
+        };
+
+        message
+    }
 }

@@ -96,23 +96,23 @@ struct Merging {
 
 #[derive(Config)]
 struct ExtendsString {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: String,
-    // #[setting(extends)]
+    // #[setting(extend)]
     // extends2: String,
-    // #[setting(extends)]
+    // #[setting(extend)]
     // extends_int: usize,
 }
 
 #[derive(Config)]
 struct ExtendsList {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: Vec<String>,
 }
 
 #[derive(Config)]
 struct ExtendsEnum {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: ExtendsFrom,
 }
 
@@ -128,6 +128,24 @@ struct EnvVars {
     advanced: Vec<String>,
     // #[setting(parse_env = vec_from_env)]
     // invalid: Vec<String>,
+}
+
+fn validate_test(_: &str) -> Result<(), ValidateError> {
+    Ok(())
+}
+
+#[derive(Config)]
+pub struct NestedValidations {
+    #[setting(validate = validate_test)]
+    basic: String,
+}
+
+#[derive(Config)]
+struct Validations {
+    #[setting(validate = validate_test)]
+    basic: String,
+    #[setting(nested)]
+    nested: NestedValidations,
 }
 
 #[derive(Config)]

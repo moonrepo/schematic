@@ -1,4 +1,5 @@
 use crate::error::ConfigError;
+use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
@@ -22,6 +23,14 @@ pub trait Config: Sized {
 
     fn partial() -> Self::Partial {
         <Self::Partial as Default>::default()
+    }
+
+    fn validate(&self) -> Result<(), ValidatorError> {
+        self.validate_with_path(SettingPath::default())
+    }
+
+    fn validate_with_path(&self, _path: SettingPath) -> Result<(), ValidatorError> {
+        Ok(())
     }
 }
 

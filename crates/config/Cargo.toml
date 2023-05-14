@@ -12,6 +12,7 @@ miette = { workspace = true }
 reqwest = { version = "0.11.17", default-features = false, features = ["blocking", "rustls-tls"] }
 serde = { workspace = true }
 serde_path_to_error = "0.1.11"
+starbase_styles = "0.1.7"
 thiserror = "1.0.40"
 
 # json

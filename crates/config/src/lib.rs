@@ -1,16 +1,20 @@
 mod config;
-pub mod env;
 mod error;
-pub mod internal;
 mod loader;
-pub mod merge;
 mod source;
+mod validator;
+
+pub mod env;
+pub mod internal;
+pub mod merge;
 
 pub use config::*;
 pub use error::*;
 pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;
+pub use starbase_styles::color;
+pub use validator::*;
 
 // We can't put these in the proc-macro crate!
 
