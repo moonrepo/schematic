@@ -92,3 +92,52 @@ pub enum ParseError {
         error: serde_yaml::Error,
     },
 }
+
+#[derive(Error, Debug, Diagnostic)]
+#[error("{message}")]
+pub struct ValidationError {
+    message: String,
+}
+
+impl ValidationError {
+    pub fn new(message: String) -> Self {
+        ValidationError { message }
+    }
+}
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum ValidationType {
+    #[error("Invalid setting `{path}`")]
+    Rule {
+        path: String,
+        #[source]
+        error: ValidationError,
+    },
+    #[error("Invalid setting `{path}`")]
+    Nested {
+        path: String,
+        #[source]
+        error: ValidationErrors,
+    },
+}
+
+#[derive(Error, Debug, Diagnostic)]
+#[error("Failed to validate.")]
+pub struct ValidationErrors {
+    #[related]
+    errors: Vec<ValidationType>,
+}
+
+impl ValidationErrors {
+    pub fn new() -> Self {
+        ValidationErrors { errors: vec![] }
+    }
+
+    pub fn add_error(&mut self, error: ValidationType) {
+        self.errors.push(error);
+    }
+
+    pub fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
+    }
+}
