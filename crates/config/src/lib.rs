@@ -12,6 +12,7 @@ pub use error::*;
 pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;
+pub use starbase_styles::color;
 pub use validator::*;
 
 // We can't put these in the proc-macro crate!

@@ -1,4 +1,5 @@
 use miette::Diagnostic;
+use starbase_styles::color;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug)]
@@ -132,7 +133,11 @@ impl ValidateErrorType {
                     None => path.clone(),
                 };
 
-                list.push(format!("`{}` - {}", path, error.message));
+                list.push(format!(
+                    "{}: {}",
+                    color::id(path.to_string()),
+                    error.message
+                ));
             }
             ValidateErrorType::Nested {
                 error: nested_error,
@@ -158,14 +163,15 @@ impl std::error::Error for ValidatorError {}
 impl Display for ValidatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut first = true;
+        let dot = color::failure("·");
 
         for error_type in &self.errors {
             for error in error_type.to_error_list() {
                 if first {
-                    write!(f, "· {}", error)?;
+                    write!(f, "{} {}", dot, error)?;
                     first = false;
                 } else {
-                    write!(f, "\n· {}", error)?;
+                    write!(f, "\n{} {}", dot, error)?;
                 }
             }
         }
