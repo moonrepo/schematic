@@ -146,17 +146,19 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        Ok(format.parse(match self {
-            Source::Code { code } => code.to_owned(),
-            Source::File { path } => {
-                if !path.exists() {
-                    return Err(ConfigError::MissingFile(path.to_path_buf()));
-                }
+        format
+            .parse(match self {
+                Source::Code { code } => code.to_owned(),
+                Source::File { path } => {
+                    if !path.exists() {
+                        return Err(ConfigError::MissingFile(path.to_path_buf()));
+                    }
 
-                fs::read_to_string(path)?
-            }
-            Source::Url { url } => reqwest::blocking::get(url)?.text()?,
-        })?)
+                    fs::read_to_string(path)?
+                }
+                Source::Url { url } => reqwest::blocking::get(url)?.text()?,
+            })
+            .map_err(|e| ConfigError::Parse(e))
     }
 }
 

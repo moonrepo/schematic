@@ -73,6 +73,8 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(partial_layers)?;
         let config = T::from_partial(partial);
 
+        config.validate()?;
+
         Ok(ConfigLoadResult {
             config,
             format: self.format,

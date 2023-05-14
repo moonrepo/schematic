@@ -198,7 +198,7 @@ impl<'l> Setting<'l> {
         if let Some(func) = self.args.validate.as_ref() {
             quote! {
                 if let Err(error) = #func(&self.#name) {
-                    errors.add_error(schematic::ValidateType::rule(#name_quoted, error));
+                    errors.push(schematic::ValidateType::rule(#name_quoted, error));
                 }
             }
         } else {

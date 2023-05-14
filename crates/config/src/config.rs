@@ -1,4 +1,4 @@
-use crate::error::{ConfigError, ValidateErrors};
+use crate::error::ConfigError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
@@ -24,7 +24,7 @@ pub trait Config: Sized {
         <Self::Partial as Default>::default()
     }
 
-    fn validate(&self) -> Result<(), ValidateErrors> {
+    fn validate(&self) -> Result<(), ConfigError> {
         Ok(())
     }
 }

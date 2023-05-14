@@ -50,9 +50,21 @@ pub enum ConfigError {
     Http(#[from] reqwest::Error),
 
     // Parser
-    #[diagnostic(code(config::parse))]
-    #[error(transparent)]
-    Parse(#[from] ParseError),
+    #[diagnostic(code(config::parse::failed))]
+    #[error("{0}")]
+    Parse(
+        #[diagnostic_source]
+        #[source]
+        ParseError,
+    ),
+
+    // Validator
+    #[diagnostic(code(config::validate::failed))]
+    #[error("Failed to validate")]
+    Validate {
+        #[related]
+        errors: Vec<ValidateType>,
+    },
 }
 
 #[derive(Error, Debug, Diagnostic)]
@@ -100,8 +112,10 @@ pub struct ValidateError {
 }
 
 impl ValidateError {
-    pub fn new(message: String) -> Self {
-        ValidateError { message }
+    pub fn new<T: AsRef<str>>(message: T) -> Self {
+        ValidateError {
+            message: message.as_ref().to_owned(),
+        }
     }
 }
 
@@ -110,14 +124,15 @@ pub enum ValidateType {
     #[error("Invalid setting `{path}`")]
     Rule {
         path: String,
+        #[diagnostic_source]
         #[source]
         error: ValidateError,
     },
     #[error("Invalid setting `{path}`")]
     Nested {
         path: String,
-        #[source]
-        error: ValidateErrors,
+        #[related]
+        errors: Vec<ValidateError>,
     },
 }
 
@@ -129,31 +144,10 @@ impl ValidateType {
         }
     }
 
-    pub fn nested(path: &str, error: ValidateErrors) -> Self {
+    pub fn nested(path: &str, errors: Vec<ValidateError>) -> Self {
         ValidateType::Nested {
             path: path.to_owned(),
-            error,
+            errors,
         }
-    }
-}
-
-#[derive(Error, Debug, Diagnostic)]
-#[error("Failed to validate.")]
-pub struct ValidateErrors {
-    #[related]
-    errors: Vec<ValidateType>,
-}
-
-impl ValidateErrors {
-    pub fn new() -> Self {
-        ValidateErrors { errors: vec![] }
-    }
-
-    pub fn add_error(&mut self, error: ValidateType) {
-        self.errors.push(error);
-    }
-
-    pub fn has_errors(&self) -> bool {
-        !self.errors.is_empty()
     }
 }
