@@ -1,11 +1,12 @@
 mod config;
-pub mod env;
 mod error;
-pub mod internal;
 mod loader;
-pub mod merge;
 mod source;
 mod validator;
+
+pub mod env;
+pub mod internal;
+pub mod merge;
 
 pub use config::*;
 pub use error::*;
