@@ -130,9 +130,13 @@ struct EnvVars {
     // invalid: Vec<String>,
 }
 
+fn validate_test(_: &str) -> Result<(), ValidateError> {
+    Ok(())
+}
+
 #[derive(Config)]
 struct Validations {
-    #[setting(validate(custom(vec_from_env)))]
+    #[setting(validate = validate_test)]
     basic: String,
 }
 

@@ -85,10 +85,6 @@ impl<'l> Setting<'l> {
         self.args.default.is_some() || self.args.default_fn.is_some()
     }
 
-    pub fn has_validation(&self) -> bool {
-        self.args.validate.is_some()
-    }
-
     pub fn is_extendable(&self) -> bool {
         self.args.extend
     }
@@ -192,6 +188,21 @@ impl<'l> Setting<'l> {
                     self.#name = next.#name;
                 }
             }
+        }
+    }
+
+    pub fn get_validate_statement(&self) -> TokenStream {
+        let name = self.name;
+        let name_quoted = format!("{}", self.name);
+
+        if let Some(func) = self.args.validate.as_ref() {
+            quote! {
+                if let Err(error) = #func(&self.#name) {
+                    errors.add_error(schematic::ValidateType::rule(#name_quoted, error));
+                }
+            }
+        } else {
+            quote! {}
         }
     }
 

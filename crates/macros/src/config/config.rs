@@ -49,7 +49,7 @@ impl<'l> Config<'l> {
 
         if names.len() > 1 {
             panic!(
-                "Only 1 setting may use `extends`, found: {}",
+                "Only 1 setting may use `extend`, found: {}",
                 names.join(", ")
             );
         }
@@ -97,6 +97,8 @@ impl<'l> Config<'l> {
 
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
+
+        #[allow(unused_mut)]
         let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
         #[cfg(feature = "json_schema")]
@@ -107,10 +109,6 @@ impl<'l> Config<'l> {
         #[cfg(feature = "typescript")]
         {
             attrs.push(quote! { #[derive(ts_rs::TS)] });
-        }
-
-        if self.settings.iter().any(|s| s.has_validation()) {
-            attrs.push(quote! { #[derive(schematic::validate::Validate)] });
         }
 
         attrs
@@ -141,6 +139,7 @@ impl<'l> ToTokens for Config<'l> {
         let mut default_stmts = vec![];
         let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
+        let mut validate_stmts = vec![];
         let extends_from = self.extends_from();
 
         for setting in &self.settings {
@@ -148,6 +147,7 @@ impl<'l> ToTokens for Config<'l> {
             default_stmts.push(setting.get_default_statement());
             from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
+            validate_stmts.push(setting.get_validate_statement());
         }
 
         let token = quote! {
@@ -181,6 +181,18 @@ impl<'l> ToTokens for Config<'l> {
                     Self {
                         #(#field_names: #from_stmts),*
                     }
+                }
+
+                fn validate(&self) -> Result<(), schematic::ValidateErrors> {
+                    let mut errors = schematic::ValidateErrors::new();
+
+                    #(#validate_stmts)*
+
+                    if errors.has_errors() {
+                        return Err(errors);
+                    }
+
+                    Ok(())
                 }
             }
         };

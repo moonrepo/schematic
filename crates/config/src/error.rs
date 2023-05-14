@@ -95,45 +95,61 @@ pub enum ParseError {
 
 #[derive(Error, Debug, Diagnostic)]
 #[error("{message}")]
-pub struct ValidationError {
+pub struct ValidateError {
     message: String,
 }
 
-impl ValidationError {
+impl ValidateError {
     pub fn new(message: String) -> Self {
-        ValidationError { message }
+        ValidateError { message }
     }
 }
 
 #[derive(Error, Debug, Diagnostic)]
-pub enum ValidationType {
+pub enum ValidateType {
     #[error("Invalid setting `{path}`")]
     Rule {
         path: String,
         #[source]
-        error: ValidationError,
+        error: ValidateError,
     },
     #[error("Invalid setting `{path}`")]
     Nested {
         path: String,
         #[source]
-        error: ValidationErrors,
+        error: ValidateErrors,
     },
+}
+
+impl ValidateType {
+    pub fn rule(path: &str, error: ValidateError) -> Self {
+        ValidateType::Rule {
+            path: path.to_owned(),
+            error,
+        }
+    }
+
+    pub fn nested(path: &str, error: ValidateErrors) -> Self {
+        ValidateType::Nested {
+            path: path.to_owned(),
+            error,
+        }
+    }
 }
 
 #[derive(Error, Debug, Diagnostic)]
 #[error("Failed to validate.")]
-pub struct ValidationErrors {
+pub struct ValidateErrors {
     #[related]
-    errors: Vec<ValidationType>,
+    errors: Vec<ValidateType>,
 }
 
-impl ValidationErrors {
+impl ValidateErrors {
     pub fn new() -> Self {
-        ValidationErrors { errors: vec![] }
+        ValidateErrors { errors: vec![] }
     }
 
-    pub fn add_error(&mut self, error: ValidationType) {
+    pub fn add_error(&mut self, error: ValidateType) {
         self.errors.push(error);
     }
 
