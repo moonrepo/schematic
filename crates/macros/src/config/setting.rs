@@ -200,28 +200,24 @@ impl<'l> Setting<'l> {
         let name_quoted = format!("{}", self.name);
 
         if self.is_nested() {
+            quote! {}
             // quote! {
-            //     if let Err(schematic::ConfigError::Validate { errors: nested_errors, .. }) = self.#name.validate() {
-            //         errors.push(schematic::ValidateType::nested(#name_quoted, nested_errors));
+            //     if let Err(schematic::ValidatorError { errors: nested_errors }) = self.#name.validate_with_path(path.join(schematic::Segment::Key(#name_quoted.to_owned()))) {
+            //         errors.push(schematic::ValidateErrorType::nested(#name_quoted, nested_errors));
             //     }
             // }
-            quote! {
-                // path.push(#name_quoted.to_owned());
-                self.#name.validate_with_path()?;
-                // path.pop();
-            }
+            // quote! {
+            //     self.#name.validate_with_path(
+            //         path.join(schematic::Segment::Key(#name_quoted.to_owned()))
+            //     )?;
+            // }
         } else if let Some(func) = self.args.validate.as_ref() {
-            // quote! {
-            //     if let Err(error) = #func(&self.#name) {
-            //         errors.push(schematic::ValidateType::rule(#name_quoted, error));
-            //     }
-            // }
             quote! {
                 if let Err(error) = #func(&self.#name) {
-                    return Err(schematic::ConfigError::Validate {
+                    errors.push(schematic::ValidateErrorType::setting(
+                        path.join_key(#name_quoted),
                         error,
-                        path: #name_quoted.to_owned(),
-                    });
+                    ));
                 }
             }
         } else {

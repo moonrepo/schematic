@@ -5,13 +5,14 @@ pub mod internal;
 mod loader;
 pub mod merge;
 mod source;
-pub mod validate;
+mod validator;
 
 pub use config::*;
 pub use error::*;
 pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;
+pub use validator::*;
 
 // We can't put these in the proc-macro crate!
 

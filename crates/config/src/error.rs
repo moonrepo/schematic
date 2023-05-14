@@ -1,3 +1,4 @@
+use crate::validator::ValidatorError;
 use miette::Diagnostic;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -52,28 +53,20 @@ pub enum ConfigError {
     // Parser
     #[diagnostic(code(config::parse::failed))]
     #[error("{0}")]
-    Parse(
+    Parser(
         #[diagnostic_source]
         #[source]
-        ParseError,
+        ParserError,
     ),
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate `{path}`")]
-    Validate {
-        path: String,
-
-        // We only capture a single error, instead of many errors,
-        // because miette doesn't handle rendering them very well...
-        #[diagnostic_source]
-        #[source]
-        error: ValidateError,
-    },
+    #[error(transparent)]
+    Validator(#[from] ValidatorError),
 }
 
 #[derive(Error, Debug, Diagnostic)]
-pub enum ParseError {
+pub enum ParserError {
     #[cfg(feature = "json")]
     #[diagnostic(code(parse::json::failed))]
     #[error("Failed to parse JSON setting `{path}`")]
@@ -109,53 +102,3 @@ pub enum ParseError {
         error: serde_yaml::Error,
     },
 }
-
-#[derive(Clone, Error, Debug, Diagnostic)]
-#[error("{message}")]
-pub struct ValidateError {
-    message: String,
-}
-
-impl ValidateError {
-    pub fn new<T: AsRef<str>>(message: T) -> Self {
-        ValidateError {
-            message: message.as_ref().to_owned(),
-        }
-    }
-}
-
-// #[derive(Clone, Error, Debug, Diagnostic)]
-// pub enum ValidateType {
-//     #[diagnostic(code(config::validate::invalid_setting))]
-//     #[error("Invalid setting `{path}`")]
-//     Rule {
-//         path: String,
-//         #[diagnostic_source]
-//         #[source]
-//         error: ValidateError,
-//     },
-
-//     #[diagnostic(code(config::validate::invalid_nested))]
-//     #[error("Invalid setting `{path}`")]
-//     Nested {
-//         path: String,
-//         #[related]
-//         errors: Vec<ValidateType>,
-//     },
-// }
-
-// impl ValidateType {
-//     pub fn rule(path: &str, error: ValidateError) -> Self {
-//         ValidateType::Rule {
-//             path: path.to_owned(),
-//             error,
-//         }
-//     }
-
-//     pub fn nested(path: &str, errors: Vec<ValidateType>) -> Self {
-//         ValidateType::Nested {
-//             path: path.to_owned(),
-//             errors,
-//         }
-//     }
-// }

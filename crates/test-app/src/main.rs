@@ -1,10 +1,13 @@
 use miette::Result;
-use schematic::{Config, ConfigLoader, ValidateError};
-use serde::Serialize;
+use schematic::{Config, ConfigLoader, Segment, ValidateError};
+use serde::{de, Deserialize, Serialize};
 
 fn validate_string(value: &str) -> Result<(), ValidateError> {
-    // Err(ValidateError::new("This string is ugly!"))
-    Ok(())
+    Err(ValidateError::with_segments(
+        "This string is ugly!",
+        vec![Segment::Index(1), Segment::Key("foo".to_owned())],
+    ))
+    // Ok(())
 }
 
 fn validate_number(value: &usize) -> Result<(), ValidateError> {
@@ -15,16 +18,16 @@ fn validate_number(value: &usize) -> Result<(), ValidateError> {
 #[derive(Debug, Config, Serialize)]
 pub struct NestedConfig {
     #[setting(validate = validate_string)]
-    string: String,
+    string2: String,
     #[setting(validate = validate_number)]
-    number: usize,
+    number2: usize,
 }
 
 #[derive(Debug, Config, Serialize)]
 struct TestConfig {
     #[setting(validate = validate_string)]
     string: String,
-    // #[setting(validate = validate_number)]
+    #[setting(validate = validate_number)]
     number: usize,
     #[setting(nested)]
     nested: NestedConfig,
