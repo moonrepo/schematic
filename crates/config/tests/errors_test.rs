@@ -27,7 +27,7 @@ mod json {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse JSON setting `setting`.")
+        assert_eq!(error.to_string(), "Failed to parse JSON setting `setting`")
     }
 
     #[test]
@@ -41,7 +41,7 @@ mod json {
 
         assert_eq!(
             error.to_string(),
-            "Failed to parse JSON setting `nested.setting`."
+            "Failed to parse JSON setting `nested.setting`"
         )
     }
 }
@@ -59,7 +59,7 @@ mod toml {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse TOML setting `setting`.")
+        assert_eq!(error.to_string(), "Failed to parse TOML setting `setting`")
     }
 
     #[test]
@@ -73,7 +73,7 @@ mod toml {
 
         assert_eq!(
             error.to_string(),
-            "Failed to parse TOML setting `nested.setting`."
+            "Failed to parse TOML setting `nested.setting`"
         )
     }
 }
@@ -91,7 +91,7 @@ mod yaml {
             .err()
             .unwrap();
 
-        assert_eq!(error.to_string(), "Failed to parse YAML setting `setting`.")
+        assert_eq!(error.to_string(), "Failed to parse YAML setting `setting`")
     }
 
     #[test]
@@ -105,7 +105,7 @@ mod yaml {
 
         assert_eq!(
             error.to_string(),
-            "Failed to parse YAML setting `nested.setting`."
+            "Failed to parse YAML setting `nested.setting`"
         )
     }
 }

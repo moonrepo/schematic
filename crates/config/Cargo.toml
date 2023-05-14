@@ -8,9 +8,9 @@ repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
 schematic_macros = { version = "0.1.1", path = "../macros" }
-miette = "5.8.0"
+miette = { workspace = true }
 reqwest = { version = "0.11.17", default-features = false, features = ["blocking", "rustls-tls"] }
-serde = { version = "1.0.159", features = ["derive"] }
+serde = { workspace = true }
 serde_path_to_error = "0.1.11"
 thiserror = "1.0.40"
 
@@ -30,7 +30,7 @@ ts-rs = { version = "6.2.1", optional = true }
 serde_yaml = { version = "0.9.21", optional = true }
 
 [features]
-default = ["yaml", "toml", "json"]
+default = ["json"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars"]
 toml = ["dep:toml"]

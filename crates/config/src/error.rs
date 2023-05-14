@@ -41,7 +41,7 @@ pub enum ConfigError {
 
     // IO
     #[diagnostic(code(config::fs))]
-    #[error("Failed to read file.")]
+    #[error("Failed to read source file.")]
     Io(#[from] std::io::Error),
 
     // HTTP
@@ -49,6 +49,8 @@ pub enum ConfigError {
     #[error("Failed to download source from URL.")]
     Http(#[from] reqwest::Error),
 
+    // Parser
+    #[diagnostic(code(config::parse))]
     #[error(transparent)]
     Parse(#[from] ParseError),
 }
@@ -57,7 +59,7 @@ pub enum ConfigError {
 pub enum ParseError {
     #[cfg(feature = "json")]
     #[diagnostic(code(parse::json::failed))]
-    #[error("Failed to parse JSON setting `{path}`.")]
+    #[error("Failed to parse JSON setting `{path}`")]
     Json {
         #[source]
         error: serde_json::Error,
@@ -66,7 +68,7 @@ pub enum ParseError {
 
     #[cfg(feature = "toml")]
     #[diagnostic(code(parse::toml::failed))]
-    #[error("Failed to parse TOML setting `{path}`.")]
+    #[error("Failed to parse TOML setting `{path}`")]
     Toml {
         #[source]
         error: toml::de::Error,
@@ -75,7 +77,7 @@ pub enum ParseError {
 
     #[cfg(feature = "yaml")]
     #[diagnostic(code(parse::yaml::failed))]
-    #[error("Failed to parse YAML setting `{path}`.")]
+    #[error("Failed to parse YAML setting `{path}`")]
     Yaml {
         #[source]
         error: serde_yaml::Error,

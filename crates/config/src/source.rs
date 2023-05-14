@@ -1,5 +1,4 @@
 use crate::error::{ConfigError, ParseError};
-use serde::de::IntoDeserializer;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -45,6 +44,8 @@ impl SourceFormat {
 
             #[cfg(feature = "yaml")]
             SourceFormat::Yaml => {
+                use serde::de::IntoDeserializer;
+
                 // First pass, convert string to value
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
