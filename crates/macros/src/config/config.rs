@@ -184,13 +184,21 @@ impl<'l> ToTokens for Config<'l> {
                 }
 
                 fn validate(&self) -> Result<(), schematic::ConfigError> {
-                    let mut errors = vec![];
+                    // let path = vec![];
+                    self.validate_with_path()
+                }
+
+                fn validate_with_path(&self) -> Result<(), schematic::ConfigError> {
+                    // let mut errors: Vec<schematic::ValidateType> = vec![];
 
                     #(#validate_stmts)*
 
-                    if !errors.is_empty() {
-                        return Err(schematic::ConfigError::Validate { errors });
-                    }
+                    // if !errors.is_empty() {
+                    //     return Err(schematic::ConfigError::Validate {
+                    //         first_error: errors[0].clone(),
+                    //         errors
+                    //     });
+                    // }
 
                     Ok(())
                 }

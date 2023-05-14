@@ -8,8 +8,8 @@ fn validate_string(value: &str) -> Result<(), ValidateError> {
 }
 
 fn validate_number(value: &usize) -> Result<(), ValidateError> {
-    // Err(ValidateError::new("Nah, we don't accept numbers."))
-    Ok(())
+    Err(ValidateError::new("Nah, we don't accept numbers."))
+    // Ok(())
 }
 
 #[derive(Debug, Config, Serialize)]
@@ -24,7 +24,7 @@ pub struct NestedConfig {
 struct TestConfig {
     #[setting(validate = validate_string)]
     string: String,
-    #[setting(validate = validate_number)]
+    // #[setting(validate = validate_number)]
     number: usize,
     #[setting(nested)]
     nested: NestedConfig,

@@ -61,6 +61,10 @@ impl<'l> Setting<'l> {
             panic!("Cannot use `parse_env` without `env`.");
         }
 
+        if args.validate.is_some() && args.nested {
+            panic!("Cannot use `validate` for `nested` configs.");
+        }
+
         let setting = Setting {
             args,
             comment: extract_comment(field),
@@ -70,7 +74,7 @@ impl<'l> Setting<'l> {
 
         if setting.has_default() {
             if setting.is_nested() {
-                panic!("Cannot use `default` or `default_fn` with nested configs.");
+                panic!("Cannot use `default` or `default_fn` with `nested` configs.");
             }
 
             if setting.is_optional() {
@@ -195,10 +199,29 @@ impl<'l> Setting<'l> {
         let name = self.name;
         let name_quoted = format!("{}", self.name);
 
-        if let Some(func) = self.args.validate.as_ref() {
+        if self.is_nested() {
+            // quote! {
+            //     if let Err(schematic::ConfigError::Validate { errors: nested_errors, .. }) = self.#name.validate() {
+            //         errors.push(schematic::ValidateType::nested(#name_quoted, nested_errors));
+            //     }
+            // }
+            quote! {
+                // path.push(#name_quoted.to_owned());
+                self.#name.validate_with_path()?;
+                // path.pop();
+            }
+        } else if let Some(func) = self.args.validate.as_ref() {
+            // quote! {
+            //     if let Err(error) = #func(&self.#name) {
+            //         errors.push(schematic::ValidateType::rule(#name_quoted, error));
+            //     }
+            // }
             quote! {
                 if let Err(error) = #func(&self.#name) {
-                    errors.push(schematic::ValidateType::rule(#name_quoted, error));
+                    return Err(schematic::ConfigError::Validate {
+                        error,
+                        path: #name_quoted.to_owned(),
+                    });
                 }
             }
         } else {

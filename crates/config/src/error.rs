@@ -60,10 +60,15 @@ pub enum ConfigError {
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate")]
+    #[error("Failed to validate `{path}`")]
     Validate {
-        #[related]
-        errors: Vec<ValidateType>,
+        path: String,
+
+        // We only capture a single error, instead of many errors,
+        // because miette doesn't handle rendering them very well...
+        #[diagnostic_source]
+        #[source]
+        error: ValidateError,
     },
 }
 
@@ -105,7 +110,7 @@ pub enum ParseError {
     },
 }
 
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Clone, Error, Debug, Diagnostic)]
 #[error("{message}")]
 pub struct ValidateError {
     message: String,
@@ -119,35 +124,38 @@ impl ValidateError {
     }
 }
 
-#[derive(Error, Debug, Diagnostic)]
-pub enum ValidateType {
-    #[error("Invalid setting `{path}`")]
-    Rule {
-        path: String,
-        #[diagnostic_source]
-        #[source]
-        error: ValidateError,
-    },
-    #[error("Invalid setting `{path}`")]
-    Nested {
-        path: String,
-        #[related]
-        errors: Vec<ValidateError>,
-    },
-}
+// #[derive(Clone, Error, Debug, Diagnostic)]
+// pub enum ValidateType {
+//     #[diagnostic(code(config::validate::invalid_setting))]
+//     #[error("Invalid setting `{path}`")]
+//     Rule {
+//         path: String,
+//         #[diagnostic_source]
+//         #[source]
+//         error: ValidateError,
+//     },
 
-impl ValidateType {
-    pub fn rule(path: &str, error: ValidateError) -> Self {
-        ValidateType::Rule {
-            path: path.to_owned(),
-            error,
-        }
-    }
+//     #[diagnostic(code(config::validate::invalid_nested))]
+//     #[error("Invalid setting `{path}`")]
+//     Nested {
+//         path: String,
+//         #[related]
+//         errors: Vec<ValidateType>,
+//     },
+// }
 
-    pub fn nested(path: &str, errors: Vec<ValidateError>) -> Self {
-        ValidateType::Nested {
-            path: path.to_owned(),
-            errors,
-        }
-    }
-}
+// impl ValidateType {
+//     pub fn rule(path: &str, error: ValidateError) -> Self {
+//         ValidateType::Rule {
+//             path: path.to_owned(),
+//             error,
+//         }
+//     }
+
+//     pub fn nested(path: &str, errors: Vec<ValidateType>) -> Self {
+//         ValidateType::Nested {
+//             path: path.to_owned(),
+//             errors,
+//         }
+//     }
+// }

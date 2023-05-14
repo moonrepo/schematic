@@ -135,9 +135,17 @@ fn validate_test(_: &str) -> Result<(), ValidateError> {
 }
 
 #[derive(Config)]
+pub struct NestedValidations {
+    #[setting(validate = validate_test)]
+    basic: String,
+}
+
+#[derive(Config)]
 struct Validations {
     #[setting(validate = validate_test)]
     basic: String,
+    #[setting(nested)]
+    nested: NestedValidations,
 }
 
 #[derive(Config)]
