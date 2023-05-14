@@ -70,6 +70,34 @@ pub enum ConfigError {
     ),
 }
 
+impl ConfigError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = self.to_string();
+
+        match self {
+            ConfigError::Io(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_string());
+            }
+            ConfigError::Http(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_string());
+            }
+            ConfigError::Parser(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_full_string());
+            }
+            ConfigError::Validator(inner) => {
+                message.push(' ');
+                message.push_str(&inner.to_full_string());
+            }
+            _ => {}
+        };
+
+        message
+    }
+}
+
 #[derive(Error, Debug, Diagnostic)]
 pub enum ParserError {
     #[cfg(feature = "json")]
@@ -106,4 +134,28 @@ pub enum ParserError {
         #[source]
         error: serde_yaml::Error,
     },
+}
+
+impl ParserError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = self.to_string();
+        message.push_str("\n  ");
+
+        match self {
+            #[cfg(feature = "json")]
+            ParserError::Json { error, .. } => {
+                message.push_str(&error.to_string());
+            }
+            #[cfg(feature = "toml")]
+            ParserError::Toml { error, .. } => {
+                message.push_str(error.message());
+            }
+            #[cfg(feature = "yaml")]
+            ParserError::Yaml { error, .. } | ParserError::YamlExtended { error } => {
+                message.push_str(&error.to_string());
+            }
+        };
+
+        message
+    }
 }

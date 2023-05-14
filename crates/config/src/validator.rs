@@ -158,7 +158,19 @@ pub struct ValidatorError {
     pub errors: Vec<ValidateErrorType>,
 }
 
-impl std::error::Error for ValidatorError {}
+impl ValidatorError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = String::new();
+
+        for error_type in &self.errors {
+            for error in error_type.to_error_list() {
+                message.push_str(format!("\n  {}", error).as_str());
+            }
+        }
+
+        message
+    }
+}
 
 impl Display for ValidatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -179,3 +191,5 @@ impl Display for ValidatorError {
         Ok(())
     }
 }
+
+impl std::error::Error for ValidatorError {}
