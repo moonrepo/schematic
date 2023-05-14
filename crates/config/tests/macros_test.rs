@@ -96,23 +96,23 @@ struct Merging {
 
 #[derive(Config)]
 struct ExtendsString {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: String,
-    // #[setting(extends)]
+    // #[setting(extend)]
     // extends2: String,
-    // #[setting(extends)]
+    // #[setting(extend)]
     // extends_int: usize,
 }
 
 #[derive(Config)]
 struct ExtendsList {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: Vec<String>,
 }
 
 #[derive(Config)]
 struct ExtendsEnum {
-    #[setting(extends)]
+    #[setting(extend)]
     extends: ExtendsFrom,
 }
 
