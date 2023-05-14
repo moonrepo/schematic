@@ -200,17 +200,11 @@ impl<'l> Setting<'l> {
         let name_quoted = format!("{}", self.name);
 
         if self.is_nested() {
-            quote! {}
-            // quote! {
-            //     if let Err(schematic::ValidatorError { errors: nested_errors }) = self.#name.validate_with_path(path.join(schematic::Segment::Key(#name_quoted.to_owned()))) {
-            //         errors.push(schematic::ValidateErrorType::nested(#name_quoted, nested_errors));
-            //     }
-            // }
-            // quote! {
-            //     self.#name.validate_with_path(
-            //         path.join(schematic::Segment::Key(#name_quoted.to_owned()))
-            //     )?;
-            // }
+            quote! {
+                if let Err(nested_error) = self.#name.validate_with_path(path.join_key(#name_quoted)) {
+                    errors.push(schematic::ValidateErrorType::nested(nested_error));
+                }
+            }
         } else if let Some(func) = self.args.validate.as_ref() {
             quote! {
                 if let Err(error) = #func(&self.#name) {

@@ -158,7 +158,7 @@ impl Source {
                 }
                 Source::Url { url } => reqwest::blocking::get(url)?.text()?,
             })
-            .map_err(|e| ConfigError::Parser(e))
+            .map_err(ConfigError::Parser)
     }
 }
 

@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug)]
@@ -24,6 +25,10 @@ impl SettingPath {
         path
     }
 
+    pub fn join_index(&self, index: usize) -> Self {
+        self.join(Segment::Index(index))
+    }
+
     pub fn join_key(&self, key: &str) -> Self {
         self.join(Segment::Key(key.to_owned()))
     }
@@ -32,6 +37,10 @@ impl SettingPath {
         let mut path = self.clone();
         path.segments.extend(other.segments.clone());
         path
+    }
+
+    pub fn join_variant(&self, variant: &str) -> Self {
+        self.join(Segment::Variant(variant.to_owned()))
     }
 }
 
@@ -100,7 +109,6 @@ pub enum ValidateErrorType {
     },
 
     Nested {
-        path: SettingPath,
         error: ValidatorError,
     },
 }
@@ -110,8 +118,8 @@ impl ValidateErrorType {
         ValidateErrorType::Setting { path, error }
     }
 
-    pub fn nested(path: SettingPath, error: ValidatorError) -> Self {
-        ValidateErrorType::Nested { path, error }
+    pub fn nested(error: ValidatorError) -> Self {
+        ValidateErrorType::Nested { error }
     }
 
     pub fn to_error_list(&self) -> Vec<String> {
@@ -120,21 +128,18 @@ impl ValidateErrorType {
         match self {
             ValidateErrorType::Setting { path, error } => {
                 let path = match &error.path {
-                    Some(child_path) => path.join_path(&child_path),
+                    Some(child_path) => path.join_path(child_path),
                     None => path.clone(),
                 };
 
                 list.push(format!("`{}` - {}", path, error.message));
             }
-            ValidateErrorType::Nested { path, error } => {
-                // let path = match parent_path {
-                //     Some(parent_path) => parent_path.join_path(path),
-                //     None => path.clone(),
-                // };
-
-                // for error_type in &error.errors {
-                //     list.extend(error_type.to_error_list(Some(&path)));
-                // }
+            ValidateErrorType::Nested {
+                error: nested_error,
+            } => {
+                for error in &nested_error.errors {
+                    list.extend(error.to_error_list());
+                }
             }
         }
 
@@ -142,8 +147,9 @@ impl ValidateErrorType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Diagnostic)]
 pub struct ValidatorError {
+    pub path: SettingPath,
     pub errors: Vec<ValidateErrorType>,
 }
 
@@ -151,11 +157,16 @@ impl std::error::Error for ValidatorError {}
 
 impl Display for ValidatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Failed to validate:")?;
+        let mut first = true;
 
         for error_type in &self.errors {
             for error in error_type.to_error_list() {
-                write!(f, "\n  {}", error)?;
+                if first {
+                    write!(f, "· {}", error)?;
+                    first = false;
+                } else {
+                    write!(f, "\n· {}", error)?;
+                }
             }
         }
 

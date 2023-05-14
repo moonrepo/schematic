@@ -1,8 +1,8 @@
 use miette::Result;
 use schematic::{Config, ConfigLoader, Segment, ValidateError};
-use serde::{de, Deserialize, Serialize};
+use serde::Serialize;
 
-fn validate_string(value: &str) -> Result<(), ValidateError> {
+fn validate_string(_: &str) -> Result<(), ValidateError> {
     Err(ValidateError::with_segments(
         "This string is ugly!",
         vec![Segment::Index(1), Segment::Key("foo".to_owned())],
@@ -10,7 +10,7 @@ fn validate_string(value: &str) -> Result<(), ValidateError> {
     // Ok(())
 }
 
-fn validate_number(value: &usize) -> Result<(), ValidateError> {
+fn validate_number(_: &usize) -> Result<(), ValidateError> {
     Err(ValidateError::new("Nah, we don't accept numbers."))
     // Ok(())
 }

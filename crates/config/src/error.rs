@@ -61,8 +61,12 @@ pub enum ConfigError {
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error(transparent)]
-    Validator(#[from] ValidatorError),
+    #[error("Failed to validate config.")]
+    Validator(
+        #[diagnostic_source]
+        #[source]
+        ValidatorError,
+    ),
 }
 
 #[derive(Error, Debug, Diagnostic)]

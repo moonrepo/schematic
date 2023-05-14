@@ -194,6 +194,7 @@ impl<'l> ToTokens for Config<'l> {
                     if !errors.is_empty() {
                         return Err(schematic::ValidatorError {
                             errors,
+                            path,
                         });
                     }
 
