@@ -5,7 +5,7 @@ use quote::{format_ident, quote, ToTokens};
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]
-#[darling(default, attributes(config))]
+#[darling(default, attributes(config), supports(struct_named))]
 pub struct ConfigArgs {
     // serde
     rename: Option<String>,

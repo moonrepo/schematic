@@ -24,7 +24,7 @@ fn uses_native_defaults() {
 pub struct CustomDefaults {
     #[setting(default = true)]
     boolean: bool,
-    #[setting(default = "foo")]
+    #[setting(default_str = "foo")]
     string: String,
     #[setting(default = 123)]
     number: usize,

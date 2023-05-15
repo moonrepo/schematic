@@ -10,6 +10,7 @@ use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
 pub struct SettingArgs {
     default: Option<Expr>,
     default_fn: Option<ExprPath>,
+    default_str: Option<String>,
     env: Option<String>,
     extend: bool,
     merge: Option<ExprPath>,
@@ -57,6 +58,10 @@ impl<'l> Setting<'l> {
             panic!("Cannot provide both `default` and `default_fn`.");
         }
 
+        if args.default_str.is_some() && args.default.is_some() {
+            panic!("Cannot provide both `default` and `default_str`.");
+        }
+
         if args.parse_env.is_some() && args.env.is_none() {
             panic!("Cannot use `parse_env` without `env`.");
         }
@@ -74,11 +79,11 @@ impl<'l> Setting<'l> {
 
         if setting.has_default() {
             if setting.is_nested() {
-                panic!("Cannot use `default` or `default_fn` with `nested` configs.");
+                panic!("Cannot use defaults with `nested` configs.");
             }
 
             if setting.is_optional() {
-                panic!("Cannot use `default` or `default_fn` with optional settings.");
+                panic!("Cannot use defaults with optional settings.");
             }
         }
 
@@ -86,7 +91,9 @@ impl<'l> Setting<'l> {
     }
 
     pub fn has_default(&self) -> bool {
-        self.args.default.is_some() || self.args.default_fn.is_some()
+        self.args.default.is_some()
+            || self.args.default_fn.is_some()
+            || self.args.default_str.is_some()
     }
 
     pub fn is_extendable(&self) -> bool {
@@ -130,6 +137,10 @@ impl<'l> Setting<'l> {
             return quote! { Some(#func()) };
         };
 
+        if let Some(string) = self.args.default_str.as_ref() {
+            return quote! { Some(#string.into()) };
+        };
+
         let Some(expr) = self.args.default.as_ref() else {
             return quote! { None };
         };
@@ -138,16 +149,11 @@ impl<'l> Setting<'l> {
             Expr::Array(_) | Expr::Call(_) | Expr::Lit(_) | Expr::Tuple(_) => {
                 quote! { Some(#expr) }
             }
-            // Strings are `Path` for some reason instead of `Lit`...
-            Expr::Path(inner) => {
-                let string = format!("{}", inner.to_token_stream());
-                quote! { Some(#string.into()) }
-            }
             invalid => {
                 let name = self.name.to_string();
                 let info = format!("{:?}", invalid);
 
-                panic!("Unsupported default value for {name} ({info}). May only provide literals, arrays, or tuples. Use `default_fn` for more complex defaults.");
+                panic!("Unsupported default value for {name} ({info}). May only provide literals, arrays, or tuples. Use `default_fn` or `default_str` for more complex defaults.");
             }
         }
     }

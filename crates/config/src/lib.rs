@@ -34,6 +34,7 @@ macro_rules! config_enum {
             schemars::JsonSchema,
             ts_rs::TS,
         )]
+        #[serde(rename_all = "kebab-case")]
         $impl
     };
 }
@@ -52,6 +53,7 @@ macro_rules! config_enum {
             serde::Serialize,
             schemars::JsonSchema,
         )]
+        #[serde(rename_all = "kebab-case")]
         $impl
     };
 }
@@ -63,6 +65,7 @@ macro_rules! config_enum {
         #[derive(
             Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize, ts_rs::TS,
         )]
+        #[serde(rename_all = "kebab-case")]
         $impl
     };
 }
@@ -72,6 +75,7 @@ macro_rules! config_enum {
 macro_rules! config_enum {
     ($impl:item) => {
         #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+        #[serde(rename_all = "kebab-case")]
         $impl
     };
 }
