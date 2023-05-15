@@ -102,6 +102,7 @@ pub fn url<T: Url>(value: &T) -> Result<(), ValidateError> {
     r::url::apply(value, ()).map_err(map_err)
 }
 
+#[cfg(feature = "valid_url")]
 pub fn url_secure<T: AsRef<str>>(value: T) -> Result<(), ValidateError> {
     url(&value)?;
 
@@ -123,8 +124,14 @@ pub fn in_range<T: Bounds + 'static>(min: T, max: T) -> Validator<T> {
 
 /// Validate an extends value is either a file path or secure URL.
 pub fn extends_string(value: &str) -> Result<(), ValidateError> {
+    #[allow(unreachable_code)]
     if is_url_like(value) {
-        return url_secure(value);
+        #[cfg(feature = "valid_url")]
+        {
+            return url_secure(value);
+        }
+
+        return Ok(());
     } else if is_file_like(value) {
         return Ok(());
     }
