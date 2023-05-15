@@ -1,5 +1,4 @@
 use super::setting::Setting;
-use crate::utils::unwrap_option;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -61,11 +60,10 @@ impl<'l> Config<'l> {
                 let name = setting.name;
                 let value = format!(
                     "{}",
-                    if let Some(inner) = unwrap_option(setting.value) {
-                        inner.to_token_stream()
-                    } else {
-                        setting.value.to_token_stream()
-                    }
+                    setting
+                        .inner_value
+                        .unwrap_or(setting.value)
+                        .to_token_stream()
                 );
 
                 // Janky but works!
