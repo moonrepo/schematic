@@ -154,8 +154,12 @@ pub struct NestedValidations {
 struct Validations {
     #[setting(validate = validate_test)]
     basic: String,
+    #[setting(validate = validate_test)]
+    optional: Option<String>,
     #[setting(nested)]
     nested: NestedValidations,
+    // #[setting(nested)]
+    // nested2: Option<NestedValidations>,
 }
 
 #[derive(Config)]

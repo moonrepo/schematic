@@ -205,9 +205,9 @@ impl<'l> Setting<'l> {
         let name = self.name;
         let name_quoted = format!("{}", self.name);
 
-        if self.is_nested() {
+        let validator = if self.is_nested() {
             quote! {
-                if let Err(nested_error) = self.#name.validate_with_path(path.join_key(#name_quoted)) {
+                if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
                     errors.push(schematic::ValidateErrorType::nested(nested_error));
                 }
             }
@@ -221,7 +221,7 @@ impl<'l> Setting<'l> {
             };
 
             quote! {
-                if let Err(error) = #func(&self.#name) {
+                if let Err(error) = #func(setting) {
                     errors.push(schematic::ValidateErrorType::setting(
                         path.join_key(#name_quoted),
                         error,
@@ -229,7 +229,20 @@ impl<'l> Setting<'l> {
                 }
             }
         } else {
-            quote! {}
+            return quote! {};
+        };
+
+        if self.is_optional() {
+            quote! {
+                if let Some(setting) = self.#name.as_ref() {
+                    #validator
+                }
+            }
+        } else {
+            quote! {
+                let setting = &self.#name;
+                #validator
+            }
         }
     }
 
