@@ -85,7 +85,7 @@ impl<'l> Config<'l> {
                     }
                     _ => {
                         panic!(
-                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extends` for {name}."
+                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extend` for {name}."
                         );
                     }
                 };
