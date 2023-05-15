@@ -14,6 +14,7 @@ mod private {
 }
 
 config_enum!(
+    #[derive(Default)]
     pub enum SomeEnum {
         #[default]
         A,
@@ -46,10 +47,14 @@ struct DefaultValues {
     boolean_fn: bool,
     // #[setting(default = 'a')]
     // chars: char,
-    #[setting(default = "foo")]
+    #[setting(default_str = "foo")]
     string: String,
     #[setting(default_fn = private::default_string)]
     string_fn: String,
+    #[setting(default_str = "foo.json")]
+    file_string: String,
+    #[setting(default_str = "foo with. many values!")]
+    long_string: String,
     #[setting(default = 123)]
     number: usize,
     #[setting(default = [1, 2, 3, 4])]
@@ -67,6 +72,8 @@ struct DefaultValues {
 struct Nested {
     #[setting(nested)]
     one: ValueTypes,
+    #[setting(nested)]
+    two: Option<ValueTypes>,
     // Invalid
     // #[setting(nested)]
     // two: bool,
@@ -116,6 +123,12 @@ struct ExtendsEnum {
     extends: ExtendsFrom,
 }
 
+#[derive(Config)]
+struct ExtendsOptional {
+    #[setting(extend)]
+    extends: Option<Vec<String>>,
+}
+
 fn vec_from_env(_: String) -> Result<Vec<String>, ConfigError> {
     Ok(vec![])
 }
@@ -144,8 +157,12 @@ pub struct NestedValidations {
 struct Validations {
     #[setting(validate = validate_test)]
     basic: String,
+    #[setting(validate = validate_test)]
+    optional: Option<String>,
     #[setting(nested)]
     nested: NestedValidations,
+    #[setting(nested)]
+    nested2: Option<NestedValidations>,
 }
 
 #[derive(Config)]

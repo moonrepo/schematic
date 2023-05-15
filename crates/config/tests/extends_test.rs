@@ -11,6 +11,14 @@ struct ExtendsString {
     value: Vec<usize>,
 }
 
+#[derive(Debug, Config)]
+struct ExtendsStringOptional {
+    #[setting(extend)]
+    extends: Option<String>,
+    #[setting(merge = merge::append_vec)]
+    value: Vec<usize>,
+}
+
 #[derive(Config)]
 struct ExtendsList {
     #[setting(extend)]
@@ -123,5 +131,26 @@ fn extends_from_chain_in_order_using_both_enum() {
                 path: root.join("./base-both.yml")
             }
         ]
+    );
+}
+
+#[test]
+fn extends_from_optional() {
+    let root = get_fixture_path("extending");
+
+    let result = ConfigLoader::<ExtendsStringOptional>::new(SourceFormat::Yaml)
+        .file(root.join("string2.yml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.extends, None);
+    assert_eq!(result.config.value, vec![3]);
+
+    assert_eq!(
+        result.sources,
+        vec![Source::File {
+            path: root.join("./string2.yml")
+        }]
     );
 }
