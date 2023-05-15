@@ -48,6 +48,9 @@ pub struct Setting<'l> {
     pub comment: Option<String>,
     pub name: &'l Ident,
     pub value: &'l Type,
+    pub inner_value: Option<&'l Type>,
+
+    optional: bool,
 }
 
 impl<'l> Setting<'l> {
@@ -70,11 +73,14 @@ impl<'l> Setting<'l> {
             panic!("Cannot use `validate` for `nested` configs.");
         }
 
+        let inner_value = unwrap_option(&field.ty);
         let setting = Setting {
             args,
             comment: extract_comment(field),
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
+            inner_value,
+            optional: inner_value.is_some(),
         };
 
         if setting.has_default() {
@@ -105,7 +111,7 @@ impl<'l> Setting<'l> {
     }
 
     pub fn is_optional(&self) -> bool {
-        unwrap_option(self.value).is_some()
+        self.optional
     }
 
     pub fn get_default_statement(&self) -> TokenStream {
@@ -129,6 +135,10 @@ impl<'l> Setting<'l> {
     pub fn get_default_value(&self) -> TokenStream {
         if self.args.nested {
             let struct_name = format_ident!("Partial{}", self.get_nested_struct_name());
+
+            if self.is_optional() {
+                return quote! { None };
+            }
 
             return quote! { Some(#struct_name::default_values()?) };
         };
@@ -165,7 +175,11 @@ impl<'l> Setting<'l> {
         if self.is_nested() {
             let struct_name = self.get_nested_struct_name();
 
-            quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+            if self.is_optional() {
+                quote! { partial.#name.map(#struct_name::from_partial) }
+            } else {
+                quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
+            }
 
             // Reset extendable values since we don't have the entire resolved list
         } else if self.is_extendable() {
@@ -247,7 +261,9 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_nested_struct_name(&self) -> Ident {
-        match &self.value {
+        let inner = self.inner_value.unwrap_or(self.value);
+
+        match inner {
             Type::Path(path) => {
                 let segments = &path.path.segments;
                 let last_segment = segments.last().unwrap();
@@ -265,15 +281,22 @@ impl<'l> ToTokens for Setting<'l> {
         let value = self.value;
 
         // Wrap value based on current state
-        let mut value = if self.is_nested() {
-            quote! { <#value as schematic::Config>::Partial }
-        } else {
-            quote! { #value }
-        };
+        let value = match (self.is_nested(), self.is_optional()) {
+            (true, true) => {
+                let inner_value = self.inner_value;
 
-        if !self.is_optional() {
-            value = quote! { Option<#value> };
-        }
+                quote! { Option<<#inner_value as schematic::Config>::Partial> }
+            }
+            (true, false) => {
+                quote! { Option<<#value as schematic::Config>::Partial> }
+            }
+            (false, true) => {
+                quote! { #value }
+            }
+            (false, false) => {
+                quote! { Option<#value> }
+            }
+        };
 
         // Gather all attributes
         let serde_meta = self.args.get_serde_meta();

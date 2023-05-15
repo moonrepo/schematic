@@ -71,6 +71,8 @@ struct DefaultValues {
 struct Nested {
     #[setting(nested)]
     one: ValueTypes,
+    #[setting(nested)]
+    two: Option<ValueTypes>,
     // Invalid
     // #[setting(nested)]
     // two: bool,
@@ -158,8 +160,8 @@ struct Validations {
     optional: Option<String>,
     #[setting(nested)]
     nested: NestedValidations,
-    // #[setting(nested)]
-    // nested2: Option<NestedValidations>,
+    #[setting(nested)]
+    nested2: Option<NestedValidations>,
 }
 
 #[derive(Config)]
