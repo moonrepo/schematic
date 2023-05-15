@@ -315,6 +315,7 @@ dependencies = [
  "garde_derive",
  "once_cell",
  "regex",
+ "url",
 ]
 
 [[package]]

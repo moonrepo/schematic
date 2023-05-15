@@ -98,4 +98,16 @@ pub struct ValidateFuncs {
     ip_v4: String,
     #[setting(validate = validate::ip_v6)]
     ip_v6: String,
+    #[setting(validate = validate::regex("^foo$"))]
+    regex: String,
+    #[setting(validate = validate::min_length(1))]
+    min: String,
+    #[setting(validate = validate::max_length(1))]
+    max: String,
+    #[setting(validate = validate::in_length(1, 5))]
+    len: String,
+    #[setting(validate = validate::url)]
+    url: String,
+    #[setting(validate = validate::in_range(1, 5))]
+    range: i32,
 }
