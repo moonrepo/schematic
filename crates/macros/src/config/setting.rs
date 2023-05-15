@@ -15,7 +15,7 @@ pub struct SettingArgs {
     merge: Option<ExprPath>,
     nested: bool,
     parse_env: Option<ExprPath>,
-    validate: Option<ExprPath>,
+    validate: Option<Expr>,
 
     // serde
     rename: Option<String>,
@@ -205,7 +205,15 @@ impl<'l> Setting<'l> {
                     errors.push(schematic::ValidateErrorType::nested(nested_error));
                 }
             }
-        } else if let Some(func) = self.args.validate.as_ref() {
+        } else if let Some(expr) = self.args.validate.as_ref() {
+            let func = match expr {
+                Expr::Call(func) => quote! { #func },
+                Expr::Path(func) => quote! { #func },
+                _ => {
+                    panic!("Unsupported `validate` syntax.");
+                }
+            };
+
             quote! {
                 if let Err(error) = #func(&self.#name) {
                     errors.push(schematic::ValidateErrorType::setting(

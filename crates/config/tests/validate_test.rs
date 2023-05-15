@@ -81,3 +81,21 @@ fn can_customize_path() {
         "Failed to validate config. \n  string[1].foo: invalid string"
     )
 }
+
+#[derive(Config)]
+pub struct ValidateFuncs {
+    #[setting(validate = validate::alphanumeric)]
+    alnum: String,
+    #[setting(validate = validate::ascii)]
+    ascii: String,
+    #[setting(validate = validate::contains("foo"))]
+    contains: String,
+    #[setting(validate = validate::email)]
+    email: String,
+    #[setting(validate = validate::ip)]
+    ip: String,
+    #[setting(validate = validate::ip_v4)]
+    ip_v4: String,
+    #[setting(validate = validate::ip_v6)]
+    ip_v6: String,
+}

@@ -8,6 +8,7 @@ repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
 schematic_macros = { version = "0.1.1", path = "../macros" }
+garde = { version = "0.11.2", default-features = false, features = ["pattern"] }
 miette = { workspace = true }
 reqwest = { version = "0.11.17", default-features = false, features = ["blocking", "rustls-tls"] }
 serde = { workspace = true }
@@ -38,6 +39,8 @@ toml = ["dep:toml"]
 typescript = ["dep:ts-rs"]
 yaml = ["dep:serde_yaml"]
 
+valid_email = ["garde/email"]
+
 [dev-dependencies]
-schematic = { path = ".", features = ["json", "yaml", "toml"] }
+schematic = { path = ".", features = ["json", "yaml", "toml", "valid_email"] }
 serial_test = "2.0.0"
