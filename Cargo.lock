@@ -307,6 +307,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "garde"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d959ef7bda0bda7cc0f6fbebfbac6202f810394f50e07059eeea8ec31e69e4b0"
+dependencies = [
+ "garde_derive",
+ "once_cell",
+ "regex",
+ "url",
+]
+
+[[package]]
+name = "garde_derive"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e89f7fce035bb3a3718e23efff13709a0b21b694c4eae20a32e1a3e4e27c6a2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 2.0.15",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -877,6 +901,7 @@ dependencies = [
 name = "schematic"
 version = "0.1.1"
 dependencies = [
+ "garde",
  "miette",
  "reqwest",
  "schemars",

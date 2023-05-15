@@ -7,6 +7,7 @@ mod validator;
 pub mod env;
 pub mod internal;
 pub mod merge;
+pub mod validate;
 
 pub use config::*;
 pub use error::*;

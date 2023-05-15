@@ -81,3 +81,48 @@ fn can_customize_path() {
         "Failed to validate config. \n  string[1].foo: invalid string"
     )
 }
+
+#[derive(Config)]
+pub struct ValidateFuncs {
+    #[setting(validate = validate::alphanumeric)]
+    alnum: String,
+    #[setting(validate = validate::ascii)]
+    ascii: String,
+    #[setting(validate = validate::contains("foo"))]
+    contains: String,
+    #[setting(validate = validate::email)]
+    email: String,
+    #[setting(validate = validate::ip)]
+    ip: String,
+    #[setting(validate = validate::ip_v4)]
+    ip_v4: String,
+    #[setting(validate = validate::ip_v6)]
+    ip_v6: String,
+    #[setting(validate = validate::regex("^foo$"))]
+    regex: String,
+    #[setting(validate = validate::min_length(1))]
+    min: String,
+    #[setting(validate = validate::max_length(1))]
+    max: String,
+    #[setting(validate = validate::in_length(1, 5))]
+    len: String,
+    #[setting(validate = validate::url)]
+    url: String,
+    #[setting(validate = validate::in_range(1, 5))]
+    range: i32,
+}
+
+#[test]
+fn runs_the_validator_funcs() {
+    let error = ConfigLoader::<ValidateFuncs>::new(SourceFormat::Json)
+        .code(r#"{}"#)
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert_eq!(
+        error.to_full_string(),
+        "Failed to validate config. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  range: lower than 1"
+    )
+}
