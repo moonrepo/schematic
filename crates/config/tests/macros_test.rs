@@ -120,6 +120,12 @@ struct ExtendsEnum {
     extends: ExtendsFrom,
 }
 
+#[derive(Config)]
+struct ExtendsOptional {
+    #[setting(extend)]
+    extends: Option<Vec<String>>,
+}
+
 fn vec_from_env(_: String) -> Result<Vec<String>, ConfigError> {
     Ok(vec![])
 }

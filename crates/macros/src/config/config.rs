@@ -1,4 +1,5 @@
 use super::setting::Setting;
+use crate::utils::unwrap_option;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -58,10 +59,17 @@ impl<'l> Config<'l> {
         for setting in &self.settings {
             if setting.is_extendable() {
                 let name = setting.name;
-                let type_of = format!("{}", setting.value.to_token_stream());
+                let value = format!(
+                    "{}",
+                    if let Some(inner) = unwrap_option(setting.value) {
+                        inner.to_token_stream()
+                    } else {
+                        setting.value.to_token_stream()
+                    }
+                );
 
                 // Janky but works!
-                match type_of.as_str() {
+                match value.as_str() {
                     "String" => {
                         return quote! {
                             if let Some(value) = self.#name.as_ref() {
