@@ -108,8 +108,16 @@ pub struct ValidateFuncs {
     len: String,
     #[setting(validate = validate::url)]
     url: String,
+    #[setting(validate = validate::url_secure)]
+    url_secure: String,
     #[setting(validate = validate::in_range(1, 5))]
     range: i32,
+    #[setting(validate = validate::extends_string)]
+    ext_str: String,
+    #[setting(validate = validate::extends_list)]
+    ext_list: Vec<String>,
+    #[setting(validate = validate::extends_from)]
+    ext_from: ExtendsFrom,
 }
 
 #[test]
@@ -123,7 +131,7 @@ fn runs_the_validator_funcs() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  range: lower than 1"
+        "Failed to validate config. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
     )
 }
 
