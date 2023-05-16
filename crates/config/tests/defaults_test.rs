@@ -1,4 +1,5 @@
 use schematic::*;
+use std::path::PathBuf;
 
 #[derive(Debug, Config)]
 pub struct NativeDefaults {
@@ -77,4 +78,41 @@ fn can_overwrite_optional_fields() {
     assert_eq!(result.config.required, 789);
     assert_eq!(result.config.required_with_default, 123);
     assert_eq!(result.config.optional, Some(456));
+}
+
+#[derive(Default)]
+pub struct Context {
+    count: usize,
+    root: PathBuf,
+}
+
+fn default_count(ctx: &Context) -> usize {
+    ctx.count * 2
+}
+
+fn default_path(ctx: &Context) -> PathBuf {
+    ctx.root.join("sub")
+}
+
+#[derive(Debug, Config)]
+#[config(context = Context)]
+pub struct ContextDefaults {
+    #[setting(default_fn = default_count)]
+    count: usize,
+    #[setting(default_fn = default_path)]
+    path: PathBuf,
+}
+
+#[test]
+fn sets_defaults_from_context() {
+    let context = Context {
+        count: 5,
+        root: PathBuf::from("/root"),
+    };
+    let result = ConfigLoader::<ContextDefaults>::new(SourceFormat::Yaml)
+        .load_with_context(&context)
+        .unwrap();
+
+    assert_eq!(result.config.count, 10);
+    assert_eq!(result.config.path, PathBuf::from("/root/sub"));
 }

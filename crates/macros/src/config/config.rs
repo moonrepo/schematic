@@ -2,11 +2,14 @@ use super::setting::Setting;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
+use syn::ExprPath;
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]
 #[darling(default, attributes(config), supports(struct_named))]
 pub struct ConfigArgs {
+    context: Option<ExprPath>,
+
     // serde
     rename: Option<String>,
     rename_all: Option<String>,
@@ -124,6 +127,10 @@ impl<'l> Config<'l> {
 impl<'l> ToTokens for Config<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
+        let context = match self.args.context.as_ref() {
+            Some(ctx) => quote! { #ctx },
+            None => quote! { () },
+        };
 
         // Generate the partial struct
         let partial_name = format_ident!("Partial{}", self.name);
@@ -159,7 +166,9 @@ impl<'l> ToTokens for Config<'l> {
         let token = quote! {
             #[automatically_derived]
             impl schematic::PartialConfig for #partial_name {
-                fn default_values() -> Result<Self, schematic::ConfigError> {
+                type Context = #context;
+
+                fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
                     Ok(Self {
                         #(#field_names: #default_stmts),*
                     })

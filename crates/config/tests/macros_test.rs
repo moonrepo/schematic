@@ -6,12 +6,12 @@ use std::{
     path::PathBuf,
 };
 
-fn default_bool() -> bool {
+fn default_bool<C>(_: &C) -> bool {
     true
 }
 
 mod private {
-    pub fn default_string() -> String {
+    pub fn default_string<C>(_: &C) -> String {
         String::from("bar")
     }
 }
@@ -66,7 +66,7 @@ struct DefaultValues {
     array: [u8; 4],
     #[setting(default = (1, 2, 3, 4))]
     tuple: (u8, u8, u8, u8),
-    #[setting(default_fn = SomeEnum::default)]
+    // #[setting(default_fn = SomeEnum::default)]
     enums: SomeEnum,
     // Invalid
     // #[setting(default = true, default_fn = default_bool)]

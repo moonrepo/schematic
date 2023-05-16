@@ -112,13 +112,13 @@ impl<'l> SettingType<'l> {
                 NestedType::None(id) => {
                     let partial_name = format_ident!("Partial{}", id);
 
-                    quote! { Some(#partial_name::default_values()?) }
+                    quote! { Some(#partial_name::default_values(context)?) }
                 }
                 _ => quote! { None },
             },
             SettingType::Value { value, .. } => {
                 if let Some(func) = args.default_fn.as_ref() {
-                    return quote! { Some(#func()) };
+                    return quote! { Some(#func(context)) };
                 };
 
                 if let Some(string) = args.default_str.as_ref() {
