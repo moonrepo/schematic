@@ -66,12 +66,14 @@ pub enum ConfigError {
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate config.")]
-    Validator(
+    #[error("Failed to validate {config}.")]
+    Validator {
+        config: String,
+
         #[diagnostic_source]
         #[source]
-        ValidatorError,
-    ),
+        error: ValidatorError,
+    },
 }
 
 impl ConfigError {
@@ -91,7 +93,7 @@ impl ConfigError {
                 message.push(' ');
                 message.push_str(&inner.to_full_string());
             }
-            ConfigError::Validator(inner) => {
+            ConfigError::Validator { error: inner, .. } => {
                 message.push(' ');
                 message.push_str(&inner.to_full_string());
             }

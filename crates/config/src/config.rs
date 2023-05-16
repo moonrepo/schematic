@@ -2,6 +2,14 @@ use crate::error::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+pub struct ConfigMeta {
+    /// Name of the struct.
+    pub name: &'static str,
+
+    /// File name of the loaded config.
+    pub file: Option<&'static str>,
+}
+
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
     type Context: Default;
 
@@ -14,6 +22,8 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 
 pub trait Config: Sized {
     type Partial: PartialConfig;
+
+    const META: ConfigMeta;
 
     fn default_values(
         context: &<Self::Partial as PartialConfig>::Context,

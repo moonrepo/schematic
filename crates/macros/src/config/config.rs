@@ -9,6 +9,7 @@ use syn::ExprPath;
 #[darling(default, attributes(config), supports(struct_named))]
 pub struct ConfigArgs {
     context: Option<ExprPath>,
+    file: Option<String>,
 
     // serde
     rename: Option<String>,
@@ -104,6 +105,26 @@ impl<'l> Config<'l> {
         quote! {}
     }
 
+    pub fn get_meta_struct(&self) -> TokenStream {
+        let name = format!("{}", self.name);
+
+        let file = match &self.args.file {
+            Some(f) => {
+                let file = format_ident!("{}", f);
+
+                quote! { Some(#file) }
+            }
+            None => quote! { None },
+        };
+
+        quote! {
+            schematic::ConfigMeta {
+                name: #name,
+                file: #file,
+            }
+        }
+    }
+
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
 
@@ -187,10 +208,14 @@ impl<'l> ToTokens for Config<'l> {
 
         tokens.extend(token);
 
+        let meta = self.get_meta_struct();
+
         let token = quote! {
             #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
+
+                const META: schematic::ConfigMeta = #meta;
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {

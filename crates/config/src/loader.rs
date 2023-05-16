@@ -2,6 +2,7 @@ use crate::config::{Config, ExtendsFrom, PartialConfig};
 use crate::error::ConfigError;
 use crate::source::{Source, SourceFormat};
 use serde::Serialize;
+use starbase_styles::color;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 
@@ -80,7 +81,18 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(partial_layers, context)?;
         let config = T::from_partial(partial);
 
-        config.validate(context).map_err(ConfigError::Validator)?;
+        config.validate(context).map_err(|error| {
+            let meta = T::META;
+
+            ConfigError::Validator {
+                config: if let Some(file) = &meta.file {
+                    color::file(file)
+                } else {
+                    meta.name.to_owned()
+                },
+                error,
+            }
+        })?;
 
         Ok(ConfigLoadResult {
             config,
