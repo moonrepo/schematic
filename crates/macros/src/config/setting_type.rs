@@ -112,13 +112,13 @@ impl<'l> SettingType<'l> {
                 NestedType::None(id) => {
                     let partial_name = format_ident!("Partial{}", id);
 
-                    quote! { Some(#partial_name::default_values()?) }
+                    quote! { Some(#partial_name::default_values(context)?) }
                 }
                 _ => quote! { None },
             },
             SettingType::Value { value, .. } => {
                 if let Some(func) = args.default_fn.as_ref() {
-                    return quote! { Some(#func()) };
+                    return quote! { #func(context) };
                 };
 
                 if let Some(string) = args.default_str.as_ref() {
@@ -211,20 +211,20 @@ impl<'l> SettingType<'l> {
         match self {
             SettingType::Nested { collection, .. } => match collection {
                 NestedType::None(_) => Some(quote! {
-                    if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
+                    if let Err(nested_error) = setting.validate_with_path(context, path.join_key(#name_quoted)) {
                         errors.push(schematic::ValidateErrorType::nested(nested_error));
                     }
                 }),
                 NestedType::Set(_, _) => Some(quote! {
                     for (i, item) in setting.iter().enumerate() {
-                        if let Err(nested_error) = item.validate_with_path(path.join_key(#name_quoted).join_index(i)) {
+                        if let Err(nested_error) = item.validate_with_path(context, path.join_key(#name_quoted).join_index(i)) {
                             errors.push(schematic::ValidateErrorType::nested(nested_error));
                         }
                     }
                 }),
                 NestedType::Map(_, _, _) => Some(quote! {
                     for (key, value) in setting {
-                        if let Err(nested_error) = value.validate_with_path(path.join_key(#name_quoted).join_key(key)) {
+                        if let Err(nested_error) = value.validate_with_path(context, path.join_key(#name_quoted).join_key(key)) {
                             errors.push(schematic::ValidateErrorType::nested(nested_error));
                         }
                     }
@@ -243,7 +243,7 @@ impl<'l> SettingType<'l> {
                     };
 
                     Some(quote! {
-                        if let Err(error) = #func(setting) {
+                        if let Err(error) = #func(setting, self, context) {
                             errors.push(schematic::ValidateErrorType::setting(
                                 path.join_key(#name_quoted),
                                 error,

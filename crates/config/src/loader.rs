@@ -68,12 +68,21 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     pub fn load(&mut self) -> Result<ConfigLoadResult<T>, ConfigError> {
+        let context = <T::Partial as PartialConfig>::Context::default();
+
+        self.load_with_context(&context)
+    }
+
+    pub fn load_with_context(
+        &mut self,
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<ConfigLoadResult<T>, ConfigError> {
         let sources_to_parse = mem::take(&mut self.sources);
         let (partial_layers, resolved_sources) = self.parse_into_layers(sources_to_parse)?;
-        let partial = self.merge_layers(partial_layers)?;
+        let partial = self.merge_layers(partial_layers, context)?;
         let config = T::from_partial(partial);
 
-        config.validate().map_err(ConfigError::Validator)?;
+        config.validate(context).map_err(ConfigError::Validator)?;
 
         Ok(ConfigLoadResult {
             config,
@@ -116,12 +125,16 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(sources)
     }
 
-    fn merge_layers(&self, layers: Vec<T::Partial>) -> Result<T::Partial, ConfigError> {
+    fn merge_layers(
+        &self,
+        layers: Vec<T::Partial>,
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<T::Partial, ConfigError> {
         // All `None` by default
         let mut merged = T::Partial::default();
 
         // First layer should be the defaults
-        merged.merge(T::Partial::default_values()?);
+        merged.merge(T::Partial::default_values(context)?);
 
         // Then apply other layers in order
         for layer in layers {

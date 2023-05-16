@@ -3,7 +3,9 @@ use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub trait PartialConfig: Default + DeserializeOwned + Sized {
-    fn default_values() -> Result<Self, ConfigError>;
+    type Context: Default;
+
+    fn default_values(context: &Self::Context) -> Result<Self, ConfigError>;
 
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
@@ -13,9 +15,11 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    fn default_values() -> Result<Self, ConfigError> {
+    fn default_values(
+        context: &<Self::Partial as PartialConfig>::Context,
+    ) -> Result<Self, ConfigError> {
         Ok(Self::from_partial(
-            <Self::Partial as PartialConfig>::default_values()?,
+            <Self::Partial as PartialConfig>::default_values(context)?,
         ))
     }
 
@@ -25,11 +29,18 @@ pub trait Config: Sized {
         <Self::Partial as Default>::default()
     }
 
-    fn validate(&self) -> Result<(), ValidatorError> {
-        self.validate_with_path(SettingPath::default())
+    fn validate(
+        &self,
+        context: &<Self::Partial as PartialConfig>::Context,
+    ) -> Result<(), ValidatorError> {
+        self.validate_with_path(context, SettingPath::default())
     }
 
-    fn validate_with_path(&self, _path: SettingPath) -> Result<(), ValidatorError> {
+    fn validate_with_path(
+        &self,
+        _context: &<Self::Partial as PartialConfig>::Context,
+        _path: SettingPath,
+    ) -> Result<(), ValidatorError> {
         Ok(())
     }
 }

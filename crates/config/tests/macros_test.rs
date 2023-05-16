@@ -6,13 +6,13 @@ use std::{
     path::PathBuf,
 };
 
-fn default_bool() -> bool {
-    true
+fn default_bool<C>(_: &C) -> Option<bool> {
+    Some(true)
 }
 
 mod private {
-    pub fn default_string() -> String {
-        String::from("bar")
+    pub fn default_string<C>(_: &C) -> Option<String> {
+        Some("bar".into())
     }
 }
 
@@ -66,7 +66,7 @@ struct DefaultValues {
     array: [u8; 4],
     #[setting(default = (1, 2, 3, 4))]
     tuple: (u8, u8, u8, u8),
-    #[setting(default_fn = SomeEnum::default)]
+    // #[setting(default_fn = SomeEnum::default)]
     enums: SomeEnum,
     // Invalid
     // #[setting(default = true, default_fn = default_bool)]
@@ -154,7 +154,7 @@ struct EnvVars {
     // invalid: Vec<String>,
 }
 
-fn validate_test(_: &str) -> Result<(), ValidateError> {
+fn validate_test<T, C>(_: &str, _: &T, _: &C) -> Result<(), ValidateError> {
     Ok(())
 }
 

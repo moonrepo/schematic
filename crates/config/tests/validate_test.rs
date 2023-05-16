@@ -3,7 +3,7 @@
 use schematic::*;
 use std::collections::HashMap;
 
-fn test_string(value: &String) -> Result<(), ValidateError> {
+fn test_string<T, C>(value: &String, _: &T, _: &C) -> Result<(), ValidateError> {
     if value.is_empty() {
         return Ok(());
     }
@@ -55,7 +55,7 @@ fn errors_for_nested_field() {
     )
 }
 
-fn test_string_path(_: &String) -> Result<(), ValidateError> {
+fn test_string_path<T, C>(_: &String, _: &T, _: &C) -> Result<(), ValidateError> {
     Err(ValidateError::with_segments(
         "invalid string",
         vec![Segment::Index(1), Segment::Key("foo".to_owned())],
