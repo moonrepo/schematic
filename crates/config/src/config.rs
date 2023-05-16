@@ -29,11 +29,18 @@ pub trait Config: Sized {
         <Self::Partial as Default>::default()
     }
 
-    fn validate(&self) -> Result<(), ValidatorError> {
-        self.validate_with_path(SettingPath::default())
+    fn validate(
+        &self,
+        context: &<Self::Partial as PartialConfig>::Context,
+    ) -> Result<(), ValidatorError> {
+        self.validate_with_path(context, SettingPath::default())
     }
 
-    fn validate_with_path(&self, _path: SettingPath) -> Result<(), ValidatorError> {
+    fn validate_with_path(
+        &self,
+        _context: &<Self::Partial as PartialConfig>::Context,
+        _path: SettingPath,
+    ) -> Result<(), ValidatorError> {
         Ok(())
     }
 }

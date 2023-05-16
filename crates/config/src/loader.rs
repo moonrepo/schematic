@@ -82,7 +82,7 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(partial_layers, context)?;
         let config = T::from_partial(partial);
 
-        config.validate().map_err(ConfigError::Validator)?;
+        config.validate(context).map_err(ConfigError::Validator)?;
 
         Ok(ConfigLoadResult {
             config,

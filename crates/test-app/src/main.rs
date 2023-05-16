@@ -2,7 +2,7 @@ use miette::Result;
 use schematic::{Config, ConfigLoader, Segment, ValidateError};
 use serde::Serialize;
 
-fn validate_string<D>(_: &str, _: &D) -> Result<(), ValidateError> {
+fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
     Err(ValidateError::with_segments(
         "This string is ugly!",
         vec![Segment::Index(1), Segment::Key("foo".to_owned())],
@@ -10,7 +10,7 @@ fn validate_string<D>(_: &str, _: &D) -> Result<(), ValidateError> {
     // Ok(())
 }
 
-fn validate_number<D>(_: &usize, _: &D) -> Result<(), ValidateError> {
+fn validate_number<D, C>(_: &usize, _: &D, _: &C) -> Result<(), ValidateError> {
     Err(ValidateError::new("Nah, we don't accept numbers."))
     // Ok(())
 }

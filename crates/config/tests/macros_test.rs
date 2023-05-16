@@ -154,7 +154,7 @@ struct EnvVars {
     // invalid: Vec<String>,
 }
 
-fn validate_test<T>(_: &str, _: &T) -> Result<(), ValidateError> {
+fn validate_test<T, C>(_: &str, _: &T, _: &C) -> Result<(), ValidateError> {
     Ok(())
 }
 
