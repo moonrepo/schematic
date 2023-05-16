@@ -60,10 +60,12 @@ impl<'l> Config<'l> {
                 let name = setting.name;
                 let value = format!(
                     "{}",
-                    setting
-                        .inner_value
-                        .unwrap_or(setting.value)
-                        .to_token_stream()
+                    // TODO
+                    // setting
+                    //     .inner_value
+                    //     .unwrap_or(setting.value)
+                    //     .to_token_stream()
+                    setting.value.to_token_stream()
                 );
 
                 // Janky but works!

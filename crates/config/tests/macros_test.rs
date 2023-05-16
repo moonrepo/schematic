@@ -76,6 +76,8 @@ struct Nested {
     one: ValueTypes,
     #[setting(nested)]
     two: Option<ValueTypes>,
+    #[setting(nested)]
+    list: Vec<ValueTypes>,
     // Invalid
     // #[setting(nested)]
     // two: bool,
