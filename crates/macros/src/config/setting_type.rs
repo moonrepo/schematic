@@ -31,11 +31,11 @@ pub enum SettingType<'l> {
         // Raw original value type
         raw: &'l Type,
 
-        // Inner raw path type
-        raw_path: &'l TypePath,
-
         // Inner path type with `Option` unwrapped
         path: &'l TypePath,
+
+        // Path type wrapped in a collection
+        collection: NestedType<'l>,
 
         // Wrapped in `Option`
         optional: bool,
@@ -68,8 +68,8 @@ impl<'l> SettingType<'l> {
         };
 
         SettingType::Nested {
+            collection: NestedType::from(path.path.segments.last().unwrap()),
             raw,
-            raw_path,
             path,
             optional,
         }
@@ -108,16 +108,14 @@ impl<'l> SettingType<'l> {
 
     pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
-            SettingType::Nested { path, .. } => {
-                match NestedType::from(path.path.segments.last().unwrap()) {
-                    NestedType::None(id) => {
-                        let partial_name = format_ident!("Partial{}", id);
+            SettingType::Nested { collection, .. } => match collection {
+                NestedType::None(id) => {
+                    let partial_name = format_ident!("Partial{}", id);
 
-                        quote! { Some(#partial_name::default_values()?) }
-                    }
-                    _ => quote! { None },
+                    quote! { Some(#partial_name::default_values()?) }
                 }
-            }
+                _ => quote! { None },
+            },
             SettingType::Value { value, .. } => {
                 if let Some(func) = args.default_fn.as_ref() {
                     return quote! { Some(#func()) };
@@ -153,8 +151,12 @@ impl<'l> SettingType<'l> {
 
     pub fn get_from_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
-            SettingType::Nested { path, optional, .. } => {
-                let callback = match NestedType::from(path.path.segments.last().unwrap()) {
+            SettingType::Nested {
+                collection,
+                optional,
+                ..
+            } => {
+                let callback = match collection {
                     NestedType::None(id) => {
                         quote! { #id::from_partial }
                     }
@@ -207,29 +209,27 @@ impl<'l> SettingType<'l> {
         let name_quoted = format!("{}", name);
 
         match self {
-            SettingType::Nested { path, .. } => {
-                match NestedType::from(path.path.segments.last().unwrap()) {
-                    NestedType::None(_) => Some(quote! {
-                        if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
+            SettingType::Nested { collection, .. } => match collection {
+                NestedType::None(_) => Some(quote! {
+                    if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
+                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    }
+                }),
+                NestedType::Set(_, _) => Some(quote! {
+                    for (i, item) in setting.iter().enumerate() {
+                        if let Err(nested_error) = item.validate_with_path(path.join_key(#name_quoted).join_index(i)) {
                             errors.push(schematic::ValidateErrorType::nested(nested_error));
                         }
-                    }),
-                    NestedType::Set(_, _) => Some(quote! {
-                        for (i, item) in setting.iter().enumerate() {
-                            if let Err(nested_error) = item.validate_with_path(path.join_key(#name_quoted).join_index(i)) {
-                                errors.push(schematic::ValidateErrorType::nested(nested_error));
-                            }
+                    }
+                }),
+                NestedType::Map(_, _, _) => Some(quote! {
+                    for (key, value) in setting {
+                        if let Err(nested_error) = value.validate_with_path(path.join_key(#name_quoted).join_key(key)) {
+                            errors.push(schematic::ValidateErrorType::nested(nested_error));
                         }
-                    }),
-                    NestedType::Map(_, _, _) => Some(quote! {
-                        for (key, value) in setting {
-                            if let Err(nested_error) = value.validate_with_path(path.join_key(#name_quoted).join_key(key)) {
-                                errors.push(schematic::ValidateErrorType::nested(nested_error));
-                            }
-                        }
-                    }),
-                }
-            }
+                    }
+                }),
+            },
             SettingType::Value { .. } => {
                 if let Some(expr) = args.validate.as_ref() {
                     let func = match expr {
@@ -261,8 +261,10 @@ impl<'l> SettingType<'l> {
 impl<'l> ToTokens for SettingType<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            SettingType::Nested { path, .. } => {
-                tokens.extend(match NestedType::from(path.path.segments.last().unwrap()) {
+            SettingType::Nested {
+                path, collection, ..
+            } => {
+                tokens.extend(match collection {
                     NestedType::None(_) => {
                         quote! { Option<<#path as schematic::Config>::Partial> }
                     }
@@ -283,7 +285,7 @@ impl<'l> ToTokens for SettingType<'l> {
     }
 }
 
-enum NestedType<'l> {
+pub enum NestedType<'l> {
     // Struct
     None(&'l Ident),
     // Vec<Struct>, HashSet<Struct>, ...
