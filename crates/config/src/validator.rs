@@ -102,6 +102,12 @@ impl ValidateError {
     }
 }
 
+impl Display for ValidateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum ValidateErrorType {
     Setting {
