@@ -142,7 +142,7 @@ impl Source {
         Ok(Source::Url { url })
     }
 
-    pub fn parse<D>(&self, format: SourceFormat) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, format: SourceFormat, label: &str) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
@@ -158,7 +158,10 @@ impl Source {
                 }
                 Source::Url { url } => reqwest::blocking::get(url)?.text()?,
             })
-            .map_err(ConfigError::Parser)
+            .map_err(|error| ConfigError::Parser {
+                config: label.to_owned(),
+                error,
+            })
     }
 }
 

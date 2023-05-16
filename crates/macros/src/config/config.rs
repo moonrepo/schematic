@@ -109,11 +109,7 @@ impl<'l> Config<'l> {
         let name = format!("{}", self.name);
 
         let file = match &self.args.file {
-            Some(f) => {
-                let file = format_ident!("{}", f);
-
-                quote! { Some(#file) }
-            }
+            Some(f) => quote! { Some(#f) },
             None => quote! { None },
         };
 

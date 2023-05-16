@@ -36,7 +36,7 @@ fn errors_for_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  string1: invalid string"
+        "Failed to validate Validate. \n  string1: invalid string"
     )
 }
 
@@ -51,7 +51,7 @@ fn errors_for_nested_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  string1: invalid string\n  nested.string2: invalid string"
+        "Failed to validate Validate. \n  string1: invalid string\n  nested.string2: invalid string"
     )
 }
 
@@ -63,6 +63,7 @@ fn test_string_path<T, C>(_: &String, _: &T, _: &C) -> Result<(), ValidateError>
 }
 
 #[derive(Config)]
+#[config(file = "test.json")]
 pub struct ValidatePath {
     #[setting(validate = test_string_path)]
     string: String,
@@ -79,7 +80,7 @@ fn can_customize_path() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  string[1].foo: invalid string"
+        "Failed to validate test.json. \n  string[1].foo: invalid string"
     )
 }
 
@@ -132,7 +133,7 @@ fn runs_the_validator_funcs() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
+        "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
     )
 }
 
@@ -163,7 +164,7 @@ fn errors_for_optional_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  string1: invalid string"
+        "Failed to validate ValidateOptional. \n  string1: invalid string"
     )
 }
 
@@ -186,6 +187,6 @@ fn errors_for_nested_field_collections() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate config. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
+        "Failed to validate ValidateCollections. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
     )
 }

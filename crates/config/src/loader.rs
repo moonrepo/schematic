@@ -16,14 +16,22 @@ pub struct ConfigLoadResult<T: Config> {
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     format: SourceFormat,
+    label: String,
     sources: Vec<Source>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     pub fn new(format: SourceFormat) -> Self {
+        let meta = T::META;
+
         ConfigLoader {
             _config: PhantomData,
             format,
+            label: if let Some(file) = &meta.file {
+                color::file(file)
+            } else {
+                color::label(meta.name)
+            },
             sources: vec![],
         }
     }
@@ -81,18 +89,12 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(partial_layers, context)?;
         let config = T::from_partial(partial);
 
-        config.validate(context).map_err(|error| {
-            let meta = T::META;
-
-            ConfigError::Validator {
-                config: if let Some(file) = &meta.file {
-                    color::file(file)
-                } else {
-                    meta.name.to_owned()
-                },
+        config
+            .validate(context)
+            .map_err(|error| ConfigError::Validator {
+                config: self.label.clone(),
                 error,
-            }
-        })?;
+            })?;
 
         Ok(ConfigLoadResult {
             config,
@@ -172,7 +174,7 @@ impl<T: Config> ConfigLoader<T> {
         let mut sources: Vec<Source> = vec![];
 
         for source in sources_to_parse {
-            let partial: T::Partial = source.parse(self.format)?;
+            let partial: T::Partial = source.parse(self.format, &self.label)?;
 
             if let Some(extends_from) = partial.extends_from() {
                 let (extended_layers, extended_sources) =

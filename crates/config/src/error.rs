@@ -57,16 +57,18 @@ pub enum ConfigError {
 
     // Parser
     #[diagnostic(code(config::parse::failed))]
-    #[error("Failed to parse config.")]
-    Parser(
+    #[error("Failed to parse {config}")]
+    Parser {
+        config: String,
+
         #[diagnostic_source]
         #[source]
-        ParserError,
-    ),
+        error: ParserError,
+    },
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate {config}.")]
+    #[error("Failed to validate {config}")]
     Validator {
         config: String,
 
@@ -80,21 +82,28 @@ impl ConfigError {
     pub fn to_full_string(&self) -> String {
         let mut message = self.to_string();
 
+        let mut push_end = || {
+            if !message.ends_with('.') && !message.ends_with(':') {
+                message.push('.');
+            }
+            message.push(' ');
+        };
+
         match self {
             ConfigError::Io(inner) => {
-                message.push(' ');
+                push_end();
                 message.push_str(&inner.to_string());
             }
             ConfigError::Http(inner) => {
-                message.push(' ');
+                push_end();
                 message.push_str(&inner.to_string());
             }
-            ConfigError::Parser(inner) => {
-                message.push(' ');
+            ConfigError::Parser { error: inner, .. } => {
+                push_end();
                 message.push_str(&inner.to_full_string());
             }
             ConfigError::Validator { error: inner, .. } => {
-                message.push(' ');
+                push_end();
                 message.push_str(&inner.to_full_string());
             }
             _ => {}
@@ -108,7 +117,7 @@ impl ConfigError {
 pub enum ParserError {
     #[cfg(feature = "json")]
     #[diagnostic(code(parse::json::failed))]
-    #[error("Invalid setting {}:", .path.style(Style::Id))]
+    #[error("Invalid setting {}", .path.style(Style::Id))]
     Json {
         #[source]
         error: serde_json::Error,
@@ -117,7 +126,7 @@ pub enum ParserError {
 
     #[cfg(feature = "toml")]
     #[diagnostic(code(parse::toml::failed))]
-    #[error("Invalid setting {}:", .path.style(Style::Id))]
+    #[error("Invalid setting {}", .path.style(Style::Id))]
     Toml {
         #[source]
         error: toml::de::Error,
@@ -126,7 +135,7 @@ pub enum ParserError {
 
     #[cfg(feature = "yaml")]
     #[diagnostic(code(parse::yaml::failed))]
-    #[error("Invalid setting {}:", .path.style(Style::Id))]
+    #[error("Invalid setting {}", .path.style(Style::Id))]
     Yaml {
         #[source]
         error: serde_yaml::Error,
