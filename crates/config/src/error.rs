@@ -21,6 +21,10 @@ pub enum ConfigError {
     #[error("Invalid raw code used as a source.")]
     InvalidCode,
 
+    #[diagnostic(code(config::default::invalid))]
+    #[error("Invalid default value. {0}")]
+    InvalidDefault(String),
+
     #[diagnostic(code(config::env::invalid))]
     #[error("Invalid environment variable {}. {1}", .0.style(Style::Symbol))]
     InvalidEnvVar(String, String),
