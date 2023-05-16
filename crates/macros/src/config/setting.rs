@@ -148,9 +148,11 @@ impl<'l> Setting<'l> {
         };
 
         if let Some(string) = self.args.default_str.as_ref() {
+            let value = self.value;
+
             return quote! {
                 Some(
-                    String::try_from(#string)
+                    #value::try_from(#string)
                         .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
                 )
             };

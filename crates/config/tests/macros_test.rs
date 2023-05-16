@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 fn default_bool() -> bool {
     true
@@ -55,6 +55,8 @@ struct DefaultValues {
     file_string: String,
     #[setting(default_str = "foo with. many values!")]
     long_string: String,
+    #[setting(default_str = "foo/bar")]
+    path_string: PathBuf,
     #[setting(default = 123)]
     number: usize,
     #[setting(default = [1, 2, 3, 4])]
