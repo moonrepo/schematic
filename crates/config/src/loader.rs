@@ -3,7 +3,6 @@ use crate::error::ConfigError;
 use crate::source::{Source, SourceFormat};
 use serde::Serialize;
 use std::marker::PhantomData;
-use std::mem;
 use std::path::PathBuf;
 
 #[derive(Serialize)]
@@ -67,18 +66,17 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    pub fn load(&mut self) -> Result<ConfigLoadResult<T>, ConfigError> {
+    pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
 
         self.load_with_context(&context)
     }
 
     pub fn load_with_context(
-        &mut self,
+        &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        let sources_to_parse = mem::take(&mut self.sources);
-        let (partial_layers, resolved_sources) = self.parse_into_layers(sources_to_parse)?;
+        let (partial_layers, resolved_sources) = self.parse_into_layers(&self.sources)?;
         let partial = self.merge_layers(partial_layers, context)?;
         let config = T::from_partial(partial);
 
@@ -91,8 +89,18 @@ impl<T: Config> ConfigLoader<T> {
         })
     }
 
+    pub fn load_partial(
+        &self,
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<T::Partial, ConfigError> {
+        let (partial_layers, _) = self.parse_into_layers(&self.sources)?;
+        let partial = self.merge_layers(partial_layers, context)?;
+
+        Ok(partial)
+    }
+
     fn extend_additional_layers(
-        &mut self,
+        &self,
         parent_source: &Source,
         extends_from: &ExtendsFrom,
     ) -> Result<(Vec<T::Partial>, Vec<Source>), ConfigError> {
@@ -122,7 +130,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(sources)
+        self.parse_into_layers(&sources)
     }
 
     fn merge_layers(
@@ -145,8 +153,8 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     fn parse_into_layers(
-        &mut self,
-        sources_to_parse: Vec<Source>,
+        &self,
+        sources_to_parse: &[Source],
     ) -> Result<(Vec<T::Partial>, Vec<Source>), ConfigError> {
         let mut layers: Vec<T::Partial> = vec![];
         let mut sources: Vec<Source> = vec![];
@@ -156,14 +164,14 @@ impl<T: Config> ConfigLoader<T> {
 
             if let Some(extends_from) = partial.extends_from() {
                 let (extended_layers, extended_sources) =
-                    self.extend_additional_layers(&source, &extends_from)?;
+                    self.extend_additional_layers(source, &extends_from)?;
 
                 layers.extend(extended_layers);
                 sources.extend(extended_sources);
             }
 
             layers.push(partial);
-            sources.push(source);
+            sources.push(source.clone());
         }
 
         Ok((layers, sources))
