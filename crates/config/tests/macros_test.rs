@@ -6,13 +6,13 @@ use std::{
     path::PathBuf,
 };
 
-fn default_bool<C>(_: &C) -> bool {
-    true
+fn default_bool<C>(_: &C) -> Option<bool> {
+    Some(true)
 }
 
 mod private {
-    pub fn default_string<C>(_: &C) -> String {
-        String::from("bar")
+    pub fn default_string<C>(_: &C) -> Option<String> {
+        Some("bar".into())
     }
 }
 

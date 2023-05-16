@@ -86,12 +86,12 @@ pub struct Context {
     root: PathBuf,
 }
 
-fn default_count(ctx: &Context) -> usize {
-    ctx.count * 2
+fn default_count(ctx: &Context) -> Option<usize> {
+    Some(ctx.count * 2)
 }
 
-fn default_path(ctx: &Context) -> PathBuf {
-    ctx.root.join("sub")
+fn default_path(ctx: &Context) -> Option<PathBuf> {
+    Some(ctx.root.join("sub"))
 }
 
 #[derive(Debug, Config)]

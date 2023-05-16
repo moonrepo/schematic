@@ -118,7 +118,7 @@ impl<'l> SettingType<'l> {
             },
             SettingType::Value { value, .. } => {
                 if let Some(func) = args.default_fn.as_ref() {
-                    return quote! { Some(#func(context)) };
+                    return quote! { #func(context) };
                 };
 
                 if let Some(string) = args.default_str.as_ref() {
