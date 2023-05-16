@@ -243,7 +243,7 @@ impl<'l> SettingType<'l> {
                     };
 
                     Some(quote! {
-                        if let Err(error) = #func(setting) {
+                        if let Err(error) = #func(setting, self) {
                             errors.push(schematic::ValidateErrorType::setting(
                                 path.join_key(#name_quoted),
                                 error,
