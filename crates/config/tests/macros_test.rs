@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
 use schematic::*;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::PathBuf,
+};
 
 fn default_bool() -> bool {
     true
@@ -78,6 +81,10 @@ struct Nested {
     two: Option<ValueTypes>,
     #[setting(nested)]
     list: Vec<ValueTypes>,
+    #[setting(nested)]
+    map: HashMap<String, ValueTypes>,
+    #[setting(nested)]
+    map2: Option<BTreeMap<usize, ValueTypes>>,
     // Invalid
     // #[setting(nested)]
     // two: bool,
@@ -96,6 +103,8 @@ struct Serde {
 }
 
 fn merge_basic(_: String, _: String) -> Option<String> {
+    let map = HashMap::<String, String>::new();
+    let map2: HashMap<String, String> = map.into_iter().map(|(k, v)| (k, v)).collect();
     None
 }
 

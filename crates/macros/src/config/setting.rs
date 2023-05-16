@@ -167,6 +167,10 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_validate_statement(&self) -> TokenStream {
+        if self.args.validate.is_none() {
+            return quote! {};
+        }
+
         let name = self.name;
         let validator = self
             .value_type
@@ -190,31 +194,7 @@ impl<'l> Setting<'l> {
 impl<'l> ToTokens for Setting<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
-        let value = self.value;
-
-        // Wrap value based on current state
-        let value = match (self.is_nested(), self.is_optional()) {
-            (true, true) => {
-                // let inner_value = self.inner_value.unwrap();
-                // let value_cast = quote! { <#inner_value as schematic::Config>::Partial };
-
-                // if let Some(vec_value) = unwrap_vec(inner_value) {
-                //     quote! { Option<Vec<#value_cast>> }
-                // } else {
-                //     quote! { Option<#value_cast> }
-                // }
-                quote! { None }
-            }
-            (true, false) => {
-                quote! { Option<<#value as schematic::Config>::Partial> }
-            }
-            (false, true) => {
-                quote! { #value }
-            }
-            (false, false) => {
-                quote! { Option<#value> }
-            }
-        };
+        let value = &self.value_type;
 
         // Gather all attributes
         let serde_meta = self.args.get_serde_meta();
