@@ -99,6 +99,13 @@ impl<'l> SettingType<'l> {
         }
     }
 
+    pub fn get_inner_type(&self) -> Option<&'l Type> {
+        match self {
+            SettingType::Nested { .. } => None,
+            SettingType::Value { value, .. } => Some(value),
+        }
+    }
+
     pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::Nested { path, .. } => {

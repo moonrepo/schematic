@@ -103,8 +103,6 @@ struct Serde {
 }
 
 fn merge_basic(_: String, _: String) -> Option<String> {
-    let map = HashMap::<String, String>::new();
-    let map2: HashMap<String, String> = map.into_iter().map(|(k, v)| (k, v)).collect();
     None
 }
 

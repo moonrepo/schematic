@@ -28,25 +28,6 @@ pub fn unwrap_path_type<'l>(
     }
 }
 
-// pub fn unwrap_hashmap(ty: &syn::Type) -> Option<&syn::Type> {
-//     unwrap_path_type(ty, &[&["HashMap"], &["std", "collections", "HashMap"]])
-// }
-
-pub fn unwrap_vec(ty: &syn::Type) -> Option<&syn::Type> {
-    let Some(args) = unwrap_path_type(ty, &[&["Vec"], &["std", "vec", "Vec"]]) else {
-        return None;
-    };
-
-    if args.args.len() != 1 {
-        return None;
-    }
-
-    match &args.args[0] {
-        syn::GenericArgument::Type(t) => Some(t),
-        _ => None,
-    }
-}
-
 pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
     let Some(args) = unwrap_path_type(
         ty,

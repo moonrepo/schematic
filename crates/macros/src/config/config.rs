@@ -56,17 +56,13 @@ impl<'l> Config<'l> {
 
         // Loop again and generate the necessary code
         for setting in &self.settings {
-            if setting.is_extendable() {
+            if !setting.is_extendable() {
+                continue;
+            }
+
+            if let Some(inner_type) = setting.value_type.get_inner_type() {
                 let name = setting.name;
-                let value = format!(
-                    "{}",
-                    // TODO
-                    // setting
-                    //     .inner_value
-                    //     .unwrap_or(setting.value)
-                    //     .to_token_stream()
-                    setting.value.to_token_stream()
-                );
+                let value = format!("{}", inner_type.to_token_stream());
 
                 // Janky but works!
                 match value.as_str() {
@@ -91,9 +87,11 @@ impl<'l> Config<'l> {
                             }
                         };
                     }
-                    _ => {
+                    inner => {
+                        let inner = inner.to_string();
+
                         panic!(
-                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extend` for {name}."
+                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extend` for {name}. Received `{inner}`."
                         );
                     }
                 };
