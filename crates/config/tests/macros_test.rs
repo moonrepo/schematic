@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 
 use schematic::*;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::PathBuf,
+};
 
 fn default_bool() -> bool {
     true
@@ -76,6 +79,12 @@ struct Nested {
     one: ValueTypes,
     #[setting(nested)]
     two: Option<ValueTypes>,
+    #[setting(nested)]
+    list: Vec<ValueTypes>,
+    #[setting(nested)]
+    map: HashMap<String, ValueTypes>,
+    #[setting(nested)]
+    map2: Option<BTreeMap<String, ValueTypes>>,
     // Invalid
     // #[setting(nested)]
     // two: bool,

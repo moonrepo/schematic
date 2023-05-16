@@ -1,6 +1,11 @@
+use syn::AngleBracketedGenericArguments;
+
 // Thanks to confique for the implementation:
 // https://github.com/LukasKalbertodt/confique/blob/main/macro/src/util.rs
-pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
+pub fn unwrap_path_type<'l>(
+    ty: &'l syn::Type,
+    lookups: &[&[&str]],
+) -> Option<&'l AngleBracketedGenericArguments> {
     let ty = match ty {
         syn::Type::Path(path) => path,
         _ => return None,
@@ -10,22 +15,29 @@ pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
         return None;
     }
 
-    let valid_paths = [
-        &["Option"] as &[_],
-        &["std", "option", "Option"],
-        &["core", "option", "Option"],
-    ];
-
-    if !valid_paths
+    if !lookups
         .iter()
         .any(|vp| ty.path.segments.iter().map(|s| &s.ident).eq(*vp))
     {
         return None;
     }
 
-    let args = match &ty.path.segments.last().unwrap().arguments {
-        syn::PathArguments::AngleBracketed(args) => args,
-        _ => return None,
+    match &ty.path.segments.last().unwrap().arguments {
+        syn::PathArguments::AngleBracketed(args) => Some(args),
+        _ => None,
+    }
+}
+
+pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
+    let Some(args) = unwrap_path_type(
+        ty,
+        &[
+            &["Option"],
+            &["std", "option", "Option"],
+            &["core", "option", "Option"],
+        ],
+    ) else {
+        return None;
     };
 
     if args.args.len() != 1 {
