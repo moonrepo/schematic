@@ -133,17 +133,7 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_from_statement(&self) -> TokenStream {
-        let name = self.name;
-
-        // let struct_name = self.get_nested_struct_name();
-
-        // if self.is_optional() {
-        //     quote! { partial.#name.map(#struct_name::from_partial) }
-        // } else {
-        //     quote! { #struct_name::from_partial(partial.#name.unwrap_or_default()) }
-        // }
-
-        self.value_type.get_from_value(name, &self.args)
+        self.value_type.get_from_value(self.name, &self.args)
     }
 
     pub fn get_merge_statement(&self) -> TokenStream {
@@ -167,14 +157,13 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_validate_statement(&self) -> TokenStream {
-        if self.args.validate.is_none() {
-            return quote! {};
-        }
-
         let name = self.name;
-        let validator = self
+
+        let Some(validator) = self
             .value_type
-            .get_validate_statement(self.name, &self.args);
+            .get_validate_statement(self.name, &self.args) else {
+            return quote! {};
+        };
 
         if self.is_optional() {
             quote! {

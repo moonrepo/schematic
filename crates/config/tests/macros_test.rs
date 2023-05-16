@@ -84,7 +84,7 @@ struct Nested {
     #[setting(nested)]
     map: HashMap<String, ValueTypes>,
     #[setting(nested)]
-    map2: Option<BTreeMap<usize, ValueTypes>>,
+    map2: Option<BTreeMap<String, ValueTypes>>,
     // Invalid
     // #[setting(nested)]
     // two: bool,

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
+use std::collections::HashMap;
 
 fn test_string(value: &String) -> Result<(), ValidateError> {
     if value.is_empty() {
@@ -163,5 +164,28 @@ fn errors_for_optional_field() {
     assert_eq!(
         error.to_full_string(),
         "Failed to validate config. \n  string1: invalid string"
+    )
+}
+
+#[derive(Config)]
+pub struct ValidateCollections {
+    #[setting(nested)]
+    list: Vec<NestedValidate>,
+    #[setting(nested)]
+    map: HashMap<String, NestedValidate>,
+}
+
+#[test]
+fn errors_for_nested_field_collections() {
+    let error = ConfigLoader::<ValidateCollections>::new(SourceFormat::Json)
+        .code(r#"{ "list": [ {"string2": "abc"} ], "map": { "key": {"string2": "abc"} } }"#)
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert_eq!(
+        error.to_full_string(),
+        "Failed to validate config. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
     )
 }

@@ -203,15 +203,31 @@ impl<'l> SettingType<'l> {
         }
     }
 
-    pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+    pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
         let name_quoted = format!("{}", name);
 
         match self {
-            SettingType::Nested { .. } => {
-                quote! {
-                    if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
-                        errors.push(schematic::ValidateErrorType::nested(nested_error));
-                    }
+            SettingType::Nested { path, .. } => {
+                match NestedType::from(path.path.segments.last().unwrap()) {
+                    NestedType::None(_) => Some(quote! {
+                        if let Err(nested_error) = setting.validate_with_path(path.join_key(#name_quoted)) {
+                            errors.push(schematic::ValidateErrorType::nested(nested_error));
+                        }
+                    }),
+                    NestedType::Set(_, _) => Some(quote! {
+                        for (i, item) in setting.iter().enumerate() {
+                            if let Err(nested_error) = item.validate_with_path(path.join_key(#name_quoted).join_index(i)) {
+                                errors.push(schematic::ValidateErrorType::nested(nested_error));
+                            }
+                        }
+                    }),
+                    NestedType::Map(_, _, _) => Some(quote! {
+                        for (key, value) in setting {
+                            if let Err(nested_error) = value.validate_with_path(path.join_key(#name_quoted).join_key(key)) {
+                                errors.push(schematic::ValidateErrorType::nested(nested_error));
+                            }
+                        }
+                    }),
                 }
             }
             SettingType::Value { .. } => {
@@ -226,16 +242,16 @@ impl<'l> SettingType<'l> {
                         }
                     };
 
-                    quote! {
+                    Some(quote! {
                         if let Err(error) = #func(setting) {
                             errors.push(schematic::ValidateErrorType::setting(
                                 path.join_key(#name_quoted),
                                 error,
                             ));
                         }
-                    }
+                    })
                 } else {
-                    quote! {}
+                    None
                 }
             }
         }
