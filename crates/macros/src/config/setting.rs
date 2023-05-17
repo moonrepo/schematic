@@ -1,8 +1,9 @@
 use crate::config::setting_type::SettingType;
+use crate::utils::extract_comment;
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Expr, ExprLit, ExprPath, Field, Lit, Meta, Type};
+use syn::{Expr, ExprPath, Field, Type};
 
 // #[setting()]
 #[derive(FromAttributes, Default)]
@@ -72,7 +73,7 @@ impl<'l> Setting<'l> {
         }
 
         let setting = Setting {
-            comment: extract_comment(field),
+            comment: extract_comment(&field.attrs),
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
             value_type: if args.nested {
@@ -198,22 +199,4 @@ impl<'l> ToTokens for Setting<'l> {
             pub #name: #value,
         });
     }
-}
-
-fn extract_comment(field: &Field) -> Option<String> {
-    for attr in &field.attrs {
-        if let Meta::NameValue(meta) = &attr.meta {
-            if meta.path.is_ident("doc") {
-                if let Expr::Lit(ExprLit {
-                    lit: Lit::Str(value),
-                    ..
-                }) = &meta.value
-                {
-                    return Some(value.value());
-                }
-            }
-        }
-    }
-
-    None
 }

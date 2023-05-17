@@ -1,4 +1,22 @@
-use syn::AngleBracketedGenericArguments;
+use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta};
+
+pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
+    for attr in attrs {
+        if let Meta::NameValue(meta) = &attr.meta {
+            if meta.path.is_ident("doc") {
+                if let Expr::Lit(ExprLit {
+                    lit: Lit::Str(value),
+                    ..
+                }) = &meta.value
+                {
+                    return Some(value.value());
+                }
+            }
+        }
+    }
+
+    None
+}
 
 // Thanks to confique for the implementation:
 // https://github.com/LukasKalbertodt/confique/blob/main/macro/src/util.rs

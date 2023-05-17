@@ -9,6 +9,7 @@ use syn::ExprPath;
 #[darling(default, attributes(config), supports(struct_named))]
 pub struct ConfigArgs {
     context: Option<ExprPath>,
+    file: Option<String>,
 
     // serde
     rename: Option<String>,
@@ -35,6 +36,7 @@ impl ConfigArgs {
 
 pub struct Config<'l> {
     pub args: ConfigArgs,
+    pub comment: Option<String>,
     pub name: &'l Ident,
     pub settings: Vec<Setting<'l>>,
 }
@@ -104,10 +106,24 @@ impl<'l> Config<'l> {
         quote! {}
     }
 
+    pub fn get_meta_struct(&self) -> TokenStream {
+        let name = format!("{}", self.name);
+
+        let file = match &self.args.file {
+            Some(f) => quote! { Some(#f) },
+            None => quote! { None },
+        };
+
+        quote! {
+            schematic::ConfigMeta {
+                name: #name,
+                file: #file,
+            }
+        }
+    }
+
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
-
-        #[allow(unused_mut)]
         let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
         #[cfg(feature = "json_schema")]
@@ -119,6 +135,10 @@ impl<'l> Config<'l> {
         {
             attrs.push(quote! { #[derive(ts_rs::TS)] });
         }
+
+        if let Some(cmt) = &self.comment {
+            attrs.push(quote! { #[doc = #cmt] });
+        };
 
         attrs
     }
@@ -187,10 +207,14 @@ impl<'l> ToTokens for Config<'l> {
 
         tokens.extend(token);
 
+        let meta = self.get_meta_struct();
+
         let token = quote! {
             #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
+
+                const META: schematic::ConfigMeta = #meta;
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {
