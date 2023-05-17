@@ -75,6 +75,11 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
+    pub fn label(&mut self, label: String) -> &mut Self {
+        self.label = label;
+        self
+    }
+
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
 
