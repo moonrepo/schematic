@@ -1,3 +1,4 @@
+use crate::config::PartialConfig;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     hash::Hash,
@@ -83,6 +84,14 @@ where
     for item in next {
         prev.insert(item);
     }
+
+    Some(prev)
+}
+
+/// Merge the next [PartialConfig] into the previous [PartialConfig], using the merging
+/// strategies defined by the [Config] derive implementation.
+pub fn merge_partial<T: PartialConfig>(mut prev: T, next: T) -> Option<T> {
+    prev.merge(next);
 
     Some(prev)
 }

@@ -22,6 +22,8 @@ pub struct MergeFunc {
     vector: Vec<usize>,
     #[setting(merge = merge::discard)]
     map: HashMap<String, usize>,
+    #[setting(nested, merge = merge::merge_partial)]
+    nested: MergeNormal,
 }
 
 #[test]
@@ -49,12 +51,14 @@ fn custom_merge_with_funcs() {
         string: Some("foo".into()),
         vector: Some(vec![1, 2, 3]),
         map: Some(HashMap::from_iter([("a".into(), 1)])),
+        nested: None,
     };
 
     base.merge(PartialMergeFunc {
         string: Some("bar".into()),
         vector: Some(vec![4, 5, 6]),
         map: Some(HashMap::from_iter([("b".into(), 2)])),
+        nested: None,
     });
 
     assert_eq!(base.string.unwrap(), "foo-bar");
