@@ -36,6 +36,7 @@ impl ConfigArgs {
 
 pub struct Config<'l> {
     pub args: ConfigArgs,
+    pub comment: Option<String>,
     pub name: &'l Ident,
     pub settings: Vec<Setting<'l>>,
 }
@@ -123,8 +124,6 @@ impl<'l> Config<'l> {
 
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
         let serde_meta = self.args.get_serde_meta();
-
-        #[allow(unused_mut)]
         let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
         #[cfg(feature = "json_schema")]
@@ -136,6 +135,10 @@ impl<'l> Config<'l> {
         {
             attrs.push(quote! { #[derive(ts_rs::TS)] });
         }
+
+        if let Some(cmt) = &self.comment {
+            attrs.push(quote! { #[doc = #cmt] });
+        };
 
         attrs
     }

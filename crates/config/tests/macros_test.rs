@@ -178,6 +178,7 @@ struct Validations {
     nested2: Option<NestedValidations>,
 }
 
+/// Container comment.
 #[derive(Config)]
 struct Comments {
     // Normal
