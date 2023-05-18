@@ -58,7 +58,7 @@ fn errors_for_nested_field() {
 fn test_string_path<T, C>(_: &String, _: &T, _: &C) -> Result<(), ValidateError> {
     Err(ValidateError::with_segments(
         "invalid string",
-        vec![Segment::Index(1), Segment::Key("foo".to_owned())],
+        [Segment::Index(1), Segment::Key("foo".to_owned())],
     ))
 }
 

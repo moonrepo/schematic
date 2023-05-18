@@ -95,13 +95,16 @@ impl ValidateError {
     }
 
     pub fn with_segment<T: AsRef<str>>(message: T, segment: Segment) -> Self {
-        Self::with_segments(message, vec![segment])
+        Self::with_segments(message, [segment])
     }
 
-    pub fn with_segments<T: AsRef<str>>(message: T, segments: Vec<Segment>) -> Self {
+    pub fn with_segments<T: AsRef<str>, I>(message: T, segments: I) -> Self
+    where
+        I: IntoIterator<Item = Segment>,
+    {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: Some(SettingPath::new(segments)),
+            path: Some(SettingPath::new(segments.into_iter().collect())),
         }
     }
 }

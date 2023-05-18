@@ -5,6 +5,7 @@ edition = "2021"
 license = "MIT"
 description = "derive(Config)"
 repository = "https://github.com/moonrepo/schematic"
+readme = "../../README.md"
 
 [dependencies]
 schematic_macros = { version = "0.2.3", path = "../macros" }
