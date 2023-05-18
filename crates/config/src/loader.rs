@@ -168,6 +168,9 @@ impl<T: Config> ConfigLoader<T> {
             merged.merge(layer);
         }
 
+        // Last layer should be environment variables
+        merged.merge(T::Partial::env_values()?);
+
         Ok(merged)
     }
 

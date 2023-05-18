@@ -170,6 +170,7 @@ impl<'l> ToTokens for Config<'l> {
         // Generate implementations
         let mut field_names = vec![];
         let mut default_stmts = vec![];
+        let mut env_stmts = vec![];
         let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
         let mut validate_stmts = vec![];
@@ -178,6 +179,7 @@ impl<'l> ToTokens for Config<'l> {
         for setting in &self.settings {
             field_names.push(setting.name);
             default_stmts.push(setting.get_default_statement());
+            env_stmts.push(setting.get_env_statement());
             from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
             validate_stmts.push(setting.get_validate_statement());
@@ -191,6 +193,12 @@ impl<'l> ToTokens for Config<'l> {
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
                     Ok(Self {
                         #(#field_names: #default_stmts),*
+                    })
+                }
+
+                 fn env_values() -> Result<Self, schematic::ConfigError> {
+                    Ok(Self {
+                        #(#field_names: #env_stmts),*
                     })
                 }
 

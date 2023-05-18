@@ -116,21 +116,11 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_default_statement(&self) -> TokenStream {
-        let value = self.value_type.get_default_value(self.name, &self.args);
+        self.value_type.get_default_value(self.name, &self.args)
+    }
 
-        match (&self.args.env, &self.args.parse_env) {
-            (Some(env), Some(parse_env)) => {
-                quote! {
-                    schematic::internal::parse_from_env_var(#env, #parse_env, #value)?
-                }
-            }
-            (Some(env), None) => {
-                quote! {
-                    schematic::internal::default_from_env_var(#env, #value)?
-                }
-            }
-            _ => value,
-        }
+    pub fn get_env_statement(&self) -> TokenStream {
+        self.value_type.get_env_value(&self.args)
     }
 
     pub fn get_from_statement(&self) -> TokenStream {
