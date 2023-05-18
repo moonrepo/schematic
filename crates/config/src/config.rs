@@ -15,6 +15,8 @@ pub trait PartialConfig: Default + DeserializeOwned + Sized {
 
     fn default_values(context: &Self::Context) -> Result<Self, ConfigError>;
 
+    fn env_values() -> Result<Self, ConfigError>;
+
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
     fn merge(&mut self, next: Self);

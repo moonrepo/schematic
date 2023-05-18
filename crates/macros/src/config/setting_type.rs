@@ -149,6 +149,22 @@ impl<'l> SettingType<'l> {
         }
     }
 
+    pub fn get_env_value(&self, args: &SettingArgs) -> TokenStream {
+        match (&args.env, &args.parse_env) {
+            (Some(env), Some(parse_env)) => {
+                quote! {
+                    schematic::internal::parse_from_env_var(#env, #parse_env)?
+                }
+            }
+            (Some(env), None) => {
+                quote! {
+                    schematic::internal::default_from_env_var(#env)?
+                }
+            }
+            _ => quote! { None },
+        }
+    }
+
     pub fn get_from_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::Nested {

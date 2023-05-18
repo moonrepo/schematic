@@ -90,3 +90,18 @@ fn errors_on_split_parse_fail() {
         .load()
         .unwrap();
 }
+
+#[test]
+#[serial]
+fn env_var_takes_precedence() {
+    reset_vars();
+    env::set_var("ENV_STRING", "foo");
+
+    let result = ConfigLoader::<EnvVars>::new(SourceFormat::Yaml)
+        .code("string: bar")
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "foo");
+}
