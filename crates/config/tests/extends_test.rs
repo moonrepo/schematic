@@ -49,8 +49,13 @@ fn extends_from_chain_in_order() {
     assert_eq!(result.config.value, vec![3, 2, 1]);
 
     assert_eq!(
-        result.sources,
+        result
+            .layers
+            .into_iter()
+            .map(|l| l.source)
+            .collect::<Vec<_>>(),
         vec![
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -59,7 +64,8 @@ fn extends_from_chain_in_order() {
             },
             Source::File {
                 path: root.join("./base.yml")
-            }
+            },
+            Source::Env,
         ]
     );
 }
@@ -78,8 +84,13 @@ fn extends_from_chain_in_order_using_list() {
     assert_eq!(result.config.value, vec![3, 2, 4, 1]);
 
     assert_eq!(
-        result.sources,
+        result
+            .layers
+            .into_iter()
+            .map(|l| l.source)
+            .collect::<Vec<_>>(),
         vec![
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -91,7 +102,8 @@ fn extends_from_chain_in_order_using_list() {
             },
             Source::File {
                 path: root.join("./base-list.yml")
-            }
+            },
+            Source::Env,
         ]
     );
 }
@@ -110,8 +122,13 @@ fn extends_from_chain_in_order_using_both_enum() {
     assert_eq!(result.config.value, vec![3, 2, 3, 2, 4, 1]);
 
     assert_eq!(
-        result.sources,
+        result
+            .layers
+            .into_iter()
+            .map(|l| l.source)
+            .collect::<Vec<_>>(),
         vec![
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -129,7 +146,8 @@ fn extends_from_chain_in_order_using_both_enum() {
             },
             Source::File {
                 path: root.join("./base-both.yml")
-            }
+            },
+            Source::Env,
         ]
     );
 }
@@ -148,9 +166,17 @@ fn extends_from_optional() {
     assert_eq!(result.config.value, vec![3]);
 
     assert_eq!(
-        result.sources,
-        vec![Source::File {
-            path: root.join("./string2.yml")
-        }]
+        result
+            .layers
+            .into_iter()
+            .map(|l| l.source)
+            .collect::<Vec<_>>(),
+        vec![
+            Source::Defaults,
+            Source::File {
+                path: root.join("./string2.yml")
+            },
+            Source::Env,
+        ]
     );
 }

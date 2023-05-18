@@ -1,8 +1,9 @@
 use miette::Result;
-use schematic::{Config, ConfigLoader, Segment, ValidateError};
+use schematic::{Config, ConfigLoader, ValidateError};
 use serde::Serialize;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
+    // use schematic::Segment;
     // Err(ValidateError::with_segments(
     //     "This string is ugly!",
     //     vec![Segment::Index(1), Segment::Key("foo".to_owned())],
