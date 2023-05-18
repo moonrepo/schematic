@@ -11,7 +11,7 @@ readme = "../../README.md"
 schematic_macros = { version = "0.2.3", path = "../macros" }
 garde = { version = "0.11.2", default-features = false, features = ["pattern"] }
 miette = { workspace = true }
-reqwest = { version = "0.11.17", default-features = false, features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.11.18", default-features = false, features = ["blocking", "rustls-tls"] }
 serde = { workspace = true }
 serde_path_to_error = "0.1.11"
 starbase_styles = "0.1.7"
@@ -24,7 +24,7 @@ serde_json = { version = "1.0.95", optional = true }
 schemars = { version = "0.8.12", optional = true }
 
 # toml
-toml = { version = "0.7.3", optional = true }
+toml = { version = "0.7.4", optional = true }
 
 # typescript
 ts-rs = { version = "6.2.1", optional = true }
