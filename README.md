@@ -209,8 +209,8 @@ URL. For example:
 
 ```yaml
 extends:
-	- './another/file.yml'
-	- 'https://domain.com/some/other/file.yml'
+  - "./another/file.yml"
+  - "https://domain.com/some/other/file.yml"
 ```
 
 When defining `extend`, we currently support 3 types of patterns. The first is with a single string,
@@ -249,7 +249,35 @@ struct AppConfig {
 
 ### Merge strategies
 
-TODO
+A common requirement for configuration is to merge multiple sources/layers into a final result. By
+default schematic will replace the previous value with the next value if the next value is `Some`,
+but sometimes you want far more control, like shallow merging or deep merging collections.
+
+This can be achieved with the `merge` attribute field, which requires a path to a function to call.
+
+```rust
+#[derive(Config)]
+struct AppConfig {
+	#[setting(merge = schematic::merge::append_vec)]
+	allowed_hosts: Vec<String>,
+}
+```
+
+> We provide a handful of built-in merge functions in the
+> [`merge` module](https://docs.rs/schematic/latest/schematic/merge/index.html).
+
+When defining a custom merge function, the previous and next values are passed as arguments, and the
+function must return an optional merged result. If `None` is provided, either value will be used.
+
+Here's an example of the merge function above.
+
+```rust
+pub fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>) -> Option<Vec<T>> {
+    prev.extend(next);
+
+    Some(prev)
+}
+```
 
 ### Validation rules
 

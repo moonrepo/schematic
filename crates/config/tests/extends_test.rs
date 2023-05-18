@@ -65,7 +65,7 @@ fn extends_from_chain_in_order() {
             Source::File {
                 path: root.join("./base.yml")
             },
-            Source::Env,
+            Source::EnvVars,
         ]
     );
 }
@@ -103,7 +103,7 @@ fn extends_from_chain_in_order_using_list() {
             Source::File {
                 path: root.join("./base-list.yml")
             },
-            Source::Env,
+            Source::EnvVars,
         ]
     );
 }
@@ -147,7 +147,7 @@ fn extends_from_chain_in_order_using_both_enum() {
             Source::File {
                 path: root.join("./base-both.yml")
             },
-            Source::Env,
+            Source::EnvVars,
         ]
     );
 }
@@ -176,7 +176,7 @@ fn extends_from_optional() {
             Source::File {
                 path: root.join("./string2.yml")
             },
-            Source::Env,
+            Source::EnvVars,
         ]
     );
 }

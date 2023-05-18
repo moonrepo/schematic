@@ -137,7 +137,7 @@ impl<T: Config> ConfigLoader<T> {
         // Last layer should be environment variables
         layers.push(Layer {
             partial: T::Partial::env_values()?,
-            source: Source::Env,
+            source: Source::EnvVars,
         });
 
         Ok(layers)

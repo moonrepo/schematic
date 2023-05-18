@@ -103,11 +103,11 @@ impl SourceFormat {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
+#[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     Code { code: String },
     Defaults,
-    Env,
+    EnvVars,
     File { path: PathBuf },
     Url { url: String },
 }
