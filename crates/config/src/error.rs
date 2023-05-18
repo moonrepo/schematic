@@ -71,8 +71,6 @@ pub enum ConfigError {
     #[error("Failed to validate {config}")]
     Validator {
         config: String,
-
-        #[diagnostic_source]
         #[source]
         error: ValidatorError,
     },

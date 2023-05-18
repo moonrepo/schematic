@@ -147,8 +147,9 @@ impl ValidateErrorType {
                 };
 
                 list.push(format!(
-                    "{}: {}",
+                    "{}{} {}",
                     color::id(path.to_string()),
+                    color::muted_light(":"),
                     error.message
                 ));
             }
