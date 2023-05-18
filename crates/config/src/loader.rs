@@ -91,8 +91,8 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        let layers = self.parse_into_layers(&self.sources)?;
-        let partial = self.merge_layers(&layers, context)?;
+        let layers = self.extract_layers(&self.sources, context)?;
+        let partial = self.merge_layers(&layers)?;
         let config = T::from_partial(partial);
 
         config
@@ -113,10 +113,34 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        let layers = self.parse_into_layers(&self.sources)?;
-        let partial = self.merge_layers(&layers, context)?;
+        let layers = self.extract_layers(&self.sources, context)?;
+        let partial = self.merge_layers(&layers)?;
 
         Ok(partial)
+    }
+
+    fn extract_layers(
+        &self,
+        sources_to_parse: &[Source],
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<Vec<Layer<T>>, ConfigError> {
+        let mut layers: Vec<Layer<T>> = vec![];
+
+        // First layer should be the defaults
+        layers.push(Layer {
+            partial: T::Partial::default_values(context)?,
+            source: Source::Defaults,
+        });
+
+        layers.extend(self.parse_into_layers(sources_to_parse)?);
+
+        // Last layer should be environment variables
+        layers.push(Layer {
+            partial: T::Partial::env_values()?,
+            source: Source::Env,
+        });
+
+        Ok(layers)
     }
 
     fn extend_additional_layers(
@@ -153,24 +177,14 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources)
     }
 
-    fn merge_layers(
-        &self,
-        layers: &[Layer<T>],
-        context: &<T::Partial as PartialConfig>::Context,
-    ) -> Result<T::Partial, ConfigError> {
+    fn merge_layers(&self, layers: &[Layer<T>]) -> Result<T::Partial, ConfigError> {
         // All `None` by default
         let mut merged = T::Partial::default();
-
-        // First layer should be the defaults
-        merged.merge(T::Partial::default_values(context)?);
 
         // Then apply other layers in order
         for layer in layers {
             merged.merge(layer.partial.clone());
         }
-
-        // Last layer should be environment variables
-        merged.merge(T::Partial::env_values()?);
 
         Ok(merged)
     }

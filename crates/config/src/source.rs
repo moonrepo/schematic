@@ -77,6 +77,8 @@ impl SourceFormat {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Source {
     Code { code: String },
+    Defaults,
+    Env,
     File { path: PathBuf },
     Url { url: String },
 }
@@ -157,6 +159,7 @@ impl Source {
                     fs::read_to_string(path)?
                 }
                 Source::Url { url } => reqwest::blocking::get(url)?.text()?,
+                _ => unreachable!(),
             })
             .map_err(|error| ConfigError::Parser {
                 config: label.to_owned(),
