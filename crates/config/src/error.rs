@@ -55,6 +55,17 @@ pub enum ConfigError {
     #[error("Failed to download source from URL.")]
     Http(#[from] reqwest::Error),
 
+    // Validator
+    #[diagnostic(code(config::validate::failed))]
+    #[error("Failed to validate {config}")]
+    Validator {
+        config: String,
+
+        #[diagnostic_source]
+        #[source]
+        error: ValidatorError,
+    },
+
     // Parser
     // We can't pass through the original parser error,
     // so we need to duplicate everything here.
@@ -73,17 +84,6 @@ pub enum ConfigError {
 
         #[label("{}", .error)]
         span: Option<SourceSpan>,
-    },
-
-    // Validator
-    #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate {config}")]
-    Validator {
-        config: String,
-
-        #[diagnostic_source]
-        #[source]
-        error: ValidatorError,
     },
 }
 
@@ -109,7 +109,7 @@ impl ConfigError {
             }
             ConfigError::Parser { error, .. } => {
                 push_end();
-                message.push_str(&error);
+                message.push_str(error);
             }
             ConfigError::Validator { error: inner, .. } => {
                 push_end();

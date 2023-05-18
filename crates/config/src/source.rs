@@ -13,12 +13,13 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
 }
 
 fn create_parser_error<T: Display>(
+    source: &str,
     content: &str,
     loc: Option<(usize, usize)>,
     error: &serde_path_to_error::Error<T>,
 ) -> ParserError {
     ParserError {
-        content: NamedSource::new("todo", content.to_owned()),
+        content: NamedSource::new(source, content.to_owned()),
         path: error.path().to_string(),
         span: loc.map(|(line, column)| create_span(content, line, column)),
         error: error.to_string(),
@@ -39,7 +40,7 @@ pub enum SourceFormat {
 }
 
 impl SourceFormat {
-    pub fn parse<D>(&self, content: String) -> Result<D, ParserError>
+    pub fn parse<D>(&self, content: String, source: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -50,6 +51,7 @@ impl SourceFormat {
 
                 serde_path_to_error::deserialize(de).map_err(|error| {
                     create_parser_error(
+                        source,
                         &content,
                         Some((error.inner().line(), error.inner().column())),
                         &error,
@@ -62,7 +64,7 @@ impl SourceFormat {
                 let de = toml::Deserializer::new(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new("todo", content.to_owned()),
+                    content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
                     span: error.inner().span().map(|s| s.into()),
                     error: error.to_string(),
@@ -78,18 +80,16 @@ impl SourceFormat {
                 let mut result: serde_yaml::Value =
                     serde_path_to_error::deserialize(de).map_err(|error| {
                         create_parser_error(
+                            source,
                             &content,
-                            error
-                                .inner()
-                                .location()
-                                .map(|s| (s.line(), s.column()).into()),
+                            error.inner().location().map(|s| (s.line(), s.column())),
                             &error,
                         )
                     })?;
 
                 // Applies anchors/aliases/references
                 result.apply_merge().map_err(|error| ParserError {
-                    content: NamedSource::new("todo", content.to_owned()),
+                    content: NamedSource::new(source, content.to_owned()),
                     path: String::new(),
                     span: error.location().map(|s| (s.line(), s.column()).into()),
                     error: error.to_string(),
@@ -100,11 +100,9 @@ impl SourceFormat {
 
                 serde_path_to_error::deserialize(de).map_err(|error| {
                     create_parser_error(
+                        source,
                         &content,
-                        error
-                            .inner()
-                            .location()
-                            .map(|s| (s.line(), s.column()).into()),
+                        error.inner().location().map(|s| (s.line(), s.column())),
                         &error,
                     )
                 })?
@@ -190,26 +188,26 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        format
-            .parse(match self {
-                Source::Code { code } => code.to_owned(),
-                Source::File { path } => {
-                    if !path.exists() {
-                        return Err(ConfigError::MissingFile(path.to_path_buf()));
-                    }
-
-                    fs::read_to_string(path)?
+        let result = match self {
+            Source::Code { code } => format.parse(code.to_owned(), "code"),
+            Source::File { path } => {
+                if !path.exists() {
+                    return Err(ConfigError::MissingFile(path.to_path_buf()));
                 }
-                Source::Url { url } => reqwest::blocking::get(url)?.text()?,
-                _ => unreachable!(),
-            })
-            .map_err(|error| ConfigError::Parser {
-                config: label.to_owned(),
-                content: error.content,
-                error: error.error,
-                path: error.path,
-                span: error.span,
-            })
+
+                format.parse(fs::read_to_string(path)?, path.to_str().unwrap())
+            }
+            Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
+            _ => unreachable!(),
+        };
+
+        result.map_err(|error| ConfigError::Parser {
+            config: label.to_owned(),
+            content: error.content,
+            error: error.error,
+            path: error.path,
+            span: error.span,
+        })
     }
 }
 
