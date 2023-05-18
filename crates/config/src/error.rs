@@ -1,5 +1,5 @@
 use crate::validator::ValidatorError;
-use miette::Diagnostic;
+use miette::{Diagnostic, NamedSource, SourceSpan};
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -56,14 +56,23 @@ pub enum ConfigError {
     Http(#[from] reqwest::Error),
 
     // Parser
+    // We can't pass through the original parser error,
+    // so we need to duplicate everything here.
+    // https://github.com/zkat/miette/issues/172
     #[diagnostic(code(config::parse::failed))]
-    #[error("Failed to parse {config}")]
+    #[error("Failed to parse {config}, invalid setting {}.\n", .path.style(Style::Id))]
     Parser {
         config: String,
 
-        #[diagnostic_source]
-        #[source]
-        error: ParserError,
+        #[source_code]
+        content: NamedSource,
+
+        error: String,
+
+        path: String,
+
+        #[label("{}", .error)]
+        span: Option<SourceSpan>,
     },
 
     // Validator
@@ -98,9 +107,9 @@ impl ConfigError {
                 push_end();
                 message.push_str(&inner.to_string());
             }
-            ConfigError::Parser { error: inner, .. } => {
+            ConfigError::Parser { error, .. } => {
                 push_end();
-                message.push_str(&inner.to_full_string());
+                message.push_str(&error);
             }
             ConfigError::Validator { error: inner, .. } => {
                 push_end();
@@ -114,63 +123,78 @@ impl ConfigError {
 }
 
 #[derive(Error, Debug, Diagnostic)]
-pub enum ParserError {
-    #[cfg(feature = "json")]
-    #[diagnostic(code(parse::json::failed))]
-    #[error("Invalid setting {}", .path.style(Style::Id))]
-    Json {
-        #[source]
-        error: serde_json::Error,
-        path: String,
-    },
+#[error("Invalid setting {}", .path.style(Style::Id))]
+#[diagnostic(severity(Error))]
+pub struct ParserError {
+    #[source_code]
+    pub content: NamedSource,
 
-    #[cfg(feature = "toml")]
-    #[diagnostic(code(parse::toml::failed))]
-    #[error("Invalid setting {}", .path.style(Style::Id))]
-    Toml {
-        #[source]
-        error: toml::de::Error,
-        path: String,
-    },
+    pub error: String,
 
-    #[cfg(feature = "yaml")]
-    #[diagnostic(code(parse::yaml::failed))]
-    #[error("Invalid setting {}", .path.style(Style::Id))]
-    Yaml {
-        #[source]
-        error: serde_yaml::Error,
-        path: String,
-    },
+    pub path: String,
 
-    #[cfg(feature = "yaml")]
-    #[diagnostic(code(parse::yaml::extended))]
-    #[error("Failed to apply YAML anchors and references.")]
-    YamlExtended {
-        #[source]
-        error: serde_yaml::Error,
-    },
+    #[label("{}", .error)]
+    pub span: Option<SourceSpan>,
 }
 
-impl ParserError {
-    pub fn to_full_string(&self) -> String {
-        let mut message = self.to_string();
-        message.push_str("\n  ");
+// #[derive(Error, Debug, Diagnostic)]
+// pub enum ParserError {
+//     #[cfg(feature = "json")]
+//     #[diagnostic(code(parse::json::failed))]
+//     #[error("Invalid setting {}", .path.style(Style::Id))]
+//     Json {
+//         #[source]
+//         error: serde_json::Error,
+//         path: String,
+//     },
 
-        match self {
-            #[cfg(feature = "json")]
-            ParserError::Json { error, .. } => {
-                message.push_str(&error.to_string());
-            }
-            #[cfg(feature = "toml")]
-            ParserError::Toml { error, .. } => {
-                message.push_str(error.message());
-            }
-            #[cfg(feature = "yaml")]
-            ParserError::Yaml { error, .. } | ParserError::YamlExtended { error } => {
-                message.push_str(&error.to_string());
-            }
-        };
+//     #[cfg(feature = "toml")]
+//     #[diagnostic(code(parse::toml::failed))]
+//     #[error("Invalid setting {}", .path.style(Style::Id))]
+//     Toml {
+//         #[source]
+//         error: toml::de::Error,
+//         path: String,
+//     },
 
-        message
-    }
-}
+//     #[cfg(feature = "yaml")]
+//     #[diagnostic(code(parse::yaml::failed))]
+//     #[error("Invalid setting {}", .path.style(Style::Id))]
+//     Yaml {
+//         #[source]
+//         error: serde_yaml::Error,
+//         path: String,
+//     },
+
+//     #[cfg(feature = "yaml")]
+//     #[diagnostic(code(parse::yaml::extended))]
+//     #[error("Failed to apply YAML anchors and references.")]
+//     YamlExtended {
+//         #[source]
+//         error: serde_yaml::Error,
+//     },
+// }
+
+// impl ParserError {
+//     pub fn to_full_string(&self) -> String {
+//         let mut message = self.to_string();
+//         message.push_str("\n  ");
+
+//         match self {
+//             #[cfg(feature = "json")]
+//             ParserError::Json { error, .. } => {
+//                 message.push_str(&error.to_string());
+//             }
+//             #[cfg(feature = "toml")]
+//             ParserError::Toml { error, .. } => {
+//                 message.push_str(error.message());
+//             }
+//             #[cfg(feature = "yaml")]
+//             ParserError::Yaml { error, .. } | ParserError::YamlExtended { error, .. } => {
+//                 message.push_str(&error.to_string());
+//             }
+//         };
+
+//         message
+//     }
+// }

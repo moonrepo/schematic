@@ -1,7 +1,29 @@
 use crate::error::{ConfigError, ParserError};
+use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::{de::DeserializeOwned, Serialize};
+use std::fmt::Display;
 use std::fs;
 use std::path::PathBuf;
+
+fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
+    let offset = SourceOffset::from_location(content, line, column).offset();
+    let length = 0;
+
+    (offset, length).into()
+}
+
+fn create_parser_error<T: Display>(
+    content: &str,
+    loc: Option<(usize, usize)>,
+    error: &serde_path_to_error::Error<T>,
+) -> ParserError {
+    ParserError {
+        content: NamedSource::new("todo", content.to_owned()),
+        path: error.path().to_string(),
+        span: loc.map(|(line, column)| create_span(content, line, column)),
+        error: error.to_string(),
+    }
+}
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -26,9 +48,12 @@ impl SourceFormat {
             SourceFormat::Json => {
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Json {
-                    path: error.path().to_string(),
-                    error: error.into_inner(),
+                serde_path_to_error::deserialize(de).map_err(|error| {
+                    create_parser_error(
+                        &content,
+                        Some((error.inner().line(), error.inner().column())),
+                        &error,
+                    )
                 })?
             }
 
@@ -36,9 +61,11 @@ impl SourceFormat {
             SourceFormat::Toml => {
                 let de = toml::Deserializer::new(&content);
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Toml {
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new("todo", content.to_owned()),
                     path: error.path().to_string(),
-                    error: error.into_inner(),
+                    span: error.inner().span().map(|s| s.into()),
+                    error: error.to_string(),
                 })?
             }
 
@@ -49,22 +76,37 @@ impl SourceFormat {
                 // First pass, convert string to value
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
-                    serde_path_to_error::deserialize(de).map_err(|error| ParserError::Yaml {
-                        path: error.path().to_string(),
-                        error: error.into_inner(),
+                    serde_path_to_error::deserialize(de).map_err(|error| {
+                        create_parser_error(
+                            &content,
+                            error
+                                .inner()
+                                .location()
+                                .map(|s| (s.line(), s.column()).into()),
+                            &error,
+                        )
                     })?;
 
                 // Applies anchors/aliases/references
-                result
-                    .apply_merge()
-                    .map_err(|error| ParserError::YamlExtended { error })?;
+                result.apply_merge().map_err(|error| ParserError {
+                    content: NamedSource::new("todo", content.to_owned()),
+                    path: String::new(),
+                    span: error.location().map(|s| (s.line(), s.column()).into()),
+                    error: error.to_string(),
+                })?;
 
                 // Second pass, convert value to struct
                 let de = result.into_deserializer();
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Yaml {
-                    path: error.path().to_string(),
-                    error: error.into_inner(),
+                serde_path_to_error::deserialize(de).map_err(|error| {
+                    create_parser_error(
+                        &content,
+                        error
+                            .inner()
+                            .location()
+                            .map(|s| (s.line(), s.column()).into()),
+                        &error,
+                    )
                 })?
             }
         };
@@ -163,7 +205,10 @@ impl Source {
             })
             .map_err(|error| ConfigError::Parser {
                 config: label.to_owned(),
-                error,
+                content: error.content,
+                error: error.error,
+                path: error.path,
+                span: error.span,
             })
     }
 }
