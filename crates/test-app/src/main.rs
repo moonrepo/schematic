@@ -1,18 +1,19 @@
 use miette::Result;
-use schematic::{Config, ConfigLoader, Segment, ValidateError};
+use schematic::{Config, ConfigLoader, ValidateError};
 use serde::Serialize;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
-    Err(ValidateError::with_segments(
-        "This string is ugly!",
-        vec![Segment::Index(1), Segment::Key("foo".to_owned())],
-    ))
-    // Ok(())
+    // use schematic::Segment;
+    // Err(ValidateError::with_segments(
+    //     "This string is ugly!",
+    //     vec![Segment::Index(1), Segment::Key("foo".to_owned())],
+    // ))
+    Ok(())
 }
 
 fn validate_number<D, C>(_: &usize, _: &D, _: &C) -> Result<(), ValidateError> {
-    Err(ValidateError::new("Nah, we don't accept numbers."))
-    // Ok(())
+    // Err(ValidateError::new("Nah, we don't accept numbers."))
+    Ok(())
 }
 
 #[derive(Debug, Config, Serialize)]
@@ -41,7 +42,7 @@ fn main() -> Result<()> {
         .load()?;
 
     dbg!(&config.config.string);
-    dbg!(&config.sources);
+    dbg!(&config.layers);
 
     println!("{}", serde_json::to_string_pretty(&config).unwrap());
 
