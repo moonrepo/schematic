@@ -94,6 +94,10 @@ impl ValidateError {
         }
     }
 
+    pub fn with_segment<T: AsRef<str>>(message: T, segment: Segment) -> Self {
+        Self::with_segments(message, vec![segment])
+    }
+
     pub fn with_segments<T: AsRef<str>>(message: T, segments: Vec<Segment>) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
