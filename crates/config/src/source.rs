@@ -192,10 +192,7 @@ impl Source {
 
         result.map_err(|error| ConfigError::Parser {
             config: label.to_owned(),
-            content: error.content,
-            error: error.error,
-            path: error.path,
-            span: error.span,
+            error,
         })
     }
 }

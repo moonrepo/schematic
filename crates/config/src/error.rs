@@ -55,6 +55,17 @@ pub enum ConfigError {
     #[error("Failed to download source from URL.")]
     Http(#[from] reqwest::Error),
 
+    // Parser
+    #[diagnostic(code(config::parse::failed))]
+    #[error("Failed to parse {config}")]
+    Parser {
+        config: String,
+
+        #[diagnostic_source]
+        #[source]
+        error: ParserError,
+    },
+
     // Validator
     #[diagnostic(code(config::validate::failed))]
     #[error("Failed to validate {config}")]
@@ -64,26 +75,6 @@ pub enum ConfigError {
         #[diagnostic_source]
         #[source]
         error: ValidatorError,
-    },
-
-    // Parser
-    // We can't pass through the original parser error,
-    // so we need to duplicate everything here.
-    // https://github.com/zkat/miette/issues/172
-    #[diagnostic(code(config::parse::failed))]
-    #[error("Failed to parse {config}, invalid setting {}.\n", .path.style(Style::Id))]
-    Parser {
-        config: String,
-
-        #[source_code]
-        content: NamedSource,
-
-        error: String,
-
-        path: String,
-
-        #[label("{}", .error)]
-        span: Option<SourceSpan>,
     },
 }
 
@@ -109,9 +100,9 @@ impl ConfigError {
                 push_end();
                 message.push_str(&inner.to_string());
             }
-            ConfigError::Parser { error, .. } => {
+            ConfigError::Parser { error: inner, .. } => {
                 push_end();
-                message.push_str(error);
+                message.push_str(&inner.to_full_string());
             }
             ConfigError::Validator { error: inner, .. } => {
                 push_end();
@@ -137,6 +128,15 @@ pub struct ParserError {
 
     #[label("{}", .error)]
     pub span: Option<SourceSpan>,
+}
+
+impl ParserError {
+    pub fn to_full_string(&self) -> String {
+        let mut message = self.to_string();
+        message.push_str(".\n");
+        message.push_str(&self.error);
+        message
+    }
 }
 
 // #[derive(Error, Debug, Diagnostic)]
