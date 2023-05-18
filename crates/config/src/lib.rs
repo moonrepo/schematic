@@ -1,5 +1,6 @@
 mod config;
 mod error;
+mod layer;
 mod loader;
 mod source;
 mod validator;
@@ -11,6 +12,7 @@ pub mod validate;
 
 pub use config::*;
 pub use error::*;
+pub use layer::*;
 pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;

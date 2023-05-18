@@ -10,7 +10,7 @@ pub struct ConfigMeta {
     pub file: Option<&'static str>,
 }
 
-pub trait PartialConfig: Default + DeserializeOwned + Sized {
+pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
     type Context: Default;
 
     fn default_values(context: &Self::Context) -> Result<Self, ConfigError>;
