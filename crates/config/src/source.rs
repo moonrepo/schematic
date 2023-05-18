@@ -1,7 +1,6 @@
 use crate::error::{ConfigError, ParserError};
 use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::{de::DeserializeOwned, Serialize};
-use std::fmt::Display;
 use std::fs;
 use std::path::PathBuf;
 
@@ -10,20 +9,6 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
     let length = 0;
 
     (offset, length).into()
-}
-
-fn create_parser_error<T: Display>(
-    source: &str,
-    content: &str,
-    loc: Option<(usize, usize)>,
-    error: &serde_path_to_error::Error<T>,
-) -> ParserError {
-    ParserError {
-        content: NamedSource::new(source, content.to_owned()),
-        path: error.path().to_string(),
-        span: loc.map(|(line, column)| create_span(content, line, column)),
-        error: error.to_string(),
-    }
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -49,13 +34,15 @@ impl SourceFormat {
             SourceFormat::Json => {
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
-                serde_path_to_error::deserialize(de).map_err(|error| {
-                    create_parser_error(
-                        source,
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
+                    path: error.path().to_string(),
+                    span: Some(create_span(
                         &content,
-                        Some((error.inner().line(), error.inner().column())),
-                        &error,
-                    )
+                        error.inner().line(),
+                        error.inner().column(),
+                    )),
+                    error: error.inner().to_string(),
                 })?
             }
 
@@ -67,7 +54,7 @@ impl SourceFormat {
                     content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
                     span: error.inner().span().map(|s| s.into()),
-                    error: error.to_string(),
+                    error: error.inner().message().to_owned(),
                 })?
             }
 
@@ -78,13 +65,14 @@ impl SourceFormat {
                 // First pass, convert string to value
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
-                    serde_path_to_error::deserialize(de).map_err(|error| {
-                        create_parser_error(
-                            source,
-                            &content,
-                            error.inner().location().map(|s| (s.line(), s.column())),
-                            &error,
-                        )
+                    serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                        content: NamedSource::new(source, content.to_owned()),
+                        path: error.path().to_string(),
+                        span: error
+                            .inner()
+                            .location()
+                            .map(|s| create_span(&content, s.line(), s.column())),
+                        error: error.inner().to_string(),
                     })?;
 
                 // Applies anchors/aliases/references
@@ -98,13 +86,14 @@ impl SourceFormat {
                 // Second pass, convert value to struct
                 let de = result.into_deserializer();
 
-                serde_path_to_error::deserialize(de).map_err(|error| {
-                    create_parser_error(
-                        source,
-                        &content,
-                        error.inner().location().map(|s| (s.line(), s.column())),
-                        &error,
-                    )
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
+                    path: error.path().to_string(),
+                    span: error
+                        .inner()
+                        .location()
+                        .map(|s| create_span(&content, s.line(), s.column())),
+                    error: error.inner().to_string(),
                 })?
             }
         };

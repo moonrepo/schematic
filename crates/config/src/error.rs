@@ -92,10 +92,12 @@ impl ConfigError {
         let mut message = self.to_string();
 
         let mut push_end = || {
-            if !message.ends_with('.') && !message.ends_with(':') {
-                message.push('.');
+            if !message.ends_with('\n') {
+                if !message.ends_with('.') && !message.ends_with(':') {
+                    message.push('.');
+                }
+                message.push(' ');
             }
-            message.push(' ');
         };
 
         match self {
