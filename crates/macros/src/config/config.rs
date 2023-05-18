@@ -107,7 +107,11 @@ impl<'l> Config<'l> {
     }
 
     pub fn get_meta_struct(&self) -> TokenStream {
-        let name = format!("{}", self.name);
+        let name = if let Some(rename) = &self.args.rename {
+            rename.to_string()
+        } else {
+            format!("{}", self.name)
+        };
 
         let file = match &self.args.file {
             Some(f) => quote! { Some(#f) },

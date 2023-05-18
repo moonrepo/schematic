@@ -2,7 +2,7 @@ use crate::error::ConfigError;
 use std::str::FromStr;
 
 /// Parse a string into a boolean. Will parse "1", "true", "yes", "on",
-/// and "enabled" as true, and everything as false.
+/// and "enabled" as true, and everything else as false.
 pub fn parse_bool(var: String) -> Result<bool, ConfigError> {
     match var.to_lowercase().as_str() {
         "1" | "true" | "yes" | "on" | "enabled" | "enable" => Ok(true),

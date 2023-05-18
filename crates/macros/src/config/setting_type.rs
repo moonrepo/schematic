@@ -132,7 +132,11 @@ impl<'l> SettingType<'l> {
 
                 if let Some(expr) = args.default.as_ref() {
                     return match expr {
-                        Expr::Array(_) | Expr::Call(_) | Expr::Lit(_) | Expr::Tuple(_) => {
+                        Expr::Array(_)
+                        | Expr::Call(_)
+                        | Expr::Lit(_)
+                        | Expr::Macro(_)
+                        | Expr::Tuple(_) => {
                             quote! { Some(#expr) }
                         }
                         invalid => {

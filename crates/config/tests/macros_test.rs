@@ -68,6 +68,8 @@ struct DefaultValues {
     array: [u8; 4],
     #[setting(default = (1, 2, 3, 4))]
     tuple: (u8, u8, u8, u8),
+    #[setting(default = vec![1, 2, 3, 4])]
+    vector: Vec<usize>,
     // #[setting(default_fn = SomeEnum::default)]
     enums: SomeEnum,
     // Invalid
