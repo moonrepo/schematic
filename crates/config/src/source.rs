@@ -1,7 +1,15 @@
 use crate::error::{ConfigError, ParserError};
+use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
+
+fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
+    let offset = SourceOffset::from_location(content, line, column).offset();
+    let length = 0;
+
+    (offset, length).into()
+}
 
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -17,7 +25,7 @@ pub enum SourceFormat {
 }
 
 impl SourceFormat {
-    pub fn parse<D>(&self, content: String) -> Result<D, ParserError>
+    pub fn parse<D>(&self, content: String, source: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -26,9 +34,15 @@ impl SourceFormat {
             SourceFormat::Json => {
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Json {
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
-                    error: error.into_inner(),
+                    span: Some(create_span(
+                        &content,
+                        error.inner().line(),
+                        error.inner().column(),
+                    )),
+                    error: error.inner().to_string(),
                 })?
             }
 
@@ -36,9 +50,11 @@ impl SourceFormat {
             SourceFormat::Toml => {
                 let de = toml::Deserializer::new(&content);
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Toml {
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
-                    error: error.into_inner(),
+                    span: error.inner().span().map(|s| s.into()),
+                    error: error.inner().message().to_owned(),
                 })?
             }
 
@@ -49,22 +65,35 @@ impl SourceFormat {
                 // First pass, convert string to value
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
-                    serde_path_to_error::deserialize(de).map_err(|error| ParserError::Yaml {
+                    serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                        content: NamedSource::new(source, content.to_owned()),
                         path: error.path().to_string(),
-                        error: error.into_inner(),
+                        span: error
+                            .inner()
+                            .location()
+                            .map(|s| create_span(&content, s.line(), s.column())),
+                        error: error.inner().to_string(),
                     })?;
 
                 // Applies anchors/aliases/references
-                result
-                    .apply_merge()
-                    .map_err(|error| ParserError::YamlExtended { error })?;
+                result.apply_merge().map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
+                    path: String::new(),
+                    span: error.location().map(|s| (s.line(), s.column()).into()),
+                    error: error.to_string(),
+                })?;
 
                 // Second pass, convert value to struct
                 let de = result.into_deserializer();
 
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError::Yaml {
+                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+                    content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
-                    error: error.into_inner(),
+                    span: error
+                        .inner()
+                        .location()
+                        .map(|s| create_span(&content, s.line(), s.column())),
+                    error: error.inner().to_string(),
                 })?
             }
         };
@@ -148,23 +177,26 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        format
-            .parse(match self {
-                Source::Code { code } => code.to_owned(),
-                Source::File { path } => {
-                    if !path.exists() {
-                        return Err(ConfigError::MissingFile(path.to_path_buf()));
-                    }
-
-                    fs::read_to_string(path)?
+        let result = match self {
+            Source::Code { code } => format.parse(code.to_owned(), "code"),
+            Source::File { path } => {
+                if !path.exists() {
+                    return Err(ConfigError::MissingFile(path.to_path_buf()));
                 }
-                Source::Url { url } => reqwest::blocking::get(url)?.text()?,
-                _ => unreachable!(),
-            })
-            .map_err(|error| ConfigError::Parser {
-                config: label.to_owned(),
-                error,
-            })
+
+                format.parse(fs::read_to_string(path)?, path.to_str().unwrap())
+            }
+            Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
+            _ => unreachable!(),
+        };
+
+        result.map_err(|error| ConfigError::Parser {
+            config: label.to_owned(),
+            content: error.content,
+            error: error.error,
+            path: error.path,
+            span: error.span,
+        })
     }
 }
 
