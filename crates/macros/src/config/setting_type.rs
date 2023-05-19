@@ -109,7 +109,7 @@ impl<'l> SettingType<'l> {
     pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::Nested { collection, .. } => match collection {
-                NestedType::None(id) => {
+                NestedType::None(id) if !self.is_optional() => {
                     let partial_name = format_ident!("Partial{}", id);
 
                     quote! { Some(#partial_name::default_values(context)?) }

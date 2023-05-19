@@ -1,7 +1,7 @@
 use schematic::*;
 use std::path::PathBuf;
 
-#[derive(Debug, Config)]
+#[derive(Debug, Default, Config)]
 pub struct NativeDefaults {
     boolean: bool,
     string: String,
@@ -115,4 +115,22 @@ fn sets_defaults_from_context() {
 
     assert_eq!(result.config.count, 10);
     assert_eq!(result.config.path, PathBuf::from("/root/sub"));
+}
+
+#[derive(Config)]
+pub struct NestedDefaults {
+    #[setting(nested)]
+    nested: NativeDefaults,
+    #[setting(nested)]
+    nested_opt: Option<NativeDefaults>,
+}
+
+#[test]
+fn handles_nested_defaults() {
+    let result = ConfigLoader::<NestedDefaults>::new(SourceFormat::Yaml)
+        .load()
+        .unwrap();
+
+    assert!(result.config.nested_opt.is_none());
+    assert!(!result.config.nested.boolean);
 }
