@@ -128,23 +128,7 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_merge_statement(&self) -> TokenStream {
-        let name = self.name;
-
-        if let Some(func) = self.args.merge.as_ref() {
-            quote! {
-                if self.#name.is_some() && next.#name.is_some() {
-                    self.#name = #func(self.#name.take().unwrap(), next.#name.take().unwrap());
-                } else if next.#name.is_some() {
-                    self.#name = next.#name;
-                }
-            }
-        } else {
-            quote! {
-                if next.#name.is_some() {
-                    self.#name = next.#name;
-                }
-            }
-        }
+        self.value_type.get_merge_statement(self.name, &self.args)
     }
 
     pub fn get_validate_statement(&self) -> TokenStream {

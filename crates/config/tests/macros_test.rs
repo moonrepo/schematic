@@ -106,8 +106,8 @@ struct Serde {
     all: bool,
 }
 
-fn merge_basic(_: String, _: String) -> Option<String> {
-    None
+fn merge_basic<C>(_: String, _: String, _: &C) -> Result<Option<String>, ConfigError> {
+    Ok(None)
 }
 
 #[derive(Config)]

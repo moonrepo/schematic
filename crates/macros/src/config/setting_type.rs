@@ -225,6 +225,47 @@ impl<'l> SettingType<'l> {
         }
     }
 
+    pub fn get_merge_statement(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+        // Nested values require special partial merging
+        if let SettingType::Nested {
+            // However this only applies to direct types and
+            // not those wrapped in a collection
+            collection: NestedType::None(_),
+            ..
+        } = self
+        {
+            if args.merge.is_some() {
+                panic!("Nested configs do not support `merge` unless wrapped in a collection.");
+            }
+
+            return quote! {
+                self.#name = schematic::internal::merge_partial_settings(
+                    self.#name.take(),
+                    next.#name.take(),
+                    context,
+                )?;
+            };
+        };
+
+        // Everything elses uses basic merging
+        if let Some(func) = args.merge.as_ref() {
+            quote! {
+                self.#name = schematic::internal::merge_settings(
+                    self.#name.take(),
+                    next.#name.take(),
+                    context,
+                    #func,
+                )?;
+            }
+        } else {
+            quote! {
+                if next.#name.is_some() {
+                    self.#name = next.#name;
+                }
+            }
+        }
+    }
+
     pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
         let name_quoted = format!("{}", name);
 

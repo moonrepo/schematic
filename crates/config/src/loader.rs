@@ -92,7 +92,7 @@ impl<T: Config> ConfigLoader<T> {
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         let layers = self.extract_layers(&self.sources, context)?;
-        let partial = self.merge_layers(&layers)?;
+        let partial = self.merge_layers(&layers, context)?;
         let config = T::from_partial(partial);
 
         config
@@ -114,7 +114,7 @@ impl<T: Config> ConfigLoader<T> {
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
         let layers = self.extract_layers(&self.sources, context)?;
-        let partial = self.merge_layers(&layers)?;
+        let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
     }
@@ -177,13 +177,17 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources)
     }
 
-    fn merge_layers(&self, layers: &[Layer<T>]) -> Result<T::Partial, ConfigError> {
+    fn merge_layers(
+        &self,
+        layers: &[Layer<T>],
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<T::Partial, ConfigError> {
         // All `None` by default
         let mut merged = T::Partial::default();
 
         // Then apply other layers in order
         for layer in layers {
-            merged.merge(layer.partial.clone());
+            merged.merge(context, layer.partial.clone())?;
         }
 
         Ok(merged)

@@ -1,4 +1,6 @@
+use crate::config::PartialConfig;
 use crate::error::ConfigError;
+use crate::merge::merge_partial;
 use std::{env, str::FromStr};
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {
@@ -20,4 +22,39 @@ pub fn parse_from_env_var<T>(
     }
 
     Ok(None)
+}
+
+#[allow(clippy::unnecessary_unwrap)]
+pub fn merge_settings<T, C>(
+    prev: Option<T>,
+    next: Option<T>,
+    context: &C,
+    merger: impl Fn(T, T, &C) -> Result<Option<T>, ConfigError>,
+) -> Result<Option<T>, ConfigError> {
+    if prev.is_some() && next.is_some() {
+        merger(prev.unwrap(), next.unwrap(), context)
+    } else if next.is_some() {
+        Ok(next)
+    } else {
+        Ok(prev)
+    }
+}
+
+#[allow(clippy::unnecessary_unwrap)]
+pub fn merge_partial_settings<T: PartialConfig>(
+    prev: Option<T>,
+    next: Option<T>,
+    context: &T::Context,
+) -> Result<Option<T>, ConfigError> {
+    if prev.is_some() && next.is_some() {
+        merge_partial(prev.unwrap(), next.unwrap(), context)
+    } else if next.is_some() {
+        // For optional nested configs, defaults values are not provided by the
+        // `default_values` method since we return `None`. However, if a value
+        // is provided during the merging process, then we need to lazily load
+        // the default values to merge against.
+        merge_partial(T::default_values(context)?, next.unwrap(), context)
+    } else {
+        Ok(prev)
+    }
 }
