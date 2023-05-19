@@ -1,4 +1,4 @@
-# Schematic
+# schematic
 
 > derive(Config)
 
@@ -20,8 +20,7 @@ TODO
 
 ## Usage
 
-Define a struct and derive the `Config` trait. This struct represents the _final state_, after all
-layers have been merged.
+Define a struct and derive the `Config` trait.
 
 ```rust
 use schematic::Config;
@@ -57,23 +56,172 @@ result.layers;
 
 ## Configuration
 
-TODO
+The bulk of schematic is powered through the `Config` trait and the associated derive macro. This
+macro helps to generate and automate the following:
+
+- Generates a [partial config](#partials) struct, with all field values wrapped in `Option`.
+- Provides [default value](#default-values) and [environment variable](#environment-variables)
+  handling.
+- Implements [merging](#merge-strategies) and [validation](#validation) logic.
+- And other minor features, like [metadata](#metadata).
+
+The struct that derives `Config` represents the _final state_, after all [partial layers](#partials)
+have been merged, and default and environment variable values have been applied. This means that all
+fields (settings) should _not_ be wrapped in `Option`, unless the setting is truly optional (think
+nullable in the config file).
+
+```rust
+#[derive(Config)]
+pub struct ExampleConfig {
+	pub number: usize,
+	pub string: String,
+	pub boolean: bool,
+	pub array: Vec<String>,
+	pub optional: Option<String>,
+}
+```
+
+> This pattern provides the optimal developer experience, as you can reference the settings as-is,
+> without having to unwrap them, or use `match` or `if-let` statements!
 
 ### Partials
 
-TODO
+A powerful feature of schematic is what we call partial configurations. These are a mirror of the
+derived [config](#config), with all settings wrapped in `Option`, are prefixed with `Partial`, and
+have common serde and derive attributes automatically applied.
+
+For example, the `ExampleConfig` above would generate the following partial struct:
+
+```rust
+#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+pub struct PartialExampleConfig {
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub number: Option<usize>,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub string: Option<String>,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub boolean: Option<bool>,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub array: Option<Vec<String>>,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub optional: Option<String>,
+}
+```
+
+So what are partials used for exactly? Partials are used for the entire parsing, layering,
+extending, and merging process, instead of the base [config](#configuration).
+
+When deserializing a source with serde, we utilize the partial config as the target type, because
+not all fields are guaranteed to be present. This is especially true when merging multiple sources
+together, as each source may only contain a subset of the final config. Each source represents a
+layer to be merged.
+
+Partials are also beneficial when serializing, as only settings with values will be written to the
+source, instead of everything! A common complaint of serde's strictness.
+
+As stated above, partials also handle the following:
+
+- Defining [default values](#default-values) for settings.
+- Inheriting [environment variable](#environment-variables) values.
+- Merging partials with [strategy functions](#merge-strategies).
+- Declaring [extendable sources](#extendable).
 
 ### Nested
 
-TODO
+[Configuration](#configuration) can easily be nested within other configuration using the
+`#[setting(nested)]` attribute. Child configuration will be deeply merged and validated alongside
+the parent.
+
+```rust
+#[derive(Config)]
+pub struct ChildConfig {
+	// ...
+}
+
+#[derive(Config)]
+pub struct ParentConfig {
+	#[setting(nested)]
+	pub nested: ChildConfig,
+
+	#[setting(nested)]
+	pub optional_nested: Option<ChildConfig>,
+}
+```
+
+The `#[setting(nested)]` attribute is required, as the macro will substitute the config struct with
+its [partial struct](#partials) variant.
+
+> Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`.
 
 ### Contexts
 
-TODO
+Context is an important mechanism that allows for different [default values](#default-values) and
+[validation rules](#validation-rules) to be used, for the _same_ configuration struct, depending on
+context!
+
+To begin, a context is a struct with a default implementation.
+
+```rust
+#[derive(Default)]
+struct ExampleContext {
+	some_value: bool,
+	another_value: usize,
+}
+```
+
+Context must then be associated with a configuration through the `context` attribute field.
+
+```rust
+#[derive(Config)]
+#[config(context = ExampleContext)]
+pub struct ExampleConfig {
+	// ...
+}
+```
+
+And then passed to the `ConfigLoader.load_with_context` method.
+
+```rust
+let context = ExampleContext {
+	some_value: true,
+	another_value: 10,
+};
+
+let result = ConfigLoader::<ExampleConfig>::yaml()
+	.url(url_to_config)?
+	.load_with_context(&context)?;
+```
+
+Refer to the [default values](#default-values) and [validation rules](#validation-rules) sections
+for more information on how to use context.
 
 ### Metadata
 
-TODO
+[Configuration](#configuration) supports basic metadata for use within error messages through the
+`#[config]` attribute. Right now we support a `name`, derived from the struct name or the serde
+`rename` attribute field.
+
+We also support a `file` field, which is typically the name of the configuration file that is being
+loaded.
+
+```rust
+#[derive(Config)]
+#[config(file = "example.json")]
+pub struct ExampleConfig {
+	// ...
+}
+```
+
+Metadata can be accessed with the `META` constant.
+
+```rust
+ExampleConfig::META.name;
+```
 
 ### Serde support
 
