@@ -21,3 +21,27 @@ pub fn parse_from_env_var<T>(
 
     Ok(None)
 }
+
+pub fn merge_settings<T, C>(prev: Option<T>, next: Option<T>, _: &C) -> Option<T> {
+    if next.is_some() {
+        next
+    } else {
+        prev
+    }
+}
+
+#[allow(clippy::unnecessary_unwrap)]
+pub fn merge_settings_with_func<T, C>(
+    prev: Option<T>,
+    next: Option<T>,
+    context: &C,
+    merger: impl Fn(T, T, &C) -> Option<T>,
+) -> Option<T> {
+    if prev.is_some() && next.is_some() {
+        merger(prev.unwrap(), next.unwrap(), context)
+    } else if next.is_some() {
+        next
+    } else {
+        prev
+    }
+}

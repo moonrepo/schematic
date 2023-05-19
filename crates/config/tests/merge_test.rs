@@ -10,7 +10,7 @@ pub struct MergeNormal {
     map: HashMap<String, usize>,
 }
 
-fn merge_string(prev: String, next: String) -> Option<String> {
+fn merge_string<C>(prev: String, next: String, _: &C) -> Option<String> {
     Some(format!("{}-{}", prev, next))
 }
 
@@ -34,11 +34,14 @@ fn normal_merge_takes_some_next() {
         map: Some(HashMap::from_iter([("a".into(), 1)])),
     };
 
-    base.merge(PartialMergeNormal {
-        string: Some("bar".into()),
-        vector: Some(vec![4, 5, 6]),
-        map: None,
-    });
+    base.merge(
+        &(),
+        PartialMergeNormal {
+            string: Some("bar".into()),
+            vector: Some(vec![4, 5, 6]),
+            map: None,
+        },
+    );
 
     assert_eq!(base.string.unwrap(), "bar");
     assert_eq!(base.vector.unwrap(), vec![4, 5, 6]);
@@ -54,12 +57,15 @@ fn custom_merge_with_funcs() {
         nested: None,
     };
 
-    base.merge(PartialMergeFunc {
-        string: Some("bar".into()),
-        vector: Some(vec![4, 5, 6]),
-        map: Some(HashMap::from_iter([("b".into(), 2)])),
-        nested: None,
-    });
+    base.merge(
+        &(),
+        PartialMergeFunc {
+            string: Some("bar".into()),
+            vector: Some(vec![4, 5, 6]),
+            map: Some(HashMap::from_iter([("b".into(), 2)])),
+            nested: None,
+        },
+    );
 
     assert_eq!(base.string.unwrap(), "foo-bar");
     assert_eq!(base.vector.unwrap(), vec![4, 5, 6, 1, 2, 3]);
@@ -71,27 +77,27 @@ mod helpers {
 
     #[test]
     fn discard() {
-        assert_eq!(merge::discard(1, 2), None);
+        assert_eq!(merge::discard(1, 2, &()), None);
     }
 
     #[test]
     fn preserve() {
-        assert_eq!(merge::preserve(1, 2), Some(1));
+        assert_eq!(merge::preserve(1, 2, &()), Some(1));
     }
 
     #[test]
     fn replace() {
-        assert_eq!(merge::replace(1, 2), Some(2));
+        assert_eq!(merge::replace(1, 2, &()), Some(2));
     }
 
     #[test]
     fn append_vec() {
-        assert_eq!(merge::append_vec(vec![1], vec![2]), Some(vec![1, 2]));
+        assert_eq!(merge::append_vec(vec![1], vec![2], &()), Some(vec![1, 2]));
     }
 
     #[test]
     fn prepend_vec() {
-        assert_eq!(merge::prepend_vec(vec![1], vec![2]), Some(vec![2, 1]));
+        assert_eq!(merge::prepend_vec(vec![1], vec![2], &()), Some(vec![2, 1]));
     }
 
     #[test]
@@ -99,7 +105,8 @@ mod helpers {
         assert_eq!(
             merge::merge_btreemap(
                 BTreeMap::from_iter([("a".to_string(), 1), ("b".to_string(), 2)]),
-                BTreeMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)])
+                BTreeMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)]),
+                &()
             ),
             Some(BTreeMap::from_iter([
                 ("a".to_string(), 1),
@@ -114,7 +121,8 @@ mod helpers {
         assert_eq!(
             merge::merge_btreeset(
                 BTreeSet::from_iter(["a", "b"]),
-                BTreeSet::from_iter(["a", "b", "c", "d"])
+                BTreeSet::from_iter(["a", "b", "c", "d"]),
+                &()
             ),
             Some(BTreeSet::from_iter(["a", "b", "c", "d"]))
         );
@@ -125,7 +133,8 @@ mod helpers {
         assert_eq!(
             merge::merge_hashmap(
                 HashMap::from_iter([("a".to_string(), 1), ("b".to_string(), 2)]),
-                HashMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)])
+                HashMap::from_iter([("b".to_string(), 3), ("c".to_string(), 4)]),
+                &()
             ),
             Some(HashMap::from_iter([
                 ("a".to_string(), 1),
@@ -140,7 +149,8 @@ mod helpers {
         assert_eq!(
             merge::merge_hashset(
                 HashSet::from_iter(["a", "b"]),
-                HashSet::from_iter(["a", "b", "c", "d"])
+                HashSet::from_iter(["a", "b", "c", "d"]),
+                &()
             ),
             Some(HashSet::from_iter(["a", "b", "c", "d"]))
         );

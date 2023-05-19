@@ -225,6 +225,32 @@ impl<'l> SettingType<'l> {
         }
     }
 
+    pub fn get_merge_statement(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+        match self {
+            SettingType::Nested { .. } => {
+                quote! {}
+            }
+            SettingType::Value { .. } => {
+                if let Some(func) = args.merge.as_ref() {
+                    quote! {
+                        self.#name = schematic::internal::merge_settings_with_func(
+                            self.#name.take(),
+                            next.#name.take(),
+                            context,
+                            #func,
+                        );
+                    }
+                } else {
+                    quote! {
+                        if next.#name.is_some() {
+                            self.#name = next.#name;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
         let name_quoted = format!("{}", name);
 

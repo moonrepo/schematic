@@ -106,7 +106,7 @@ struct Serde {
     all: bool,
 }
 
-fn merge_basic(_: String, _: String) -> Option<String> {
+fn merge_basic<C>(_: String, _: String, _: &C) -> Option<String> {
     None
 }
 

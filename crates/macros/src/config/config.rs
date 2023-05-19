@@ -211,7 +211,7 @@ impl<'l> ToTokens for Config<'l> {
                     None
                 }
 
-                fn merge(&mut self, mut next: Self) {
+                fn merge(&mut self, context: &Self::Context, mut next: Self) {
                     #(#merge_stmts)*
                 }
             }

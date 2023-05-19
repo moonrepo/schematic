@@ -161,9 +161,9 @@ its [partial struct](#partials) variant.
 
 ### Contexts
 
-Context is an important mechanism that allows for different [default values](#default-values) and
-[validation rules](#validation-rules) to be used, for the _same_ configuration struct, depending on
-context!
+Context is an important mechanism that allows for different [default values](#default-values),
+[merge strategies](#merge-strategies), and [validation rules](#validation-rules) to be used, for the
+_same_ configuration struct, depending on context!
 
 To begin, a context is a struct with a default implementation.
 
@@ -198,8 +198,8 @@ let result = ConfigLoader::<ExampleConfig>::yaml()
 	.load_with_context(&context)?;
 ```
 
-Refer to the [default values](#default-values) and [validation rules](#validation-rules) sections
-for more information on how to use context.
+Refer to the [default values](#default-values), [merge strategies](#merge-strategies), and
+[validation rules](#validation-rules) sections for more information on how to use context.
 
 ### Metadata
 
@@ -415,13 +415,14 @@ struct AppConfig {
 > We provide a handful of built-in merge functions in the
 > [`merge` module](https://docs.rs/schematic/latest/schematic/merge/index.html).
 
-When defining a custom merge function, the previous and next values are passed as arguments, and the
-function must return an optional merged result. If `None` is provided, neither value will be used.
+When defining a custom merge function, the previous value, next value, and context are passed as
+arguments, and the function must return an optional merged result. If `None` is provided, neither
+value will be used.
 
 Here's an example of the merge function above.
 
 ```rust
-pub fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>) -> Option<Vec<T>> {
+pub fn append_vec<T, C>(mut prev: Vec<T>, next: Vec<T>, context: &C) -> Option<Vec<T>> {
     prev.extend(next);
 
     Some(prev)
