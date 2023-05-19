@@ -2,7 +2,8 @@
 
 > derive(Config)
 
-TODO
+Schematic is a light-weight, macro-based, layered serde configuration library, with built-in support
+for merge strategies, validation rules, environment variables, and more!
 
 - Load sources from the file system or secure URLs.
 - Source layering that merge into a final configuration.
@@ -11,7 +12,7 @@ TODO
 - Aggregated validation with built-in validate functions (provided by
   [garde](https://crates.io/crates/garde)).
 - Environment variable parsing and overrides.
-- Beautiful errors powered by the [miette](https://crates.io/crates/miette) crate.
+- Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
 - Supports JSON, TOML, and YAML via serde.
 
 > This crate was built specifically for [moon](https://github.com/moonrepo/moon), and many of the
@@ -59,7 +60,7 @@ result.layers;
 The bulk of schematic is powered through the `Config` trait and the associated derive macro. This
 macro helps to generate and automate the following:
 
-- Generates a [partial config](#partials) struct, with all field values wrapped in `Option`.
+- Generates a [partial configuration](#partials) struct, with all field values wrapped in `Option`.
 - Provides [default value](#default-values) and [environment variable](#environment-variables)
   handling.
 - Implements [merging](#merge-strategies) and [validation](#validation) logic.
@@ -87,8 +88,8 @@ pub struct ExampleConfig {
 ### Partials
 
 A powerful feature of schematic is what we call partial configurations. These are a mirror of the
-derived [config](#config), with all settings wrapped in `Option`, are prefixed with `Partial`, and
-have common serde and derive attributes automatically applied.
+derived [configuration](#configuration), with all settings wrapped in `Option`, are prefixed with
+`Partial`, and have common serde and derive attributes automatically applied.
 
 For example, the `ExampleConfig` above would generate the following partial struct:
 
@@ -114,7 +115,7 @@ pub struct PartialExampleConfig {
 ```
 
 So what are partials used for exactly? Partials are used for the entire parsing, layering,
-extending, and merging process, instead of the base [config](#configuration).
+extending, and merging process, instead of the base/final [configuration](#configuration).
 
 When deserializing a source with serde, we utilize the partial config as the target type, because
 not all fields are guaranteed to be present. This is especially true when merging multiple sources
@@ -203,11 +204,11 @@ for more information on how to use context.
 ### Metadata
 
 [Configuration](#configuration) supports basic metadata for use within error messages through the
-`#[config]` attribute. Right now we support a `name`, derived from the struct name or the serde
+`#[config]` attribute. Right now we support a name, derived from the struct name or the serde
 `rename` attribute field.
 
 We also support a `file` field, which is typically the name of the configuration file that is being
-loaded.
+loaded. This takes precedence over the name in error messages.
 
 ```rust
 #[derive(Config)]
@@ -227,8 +228,8 @@ ExampleConfig::META.name;
 
 By default the `Config` macro will apply
 `#[serde(default, deny_unknown_fields, rename_all = "camelCase")]` to the
-[partial config](#partials). The `default` and `deny_unknown_fields` cannot be customized, as they
-ensure proper parsing and layer merging.
+[partial configuration](#partials). The `default` and `deny_unknown_fields` cannot be customized, as
+they ensure proper parsing and layer merging.
 
 However, the `rename_all` field can be customized, and we also support the `rename` field, both via
 the top-level `#[config]` attribute.
@@ -252,10 +253,10 @@ optional `#[setting]` attribute.
 
 In schematic, there are 2 forms of default values:
 
-- The first is on the [partial config](#partials), is defined with the `#[setting]` attribute, and
-  is the first layer of the configuration to be merged.
-- The second is on the [final config](#configuration) itself, and uses `Default` to generate the
-  final value if none was provided. This acts more like a fallback.
+- The first is on the [partial configuration](#partials), is defined with the `#[setting]`
+  attribute, and is the first layer of the configuration to be merged.
+- The second is on the [final configuration](#configuration) itself, and uses `Default` to generate
+  the final value if none was provided. This acts more like a fallback.
 
 This section will talk about the `#[setting]` attribute, and the supported `default`, `default_str`,
 and `default_fn` attribute fields.
