@@ -70,6 +70,86 @@ fn custom_merge_with_funcs() {
     assert_eq!(base.map, None);
 }
 
+#[derive(Debug, Config)]
+pub struct MergeNested {
+    #[setting(default_str = "xyz")]
+    string: String,
+    #[setting(default = 10)]
+    other: usize,
+}
+
+#[derive(Debug, Config)]
+pub struct MergeBase {
+    #[setting(default_str = "abc")]
+    string: String,
+    #[setting(default = vec![1,2,3], merge = merge::append_vec)]
+    vector: Vec<usize>,
+    #[setting(nested)]
+    nested: MergeNested,
+    #[setting(nested)]
+    opt_nested: Option<MergeNested>,
+}
+
+#[test]
+fn uses_defaults_when_no_layers() {
+    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "abc");
+    assert_eq!(result.config.vector, vec![1, 2, 3]);
+    assert_eq!(result.config.nested.string, "xyz");
+    assert_eq!(result.config.nested.other, 10);
+    assert!(result.config.opt_nested.is_none());
+}
+
+#[test]
+fn can_merge_with_defaults() {
+    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
+        .code("string: def")
+        .unwrap()
+        .code("vector: [4]")
+        .unwrap()
+        .code(
+            r"vector: [5]
+nested:
+  string: zyx
+",
+        )
+        .unwrap()
+        .code(
+            r"nested:
+  other: 15
+",
+        )
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "def");
+    assert_eq!(result.config.vector, vec![1, 2, 3, 4, 5]);
+    assert_eq!(result.config.nested.string, "zyx");
+    assert_eq!(result.config.nested.other, 15);
+    assert!(result.config.opt_nested.is_none());
+}
+
+#[test]
+fn loads_defaults_for_optional_nested() {
+    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
+        .code(
+            r"
+optNested:
+    string: hij",
+        )
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(result.config.opt_nested.is_some());
+    assert_eq!(result.config.opt_nested.as_ref().unwrap().string, "hij");
+    assert_eq!(result.config.opt_nested.as_ref().unwrap().other, 10);
+}
+
 mod helpers {
     use super::*;
 
