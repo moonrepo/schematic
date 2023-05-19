@@ -25,7 +25,7 @@ pub fn parse_from_env_var<T>(
 }
 
 #[allow(clippy::unnecessary_unwrap)]
-pub fn merge_partial_settings<T: PartialConfig, C>(
+pub fn merge_partial_settings<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
