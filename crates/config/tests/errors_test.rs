@@ -29,7 +29,7 @@ mod json {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting setting.\ninvalid type: integer `123`, expected a boolean at line 1 column 16"
+            "Failed to parse BaseConfig. Invalid setting setting.\ninvalid type: integer `123`, expected a boolean at line 1 column 16"
         )
     }
 
@@ -44,7 +44,7 @@ mod json {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean at line 1 column 28"
+            "Failed to parse BaseConfig. Invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean at line 1 column 28"
         )
     }
 }
@@ -64,7 +64,7 @@ mod toml {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting setting.\ninvalid type: integer `123`, expected a boolean"
+            "Failed to parse BaseConfig. Invalid setting setting.\ninvalid type: integer `123`, expected a boolean"
         )
     }
 
@@ -79,7 +79,7 @@ mod toml {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean"
+            "Failed to parse BaseConfig. Invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean"
         )
     }
 }
@@ -99,7 +99,7 @@ mod yaml {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting setting.\ninvalid type: integer `123`, expected a boolean"
+            "Failed to parse BaseConfig. Invalid setting setting.\ninvalid type: integer `123`, expected a boolean"
         )
     }
 
@@ -114,7 +114,7 @@ mod yaml {
 
         assert_eq!(
             error.to_full_string(),
-            "Failed to parse BaseConfig, invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean"
+            "Failed to parse BaseConfig. Invalid setting nested.setting.\ninvalid type: integer `123`, expected a boolean"
         )
     }
 }

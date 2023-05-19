@@ -3,17 +3,17 @@ use schematic::{Config, ConfigLoader, ValidateError};
 use serde::Serialize;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
-    // use schematic::Segment;
-    // Err(ValidateError::with_segments(
-    //     "This string is ugly!",
-    //     vec![Segment::Index(1), Segment::Key("foo".to_owned())],
-    // ))
-    Ok(())
+    use schematic::Segment;
+    Err(ValidateError::with_segments(
+        "This string is ugly!",
+        vec![Segment::Index(1), Segment::Key("foo".to_owned())],
+    ))
+    // Ok(())
 }
 
 fn validate_number<D, C>(_: &usize, _: &D, _: &C) -> Result<(), ValidateError> {
-    // Err(ValidateError::new("Nah, we don't accept numbers."))
-    Ok(())
+    Err(ValidateError::new("Nah, we don't accept numbers."))
+    // Ok(())
 }
 
 #[derive(Debug, Config, Serialize)]
@@ -38,7 +38,7 @@ struct TestConfig {
 fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::json()
         //.code(r#"{ "string": "abc", "other": 123 }"#)?
-        .code("{\n  \"string\": 123\n}")?
+        // .code("{\n  \"string\": 123\n}")?
         .load()?;
 
     dbg!(&config.config.string);

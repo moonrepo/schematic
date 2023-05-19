@@ -267,7 +267,7 @@ struct AppConfig {
 > [`merge` module](https://docs.rs/schematic/latest/schematic/merge/index.html).
 
 When defining a custom merge function, the previous and next values are passed as arguments, and the
-function must return an optional merged result. If `None` is provided, either value will be used.
+function must return an optional merged result. If `None` is provided, neither value will be used.
 
 Here's an example of the merge function above.
 
@@ -290,8 +290,8 @@ _after_ the [final configuration](#configuration) has been merged. This means we
 end result, not [partial](#partials) values (which may be incorrect).
 
 Validation can be applied on a per-setting basis with the `validate` attribute field, which requires
-a path to a function. Furthermore, some functions are factories which can be called to produce a
-validator.
+a path to a function to call. Furthermore, some functions are factories which can be called to
+produce a validator.
 
 ```rust
 #[derive(Config)]
