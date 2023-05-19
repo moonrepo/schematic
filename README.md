@@ -422,10 +422,10 @@ value will be used.
 Here's an example of the merge function above.
 
 ```rust
-pub fn append_vec<T, C>(mut prev: Vec<T>, next: Vec<T>, context: &C) -> Option<Vec<T>> {
+pub fn append_vec<T, C>(mut prev: Vec<T>, next: Vec<T>, context: &C) -> Result<Option<Vec<T>>, ConfigError> {
     prev.extend(next);
 
-    Some(prev)
+    Ok(Some(prev))
 }
 ```
 

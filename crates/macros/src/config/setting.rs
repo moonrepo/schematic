@@ -68,6 +68,10 @@ impl<'l> Setting<'l> {
             panic!("Cannot use `parse_env` without `env`.");
         }
 
+        if args.merge.is_some() && args.nested {
+            panic!("Cannot use `merge` for `nested` configs.");
+        }
+
         if args.validate.is_some() && args.nested {
             panic!("Cannot use `validate` for `nested` configs.");
         }

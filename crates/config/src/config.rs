@@ -19,7 +19,7 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
 
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
-    fn merge(&mut self, context: &Self::Context, next: Self);
+    fn merge(&mut self, context: &Self::Context, next: Self) -> Result<(), ConfigError>;
 }
 
 pub trait Config: Sized {

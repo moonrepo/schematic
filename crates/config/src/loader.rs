@@ -187,7 +187,7 @@ impl<T: Config> ConfigLoader<T> {
 
         // Then apply other layers in order
         for layer in layers {
-            merged.merge(context, layer.partial.clone());
+            merged.merge(context, layer.partial.clone())?;
         }
 
         Ok(merged)

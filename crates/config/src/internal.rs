@@ -1,4 +1,6 @@
 use crate::error::ConfigError;
+use crate::merge::merge_partial;
+use crate::PartialConfig;
 use std::{env, str::FromStr};
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {
@@ -22,26 +24,33 @@ pub fn parse_from_env_var<T>(
     Ok(None)
 }
 
-pub fn merge_settings<T, C>(prev: Option<T>, next: Option<T>, _: &C) -> Option<T> {
-    if next.is_some() {
-        next
+#[allow(clippy::unnecessary_unwrap)]
+pub fn merge_partial_settings<T: PartialConfig, C>(
+    prev: Option<T>,
+    next: Option<T>,
+    context: &T::Context,
+) -> Result<Option<T>, ConfigError> {
+    if prev.is_some() && next.is_some() {
+        merge_partial(prev.unwrap(), next.unwrap(), context)
+    } else if next.is_some() {
+        merge_partial(T::default_values(context)?, next.unwrap(), context)
     } else {
-        prev
+        Ok(prev)
     }
 }
 
 #[allow(clippy::unnecessary_unwrap)]
-pub fn merge_settings_with_func<T, C>(
+pub fn merge_settings<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
-    merger: impl Fn(T, T, &C) -> Option<T>,
-) -> Option<T> {
+    merger: impl Fn(T, T, &C) -> Result<Option<T>, ConfigError>,
+) -> Result<Option<T>, ConfigError> {
     if prev.is_some() && next.is_some() {
         merger(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {
-        next
+        Ok(next)
     } else {
-        prev
+        Ok(prev)
     }
 }

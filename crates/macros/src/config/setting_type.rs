@@ -226,26 +226,26 @@ impl<'l> SettingType<'l> {
     }
 
     pub fn get_merge_statement(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
-        match self {
-            SettingType::Nested { .. } => {
-                quote! {}
+        if let SettingType::Nested {
+            collection: NestedType::None(id),
+            ..
+        } = self
+        {};
+
+        // Everything elses uses basic merging
+        if let Some(func) = args.merge.as_ref() {
+            quote! {
+                self.#name = schematic::internal::merge_settings(
+                    self.#name.take(),
+                    next.#name.take(),
+                    context,
+                    #func,
+                )?;
             }
-            SettingType::Value { .. } => {
-                if let Some(func) = args.merge.as_ref() {
-                    quote! {
-                        self.#name = schematic::internal::merge_settings_with_func(
-                            self.#name.take(),
-                            next.#name.take(),
-                            context,
-                            #func,
-                        );
-                    }
-                } else {
-                    quote! {
-                        if next.#name.is_some() {
-                            self.#name = next.#name;
-                        }
-                    }
+        } else {
+            quote! {
+                if next.#name.is_some() {
+                    self.#name = next.#name;
                 }
             }
         }
