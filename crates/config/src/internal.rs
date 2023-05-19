@@ -1,6 +1,6 @@
+use crate::config::PartialConfig;
 use crate::error::ConfigError;
 use crate::merge::merge_partial;
-use crate::PartialConfig;
 use std::{env, str::FromStr};
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {

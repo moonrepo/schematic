@@ -157,7 +157,8 @@ pub struct ParentConfig {
 The `#[setting(nested)]` attribute is required, as the macro will substitute the config struct with
 its [partial struct](#partials) variant.
 
-> Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`.
+> Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`. However! When
+> in a collection, setting default values are not inherited.
 
 ### Contexts
 
