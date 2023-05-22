@@ -259,16 +259,16 @@ In schematic, there are 2 forms of default values:
 - The second is on the [final configuration](#configuration) itself, and uses `Default` to generate
   the final value if none was provided. This acts more like a fallback.
 
-This section will talk about the `#[setting]` attribute, and the supported `default`, `default_str`,
-and `default_fn` attribute fields.
-
-The `default` attribute field is used for declaring primitive values, like numbers and booleans. It
-can also be used for array and tuple literals, as well as function (mainly for `from()`) and macros
-calls.
+This section will talk about the `#[setting]` attribute and `default`. The `default` attribute field
+is used for declaring primitive values, like numbers and booleans. It can also be used for array and
+tuple literals, as well as function (mainly for `from()`) and macros calls.
 
 ```rust
 #[derive(Config)]
 struct AppConfig {
+	#[setting(default = "/")]
+	base: String,
+
 	#[setting(default = 3000)]
 	port: usize,
 
@@ -280,22 +280,10 @@ struct AppConfig {
 }
 ```
 
-For string literals, the `default_str` attribute field should be used instead.
-
-```rust
-#[derive(Config)]
-struct AppConfig {
-	#[setting(default_str = "/")]
-	base: String,
-}
-```
-
-And lastly, if you need more control or need to calculate a complex value, you can use the
-`default_fn` attribute field, which requires a path to a function to call.
-
-This function receives the [context](#contexts) as the first argument (use `()` or generics if you
-don't have context), and can return an optional value. If `None` is returned, the `Default` value
-will be used instead.
+If you need more control or need to calculate a complex value, you can pass a reference to a
+function to call. This function receives the [context](#contexts) as the first argument (use `()` or
+generics if you don't have context), and can return an optional value. If `None` is returned, the
+`Default` value will be used instead.
 
 ```rust
 fn find_unused_port(ctx: &Context) -> Option<usize> {
@@ -305,7 +293,7 @@ fn find_unused_port(ctx: &Context) -> Option<usize> {
 
 #[derive(Config)]
 struct AppConfig {
-	#[setting(default_fn = find_unused_port)]
+	#[setting(default = find_unused_port)]
 	port: usize,
 }
 ```
