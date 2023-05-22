@@ -5,11 +5,11 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Expr, ExprPath, Field, Meta, Type};
 
-pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Option<Expr>> {
+pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
     match meta {
         Meta::Path(_) => Err(darling::Error::unsupported_format("path").with_span(meta)),
         Meta::List(_) => Err(darling::Error::unsupported_format("list").with_span(meta)),
-        Meta::NameValue(nv) => Ok(Some(nv.value.clone())),
+        Meta::NameValue(nv) => Ok(nv.value.clone()),
     }
 }
 
@@ -17,7 +17,7 @@ pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Option<Expr>> {
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
 pub struct SettingArgs {
-    #[darling(with = "preserve_str_literal")]
+    #[darling(with = "preserve_str_literal", map = "Some")]
     pub default: Option<Expr>,
     pub env: Option<String>,
     pub extend: bool,
