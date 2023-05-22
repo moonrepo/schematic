@@ -116,24 +116,12 @@ impl<'l> SettingType<'l> {
                 _ => quote! { None },
             },
             SettingType::Value { value, .. } => {
-                // if let Some(func) = args.default_fn.as_ref() {
-                //     return quote! { #func(context) };
-                // };
-
-                // if let Some(string) = args.default_str.as_ref() {
-                //     return quote! {
-                //         Some(
-                //             #value::try_from(#string)
-                //                 .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
-                //         )
-                //     };
-                // };
-
                 if let Some(expr) = args.default.as_ref() {
                     return match expr {
                         Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
                             quote! { Some(#expr) }
                         }
+                        Expr::Path(func) => quote! { #func(context) },
                         Expr::Lit(lit) => match &lit.lit {
                             Lit::Str(string) => quote! {
                                 Some(

@@ -97,9 +97,9 @@ fn default_path(ctx: &Context) -> Option<PathBuf> {
 #[derive(Debug, Config)]
 #[config(context = Context)]
 pub struct ContextDefaults {
-    #[setting(default_fn = default_count)]
+    #[setting(default = default_count)]
     count: usize,
-    #[setting(default_fn = default_path)]
+    #[setting(default = default_path)]
     path: PathBuf,
 }
 

@@ -259,12 +259,9 @@ In schematic, there are 2 forms of default values:
 - The second is on the [final configuration](#configuration) itself, and uses `Default` to generate
   the final value if none was provided. This acts more like a fallback.
 
-This section will talk about the `#[setting]` attribute, and the supported `default`, `default_str`,
-and `default_fn` attribute fields.
-
-The `default` attribute field is used for declaring primitive values, like numbers and booleans. It
-can also be used for array and tuple literals, as well as function (mainly for `from()`) and macros
-calls.
+This section will talk about the `#[setting]` attribute and `default`. The `default` attribute field
+is used for declaring primitive values, like numbers and booleans. It can also be used for array and
+tuple literals, as well as function (mainly for `from()`) and macros calls.
 
 ```rust
 #[derive(Config)]
@@ -296,7 +293,7 @@ fn find_unused_port(ctx: &Context) -> Option<usize> {
 
 #[derive(Config)]
 struct AppConfig {
-	#[setting(default_fn = find_unused_port)]
+	#[setting(default = find_unused_port)]
 	port: usize,
 }
 ```

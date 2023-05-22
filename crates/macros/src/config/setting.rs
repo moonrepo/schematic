@@ -7,8 +7,8 @@ use syn::{Expr, ExprPath, Field, Meta, Type};
 
 pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Option<Expr>> {
     match meta {
-        Meta::Path(_) => return Err(darling::Error::unsupported_format("path").with_span(meta)),
-        Meta::List(_) => return Err(darling::Error::unsupported_format("list").with_span(meta)),
+        Meta::Path(_) => Err(darling::Error::unsupported_format("path").with_span(meta)),
+        Meta::List(_) => Err(darling::Error::unsupported_format("list").with_span(meta)),
         Meta::NameValue(nv) => Ok(Some(nv.value.clone())),
     }
 }
@@ -19,8 +19,6 @@ pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Option<Expr>> {
 pub struct SettingArgs {
     #[darling(with = "preserve_str_literal")]
     pub default: Option<Expr>,
-    // pub default_fn: Option<ExprPath>,
-    // pub default_str: Option<String>,
     pub env: Option<String>,
     pub extend: bool,
     pub merge: Option<ExprPath>,

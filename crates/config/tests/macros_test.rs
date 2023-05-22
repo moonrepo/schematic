@@ -48,13 +48,13 @@ pub struct OptionalValues {
 struct DefaultValues {
     #[setting(default = true)]
     boolean: bool,
-    #[setting(default_fn = default_bool)]
+    #[setting(default = default_bool)]
     boolean_fn: bool,
     // #[setting(default = 'a')]
     // chars: char,
     #[setting(default = "foo")]
     string: String,
-    #[setting(default_fn = private::default_string)]
+    #[setting(default = private::default_string)]
     string_fn: String,
     #[setting(default = "foo.json")]
     file_string: String,
@@ -70,10 +70,10 @@ struct DefaultValues {
     tuple: (u8, u8, u8, u8),
     #[setting(default = vec![1, 2, 3, 4])]
     vector: Vec<usize>,
-    // #[setting(default_fn = SomeEnum::default)]
+    // #[setting(default = SomeEnum::default)]
     enums: SomeEnum,
     // Invalid
-    // #[setting(default = true, default_fn = default_bool)]
+    // #[setting(default = true, default = default_bool)]
     // invalid: bool,
 }
 
