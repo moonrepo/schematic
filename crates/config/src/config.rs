@@ -27,19 +27,7 @@ pub trait Config: Sized {
 
     const META: ConfigMeta;
 
-    fn default_values(
-        context: &<Self::Partial as PartialConfig>::Context,
-    ) -> Result<Self, ConfigError> {
-        Ok(Self::from_partial(
-            <Self::Partial as PartialConfig>::default_values(context)?,
-        ))
-    }
-
     fn from_partial(partial: Self::Partial) -> Self;
-
-    fn partial() -> Self::Partial {
-        <Self::Partial as Default>::default()
-    }
 
     fn validate(
         &self,
