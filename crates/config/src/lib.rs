@@ -30,7 +30,6 @@ macro_rules! config_enum {
         #[derive(
             Clone,
             Debug,
-            Default,
             Eq,
             PartialEq,
             serde::Deserialize,
@@ -48,14 +47,7 @@ macro_rules! config_enum {
 macro_rules! config_enum {
     ($impl:item) => {
         #[derive(
-            Clone,
-            Debug,
-            Default,
-            Eq,
-            PartialEq,
-            serde::Deserialize,
-            serde::Serialize,
-            schemars::JsonSchema,
+            Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, schemars::JsonSchema,
         )]
         #[serde(rename_all = "kebab-case")]
         $impl

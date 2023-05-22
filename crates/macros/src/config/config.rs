@@ -224,6 +224,15 @@ impl<'l> ToTokens for Config<'l> {
 
         let token = quote! {
             #[automatically_derived]
+            impl Default for #name {
+                fn default() -> Self {
+                   let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
+
+                    <Self as schematic::Config>::default_values(&context).unwrap()
+                }
+            }
+
+            #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 

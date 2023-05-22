@@ -1,7 +1,7 @@
 use schematic::*;
 use std::path::PathBuf;
 
-#[derive(Debug, Default, Config)]
+#[derive(Debug, Config)]
 pub struct NativeDefaults {
     boolean: bool,
     string: String,
