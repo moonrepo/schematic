@@ -27,7 +27,10 @@ pub trait Config: Sized {
 
     const META: ConfigMeta;
 
-    fn from_partial(partial: Self::Partial) -> Self;
+    fn from_partial(
+        context: &<Self::Partial as PartialConfig>::Context,
+        partial: Self::Partial,
+    ) -> Self;
 
     fn validate(
         &self,

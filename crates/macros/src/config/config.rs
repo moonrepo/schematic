@@ -229,6 +229,7 @@ impl<'l> ToTokens for Config<'l> {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
                     <Self as schematic::Config>::from_partial(
+                        &context,
                         <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap(),
                     )
                 }
@@ -240,7 +241,10 @@ impl<'l> ToTokens for Config<'l> {
 
                 const META: schematic::ConfigMeta = #meta;
 
-                fn from_partial(partial: Self::Partial) -> Self {
+                fn from_partial(
+                    context: &<Self::Partial as schematic::PartialConfig>::Context,
+                    partial: Self::Partial,
+                ) -> Self {
                     Self {
                         #(#field_names: #from_stmts),*
                     }

@@ -170,14 +170,14 @@ impl<'l> SettingType<'l> {
             } => {
                 let callback = match collection {
                     NestedType::None(id) => {
-                        quote! { #id::from_partial }
+                        quote! { |v| #id::from_partial(context, v) }
                     }
                     NestedType::Set(_, item) => {
                         quote! {
                             |data| {
                                 data
                                 .into_iter()
-                                .map(#item::from_partial)
+                                .map(|v| #item::from_partial(context, v))
                                 .collect::<_>()
                             }
                         }
@@ -187,7 +187,7 @@ impl<'l> SettingType<'l> {
                             |data| {
                                 data
                                 .into_iter()
-                                .map(|(k, v)| (k, #value::from_partial(v)))
+                                .map(|(k, v)| (k, #value::from_partial(context, v)))
                                 .collect::<_>()
                             }
                         }
