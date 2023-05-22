@@ -52,15 +52,15 @@ struct DefaultValues {
     boolean_fn: bool,
     // #[setting(default = 'a')]
     // chars: char,
-    #[setting(default_str = "foo")]
+    #[setting(default = "foo")]
     string: String,
     #[setting(default_fn = private::default_string)]
     string_fn: String,
-    #[setting(default_str = "foo.json")]
+    #[setting(default = "foo.json")]
     file_string: String,
-    #[setting(default_str = "foo with. many values!")]
+    #[setting(default = "foo with. many values!")]
     long_string: String,
-    #[setting(default_str = "foo/bar")]
+    #[setting(default = "foo/bar")]
     path_string: PathBuf,
     #[setting(default = 123)]
     number: usize,

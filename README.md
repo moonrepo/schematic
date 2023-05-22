@@ -269,6 +269,9 @@ calls.
 ```rust
 #[derive(Config)]
 struct AppConfig {
+	#[setting(default = "/")]
+	base: String,
+
 	#[setting(default = 3000)]
 	port: usize,
 
@@ -280,22 +283,10 @@ struct AppConfig {
 }
 ```
 
-For string literals, the `default_str` attribute field should be used instead.
-
-```rust
-#[derive(Config)]
-struct AppConfig {
-	#[setting(default_str = "/")]
-	base: String,
-}
-```
-
-And lastly, if you need more control or need to calculate a complex value, you can use the
-`default_fn` attribute field, which requires a path to a function to call.
-
-This function receives the [context](#contexts) as the first argument (use `()` or generics if you
-don't have context), and can return an optional value. If `None` is returned, the `Default` value
-will be used instead.
+If you need more control or need to calculate a complex value, you can pass a reference to a
+function to call. This function receives the [context](#contexts) as the first argument (use `()` or
+generics if you don't have context), and can return an optional value. If `None` is returned, the
+`Default` value will be used instead.
 
 ```rust
 fn find_unused_port(ctx: &Context) -> Option<usize> {

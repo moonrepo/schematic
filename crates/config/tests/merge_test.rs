@@ -72,7 +72,7 @@ fn custom_merge_with_funcs() {
 
 #[derive(Debug, Config)]
 pub struct MergeNested {
-    #[setting(default_str = "xyz")]
+    #[setting(default = "xyz")]
     string: String,
     #[setting(default = 10)]
     other: usize,
@@ -80,7 +80,7 @@ pub struct MergeNested {
 
 #[derive(Debug, Config)]
 pub struct MergeBase {
-    #[setting(default_str = "abc")]
+    #[setting(default = "abc")]
     string: String,
     #[setting(default = vec![1,2,3], merge = merge::append_vec)]
     vector: Vec<usize>,

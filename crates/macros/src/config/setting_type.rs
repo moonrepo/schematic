@@ -2,8 +2,7 @@ use super::setting::SettingArgs;
 use crate::utils::unwrap_option;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Expr, GenericArgument, PathArguments, TypePath};
-use syn::{PathSegment, Type};
+use syn::{Expr, GenericArgument, Lit, PathArguments, PathSegment, Type, TypePath};
 
 fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
     let last_segment = path.path.segments.last().unwrap();
@@ -117,33 +116,38 @@ impl<'l> SettingType<'l> {
                 _ => quote! { None },
             },
             SettingType::Value { value, .. } => {
-                if let Some(func) = args.default_fn.as_ref() {
-                    return quote! { #func(context) };
-                };
+                // if let Some(func) = args.default_fn.as_ref() {
+                //     return quote! { #func(context) };
+                // };
 
-                if let Some(string) = args.default_str.as_ref() {
-                    return quote! {
-                        Some(
-                            #value::try_from(#string)
-                                .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
-                        )
-                    };
-                };
+                // if let Some(string) = args.default_str.as_ref() {
+                //     return quote! {
+                //         Some(
+                //             #value::try_from(#string)
+                //                 .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
+                //         )
+                //     };
+                // };
 
                 if let Some(expr) = args.default.as_ref() {
                     return match expr {
-                        Expr::Array(_)
-                        | Expr::Call(_)
-                        | Expr::Lit(_)
-                        | Expr::Macro(_)
-                        | Expr::Tuple(_) => {
+                        Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
                             quote! { Some(#expr) }
                         }
+                        Expr::Lit(lit) => match &lit.lit {
+                            Lit::Str(string) => quote! {
+                                Some(
+                                    #value::try_from(#string)
+                                        .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
+                                )
+                            },
+                            other => quote! { Some(#other) },
+                        },
                         invalid => {
                             let name = name.to_string();
                             let info = format!("{:?}", invalid);
 
-                            panic!("Unsupported default value for {name} ({info}). May only provide literals, arrays, or tuples. Use `default_fn` or `default_str` for more complex defaults.");
+                            panic!("Unsupported default value for {name} ({info}). May only provide literals, primitives, arrays, or tuples.");
                         }
                     };
                 };
