@@ -106,8 +106,8 @@ impl SourceFormat {
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     Code { code: String },
-    Defaults,
-    EnvVars,
+    // Defaults,
+    // EnvVars,
     File { path: PathBuf },
     Url { url: String },
 }
@@ -187,7 +187,7 @@ impl Source {
                 format.parse(fs::read_to_string(path)?, path.to_str().unwrap())
             }
             Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
-            _ => unreachable!(),
+            // _ => unreachable!(),
         };
 
         result.map_err(|error| ConfigError::Parser {

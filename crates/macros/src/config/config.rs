@@ -245,7 +245,18 @@ impl<'l> ToTokens for Config<'l> {
                     context: &<Self::Partial as schematic::PartialConfig>::Context,
                     partial: Self::Partial,
                 ) -> Result<Self, schematic::ConfigError> {
-                    // let mut config = <Self::Partial as schematic::PartialConfig>::default_values(context)?;
+                    use schematic::PartialConfig as SPC;
+
+                    // Defaults
+                    let mut config = <#partial_name as SPC>::default_values(context)?;
+
+                    // Layer sources
+                    config.merge(context, partial)?;
+
+                    // Env vars
+                    config.merge(context, <#partial_name as SPC>::env_values()?)?;
+
+                    let partial = config;
 
                     Ok(Self {
                         #(#field_names: #from_stmts),*
