@@ -230,7 +230,8 @@ impl<'l> ToTokens for Config<'l> {
 
                     <Self as schematic::Config>::from_partial(
                         &context,
-                        <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap(),
+                        Default::default(),
+                        false,
                     ).unwrap()
                 }
             }
@@ -244,6 +245,7 @@ impl<'l> ToTokens for Config<'l> {
                 fn from_partial(
                     context: &<Self::Partial as schematic::PartialConfig>::Context,
                     partial: Self::Partial,
+                    with_env: bool,
                 ) -> Result<Self, schematic::ConfigError> {
                     use schematic::PartialConfig as SPC;
 
@@ -254,7 +256,9 @@ impl<'l> ToTokens for Config<'l> {
                     config.merge(context, partial)?;
 
                     // Env vars
-                    config.merge(context, <#partial_name as SPC>::env_values()?)?;
+                    if with_env {
+                        config.merge(context, <#partial_name as SPC>::env_values()?)?;
+                    }
 
                     let partial = config;
 

@@ -171,7 +171,7 @@ impl<'l> SettingType<'l> {
                 let statement = match collection {
                     NestedType::None(id) => {
                         quote! {
-                             #id::from_partial(context, data)?
+                             #id::from_partial(context, data, with_env)?
                         }
                     }
                     NestedType::Set(api, item) => {
@@ -180,7 +180,7 @@ impl<'l> SettingType<'l> {
                                 {
                                     let mut result = #api::with_capacity(data.len());
                                     for v in data {
-                                        result.push(#item::from_partial(context, v)?);
+                                        result.push(#item::from_partial(context, v, with_env)?);
                                     }
                                     result
                                 }
@@ -190,7 +190,7 @@ impl<'l> SettingType<'l> {
                                 {
                                     let mut result = #api::new();
                                     for v in data {
-                                        result.insert(#item::from_partial(context, v)?);
+                                        result.insert(#item::from_partial(context, v, with_env)?);
                                     }
                                     result
                                 }
@@ -199,7 +199,7 @@ impl<'l> SettingType<'l> {
                         // quote! {
                         //     let result = Result<#api<_>, schematic::ConfigError> = data
                         //         .into_iter()
-                        //         .map(|v| #item::from_partial(context, v))
+                        //         .map(|v| #item::from_partial(context, v, with_env))
                         //         .collect::<#api<Result<_, schematic::ConfigError>>>();
                         //     result?
                         // }
@@ -209,7 +209,7 @@ impl<'l> SettingType<'l> {
                             {
                                 let mut result = #api::new();
                                 for (k, v) in data {
-                                    result.insert(k, #value::from_partial(context, v)?);
+                                    result.insert(k, #value::from_partial(context, v, with_env)?);
                                 }
                                 result
                             }
@@ -217,7 +217,7 @@ impl<'l> SettingType<'l> {
                         // quote! {
                         //     let result = Result<#api<_, _>, schematic::ConfigError> = data
                         //         .into_iter()
-                        //         .map(|(k, v)| (k, #value::from_partial(context, v)))
+                        //         .map(|(k, v)| (k, #value::from_partial(context, v, with_env)))
                         //         .collect::<#api<_, Result<_, schematic::ConfigError>>>();
                         //     result?
                         // }

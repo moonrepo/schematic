@@ -30,6 +30,7 @@ pub trait Config: Sized {
     fn from_partial(
         context: &<Self::Partial as PartialConfig>::Context,
         partial: Self::Partial,
+        with_env: bool,
     ) -> Result<Self, ConfigError>;
 
     fn validate(

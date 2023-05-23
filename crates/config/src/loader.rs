@@ -93,7 +93,7 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         let layers = self.extract_layers(&self.sources, context)?;
         let partial = self.merge_layers(&layers, context)?;
-        let config = T::from_partial(context, partial)?;
+        let config = T::from_partial(context, partial, true)?;
 
         config
             .validate(context)
