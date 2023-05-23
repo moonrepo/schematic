@@ -168,36 +168,77 @@ impl<'l> SettingType<'l> {
                 optional,
                 ..
             } => {
-                let callback = match collection {
+                let statement = match collection {
                     NestedType::None(id) => {
-                        quote! { #id::from_partial }
-                    }
-                    NestedType::Set(_, item) => {
                         quote! {
-                            |data| {
-                                data
-                                .into_iter()
-                                .map(#item::from_partial)
-                                .collect::<_>()
-                            }
+                             #id::from_partial(context, data, with_env)?
                         }
                     }
-                    NestedType::Map(_, _, value) => {
-                        quote! {
-                            |data| {
-                                data
-                                .into_iter()
-                                .map(|(k, v)| (k, #value::from_partial(v)))
-                                .collect::<_>()
+                    NestedType::Set(api, item) => {
+                        if *api == "Vec" {
+                            quote! {
+                                {
+                                    let mut result = #api::with_capacity(data.len());
+                                    for v in data {
+                                        result.push(#item::from_partial(context, v, with_env)?);
+                                    }
+                                    result
+                                }
+                            }
+                        } else {
+                            quote! {
+                                {
+                                    let mut result = #api::new();
+                                    for v in data {
+                                        result.insert(#item::from_partial(context, v, with_env)?);
+                                    }
+                                    result
+                                }
                             }
                         }
+                        // quote! {
+                        //     let result = Result<#api<_>, schematic::ConfigError> = data
+                        //         .into_iter()
+                        //         .map(|v| #item::from_partial(context, v, with_env))
+                        //         .collect::<#api<Result<_, schematic::ConfigError>>>();
+                        //     result?
+                        // }
+                    }
+                    NestedType::Map(api, _, value) => {
+                        quote! {
+                            {
+                                let mut result = #api::new();
+                                for (k, v) in data {
+                                    result.insert(k, #value::from_partial(context, v, with_env)?);
+                                }
+                                result
+                            }
+                        }
+                        // quote! {
+                        //     let result = Result<#api<_, _>, schematic::ConfigError> = data
+                        //         .into_iter()
+                        //         .map(|(k, v)| (k, #value::from_partial(context, v, with_env)))
+                        //         .collect::<#api<_, Result<_, schematic::ConfigError>>>();
+                        //     result?
+                        // }
                     }
                 };
 
                 if *optional {
-                    quote! { partial.#name.map(#callback) }
+                    quote! {
+                        if let Some(data) = partial.#name {
+                            Some(#statement)
+                        } else {
+                            None
+                        }
+                    }
                 } else {
-                    quote! { partial.#name.map(#callback).unwrap() }
+                    quote! {
+                        {
+                            let data = partial.#name.unwrap_or_default();
+                            #statement
+                        }
+                    }
                 }
             }
             SettingType::Value { optional, .. } => {

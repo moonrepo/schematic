@@ -105,3 +105,49 @@ fn env_var_takes_precedence() {
 
     assert_eq!(result.config.string, "foo");
 }
+
+#[derive(Debug, Config)]
+pub struct EnvVarsNested {
+    #[setting(env = "ENV_STRING")]
+    string: String,
+}
+
+#[derive(Debug, Config)]
+pub struct EnvVarsBase {
+    #[setting(nested)]
+    nested: EnvVarsNested,
+    #[setting(nested)]
+    opt_nested: Option<EnvVarsNested>,
+}
+
+#[test]
+#[serial]
+fn loads_env_vars_for_nested() {
+    reset_vars();
+    env::set_var("ENV_STRING", "foo");
+
+    let result = ConfigLoader::<EnvVarsBase>::new(SourceFormat::Yaml)
+        .code("{}")
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.nested.string, "foo");
+    assert!(result.config.opt_nested.is_none());
+}
+
+#[test]
+#[serial]
+fn loads_env_vars_for_optional_nested_when_valued() {
+    reset_vars();
+    env::set_var("ENV_STRING", "foo");
+
+    let result = ConfigLoader::<EnvVarsBase>::new(SourceFormat::Yaml)
+        .code("optNested:\n  string: bar")
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.nested.string, "foo");
+    assert_eq!(result.config.opt_nested.unwrap().string, "foo");
+}

@@ -91,9 +91,9 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        let layers = self.extract_layers(&self.sources, context)?;
+        let layers = self.parse_into_layers(&self.sources)?;
         let partial = self.merge_layers(&layers, context)?;
-        let config = T::from_partial(partial);
+        let config = T::from_partial(context, partial, true)?;
 
         config
             .validate(context)
@@ -113,34 +113,10 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        let layers = self.extract_layers(&self.sources, context)?;
+        let layers = self.parse_into_layers(&self.sources)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
-    }
-
-    fn extract_layers(
-        &self,
-        sources_to_parse: &[Source],
-        context: &<T::Partial as PartialConfig>::Context,
-    ) -> Result<Vec<Layer<T>>, ConfigError> {
-        let mut layers: Vec<Layer<T>> = vec![];
-
-        // First layer should be the defaults
-        layers.push(Layer {
-            partial: T::Partial::default_values(context)?,
-            source: Source::Defaults,
-        });
-
-        layers.extend(self.parse_into_layers(sources_to_parse)?);
-
-        // Last layer should be environment variables
-        layers.push(Layer {
-            partial: T::Partial::env_values()?,
-            source: Source::EnvVars,
-        });
-
-        Ok(layers)
     }
 
     fn extend_additional_layers(
@@ -200,9 +176,7 @@ impl<T: Config> ConfigLoader<T> {
             let partial: T::Partial = source.parse(self.format, &self.label)?;
 
             if let Some(extends_from) = partial.extends_from() {
-                let extended_layers = self.extend_additional_layers(source, &extends_from)?;
-
-                layers.extend(extended_layers);
+                layers.extend(self.extend_additional_layers(source, &extends_from)?);
             }
 
             layers.push(Layer {

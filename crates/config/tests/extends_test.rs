@@ -55,7 +55,7 @@ fn extends_from_chain_in_order() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            Source::Defaults,
+            // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -65,7 +65,7 @@ fn extends_from_chain_in_order() {
             Source::File {
                 path: root.join("./base.yml")
             },
-            Source::EnvVars,
+            // Source::EnvVars,
         ]
     );
 }
@@ -90,7 +90,7 @@ fn extends_from_chain_in_order_using_list() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            Source::Defaults,
+            // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -103,7 +103,7 @@ fn extends_from_chain_in_order_using_list() {
             Source::File {
                 path: root.join("./base-list.yml")
             },
-            Source::EnvVars,
+            // Source::EnvVars,
         ]
     );
 }
@@ -128,7 +128,7 @@ fn extends_from_chain_in_order_using_both_enum() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            Source::Defaults,
+            // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
@@ -147,7 +147,7 @@ fn extends_from_chain_in_order_using_both_enum() {
             Source::File {
                 path: root.join("./base-both.yml")
             },
-            Source::EnvVars,
+            // Source::EnvVars,
         ]
     );
 }
@@ -172,11 +172,11 @@ fn extends_from_optional() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            Source::Defaults,
+            // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml")
             },
-            Source::EnvVars,
+            // Source::EnvVars,
         ]
     );
 }

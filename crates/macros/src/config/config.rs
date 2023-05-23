@@ -226,9 +226,13 @@ impl<'l> ToTokens for Config<'l> {
             #[automatically_derived]
             impl Default for #name {
                 fn default() -> Self {
-                   let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
+                    let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
-                    <Self as schematic::Config>::default_values(&context).unwrap()
+                    <Self as schematic::Config>::from_partial(
+                        &context,
+                        Default::default(),
+                        false,
+                    ).unwrap()
                 }
             }
 
@@ -238,10 +242,29 @@ impl<'l> ToTokens for Config<'l> {
 
                 const META: schematic::ConfigMeta = #meta;
 
-                fn from_partial(partial: Self::Partial) -> Self {
-                    Self {
-                        #(#field_names: #from_stmts),*
+                fn from_partial(
+                    context: &<Self::Partial as schematic::PartialConfig>::Context,
+                    partial: Self::Partial,
+                    with_env: bool,
+                ) -> Result<Self, schematic::ConfigError> {
+                    use schematic::PartialConfig as SPC;
+
+                    // Defaults
+                    let mut config = <#partial_name as SPC>::default_values(context)?;
+
+                    // Layer sources
+                    config.merge(context, partial)?;
+
+                    // Env vars
+                    if with_env {
+                        config.merge(context, <#partial_name as SPC>::env_values()?)?;
                     }
+
+                    let partial = config;
+
+                    Ok(Self {
+                        #(#field_names: #from_stmts),*
+                    })
                 }
 
                 fn validate_with_path(
