@@ -231,7 +231,7 @@ impl<'l> ToTokens for Config<'l> {
                     <Self as schematic::Config>::from_partial(
                         &context,
                         <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap(),
-                    )
+                    ).unwrap()
                 }
             }
 
@@ -244,10 +244,12 @@ impl<'l> ToTokens for Config<'l> {
                 fn from_partial(
                     context: &<Self::Partial as schematic::PartialConfig>::Context,
                     partial: Self::Partial,
-                ) -> Self {
-                    Self {
+                ) -> Result<Self, schematic::ConfigError> {
+                    // let mut config = <Self::Partial as schematic::PartialConfig>::default_values(context)?;
+
+                    Ok(Self {
                         #(#field_names: #from_stmts),*
-                    }
+                    })
                 }
 
                 fn validate_with_path(
