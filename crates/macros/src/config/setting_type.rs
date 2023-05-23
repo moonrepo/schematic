@@ -234,10 +234,9 @@ impl<'l> SettingType<'l> {
                     }
                 } else {
                     quote! {
-                        if let Some(data) = partial.#name {
+                        {
+                            let data = partial.#name.unwrap_or_default();
                             #statement
-                        } else {
-                            Default::default()
                         }
                     }
                 }
