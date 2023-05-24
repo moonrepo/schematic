@@ -36,16 +36,36 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
     // Render variants to tokens
+    let unit_names = variants
+        .iter()
+        .map(|v| {
+            let name = &v.name;
+
+            quote! {
+                #enum_name::#name,
+            }
+        })
+        .collect::<Vec<_>>();
+
     let display_stmts = variants
         .iter()
         .map(|v| v.get_display_fmt())
         .collect::<Vec<_>>();
+
     let from_stmts = variants
         .iter()
         .map(|v| v.get_from_str())
         .collect::<Vec<_>>();
 
     quote! {
+        impl #enum_name {
+            pub fn variants() -> Vec<#enum_name> {
+                vec![
+                    #(#unit_names)*
+                ]
+            }
+        }
+
         #[automatically_derived]
         impl std::str::FromStr for #enum_name {
             type Err = schematic::ConfigError;
