@@ -8,7 +8,7 @@ use syn::{parse_macro_input, Data, DeriveInput};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
-#[darling(default, attributes(serde), supports(enum_unit))]
+#[darling(default, allow_unknown_fields, attributes(serde), supports(enum_unit))]
 pub struct SerdeArgs {
     rename_all: Option<String>,
 }

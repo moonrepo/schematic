@@ -204,7 +204,7 @@ enum BasicEnum {
 }
 
 #[derive(ConfigEnum, Deserialize, Serialize)]
-#[serde(rename_all = "UPPERCASE")]
+#[serde(rename = "Test", rename_all = "UPPERCASE")]
 enum CustomFormatEnum {
     Foo,
     Bar,
