@@ -17,7 +17,7 @@ mod private {
     }
 }
 
-config_enum!(
+derive_enum!(
     #[derive(Default)]
     pub enum SomeEnum {
         #[default]

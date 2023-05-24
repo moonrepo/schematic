@@ -25,7 +25,7 @@ pub use validator::*;
 
 #[cfg(all(feature = "json_schema", feature = "typescript"))]
 #[macro_export]
-macro_rules! config_enum {
+macro_rules! derive_enum {
     ($impl:item) => {
         #[derive(
             Clone,
@@ -44,7 +44,7 @@ macro_rules! config_enum {
 
 #[cfg(all(feature = "json_schema", not(feature = "typescript")))]
 #[macro_export]
-macro_rules! config_enum {
+macro_rules! derive_enum {
     ($impl:item) => {
         #[derive(
             Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, schemars::JsonSchema,
@@ -56,7 +56,7 @@ macro_rules! config_enum {
 
 #[cfg(all(not(feature = "json_schema"), feature = "typescript"))]
 #[macro_export]
-macro_rules! config_enum {
+macro_rules! derive_enum {
     ($impl:item) => {
         #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, ts_rs::TS)]
         #[serde(rename_all = "kebab-case")]
@@ -66,7 +66,7 @@ macro_rules! config_enum {
 
 #[cfg(all(not(feature = "json_schema"), not(feature = "typescript")))]
 #[macro_export]
-macro_rules! config_enum {
+macro_rules! derive_enum {
     ($impl:item) => {
         #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
         #[serde(rename_all = "kebab-case")]
