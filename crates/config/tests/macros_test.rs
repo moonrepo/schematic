@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, HashMap},
     path::PathBuf,
@@ -193,4 +194,20 @@ struct Comments {
      * Block
      */
     block: bool,
+}
+
+#[derive(ConfigEnum)]
+enum BasicEnum {
+    Foo,
+    Bar,
+    Baz,
+}
+
+#[derive(ConfigEnum, Deserialize, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+enum CustomFormatEnum {
+    Foo,
+    Bar,
+    #[variant(value = "b-a-z")]
+    Baz,
 }

@@ -1,8 +1,8 @@
 use crate::utils::{extract_comment, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
-use syn::{Expr, ExprPath, Field, Fields, Meta, Type, Variant as NativeVariant};
+use quote::quote;
+use syn::{Fields, Variant as NativeVariant};
 
 // #[variant()]
 #[derive(FromAttributes, Default)]
@@ -27,10 +27,22 @@ impl<'l> Variant<'l> {
         }
 
         Variant {
-            args,
             comment: extract_comment(&variant.attrs),
             name: &variant.ident,
-            value: format_case(format, variant.ident.to_string().as_str()),
+            value: args
+                .value
+                .clone()
+                .unwrap_or_else(|| format_case(format, variant.ident.to_string().as_str())),
+            args,
+        }
+    }
+
+    pub fn get_from_str(&self) -> TokenStream {
+        let name = &self.name;
+        let value = &self.value;
+
+        quote! {
+            #value => Self::#name,
         }
     }
 }
