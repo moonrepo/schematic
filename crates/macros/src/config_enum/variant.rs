@@ -37,6 +37,15 @@ impl<'l> Variant<'l> {
         }
     }
 
+    pub fn get_display_fmt(&self) -> TokenStream {
+        let name = &self.name;
+        let value = &self.value;
+
+        quote! {
+            Self::#name => f.pad(#value),
+        }
+    }
+
     pub fn get_from_str(&self) -> TokenStream {
         let name = &self.name;
         let value = &self.value;

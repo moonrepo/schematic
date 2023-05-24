@@ -28,12 +28,18 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .rename_all
         .unwrap_or_else(|| "kebab-case".to_owned());
 
+    // Extract unit variants
     let variants = data
         .variants
         .iter()
         .map(|v| Variant::from(v, &case_format))
         .collect::<Vec<_>>();
 
+    // Render variants to tokens
+    let display_stmts = variants
+        .iter()
+        .map(|v| v.get_display_fmt())
+        .collect::<Vec<_>>();
     let from_stmts = variants
         .iter()
         .map(|v| v.get_from_str())
@@ -76,6 +82,18 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
                 std::str::FromStr::from_str(value)
+            }
+        }
+
+        #[automatically_derived]
+        impl std::fmt::Display for #enum_name {
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+            ) -> std::fmt::Result {
+                match self {
+                    #(#display_stmts)*
+                }
             }
         }
     }
