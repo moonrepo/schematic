@@ -8,7 +8,12 @@ use syn::{parse_macro_input, Data, DeriveInput};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
-#[darling(default, allow_unknown_fields, attributes(serde), supports(enum_unit))]
+#[darling(
+    default,
+    allow_unknown_fields,
+    attributes(serde),
+    supports(enum_unit, enum_tuple)
+)]
 pub struct SerdeArgs {
     rename_all: Option<String>,
 }
@@ -38,13 +43,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     // Render variants to tokens
     let unit_names = variants
         .iter()
-        .map(|v| {
-            let name = &v.name;
-
-            quote! {
-                #enum_name::#name,
-            }
-        })
+        .map(|v| v.get_unit_name())
         .collect::<Vec<_>>();
 
     let display_stmts = variants
@@ -73,7 +72,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 Ok(match s {
                     #(#from_stmts)*
-                    unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
+                    // unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
                 })
             }
         }
