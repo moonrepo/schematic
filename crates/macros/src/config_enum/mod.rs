@@ -8,7 +8,12 @@ use syn::{parse_macro_input, Data, DeriveInput};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
-#[darling(default, allow_unknown_fields, attributes(serde), supports(enum_unit))]
+#[darling(
+    default,
+    allow_unknown_fields,
+    attributes(serde),
+    supports(enum_unit, enum_tuple)
+)]
 pub struct SerdeArgs {
     rename_all: Option<String>,
 }
@@ -36,26 +41,32 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
     // Render variants to tokens
-    let unit_names = variants
-        .iter()
-        .map(|v| {
-            let name = &v.name;
+    let mut unit_names = vec![];
+    let mut display_stmts = vec![];
+    let mut from_stmts = vec![];
+    let mut has_fallback = false;
 
-            quote! {
-                #enum_name::#name,
+    for variant in variants {
+        unit_names.push(variant.get_unit_name());
+        display_stmts.push(variant.get_display_fmt());
+        from_stmts.push(variant.get_from_str());
+
+        if variant.args.fallback {
+            if has_fallback {
+                panic!("Only 1 fallback variant is supported.")
             }
-        })
-        .collect::<Vec<_>>();
 
-    let display_stmts = variants
-        .iter()
-        .map(|v| v.get_display_fmt())
-        .collect::<Vec<_>>();
+            has_fallback = true;
+        }
+    }
 
-    let from_stmts = variants
-        .iter()
-        .map(|v| v.get_from_str())
-        .collect::<Vec<_>>();
+    let from_fallback = if has_fallback {
+        quote! {}
+    } else {
+        quote! {
+            unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
+        }
+    };
 
     quote! {
         impl #enum_name {
@@ -73,7 +84,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 Ok(match s {
                     #(#from_stmts)*
-                    unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
+                    #from_fallback
                 })
             }
         }
@@ -108,9 +119,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl std::fmt::Display for #enum_name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
+                write!(f, "{}", match self {
                     #(#display_stmts)*
-                }
+                })
             }
         }
     }

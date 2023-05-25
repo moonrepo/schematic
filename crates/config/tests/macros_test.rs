@@ -211,3 +211,12 @@ enum CustomFormatEnum {
     #[variant(value = "b-a-z")]
     Baz,
 }
+
+#[derive(ConfigEnum)]
+enum OtherEnum {
+    Foo,
+    Bar,
+    Baz,
+    #[variant(fallback)]
+    Other(String),
+}
