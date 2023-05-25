@@ -217,6 +217,6 @@ enum OtherEnum {
     Foo,
     Bar,
     Baz,
-    #[variant(other)]
+    #[variant(fallback)]
     Other(String),
 }

@@ -8,7 +8,7 @@ use syn::{Fields, Variant as NativeVariant};
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(variant))]
 pub struct VariantArgs {
-    pub other: bool,
+    pub fallback: bool,
     pub value: Option<String>,
 }
 
@@ -23,17 +23,17 @@ impl<'l> Variant<'l> {
     pub fn from<'n>(variant: &'n NativeVariant, format: &str) -> Variant<'n> {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap_or_default();
 
-        if args.other {
+        if args.fallback {
             if let Fields::Unnamed(fields) = &variant.fields {
                 if fields.unnamed.len() != 1 {
-                    panic!("Only 1 unnamed field is supported for other.");
+                    panic!("Only 1 unnamed field is supported for `fallback`.");
                 }
             } else {
-                panic!("Only unnamed tuple variants are supported for other.");
+                panic!("Only unnamed tuple variants are supported for `fallback`.");
             }
 
             if args.value.is_some() {
-                panic!("Value is not supported for other variants.");
+                panic!("`value` is not supported for `fallback`.");
             }
         } else if !matches!(variant.fields, Fields::Unit) {
             panic!("Only unit variants are supported.");
@@ -42,7 +42,7 @@ impl<'l> Variant<'l> {
         Variant {
             comment: extract_comment(&variant.attrs),
             name: &variant.ident,
-            value: if args.other {
+            value: if args.fallback {
                 String::new()
             } else {
                 args.value
@@ -57,9 +57,9 @@ impl<'l> Variant<'l> {
         let name = &self.name;
         let value = &self.value;
 
-        if self.args.other {
+        if self.args.fallback {
             quote! {
-                Self::#name(other) => other,
+                Self::#name(fallback) => fallback,
             }
         } else {
             quote! {
@@ -72,11 +72,11 @@ impl<'l> Variant<'l> {
         let name = &self.name;
         let value = &self.value;
 
-        if self.args.other {
+        if self.args.fallback {
             quote! {
-                other => Self::#name(
-                    other.try_into().map_err(|_| {
-                        schematic::ConfigError::EnumInvalidOther(other.to_string())
+                fallback => Self::#name(
+                    fallback.try_into().map_err(|_| {
+                        schematic::ConfigError::EnumInvalidFallback(fallback.to_string())
                     })?
                 ),
             }
@@ -90,7 +90,7 @@ impl<'l> Variant<'l> {
     pub fn get_unit_name(&self) -> TokenStream {
         let name = &self.name;
 
-        if self.args.other {
+        if self.args.fallback {
             quote! {
                 Self::#name(Default::default()),
             }

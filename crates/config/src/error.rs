@@ -9,9 +9,9 @@ pub enum ConfigError {
     #[error("{0}")]
     Message(String),
 
-    #[diagnostic(code(config::enums::invalid_other))]
-    #[error("Invalid other value {}, unable to parse type.", .0.style(Style::Symbol))]
-    EnumInvalidOther(String),
+    #[diagnostic(code(config::enums::invalid_fallback))]
+    #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
+    EnumInvalidFallback(String),
 
     #[diagnostic(code(config::enums::unknown_variant))]
     #[error("Unknown enum variant {}.", .0.style(Style::Id))]

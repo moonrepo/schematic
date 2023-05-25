@@ -44,23 +44,23 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut unit_names = vec![];
     let mut display_stmts = vec![];
     let mut from_stmts = vec![];
-    let mut has_other = false;
+    let mut has_fallback = false;
 
     for variant in variants {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
 
-        if variant.args.other {
-            if has_other {
-                panic!("Only 1 other variant is supported.")
+        if variant.args.fallback {
+            if has_fallback {
+                panic!("Only 1 fallback variant is supported.")
             }
 
-            has_other = true;
+            has_fallback = true;
         }
     }
 
-    let from_fallback = if has_other {
+    let from_fallback = if has_fallback {
         quote! {}
     } else {
         quote! {
