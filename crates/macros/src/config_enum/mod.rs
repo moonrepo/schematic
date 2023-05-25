@@ -119,9 +119,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl std::fmt::Display for #enum_name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                match self {
+                write!(f, "{}", match self {
                     #(#display_stmts)*
-                }
+                })
             }
         }
     }

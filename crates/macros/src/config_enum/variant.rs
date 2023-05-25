@@ -59,11 +59,11 @@ impl<'l> Variant<'l> {
 
         if self.args.other {
             quote! {
-                Self::#name(other) => f.pad(other),
+                Self::#name(other) => other,
             }
         } else {
             quote! {
-                Self::#name => f.pad(#value),
+                Self::#name => #value,
             }
         }
     }
