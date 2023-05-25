@@ -20,7 +20,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         SerdeArgs::from_derive_input(&input).expect("Failed to parse serde arguments.");
 
     let Data::Enum(data) = input.data else {
-        panic!("Only structs are supported.");
+        panic!("Only unit enums are supported.");
     };
 
     let enum_name = &input.ident;
