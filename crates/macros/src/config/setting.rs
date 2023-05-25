@@ -1,17 +1,9 @@
 use crate::config::setting_type::SettingType;
-use crate::utils::extract_comment;
+use crate::utils::{extract_comment, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Expr, ExprPath, Field, Meta, Type};
-
-pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
-    match meta {
-        Meta::Path(_) => Err(darling::Error::unsupported_format("path").with_span(meta)),
-        Meta::List(_) => Err(darling::Error::unsupported_format("list").with_span(meta)),
-        Meta::NameValue(nv) => Ok(nv.value.clone()),
-    }
-}
+use syn::{Expr, ExprPath, Field, Type};
 
 // #[setting()]
 #[derive(FromAttributes, Default)]

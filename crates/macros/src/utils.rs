@@ -1,4 +1,28 @@
+use convert_case::{Case, Casing};
 use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta};
+
+pub fn format_case(format: &str, value: &str) -> String {
+    let case = match format {
+        "lowercase" => Case::Lower,
+        "UPPERCASE" => Case::Upper,
+        "PascalCase" => Case::Pascal,
+        "camelCase" => Case::Camel,
+        "snake_case" => Case::Snake,
+        "SCREAMING_SNAKE_CASE" => Case::UpperSnake,
+        "SCREAMING-KEBAB-CASE" => Case::UpperKebab,
+        _ => Case::Kebab,
+    };
+
+    value.to_case(case)
+}
+
+pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
+    match meta {
+        Meta::Path(_) => Err(darling::Error::unsupported_format("path").with_span(meta)),
+        Meta::List(_) => Err(darling::Error::unsupported_format("list").with_span(meta)),
+        Meta::NameValue(nv) => Ok(nv.value.clone()),
+    }
+}
 
 pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
     for attr in attrs {
