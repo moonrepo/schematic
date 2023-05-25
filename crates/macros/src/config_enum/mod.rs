@@ -41,20 +41,32 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
     // Render variants to tokens
-    let unit_names = variants
-        .iter()
-        .map(|v| v.get_unit_name())
-        .collect::<Vec<_>>();
+    let mut unit_names = vec![];
+    let mut display_stmts = vec![];
+    let mut from_stmts = vec![];
+    let mut has_other = false;
 
-    let display_stmts = variants
-        .iter()
-        .map(|v| v.get_display_fmt())
-        .collect::<Vec<_>>();
+    for variant in variants {
+        unit_names.push(variant.get_unit_name());
+        display_stmts.push(variant.get_display_fmt());
+        from_stmts.push(variant.get_from_str());
 
-    let from_stmts = variants
-        .iter()
-        .map(|v| v.get_from_str())
-        .collect::<Vec<_>>();
+        if variant.args.other {
+            if has_other {
+                panic!("Only 1 other variant is supported.")
+            }
+
+            has_other = true;
+        }
+    }
+
+    let from_fallback = if has_other {
+        quote! {}
+    } else {
+        quote! {
+            unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
+        }
+    };
 
     quote! {
         impl #enum_name {
@@ -72,7 +84,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
             fn from_str(s: &str) -> Result<Self, Self::Err> {
                 Ok(match s {
                     #(#from_stmts)*
-                    // unknown => return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned())),
+                    #from_fallback
                 })
             }
         }

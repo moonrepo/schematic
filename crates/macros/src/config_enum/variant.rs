@@ -24,8 +24,16 @@ impl<'l> Variant<'l> {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap_or_default();
 
         if args.other {
-            if !matches!(variant.fields, Fields::Unnamed(_)) {
+            if let Fields::Unnamed(fields) = &variant.fields {
+                if fields.unnamed.len() != 1 {
+                    panic!("Only 1 unnamed field is supported for other.");
+                }
+            } else {
                 panic!("Only unnamed tuple variants are supported for other.");
+            }
+
+            if args.value.is_some() {
+                panic!("Value is not supported for other variants.");
             }
         } else if !matches!(variant.fields, Fields::Unit) {
             panic!("Only unit variants are supported.");
@@ -67,7 +75,9 @@ impl<'l> Variant<'l> {
         if self.args.other {
             quote! {
                 other => Self::#name(
-                    std::str::FromStr::from_str(other).map_err(|e| schematic::ConfigError::Message(e.to_string()))?
+                    other.try_into().map_err(|_| {
+                        schematic::ConfigError::EnumInvalidOther(other.to_string())
+                    })?
                 ),
             }
         } else {
