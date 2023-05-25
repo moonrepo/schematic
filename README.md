@@ -245,6 +245,58 @@ struct Example {
 
 > The `rename` field will also update the [metadata](#metadata) name.
 
+## Configuration enums
+
+Configurations typically use enums to handle value variations of a specific [setting](#settings). To
+simplify this process, we offer a `ConfigEnum` macro/trait that can be derived for enums. At this
+point in time, _only unit variants_ are supported.
+
+```rust
+#[derive(ConfigEnum)]
+enum LogLevel {
+	Info,
+	Error,
+	Debug,
+	Off
+}
+```
+
+This enum will generate the following implementations:
+
+- Provides a static `variants` method, that returns a list of all variants. Perfect for iteration.
+- Implements `FromStr` and `TryFrom` for parsing from a string.
+- Implements `Display` for formatting into a string.
+
+The string value/format is based on the variant name, and is converted to kebab-case by default.
+This can be customized with the `#[serde(rename_all = "kebab-case")]` attribute, which keeps
+consistency with serde's handling.
+
+### Common derives
+
+Furthermore, all enums (not just unit enums) typically support the same derived traits, like
+`Clone`, `Eq`, etc. To reduce boilerplate, we offer a `derive_enum!` macro that will apply these
+traits for you.
+
+```rust
+derive_enum!(
+	#[derive(ConfigEnum, Default)]
+	enum LogLevel {
+		Info,
+		Error,
+		Debug,
+		#[default]
+		Off
+	}
+);
+```
+
+This macro will inject the following attributes:
+
+```rust
+#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+```
+
 ## Settings
 
 Settings are the individual fields/members of a configuration struct, and can be annotated with the
