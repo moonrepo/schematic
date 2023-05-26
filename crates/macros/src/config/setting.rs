@@ -105,11 +105,23 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_default_statement(&self) -> TokenStream {
-        self.value_type.get_default_value(self.name, &self.args)
+        if let Some(value) = self.value_type.get_default_value(self.name, &self.args) {
+            let name = self.name;
+
+            return quote! { partial.#name = #value; };
+        }
+
+        quote! {}
     }
 
     pub fn get_env_statement(&self) -> TokenStream {
-        self.value_type.get_env_value(&self.args)
+        if let Some(value) = self.value_type.get_env_value(&self.args) {
+            let name = self.name;
+
+            return quote! { partial.#name = #value; };
+        }
+
+        quote! {}
     }
 
     pub fn get_from_statement(&self) -> TokenStream {
