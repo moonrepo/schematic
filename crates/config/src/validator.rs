@@ -1,6 +1,8 @@
 use miette::Diagnostic;
 use starbase_styles::color;
+use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};
+use thiserror::Error;
 
 #[derive(Clone, Debug)]
 pub enum Segment {
@@ -73,24 +75,25 @@ impl Display for SettingPath {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Diagnostic, Error)]
+#[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]
 pub struct ValidateError {
     pub message: String,
-    pub path: Option<SettingPath>,
+    pub path: SettingPath,
 }
 
 impl ValidateError {
     pub fn new<T: AsRef<str>>(message: T) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: None,
+            path: SettingPath::default(),
         }
     }
 
     pub fn with_path<T: AsRef<str>>(message: T, path: SettingPath) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: Some(path),
+            path,
         }
     }
 
@@ -104,14 +107,8 @@ impl ValidateError {
     {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: Some(SettingPath::new(segments.into_iter().collect())),
+            path: SettingPath::new(segments.into_iter().collect()),
         }
-    }
-}
-
-impl Display for ValidateError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.message)
     }
 }
 
@@ -141,17 +138,10 @@ impl ValidateErrorType {
 
         match self {
             ValidateErrorType::Setting { path, error } => {
-                let path = match &error.path {
-                    Some(child_path) => path.join_path(child_path),
-                    None => path.clone(),
-                };
+                let mut error = error.clone();
+                error.path = path.join_path(&error.path);
 
-                list.push(format!(
-                    "{}{} {}",
-                    color::id(path.to_string()),
-                    color::muted_light(":"),
-                    error.message
-                ));
+                list.push(error.to_string());
             }
             ValidateErrorType::Nested {
                 error: nested_error,
@@ -166,7 +156,7 @@ impl ValidateErrorType {
     }
 }
 
-#[derive(Clone, Debug, Diagnostic)]
+#[derive(Clone, Debug, Diagnostic, Error)]
 pub struct ValidatorError {
     pub path: SettingPath,
     pub errors: Vec<ValidateErrorType>,
@@ -205,5 +195,3 @@ impl Display for ValidatorError {
         Ok(())
     }
 }
-
-impl std::error::Error for ValidatorError {}
