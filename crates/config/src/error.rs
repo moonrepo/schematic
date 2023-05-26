@@ -79,6 +79,8 @@ pub enum ConfigError {
     #[error("Failed to validate {config}")]
     Validator {
         config: String,
+
+        #[diagnostic_source]
         #[source]
         error: ValidatorError,
     },
@@ -122,7 +124,7 @@ impl ConfigError {
 }
 
 #[derive(Error, Debug, Diagnostic)]
-#[error("Invalid setting {}", .path.style(Style::Id))]
+#[error("{}{} {error}\n", .path.style(Style::Id), ":".style(Style::MutedLight))]
 #[diagnostic(severity(Error))]
 pub struct ParserError {
     #[source_code]
@@ -132,7 +134,7 @@ pub struct ParserError {
 
     pub path: String,
 
-    #[label("{}", .error)]
+    #[label("Fix this")]
     pub span: Option<SourceSpan>,
 }
 
