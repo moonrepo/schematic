@@ -42,7 +42,7 @@ impl SourceFormat {
                         error.inner().line(),
                         error.inner().column(),
                     )),
-                    error: error.inner().to_string(),
+                    message: error.inner().to_string(),
                 })?
             }
 
@@ -54,7 +54,7 @@ impl SourceFormat {
                     content: NamedSource::new(source, content.to_owned()),
                     path: error.path().to_string(),
                     span: error.inner().span().map(|s| s.into()),
-                    error: error.inner().message().to_owned(),
+                    message: error.inner().message().to_owned(),
                 })?
             }
 
@@ -72,7 +72,7 @@ impl SourceFormat {
                             .inner()
                             .location()
                             .map(|s| create_span(&content, s.line(), s.column())),
-                        error: error.inner().to_string(),
+                        message: error.inner().to_string(),
                     })?;
 
                 // Applies anchors/aliases/references
@@ -80,7 +80,7 @@ impl SourceFormat {
                     content: NamedSource::new(source, content.to_owned()),
                     path: String::new(),
                     span: error.location().map(|s| (s.line(), s.column()).into()),
-                    error: error.to_string(),
+                    message: error.to_string(),
                 })?;
 
                 // Second pass, convert value to struct
@@ -93,7 +93,7 @@ impl SourceFormat {
                         .inner()
                         .location()
                         .map(|s| create_span(&content, s.line(), s.column())),
-                    error: error.inner().to_string(),
+                    message: error.inner().to_string(),
                 })?
             }
         };

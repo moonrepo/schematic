@@ -80,7 +80,8 @@ pub enum ConfigError {
     Validator {
         config: String,
 
-        #[diagnostic_source]
+        // This includes the vertical red line which we don't want!
+        // #[diagnostic_source]
         #[source]
         error: ValidatorError,
     },
@@ -110,7 +111,7 @@ impl ConfigError {
             }
             ConfigError::Parser { error: inner, .. } => {
                 push_end();
-                message.push_str(&inner.to_full_string());
+                message.push_str(&inner.to_string());
             }
             ConfigError::Validator { error: inner, .. } => {
                 push_end();
@@ -119,92 +120,21 @@ impl ConfigError {
             _ => {}
         };
 
-        message
+        message.trim().to_string()
     }
 }
 
 #[derive(Error, Debug, Diagnostic)]
-#[error("{}{} {error}\n", .path.style(Style::Id), ":".style(Style::MutedLight))]
+#[error("{}{} {message}\n", .path.style(Style::Id), ":".style(Style::MutedLight))]
 #[diagnostic(severity(Error))]
 pub struct ParserError {
     #[source_code]
     pub content: NamedSource,
 
-    pub error: String,
+    pub message: String,
 
     pub path: String,
 
     #[label("Fix this")]
     pub span: Option<SourceSpan>,
 }
-
-impl ParserError {
-    pub fn to_full_string(&self) -> String {
-        let mut message = self.to_string();
-        message.push_str(".\n");
-        message.push_str(&self.error);
-        message
-    }
-}
-
-// #[derive(Error, Debug, Diagnostic)]
-// pub enum ParserError {
-//     #[cfg(feature = "json")]
-//     #[diagnostic(code(parse::json::failed))]
-//     #[error("Invalid setting {}", .path.style(Style::Id))]
-//     Json {
-//         #[source]
-//         error: serde_json::Error,
-//         path: String,
-//     },
-
-//     #[cfg(feature = "toml")]
-//     #[diagnostic(code(parse::toml::failed))]
-//     #[error("Invalid setting {}", .path.style(Style::Id))]
-//     Toml {
-//         #[source]
-//         error: toml::de::Error,
-//         path: String,
-//     },
-
-//     #[cfg(feature = "yaml")]
-//     #[diagnostic(code(parse::yaml::failed))]
-//     #[error("Invalid setting {}", .path.style(Style::Id))]
-//     Yaml {
-//         #[source]
-//         error: serde_yaml::Error,
-//         path: String,
-//     },
-
-//     #[cfg(feature = "yaml")]
-//     #[diagnostic(code(parse::yaml::extended))]
-//     #[error("Failed to apply YAML anchors and references.")]
-//     YamlExtended {
-//         #[source]
-//         error: serde_yaml::Error,
-//     },
-// }
-
-// impl ParserError {
-//     pub fn to_full_string(&self) -> String {
-//         let mut message = self.to_string();
-//         message.push_str("\n  ");
-
-//         match self {
-//             #[cfg(feature = "json")]
-//             ParserError::Json { error, .. } => {
-//                 message.push_str(&error.to_string());
-//             }
-//             #[cfg(feature = "toml")]
-//             ParserError::Toml { error, .. } => {
-//                 message.push_str(error.message());
-//             }
-//             #[cfg(feature = "yaml")]
-//             ParserError::Yaml { error, .. } | ParserError::YamlExtended { error, .. } => {
-//                 message.push_str(&error.to_string());
-//             }
-//         };
-
-//         message
-//     }
-// }
