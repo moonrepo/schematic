@@ -37,7 +37,7 @@ struct TestConfig {
 
 fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::json()
-        //.code(r#"{ "string": "abc", "other": 123 }"#)?
+        // .code(r#"{ "string": "abc", "other": 123 }"#)?
         // .code("{\n  \"string\": 123\n}")?
         .load()?;
 

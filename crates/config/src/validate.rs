@@ -151,7 +151,7 @@ pub fn extends_string<D, C>(value: &str, data: &D, context: &C) -> Result<(), Va
 pub fn extends_list<D, C>(values: &[String], data: &D, context: &C) -> Result<(), ValidateError> {
     for (i, value) in values.iter().enumerate() {
         if let Err(mut error) = extends_string(value, data, context) {
-            error.path = Some(SettingPath::new(vec![Segment::Index(i)]));
+            error.path = SettingPath::new(vec![Segment::Index(i)]);
 
             return Err(error);
         }
