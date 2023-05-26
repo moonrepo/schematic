@@ -3,6 +3,9 @@ use crate::validator::{Segment, SettingPath, ValidateError};
 use crate::ExtendsFrom;
 use garde::rules as r;
 
+/// A validator function that receives a setting value to validate, the parent
+/// configuration the setting belongs to, the current context, and can return
+/// a [ValidateError] on failure.
 pub type Validator<Val, Data, Ctx> =
     Box<dyn FnOnce(&Val, &Data, &Ctx) -> Result<(), ValidateError>>;
 
@@ -104,6 +107,7 @@ pub fn url<T: Url, D, C>(value: &T, _: &D, _: &C) -> Result<(), ValidateError> {
 }
 
 #[cfg(feature = "valid_url")]
+/// Validate a string matches a URL and starts with https://.
 pub fn url_secure<T: AsRef<str>, D, C>(
     value: T,
     data: &D,

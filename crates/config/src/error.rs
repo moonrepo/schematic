@@ -88,6 +88,8 @@ pub enum ConfigError {
 }
 
 impl ConfigError {
+    /// Return a full error string, disregarding `miette` diagnostic structure.
+    /// This is extremely useful for debugging and tests, and less for application use.
     pub fn to_full_string(&self) -> String {
         let mut message = self.to_string();
 
