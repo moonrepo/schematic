@@ -107,6 +107,16 @@ struct Serde {
     all: bool,
 }
 
+#[derive(Config, Serialize)]
+struct SerdeNative {
+    #[serde(rename = "renamed")]
+    rename: String,
+    #[serde(skip)]
+    skipped: String,
+    #[serde(skip, rename = "renamed")]
+    all: bool,
+}
+
 fn merge_basic<C>(_: String, _: String, _: &C) -> Result<Option<String>, ConfigError> {
     Ok(None)
 }

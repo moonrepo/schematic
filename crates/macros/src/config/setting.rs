@@ -5,6 +5,14 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Expr, ExprPath, Field, Type};
 
+// #[serde()]
+#[derive(FromAttributes, Default)]
+#[darling(default, allow_unknown_fields, attributes(serde))]
+pub struct SerdeArgs {
+    pub rename: Option<String>,
+    pub skip: bool,
+}
+
 // #[setting()]
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(setting))]
@@ -23,28 +31,9 @@ pub struct SettingArgs {
     pub skip: bool,
 }
 
-impl SettingArgs {
-    pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![];
-
-        if let Some(rename) = &self.rename {
-            meta.push(quote! { rename = #rename });
-        }
-
-        if self.skip {
-            meta.push(quote! { skip });
-        } else {
-            meta.push(quote! { skip_serializing_if = "Option::is_none" });
-        }
-
-        quote! {
-            #(#meta),*
-        }
-    }
-}
-
 pub struct Setting<'l> {
     pub args: SettingArgs,
+    pub serde_args: SerdeArgs,
     pub comment: Option<String>,
     pub name: &'l Ident,
     pub value: &'l Type,
@@ -54,6 +43,7 @@ pub struct Setting<'l> {
 impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
+        let serde_args = SerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
 
         if args.parse_env.is_some() && args.env.is_none() {
             panic!("Cannot use `parse_env` without `env`.");
@@ -73,6 +63,7 @@ impl<'l> Setting<'l> {
                 SettingType::value(&field.ty)
             },
             args,
+            serde_args,
         };
 
         if setting.has_default() {
@@ -154,6 +145,26 @@ impl<'l> Setting<'l> {
             }
         }
     }
+
+    pub fn get_serde_meta(&self) -> TokenStream {
+        let mut meta = vec![];
+
+        if let Some(rename) = &self.args.rename {
+            meta.push(quote! { rename = #rename });
+        } else if let Some(rename) = &self.serde_args.rename {
+            meta.push(quote! { rename = #rename });
+        }
+
+        if self.args.skip || self.serde_args.skip {
+            meta.push(quote! { skip });
+        } else {
+            meta.push(quote! { skip_serializing_if = "Option::is_none" });
+        }
+
+        quote! {
+            #(#meta),*
+        }
+    }
 }
 
 impl<'l> ToTokens for Setting<'l> {
@@ -162,7 +173,7 @@ impl<'l> ToTokens for Setting<'l> {
         let value = &self.value_type;
 
         // Gather all attributes
-        let serde_meta = self.args.get_serde_meta();
+        let serde_meta = self.get_serde_meta();
         let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
 
         if let Some(cmt) = &self.comment {
