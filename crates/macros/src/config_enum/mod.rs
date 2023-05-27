@@ -21,8 +21,7 @@ pub struct SerdeArgs {
 // #[derive(ConfigEnum)]
 pub fn macro_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
-    let serde_args =
-        SerdeArgs::from_derive_input(&input).expect("Failed to parse serde arguments.");
+    let serde_args = SerdeArgs::from_derive_input(&input).unwrap_or_default();
 
     let Data::Enum(data) = input.data else {
         panic!("Only unit enums are supported.");

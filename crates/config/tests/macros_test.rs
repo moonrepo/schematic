@@ -98,6 +98,7 @@ struct Nested {
 }
 
 #[derive(Config)]
+#[config(allow_unknown_fields, rename_all = "kebab-case")]
 struct Serde {
     #[setting(rename = "renamed")]
     rename: String,
@@ -108,8 +109,9 @@ struct Serde {
 }
 
 #[derive(Config, Serialize)]
+#[serde(rename = "SerdeNativeRenamed", rename_all = "snake_case")]
 struct SerdeNative {
-    #[serde(rename = "renamed")]
+    #[serde(alias = "test", rename = "renamed")]
     rename: String,
     #[serde(skip)]
     skipped: String,
