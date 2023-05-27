@@ -1202,6 +1202,7 @@ name = "test_app"
 version = "0.5.3"
 dependencies = [
  "miette",
+ "schemars",
  "schematic",
  "serde",
  "serde_json",

@@ -1,6 +1,7 @@
+use crate::derive_enum;
 use crate::error::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 
 pub struct ConfigMeta {
     /// Name of the struct.
@@ -75,12 +76,13 @@ pub trait Config: Sized {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-pub enum ExtendsFrom {
-    String(String),
-    List(Vec<String>),
-}
+derive_enum!(
+    #[serde(untagged)]
+    pub enum ExtendsFrom {
+        String(String),
+        List(Vec<String>),
+    }
+);
 
 impl Default for ExtendsFrom {
     fn default() -> Self {
