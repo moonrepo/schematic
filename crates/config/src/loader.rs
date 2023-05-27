@@ -9,8 +9,13 @@ use std::path::PathBuf;
 
 #[derive(Serialize)]
 pub struct ConfigLoadResult<T: Config> {
+    /// Final configuration, after all layers are merged.
     pub config: T,
+
+    /// Format of sources.
     pub format: SourceFormat,
+
+    /// Partial layers, in order of declaration and extension.
     pub layers: Vec<Layer<T>>,
 }
 
@@ -22,6 +27,7 @@ pub struct ConfigLoader<T: Config> {
 }
 
 impl<T: Config> ConfigLoader<T> {
+    /// Create a new config loader with the provided source format.
     pub fn new(format: SourceFormat) -> Self {
         let meta = T::META;
 
@@ -38,55 +44,68 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     #[cfg(feature = "json")]
+    /// Create a new JSON config loader.
     pub fn json() -> Self {
         ConfigLoader::new(SourceFormat::Json)
     }
 
     #[cfg(feature = "toml")]
+    /// Create a new TOML config loader.
     pub fn toml() -> Self {
         ConfigLoader::new(SourceFormat::Toml)
     }
 
     #[cfg(feature = "yaml")]
+    /// Create a new YAML config loader.
     pub fn yaml() -> Self {
         ConfigLoader::new(SourceFormat::Yaml)
     }
 
+    /// Add a code snippet source to load.
     pub fn code<S: TryInto<String>>(&mut self, code: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::code(code)?);
 
         Ok(self)
     }
 
+    /// Add a file source to load.
     pub fn file<S: TryInto<PathBuf>>(&mut self, path: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::file(path)?);
 
         Ok(self)
     }
 
+    /// Add a source to load. Will attempt to infer the source type.
     pub fn source<S: AsRef<str>>(&mut self, value: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::new(value.as_ref(), None)?);
 
         Ok(self)
     }
 
+    /// Add a URL source to load.
     pub fn url<S: TryInto<String>>(&mut self, url: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::url(url)?);
 
         Ok(self)
     }
 
+    /// Set the label to include an error messages. By default will be the configuration
+    /// struct name, or the `#[config(file = "...")]` attribute if set.
     pub fn label(&mut self, label: String) -> &mut Self {
         self.label = label;
         self
     }
 
+    /// Load, parse, merge, and validate all sources into a final configuration.
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
 
         self.load_with_context(&context)
     }
 
+    /// Load, parse, merge, and validate all sources into a final configuration
+    /// with the provided context. Context will be passed to all applicable
+    /// default, merge, and validate functions.
     pub fn load_with_context(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -109,6 +128,15 @@ impl<T: Config> ConfigLoader<T> {
         })
     }
 
+    /// Load, parse, and merge all sources into a partial configuration
+    /// with the provided context. Validation will _not_ be performed.
+    ///
+    /// Partials can be converted to full with `Config::from_partial`.
+    ///
+    /// ```
+    /// let partial = loader.load_partial(&context)?;
+    /// let config = Config::from_partial(&context, partial, true)?;
+    /// ```
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
