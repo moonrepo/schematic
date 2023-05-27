@@ -219,6 +219,7 @@ enum BasicEnum {
 #[serde(rename = "Test", rename_all = "UPPERCASE")]
 enum CustomFormatEnum {
     Foo,
+    #[serde(rename = "bAr")]
     Bar,
     #[variant(value = "b-a-z")]
     Baz,
