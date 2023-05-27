@@ -95,6 +95,10 @@ impl<'l> Variant<'l> {
                     })?
                 ),
             }
+        } else if let Some(alias) = &self.serde_args.alias {
+            quote! {
+                #value | #alias => Self::#name,
+            }
         } else {
             quote! {
                 #value => Self::#name,

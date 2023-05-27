@@ -233,3 +233,13 @@ enum OtherEnum {
     #[variant(fallback)]
     Other(String),
 }
+
+#[derive(ConfigEnum, Serialize)]
+enum AliasedEnum {
+    #[serde(alias = "a")]
+    Foo,
+    #[serde(alias = "b")]
+    Bar,
+    #[serde(alias = "c")]
+    Baz,
+}
