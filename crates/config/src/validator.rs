@@ -6,13 +6,13 @@ use thiserror::Error;
 
 #[derive(Clone, Debug)]
 pub enum Segment {
-    /// List index: [0]
+    /// List index: `[0]`
     Index(usize),
-    /// Map key: name.
+    /// Map key: `name.`
     Key(String),
-    /// Enum variant: name.
+    /// Enum variant: `name.`
     Variant(String),
-    /// Unknown segment: ?
+    /// Unknown segment: `?`
     Unknown,
 }
 
@@ -23,12 +23,12 @@ pub struct SettingPath {
 }
 
 impl SettingPath {
-    /// Create a new instance with the provided [Segment]s.
+    /// Create a new instance with the provided [`Segment`]s.
     pub fn new(segments: Vec<Segment>) -> Self {
         Self { segments }
     }
 
-    /// Create a new instance and append the provided [Segment]
+    /// Create a new instance and append the provided [`Segment`]
     /// to the end of the current path.
     pub fn join(&self, segment: Segment) -> Self {
         let mut path = self.clone();
@@ -36,19 +36,19 @@ impl SettingPath {
         path
     }
 
-    /// Create a new instance and append an `Index` [Segment]
+    /// Create a new instance and append an `Index` [`Segment`]
     /// to the end of the current path.
     pub fn join_index(&self, index: usize) -> Self {
         self.join(Segment::Index(index))
     }
 
-    /// Create a new instance and append an `Key` [Segment]
+    /// Create a new instance and append an `Key` [`Segment`]
     /// to the end of the current path.
     pub fn join_key(&self, key: &str) -> Self {
         self.join(Segment::Key(key.to_owned()))
     }
 
-    /// Create a new instance and append another [SettingPath]
+    /// Create a new instance and append another [`SettingPath`]
     /// to the end of the current path.
     pub fn join_path(&self, other: &Self) -> Self {
         let mut path = self.clone();
@@ -56,7 +56,7 @@ impl SettingPath {
         path
     }
 
-    /// Create a new instance and append an `Variant` [Segment]
+    /// Create a new instance and append an `Variant` [`Segment`]
     /// to the end of the current path.
     pub fn join_variant(&self, variant: &str) -> Self {
         self.join(Segment::Variant(variant.to_owned()))
@@ -94,7 +94,10 @@ impl Display for SettingPath {
 #[derive(Clone, Debug, Diagnostic, Error)]
 #[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]
 pub struct ValidateError {
+    /// Failure message.
     pub message: String,
+
+    /// Relative path to the setting that failed validation.
     pub path: SettingPath,
 }
 
@@ -107,7 +110,7 @@ impl ValidateError {
         }
     }
 
-    /// Create a new validation error with the provided message and [SettingPath].
+    /// Create a new validation error with the provided message and [`SettingPath`].
     pub fn with_path<T: AsRef<str>>(message: T, path: SettingPath) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
@@ -115,12 +118,12 @@ impl ValidateError {
         }
     }
 
-    /// Create a new validation error with the provided message and path [Segment].
+    /// Create a new validation error with the provided message and path [`Segment`].
     pub fn with_segment<T: AsRef<str>>(message: T, segment: Segment) -> Self {
         Self::with_segments(message, [segment])
     }
 
-    /// Create a new validation error with the provided message and multiple path [Segment]s.
+    /// Create a new validation error with the provided message and multiple path [`Segment`]s.
     pub fn with_segments<T: AsRef<str>, I>(message: T, segments: I) -> Self
     where
         I: IntoIterator<Item = Segment>,

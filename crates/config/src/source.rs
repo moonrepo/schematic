@@ -25,6 +25,9 @@ pub enum SourceFormat {
 }
 
 impl SourceFormat {
+    /// Parse the provided content in the defined format into a partial configuration struct.
+    /// On failure, will attempt to extract the path to the problematic field and source
+    /// code spans (for use in `miette`).
     pub fn parse<D>(&self, content: String, source: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,

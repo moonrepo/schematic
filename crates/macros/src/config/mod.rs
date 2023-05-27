@@ -3,7 +3,7 @@ pub mod config;
 pub mod setting;
 pub mod setting_type;
 
-use crate::config::config::{Config, ConfigArgs};
+use crate::config::config::{Config, ConfigArgs, SerdeArgs};
 use crate::config::setting::Setting;
 use crate::utils::extract_comment;
 use darling::FromDeriveInput;
@@ -15,6 +15,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 pub fn macro_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
     let args = ConfigArgs::from_derive_input(&input).expect("Failed to parse arguments.");
+    let serde_args = SerdeArgs::from_derive_input(&input).unwrap_or_default();
 
     let Data::Struct(data) = input.data else {
         panic!("Only structs are supported.");
@@ -26,6 +27,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let config = Config {
         args,
+        serde_args,
         comment: extract_comment(&input.attrs),
         name: &input.ident,
         settings: fields.named.iter().map(Setting::from).collect::<Vec<_>>(),

@@ -7,9 +7,16 @@ mod loader;
 mod source;
 mod validator;
 
+/// Built-in `parse_env` functions.
 pub mod env;
+
+#[doc(hidden)]
 pub mod internal;
+
+/// Built-in `merge` functions.
 pub mod merge;
+
+/// Built-in `validate` functions.
 pub mod validate;
 
 pub use config::*;

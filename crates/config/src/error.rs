@@ -127,7 +127,7 @@ impl ConfigError {
 }
 
 #[derive(Error, Debug, Diagnostic)]
-#[error("{}{} {message}\n", .path.style(Style::Id), ":".style(Style::MutedLight))]
+#[error("{}{} {message}", .path.style(Style::Id), ":".style(Style::MutedLight))]
 #[diagnostic(severity(Error))]
 pub struct ParserError {
     #[source_code]

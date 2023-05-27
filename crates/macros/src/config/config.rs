@@ -4,10 +4,19 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::ExprPath;
 
+// #[serde()]
+#[derive(FromDeriveInput, Default)]
+#[darling(default, allow_unknown_fields, attributes(serde))]
+pub struct SerdeArgs {
+    rename: Option<String>,
+    rename_all: Option<String>,
+}
+
 // #[config()]
 #[derive(FromDeriveInput, Default)]
 #[darling(default, attributes(config), supports(struct_named))]
 pub struct ConfigArgs {
+    allow_unknown_fields: bool,
     context: Option<ExprPath>,
     file: Option<String>,
 
@@ -16,26 +25,9 @@ pub struct ConfigArgs {
     rename_all: Option<String>,
 }
 
-impl ConfigArgs {
-    pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![quote! { default }, quote! { deny_unknown_fields }];
-
-        if let Some(rename) = &self.rename {
-            meta.push(quote! { rename = #rename });
-        }
-
-        let rename_all = self.rename_all.as_deref().unwrap_or("camelCase");
-
-        meta.push(quote! { rename_all = #rename_all });
-
-        quote! {
-            #(#meta),*
-        }
-    }
-}
-
 pub struct Config<'l> {
     pub args: ConfigArgs,
+    pub serde_args: SerdeArgs,
     pub comment: Option<String>,
     pub name: &'l Ident,
     pub settings: Vec<Setting<'l>>,
@@ -126,8 +118,35 @@ impl<'l> Config<'l> {
         }
     }
 
+    pub fn get_serde_meta(&self) -> TokenStream {
+        let mut meta = vec![quote! { default }];
+
+        if !self.args.allow_unknown_fields {
+            meta.push(quote! { deny_unknown_fields });
+        }
+
+        if let Some(rename) = &self.args.rename {
+            meta.push(quote! { rename = #rename });
+        } else if let Some(rename) = &self.serde_args.rename {
+            meta.push(quote! { rename = #rename });
+        }
+
+        let rename_all = self
+            .args
+            .rename_all
+            .as_deref()
+            .or(self.serde_args.rename_all.as_deref())
+            .unwrap_or("camelCase");
+
+        meta.push(quote! { rename_all = #rename_all });
+
+        quote! {
+            #(#meta),*
+        }
+    }
+
     pub fn get_partial_attrs(&self) -> Vec<TokenStream> {
-        let serde_meta = self.args.get_serde_meta();
+        let serde_meta = self.get_serde_meta();
         let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
         #[cfg(feature = "json_schema")]

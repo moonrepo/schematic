@@ -98,12 +98,24 @@ struct Nested {
 }
 
 #[derive(Config)]
+#[config(allow_unknown_fields, rename_all = "kebab-case")]
 struct Serde {
     #[setting(rename = "renamed")]
     rename: String,
     #[setting(skip)]
     skipped: String,
     #[setting(skip, rename = "renamed")]
+    all: bool,
+}
+
+#[derive(Config, Serialize)]
+#[serde(rename = "SerdeNativeRenamed", rename_all = "snake_case")]
+struct SerdeNative {
+    #[serde(alias = "test", rename = "renamed")]
+    rename: String,
+    #[serde(skip)]
+    skipped: String,
+    #[serde(skip, rename = "renamed")]
     all: bool,
 }
 
@@ -207,6 +219,7 @@ enum BasicEnum {
 #[serde(rename = "Test", rename_all = "UPPERCASE")]
 enum CustomFormatEnum {
     Foo,
+    #[serde(rename = "bAr")]
     Bar,
     #[variant(value = "b-a-z")]
     Baz,
@@ -219,4 +232,14 @@ enum OtherEnum {
     Baz,
     #[variant(fallback)]
     Other(String),
+}
+
+#[derive(ConfigEnum, Serialize)]
+enum AliasedEnum {
+    #[serde(alias = "a")]
+    Foo,
+    #[serde(alias = "b")]
+    Bar,
+    #[serde(alias = "c")]
+    Baz,
 }
