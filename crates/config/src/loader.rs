@@ -89,7 +89,7 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    /// Set the label to include an error messages. By default will be the configuration
+    /// Set the label to include in error messages. By default will be the configuration
     /// struct name, or the `#[config(file = "...")]` attribute if set.
     pub fn label(&mut self, label: String) -> &mut Self {
         self.label = label;
@@ -105,7 +105,7 @@ impl<T: Config> ConfigLoader<T> {
 
     /// Load, parse, merge, and validate all sources into a final configuration
     /// with the provided context. Context will be passed to all applicable
-    /// default, merge, and validate functions.
+    /// default, merge, and validate functions defined with `#[setting]`.
     pub fn load_with_context(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -131,7 +131,7 @@ impl<T: Config> ConfigLoader<T> {
     /// Load, parse, and merge all sources into a partial configuration
     /// with the provided context. Validation will _not_ be performed.
     ///
-    /// Partials can be converted to full with [Config::from_partial].
+    /// Partials can be converted to full with [`Config::from_partial`].
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,

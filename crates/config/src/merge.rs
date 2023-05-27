@@ -5,7 +5,7 @@ use std::{
     hash::Hash,
 };
 
-/// Discard both previous and next values and return [None].
+/// Discard both previous and next values and return [`None`].
 pub fn discard<T, C>(_: T, _: T, _: &C) -> Result<Option<T>, ConfigError> {
     Ok(None)
 }
@@ -40,8 +40,8 @@ pub fn prepend_vec<T, C>(prev: Vec<T>, next: Vec<T>, _: &C) -> Result<Option<Vec
     Ok(Some(new))
 }
 
-/// Shallow merge the next [BTreeMap] into the previous [BTreeMap]. Any items in the
-/// next [BTreeMap] will overwrite items in the previous [BTreeMap] of the same key.
+/// Shallow merge the next [`BTreeMap`] into the previous [`BTreeMap`]. Any items in the
+/// next [`BTreeMap`] will overwrite items in the previous [`BTreeMap`] of the same key.
 pub fn merge_btreemap<K, V, C>(
     mut prev: BTreeMap<K, V>,
     next: BTreeMap<K, V>,
@@ -57,7 +57,7 @@ where
     Ok(Some(prev))
 }
 
-/// Shallow merge the next [BTreeSet] into the previous [BTreeSet], overwriting duplicates.
+/// Shallow merge the next [`BTreeSet`] into the previous [`BTreeSet`], overwriting duplicates.
 pub fn merge_btreeset<T, C>(
     mut prev: BTreeSet<T>,
     next: BTreeSet<T>,
@@ -73,8 +73,8 @@ where
     Ok(Some(prev))
 }
 
-/// Shallow merge the next [HashMap] into the previous [HashMap]. Any items in the
-/// next [HashMap] will overwrite items in the previous [HashMap] of the same key.
+/// Shallow merge the next [`HashMap`] into the previous [`HashMap`]. Any items in the
+/// next [`HashMap`] will overwrite items in the previous [`HashMap`] of the same key.
 pub fn merge_hashmap<K, V, C>(
     mut prev: HashMap<K, V>,
     next: HashMap<K, V>,
@@ -90,7 +90,7 @@ where
     Ok(Some(prev))
 }
 
-/// Shallow merge the next [HashSet] into the previous [HashSet], overwriting duplicates.
+/// Shallow merge the next [`HashSet`] into the previous [`HashSet`], overwriting duplicates.
 pub fn merge_hashset<T, C>(
     mut prev: HashSet<T>,
     next: HashSet<T>,
@@ -106,8 +106,8 @@ where
     Ok(Some(prev))
 }
 
-/// Merge the next [PartialConfig] into the previous [PartialConfig], using the merging
-/// strategies defined by the [Config] derive implementation.
+/// Merge the next [`PartialConfig`] into the previous [`PartialConfig`], using the merging
+/// strategies defined by the [`Config`] derive implementation.
 pub fn merge_partial<T: PartialConfig>(
     mut prev: T,
     next: T,

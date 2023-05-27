@@ -13,29 +13,29 @@ pub struct ConfigMeta {
 pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
     type Context: Default;
 
-    /// Return a partial configuration with values populated with default values, for settings
-    /// marked with `#[setting(default)]`. Unmarked settings will be `None`.
+    /// Return a partial configuration with values populated with default values for settings
+    /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
     ///
-    /// If a default value fails to parse or cast into the correct type, and error is returned.
+    /// If a default value fails to parse or cast into the correct type, an error is returned.
     fn default_values(context: &Self::Context) -> Result<Self, ConfigError>;
 
-    /// Return a partial configuration with values populated from environment variables,
-    /// for settings marked with `#[setting(env)]`. Unmarked settings will be `None`.
+    /// Return a partial configuration with values populated from environment variables
+    /// for settings marked with `#[setting(env)]`. Unmarked settings will be [`None`].
     ///
-    /// If an environment variable does not exist, the value will be `None`. If
-    /// the variable fails to parse or cast into the correct type, and error is returned.
+    /// If an environment variable does not exist, the value will be [`None`]. If
+    /// the variable fails to parse or cast into the correct type, an error is returned.
     fn env_values() -> Result<Self, ConfigError>;
 
-    /// When a setting is marked as extendable (`#[setting(extend)]`), this returns [`ExtendsFrom`]
-    /// with the extended sources, either a list of strings or a single string. When no setting
-    /// is extendable, this returns `None`.
+    /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
+    /// [`ExtendsFrom`] with the extended sources, either a list of strings or a single string.
+    /// When no setting is extendable, this returns [`None`].
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
     /// Merge another partial configuration into this one and clone values when applicable. The
     /// following merge strategies are applied:
     ///
-    /// - Current `None` values are replaced with the next value if `Some`.
-    /// - Current `Some` values are merged with the next value if `Some`,
+    /// - Current [`None`] values are replaced with the next value if [`Some`].
+    /// - Current [`Some`] values are merged with the next value if [`Some`],
     ///     using the merge function from `#[setting(merge)]`.
     fn merge(&mut self, context: &Self::Context, next: Self) -> Result<(), ConfigError>;
 }
@@ -46,8 +46,9 @@ pub trait Config: Sized {
     const META: ConfigMeta;
 
     /// Convert a partial configuration into a full configuration, with all values populated.
-    /// Defaults values will be applied first, followed by merging the partial, and lastly
-    /// environment variable values.
+    /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
+    /// by merging the partial, and lastly environment variable values from
+    /// [`PartialConfig::env_values`].
     fn from_partial(
         context: &<Self::Partial as PartialConfig>::Context,
         partial: Self::Partial,
@@ -63,7 +64,8 @@ pub trait Config: Sized {
         self.validate_with_path(context, SettingPath::default())
     }
 
-    /// Internal use only, use [validate] instead.
+    #[doc(hidden)]
+    /// Internal use only, use [`Config.validate`] instead.
     fn validate_with_path(
         &self,
         _context: &<Self::Partial as PartialConfig>::Context,
