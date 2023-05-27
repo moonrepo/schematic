@@ -131,12 +131,7 @@ impl<T: Config> ConfigLoader<T> {
     /// Load, parse, and merge all sources into a partial configuration
     /// with the provided context. Validation will _not_ be performed.
     ///
-    /// Partials can be converted to full with `Config::from_partial`.
-    ///
-    /// ```
-    /// let partial = loader.load_partial(&context)?;
-    /// let config = Config::from_partial(&context, partial, true)?;
-    /// ```
+    /// Partials can be converted to full with [Config::from_partial].
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
