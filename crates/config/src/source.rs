@@ -105,14 +105,23 @@ impl SourceFormat {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
+    /// Inline code snippet of the configuration.
     Code { code: String },
-    // Defaults,
-    // EnvVars,
+
+    /// File system path to the configuration.
     File { path: PathBuf },
+
+    /// Secure URL to the configuration.
     Url { url: String },
 }
 
 impl Source {
+    /// Create a new source with the provided value. Will attempt to infer the
+    /// type of source based on characters within the value:
+    ///
+    /// - Will be a URL, if the value starts with `http://`, `https://`, or `www`.
+    /// - Will be a file, if the file ends in an extension, or contains path separators.
+    /// - Otherwise will be a code snippet.
     pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {
         // Extending from a URL is allowed from any parent source
         if is_url_like(value) {
@@ -151,18 +160,21 @@ impl Source {
         Source::code(value)
     }
 
+    /// Create a new code snippet source.
     pub fn code<T: TryInto<String>>(code: T) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
         Ok(Source::Code { code })
     }
 
+    /// Create a new file source with the provided path.
     pub fn file<T: TryInto<PathBuf>>(path: T) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
         Ok(Source::File { path })
     }
 
+    /// Create a new URL source with the provided URL. Will error if that URL is not secure.
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
@@ -173,6 +185,7 @@ impl Source {
         Ok(Source::Url { url })
     }
 
+    /// Parse the source contents according to the required format.
     pub fn parse<D>(&self, format: SourceFormat, label: &str) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
@@ -184,7 +197,7 @@ impl Source {
                     return Err(ConfigError::MissingFile(path.to_path_buf()));
                 }
 
-                format.parse(fs::read_to_string(path)?, path.to_str().unwrap())
+                format.parse(fs::read_to_string(path)?, path.to_str().unwrap_or("file"))
             }
             Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
             // _ => unreachable!(),
@@ -197,6 +210,8 @@ impl Source {
     }
 }
 
+/// Returns true if the value looks like a file, by checking for `file://`,
+/// path separators, or supported file extensions.
 pub fn is_file_like(value: &str) -> bool {
     value.starts_with("file://")
         || value.starts_with('/')
@@ -210,6 +225,7 @@ pub fn is_file_like(value: &str) -> bool {
         || value.ends_with(".yml")
 }
 
+/// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www`.
 pub fn is_url_like(value: &str) -> bool {
     value.starts_with("https://") || value.starts_with("http://") || value.starts_with("www")
 }

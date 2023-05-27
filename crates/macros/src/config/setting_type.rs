@@ -105,19 +105,19 @@ impl<'l> SettingType<'l> {
         }
     }
 
-    pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+    pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
         match self {
             SettingType::Nested { collection, .. } => match collection {
                 NestedType::None(id) if !self.is_optional() => {
                     let partial_name = format_ident!("Partial{}", id);
 
-                    quote! { Some(#partial_name::default_values(context)?) }
+                    Some(quote! { Some(#partial_name::default_values(context)?) })
                 }
-                _ => quote! { None },
+                _ => None,
             },
             SettingType::Value { value, .. } => {
                 if let Some(expr) = args.default.as_ref() {
-                    return match expr {
+                    return Some(match expr {
                         Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
                             quote! { Some(#expr) }
                         }
@@ -137,27 +137,23 @@ impl<'l> SettingType<'l> {
 
                             panic!("Unsupported default value for {name} ({info}). May only provide literals, primitives, arrays, or tuples.");
                         }
-                    };
+                    });
                 };
 
-                quote! { None }
+                None
             }
         }
     }
 
-    pub fn get_env_value(&self, args: &SettingArgs) -> TokenStream {
+    pub fn get_env_value(&self, args: &SettingArgs) -> Option<TokenStream> {
         match (&args.env, &args.parse_env) {
-            (Some(env), Some(parse_env)) => {
-                quote! {
-                    schematic::internal::parse_from_env_var(#env, #parse_env)?
-                }
-            }
-            (Some(env), None) => {
-                quote! {
-                    schematic::internal::default_from_env_var(#env)?
-                }
-            }
-            _ => quote! { None },
+            (Some(env), Some(parse_env)) => Some(quote! {
+                schematic::internal::parse_from_env_var(#env, #parse_env)?
+            }),
+            (Some(env), None) => Some(quote! {
+                schematic::internal::default_from_env_var(#env)?
+            }),
+            _ => None,
         }
     }
 

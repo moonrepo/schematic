@@ -195,15 +195,15 @@ impl<'l> ToTokens for Config<'l> {
                 type Context = #context;
 
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    Ok(Self {
-                        #(#field_names: #default_stmts),*
-                    })
+                    let mut partial = Self::default();
+                    #(#default_stmts)*
+                    Ok(partial)
                 }
 
                  fn env_values() -> Result<Self, schematic::ConfigError> {
-                    Ok(Self {
-                        #(#field_names: #env_stmts),*
-                    })
+                    let mut partial = Self::default();
+                    #(#env_stmts)*
+                    Ok(partial)
                 }
 
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {

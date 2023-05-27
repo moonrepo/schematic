@@ -6,42 +6,58 @@ use thiserror::Error;
 
 #[derive(Clone, Debug)]
 pub enum Segment {
+    /// List index: [0]
     Index(usize),
+    /// Map key: name.
     Key(String),
+    /// Enum variant: name.
     Variant(String),
+    /// Unknown segment: ?
     Unknown,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct SettingPath {
+    /// List of path segments.
     segments: Vec<Segment>,
 }
 
 impl SettingPath {
+    /// Create a new instance with the provided [Segment]s.
     pub fn new(segments: Vec<Segment>) -> Self {
         Self { segments }
     }
 
+    /// Create a new instance and append the provided [Segment]
+    /// to the end of the current path.
     pub fn join(&self, segment: Segment) -> Self {
         let mut path = self.clone();
         path.segments.push(segment);
         path
     }
 
+    /// Create a new instance and append an `Index` [Segment]
+    /// to the end of the current path.
     pub fn join_index(&self, index: usize) -> Self {
         self.join(Segment::Index(index))
     }
 
+    /// Create a new instance and append an `Key` [Segment]
+    /// to the end of the current path.
     pub fn join_key(&self, key: &str) -> Self {
         self.join(Segment::Key(key.to_owned()))
     }
 
+    /// Create a new instance and append another [SettingPath]
+    /// to the end of the current path.
     pub fn join_path(&self, other: &Self) -> Self {
         let mut path = self.clone();
         path.segments.extend(other.segments.clone());
         path
     }
 
+    /// Create a new instance and append an `Variant` [Segment]
+    /// to the end of the current path.
     pub fn join_variant(&self, variant: &str) -> Self {
         self.join(Segment::Variant(variant.to_owned()))
     }
@@ -83,6 +99,7 @@ pub struct ValidateError {
 }
 
 impl ValidateError {
+    /// Create a new validation error with the provided message.
     pub fn new<T: AsRef<str>>(message: T) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
@@ -90,6 +107,7 @@ impl ValidateError {
         }
     }
 
+    /// Create a new validation error with the provided message and [SettingPath].
     pub fn with_path<T: AsRef<str>>(message: T, path: SettingPath) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
@@ -97,10 +115,12 @@ impl ValidateError {
         }
     }
 
+    /// Create a new validation error with the provided message and path [Segment].
     pub fn with_segment<T: AsRef<str>>(message: T, segment: Segment) -> Self {
         Self::with_segments(message, [segment])
     }
 
+    /// Create a new validation error with the provided message and multiple path [Segment]s.
     pub fn with_segments<T: AsRef<str>, I>(message: T, segments: I) -> Self
     where
         I: IntoIterator<Item = Segment>,
@@ -158,11 +178,15 @@ impl ValidateErrorType {
 
 #[derive(Clone, Debug, Diagnostic, Error)]
 pub struct ValidatorError {
+    /// When nested, the path to the setting that contains the nested error.
     pub path: SettingPath,
+
+    /// A list of validation errors for the current path. Includes nested errors.
     pub errors: Vec<ValidateErrorType>,
 }
 
 impl ValidatorError {
+    /// Return a string of all recursive validation errors, joined with newlines.
     pub fn to_full_string(&self) -> String {
         let mut message = String::new();
 
