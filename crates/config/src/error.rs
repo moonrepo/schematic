@@ -18,7 +18,7 @@ pub enum ConfigError {
     EnumUnknownVariant(String),
 
     #[diagnostic(code(config::code::extends))]
-    #[error("Unable to extend from a code based source, expected a file path or URL.")]
+    #[error("Unable to extend, expected a file path or URL.")]
     ExtendsFromNoCode,
 
     #[diagnostic(code(config::file::extends))]
@@ -41,7 +41,7 @@ pub enum ConfigError {
     #[error("Invalid file path used as a source.")]
     InvalidFile,
 
-    #[diagnostic(code(config::file::missing), help("Ensure the path is absolute?"))]
+    #[diagnostic(code(config::file::missing), help("Is the path absolute?"))]
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 

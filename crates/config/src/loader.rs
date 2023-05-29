@@ -6,6 +6,7 @@ use serde::Serialize;
 use starbase_styles::color;
 use std::marker::PhantomData;
 use std::path::PathBuf;
+use tracing::trace;
 
 #[derive(Serialize)]
 pub struct ConfigLoadResult<T: Config> {
@@ -120,9 +121,16 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        let layers = self.parse_into_layers(&self.sources)?;
+        trace!(sources = ?self.sources, "Loading {} configuration", self.label);
+
+        let layers = self.parse_into_layers(&self.sources, false)?;
         let partial = self.merge_layers(&layers, context)?;
+
+        trace!("Inheriting default and environment variable values");
+
         let config = T::from_partial(context, partial, true)?;
+
+        trace!("Validating final configuration");
 
         config
             .validate(context)
@@ -146,7 +154,9 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        let layers = self.parse_into_layers(&self.sources)?;
+        trace!("Loading {} partial configuration", self.label);
+
+        let layers = self.parse_into_layers(&self.sources, false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
@@ -167,6 +177,8 @@ impl<T: Config> ConfigLoader<T> {
                 return Err(ConfigError::ExtendsFromNoCode);
             }
 
+            trace!(source = ?source, "Extending additional source");
+
             sources.push(source);
 
             Ok(())
@@ -183,7 +195,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources)
+        self.parse_into_layers(&sources, true)
     }
 
     fn merge_layers(
@@ -191,6 +203,8 @@ impl<T: Config> ConfigLoader<T> {
         layers: &[Layer<T>],
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
+        trace!("Merging partial layers into a final result");
+
         // All `None` by default
         let mut merged = T::Partial::default();
 
@@ -202,15 +216,27 @@ impl<T: Config> ConfigLoader<T> {
         Ok(merged)
     }
 
-    fn parse_into_layers(&self, sources_to_parse: &[Source]) -> Result<Vec<Layer<T>>, ConfigError> {
+    fn parse_into_layers(
+        &self,
+        sources_to_parse: &[Source],
+        extending: bool,
+    ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
 
+        if !extending {
+            trace!("Parsing sources into partial layers");
+        }
+
         for source in sources_to_parse {
+            trace!(source = ?source, "Parsing source");
+
             let partial: T::Partial = source.parse(self.format, &self.label)?;
 
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(source, &extends_from)?);
             }
+
+            trace!(source = ?source, "Created layer from source");
 
             layers.push(Layer {
                 partial,
