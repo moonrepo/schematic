@@ -57,13 +57,16 @@ fn extends_from_chain_in_order() {
         vec![
             // Source::Defaults,
             Source::File {
-                path: root.join("./string2.yml")
+                path: root.join("./string2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./string1.yml")
+                path: root.join("./string1.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./base.yml")
+                path: root.join("./base.yml"),
+                required: true,
             },
             // Source::EnvVars,
         ]
@@ -92,16 +95,20 @@ fn extends_from_chain_in_order_using_list() {
         vec![
             // Source::Defaults,
             Source::File {
-                path: root.join("./string2.yml")
+                path: root.join("./string2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./list1.yml")
+                path: root.join("./list1.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./list2.yml")
+                path: root.join("./list2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./base-list.yml")
+                path: root.join("./base-list.yml"),
+                required: true,
             },
             // Source::EnvVars,
         ]
@@ -130,22 +137,28 @@ fn extends_from_chain_in_order_using_both_enum() {
         vec![
             // Source::Defaults,
             Source::File {
-                path: root.join("./string2.yml")
+                path: root.join("./string2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./list1.yml")
+                path: root.join("./list1.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./string2.yml")
+                path: root.join("./string2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./string1.yml")
+                path: root.join("./string1.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("list2.yml")
+                path: root.join("list2.yml"),
+                required: true,
             },
             Source::File {
-                path: root.join("./base-both.yml")
+                path: root.join("./base-both.yml"),
+                required: true,
             },
             // Source::EnvVars,
         ]
@@ -174,7 +187,8 @@ fn extends_from_optional() {
         vec![
             // Source::Defaults,
             Source::File {
-                path: root.join("./string2.yml")
+                path: root.join("./string2.yml"),
+                required: true,
             },
             // Source::EnvVars,
         ]

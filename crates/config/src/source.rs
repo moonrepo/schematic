@@ -35,6 +35,12 @@ impl SourceFormat {
         let data: D = match self {
             #[cfg(feature = "json")]
             SourceFormat::Json => {
+                let content = if content.is_empty() {
+                    "{}".to_owned()
+                } else {
+                    content
+                };
+
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
@@ -112,7 +118,7 @@ pub enum Source {
     Code { code: String },
 
     /// File system path to the configuration.
-    File { path: PathBuf },
+    File { path: PathBuf, required: bool },
 
     /// Secure URL to the configuration.
     Url { url: String },
@@ -140,7 +146,7 @@ impl Source {
             };
 
             if parent_source.is_none() {
-                return Source::file(value);
+                return Source::file(value, true);
             }
 
             if let Source::File {
@@ -154,7 +160,7 @@ impl Source {
                     path = parent_path.parent().unwrap().join(path);
                 }
 
-                return Source::file(path);
+                return Source::file(path, true);
             } else {
                 return Err(ConfigError::ExtendsFromParentFileOnly);
             }
@@ -171,10 +177,10 @@ impl Source {
     }
 
     /// Create a new file source with the provided path.
-    pub fn file<T: TryInto<PathBuf>>(path: T) -> Result<Source, ConfigError> {
+    pub fn file<T: TryInto<PathBuf>>(path: T, required: bool) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
-        Ok(Source::File { path })
+        Ok(Source::File { path, required })
     }
 
     /// Create a new URL source with the provided URL. Will error if that URL is not secure.
@@ -195,12 +201,18 @@ impl Source {
     {
         let result = match self {
             Source::Code { code } => format.parse(code.to_owned(), "code"),
-            Source::File { path } => {
-                if !path.exists() {
-                    return Err(ConfigError::MissingFile(path.to_path_buf()));
-                }
+            Source::File { path, required } => {
+                let content = if path.exists() {
+                    fs::read_to_string(path)?
+                } else {
+                    if *required {
+                        return Err(ConfigError::MissingFile(path.to_path_buf()));
+                    }
 
-                format.parse(fs::read_to_string(path)?, path.to_str().unwrap_or("file"))
+                    "".into()
+                };
+
+                format.parse(content, path.to_str().unwrap_or("file"))
             }
             Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
             // _ => unreachable!(),

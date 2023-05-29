@@ -20,6 +20,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -29,6 +30,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("./some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -38,6 +40,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -47,6 +50,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yml"),
+            required: true,
         }
     );
 }
@@ -55,6 +59,7 @@ fn can_create_file_source() {
 fn can_create_file_source_with_parent() {
     let parent = Source::File {
         path: PathBuf::from("/root/config.yml"),
+        required: true,
     };
 
     let source = Source::new("file://some/path/config.yml", Some(&parent)).unwrap();
@@ -63,6 +68,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -72,6 +78,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -81,6 +88,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yml"),
+            required: true,
         }
     );
 
@@ -90,6 +98,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            required: true,
         }
     );
 }
@@ -119,6 +128,22 @@ fn loads_json_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
+#[cfg(feature = "json")]
+#[test]
+fn loads_json_file_optional() {
+    let root = get_fixture_path("json");
+
+    let result = ConfigLoader::<Config>::new(SourceFormat::Json)
+        .file_optional(root.join("missing.json"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "");
+    assert_eq!(result.config.number, 0);
+}
+
 #[cfg(feature = "toml")]
 #[test]
 fn loads_toml_files() {
@@ -144,6 +169,22 @@ fn loads_toml_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
+#[cfg(feature = "toml")]
+#[test]
+fn loads_toml_file_optional() {
+    let root = get_fixture_path("toml");
+
+    let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
+        .file_optional(root.join("missing.toml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "");
+    assert_eq!(result.config.number, 0);
+}
+
 #[test]
 fn loads_yaml_files() {
     let root = get_fixture_path("yaml");
@@ -166,4 +207,20 @@ fn loads_yaml_files() {
     assert_eq!(result.config.string, "bar");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
+}
+
+#[cfg(feature = "yaml")]
+#[test]
+fn loads_yaml_file_optional() {
+    let root = get_fixture_path("yaml");
+
+    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+        .file_optional(root.join("missing.yaml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "");
+    assert_eq!(result.config.number, 0);
 }

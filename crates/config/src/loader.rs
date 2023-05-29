@@ -70,7 +70,17 @@ impl<T: Config> ConfigLoader<T> {
 
     /// Add a file source to load.
     pub fn file<S: TryInto<PathBuf>>(&mut self, path: S) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::file(path)?);
+        self.sources.push(Source::file(path, true)?);
+
+        Ok(self)
+    }
+
+    /// Add a file source to load but don't error if the file doesn't exist.
+    pub fn file_optional<S: TryInto<PathBuf>>(
+        &mut self,
+        path: S,
+    ) -> Result<&mut Self, ConfigError> {
+        self.sources.push(Source::file(path, false)?);
 
         Ok(self)
     }
