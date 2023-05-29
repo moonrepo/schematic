@@ -18,7 +18,7 @@ pub enum ConfigError {
     EnumUnknownVariant(String),
 
     #[diagnostic(code(config::code::extends))]
-    #[error("Unable to extend from a code based source.")]
+    #[error("Unable to extend from a code based source, expected a file path or URL.")]
     ExtendsFromNoCode,
 
     #[diagnostic(code(config::file::extends))]

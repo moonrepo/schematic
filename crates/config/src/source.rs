@@ -216,16 +216,17 @@ impl Source {
 /// Returns true if the value looks like a file, by checking for `file://`,
 /// path separators, or supported file extensions.
 pub fn is_file_like(value: &str) -> bool {
-    value.starts_with("file://")
+    (value.starts_with("file://")
         || value.starts_with('/')
         || value.starts_with('\\')
         || value.starts_with('.')
         || value.contains('/')
         || value.contains('\\')
-        || value.ends_with(".json")
-        || value.ends_with(".toml")
-        || value.ends_with(".yaml")
-        || value.ends_with(".yml")
+        || value.contains('.'))
+        && (value.ends_with(".json")
+            || value.ends_with(".toml")
+            || value.ends_with(".yaml")
+            || value.ends_with(".yml"))
 }
 
 /// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www`.
