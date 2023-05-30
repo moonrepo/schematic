@@ -918,7 +918,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.5.8"
+version = "0.5.9"
 dependencies = [
  "garde",
  "miette",
