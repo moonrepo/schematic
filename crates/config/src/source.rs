@@ -255,5 +255,9 @@ pub fn is_url_like(value: &str) -> bool {
 /// Returns true if the value is a secure URL, by checking for `https://`. This check can be
 /// bypassed for localhost URLs.
 pub fn is_secure_url(value: &str) -> bool {
-    value.starts_with("https://") && !value.contains("127.0.0.1") && !value.contains("//localhost")
+    if value.contains("127.0.0.1") || value.contains("//localhost") {
+        return true;
+    }
+
+    value.starts_with("https://")
 }
