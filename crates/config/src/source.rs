@@ -28,7 +28,7 @@ impl SourceFormat {
     /// Parse the provided content in the defined format into a partial configuration struct.
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
-    pub fn parse<D>(&self, content: String, source: &str) -> Result<D, ParserError>
+    pub fn parse<D>(&self, content: String, location: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -44,7 +44,7 @@ impl SourceFormat {
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(source, content.to_owned()),
+                    content: NamedSource::new(location, content.to_owned()),
                     path: error.path().to_string(),
                     span: Some(create_span(
                         &content,
@@ -60,7 +60,7 @@ impl SourceFormat {
                 let de = toml::Deserializer::new(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(source, content.to_owned()),
+                    content: NamedSource::new(location, content.to_owned()),
                     path: error.path().to_string(),
                     span: error.inner().span().map(|s| s.into()),
                     message: error.inner().message().to_owned(),
@@ -75,7 +75,7 @@ impl SourceFormat {
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
                     serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                        content: NamedSource::new(source, content.to_owned()),
+                        content: NamedSource::new(location, content.to_owned()),
                         path: error.path().to_string(),
                         span: error
                             .inner()
@@ -86,7 +86,7 @@ impl SourceFormat {
 
                 // Applies anchors/aliases/references
                 result.apply_merge().map_err(|error| ParserError {
-                    content: NamedSource::new(source, content.to_owned()),
+                    content: NamedSource::new(location, content.to_owned()),
                     path: String::new(),
                     span: error.location().map(|s| (s.line(), s.column()).into()),
                     message: error.to_string(),
@@ -96,7 +96,7 @@ impl SourceFormat {
                 let de = result.into_deserializer();
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(source, content.to_owned()),
+                    content: NamedSource::new(location, content.to_owned()),
                     path: error.path().to_string(),
                     span: error
                         .inner()
@@ -191,12 +191,13 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, format: SourceFormat, label: &str) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, format: SourceFormat) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
+        let location = self.get_source_location();
         let result = match self {
-            Source::Code { code } => format.parse(code.to_owned(), "code"),
+            Source::Code { code } => format.parse(code.to_owned(), &location),
             Source::File { path, required } => {
                 let content = if path.exists() {
                     fs::read_to_string(path)?
@@ -208,21 +209,30 @@ impl Source {
                     "".into()
                 };
 
-                format.parse(content, path.to_str().unwrap_or("file"))
+                format.parse(content, &location)
             }
             Source::Url { url } => {
                 if !is_secure_url(url) {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                format.parse(reqwest::blocking::get(url)?.text()?, url)
+                format.parse(reqwest::blocking::get(url)?.text()?, &location)
             }
         };
 
         result.map_err(|error| ConfigError::Parser {
-            config: label.to_owned(),
+            config: location,
             error,
         })
+    }
+
+    /// Return the location of the source.
+    pub fn get_source_location(&self) -> String {
+        match self {
+            Source::Code { .. } => "code".into(),
+            Source::File { path, .. } => path.to_string_lossy().into(),
+            Source::Url { url } => url.clone(),
+        }
     }
 }
 

@@ -3,7 +3,6 @@ use crate::error::ConfigError;
 use crate::layer::Layer;
 use crate::source::{Source, SourceFormat};
 use serde::Serialize;
-use starbase_styles::color;
 use std::marker::PhantomData;
 use std::path::PathBuf;
 use tracing::trace;
@@ -23,23 +22,15 @@ pub struct ConfigLoadResult<T: Config> {
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     format: SourceFormat,
-    label: String,
     sources: Vec<Source>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     /// Create a new config loader with the provided source format.
     pub fn new(format: SourceFormat) -> Self {
-        let meta = T::META;
-
         ConfigLoader {
             _config: PhantomData,
             format,
-            label: if let Some(file) = &meta.file {
-                color::file(file)
-            } else {
-                color::label(meta.name)
-            },
             sources: vec![],
         }
     }
@@ -100,13 +91,6 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    /// Set the label to include in error messages. By default will be the configuration
-    /// struct name, or the `#[config(file = "...")]` attribute if set.
-    pub fn label(&mut self, label: String) -> &mut Self {
-        self.label = label;
-        self
-    }
-
     /// Load, parse, merge, and validate all sources into a final configuration.
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
@@ -121,7 +105,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!("Loading {} configuration", self.label);
+        trace!("Loading {} configuration", T::META.name);
 
         let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
@@ -145,7 +129,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!("Loading {} partial configuration", self.label);
+        trace!("Loading {} partial configuration", T::META.name);
 
         let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
@@ -223,13 +207,13 @@ impl<T: Config> ConfigLoader<T> {
         for source in sources_to_parse {
             trace!(source = ?source, "Parsing source");
 
-            let partial: T::Partial = source.parse(self.format, &self.label)?;
+            let partial: T::Partial = source.parse(self.format)?;
 
             // Validate before continuing so we ensure the values are correct
             partial
                 .validate(context)
                 .map_err(|error| ConfigError::Validator {
-                    config: self.label.clone(),
+                    config: source.get_source_location(),
                     error,
                 })?;
 
