@@ -4,7 +4,7 @@ use crate::layer::Layer;
 use crate::source::{Source, SourceFormat};
 use serde::Serialize;
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::trace;
 
 #[derive(Serialize)]
@@ -23,6 +23,7 @@ pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     format: SourceFormat,
     sources: Vec<Source>,
+    root: Option<PathBuf>,
 }
 
 impl<T: Config> ConfigLoader<T> {
@@ -32,6 +33,7 @@ impl<T: Config> ConfigLoader<T> {
             _config: PhantomData,
             format,
             sources: vec![],
+            root: None,
         }
     }
 
@@ -137,6 +139,12 @@ impl<T: Config> ConfigLoader<T> {
         Ok(partial)
     }
 
+    /// Set the project root directory, for use within file path handling.
+    pub fn set_root<P: AsRef<Path>>(&mut self, root: P) -> &mut Self {
+        self.root = Some(root.as_ref().to_path_buf());
+        self
+    }
+
     fn extend_additional_layers(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -199,6 +207,7 @@ impl<T: Config> ConfigLoader<T> {
         extending: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
+        let root = self.root.clone().unwrap_or_default();
 
         if !extending {
             trace!("Parsing sources into partial layers");
@@ -207,12 +216,22 @@ impl<T: Config> ConfigLoader<T> {
         for source in sources_to_parse {
             trace!(source = ?source, "Parsing source");
 
+            // Determine the source location for use in error messages
             let location = match source {
                 Source::Code { .. } => T::META.name,
-                Source::File { path, .. } => path.to_str().unwrap_or(T::META.name),
+                Source::File { path, .. } => {
+                    let rel_path = if let Ok(other_path) = path.strip_prefix(&root) {
+                        other_path
+                    } else {
+                        path
+                    };
+
+                    rel_path.to_str().unwrap_or(T::META.name)
+                }
                 Source::Url { url } => url,
             };
 
+            // Parse the source into a parial
             let partial: T::Partial = source.parse(self.format, location)?;
 
             // Validate before continuing so we ensure the values are correct
