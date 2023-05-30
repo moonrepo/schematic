@@ -191,13 +191,12 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, format: SourceFormat) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, format: SourceFormat, location: &str) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
-        let location = self.get_source_location();
         let result = match self {
-            Source::Code { code } => format.parse(code.to_owned(), &location),
+            Source::Code { code } => format.parse(code.to_owned(), location),
             Source::File { path, required } => {
                 let content = if path.exists() {
                     fs::read_to_string(path)?
@@ -209,30 +208,21 @@ impl Source {
                     "".into()
                 };
 
-                format.parse(content, &location)
+                format.parse(content, location)
             }
             Source::Url { url } => {
                 if !is_secure_url(url) {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                format.parse(reqwest::blocking::get(url)?.text()?, &location)
+                format.parse(reqwest::blocking::get(url)?.text()?, location)
             }
         };
 
         result.map_err(|error| ConfigError::Parser {
-            config: location,
+            config: location.to_owned(),
             error,
         })
-    }
-
-    /// Return the location of the source.
-    pub fn get_source_location(&self) -> String {
-        match self {
-            Source::Code { .. } => "code".into(),
-            Source::File { path, .. } => path.to_string_lossy().into(),
-            Source::Url { url } => url.clone(),
-        }
     }
 }
 

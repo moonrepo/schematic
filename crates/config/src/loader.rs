@@ -207,13 +207,19 @@ impl<T: Config> ConfigLoader<T> {
         for source in sources_to_parse {
             trace!(source = ?source, "Parsing source");
 
-            let partial: T::Partial = source.parse(self.format)?;
+            let location = match source {
+                Source::Code { .. } => T::META.name,
+                Source::File { path, .. } => path.to_str().unwrap_or(T::META.name),
+                Source::Url { url } => url,
+            };
+
+            let partial: T::Partial = source.parse(self.format, location)?;
 
             // Validate before continuing so we ensure the values are correct
             partial
                 .validate(context)
                 .map_err(|error| ConfigError::Validator {
-                    config: source.get_source_location(),
+                    config: location.to_owned(),
                     error,
                 })?;
 
