@@ -6,9 +6,6 @@ use serde::{de::DeserializeOwned, Serialize};
 pub struct ConfigMeta {
     /// Name of the struct.
     pub name: &'static str,
-
-    /// File name of the loaded config.
-    pub file: Option<&'static str>,
 }
 
 pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {

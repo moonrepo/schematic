@@ -25,7 +25,6 @@ pub struct NestedConfig {
 }
 
 #[derive(Debug, Config, Serialize)]
-#[config(file = "test.yml")]
 struct TestConfig {
     #[setting(validate = validate_string)]
     string: String,

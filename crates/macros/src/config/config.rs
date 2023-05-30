@@ -105,15 +105,9 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
-        let file = match &self.args.file {
-            Some(f) => quote! { Some(#f) },
-            None => quote! { None },
-        };
-
         quote! {
             schematic::ConfigMeta {
                 name: #name,
-                file: #file,
             }
         }
     }

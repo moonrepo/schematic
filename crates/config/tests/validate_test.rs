@@ -63,7 +63,6 @@ fn test_string_path<T, C>(_: &String, _: &T, _: &C) -> Result<(), ValidateError>
 }
 
 #[derive(Config)]
-#[config(file = "test.json")]
 pub struct ValidatePath {
     #[setting(validate = test_string_path)]
     string: String,
