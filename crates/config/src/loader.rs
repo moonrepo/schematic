@@ -123,21 +123,12 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         trace!("Loading {} configuration", self.label);
 
-        let layers = self.parse_into_layers(&self.sources, false)?;
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         trace!("Inheriting default and environment variable values");
 
         let config = T::from_partial(context, partial, true)?;
-
-        trace!("Validating final configuration");
-
-        config
-            .validate(context)
-            .map_err(|error| ConfigError::Validator {
-                config: self.label.clone(),
-                error,
-            })?;
 
         Ok(ConfigLoadResult {
             config,
@@ -156,7 +147,7 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<T::Partial, ConfigError> {
         trace!("Loading {} partial configuration", self.label);
 
-        let layers = self.parse_into_layers(&self.sources, false)?;
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
@@ -164,6 +155,7 @@ impl<T: Config> ConfigLoader<T> {
 
     fn extend_additional_layers(
         &self,
+        context: &<T::Partial as PartialConfig>::Context,
         parent_source: &Source,
         extends_from: &ExtendsFrom,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
@@ -195,7 +187,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources, true)
+        self.parse_into_layers(&sources, context, true)
     }
 
     fn merge_layers(
@@ -219,6 +211,7 @@ impl<T: Config> ConfigLoader<T> {
     fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
+        context: &<T::Partial as PartialConfig>::Context,
         extending: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
@@ -232,8 +225,16 @@ impl<T: Config> ConfigLoader<T> {
 
             let partial: T::Partial = source.parse(self.format, &self.label)?;
 
+            // Validate before continuing so we ensure the values are correct
+            partial
+                .validate(context)
+                .map_err(|error| ConfigError::Validator {
+                    config: self.label.clone(),
+                    error,
+                })?;
+
             if let Some(extends_from) = partial.extends_from() {
-                layers.extend(self.extend_additional_layers(source, &extends_from)?);
+                layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
             }
 
             trace!(source = ?source, "Created layer from source");

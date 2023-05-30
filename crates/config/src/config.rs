@@ -39,6 +39,22 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     /// - Current [`Some`] values are merged with the next value if [`Some`],
     ///     using the merge function from `#[setting(merge)]`.
     fn merge(&mut self, context: &Self::Context, next: Self) -> Result<(), ConfigError>;
+
+    /// Recursively validate the configuration with the provided context.
+    /// Validation should be done on the final state, after merging partials.
+    fn validate(&self, context: &Self::Context) -> Result<(), ValidatorError> {
+        self.validate_with_path(context, SettingPath::default())
+    }
+
+    #[doc(hidden)]
+    /// Internal use only, use [`Config.validate`] instead.
+    fn validate_with_path(
+        &self,
+        _context: &Self::Context,
+        _path: SettingPath,
+    ) -> Result<(), ValidatorError> {
+        Ok(())
+    }
 }
 
 pub trait Config: Sized {
@@ -55,25 +71,6 @@ pub trait Config: Sized {
         partial: Self::Partial,
         with_env: bool,
     ) -> Result<Self, ConfigError>;
-
-    /// Recursively validate the configuration with the provided context.
-    /// Validation should be done on the final state, after merging partials.
-    fn validate(
-        &self,
-        context: &<Self::Partial as PartialConfig>::Context,
-    ) -> Result<(), ValidatorError> {
-        self.validate_with_path(context, SettingPath::default())
-    }
-
-    #[doc(hidden)]
-    /// Internal use only, use [`Config.validate`] instead.
-    fn validate_with_path(
-        &self,
-        _context: &<Self::Partial as PartialConfig>::Context,
-        _path: SettingPath,
-    ) -> Result<(), ValidatorError> {
-        Ok(())
-    }
 }
 
 derive_enum!(
