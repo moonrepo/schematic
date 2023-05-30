@@ -39,8 +39,8 @@ struct AppConfig {
 }
 ```
 
-Then load, parse, and validate the configuration from one or many sources. A source is either a file
-path, secure URL, or code block.
+Then load, parse, merge, and validate the configuration from one or many sources. A source is either
+a file path, secure URL, or code block.
 
 ```rust
 use schematic::ConfigLoader;
@@ -130,6 +130,7 @@ As stated above, partials also handle the following:
 - Defining [default values](#default-values) for settings.
 - Inheriting [environment variable](#environment-variables) values.
 - Merging partials with [strategy functions](#merge-strategies).
+- Validating current values with [validate functions](#validation-rules).
 - Declaring [extendable sources](#extendable).
 
 ### Nested
@@ -157,8 +158,8 @@ pub struct ParentConfig {
 The `#[setting(nested)]` attribute is required, as the macro will substitute the config struct with
 its [partial struct](#partials) variant.
 
-> Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`. However! When
-> in a collection, setting default values are not inherited.
+> Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`. However, these
+> are tricky to support and may now work in all situations!
 
 ### Contexts
 
@@ -490,8 +491,7 @@ as a first-class feature, with built-in validation rules provided by
 [garde](https://crates.io/crates/garde).
 
 In schematic, validation _does not_ happen as part of the serde parsing process, and instead happens
-_after_ the [final configuration](#configuration) has been merged. This means we only validate the
-end result, not [partial](#partials) values (which may be incorrect).
+_for each_ [partial configuration](#partials) to be merged.
 
 Validation can be applied on a per-setting basis with the `validate` attribute field, which requires
 a path to a function to call. Furthermore, some functions are factories which can be called to
@@ -512,7 +512,7 @@ struct AppConfig {
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html).
 
 When defining a custom validate function, the value to check is passed as the first argument, the
-current struct as the second, and the [context](#contexts) as the third. The `ValidateError` type
+current partial as the second, and the [context](#contexts) as the third. The `ValidateError` type
 must be used for failures.
 
 ```rust
@@ -520,7 +520,7 @@ use schematic::ValidateError;
 
 fn validate_string(
 	value: &str,
-	config: &AppConfig,
+	partial: &PartialAppConfig,
 	context: &Context
 ) -> Result<(), ValidateError> {
 	if !do_check(value) {
