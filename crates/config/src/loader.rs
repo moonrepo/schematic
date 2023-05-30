@@ -3,9 +3,8 @@ use crate::error::ConfigError;
 use crate::layer::Layer;
 use crate::source::{Source, SourceFormat};
 use serde::Serialize;
-use starbase_styles::color;
 use std::marker::PhantomData;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::trace;
 
 #[derive(Serialize)]
@@ -23,24 +22,18 @@ pub struct ConfigLoadResult<T: Config> {
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     format: SourceFormat,
-    label: String,
     sources: Vec<Source>,
+    root: Option<PathBuf>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     /// Create a new config loader with the provided source format.
     pub fn new(format: SourceFormat) -> Self {
-        let meta = T::META;
-
         ConfigLoader {
             _config: PhantomData,
             format,
-            label: if let Some(file) = &meta.file {
-                color::file(file)
-            } else {
-                color::label(meta.name)
-            },
             sources: vec![],
+            root: None,
         }
     }
 
@@ -100,13 +93,6 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    /// Set the label to include in error messages. By default will be the configuration
-    /// struct name, or the `#[config(file = "...")]` attribute if set.
-    pub fn label(&mut self, label: String) -> &mut Self {
-        self.label = label;
-        self
-    }
-
     /// Load, parse, merge, and validate all sources into a final configuration.
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
@@ -121,23 +107,14 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!("Loading {} configuration", self.label);
+        trace!("Loading {} configuration", T::META.name);
 
-        let layers = self.parse_into_layers(&self.sources, false)?;
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         trace!("Inheriting default and environment variable values");
 
         let config = T::from_partial(context, partial, true)?;
-
-        trace!("Validating final configuration");
-
-        config
-            .validate(context)
-            .map_err(|error| ConfigError::Validator {
-                config: self.label.clone(),
-                error,
-            })?;
 
         Ok(ConfigLoadResult {
             config,
@@ -154,16 +131,23 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!("Loading {} partial configuration", self.label);
+        trace!("Loading {} partial configuration", T::META.name);
 
-        let layers = self.parse_into_layers(&self.sources, false)?;
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
     }
 
+    /// Set the project root directory, for use within file path handling.
+    pub fn set_root<P: AsRef<Path>>(&mut self, root: P) -> &mut Self {
+        self.root = Some(root.as_ref().to_path_buf());
+        self
+    }
+
     fn extend_additional_layers(
         &self,
+        context: &<T::Partial as PartialConfig>::Context,
         parent_source: &Source,
         extends_from: &ExtendsFrom,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
@@ -195,7 +179,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources, true)
+        self.parse_into_layers(&sources, context, true)
     }
 
     fn merge_layers(
@@ -219,9 +203,11 @@ impl<T: Config> ConfigLoader<T> {
     fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
+        context: &<T::Partial as PartialConfig>::Context,
         extending: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
+        let root = self.root.clone().unwrap_or_default();
 
         if !extending {
             trace!("Parsing sources into partial layers");
@@ -230,10 +216,34 @@ impl<T: Config> ConfigLoader<T> {
         for source in sources_to_parse {
             trace!(source = ?source, "Parsing source");
 
-            let partial: T::Partial = source.parse(self.format, &self.label)?;
+            // Determine the source location for use in error messages
+            let location = match source {
+                Source::Code { .. } => T::META.name,
+                Source::File { path, .. } => {
+                    let rel_path = if let Ok(other_path) = path.strip_prefix(&root) {
+                        other_path
+                    } else {
+                        path
+                    };
+
+                    rel_path.to_str().unwrap_or(T::META.name)
+                }
+                Source::Url { url } => url,
+            };
+
+            // Parse the source into a parial
+            let partial: T::Partial = source.parse(self.format, location)?;
+
+            // Validate before continuing so we ensure the values are correct
+            partial
+                .validate(context)
+                .map_err(|error| ConfigError::Validator {
+                    config: location.to_owned(),
+                    error,
+                })?;
 
             if let Some(extends_from) = partial.extends_from() {
-                layers.extend(self.extend_additional_layers(source, &extends_from)?);
+                layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
             }
 
             trace!(source = ?source, "Created layer from source");

@@ -105,15 +105,9 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
-        let file = match &self.args.file {
-            Some(f) => quote! { Some(#f) },
-            None => quote! { None },
-        };
-
         quote! {
             schematic::ConfigMeta {
                 name: #name,
-                file: #file,
             }
         }
     }
@@ -230,8 +224,31 @@ impl<'l> ToTokens for Config<'l> {
                     None
                 }
 
-                fn merge(&mut self, context: &Self::Context, mut next: Self) -> Result<(), schematic::ConfigError> {
+                fn merge(
+                    &mut self,
+                    context: &Self::Context,
+                    mut next: Self,
+                ) -> Result<(), schematic::ConfigError> {
                     #(#merge_stmts)*
+                    Ok(())
+                }
+
+                fn validate_with_path(
+                    &self,
+                    context: &Self::Context,
+                    path: schematic::SettingPath
+                ) -> Result<(), schematic::ValidatorError> {
+                    let mut errors: Vec<schematic::ValidateErrorType> = vec![];
+
+                    #(#validate_stmts)*
+
+                    if !errors.is_empty() {
+                        return Err(schematic::ValidatorError {
+                            errors,
+                            path,
+                        });
+                    }
+
                     Ok(())
                 }
             }
@@ -268,41 +285,30 @@ impl<'l> ToTokens for Config<'l> {
                 ) -> Result<Self, schematic::ConfigError> {
                     use schematic::PartialConfig as SPC;
 
-                    // Defaults
+                    // Inherit defaults
                     let mut config = <#partial_name as SPC>::default_values(context)?;
 
                     // Layer sources
                     config.merge(context, partial)?;
 
-                    // Env vars
+                    // Inherit env vars
                     if with_env {
                         config.merge(context, <#partial_name as SPC>::env_values()?)?;
                     }
 
                     let partial = config;
 
+                    // One last validation to ensure everything is good!
+                    partial
+                        .validate(context)
+                        .map_err(|error| schematic::ConfigError::Validator {
+                            config: Self::META.name.to_string(),
+                            error,
+                        })?;
+
                     Ok(Self {
                         #(#field_names: #from_stmts),*
                     })
-                }
-
-                fn validate_with_path(
-                    &self,
-                    context: &<Self::Partial as schematic::PartialConfig>::Context,
-                    path: schematic::SettingPath
-                ) -> Result<(), schematic::ValidatorError> {
-                    let mut errors: Vec<schematic::ValidateErrorType> = vec![];
-
-                    #(#validate_stmts)*
-
-                    if !errors.is_empty() {
-                        return Err(schematic::ValidatorError {
-                            errors,
-                            path,
-                        });
-                    }
-
-                    Ok(())
                 }
             }
         };

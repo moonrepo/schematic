@@ -132,15 +132,8 @@ impl<'l> Setting<'l> {
             return quote! {};
         };
 
-        if self.is_optional() {
-            quote! {
-                if let Some(setting) = self.#name.as_ref() {
-                    #validator
-                }
-            }
-        } else {
-            quote! {
-                let setting = &self.#name;
+        quote! {
+            if let Some(setting) = self.#name.as_ref() {
                 #validator
             }
         }

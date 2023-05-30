@@ -25,7 +25,6 @@ pub struct NestedConfig {
 }
 
 #[derive(Debug, Config, Serialize)]
-#[config(file = "test.yml")]
 struct TestConfig {
     #[setting(validate = validate_string)]
     string: String,
@@ -39,6 +38,7 @@ fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::json()
         // .code(r#"{ "string": "abc", "other": 123 }"#)?
         // .code("{\n  \"string\": 123\n}")?
+        .code("{\n  \"string\": \"\" \n}")?
         .load()?;
 
     dbg!(&config.config.string);

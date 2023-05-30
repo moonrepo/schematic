@@ -208,17 +208,6 @@ Refer to the [default values](#default-values), [merge strategies](#merge-strate
 `#[config]` attribute. Right now we support a name, derived from the struct name or the serde
 `rename` attribute field.
 
-We also support a `file` field, which is typically the name of the configuration file that is being
-loaded. This takes precedence over the name in error messages.
-
-```rust
-#[derive(Config)]
-#[config(file = "example.json")]
-pub struct ExampleConfig {
-	// ...
-}
-```
-
 Metadata can be accessed with the `META` constant.
 
 ```rust

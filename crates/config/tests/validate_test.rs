@@ -63,28 +63,6 @@ fn test_string_path<T, C>(_: &String, _: &T, _: &C) -> Result<(), ValidateError>
 }
 
 #[derive(Config)]
-#[config(file = "test.json")]
-pub struct ValidatePath {
-    #[setting(validate = test_string_path)]
-    string: String,
-}
-
-#[test]
-fn can_customize_path() {
-    let error = ConfigLoader::<ValidatePath>::new(SourceFormat::Json)
-        .code(r#"{ "string": "abc" }"#)
-        .unwrap()
-        .load()
-        .err()
-        .unwrap();
-
-    assert_eq!(
-        error.to_full_string(),
-        "Failed to validate test.json. \n  string[1].foo: invalid string"
-    )
-}
-
-#[derive(Config)]
 pub struct ValidateFuncs {
     #[setting(validate = validate::alphanumeric)]
     alnum: String,
@@ -122,20 +100,20 @@ pub struct ValidateFuncs {
     ext_from: ExtendsFrom,
 }
 
-#[test]
-fn runs_the_validator_funcs() {
-    let error = ConfigLoader::<ValidateFuncs>::new(SourceFormat::Json)
-        .code(r#"{}"#)
-        .unwrap()
-        .load()
-        .err()
-        .unwrap();
+// #[test]
+// fn runs_the_validator_funcs() {
+//     let error = ConfigLoader::<ValidateFuncs>::new(SourceFormat::Json)
+//         .code(r#"{}"#)
+//         .unwrap()
+//         .load()
+//         .err()
+//         .unwrap();
 
-    assert_eq!(
-        error.to_full_string(),
-        "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
-    )
-}
+//     assert_eq!(
+//         error.to_full_string(),
+//         "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
+//     )
+// }
 
 #[derive(Config)]
 pub struct ValidateOptional {

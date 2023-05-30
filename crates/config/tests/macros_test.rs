@@ -28,7 +28,6 @@ derive_enum!(
 );
 
 #[derive(Config)]
-#[config(file = "test.json")]
 pub struct ValueTypes {
     boolean: bool,
     string: String,
@@ -45,7 +44,6 @@ pub struct OptionalValues {
 }
 
 #[derive(Config)]
-#[config(file = "some/path/file.yml")]
 struct DefaultValues {
     #[setting(default = true)]
     boolean: bool,
