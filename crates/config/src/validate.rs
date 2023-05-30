@@ -1,4 +1,4 @@
-use crate::source::{is_file_like, is_source_format, is_url_like};
+use crate::source::{is_file_like, is_secure_url, is_source_format, is_url_like};
 use crate::validator::{Segment, SettingPath, ValidateError};
 use crate::ExtendsFrom;
 use garde::rules as r;
@@ -117,7 +117,7 @@ pub fn url_secure<T: AsRef<str>, D, C>(
 
     let value = value.as_ref();
 
-    if !value.starts_with("https://") && !value.contains("127.0.0.1") {
+    if !is_secure_url(value) {
         return Err(ValidateError::new("only secure URLs are allowed"));
     }
 
@@ -134,7 +134,7 @@ pub fn in_range<T: Bounds + 'static, D, C>(min: T, max: T) -> Validator<T, D, C>
 /// Validate an extends value is either a file path or secure URL.
 pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), ValidateError> {
     if is_url_like(value) {
-        if !value.starts_with("https://") && !value.contains("127.0.0.1") {
+        if !is_secure_url(value) {
             return Err(ValidateError::new("only secure URLs can be extended"));
         }
 
@@ -145,7 +145,7 @@ pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), 
 
     if !value.is_empty() && !is_source_format(value) {
         return Err(ValidateError::new(
-            "invalid source format, try another extension",
+            "invalid format, try a supported extension",
         ));
     }
 

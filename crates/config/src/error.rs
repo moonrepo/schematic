@@ -50,8 +50,8 @@ pub enum ConfigError {
     InvalidUrl,
 
     #[diagnostic(code(config::url::https_only))]
-    #[error("Only secure URLs are allowed.")]
-    HttpsOnly,
+    #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
+    HttpsOnly(String),
 
     // IO
     #[diagnostic(code(config::fs))]

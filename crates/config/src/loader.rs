@@ -121,7 +121,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!(sources = ?self.sources, "Loading {} configuration", self.label);
+        trace!("Loading {} configuration", self.label);
 
         let layers = self.parse_into_layers(&self.sources, false)?;
         let partial = self.merge_layers(&layers, context)?;

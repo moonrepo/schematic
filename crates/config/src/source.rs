@@ -187,10 +187,6 @@ impl Source {
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
-        if !url.starts_with("https://") {
-            return Err(ConfigError::HttpsOnly);
-        }
-
         Ok(Source::Url { url })
     }
 
@@ -214,8 +210,13 @@ impl Source {
 
                 format.parse(content, path.to_str().unwrap_or("file"))
             }
-            Source::Url { url } => format.parse(reqwest::blocking::get(url)?.text()?, url),
-            // _ => unreachable!(),
+            Source::Url { url } => {
+                if !is_secure_url(url) {
+                    return Err(ConfigError::HttpsOnly(url.to_owned()));
+                }
+
+                format.parse(reqwest::blocking::get(url)?.text()?, url)
+            }
         };
 
         result.map_err(|error| ConfigError::Parser {
@@ -249,4 +250,10 @@ pub fn is_file_like(value: &str) -> bool {
 /// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www`.
 pub fn is_url_like(value: &str) -> bool {
     value.starts_with("https://") || value.starts_with("http://") || value.starts_with("www")
+}
+
+/// Returns true if the value is a secure URL, by checking for `https://`. This check can be
+/// bypassed for localhost URLs.
+pub fn is_secure_url(value: &str) -> bool {
+    value.starts_with("https://") && !value.contains("127.0.0.1") && !value.contains("//localhost")
 }

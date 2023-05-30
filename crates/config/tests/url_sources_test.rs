@@ -27,13 +27,21 @@ fn can_create_url_source() {
 #[test]
 #[should_panic(expected = "HttpsOnly")]
 fn errors_on_http() {
-    Source::new("http://some/path/config.yml", None).unwrap();
+    ConfigLoader::<Config>::new(SourceFormat::Json)
+        .url("http://some/path/config.yml")
+        .unwrap()
+        .load()
+        .unwrap();
 }
 
 #[test]
 #[should_panic(expected = "HttpsOnly")]
 fn errors_on_www() {
-    Source::new("www.domain.com/some/path/config.yml", None).unwrap();
+    ConfigLoader::<Config>::new(SourceFormat::Json)
+        .url("www.domain.com/some/path/config.yml")
+        .unwrap()
+        .load()
+        .unwrap();
 }
 
 #[cfg(feature = "json")]
