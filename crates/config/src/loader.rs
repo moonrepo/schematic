@@ -114,7 +114,8 @@ impl<T: Config> ConfigLoader<T> {
 
         trace!("Inheriting default and environment variable values");
 
-        let config = T::from_partial(context, partial, true)?;
+        // let config = T::from_partial(context, partial, true)?;
+        let config = T::from_partial(partial);
 
         Ok(ConfigLoadResult {
             config,

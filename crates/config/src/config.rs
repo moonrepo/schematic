@@ -29,6 +29,8 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     /// When no setting is extendable, this returns [`None`].
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
+    // fn finalize(context: &Self::Context, partial: Self) -> Result<Self, ConfigError>;
+
     /// Merge another partial configuration into this one and clone values when applicable. The
     /// following merge strategies are applied:
     ///
@@ -63,11 +65,7 @@ pub trait Config: Sized {
     /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
     /// by merging the partial, and lastly environment variable values from
     /// [`PartialConfig::env_values`].
-    fn from_partial(
-        context: &<Self::Partial as PartialConfig>::Context,
-        partial: Self::Partial,
-        with_env: bool,
-    ) -> Result<Self, ConfigError>;
+    fn from_partial(partial: Self::Partial) -> Self;
 }
 
 derive_enum!(

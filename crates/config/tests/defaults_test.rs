@@ -1,4 +1,7 @@
+#![allow(dead_code)]
+
 use schematic::*;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Debug, Config)]
@@ -123,6 +126,10 @@ pub struct NestedDefaults {
     nested: NativeDefaults,
     #[setting(nested)]
     nested_opt: Option<NativeDefaults>,
+    #[setting(nested)]
+    nested_vec: Vec<NativeDefaults>,
+    #[setting(nested)]
+    nested_map: HashMap<String, NativeDefaults>,
 }
 
 #[test]

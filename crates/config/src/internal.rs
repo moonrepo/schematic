@@ -25,7 +25,7 @@ pub fn parse_from_env_var<T>(
 }
 
 #[allow(clippy::unnecessary_unwrap)]
-pub fn merge_settings<T, C>(
+pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,

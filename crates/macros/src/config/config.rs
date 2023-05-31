@@ -264,11 +264,9 @@ impl<'l> ToTokens for Config<'l> {
                 fn default() -> Self {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
-                    <Self as schematic::Config>::from_partial(
-                        &context,
-                        Default::default(),
-                        false,
-                    ).unwrap()
+                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap();
+
+                    <Self as schematic::Config>::from_partial(defaults)
                 }
             }
 
@@ -278,37 +276,10 @@ impl<'l> ToTokens for Config<'l> {
 
                 const META: schematic::ConfigMeta = #meta;
 
-                fn from_partial(
-                    context: &<Self::Partial as schematic::PartialConfig>::Context,
-                    partial: Self::Partial,
-                    with_env: bool,
-                ) -> Result<Self, schematic::ConfigError> {
-                    use schematic::PartialConfig as SPC;
-
-                    // Inherit defaults
-                    let mut config = <#partial_name as SPC>::default_values(context)?;
-
-                    // Layer sources
-                    config.merge(context, partial)?;
-
-                    // Inherit env vars
-                    if with_env {
-                        config.merge(context, <#partial_name as SPC>::env_values()?)?;
-                    }
-
-                    let partial = config;
-
-                    // One last validation to ensure everything is good!
-                    partial
-                        .validate(context)
-                        .map_err(|error| schematic::ConfigError::Validator {
-                            config: Self::META.name.to_string(),
-                            error,
-                        })?;
-
-                    Ok(Self {
+                fn from_partial(partial: Self::Partial) -> Self {
+                    Self {
                         #(#field_names: #from_stmts),*
-                    })
+                    }
                 }
             }
         };

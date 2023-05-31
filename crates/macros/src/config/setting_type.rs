@@ -167,56 +167,24 @@ impl<'l> SettingType<'l> {
                 let statement = match collection {
                     NestedType::None(id) => {
                         quote! {
-                             #id::from_partial(context, data, with_env)?
+                             #id::from_partial(data)
                         }
                     }
-                    NestedType::Set(api, item) => {
-                        if *api == "Vec" {
-                            quote! {
-                                {
-                                    let mut result = #api::with_capacity(data.len());
-                                    for v in data {
-                                        result.push(#item::from_partial(context, v, with_env)?);
-                                    }
-                                    result
-                                }
-                            }
-                        } else {
-                            quote! {
-                                {
-                                    let mut result = #api::new();
-                                    for v in data {
-                                        result.insert(#item::from_partial(context, v, with_env)?);
-                                    }
-                                    result
-                                }
-                            }
-                        }
-                        // quote! {
-                        //     let result = Result<#api<_>, schematic::ConfigError> = data
-                        //         .into_iter()
-                        //         .map(|v| #item::from_partial(context, v, with_env))
-                        //         .collect::<#api<Result<_, schematic::ConfigError>>>();
-                        //     result?
-                        // }
-                    }
-                    NestedType::Map(api, _, value) => {
+                    NestedType::Set(_, item) => {
                         quote! {
-                            {
-                                let mut result = #api::new();
-                                for (k, v) in data {
-                                    result.insert(k, #value::from_partial(context, v, with_env)?);
-                                }
-                                result
-                            }
+                            data
+                                .into_iter()
+                                .map(#item::from_partial)
+                                .collect::<_>()
                         }
-                        // quote! {
-                        //     let result = Result<#api<_, _>, schematic::ConfigError> = data
-                        //         .into_iter()
-                        //         .map(|(k, v)| (k, #value::from_partial(context, v, with_env)))
-                        //         .collect::<#api<_, Result<_, schematic::ConfigError>>>();
-                        //     result?
-                        // }
+                    }
+                    NestedType::Map(_, _, value) => {
+                        quote! {
+                            data
+                                .into_iter()
+                                .map(|(k, v)| (k, #value::from_partial(v)))
+                                .collect::<_>()
+                        }
                     }
                 };
 
@@ -279,7 +247,7 @@ impl<'l> SettingType<'l> {
         // Everything elses uses basic merging
         if let Some(func) = args.merge.as_ref() {
             quote! {
-                self.#name = schematic::internal::merge_settings(
+                self.#name = schematic::internal::merge_setting(
                     self.#name.take(),
                     next.#name.take(),
                     context,
