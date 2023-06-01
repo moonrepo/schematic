@@ -18,6 +18,7 @@ pub struct SerdeArgs {
 pub struct ConfigArgs {
     allow_unknown_fields: bool,
     context: Option<ExprPath>,
+    env_prefix: Option<String>,
     file: Option<String>,
 
     // serde
@@ -186,15 +187,16 @@ impl<'l> ToTokens for Config<'l> {
 
         // Generate implementations
         let mut field_names = vec![];
+        let env_prefix = self.args.env_prefix.as_ref();
+        let extends_from = self.extends_from();
 
         let mut default_values = vec![];
         let mut from_partial_values = vec![];
 
-        let mut finalize_stmts = vec![];
         let mut env_stmts = vec![];
+        let mut finalize_stmts = vec![];
         let mut merge_stmts = vec![];
         let mut validate_stmts = vec![];
-        let extends_from = self.extends_from();
 
         for setting in &self.settings {
             field_names.push(setting.name);
@@ -202,8 +204,8 @@ impl<'l> ToTokens for Config<'l> {
             default_values.push(setting.get_default_value());
             from_partial_values.push(setting.get_from_partial_value());
 
+            env_stmts.push(setting.get_env_statement(env_prefix));
             finalize_stmts.push(setting.get_finalize_statement());
-            env_stmts.push(setting.get_env_statement());
             merge_stmts.push(setting.get_merge_statement());
             validate_stmts.push(setting.get_validate_statement());
         }

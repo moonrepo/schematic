@@ -1,5 +1,6 @@
 use crate::config::setting_type::SettingType;
 use crate::utils::{extract_comment, preserve_str_literal};
+use convert_case::{Case, Casing};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -44,10 +45,6 @@ impl<'l> Setting<'l> {
     pub fn from(field: &Field) -> Setting {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
         let serde_args = SerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
-
-        if args.parse_env.is_some() && args.env.is_none() {
-            panic!("Cannot use `parse_env` without `env`.");
-        }
 
         if args.validate.is_some() && args.nested {
             panic!("Cannot use `validate` for `nested` configs.");
@@ -95,6 +92,16 @@ impl<'l> Setting<'l> {
         self.value_type.is_optional()
     }
 
+    pub fn get_name(&self) -> String {
+        if let Some(local) = &self.args.rename {
+            local.to_owned()
+        } else if let Some(serde) = &self.serde_args.rename {
+            serde.to_owned()
+        } else {
+            self.name.to_string()
+        }
+    }
+
     pub fn get_default_value(&self) -> TokenStream {
         if self.is_optional() {
             quote! { None }
@@ -117,17 +124,33 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
-    pub fn get_env_statement(&self) -> TokenStream {
+    pub fn get_env_statement(&self, prefix: Option<&String>) -> TokenStream {
+        if self.is_nested() {
+            return quote! {};
+        }
+
         let name = self.name;
 
-        let value = match (&self.args.env, &self.args.parse_env) {
-            (Some(env), Some(parse_env)) => quote! {
+        let env = if let Some(env_name) = &self.args.env {
+            env_name.to_owned()
+        } else if let Some(env_prefix) = prefix {
+            format!("{}{}", env_prefix, self.get_name()).to_case(Case::ScreamingSnake)
+        } else {
+            if self.args.parse_env.is_some() {
+                panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
+            }
+
+            return quote! {};
+        };
+
+        let value = if let Some(parse_env) = &self.args.parse_env {
+            quote! {
                 schematic::internal::parse_from_env_var(#env, #parse_env)?
-            },
-            (Some(env), None) => quote! {
+            }
+        } else {
+            quote! {
                 schematic::internal::default_from_env_var(#env)?
-            },
-            _ => return quote! {},
+            }
         };
 
         quote! { partial.#name = #value; }
