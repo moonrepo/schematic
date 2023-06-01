@@ -117,17 +117,25 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
-    pub fn get_env_statement(&self) -> TokenStream {
+    pub fn get_env_statement(&self, prefix: Option<&String>) -> TokenStream {
         let name = self.name;
 
-        let value = match (&self.args.env, &self.args.parse_env) {
-            (Some(env), Some(parse_env)) => quote! {
+        let env = if let Some(env_name) = &self.args.env {
+            env_name.to_owned()
+        } else if let Some(env_prefix) = prefix {
+            format!("{}{}", env_prefix, self.name).to_uppercase()
+        } else {
+            return quote! {};
+        };
+
+        let value = if let Some(parse_env) = &self.args.parse_env {
+            quote! {
                 schematic::internal::parse_from_env_var(#env, #parse_env)?
-            },
-            (Some(env), None) => quote! {
+            }
+        } else {
+            quote! {
                 schematic::internal::default_from_env_var(#env)?
-            },
-            _ => return quote! {},
+            }
         };
 
         quote! { partial.#name = #value; }
