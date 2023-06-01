@@ -107,7 +107,21 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        let (partial, layers) = self.do_load(context)?;
+        trace!("Loading {} configuration", T::META.name);
+
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
+        let partial = self.merge_layers(&layers, context)?.finalize(context)?;
+
+        // Validate the final result before moving on
+        partial
+            .validate(context)
+            .map_err(|error| ConfigError::Validator {
+                config: match layers.last() {
+                    Some(last) => self.get_location(&last.source).to_owned(),
+                    None => T::META.name.to_owned(),
+                },
+                error,
+            })?;
 
         Ok(ConfigLoadResult {
             config: T::from_partial(partial),
@@ -116,15 +130,21 @@ impl<T: Config> ConfigLoader<T> {
         })
     }
 
-    /// Load, parse, merge, and validate all sources into a partial
-    /// configuration with the provided context.
+    /// Load, parse, and merge all sources into a partial configuration
+    /// with the provided context. This does not inherit default values,
+    /// environment variables, or run a final validation.
     ///
     /// Partials can be converted to full with [`Config::from_partial`].
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        Ok(self.do_load(context)?.0)
+        trace!("Loading partial {} configuration", T::META.name);
+
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
+        let partial = self.merge_layers(&layers, context)?;
+
+        Ok(partial)
     }
 
     /// Set the project root directory, for use within error messages.
@@ -170,29 +190,6 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context, true)
     }
 
-    fn do_load(
-        &self,
-        context: &<T::Partial as PartialConfig>::Context,
-    ) -> Result<(T::Partial, Vec<Layer<T>>), ConfigError> {
-        trace!("Loading {} configuration", T::META.name);
-
-        let layers = self.parse_into_layers(&self.sources, context, false)?;
-        let partial = self.merge_layers(&layers, context)?;
-
-        // Validate the final result before moving on
-        partial
-            .validate(context)
-            .map_err(|error| ConfigError::Validator {
-                config: match layers.last() {
-                    Some(last) => self.get_location(&last.source).to_owned(),
-                    None => T::META.name.to_owned(),
-                },
-                error,
-            })?;
-
-        Ok((partial, layers))
-    }
-
     fn get_location<'l>(&self, source: &'l Source) -> &'l str {
         match source {
             Source::Code { .. } => T::META.name,
@@ -228,7 +225,7 @@ impl<T: Config> ConfigLoader<T> {
             merged.merge(context, layer.partial.clone())?;
         }
 
-        merged.finalize(context)
+        Ok(merged)
     }
 
     fn parse_into_layers(
