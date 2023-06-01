@@ -1,5 +1,5 @@
 use crate::config::{Config, ExtendsFrom, PartialConfig};
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use crate::format::Format;
 use crate::layer::Layer;
 use crate::source::Source;

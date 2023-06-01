@@ -1,4 +1,4 @@
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use crate::format::Format;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;

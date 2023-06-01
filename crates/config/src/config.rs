@@ -1,5 +1,5 @@
 use crate::derive_enum;
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Serialize};
 
