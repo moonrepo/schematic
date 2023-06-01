@@ -16,6 +16,7 @@ pub struct ConfigLoadResult<T: Config> {
     pub layers: Vec<Layer<T>>,
 }
 
+#[derive(Default)]
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     sources: Vec<Source>,

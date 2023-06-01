@@ -16,6 +16,7 @@ fn can_create_code_source() {
         source,
         Source::Code {
             code: "string: foo".to_owned(),
+            format: SourceFormat::Yaml,
         }
     );
 }
@@ -27,7 +28,7 @@ string: foo
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a)
+        .code(a, SourceFormat::Yaml)
         .unwrap()
         .load()
         .unwrap();
@@ -48,9 +49,9 @@ vector: [a, b, c]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a)
+        .code(a, SourceFormat::Yaml)
         .unwrap()
-        .code(b)
+        .code(b, SourceFormat::Yaml)
         .unwrap()
         .load()
         .unwrap();
@@ -82,15 +83,15 @@ vector: [x, y, z]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a)
+        .code(a, SourceFormat::Yaml)
         .unwrap()
-        .code(b)
+        .code(b, SourceFormat::Yaml)
         .unwrap()
-        .code(c)
+        .code(c, SourceFormat::Yaml)
         .unwrap()
-        .code(d)
+        .code(d, SourceFormat::Yaml)
         .unwrap()
-        .code(e)
+        .code(e, SourceFormat::Yaml)
         .unwrap()
         .load()
         .unwrap();

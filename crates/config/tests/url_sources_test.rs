@@ -20,6 +20,7 @@ fn can_create_url_source() {
         source,
         Source::Url {
             url: "https://some/path/config.yml".to_owned(),
+            format: SourceFormat::Yaml,
         }
     );
 }
@@ -27,7 +28,7 @@ fn can_create_url_source() {
 #[test]
 #[should_panic(expected = "HttpsOnly")]
 fn errors_on_http() {
-    ConfigLoader::<Config>::new(SourceFormat::Json)
+    ConfigLoader::<Config>::new()
         .url("http://some/path/config.yml")
         .unwrap()
         .load()
@@ -37,7 +38,7 @@ fn errors_on_http() {
 #[test]
 #[should_panic(expected = "HttpsOnly")]
 fn errors_on_www() {
-    ConfigLoader::<Config>::new(SourceFormat::Json)
+    ConfigLoader::<Config>::new()
         .url("www.domain.com/some/path/config.yml")
         .unwrap()
         .load()
@@ -47,7 +48,7 @@ fn errors_on_www() {
 #[cfg(feature = "json")]
 #[test]
 fn loads_json_files() {
-    let result = ConfigLoader::<Config>::new(SourceFormat::Json)
+    let result = ConfigLoader::<Config>::new()
         .url(get_url("json/one.json"))
         .unwrap()
         .url(get_url("json/two.json"))
@@ -70,7 +71,7 @@ fn loads_json_files() {
 #[cfg(feature = "toml")]
 #[test]
 fn loads_toml_files() {
-    let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
+    let result = ConfigLoader::<Config>::new()
         .url(get_url("toml/one.toml"))
         .unwrap()
         .url(get_url("toml/two.toml"))

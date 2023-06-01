@@ -104,21 +104,23 @@ fn uses_defaults_when_no_layers() {
 #[test]
 fn can_merge_with_defaults() {
     let result = ConfigLoader::<MergeBase>::new()
-        .code("string: def")
+        .code("string: def", SourceFormat::Yaml)
         .unwrap()
-        .code("vector: [4]")
+        .code("vector: [4]", SourceFormat::Yaml)
         .unwrap()
         .code(
             r"vector: [5]
 nested:
   string: zyx
 ",
+            SourceFormat::Yaml,
         )
         .unwrap()
         .code(
             r"nested:
   other: 15
 ",
+            SourceFormat::Yaml,
         )
         .unwrap()
         .load()
@@ -138,6 +140,7 @@ fn loads_defaults_for_optional_nested() {
             r"
 optNested:
     string: hij",
+            SourceFormat::Yaml,
         )
         .unwrap()
         .load()

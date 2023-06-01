@@ -58,14 +58,17 @@ fn extends_from_chain_in_order() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string1.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -96,18 +99,22 @@ fn extends_from_chain_in_order_using_list() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list1.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base-list.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -138,26 +145,32 @@ fn extends_from_chain_in_order_using_both_enum() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list1.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string1.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("list2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base-both.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -188,6 +201,7 @@ fn extends_from_optional() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: SourceFormat::Yaml,
                 required: true,
             },
             // Source::EnvVars,

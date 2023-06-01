@@ -20,6 +20,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -30,26 +31,29 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("./some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
 
-    let source = Source::new("/some/path/config.yml", None).unwrap();
+    let source = Source::new("/some/path/config.yaml", None).unwrap();
 
     assert_eq!(
         source,
         Source::File {
-            path: PathBuf::from("/some/path/config.yml"),
+            path: PathBuf::from("/some/path/config.yaml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
 
-    let source = Source::new("some/path/config.yml", None).unwrap();
+    let source = Source::new("some/path/config.yaml", None).unwrap();
 
     assert_eq!(
         source,
         Source::File {
-            path: PathBuf::from("some/path/config.yml"),
+            path: PathBuf::from("some/path/config.yaml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -59,6 +63,7 @@ fn can_create_file_source() {
 fn can_create_file_source_with_parent() {
     let parent = Source::File {
         path: PathBuf::from("/root/config.yml"),
+        format: SourceFormat::Yaml,
         required: true,
     };
 
@@ -68,6 +73,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -78,6 +84,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -88,6 +95,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -98,6 +106,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
+            format: SourceFormat::Yaml,
             required: true,
         }
     );
@@ -108,7 +117,7 @@ fn can_create_file_source_with_parent() {
 fn loads_json_files() {
     let root = get_fixture_path("json");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Json)
+    let result = ConfigLoader::<Config>::new()
         .file(root.join("one.json"))
         .unwrap()
         .file(root.join("two.json"))
@@ -133,7 +142,7 @@ fn loads_json_files() {
 fn loads_json_file_optional() {
     let root = get_fixture_path("json");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Json)
+    let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.json"))
         .unwrap()
         .load()
@@ -149,7 +158,7 @@ fn loads_json_file_optional() {
 fn loads_toml_files() {
     let root = get_fixture_path("toml");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
+    let result = ConfigLoader::<Config>::new()
         .file(root.join("one.toml"))
         .unwrap()
         .file(root.join("two.toml"))
@@ -174,7 +183,7 @@ fn loads_toml_files() {
 fn loads_toml_file_optional() {
     let root = get_fixture_path("toml");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Toml)
+    let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.toml"))
         .unwrap()
         .load()

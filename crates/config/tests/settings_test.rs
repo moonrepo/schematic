@@ -41,7 +41,7 @@ mod standard {
     #[test]
     #[serial]
     fn returns_defaults() {
-        let config = ConfigLoader::<StandardSettings>::json()
+        let config = ConfigLoader::<StandardSettings>::new()
             .load()
             .unwrap()
             .config;
@@ -56,7 +56,7 @@ mod standard {
     fn inherits_env() {
         env::set_var("OPT_ENV", "env");
 
-        let config = ConfigLoader::<StandardSettings>::json()
+        let config = ConfigLoader::<StandardSettings>::new()
             .load()
             .unwrap()
             .config;
@@ -69,7 +69,7 @@ mod standard {
     #[test]
     #[serial]
     fn validates_all() {
-        let error = ConfigLoader::<StandardSettings>::json()
+        let error = ConfigLoader::<StandardSettings>::new()
             .load_with_context(&Context { fail: true })
             .err()
             .unwrap();
@@ -93,10 +93,7 @@ mod nested {
     #[test]
     #[serial]
     fn returns_defaults() {
-        let config = ConfigLoader::<NestedSettings>::json()
-            .load()
-            .unwrap()
-            .config;
+        let config = ConfigLoader::<NestedSettings>::new().load().unwrap().config;
 
         assert_eq!(config.nested_req.req, "");
         assert_eq!(config.nested_req.req_default, "abc");
@@ -107,8 +104,8 @@ mod nested {
     #[test]
     #[serial]
     fn applies_defaults_for_optional() {
-        let config = ConfigLoader::<NestedSettings>::json()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
+        let config = ConfigLoader::<NestedSettings>::new()
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
             .unwrap()
             .load()
             .unwrap()
@@ -128,8 +125,8 @@ mod nested {
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
-        let config = ConfigLoader::<NestedSettings>::json()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
+        let config = ConfigLoader::<NestedSettings>::new()
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
             .unwrap()
             .load()
             .unwrap()
@@ -144,8 +141,8 @@ mod nested {
     #[test]
     #[serial]
     fn validates_all() {
-        let error = ConfigLoader::<NestedSettings>::json()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
+        let error = ConfigLoader::<NestedSettings>::new()
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
             .unwrap()
             .load_with_context(&Context { fail: true })
             .err()
@@ -171,7 +168,7 @@ mod nested_vec {
     #[test]
     #[serial]
     fn returns_defaults() {
-        let config = ConfigLoader::<NestedVecSettings>::json()
+        let config = ConfigLoader::<NestedVecSettings>::new()
             .load()
             .unwrap()
             .config;
@@ -183,13 +180,14 @@ mod nested_vec {
     #[test]
     #[serial]
     fn applies_defaults_for_items() {
-        let config = ConfigLoader::<NestedVecSettings>::json()
+        let config = ConfigLoader::<NestedVecSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": [{ "req": "xyz" }],
 	"nestedOpt": [{ "opt": "hij" }]
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load()
@@ -220,13 +218,14 @@ mod nested_vec {
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
-        let config = ConfigLoader::<NestedVecSettings>::json()
+        let config = ConfigLoader::<NestedVecSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": [{ "req": "xyz" }],
 	"nestedOpt": [{ "opt": "hij" }]
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load()
@@ -242,13 +241,14 @@ mod nested_vec {
     #[test]
     #[serial]
     fn validates_all() {
-        let error = ConfigLoader::<NestedVecSettings>::json()
+        let error = ConfigLoader::<NestedVecSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": [{ "req": "1" }, { "req": "2" }],
 	"nestedOpt": [{ "opt": "3" }]
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
@@ -275,7 +275,7 @@ mod nested_map {
     #[test]
     #[serial]
     fn returns_defaults() {
-        let config = ConfigLoader::<NestedMapSettings>::json()
+        let config = ConfigLoader::<NestedMapSettings>::new()
             .load()
             .unwrap()
             .config;
@@ -290,13 +290,14 @@ mod nested_map {
     #[test]
     #[serial]
     fn applies_defaults_for_items() {
-        let config = ConfigLoader::<NestedMapSettings>::json()
+        let config = ConfigLoader::<NestedMapSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": { "key": { "req": "xyz" } },
 	"nestedOpt": { "key": { "opt": "hij" } }
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load()
@@ -333,13 +334,14 @@ mod nested_map {
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
-        let config = ConfigLoader::<NestedMapSettings>::json()
+        let config = ConfigLoader::<NestedMapSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": { "key": { "req": "xyz" } },
-	"nestedOpt": { "key": { "opt": "hij" } }
+	"nestedOpt": { key": { "opt": "hij" } }
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load()
@@ -361,13 +363,14 @@ mod nested_map {
     #[test]
     #[serial]
     fn validates_all() {
-        let error = ConfigLoader::<NestedMapSettings>::json()
+        let error = ConfigLoader::<NestedMapSettings>::new()
             .code(
                 r#"
 {
 	"nestedReq": { "key1": { "req": "xyz" } },
 	"nestedOpt": { "key2": { "opt": "hij" }, "key3": { "opt": "abc" } }
 }"#,
+                SourceFormat::Json,
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
