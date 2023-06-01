@@ -1,4 +1,4 @@
-use crate::config::setting_type::{SettingType, SettingType2};
+use crate::config::setting_type::SettingType2;
 use crate::utils::{extract_comment, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -37,8 +37,7 @@ pub struct Setting<'l> {
     pub comment: Option<String>,
     pub name: &'l Ident,
     pub value: &'l Type,
-    pub value_type: SettingType<'l>,
-    pub value_type2: SettingType2<'l>,
+    pub value_type: SettingType2<'l>,
 }
 
 impl<'l> Setting<'l> {
@@ -59,11 +58,6 @@ impl<'l> Setting<'l> {
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
             value_type: if args.nested {
-                SettingType::nested(&field.ty)
-            } else {
-                SettingType::value(&field.ty)
-            },
-            value_type2: if args.nested {
                 SettingType2::nested(&field.ty)
             } else {
                 SettingType2::value(&field.ty)
@@ -109,27 +103,8 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_default_statement(&self) -> TokenStream {
-        let name = self.name;
-
-        let value = match self.value_type.get_default_value(self.name, &self.args) {
-            Some(value) => value,
-            None => {
-                if self.is_optional() {
-                    quote! { None }
-                } else {
-                    quote! { Some(Default::default()) }
-                }
-            }
-        };
-
-        quote! {
-            #name: #value,
-        }
-    }
-
     pub fn get_finalize_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_finalize_value() {
+        if let Some(value) = self.value_type2.get_finalize_value() {
             let name = self.name;
 
             return quote! {
@@ -143,21 +118,60 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_env_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_env_value(&self.args) {
-            let name = self.name;
+        let name = self.name;
 
-            return quote! { partial.#name = #value; };
-        }
+        let value = match (&self.args.env, &self.args.parse_env) {
+            (Some(env), Some(parse_env)) => quote! {
+                schematic::internal::parse_from_env_var(#env, #parse_env)?
+            },
+            (Some(env), None) => quote! {
+                schematic::internal::default_from_env_var(#env)?
+            },
+            _ => return quote! {},
+        };
 
-        quote! {}
+        quote! { partial.#name = #value; }
     }
 
-    pub fn get_from_statement(&self) -> TokenStream {
-        self.value_type.get_from_value(self.name, &self.args)
+    pub fn get_from_partial_value(&self) -> TokenStream {
+        let name = self.name;
+        let value = self.value_type2.get_from_partial_value();
+
+        if matches!(self.value_type2, SettingType2::Value { .. }) {
+            // Reset extendable values since we don't have the entire resolved list
+            if self.args.extend {
+                quote! { Default::default() }
+
+                // Use optional values as-is as they're already wrapped in `Option`
+            } else if self.is_optional() {
+                quote! { partial.#name }
+
+                // Otherwise unwrap the resolved value or use the type default
+            } else {
+                quote! { partial.#name.unwrap_or_default() }
+            }
+        } else {
+            if self.is_optional() {
+                quote! {
+                    if let Some(data) = partial.#name {
+                        Some(#value)
+                    } else {
+                        None
+                    }
+                }
+            } else {
+                quote! {
+                    {
+                        let data = partial.#name.unwrap_or_default();
+                        #value
+                    }
+                }
+            }
+        }
     }
 
     pub fn get_merge_statement(&self) -> TokenStream {
-        self.value_type.get_merge_statement(self.name, &self.args)
+        self.value_type2.get_merge_statement(self.name, &self.args)
     }
 
     pub fn get_validate_statement(&self) -> TokenStream {

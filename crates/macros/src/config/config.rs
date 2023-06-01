@@ -186,20 +186,24 @@ impl<'l> ToTokens for Config<'l> {
 
         // Generate implementations
         let mut field_names = vec![];
-        let mut default_stmts = vec![];
+
+        let mut default_values = vec![];
+        let mut from_partial_values = vec![];
+
         let mut finalize_stmts = vec![];
         let mut env_stmts = vec![];
-        let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
         let mut validate_stmts = vec![];
         let extends_from = self.extends_from();
 
         for setting in &self.settings {
             field_names.push(setting.name);
-            default_stmts.push(setting.get_default_statement());
+
+            default_values.push(setting.get_default_value());
+            from_partial_values.push(setting.get_from_partial_value());
+
             finalize_stmts.push(setting.get_finalize_statement());
             env_stmts.push(setting.get_env_statement());
-            from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
             validate_stmts.push(setting.get_validate_statement());
         }
@@ -211,7 +215,7 @@ impl<'l> ToTokens for Config<'l> {
 
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
                     Ok(Self {
-                        #(#default_stmts)*
+                        #(#field_names: #default_values),*
                     })
                 }
 
@@ -288,7 +292,7 @@ impl<'l> ToTokens for Config<'l> {
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {
-                        #(#field_names: #from_stmts),*
+                        #(#field_names: #from_partial_values),*
                     }
                 }
             }

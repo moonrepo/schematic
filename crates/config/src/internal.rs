@@ -41,7 +41,7 @@ pub fn merge_setting<T, C>(
 }
 
 #[allow(clippy::unnecessary_unwrap)]
-pub fn merge_partial_settings<T: PartialConfig>(
+pub fn merge_partial_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
