@@ -1,4 +1,5 @@
 use schematic::*;
+use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
 
@@ -38,6 +39,7 @@ mod standard {
     use super::*;
 
     #[test]
+    #[serial]
     fn returns_defaults() {
         let config = ConfigLoader::<StandardSettings>::json()
             .load()
@@ -50,6 +52,7 @@ mod standard {
     }
 
     #[test]
+    #[serial]
     fn inherits_env() {
         env::set_var("OPT_ENV", "env");
 
@@ -64,6 +67,7 @@ mod standard {
     }
 
     #[test]
+    #[serial]
     fn validates_all() {
         let error = ConfigLoader::<StandardSettings>::json()
             .load_with_context(&Context { fail: true })
@@ -87,6 +91,7 @@ mod nested {
     use super::*;
 
     #[test]
+    #[serial]
     fn returns_defaults() {
         let config = ConfigLoader::<NestedSettings>::json()
             .load()
@@ -100,6 +105,7 @@ mod nested {
     }
 
     #[test]
+    #[serial]
     fn applies_defaults_for_optional() {
         let config = ConfigLoader::<NestedSettings>::json()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
@@ -118,6 +124,7 @@ mod nested {
     }
 
     #[test]
+    #[serial]
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
@@ -135,6 +142,7 @@ mod nested {
     }
 
     #[test]
+    #[serial]
     fn validates_all() {
         let error = ConfigLoader::<NestedSettings>::json()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
@@ -161,6 +169,7 @@ mod nested_vec {
     use super::*;
 
     #[test]
+    #[serial]
     fn returns_defaults() {
         let config = ConfigLoader::<NestedVecSettings>::json()
             .load()
@@ -172,6 +181,7 @@ mod nested_vec {
     }
 
     #[test]
+    #[serial]
     fn applies_defaults_for_items() {
         let config = ConfigLoader::<NestedVecSettings>::json()
             .code(
@@ -206,6 +216,7 @@ mod nested_vec {
     }
 
     #[test]
+    #[serial]
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
@@ -229,6 +240,7 @@ mod nested_vec {
     }
 
     #[test]
+    #[serial]
     fn validates_all() {
         let error = ConfigLoader::<NestedVecSettings>::json()
             .code(
@@ -261,6 +273,7 @@ mod nested_map {
     use super::*;
 
     #[test]
+    #[serial]
     fn returns_defaults() {
         let config = ConfigLoader::<NestedMapSettings>::json()
             .load()
@@ -275,6 +288,7 @@ mod nested_map {
     }
 
     #[test]
+    #[serial]
     fn applies_defaults_for_items() {
         let config = ConfigLoader::<NestedMapSettings>::json()
             .code(
@@ -315,6 +329,7 @@ mod nested_map {
     }
 
     #[test]
+    #[serial]
     fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
@@ -344,6 +359,7 @@ mod nested_map {
     }
 
     #[test]
+    #[serial]
     fn validates_all() {
         let error = ConfigLoader::<NestedMapSettings>::json()
             .code(
