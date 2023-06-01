@@ -1,127 +1,24 @@
-use crate::error::{ConfigError, ParserError};
-use miette::{NamedSource, SourceOffset, SourceSpan};
+use crate::errors::ConfigError;
+use crate::format::Format;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
-
-fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
-    let offset = SourceOffset::from_location(content, line, column).offset();
-    let length = 0;
-
-    (offset, length).into()
-}
-
-#[derive(Clone, Copy, Debug, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum SourceFormat {
-    #[cfg(feature = "json")]
-    Json,
-
-    #[cfg(feature = "toml")]
-    Toml,
-
-    #[cfg(feature = "yaml")]
-    Yaml,
-}
-
-impl SourceFormat {
-    /// Parse the provided content in the defined format into a partial configuration struct.
-    /// On failure, will attempt to extract the path to the problematic field and source
-    /// code spans (for use in `miette`).
-    pub fn parse<D>(&self, content: String, location: &str) -> Result<D, ParserError>
-    where
-        D: DeserializeOwned,
-    {
-        let data: D = match self {
-            #[cfg(feature = "json")]
-            SourceFormat::Json => {
-                let content = if content.is_empty() {
-                    "{}".to_owned()
-                } else {
-                    content
-                };
-
-                let de = &mut serde_json::Deserializer::from_str(&content);
-
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
-                    path: error.path().to_string(),
-                    span: Some(create_span(
-                        &content,
-                        error.inner().line(),
-                        error.inner().column(),
-                    )),
-                    message: error.inner().to_string(),
-                })?
-            }
-
-            #[cfg(feature = "toml")]
-            SourceFormat::Toml => {
-                let de = toml::Deserializer::new(&content);
-
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
-                    path: error.path().to_string(),
-                    span: error.inner().span().map(|s| s.into()),
-                    message: error.inner().message().to_owned(),
-                })?
-            }
-
-            #[cfg(feature = "yaml")]
-            SourceFormat::Yaml => {
-                use serde::de::IntoDeserializer;
-
-                // First pass, convert string to value
-                let de = serde_yaml::Deserializer::from_str(&content);
-                let mut result: serde_yaml::Value =
-                    serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                        content: NamedSource::new(location, content.to_owned()),
-                        path: error.path().to_string(),
-                        span: error
-                            .inner()
-                            .location()
-                            .map(|s| create_span(&content, s.line(), s.column())),
-                        message: error.inner().to_string(),
-                    })?;
-
-                // Applies anchors/aliases/references
-                result.apply_merge().map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
-                    path: String::new(),
-                    span: error.location().map(|s| (s.line(), s.column()).into()),
-                    message: error.to_string(),
-                })?;
-
-                // Second pass, convert value to struct
-                let de = result.into_deserializer();
-
-                serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
-                    path: error.path().to_string(),
-                    span: error
-                        .inner()
-                        .location()
-                        .map(|s| create_span(&content, s.line(), s.column())),
-                    message: error.inner().to_string(),
-                })?
-            }
-        };
-
-        Ok(data)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
-    Code { code: String },
+    Code { code: String, format: Format },
 
     /// File system path to the configuration.
-    File { path: PathBuf, required: bool },
+    File {
+        path: PathBuf,
+        format: Format,
+        required: bool,
+    },
 
     /// Secure URL to the configuration.
-    Url { url: String },
+    Url { url: String, format: Format },
 }
 
 impl Source {
@@ -166,38 +63,49 @@ impl Source {
             }
         }
 
-        Source::code(value)
+        Err(ConfigError::ExtendsFromNoCode)
     }
 
     /// Create a new code snippet source.
-    pub fn code<T: TryInto<String>>(code: T) -> Result<Source, ConfigError> {
+    pub fn code<T: TryInto<String>>(code: T, format: Format) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
-        Ok(Source::Code { code })
+        Ok(Source::Code { code, format })
     }
 
     /// Create a new file source with the provided path.
     pub fn file<T: TryInto<PathBuf>>(path: T, required: bool) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
-        Ok(Source::File { path, required })
+        Ok(Source::File {
+            format: Format::detect(path.to_str().unwrap_or_default())?,
+            path,
+            required,
+        })
     }
 
     /// Create a new URL source with the provided URL. Will error if that URL is not secure.
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
-        Ok(Source::Url { url })
+        Ok(Source::Url {
+            format: Format::detect(&url)?,
+            url,
+        })
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, format: SourceFormat, location: &str) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, location: &str) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
         let result = match self {
-            Source::Code { code } => format.parse(code.to_owned(), location),
-            Source::File { path, required } => {
+            Source::Code { code, format } => format.parse(code.to_owned(), location),
+            Source::File {
+                path,
+                format,
+                required,
+            } => {
                 let content = if path.exists() {
                     fs::read_to_string(path)?
                 } else {
@@ -210,7 +118,7 @@ impl Source {
 
                 format.parse(content, location)
             }
-            Source::Url { url } => {
+            Source::Url { url, format } => {
                 if !is_secure_url(url) {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }

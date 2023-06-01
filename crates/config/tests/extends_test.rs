@@ -39,7 +39,7 @@ struct ExtendsEnum {
 fn extends_from_chain_in_order() {
     let root = get_fixture_path("extending");
 
-    let result = ConfigLoader::<ExtendsString>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<ExtendsString>::new()
         .file(root.join("base.yml"))
         .unwrap()
         .load()
@@ -58,14 +58,17 @@ fn extends_from_chain_in_order() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string1.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -77,7 +80,7 @@ fn extends_from_chain_in_order() {
 fn extends_from_chain_in_order_using_list() {
     let root = get_fixture_path("extending");
 
-    let result = ConfigLoader::<ExtendsList>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<ExtendsList>::new()
         .file(root.join("base-list.yml"))
         .unwrap()
         .load()
@@ -96,18 +99,22 @@ fn extends_from_chain_in_order_using_list() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list1.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base-list.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -119,7 +126,7 @@ fn extends_from_chain_in_order_using_list() {
 fn extends_from_chain_in_order_using_both_enum() {
     let root = get_fixture_path("extending");
 
-    let result = ConfigLoader::<ExtendsEnum>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<ExtendsEnum>::new()
         .file(root.join("base-both.yml"))
         .unwrap()
         .load()
@@ -138,26 +145,32 @@ fn extends_from_chain_in_order_using_both_enum() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./list1.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./string1.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("list2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             Source::File {
                 path: root.join("./base-both.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             // Source::EnvVars,
@@ -169,7 +182,7 @@ fn extends_from_chain_in_order_using_both_enum() {
 fn extends_from_optional() {
     let root = get_fixture_path("extending");
 
-    let result = ConfigLoader::<ExtendsStringOptional>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<ExtendsStringOptional>::new()
         .file(root.join("string2.yml"))
         .unwrap()
         .load()
@@ -188,6 +201,7 @@ fn extends_from_optional() {
             // Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
+                format: Format::Yaml,
                 required: true,
             },
             // Source::EnvVars,

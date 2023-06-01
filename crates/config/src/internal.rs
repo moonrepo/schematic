@@ -1,5 +1,5 @@
 use crate::config::PartialConfig;
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use crate::merge::merge_partial;
 use std::{env, str::FromStr};
 

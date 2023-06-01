@@ -14,9 +14,7 @@ pub struct NativeDefaults {
 
 #[test]
 fn uses_native_defaults() {
-    let result = ConfigLoader::<NativeDefaults>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<NativeDefaults>::new().load().unwrap();
 
     assert!(!result.config.boolean);
     assert_eq!(result.config.string, "");
@@ -38,9 +36,7 @@ pub struct CustomDefaults {
 
 #[test]
 fn uses_custom_setting_defaults() {
-    let result = ConfigLoader::<CustomDefaults>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<CustomDefaults>::new().load().unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");
@@ -61,9 +57,7 @@ pub struct ReqOptDefaults {
 
 #[test]
 fn handles_required_optional_defaults() {
-    let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<ReqOptDefaults>::new().load().unwrap();
 
     assert_eq!(result.config.required, 0);
     assert_eq!(result.config.required_with_default, 123);
@@ -72,8 +66,8 @@ fn handles_required_optional_defaults() {
 
 #[test]
 fn can_overwrite_optional_fields() {
-    let result = ConfigLoader::<ReqOptDefaults>::new(SourceFormat::Yaml)
-        .code("required: 789\noptional: 456")
+    let result = ConfigLoader::<ReqOptDefaults>::new()
+        .code("required: 789\noptional: 456", Format::Yaml)
         .unwrap()
         .load()
         .unwrap();
@@ -112,7 +106,7 @@ fn sets_defaults_from_context() {
         count: 5,
         root: PathBuf::from("/root"),
     };
-    let result = ConfigLoader::<ContextDefaults>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<ContextDefaults>::new()
         .load_with_context(&context)
         .unwrap();
 
@@ -134,9 +128,7 @@ pub struct NestedDefaults {
 
 #[test]
 fn handles_nested_defaults() {
-    let result = ConfigLoader::<NestedDefaults>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<NestedDefaults>::new().load().unwrap();
 
     assert!(result.config.nested_opt.is_none());
     assert!(!result.config.nested.boolean);

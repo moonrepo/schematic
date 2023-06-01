@@ -53,6 +53,10 @@ pub enum ConfigError {
     #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
     HttpsOnly(String),
 
+    #[diagnostic(code(config::format::unsupported))]
+    #[error("Unsupported format for {0}, expected {1}.")]
+    UnsupportedFormat(String, String),
+
     // IO
     #[diagnostic(code(config::fs))]
     #[error("Failed to read source file.")]

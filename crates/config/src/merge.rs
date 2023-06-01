@@ -1,5 +1,5 @@
 use crate::config::PartialConfig;
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     hash::Hash,

@@ -1,4 +1,4 @@
-use crate::error::ConfigError;
+use crate::errors::ConfigError;
 use std::str::FromStr;
 
 /// Parse a string into a boolean. Will parse `1`, `true`, `yes`, `on`,

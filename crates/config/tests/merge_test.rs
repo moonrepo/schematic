@@ -92,9 +92,7 @@ pub struct MergeBase {
 
 #[test]
 fn uses_defaults_when_no_layers() {
-    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<MergeBase>::new().load().unwrap();
 
     assert_eq!(result.config.string, "abc");
     assert_eq!(result.config.vector, vec![1, 2, 3]);
@@ -105,22 +103,24 @@ fn uses_defaults_when_no_layers() {
 
 #[test]
 fn can_merge_with_defaults() {
-    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
-        .code("string: def")
+    let result = ConfigLoader::<MergeBase>::new()
+        .code("string: def", Format::Yaml)
         .unwrap()
-        .code("vector: [4]")
+        .code("vector: [4]", Format::Yaml)
         .unwrap()
         .code(
             r"vector: [5]
 nested:
   string: zyx
 ",
+            Format::Yaml,
         )
         .unwrap()
         .code(
             r"nested:
   other: 15
 ",
+            Format::Yaml,
         )
         .unwrap()
         .load()
@@ -135,11 +135,12 @@ nested:
 
 #[test]
 fn loads_defaults_for_optional_nested() {
-    let result = ConfigLoader::<MergeBase>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<MergeBase>::new()
         .code(
             r"
 optNested:
     string: hij",
+            Format::Yaml,
         )
         .unwrap()
         .load()
