@@ -157,6 +157,53 @@ impl<'l> SettingType<'l> {
         }
     }
 
+    pub fn get_finalize_value(&self) -> Option<TokenStream> {
+        match self {
+            SettingType::Nested { collection, .. } => Some(match collection {
+                NestedType::None(_) => {
+                    quote! {
+                        data.finalize(context)?
+                    }
+                }
+                NestedType::Set(api, _) => {
+                    if *api == "Vec" {
+                        quote! {
+                            {
+                                let mut result = #api::with_capacity(data.len());
+                                for v in data {
+                                    result.push(v.finalize(context)?);
+                                }
+                                result
+                            }
+                        }
+                    } else {
+                        quote! {
+                            {
+                                let mut result = #api::new();
+                                for v in data {
+                                    result.insert(v.finalize(context)?);
+                                }
+                                result
+                            }
+                        }
+                    }
+                }
+                NestedType::Map(api, _, _) => {
+                    quote! {
+                        {
+                            let mut result = #api::new();
+                            for (k, v) in data {
+                                result.insert(k, v.finalize(context)?);
+                            }
+                            result
+                        }
+                    }
+                }
+            }),
+            _ => None,
+        }
+    }
+
     pub fn get_from_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::Nested {

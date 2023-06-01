@@ -105,6 +105,20 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
+    pub fn get_finalize_statement(&self) -> TokenStream {
+        if let Some(value) = self.value_type.get_finalize_value() {
+            let name = self.name;
+
+            return quote! {
+                if let Some(data) = partial.#name {
+                    partial.#name = Some(#value);
+                }
+            };
+        }
+
+        quote! {}
+    }
+
     pub fn get_env_statement(&self) -> TokenStream {
         if let Some(value) = self.value_type.get_env_value(&self.args) {
             let name = self.name;

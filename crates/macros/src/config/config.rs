@@ -187,6 +187,7 @@ impl<'l> ToTokens for Config<'l> {
         // Generate implementations
         let mut field_names = vec![];
         let mut default_stmts = vec![];
+        let mut finalize_stmts = vec![];
         let mut env_stmts = vec![];
         let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
@@ -196,6 +197,7 @@ impl<'l> ToTokens for Config<'l> {
         for setting in &self.settings {
             field_names.push(setting.name);
             default_stmts.push(setting.get_default_statement());
+            finalize_stmts.push(setting.get_finalize_statement());
             env_stmts.push(setting.get_env_statement());
             from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
@@ -213,7 +215,7 @@ impl<'l> ToTokens for Config<'l> {
                     Ok(partial)
                 }
 
-                 fn env_values() -> Result<Self, schematic::ConfigError> {
+                fn env_values() -> Result<Self, schematic::ConfigError> {
                     let mut partial = Self::default();
                     #(#env_stmts)*
                     Ok(partial)
@@ -222,6 +224,14 @@ impl<'l> ToTokens for Config<'l> {
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
                     #extends_from
                     None
+                }
+
+                fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
+                    let mut partial = Self::default_values(context)?;
+                    partial.merge(context, self)?;
+                    partial.merge(context, Self::env_values()?)?;
+                    #(#finalize_stmts)*
+                    Ok(partial)
                 }
 
                 fn merge(

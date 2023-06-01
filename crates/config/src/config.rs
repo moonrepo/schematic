@@ -29,7 +29,7 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     /// When no setting is extendable, this returns [`None`].
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
-    // fn finalize(context: &Self::Context, partial: Self) -> Result<Self, ConfigError>;
+    fn finalize(self, context: &Self::Context) -> Result<Self, ConfigError>;
 
     /// Merge another partial configuration into this one and clone values when applicable. The
     /// following merge strategies are applied:
