@@ -43,12 +43,12 @@ Then load, parse, merge, and validate the configuration from one or many sources
 a file path, secure URL, or code block.
 
 ```rust
-use schematic::{ConfigLoader, SourceFormat};
+use schematic::{ConfigLoader, Format};
 
 let result = ConfigLoader::<AppConfig>::new()
-	.code("secure: false", SourceFormat::Yaml)?
-	.file(path_to_config)?
-	.url(url_to_config)?
+	.code("secure: false", Format::Yaml)?
+	.file("path/to/config.yml")?
+	.url("https://ordomain.com/to/config.yaml")?
 	.load()?;
 
 result.config;

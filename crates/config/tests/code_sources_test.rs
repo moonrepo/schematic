@@ -16,7 +16,7 @@ pub struct Config {
 //         source,
 //         Source::Code {
 //             code: "string: foo".to_owned(),
-//             format: SourceFormat::Yaml,
+//             format: Format::Yaml,
 //         }
 //     );
 // }
@@ -28,7 +28,7 @@ string: foo
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, SourceFormat::Yaml)
+        .code(a, Format::Yaml)
         .unwrap()
         .load()
         .unwrap();
@@ -49,9 +49,9 @@ vector: [a, b, c]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, SourceFormat::Yaml)
+        .code(a, Format::Yaml)
         .unwrap()
-        .code(b, SourceFormat::Yaml)
+        .code(b, Format::Yaml)
         .unwrap()
         .load()
         .unwrap();
@@ -83,15 +83,15 @@ vector: [x, y, z]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, SourceFormat::Yaml)
+        .code(a, Format::Yaml)
         .unwrap()
-        .code(b, SourceFormat::Yaml)
+        .code(b, Format::Yaml)
         .unwrap()
-        .code(c, SourceFormat::Yaml)
+        .code(c, Format::Yaml)
         .unwrap()
-        .code(d, SourceFormat::Yaml)
+        .code(d, Format::Yaml)
         .unwrap()
-        .code(e, SourceFormat::Yaml)
+        .code(e, Format::Yaml)
         .unwrap()
         .load()
         .unwrap();

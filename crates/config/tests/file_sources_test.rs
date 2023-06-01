@@ -20,7 +20,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -31,7 +31,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("./some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -42,7 +42,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yaml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -53,7 +53,7 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yaml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -63,7 +63,7 @@ fn can_create_file_source() {
 fn can_create_file_source_with_parent() {
     let parent = Source::File {
         path: PathBuf::from("/root/config.yml"),
-        format: SourceFormat::Yaml,
+        format: Format::Yaml,
         required: true,
     };
 
@@ -73,7 +73,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -84,7 +84,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -95,7 +95,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );
@@ -106,7 +106,7 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
             required: true,
         }
     );

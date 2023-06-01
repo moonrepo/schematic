@@ -20,7 +20,7 @@ fn can_create_url_source() {
         source,
         Source::Url {
             url: "https://some/path/config.yml".to_owned(),
-            format: SourceFormat::Yaml,
+            format: Format::Yaml,
         }
     );
 }

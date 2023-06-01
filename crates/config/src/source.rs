@@ -13,7 +13,7 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum SourceFormat {
+pub enum Format {
     #[cfg(feature = "json")]
     Json,
 
@@ -24,8 +24,8 @@ pub enum SourceFormat {
     Yaml,
 }
 
-impl SourceFormat {
-    pub fn detect(value: &str) -> Result<SourceFormat, ConfigError> {
+impl Format {
+    pub fn detect(value: &str) -> Result<Format, ConfigError> {
         let mut available = vec![];
 
         #[cfg(feature = "json")]
@@ -33,7 +33,7 @@ impl SourceFormat {
             available.push("JSON");
 
             if value.ends_with(".json") {
-                return Ok(SourceFormat::Json);
+                return Ok(Format::Json);
             }
         }
 
@@ -42,7 +42,7 @@ impl SourceFormat {
             available.push("TOML");
 
             if value.ends_with(".toml") {
-                return Ok(SourceFormat::Toml);
+                return Ok(Format::Toml);
             }
         }
 
@@ -51,7 +51,7 @@ impl SourceFormat {
             available.push("YAML");
 
             if value.ends_with(".yaml") || value.ends_with(".yml") {
-                return Ok(SourceFormat::Yaml);
+                return Ok(Format::Yaml);
             }
         }
 
@@ -70,7 +70,7 @@ impl SourceFormat {
     {
         let data: D = match self {
             #[cfg(feature = "json")]
-            SourceFormat::Json => {
+            Format::Json => {
                 let content = if content.is_empty() {
                     "{}".to_owned()
                 } else {
@@ -92,7 +92,7 @@ impl SourceFormat {
             }
 
             #[cfg(feature = "toml")]
-            SourceFormat::Toml => {
+            Format::Toml => {
                 let de = toml::Deserializer::new(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
@@ -104,7 +104,7 @@ impl SourceFormat {
             }
 
             #[cfg(feature = "yaml")]
-            SourceFormat::Yaml => {
+            Format::Yaml => {
                 use serde::de::IntoDeserializer;
 
                 // First pass, convert string to value
@@ -151,17 +151,17 @@ impl SourceFormat {
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
-    Code { code: String, format: SourceFormat },
+    Code { code: String, format: Format },
 
     /// File system path to the configuration.
     File {
         path: PathBuf,
-        format: SourceFormat,
+        format: Format,
         required: bool,
     },
 
     /// Secure URL to the configuration.
-    Url { url: String, format: SourceFormat },
+    Url { url: String, format: Format },
 }
 
 impl Source {
@@ -210,7 +210,7 @@ impl Source {
     }
 
     /// Create a new code snippet source.
-    pub fn code<T: TryInto<String>>(code: T, format: SourceFormat) -> Result<Source, ConfigError> {
+    pub fn code<T: TryInto<String>>(code: T, format: Format) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
         Ok(Source::Code { code, format })
@@ -221,7 +221,7 @@ impl Source {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
         Ok(Source::File {
-            format: SourceFormat::detect(path.to_str().unwrap_or_default())?,
+            format: Format::detect(path.to_str().unwrap_or_default())?,
             path,
             required,
         })
@@ -232,7 +232,7 @@ impl Source {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
         Ok(Source::Url {
-            format: SourceFormat::detect(&url)?,
+            format: Format::detect(&url)?,
             url,
         })
     }

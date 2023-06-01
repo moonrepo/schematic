@@ -1,7 +1,7 @@
 use crate::config::{Config, ExtendsFrom, PartialConfig};
 use crate::error::ConfigError;
 use crate::layer::Layer;
-use crate::source::{Source, SourceFormat};
+use crate::source::{Format, Source};
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -37,7 +37,7 @@ impl<T: Config> ConfigLoader<T> {
     pub fn code<S: TryInto<String>>(
         &mut self,
         code: S,
-        format: SourceFormat,
+        format: Format,
     ) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::code(code, format)?);
 

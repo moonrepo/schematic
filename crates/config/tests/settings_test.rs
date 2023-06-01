@@ -105,7 +105,7 @@ mod nested {
     #[serial]
     fn applies_defaults_for_optional() {
         let config = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load()
             .unwrap()
@@ -126,7 +126,7 @@ mod nested {
         env::set_var("OPT_ENV", "env");
 
         let config = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load()
             .unwrap()
@@ -142,7 +142,7 @@ mod nested {
     #[serial]
     fn validates_all() {
         let error = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, SourceFormat::Json)
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load_with_context(&Context { fail: true })
             .err()
@@ -187,7 +187,7 @@ mod nested_vec {
 	"nestedReq": [{ "req": "xyz" }],
 	"nestedOpt": [{ "opt": "hij" }]
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load()
@@ -225,7 +225,7 @@ mod nested_vec {
 	"nestedReq": [{ "req": "xyz" }],
 	"nestedOpt": [{ "opt": "hij" }]
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load()
@@ -248,7 +248,7 @@ mod nested_vec {
 	"nestedReq": [{ "req": "1" }, { "req": "2" }],
 	"nestedOpt": [{ "opt": "3" }]
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
@@ -297,7 +297,7 @@ mod nested_map {
 	"nestedReq": { "key": { "req": "xyz" } },
 	"nestedOpt": { "key": { "opt": "hij" } }
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load()
@@ -341,7 +341,7 @@ mod nested_map {
 	"nestedReq": { "key": { "req": "xyz" } },
 	"nestedOpt": { "key": { "opt": "hij" } }
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load()
@@ -370,7 +370,7 @@ mod nested_map {
 	"nestedReq": { "key1": { "req": "xyz" } },
 	"nestedOpt": { "key2": { "opt": "hij" }, "key3": { "opt": "abc" } }
 }"#,
-                SourceFormat::Json,
+                Format::Json,
             )
             .unwrap()
             .load_with_context(&Context { fail: true })

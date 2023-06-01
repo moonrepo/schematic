@@ -28,7 +28,7 @@ pub struct Validate {
 #[test]
 fn errors_for_field() {
     let error = ConfigLoader::<Validate>::new()
-        .code(r#"{ "string1": "abc" }"#, SourceFormat::Json)
+        .code(r#"{ "string1": "abc" }"#, Format::Json)
         .unwrap()
         .load()
         .err()
@@ -45,7 +45,7 @@ fn errors_for_nested_field() {
     let error = ConfigLoader::<Validate>::new()
         .code(
             r#"{ "string1": "abc", "nested": { "string2": "abc" } }"#,
-            SourceFormat::Json,
+            Format::Json,
         )
         .unwrap()
         .load()
@@ -106,7 +106,7 @@ pub struct ValidateFuncs {
 #[test]
 fn runs_the_validator_funcs() {
     let error = ConfigLoader::<ValidateFuncs>::new()
-        .code(r#"{}"#, SourceFormat::Json)
+        .code(r#"{}"#, Format::Json)
         .unwrap()
         .load()
         .err()
@@ -127,7 +127,7 @@ pub struct ValidateOptional {
 #[test]
 fn skips_optional_fields() {
     let result = ConfigLoader::<ValidateOptional>::new()
-        .code(r#"{}"#, SourceFormat::Json)
+        .code(r#"{}"#, Format::Json)
         .unwrap()
         .load();
 
@@ -137,7 +137,7 @@ fn skips_optional_fields() {
 #[test]
 fn errors_for_optional_field() {
     let error = ConfigLoader::<ValidateOptional>::new()
-        .code(r#"{ "string1": "abc" }"#, SourceFormat::Json)
+        .code(r#"{ "string1": "abc" }"#, Format::Json)
         .unwrap()
         .load()
         .err()
@@ -162,7 +162,7 @@ fn errors_for_nested_field_collections() {
     let error = ConfigLoader::<ValidateCollections>::new()
         .code(
             r#"{ "list": [ {"string2": "abc"} ], "map": { "key": {"string2": "abc"} } }"#,
-            SourceFormat::Json,
+            Format::Json,
         )
         .unwrap()
         .load()

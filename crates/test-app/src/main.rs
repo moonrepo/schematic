@@ -1,5 +1,5 @@
 use miette::Result;
-use schematic::{Config, ConfigLoader, SourceFormat, ValidateError};
+use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
@@ -36,9 +36,9 @@ struct TestConfig {
 
 fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::new()
-        // .code(r#"{ "string": "abc", "other": 123 }"#, SourceFormat::Json)?
-        // .code("{\n  \"string\": 123\n}", SourceFormat::Json)?
-        .code("{\n  \"string\": \"\" \n}", SourceFormat::Json)?
+        // .code(r#"{ "string": "abc", "other": 123 }"#, Format::Json)?
+        // .code("{\n  \"string\": 123\n}", Format::Json)?
+        .code("{\n  \"string\": \"\" \n}", Format::Json)?
         .load()?;
 
     dbg!(&config.config.string);
