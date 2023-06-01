@@ -1,6 +1,6 @@
 [package]
 name = "schematic"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 license = "MIT"
 description = "derive(Config)"
@@ -8,7 +8,7 @@ repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
 
 [dependencies]
-schematic_macros = { version = "0.6.0", path = "../macros" }
+schematic_macros = { version = "0.6.1", path = "../macros" }
 garde = { version = "0.11.2", default-features = false, features = ["pattern"] }
 miette = { workspace = true }
 reqwest = { version = "0.11.18", default-features = false, features = ["blocking", "rustls-tls"] }
