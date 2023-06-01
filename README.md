@@ -43,10 +43,10 @@ Then load, parse, merge, and validate the configuration from one or many sources
 a file path, secure URL, or code block.
 
 ```rust
-use schematic::ConfigLoader;
+use schematic::{ConfigLoader, SourceFormat};
 
-let result = ConfigLoader::<AppConfig>::yaml()
-	.code("secure: false")?
+let result = ConfigLoader::<AppConfig>::new()
+	.code("secure: false", SourceFormat::Yaml)?
 	.file(path_to_config)?
 	.url(url_to_config)?
 	.load()?;
@@ -54,6 +54,8 @@ let result = ConfigLoader::<AppConfig>::yaml()
 result.config;
 result.layers;
 ```
+
+> The format for files and URLs are derived from the trailing extension.
 
 ## Configuration
 
@@ -195,7 +197,7 @@ let context = ExampleContext {
 	another_value: 10,
 };
 
-let result = ConfigLoader::<ExampleConfig>::yaml()
+let result = ConfigLoader::<ExampleConfig>::new()
 	.url(url_to_config)?
 	.load_with_context(&context)?;
 ```

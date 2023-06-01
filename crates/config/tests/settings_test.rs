@@ -339,7 +339,7 @@ mod nested_map {
                 r#"
 {
 	"nestedReq": { "key": { "req": "xyz" } },
-	"nestedOpt": { key": { "opt": "hij" } }
+	"nestedOpt": { "key": { "opt": "hij" } }
 }"#,
                 SourceFormat::Json,
             )

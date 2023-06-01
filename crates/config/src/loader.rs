@@ -61,13 +61,6 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    /// Add a source to load. Will attempt to infer the source type.
-    pub fn source<S: AsRef<str>>(&mut self, value: S) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::new(value.as_ref(), None)?);
-
-        Ok(self)
-    }
-
     /// Add a URL source to load.
     pub fn url<S: TryInto<String>>(&mut self, url: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::url(url)?);

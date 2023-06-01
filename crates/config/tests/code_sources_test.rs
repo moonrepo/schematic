@@ -8,18 +8,18 @@ pub struct Config {
     vector: Vec<String>,
 }
 
-#[test]
-fn can_create_code_source() {
-    let source = Source::new("string: foo", None).unwrap();
+// #[test]
+// fn can_create_code_source() {
+//     let source = Source::new("string: foo", None).unwrap();
 
-    assert_eq!(
-        source,
-        Source::Code {
-            code: "string: foo".to_owned(),
-            format: SourceFormat::Yaml,
-        }
-    );
-}
+//     assert_eq!(
+//         source,
+//         Source::Code {
+//             code: "string: foo".to_owned(),
+//             format: SourceFormat::Yaml,
+//         }
+//     );
+// }
 
 #[test]
 fn handles_one_layer() {

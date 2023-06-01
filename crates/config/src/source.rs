@@ -206,7 +206,7 @@ impl Source {
             }
         }
 
-        Source::code(value, SourceFormat::Json) // TODO
+        Err(ConfigError::ExtendsFromNoCode)
     }
 
     /// Create a new code snippet source.
