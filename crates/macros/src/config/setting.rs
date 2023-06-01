@@ -1,4 +1,4 @@
-use crate::config::setting_type::SettingType2;
+use crate::config::setting_type::SettingType;
 use crate::utils::{extract_comment, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -37,7 +37,7 @@ pub struct Setting<'l> {
     pub comment: Option<String>,
     pub name: &'l Ident,
     pub value: &'l Type,
-    pub value_type: SettingType2<'l>,
+    pub value_type: SettingType<'l>,
 }
 
 impl<'l> Setting<'l> {
@@ -58,9 +58,9 @@ impl<'l> Setting<'l> {
             name: field.ident.as_ref().unwrap(),
             value: &field.ty,
             value_type: if args.nested {
-                SettingType2::nested(&field.ty)
+                SettingType::nested(&field.ty)
             } else {
-                SettingType2::value(&field.ty)
+                SettingType::value(&field.ty)
             },
             args,
             serde_args,
@@ -138,7 +138,7 @@ impl<'l> Setting<'l> {
         let value = self.value_type.get_from_partial_value();
 
         #[allow(clippy::collapsible_else_if)]
-        if matches!(self.value_type, SettingType2::Value { .. }) {
+        if matches!(self.value_type, SettingType::Value { .. }) {
             // Reset extendable values since we don't have the entire resolved list
             if self.args.extend {
                 quote! { Default::default() }

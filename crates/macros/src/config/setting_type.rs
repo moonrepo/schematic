@@ -25,7 +25,7 @@ fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
     }
 }
 
-pub enum SettingType2<'l> {
+pub enum SettingType<'l> {
     // Vec<item>
     NestedList {
         collection: &'l Ident,
@@ -54,8 +54,8 @@ pub enum SettingType2<'l> {
     },
 }
 
-impl<'l> SettingType2<'l> {
-    pub fn nested(raw: &Type) -> SettingType2 {
+impl<'l> SettingType<'l> {
+    pub fn nested(raw: &Type) -> SettingType {
         let mut optional = false;
 
         let Type::Path(raw_path) = raw else {
@@ -73,19 +73,19 @@ impl<'l> SettingType2<'l> {
         let container = &segment.ident;
 
         match &segment.arguments {
-            PathArguments::None => SettingType2::NestedValue {
+            PathArguments::None => SettingType::NestedValue {
                 path,
                 config: container,
                 optional,
             },
             PathArguments::AngleBracketed(args) => match container.to_string().as_str() {
-                "Vec" | "HashSet" | "FxHashSet" | "BTreeSet" => SettingType2::NestedList {
+                "Vec" | "HashSet" | "FxHashSet" | "BTreeSet" => SettingType::NestedList {
                     collection: container,
                     item: args.args.first().unwrap(),
                     optional,
                     path,
                 },
-                "HashMap" | "FxHashMap" | "BTreeMap" => SettingType2::NestedMap {
+                "HashMap" | "FxHashMap" | "BTreeMap" => SettingType::NestedMap {
                     collection: container,
                     key: args.args.first().unwrap(),
                     optional,
@@ -98,7 +98,7 @@ impl<'l> SettingType2<'l> {
         }
     }
 
-    pub fn value(raw: &Type) -> SettingType2 {
+    pub fn value(raw: &Type) -> SettingType {
         let mut optional = false;
 
         let value = if let Some(unwrapped_value) = unwrap_option(raw) {
@@ -108,36 +108,36 @@ impl<'l> SettingType2<'l> {
             raw
         };
 
-        SettingType2::Value { value, optional }
+        SettingType::Value { value, optional }
     }
 
     pub fn is_optional(&self) -> bool {
         match self {
-            SettingType2::NestedValue { optional, .. } => *optional,
-            SettingType2::NestedList { optional, .. } => *optional,
-            SettingType2::NestedMap { optional, .. } => *optional,
-            SettingType2::Value { optional, .. } => *optional,
+            SettingType::NestedValue { optional, .. } => *optional,
+            SettingType::NestedList { optional, .. } => *optional,
+            SettingType::NestedMap { optional, .. } => *optional,
+            SettingType::Value { optional, .. } => *optional,
         }
     }
 
     pub fn get_inner_type(&self) -> Option<&'l Type> {
         match self {
-            SettingType2::Value { value, .. } => Some(value),
+            SettingType::Value { value, .. } => Some(value),
             _ => None,
         }
     }
 
     pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
-            SettingType2::NestedList { .. } | SettingType2::NestedMap { .. } => {
+            SettingType::NestedList { .. } | SettingType::NestedMap { .. } => {
                 quote! { Some(Default::default()) }
             }
-            SettingType2::NestedValue { config, .. } => {
+            SettingType::NestedValue { config, .. } => {
                 let partial_name = format_ident!("Partial{}", config);
 
                 quote! { Some(#partial_name::default_values(context)?) }
             }
-            SettingType2::Value { value, .. } => {
+            SettingType::Value { value, .. } => {
                 if let Some(expr) = args.default.as_ref() {
                     match expr {
                         Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
@@ -169,33 +169,33 @@ impl<'l> SettingType2<'l> {
 
     pub fn get_finalize_value(&self) -> Option<TokenStream> {
         match self {
-            SettingType2::NestedList { .. } | SettingType2::NestedMap { .. } => {
+            SettingType::NestedList { .. } | SettingType::NestedMap { .. } => {
                 Some(self.map_data(quote! { value.finalize(context)? }))
             }
-            SettingType2::NestedValue { .. } => {
+            SettingType::NestedValue { .. } => {
                 Some(self.map_data(quote! { data.finalize(context)? }))
             }
-            SettingType2::Value { .. } => None,
+            SettingType::Value { .. } => None,
         }
     }
 
     pub fn get_from_partial_value(&self) -> TokenStream {
         match self {
-            SettingType2::NestedList { item, .. } => self.map_data(quote! {
+            SettingType::NestedList { item, .. } => self.map_data(quote! {
                 #item::from_partial(value)
             }),
-            SettingType2::NestedMap { value, .. } => self.map_data(quote! {
+            SettingType::NestedMap { value, .. } => self.map_data(quote! {
                 #value::from_partial(value)
             }),
-            SettingType2::NestedValue { config, .. } => quote! {
+            SettingType::NestedValue { config, .. } => quote! {
                 #config::from_partial(data)
             },
-            SettingType2::Value { .. } => quote! { data },
+            SettingType::Value { .. } => quote! { data },
         }
     }
 
     pub fn get_merge_statement(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
-        if let SettingType2::NestedValue { .. } = self {
+        if let SettingType::NestedValue { .. } = self {
             if args.merge.is_some() {
                 panic!("Nested configs do not support `merge` unless wrapped in a collection.");
             }
@@ -231,26 +231,26 @@ impl<'l> SettingType2<'l> {
         let name_quoted = format!("{}", name);
 
         match self {
-            SettingType2::NestedList { .. } => Some(quote! {
+            SettingType::NestedList { .. } => Some(quote! {
                 for (i, item) in setting.iter().enumerate() {
                     if let Err(nested_error) = item.validate_with_path(context, path.join_key(#name_quoted).join_index(i)) {
                         errors.push(schematic::ValidateErrorType::nested(nested_error));
                     }
                 }
             }),
-            SettingType2::NestedMap { .. } => Some(quote! {
+            SettingType::NestedMap { .. } => Some(quote! {
                 for (key, value) in setting {
                     if let Err(nested_error) = value.validate_with_path(context, path.join_key(#name_quoted).join_key(key)) {
                         errors.push(schematic::ValidateErrorType::nested(nested_error));
                     }
                 }
             }),
-            SettingType2::NestedValue { .. } => Some(quote! {
+            SettingType::NestedValue { .. } => Some(quote! {
                 if let Err(nested_error) = setting.validate_with_path(context, path.join_key(#name_quoted)) {
                     errors.push(schematic::ValidateErrorType::nested(nested_error));
                 }
             }),
-            SettingType2::Value { .. } => {
+            SettingType::Value { .. } => {
                 if let Some(expr) = args.validate.as_ref() {
                     let func = match expr {
                         // func(arg)()
@@ -279,7 +279,7 @@ impl<'l> SettingType2<'l> {
 
     pub fn map_data(&self, mapped_data: TokenStream) -> TokenStream {
         match self {
-            SettingType2::NestedList { collection, .. } => {
+            SettingType::NestedList { collection, .. } => {
                 quote! {
                     {
                         let mut result = #collection::new();
@@ -290,7 +290,7 @@ impl<'l> SettingType2<'l> {
                     }
                 }
             }
-            SettingType2::NestedMap { collection, .. } => {
+            SettingType::NestedMap { collection, .. } => {
                 quote! {
                     {
                         let mut result = #collection::new();
@@ -301,22 +301,22 @@ impl<'l> SettingType2<'l> {
                     }
                 }
             }
-            SettingType2::NestedValue { .. } | SettingType2::Value { .. } => {
+            SettingType::NestedValue { .. } | SettingType::Value { .. } => {
                 quote! { #mapped_data }
             }
         }
     }
 }
 
-impl<'l> ToTokens for SettingType2<'l> {
+impl<'l> ToTokens for SettingType<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(match self {
-            SettingType2::NestedList {
+            SettingType::NestedList {
                 collection, item, ..
             } => {
                 quote! { Option<#collection<<#item as schematic::Config>::Partial>> }
             }
-            SettingType2::NestedMap {
+            SettingType::NestedMap {
                 collection,
                 key,
                 value,
@@ -326,10 +326,10 @@ impl<'l> ToTokens for SettingType2<'l> {
                     Option<#collection<#key, <#value as schematic::Config>::Partial>>
                 }
             }
-            SettingType2::NestedValue { path, .. } => {
+            SettingType::NestedValue { path, .. } => {
                 quote! { Option<<#path as schematic::Config>::Partial> }
             }
-            SettingType2::Value { value, .. } => {
+            SettingType::Value { value, .. } => {
                 quote! { Option<#value> }
             }
         })
