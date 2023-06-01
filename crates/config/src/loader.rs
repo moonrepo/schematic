@@ -1,7 +1,8 @@
 use crate::config::{Config, ExtendsFrom, PartialConfig};
 use crate::error::ConfigError;
+use crate::format::Format;
 use crate::layer::Layer;
-use crate::source::{Format, Source};
+use crate::source::Source;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
