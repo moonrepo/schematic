@@ -29,6 +29,10 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     /// When no setting is extendable, this returns [`None`].
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
+    /// Finalize the partial configuration by consuming it and populating all fields with a value.
+    /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
+    /// by merging the current partial, and lastly environment variable values from
+    /// [`PartialConfig::env_values`].
     fn finalize(self, context: &Self::Context) -> Result<Self, ConfigError>;
 
     /// Merge another partial configuration into this one and clone values when applicable. The
@@ -62,9 +66,6 @@ pub trait Config: Sized {
     const META: ConfigMeta;
 
     /// Convert a partial configuration into a full configuration, with all values populated.
-    /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
-    /// by merging the partial, and lastly environment variable values from
-    /// [`PartialConfig::env_values`].
     fn from_partial(partial: Self::Partial) -> Self;
 }
 

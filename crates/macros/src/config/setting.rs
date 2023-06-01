@@ -96,13 +96,22 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_default_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_default_value(self.name, &self.args) {
-            let name = self.name;
+        let name = self.name;
 
-            return quote! { partial.#name = #value; };
+        let value = match self.value_type.get_default_value(self.name, &self.args) {
+            Some(value) => value,
+            None => {
+                if self.is_optional() {
+                    quote! { None }
+                } else {
+                    quote! { Some(Default::default()) }
+                }
+            }
+        };
+
+        quote! {
+            #name: #value,
         }
-
-        quote! {}
     }
 
     pub fn get_finalize_statement(&self) -> TokenStream {

@@ -210,9 +210,9 @@ impl<'l> ToTokens for Config<'l> {
                 type Context = #context;
 
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    let mut partial = Self::default();
-                    #(#default_stmts)*
-                    Ok(partial)
+                    Ok(Self {
+                        #(#default_stmts)*
+                    })
                 }
 
                 fn env_values() -> Result<Self, schematic::ConfigError> {
