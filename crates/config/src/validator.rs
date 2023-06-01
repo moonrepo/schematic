@@ -156,6 +156,20 @@ impl ValidateErrorType {
         ValidateErrorType::Nested { error }
     }
 
+    pub fn is_empty(&self) -> bool {
+        match self {
+            ValidateErrorType::Setting { .. } => false,
+            ValidateErrorType::Nested { error } => error.is_empty(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            ValidateErrorType::Setting { .. } => 1,
+            ValidateErrorType::Nested { error } => error.len(),
+        }
+    }
+
     pub fn to_error_list(&self) -> Vec<String> {
         let mut list = vec![];
 
@@ -189,6 +203,16 @@ pub struct ValidatorError {
 }
 
 impl ValidatorError {
+    /// Return true if there are no validation errors.
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
+
+    /// Return a count of all recursive validation errors.
+    pub fn len(&self) -> usize {
+        self.errors.iter().map(|e| e.len()).sum()
+    }
+
     /// Return a string of all recursive validation errors, joined with newlines.
     pub fn to_full_string(&self) -> String {
         let mut message = String::new();

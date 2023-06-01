@@ -1,6 +1,22 @@
-use std::collections::HashMap;
-
 use schematic::*;
+use std::collections::HashMap;
+use std::env;
+
+fn test_string<T>(_: &String, _: &T, context: &Context) -> Result<(), ValidateError> {
+    if context.fail {
+        return Err(ValidateError::new("invalid"));
+    }
+
+    Ok(())
+}
+
+fn assert_validation_error(error: ConfigError, count: usize) {
+    if let ConfigError::Validator { error: inner, .. } = error {
+        assert_eq!(inner.len(), count);
+    } else {
+        panic!("expected validation error");
+    }
+}
 
 #[derive(Default)]
 pub struct Context {
@@ -10,9 +26,11 @@ pub struct Context {
 #[derive(Debug, Config, Eq, PartialEq)]
 #[config(context = Context)]
 pub struct StandardSettings {
+    #[setting(validate = test_string)]
     req: String,
-    #[setting(default = "abc")]
+    #[setting(default = "abc", validate = test_string)]
     req_default: String,
+    #[setting(env = "OPT_ENV", validate = test_string)]
     opt: Option<String>,
 }
 
@@ -29,6 +47,30 @@ mod standard {
         assert_eq!(config.req, "");
         assert_eq!(config.req_default, "abc");
         assert_eq!(config.opt, None);
+    }
+
+    #[test]
+    fn inherits_env() {
+        env::set_var("OPT_ENV", "env");
+
+        let config = ConfigLoader::<StandardSettings>::json()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.opt, Some("env".to_owned()));
+
+        env::remove_var("OPT_ENV");
+    }
+
+    #[test]
+    fn validates_all() {
+        let error = ConfigLoader::<StandardSettings>::json()
+            .load_with_context(&Context { fail: true })
+            .err()
+            .unwrap();
+
+        assert_validation_error(error, 2);
     }
 }
 
@@ -73,6 +115,36 @@ mod nested {
 
         assert_eq!(opt.req, "xyz");
         assert_eq!(opt.req_default, "abc");
+    }
+
+    #[test]
+    fn inherits_env_for_each() {
+        env::set_var("OPT_ENV", "env");
+
+        let config = ConfigLoader::<NestedSettings>::json()
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.nested_req.opt, Some("env".to_owned()));
+        assert_eq!(config.nested_opt.unwrap().opt, Some("env".to_owned()));
+
+        env::remove_var("OPT_ENV");
+    }
+
+    #[test]
+    fn validates_all() {
+        let error = ConfigLoader::<NestedSettings>::json()
+            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#)
+            .unwrap()
+            .load_with_context(&Context { fail: true })
+            .err()
+            .unwrap();
+
+        // 1 instead of 3 since its running on a partial
+        assert_validation_error(error, 1);
     }
 }
 
@@ -131,6 +203,48 @@ mod nested_vec {
                 opt: Some("hij".into()),
             }]
         );
+    }
+
+    #[test]
+    fn inherits_env_for_each() {
+        env::set_var("OPT_ENV", "env");
+
+        let config = ConfigLoader::<NestedVecSettings>::json()
+            .code(
+                r#"
+{
+	"nestedReq": [{ "req": "xyz" }],
+	"nestedOpt": [{ "opt": "hij" }]
+}"#,
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.nested_req[0].opt, Some("env".to_owned()));
+        assert_eq!(config.nested_opt.unwrap()[0].opt, Some("env".to_owned()));
+
+        env::remove_var("OPT_ENV");
+    }
+
+    #[test]
+    fn validates_all() {
+        let error = ConfigLoader::<NestedVecSettings>::json()
+            .code(
+                r#"
+{
+	"nestedReq": [{ "req": "1" }, { "req": "2" }],
+	"nestedOpt": [{ "opt": "3" }]
+}"#,
+            )
+            .unwrap()
+            .load_with_context(&Context { fail: true })
+            .err()
+            .unwrap();
+
+        // 3 instead of 6 since its running on a partial
+        assert_validation_error(error, 3);
     }
 }
 
@@ -198,5 +312,53 @@ mod nested_map {
                 }
             )])
         );
+    }
+
+    #[test]
+    fn inherits_env_for_each() {
+        env::set_var("OPT_ENV", "env");
+
+        let config = ConfigLoader::<NestedMapSettings>::json()
+            .code(
+                r#"
+{
+	"nestedReq": { "key": { "req": "xyz" } },
+	"nestedOpt": { "key": { "opt": "hij" } }
+}"#,
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(
+            config.nested_req.get("key").unwrap().opt,
+            Some("env".to_owned())
+        );
+        assert_eq!(
+            config.nested_opt.unwrap().get("key").unwrap().opt,
+            Some("env".to_owned())
+        );
+
+        env::remove_var("OPT_ENV");
+    }
+
+    #[test]
+    fn validates_all() {
+        let error = ConfigLoader::<NestedMapSettings>::json()
+            .code(
+                r#"
+{
+	"nestedReq": { "key1": { "req": "xyz" } },
+	"nestedOpt": { "key2": { "opt": "hij" }, "key3": { "opt": "abc" } }
+}"#,
+            )
+            .unwrap()
+            .load_with_context(&Context { fail: true })
+            .err()
+            .unwrap();
+
+        // 3 instead of 6 since its running on a partial
+        assert_validation_error(error, 3);
     }
 }
