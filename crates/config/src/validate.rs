@@ -133,14 +133,13 @@ pub fn in_range<T: Bounds + 'static, D, C>(min: T, max: T) -> Validator<T, D, C>
 
 /// Validate an extends value is either a file path or secure URL.
 pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), ValidateError> {
-    if is_url_like(value) {
-        if !is_secure_url(value) {
-            return Err(ValidateError::new("only secure URLs can be extended"));
-        }
+    let is_file = is_file_like(value);
+    let is_url = is_url_like(value);
 
-        return Ok(());
-    } else if is_file_like(value) {
-        return Ok(());
+    if !is_url && !is_file {
+        return Err(ValidateError::new(
+            "only file paths and URLs can be extended",
+        ));
     }
 
     if !value.is_empty() && !is_source_format(value) {
@@ -149,9 +148,11 @@ pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), 
         ));
     }
 
-    Err(ValidateError::new(
-        "only file paths and URLs can be extended",
-    ))
+    if is_url && !is_secure_url(value) {
+        return Err(ValidateError::new("only secure URLs can be extended"));
+    }
+
+    Ok(())
 }
 
 /// Validate a list of extends values are either a file path or secure URL.
