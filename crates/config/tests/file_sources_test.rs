@@ -233,3 +233,39 @@ fn loads_yaml_file_optional() {
     assert_eq!(result.config.string, "");
     assert_eq!(result.config.number, 0);
 }
+
+#[test]
+fn can_use_multiple_formats() {
+    let result = ConfigLoader::<Config>::new()
+        .code(
+            r"
+string: foo
+number: 123
+",
+            Format::Yaml,
+        )
+        .unwrap()
+        .code(
+            r#"{
+  "boolean": true,
+  "vector": ["x", "y", "z"]
+}"#,
+            Format::Json,
+        )
+        .unwrap()
+        .code(
+            "
+boolean = false
+string = \"bar\"
+",
+            Format::Toml,
+        )
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "bar");
+    assert_eq!(result.config.number, 123);
+    assert_eq!(result.config.vector, vec!["x", "y", "z"]);
+}
