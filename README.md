@@ -381,7 +381,8 @@ struct AppConfig {
 
 If you'd prefer to not define `env` for _every_ setting, you can instead define a prefix on the
 containing struct using the `env_prefix` attribute field. This will define an environment variable
-for _all_ fields in the struct, in the format of "env prefix + field name" in UPPER_SNAKE_CASE.
+for _all_ non-nested fields in the struct, in the format of "env prefix + field name" in
+UPPER_SNAKE_CASE.
 
 For example, the environment variable below is now `APP_PORT`.
 

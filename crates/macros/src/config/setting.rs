@@ -125,6 +125,10 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_env_statement(&self, prefix: Option<&String>) -> TokenStream {
+        if self.is_nested() {
+            return quote! {};
+        }
+
         let name = self.name;
 
         let env = if let Some(env_name) = &self.args.env {

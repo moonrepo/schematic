@@ -168,6 +168,8 @@ pub struct EnvVarsPrefixed {
     list1: Vec<String>,
     #[setting(parse_env = schematic::env::split_semicolon)]
     list2: Vec<usize>,
+    #[setting(nested)]
+    nested: EnvVarsNested,
 }
 
 #[test]
