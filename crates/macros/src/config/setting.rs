@@ -95,28 +95,80 @@ impl<'l> Setting<'l> {
         self.value_type.is_optional()
     }
 
-    pub fn get_default_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_default_value(self.name, &self.args) {
+    pub fn get_default_value(&self) -> TokenStream {
+        if self.is_optional() {
+            quote! { None }
+        } else {
+            self.value_type.get_default_value(self.name, &self.args)
+        }
+    }
+
+    pub fn get_finalize_statement(&self) -> TokenStream {
+        if let Some(value) = self.value_type.get_finalize_value() {
             let name = self.name;
 
-            return quote! { partial.#name = #value; };
+            return quote! {
+                if let Some(data) = partial.#name {
+                    partial.#name = Some(#value);
+                }
+            };
         }
 
         quote! {}
     }
 
     pub fn get_env_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_env_value(&self.args) {
-            let name = self.name;
+        let name = self.name;
 
-            return quote! { partial.#name = #value; };
-        }
+        let value = match (&self.args.env, &self.args.parse_env) {
+            (Some(env), Some(parse_env)) => quote! {
+                schematic::internal::parse_from_env_var(#env, #parse_env)?
+            },
+            (Some(env), None) => quote! {
+                schematic::internal::default_from_env_var(#env)?
+            },
+            _ => return quote! {},
+        };
 
-        quote! {}
+        quote! { partial.#name = #value; }
     }
 
-    pub fn get_from_statement(&self) -> TokenStream {
-        self.value_type.get_from_value(self.name, &self.args)
+    pub fn get_from_partial_value(&self) -> TokenStream {
+        let name = self.name;
+        let value = self.value_type.get_from_partial_value();
+
+        #[allow(clippy::collapsible_else_if)]
+        if matches!(self.value_type, SettingType::Value { .. }) {
+            // Reset extendable values since we don't have the entire resolved list
+            if self.args.extend {
+                quote! { Default::default() }
+
+                // Use optional values as-is as they're already wrapped in `Option`
+            } else if self.is_optional() {
+                quote! { partial.#name }
+
+                // Otherwise unwrap the resolved value or use the type default
+            } else {
+                quote! { partial.#name.unwrap_or_default() }
+            }
+        } else {
+            if self.is_optional() {
+                quote! {
+                    if let Some(data) = partial.#name {
+                        Some(#value)
+                    } else {
+                        None
+                    }
+                }
+            } else {
+                quote! {
+                    {
+                        let data = partial.#name.unwrap_or_default();
+                        #value
+                    }
+                }
+            }
+        }
     }
 
     pub fn get_merge_statement(&self) -> TokenStream {
@@ -126,17 +178,18 @@ impl<'l> Setting<'l> {
     pub fn get_validate_statement(&self) -> TokenStream {
         let name = self.name;
 
-        let Some(validator) = self
+        if let Some(validator) = self
             .value_type
-            .get_validate_statement(self.name, &self.args) else {
-            return quote! {};
-        };
-
-        quote! {
-            if let Some(setting) = self.#name.as_ref() {
-                #validator
-            }
+            .get_validate_statement(self.name, &self.args)
+        {
+            return quote! {
+                if let Some(setting) = self.#name.as_ref() {
+                    #validator
+                }
+            };
         }
+
+        quote! {}
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {

@@ -107,39 +107,27 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!("Loading {} configuration", T::META.name);
-
-        let layers = self.parse_into_layers(&self.sources, context, false)?;
-        let partial = self.merge_layers(&layers, context)?;
-
-        trace!("Inheriting default and environment variable values");
-
-        let config = T::from_partial(context, partial, true)?;
+        let (partial, layers) = self.do_load(context)?;
 
         Ok(ConfigLoadResult {
-            config,
+            config: T::from_partial(partial),
             format: self.format,
             layers,
         })
     }
 
-    /// Load, parse, and merge all sources into a partial configuration
-    /// with the provided context. Validation will _not_ be performed.
+    /// Load, parse, merge, and validate all sources into a partial
+    /// configuration with the provided context.
     ///
     /// Partials can be converted to full with [`Config::from_partial`].
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!("Loading {} partial configuration", T::META.name);
-
-        let layers = self.parse_into_layers(&self.sources, context, false)?;
-        let partial = self.merge_layers(&layers, context)?;
-
-        Ok(partial)
+        Ok(self.do_load(context)?.0)
     }
 
-    /// Set the project root directory, for use within file path handling.
+    /// Set the project root directory, for use within error messages.
     pub fn set_root<P: AsRef<Path>>(&mut self, root: P) -> &mut Self {
         self.root = Some(root.as_ref().to_path_buf());
         self
@@ -182,6 +170,49 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context, true)
     }
 
+    fn do_load(
+        &self,
+        context: &<T::Partial as PartialConfig>::Context,
+    ) -> Result<(T::Partial, Vec<Layer<T>>), ConfigError> {
+        trace!("Loading {} configuration", T::META.name);
+
+        let layers = self.parse_into_layers(&self.sources, context, false)?;
+        let partial = self.merge_layers(&layers, context)?;
+
+        // Validate the final result before moving on
+        partial
+            .validate(context)
+            .map_err(|error| ConfigError::Validator {
+                config: match layers.last() {
+                    Some(last) => self.get_location(&last.source).to_owned(),
+                    None => T::META.name.to_owned(),
+                },
+                error,
+            })?;
+
+        Ok((partial, layers))
+    }
+
+    fn get_location<'l>(&self, source: &'l Source) -> &'l str {
+        match source {
+            Source::Code { .. } => T::META.name,
+            Source::File { path, .. } => {
+                let rel_path = if let Some(root) = &self.root {
+                    if let Ok(other_path) = path.strip_prefix(root) {
+                        other_path
+                    } else {
+                        path
+                    }
+                } else {
+                    path
+                };
+
+                rel_path.to_str().unwrap_or(T::META.name)
+            }
+            Source::Url { url } => url,
+        }
+    }
+
     fn merge_layers(
         &self,
         layers: &[Layer<T>],
@@ -197,7 +228,7 @@ impl<T: Config> ConfigLoader<T> {
             merged.merge(context, layer.partial.clone())?;
         }
 
-        Ok(merged)
+        merged.finalize(context)
     }
 
     fn parse_into_layers(
@@ -207,7 +238,6 @@ impl<T: Config> ConfigLoader<T> {
         extending: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
-        let root = self.root.clone().unwrap_or_default();
 
         if !extending {
             trace!("Parsing sources into partial layers");
@@ -217,19 +247,7 @@ impl<T: Config> ConfigLoader<T> {
             trace!(source = ?source, "Parsing source");
 
             // Determine the source location for use in error messages
-            let location = match source {
-                Source::Code { .. } => T::META.name,
-                Source::File { path, .. } => {
-                    let rel_path = if let Ok(other_path) = path.strip_prefix(&root) {
-                        other_path
-                    } else {
-                        path
-                    };
-
-                    rel_path.to_str().unwrap_or(T::META.name)
-                }
-                Source::Url { url } => url,
-            };
+            let location = self.get_location(source);
 
             // Parse the source into a parial
             let partial: T::Partial = source.parse(self.format, location)?;

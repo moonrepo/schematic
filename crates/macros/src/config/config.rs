@@ -186,18 +186,24 @@ impl<'l> ToTokens for Config<'l> {
 
         // Generate implementations
         let mut field_names = vec![];
-        let mut default_stmts = vec![];
+
+        let mut default_values = vec![];
+        let mut from_partial_values = vec![];
+
+        let mut finalize_stmts = vec![];
         let mut env_stmts = vec![];
-        let mut from_stmts = vec![];
         let mut merge_stmts = vec![];
         let mut validate_stmts = vec![];
         let extends_from = self.extends_from();
 
         for setting in &self.settings {
             field_names.push(setting.name);
-            default_stmts.push(setting.get_default_statement());
+
+            default_values.push(setting.get_default_value());
+            from_partial_values.push(setting.get_from_partial_value());
+
+            finalize_stmts.push(setting.get_finalize_statement());
             env_stmts.push(setting.get_env_statement());
-            from_stmts.push(setting.get_from_statement());
             merge_stmts.push(setting.get_merge_statement());
             validate_stmts.push(setting.get_validate_statement());
         }
@@ -208,12 +214,12 @@ impl<'l> ToTokens for Config<'l> {
                 type Context = #context;
 
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    let mut partial = Self::default();
-                    #(#default_stmts)*
-                    Ok(partial)
+                    Ok(Self {
+                        #(#field_names: #default_values),*
+                    })
                 }
 
-                 fn env_values() -> Result<Self, schematic::ConfigError> {
+                fn env_values() -> Result<Self, schematic::ConfigError> {
                     let mut partial = Self::default();
                     #(#env_stmts)*
                     Ok(partial)
@@ -222,6 +228,14 @@ impl<'l> ToTokens for Config<'l> {
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
                     #extends_from
                     None
+                }
+
+                fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
+                    let mut partial = Self::default_values(context)?;
+                    partial.merge(context, self)?;
+                    partial.merge(context, Self::env_values()?)?;
+                    #(#finalize_stmts)*
+                    Ok(partial)
                 }
 
                 fn merge(
@@ -264,11 +278,9 @@ impl<'l> ToTokens for Config<'l> {
                 fn default() -> Self {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
-                    <Self as schematic::Config>::from_partial(
-                        &context,
-                        Default::default(),
-                        false,
-                    ).unwrap()
+                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap();
+
+                    <Self as schematic::Config>::from_partial(defaults)
                 }
             }
 
@@ -278,37 +290,10 @@ impl<'l> ToTokens for Config<'l> {
 
                 const META: schematic::ConfigMeta = #meta;
 
-                fn from_partial(
-                    context: &<Self::Partial as schematic::PartialConfig>::Context,
-                    partial: Self::Partial,
-                    with_env: bool,
-                ) -> Result<Self, schematic::ConfigError> {
-                    use schematic::PartialConfig as SPC;
-
-                    // Inherit defaults
-                    let mut config = <#partial_name as SPC>::default_values(context)?;
-
-                    // Layer sources
-                    config.merge(context, partial)?;
-
-                    // Inherit env vars
-                    if with_env {
-                        config.merge(context, <#partial_name as SPC>::env_values()?)?;
+                fn from_partial(partial: Self::Partial) -> Self {
+                    Self {
+                        #(#field_names: #from_partial_values),*
                     }
-
-                    let partial = config;
-
-                    // One last validation to ensure everything is good!
-                    partial
-                        .validate(context)
-                        .map_err(|error| schematic::ConfigError::Validator {
-                            config: Self::META.name.to_string(),
-                            error,
-                        })?;
-
-                    Ok(Self {
-                        #(#field_names: #from_stmts),*
-                    })
                 }
             }
         };
