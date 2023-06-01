@@ -124,9 +124,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        let (partial, _) = self.do_load(context)?;
-
-        Ok(partial)
+        Ok(self.do_load(context)?.0)
     }
 
     /// Set the project root directory, for use within file path handling.

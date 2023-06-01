@@ -1,4 +1,4 @@
-use crate::config::setting_type::SettingType;
+use crate::config::setting_type::{SettingType, SettingType2};
 use crate::utils::{extract_comment, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -38,6 +38,7 @@ pub struct Setting<'l> {
     pub name: &'l Ident,
     pub value: &'l Type,
     pub value_type: SettingType<'l>,
+    pub value_type2: SettingType2<'l>,
 }
 
 impl<'l> Setting<'l> {
@@ -61,6 +62,11 @@ impl<'l> Setting<'l> {
                 SettingType::nested(&field.ty)
             } else {
                 SettingType::value(&field.ty)
+            },
+            value_type2: if args.nested {
+                SettingType2::nested(&field.ty)
+            } else {
+                SettingType2::value(&field.ty)
             },
             args,
             serde_args,
@@ -93,6 +99,14 @@ impl<'l> Setting<'l> {
 
     pub fn is_optional(&self) -> bool {
         self.value_type.is_optional()
+    }
+
+    pub fn get_default_value(&self) -> TokenStream {
+        if self.is_optional() {
+            quote! { None }
+        } else {
+            self.value_type2.get_default_value(self.name, &self.args)
+        }
     }
 
     pub fn get_default_statement(&self) -> TokenStream {

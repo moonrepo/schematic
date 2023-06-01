@@ -25,6 +25,142 @@ fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
     }
 }
 
+pub enum SettingType2<'l> {
+    // Vec<item>
+    NestedList {
+        collection: &'l Ident,
+        item: &'l GenericArgument,
+        optional: bool,
+        path: &'l TypePath,
+    },
+    // HashMap<key, value>
+    NestedMap {
+        collection: &'l Ident,
+        key: &'l GenericArgument,
+        optional: bool,
+        path: &'l TypePath,
+        value: &'l GenericArgument,
+    },
+    // config
+    NestedValue {
+        config: &'l Ident,
+        optional: bool,
+        path: &'l TypePath,
+    },
+    // value
+    Value {
+        optional: bool,
+        value: &'l Type,
+    },
+}
+
+impl<'l> SettingType2<'l> {
+    pub fn nested(raw: &Type) -> SettingType2 {
+        let mut optional = false;
+
+        let Type::Path(raw_path) = raw else {
+            panic!("Nested values may only be paths/type references.");
+        };
+
+        let path = if let Some(unwrapped_path) = get_option_inner(raw_path) {
+            optional = true;
+            unwrapped_path
+        } else {
+            raw_path
+        };
+
+        let segment = path.path.segments.last().unwrap();
+        let container = &segment.ident;
+
+        match &segment.arguments {
+            PathArguments::None => SettingType2::NestedValue {
+                path,
+                config: container,
+                optional,
+            },
+            PathArguments::AngleBracketed(args) => match container.to_string().as_str() {
+                "Vec" | "HashSet" | "FxHashSet" | "BTreeSet" => SettingType2::NestedList {
+                    collection: container,
+                    item: args.args.first().unwrap(),
+                    optional,
+                    path,
+                },
+                "HashMap" | "FxHashMap" | "BTreeMap" => SettingType2::NestedMap {
+                    collection: container,
+                    key: args.args.first().unwrap(),
+                    optional,
+                    path,
+                    value: args.args.last().unwrap(),
+                },
+                _ => panic!("Unsupported collection used with nested config."),
+            },
+            _ => panic!("Parens are not supported for nested config."),
+        }
+    }
+
+    pub fn value(raw: &Type) -> SettingType2 {
+        let mut optional = false;
+
+        let value = if let Some(unwrapped_value) = unwrap_option(raw) {
+            optional = true;
+            unwrapped_value
+        } else {
+            raw
+        };
+
+        SettingType2::Value { value, optional }
+    }
+
+    pub fn is_optional(&self) -> bool {
+        match self {
+            SettingType2::NestedValue { optional, .. } => *optional,
+            SettingType2::NestedList { optional, .. } => *optional,
+            SettingType2::NestedMap { optional, .. } => *optional,
+            SettingType2::Value { optional, .. } => *optional,
+        }
+    }
+
+    pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+        match self {
+            SettingType2::NestedList { .. } | SettingType2::NestedMap { .. } => {
+                quote! { Some(Default::default()) }
+            }
+            SettingType2::NestedValue { config, .. } => {
+                let partial_name = format_ident!("Partial{}", config);
+
+                quote! { Some(#partial_name::default_values(context)?) }
+            }
+            SettingType2::Value { value, .. } => {
+                if let Some(expr) = args.default.as_ref() {
+                    match expr {
+                        Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                            quote! { Some(#expr) }
+                        }
+                        Expr::Path(func) => quote! { #func(context) },
+                        Expr::Lit(lit) => match &lit.lit {
+                            Lit::Str(string) => quote! {
+                                Some(
+                                    #value::try_from(#string)
+                                        .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
+                                )
+                            },
+                            other => quote! { Some(#other) },
+                        },
+                        invalid => {
+                            let name = name.to_string();
+                            let info = format!("{:?}", invalid);
+
+                            panic!("Unsupported default value for {name} ({info}). May only provide literals, primitives, arrays, or tuples.");
+                        }
+                    }
+                } else {
+                    quote! { Some(Default::default()) }
+                }
+            }
+        }
+    }
+}
+
 pub enum SettingType<'l> {
     Nested {
         // Raw original value type
