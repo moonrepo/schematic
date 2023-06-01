@@ -377,6 +377,25 @@ struct AppConfig {
 }
 ```
 
+#### Container prefixes
+
+If you'd prefer to not define `env` for _every_ setting, you can instead define a prefix on the
+containing struct using the `env_prefix` attribute field. This will define an environment variable
+for _all_ fields in the struct, in the format of "env prefix + field name" in UPPER_SNAKE_CASE.
+
+For example, the environment variable below is now `APP_PORT`.
+
+```rust
+#[derive(Config)]
+#[config(env_prefix = "APP_")]
+struct AppConfig {
+	#[setting(default = 3000)]
+	port: usize,
+}
+```
+
+#### Parsing values
+
 We also support parsing environment variables into the required type. For example, the variable may
 be a comma separated list of values, or a JSON string.
 
