@@ -2,7 +2,7 @@ use super::setting::SettingArgs;
 use crate::utils::unwrap_option;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Expr, GenericArgument, Lit, PathArguments, PathSegment, Type, TypePath};
+use syn::{Expr, GenericArgument, Lit, PathArguments, Type, TypePath};
 
 fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
     let last_segment = path.path.segments.last().unwrap();
@@ -227,6 +227,56 @@ impl<'l> SettingType2<'l> {
         }
     }
 
+    pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
+        let name_quoted = format!("{}", name);
+
+        match self {
+            SettingType2::NestedList { .. } => Some(quote! {
+                for (i, item) in setting.iter().enumerate() {
+                    if let Err(nested_error) = item.validate_with_path(context, path.join_key(#name_quoted).join_index(i)) {
+                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    }
+                }
+            }),
+            SettingType2::NestedMap { .. } => Some(quote! {
+                for (key, value) in setting {
+                    if let Err(nested_error) = value.validate_with_path(context, path.join_key(#name_quoted).join_key(key)) {
+                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    }
+                }
+            }),
+            SettingType2::NestedValue { .. } => Some(quote! {
+                if let Err(nested_error) = setting.validate_with_path(context, path.join_key(#name_quoted)) {
+                    errors.push(schematic::ValidateErrorType::nested(nested_error));
+                }
+            }),
+            SettingType2::Value { .. } => {
+                if let Some(expr) = args.validate.as_ref() {
+                    let func = match expr {
+                        // func(arg)()
+                        Expr::Call(func) => quote! { #func },
+                        // func()
+                        Expr::Path(func) => quote! { #func },
+                        _ => {
+                            panic!("Unsupported `validate` syntax.");
+                        }
+                    };
+
+                    Some(quote! {
+                        if let Err(error) = #func(setting, self, context) {
+                            errors.push(schematic::ValidateErrorType::setting(
+                                path.join_key(#name_quoted),
+                                error,
+                            ));
+                        }
+                    })
+                } else {
+                    None
+                }
+            }
+        }
+    }
+
     pub fn map_data(&self, mapped_data: TokenStream) -> TokenStream {
         match self {
             SettingType2::NestedList { collection, .. } => {
@@ -234,7 +284,7 @@ impl<'l> SettingType2<'l> {
                     {
                         let mut result = #collection::new();
                         for value in data {
-                            result.insert(#mapped_data);
+                            result.push(#mapped_data);
                         }
                         result
                     }
@@ -251,11 +301,8 @@ impl<'l> SettingType2<'l> {
                     }
                 }
             }
-            SettingType2::NestedValue { .. } => {
+            SettingType2::NestedValue { .. } | SettingType2::Value { .. } => {
                 quote! { #mapped_data }
-            }
-            SettingType2::Value { .. } => {
-                quote! {}
             }
         }
     }
@@ -288,83 +335,3 @@ impl<'l> ToTokens for SettingType2<'l> {
         })
     }
 }
-
-// pub enum SettingType<'l> {
-//     Nested {
-//         // Raw original value type
-//         raw: &'l Type,
-
-//         // Inner path type with `Option` unwrapped
-//         path: &'l TypePath,
-
-//         // Path type wrapped in a collection
-//         collection: NestedType<'l>,
-
-//         // Wrapped in `Option`
-//         optional: bool,
-//     },
-//     Value {
-//         // Raw original value type
-//         raw: &'l Type,
-
-//         // Inner value type with `Option` unwrapped
-//         value: &'l Type,
-
-//         // Wrapped in `Option`
-//         optional: bool,
-//     },
-// }
-
-// impl<'l> SettingType<'l> {
-//     pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
-//         let name_quoted = format!("{}", name);
-
-//         match self {
-//             SettingType::Nested { collection, .. } => match collection {
-//                 NestedType::None(_) => Some(quote! {
-//                     if let Err(nested_error) = setting.validate_with_path(context, path.join_key(#name_quoted)) {
-//                         errors.push(schematic::ValidateErrorType::nested(nested_error));
-//                     }
-//                 }),
-//                 NestedType::Set(_, _) => Some(quote! {
-//                     for (i, item) in setting.iter().enumerate() {
-//                         if let Err(nested_error) = item.validate_with_path(context, path.join_key(#name_quoted).join_index(i)) {
-//                             errors.push(schematic::ValidateErrorType::nested(nested_error));
-//                         }
-//                     }
-//                 }),
-//                 NestedType::Map(_, _, _) => Some(quote! {
-//                     for (key, value) in setting {
-//                         if let Err(nested_error) = value.validate_with_path(context, path.join_key(#name_quoted).join_key(key)) {
-//                             errors.push(schematic::ValidateErrorType::nested(nested_error));
-//                         }
-//                     }
-//                 }),
-//             },
-//             SettingType::Value { .. } => {
-//                 if let Some(expr) = args.validate.as_ref() {
-//                     let func = match expr {
-//                         // func(arg)()
-//                         Expr::Call(func) => quote! { #func },
-//                         // func()
-//                         Expr::Path(func) => quote! { #func },
-//                         _ => {
-//                             panic!("Unsupported `validate` syntax.");
-//                         }
-//                     };
-
-//                     Some(quote! {
-//                         if let Err(error) = #func(setting, self, context) {
-//                             errors.push(schematic::ValidateErrorType::setting(
-//                                 path.join_key(#name_quoted),
-//                                 error,
-//                             ));
-//                         }
-//                     })
-//                 } else {
-//                     None
-//                 }
-//             }
-//         }
-//     }
-// }

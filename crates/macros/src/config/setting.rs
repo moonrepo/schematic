@@ -99,12 +99,12 @@ impl<'l> Setting<'l> {
         if self.is_optional() {
             quote! { None }
         } else {
-            self.value_type2.get_default_value(self.name, &self.args)
+            self.value_type.get_default_value(self.name, &self.args)
         }
     }
 
     pub fn get_finalize_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type2.get_finalize_value() {
+        if let Some(value) = self.value_type.get_finalize_value() {
             let name = self.name;
 
             return quote! {
@@ -135,9 +135,10 @@ impl<'l> Setting<'l> {
 
     pub fn get_from_partial_value(&self) -> TokenStream {
         let name = self.name;
-        let value = self.value_type2.get_from_partial_value();
+        let value = self.value_type.get_from_partial_value();
 
-        if matches!(self.value_type2, SettingType2::Value { .. }) {
+        #[allow(clippy::collapsible_else_if)]
+        if matches!(self.value_type, SettingType2::Value { .. }) {
             // Reset extendable values since we don't have the entire resolved list
             if self.args.extend {
                 quote! { Default::default() }
@@ -171,23 +172,24 @@ impl<'l> Setting<'l> {
     }
 
     pub fn get_merge_statement(&self) -> TokenStream {
-        self.value_type2.get_merge_statement(self.name, &self.args)
+        self.value_type.get_merge_statement(self.name, &self.args)
     }
 
     pub fn get_validate_statement(&self) -> TokenStream {
         let name = self.name;
 
-        let Some(validator) = self
+        if let Some(validator) = self
             .value_type
-            .get_validate_statement(self.name, &self.args) else {
-            return quote! {};
-        };
-
-        quote! {
-            if let Some(setting) = self.#name.as_ref() {
-                #validator
-            }
+            .get_validate_statement(self.name, &self.args)
+        {
+            return quote! {
+                if let Some(setting) = self.#name.as_ref() {
+                    #validator
+                }
+            };
         }
+
+        quote! {}
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
