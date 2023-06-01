@@ -12,52 +12,33 @@ pub struct ConfigLoadResult<T: Config> {
     /// Final configuration, after all layers are merged.
     pub config: T,
 
-    /// Format of sources.
-    pub format: SourceFormat,
-
     /// Partial layers, in order of declaration and extension.
     pub layers: Vec<Layer<T>>,
 }
 
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
-    format: SourceFormat,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     /// Create a new config loader with the provided source format.
-    pub fn new(format: SourceFormat) -> Self {
+    pub fn new() -> Self {
         ConfigLoader {
             _config: PhantomData,
-            format,
             sources: vec![],
             root: None,
         }
     }
 
-    #[cfg(feature = "json")]
-    /// Create a new JSON config loader.
-    pub fn json() -> Self {
-        ConfigLoader::new(SourceFormat::Json)
-    }
-
-    #[cfg(feature = "toml")]
-    /// Create a new TOML config loader.
-    pub fn toml() -> Self {
-        ConfigLoader::new(SourceFormat::Toml)
-    }
-
-    #[cfg(feature = "yaml")]
-    /// Create a new YAML config loader.
-    pub fn yaml() -> Self {
-        ConfigLoader::new(SourceFormat::Yaml)
-    }
-
     /// Add a code snippet source to load.
-    pub fn code<S: TryInto<String>>(&mut self, code: S) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::code(code)?);
+    pub fn code<S: TryInto<String>>(
+        &mut self,
+        code: S,
+        format: SourceFormat,
+    ) -> Result<&mut Self, ConfigError> {
+        self.sources.push(Source::code(code, format)?);
 
         Ok(self)
     }
@@ -125,7 +106,6 @@ impl<T: Config> ConfigLoader<T> {
 
         Ok(ConfigLoadResult {
             config: T::from_partial(partial),
-            format: self.format,
             layers,
         })
     }
@@ -206,7 +186,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 rel_path.to_str().unwrap_or(T::META.name)
             }
-            Source::Url { url } => url,
+            Source::Url { url, .. } => url,
         }
     }
 
@@ -247,7 +227,7 @@ impl<T: Config> ConfigLoader<T> {
             let location = self.get_location(source);
 
             // Parse the source into a parial
-            let partial: T::Partial = source.parse(self.format, location)?;
+            let partial: T::Partial = source.parse(location)?;
 
             // Validate before continuing so we ensure the values are correct
             partial

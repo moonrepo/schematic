@@ -11,7 +11,7 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
     (offset, length).into()
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SourceFormat {
     #[cfg(feature = "json")]
@@ -25,6 +25,42 @@ pub enum SourceFormat {
 }
 
 impl SourceFormat {
+    pub fn detect(value: &str) -> Result<SourceFormat, ConfigError> {
+        let mut available = vec![];
+
+        #[cfg(feature = "json")]
+        {
+            available.push("JSON");
+
+            if value.ends_with(".json") {
+                return Ok(SourceFormat::Json);
+            }
+        }
+
+        #[cfg(feature = "toml")]
+        {
+            available.push("TOML");
+
+            if value.ends_with(".toml") {
+                return Ok(SourceFormat::Toml);
+            }
+        }
+
+        #[cfg(feature = "yaml")]
+        {
+            available.push("YAML");
+
+            if value.ends_with(".yaml") || value.ends_with(".yml") {
+                return Ok(SourceFormat::Yaml);
+            }
+        }
+
+        Err(ConfigError::UnsupportedFormat(
+            value.to_owned(),
+            available.join(", "),
+        ))
+    }
+
     /// Parse the provided content in the defined format into a partial configuration struct.
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
@@ -115,13 +151,17 @@ impl SourceFormat {
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
-    Code { code: String },
+    Code { code: String, format: SourceFormat },
 
     /// File system path to the configuration.
-    File { path: PathBuf, required: bool },
+    File {
+        path: PathBuf,
+        format: SourceFormat,
+        required: bool,
+    },
 
     /// Secure URL to the configuration.
-    Url { url: String },
+    Url { url: String, format: SourceFormat },
 }
 
 impl Source {
@@ -166,38 +206,49 @@ impl Source {
             }
         }
 
-        Source::code(value)
+        Source::code(value, SourceFormat::Json) // TODO
     }
 
     /// Create a new code snippet source.
-    pub fn code<T: TryInto<String>>(code: T) -> Result<Source, ConfigError> {
+    pub fn code<T: TryInto<String>>(code: T, format: SourceFormat) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
-        Ok(Source::Code { code })
+        Ok(Source::Code { code, format })
     }
 
     /// Create a new file source with the provided path.
     pub fn file<T: TryInto<PathBuf>>(path: T, required: bool) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
-        Ok(Source::File { path, required })
+        Ok(Source::File {
+            format: SourceFormat::detect(path.to_str().unwrap_or_default())?,
+            path,
+            required,
+        })
     }
 
     /// Create a new URL source with the provided URL. Will error if that URL is not secure.
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
-        Ok(Source::Url { url })
+        Ok(Source::Url {
+            format: SourceFormat::detect(&url)?,
+            url,
+        })
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, format: SourceFormat, location: &str) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, location: &str) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
         let result = match self {
-            Source::Code { code } => format.parse(code.to_owned(), location),
-            Source::File { path, required } => {
+            Source::Code { code, format } => format.parse(code.to_owned(), location),
+            Source::File {
+                path,
+                format,
+                required,
+            } => {
                 let content = if path.exists() {
                     fs::read_to_string(path)?
                 } else {
@@ -210,7 +261,7 @@ impl Source {
 
                 format.parse(content, location)
             }
-            Source::Url { url } => {
+            Source::Url { url, format } => {
                 if !is_secure_url(url) {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
