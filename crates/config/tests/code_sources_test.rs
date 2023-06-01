@@ -26,7 +26,7 @@ fn handles_one_layer() {
 string: foo
 ";
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .code(a)
         .unwrap()
         .load()
@@ -47,7 +47,7 @@ string: foo
 vector: [a, b, c]
 ";
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .code(a)
         .unwrap()
         .code(b)
@@ -81,7 +81,7 @@ number: 123
 vector: [x, y, z]
 ";
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .code(a)
         .unwrap()
         .code(b)

@@ -90,7 +90,7 @@ mod yaml {
 
     #[test]
     fn invalid_type() {
-        let error = ConfigLoader::<BaseConfig>::new(SourceFormat::Yaml)
+        let error = ConfigLoader::<BaseConfig>::new()
             .code("---\nsetting: 123")
             .unwrap()
             .load()
@@ -105,7 +105,7 @@ mod yaml {
 
     #[test]
     fn invalid_nested_type() {
-        let error = ConfigLoader::<BaseConfig>::new(SourceFormat::Yaml)
+        let error = ConfigLoader::<BaseConfig>::new()
             .code("---\nnested:\n  setting: 123")
             .unwrap()
             .load()

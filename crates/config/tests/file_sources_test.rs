@@ -189,7 +189,7 @@ fn loads_toml_file_optional() {
 fn loads_yaml_files() {
     let root = get_fixture_path("yaml");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .file(root.join("one.yml"))
         .unwrap()
         .file(root.join("two.yml"))
@@ -214,7 +214,7 @@ fn loads_yaml_files() {
 fn loads_yaml_file_optional() {
     let root = get_fixture_path("yaml");
 
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.yaml"))
         .unwrap()
         .load()

@@ -44,9 +44,7 @@ fn defaults_to_env_var() {
     env::set_var("ENV_BOOL", "true");
     env::set_var("ENV_PATH", "some/path");
 
-    let result = ConfigLoader::<EnvVars>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<EnvVars>::new().load().unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");
@@ -61,9 +59,7 @@ fn errors_on_parse_fail() {
     reset_vars();
     env::set_var("ENV_NUMBER", "abc");
 
-    ConfigLoader::<EnvVars>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    ConfigLoader::<EnvVars>::new().load().unwrap();
 }
 
 #[test]
@@ -73,9 +69,7 @@ fn parses_into_env_vars() {
     env::set_var("ENV_VEC_STRING", "1,2,3");
     env::set_var("ENV_VEC_NUMBER", "1;2;3");
 
-    let result = ConfigLoader::<EnvVarParse>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<EnvVarParse>::new().load().unwrap();
 
     assert_eq!(result.config.list1, vec!["1", "2", "3"]);
     assert_eq!(result.config.list2, vec![1, 2, 3]);
@@ -90,9 +84,7 @@ fn errors_on_split_parse_fail() {
     reset_vars();
     env::set_var("ENV_VEC_NUMBER", "1;a;3");
 
-    ConfigLoader::<EnvVarParse>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    ConfigLoader::<EnvVarParse>::new().load().unwrap();
 }
 
 #[test]
@@ -101,7 +93,7 @@ fn env_var_takes_precedence() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
-    let result = ConfigLoader::<EnvVars>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<EnvVars>::new()
         .code("string: bar")
         .unwrap()
         .load()
@@ -130,7 +122,7 @@ fn loads_env_vars_for_nested() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
-    let result = ConfigLoader::<EnvVarsBase>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<EnvVarsBase>::new()
         .code("{}")
         .unwrap()
         .load()
@@ -146,7 +138,7 @@ fn loads_env_vars_for_optional_nested_when_valued() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
-    let result = ConfigLoader::<EnvVarsBase>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<EnvVarsBase>::new()
         .code("optNested:\n  string: bar")
         .unwrap()
         .load()
@@ -183,9 +175,7 @@ fn loads_from_prefixed() {
     env::set_var("ENV_LIST_1", "1,2,3");
     env::set_var("ENV_LIST_2", "1;2;3");
 
-    let result = ConfigLoader::<EnvVarsPrefixed>::new(SourceFormat::Yaml)
-        .load()
-        .unwrap();
+    let result = ConfigLoader::<EnvVarsPrefixed>::new().load().unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");

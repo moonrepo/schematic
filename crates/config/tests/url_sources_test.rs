@@ -92,7 +92,7 @@ fn loads_toml_files() {
 
 #[test]
 fn loads_yaml_files() {
-    let result = ConfigLoader::<Config>::new(SourceFormat::Yaml)
+    let result = ConfigLoader::<Config>::new()
         .url(get_url("yaml/one.yml"))
         .unwrap()
         .url(get_url("yaml/two.yml"))
