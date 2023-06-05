@@ -31,8 +31,8 @@ fn reset_vars() {
     env::remove_var("ENV_PATH");
     env::remove_var("ENV_VEC_STRING");
     env::remove_var("ENV_VEC_NUMBER");
-    env::remove_var("ENV_LIST_1");
-    env::remove_var("ENV_LIST_2");
+    env::remove_var("ENV_LIST1");
+    env::remove_var("ENV_LIST2");
 }
 
 #[test]
@@ -172,8 +172,8 @@ fn loads_from_prefixed() {
     env::set_var("ENV_NUMBER", "123");
     env::set_var("ENV_BOOL", "true");
     env::set_var("ENV_PATH", "some/path");
-    env::set_var("ENV_LIST_1", "1,2,3");
-    env::set_var("ENV_LIST_2", "1;2;3");
+    env::set_var("ENV_LIST1", "1,2,3");
+    env::set_var("ENV_LIST2", "1;2;3");
 
     let result = ConfigLoader::<EnvVarsPrefixed>::new().load().unwrap();
 

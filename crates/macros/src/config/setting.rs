@@ -1,6 +1,5 @@
 use crate::config::setting_type::SettingType;
 use crate::utils::{extract_comment, preserve_str_literal};
-use convert_case::{Case, Casing};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -134,7 +133,7 @@ impl<'l> Setting<'l> {
         let env = if let Some(env_name) = &self.args.env {
             env_name.to_owned()
         } else if let Some(env_prefix) = prefix {
-            format!("{}{}", env_prefix, self.get_name()).to_case(Case::ScreamingSnake)
+            format!("{}{}", env_prefix, self.get_name()).to_uppercase()
         } else {
             if self.args.parse_env.is_some() {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
