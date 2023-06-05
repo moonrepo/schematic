@@ -918,7 +918,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "garde",
  "miette",
@@ -940,7 +940,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "convert_case",
  "darling",
@@ -1200,7 +1200,7 @@ dependencies = [
 
 [[package]]
 name = "test_app"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "miette",
  "schemars",
