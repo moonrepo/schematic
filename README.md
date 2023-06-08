@@ -417,13 +417,16 @@ struct AppConfig {
 > [`env` module](https://docs.rs/schematic/latest/schematic/env/index.html).
 
 When defining a custom parse function, you should return an error with `ConfigError::Message` if
-parsing fails.
+parsing fails. A `None` value can also be returned, which will fallback to the previous or default
+value.
 
 ```rust
 use schematic::ConfigError;
 
-pub fn custom_parse(var: String) -> Result<ReturnValue, ConfigError> {
-    do_parse().map_err(|e| ConfigError::Message(e.to_string()))
+pub fn custom_parse(var: String) -> Result<Some<ReturnValue>, ConfigError> {
+	do_parse()
+		.map(|v| Some(v))
+		.map_err(|e| ConfigError::Message(e.to_string()))
 }
 ```
 

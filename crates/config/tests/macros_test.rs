@@ -155,8 +155,8 @@ struct ExtendsOptional {
     extends: Option<Vec<String>>,
 }
 
-fn vec_from_env(_: String) -> Result<Vec<String>, ConfigError> {
-    Ok(vec![])
+fn vec_from_env(_: String) -> Result<Option<Vec<String>>, ConfigError> {
+    Ok(Some(vec![]))
 }
 
 #[derive(Config)]
