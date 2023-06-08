@@ -1,15 +1,6 @@
 use crate::errors::ConfigError;
+use crate::internal;
 use std::str::FromStr;
-
-fn parse<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, ConfigError> {
-    let value = value.as_ref();
-
-    value.parse::<T>().map_err(|_| {
-        ConfigError::Message(format!(
-            "Failed to parse \"{value}\" into the correct type."
-        ))
-    })
-}
 
 /// Ignore the environment variable if it's empty and fallback to the previous or default value.
 pub fn ignore_empty<T: FromStr>(var: String) -> Result<Option<T>, ConfigError> {
@@ -19,7 +10,7 @@ pub fn ignore_empty<T: FromStr>(var: String) -> Result<Option<T>, ConfigError> {
         return Ok(None);
     }
 
-    parse(var).map(|v| Some(v))
+    internal::parse_value(var).map(|v| Some(v))
 }
 
 /// Parse a string into a boolean. Will parse `1`, `true`, `yes`, `on`,
@@ -38,7 +29,7 @@ fn split<T: FromStr>(var: String, delim: char) -> Result<Option<Vec<T>>, ConfigE
         let value = s.trim();
 
         if !value.is_empty() {
-            list.push(parse(value)?);
+            list.push(internal::parse_value(value)?);
         }
     }
 
