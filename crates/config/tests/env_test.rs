@@ -8,6 +8,8 @@ use std::{env, path::PathBuf};
 pub struct EnvVars {
     #[setting(env = "ENV_STRING")]
     string: String,
+    #[setting(env = "ENV_STRING", parse_env = schematic::env::ignore_empty, default = "abc")]
+    string_empty: String,
     #[setting(env = "ENV_NUMBER")]
     number: usize,
     #[setting(env = "ENV_BOOL")]
@@ -100,6 +102,22 @@ fn env_var_takes_precedence() {
         .unwrap();
 
     assert_eq!(result.config.string, "foo");
+}
+
+#[test]
+#[serial]
+fn can_ignore_empty_values() {
+    reset_vars();
+    env::set_var("ENV_STRING", "");
+
+    let result = ConfigLoader::<EnvVars>::new()
+        .code("string: bar", Format::Yaml)
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "");
+    assert_eq!(result.config.string_empty, "abc");
 }
 
 #[derive(Debug, Config)]
