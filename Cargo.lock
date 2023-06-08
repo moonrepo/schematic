@@ -334,24 +334,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gents"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f90141facb90dcbf825916c076780f9b76fb0434b9047e94137455f4e5f06fa"
-
-[[package]]
-name = "gents_derives"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72ed7d80bc1ce3658ef97b103e09960384159db772cc3288f55ab480b315ca6"
-dependencies = [
- "paste",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,12 +703,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "paste"
-version = "1.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f746c4065a8fa3fe23974dd82f15431cc8d40779821001404d10d2e79ca7d79"
-
-[[package]]
 name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -939,8 +915,6 @@ name = "schematic"
 version = "0.7.2"
 dependencies = [
  "garde",
- "gents",
- "gents_derives",
  "miette",
  "reqwest",
  "schemars",

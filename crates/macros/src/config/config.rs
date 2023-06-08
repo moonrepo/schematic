@@ -109,7 +109,13 @@ impl<'l> Config<'l> {
         let fields = self
             .settings
             .iter()
-            .map(|setting| setting.get_meta())
+            .filter_map(|setting| {
+                if setting.is_skipped() {
+                    None
+                } else {
+                    Some(setting.get_meta())
+                }
+            })
             .collect::<Vec<_>>();
 
         quote! {
@@ -156,12 +162,6 @@ impl<'l> Config<'l> {
         #[cfg(feature = "json_schema")]
         {
             attrs.push(quote! { #[derive(schemars::JsonSchema)] });
-        }
-
-        #[cfg(feature = "typescript")]
-        {
-            // attrs.push(quote! { #[derive(gents_derives::TS)] });
-            // attrs.push(quote! { #[ts(file_name = "config.ts", rename_all = "camelCase")] });
         }
 
         if let Some(cmt) = &self.comment {

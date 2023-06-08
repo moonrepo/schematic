@@ -91,6 +91,10 @@ impl<'l> Setting<'l> {
         self.value_type.is_optional()
     }
 
+    pub fn is_skipped(&self) -> bool {
+        self.args.skip || self.serde_args.skip
+    }
+
     pub fn get_name(&self) -> String {
         if let Some(local) = &self.args.rename {
             local.to_owned()
@@ -112,7 +116,7 @@ impl<'l> Setting<'l> {
         };
 
         // Token stream adds spaces, so remove them
-        let value = value.replace(" < ", "<").replace(" > ", ">");
+        let value = value.replace(' ', "");
 
         if self.is_nested() {
             quote! {

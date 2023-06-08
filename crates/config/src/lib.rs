@@ -8,6 +8,9 @@ mod loader;
 mod source;
 mod validator;
 
+#[cfg(feature = "typescript")]
+pub mod typescript;
+
 /// Built-in `parse_env` functions.
 pub mod env;
 

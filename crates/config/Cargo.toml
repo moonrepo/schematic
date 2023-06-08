@@ -27,19 +27,15 @@ schemars = { workspace = true, optional = true }
 # toml
 toml = { version = "0.7.4", optional = true }
 
-# typescript
-gents = { version = "0.3.1", optional = true }
-gents_derives = { version = "0.3.1", optional = true }
-
 # yaml
 serde_yaml = { version = "0.9.21", optional = true }
 
 [features]
-default = ["json"]
+default = ["json", "typescript"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "schematic_macros/json_schema"]
 toml = ["dep:toml"]
-typescript = ["dep:gents", "dep:gents_derives", "schematic_macros/typescript"]
+typescript = ["schematic_macros/typescript"]
 yaml = ["dep:serde_yaml"]
 
 valid_email = ["garde/email"]
