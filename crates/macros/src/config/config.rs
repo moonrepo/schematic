@@ -106,9 +106,18 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
+        let fields = self
+            .settings
+            .iter()
+            .map(|setting| setting.get_meta())
+            .collect::<Vec<_>>();
+
         quote! {
             schematic::ConfigMeta {
                 name: #name,
+                fields: &[
+                    #(#fields),*
+                ],
             }
         }
     }
@@ -151,7 +160,8 @@ impl<'l> Config<'l> {
 
         #[cfg(feature = "typescript")]
         {
-            attrs.push(quote! { #[derive(ts_rs::TS)] });
+            // attrs.push(quote! { #[derive(gents_derives::TS)] });
+            // attrs.push(quote! { #[ts(file_name = "config.ts", rename_all = "camelCase")] });
         }
 
         if let Some(cmt) = &self.comment {

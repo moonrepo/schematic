@@ -101,6 +101,38 @@ impl<'l> Setting<'l> {
         }
     }
 
+    pub fn get_meta(&self) -> TokenStream {
+        let optional = self.is_optional();
+        let name = self.get_name();
+        let value = match &self.value_type {
+            SettingType::NestedList { path, .. } => path.to_token_stream().to_string(),
+            SettingType::NestedMap { path, .. } => path.to_token_stream().to_string(),
+            SettingType::NestedValue { path, .. } => path.to_token_stream().to_string(),
+            SettingType::Value { value, .. } => value.to_token_stream().to_string(),
+        };
+
+        // Token stream adds spaces, so remove them
+        let value = value.replace(" < ", "<").replace(" > ", ">");
+
+        if self.is_nested() {
+            quote! {
+                schematic::MetaField::Nested {
+                    name: #name,
+                    kind: #value,
+                    optional: #optional,
+                }
+            }
+        } else {
+            quote! {
+                schematic::MetaField::Setting {
+                    name: #name,
+                    kind: #value,
+                    optional: #optional,
+                }
+            }
+        }
+    }
+
     pub fn get_default_value(&self) -> TokenStream {
         if self.is_optional() {
             quote! { None }

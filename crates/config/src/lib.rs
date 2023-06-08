@@ -37,14 +37,7 @@ pub use validator::*;
 macro_rules! derive_enum {
     ($impl:item) => {
         #[derive(
-            Clone,
-            Debug,
-            Eq,
-            PartialEq,
-            serde::Deserialize,
-            serde::Serialize,
-            schemars::JsonSchema,
-            ts_rs::TS,
+            Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, schemars::JsonSchema,
         )]
         #[serde(rename_all = "kebab-case")]
         $impl
@@ -67,7 +60,7 @@ macro_rules! derive_enum {
 #[macro_export]
 macro_rules! derive_enum {
     ($impl:item) => {
-        #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, ts_rs::TS)]
+        #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
         #[serde(rename_all = "kebab-case")]
         $impl
     };

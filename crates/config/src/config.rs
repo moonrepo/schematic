@@ -3,9 +3,27 @@ use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Serialize};
 
+type MetaString = &'static str;
+
+pub enum MetaField {
+    Setting {
+        name: MetaString,
+        kind: MetaString,
+        optional: bool,
+    },
+    Nested {
+        name: MetaString,
+        kind: MetaString,
+        optional: bool,
+    },
+}
+
 pub struct ConfigMeta {
     /// Name of the struct.
-    pub name: &'static str,
+    pub name: MetaString,
+
+    /// Fields within the struct.
+    pub fields: &'static [MetaField],
 }
 
 pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
