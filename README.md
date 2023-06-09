@@ -597,3 +597,7 @@ The following Cargo features are available:
 - `valid_email` - Enables email validation with the `schematic::validate::email` function.
 - `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
   functions.
+
+### Misc
+
+- `typescript` - Enables TypeScript types generation.
