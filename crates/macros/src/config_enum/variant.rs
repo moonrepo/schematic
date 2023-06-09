@@ -1,8 +1,8 @@
-use crate::utils::{extract_comment, format_case};
+use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
-use syn::{Fields, Variant as NativeVariant};
+use syn::{Attribute, Fields, Variant as NativeVariant};
 
 // #[serde()]
 #[derive(FromAttributes, Default)]
@@ -23,7 +23,7 @@ pub struct VariantArgs {
 pub struct Variant<'l> {
     pub args: VariantArgs,
     pub serde_args: SerdeArgs,
-    pub comment: Option<String>,
+    pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub value: String,
 }
@@ -60,7 +60,7 @@ impl<'l> Variant<'l> {
         };
 
         Variant {
-            comment: extract_comment(&variant.attrs),
+            attrs: extract_common_attrs(&variant.attrs),
             name: &variant.ident,
             value,
             args,

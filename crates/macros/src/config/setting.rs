@@ -1,9 +1,9 @@
 use crate::config::setting_type::SettingType;
-use crate::utils::{extract_comment, format_case, preserve_str_literal};
+use crate::utils::{extract_common_attrs, format_case, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Expr, ExprPath, Field, Type};
+use syn::{Attribute, Expr, ExprPath, Field, Type};
 
 // #[serde()]
 #[derive(FromAttributes, Default)]
@@ -34,7 +34,7 @@ pub struct SettingArgs {
 pub struct Setting<'l> {
     pub args: SettingArgs,
     pub serde_args: SerdeArgs,
-    pub comment: Option<String>,
+    pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub value: &'l Type,
     pub value_type: SettingType<'l>,
@@ -50,8 +50,8 @@ impl<'l> Setting<'l> {
         }
 
         let setting = Setting {
-            comment: extract_comment(&field.attrs),
             name: field.ident.as_ref().unwrap(),
+            attrs: extract_common_attrs(&field.attrs),
             value: &field.ty,
             value_type: if args.nested {
                 SettingType::nested(&field.ty)
@@ -272,9 +272,9 @@ impl<'l> ToTokens for Setting<'l> {
         let serde_meta = self.get_serde_meta();
         let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
 
-        if let Some(cmt) = &self.comment {
-            attrs.push(quote! { #[doc = #cmt] });
-        };
+        for attr in &self.attrs {
+            attrs.push(quote! { #attr });
+        }
 
         tokens.extend(quote! {
              #(#attrs)*
