@@ -69,6 +69,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     quote! {
+        #[automatically_derived]
         impl schematic::ConfigEnum for #enum_name {
             const META: schematic::Meta = schematic::Meta {
                 name: #meta_name,

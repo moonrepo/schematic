@@ -1,12 +1,14 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
+/// Representation of a type that will be rendered literally.
 #[derive(Debug, Eq, PartialEq)]
 pub enum LiteralType {
-    Int(usize),
+    Number(usize),
     String(String),
 }
 
+/// Representation of all supported TypeScript types.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Type {
     Boolean,
@@ -47,7 +49,7 @@ impl Display for Type {
                     .join(" | ")
             ),
             Type::Literal(item) => match item {
-                LiteralType::Int(value) => write!(f, "{}", value),
+                LiteralType::Number(value) => write!(f, "{}", value),
                 LiteralType::String(value) => write!(f, "'{}'", value),
             },
             Type::Reference(item) => write!(f, "{}", item),

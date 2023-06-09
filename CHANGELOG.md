@@ -13,7 +13,7 @@
   - Trait provides a `variants()` method.
 - Added `fields` to `Meta` trait.
   - Updated `Config` trait to implement fields.
-- Added TypeScript declaration/type generation.
+- Added TypeScript type generation.
   - Behind a new `typescript` flag.
   - Code can be generated with the `schematic::typescript::TypeScriptGenerator`.
 

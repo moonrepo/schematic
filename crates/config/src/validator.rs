@@ -4,6 +4,7 @@ use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};
 use thiserror::Error;
 
+/// Represents all the different forms a path is composed of.
 #[derive(Clone, Debug)]
 pub enum Segment {
     /// List index: `[0]`
@@ -16,6 +17,7 @@ pub enum Segment {
     Unknown,
 }
 
+/// Represents the path from the struct root to a field or field value.
 #[derive(Clone, Debug, Default)]
 pub struct SettingPath {
     /// List of path segments.
@@ -91,6 +93,7 @@ impl Display for SettingPath {
     }
 }
 
+/// Error for a single validation failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
 #[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]
 pub struct ValidateError {
@@ -135,6 +138,7 @@ impl ValidateError {
     }
 }
 
+/// Either contains a single or multiple validation errors.
 #[derive(Clone, Debug)]
 pub enum ValidateErrorType {
     Setting {
@@ -193,6 +197,7 @@ impl ValidateErrorType {
     }
 }
 
+/// Error that contains multiple validation errors, for each setting that failed.
 #[derive(Clone, Debug, Diagnostic, Error)]
 pub struct ValidatorError {
     /// When nested, the path to the setting that contains the nested error.

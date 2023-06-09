@@ -8,10 +8,6 @@ mod loader;
 mod source;
 mod validator;
 
-/// Utilities for generating TypeScript declarations.
-#[cfg(feature = "typescript")]
-pub mod typescript;
-
 /// Built-in `parse_env` functions.
 pub mod env;
 
@@ -20,6 +16,10 @@ pub mod internal;
 
 /// Built-in `merge` functions.
 pub mod merge;
+
+/// Utilities for generating TypeScript types.
+#[cfg(feature = "typescript")]
+pub mod typescript;
 
 /// Built-in `validate` functions.
 pub mod validate;
@@ -31,8 +31,10 @@ pub use layer::*;
 pub use loader::*;
 pub use schematic_macros::*;
 pub use source::*;
-pub use starbase_styles::color;
 pub use validator::*;
+
+/// ASCII color helpers for use within error messages.
+pub use starbase_styles::color;
 
 // We can't put these in the proc-macro crate!
 

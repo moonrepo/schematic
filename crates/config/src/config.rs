@@ -5,6 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 type MetaString = &'static str;
 
+/// Provides metadata about fields within a configuration struct.
 pub struct MetaField {
     /// Name of the setting, as it appears in the config file.
     pub name: MetaString,
@@ -16,6 +17,7 @@ pub struct MetaField {
     pub optional: bool,
 }
 
+/// Provides metadata about a configuration struct or enum.
 pub struct Meta {
     /// Name of the struct.
     pub name: MetaString,
@@ -24,6 +26,8 @@ pub struct Meta {
     pub fields: &'static [MetaField],
 }
 
+/// Represents a partial configuration of the base [`Config`], with all settings marked as optional
+/// by wrapping the values in [`Option`].
 pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
     type Context: Default;
 
@@ -76,6 +80,7 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     }
 }
 
+/// Represents the final configuration, with all settings populated with a value.
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
@@ -85,6 +90,7 @@ pub trait Config: Sized {
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
+/// Represents an enumerable setting for use within a [`Config`].
 pub trait ConfigEnum: Sized {
     const META: Meta;
 

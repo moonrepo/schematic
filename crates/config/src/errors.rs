@@ -130,6 +130,7 @@ impl ConfigError {
     }
 }
 
+/// Error related to serde parsing.
 #[derive(Error, Debug, Diagnostic)]
 #[error("{}{} {message}", .path.style(Style::Id), ":".style(Style::MutedLight))]
 #[diagnostic(severity(Error))]
