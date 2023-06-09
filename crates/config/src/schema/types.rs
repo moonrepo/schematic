@@ -60,5 +60,6 @@ pub enum Schema {
     Type {
         name: String,
         type_of: Type,
+        nullable: bool,
     },
 }
