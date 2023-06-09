@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use crate::derive_enum;
 use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
@@ -89,9 +87,10 @@ pub trait Config: Sized {
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
-pub trait ConfigEnum: Sized + Display {
+pub trait ConfigEnum: Sized {
     const META: ConfigMeta;
 
+    /// Return a list of all variants for the enum. Only unit variants are supported.
     fn variants() -> Vec<Self>;
 }
 
