@@ -16,7 +16,7 @@
 - Added TypeScript type generation (experimental, will probably change).
   - Behind a new `typescript` flag.
   - Code can be generated with the `schematic::typescript::TypeScriptGenerator`.
-- Updated partials to inherit `#[deprecated]` attributes.
+- Updated partials to inherit `#[allow]`, `#[warn]`, and `#[deprecated]` attributes.
 
 #### ⚙️ Internal
 
