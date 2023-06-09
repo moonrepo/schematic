@@ -255,6 +255,26 @@ fn generates_typescript() {
     let file = sandbox.path().join("config.ts");
 
     let mut generator = TypeScriptGenerator::new(file.clone());
+    generator.add_custom(Output::Enum {
+        name: "TestCustom",
+        fields: vec![
+            Output::Field {
+                name: "foo".into(),
+                value: Type::Literal(LiteralType::Number(1)),
+                optional: false,
+            },
+            Output::Field {
+                name: "bar".into(),
+                value: Type::Literal(LiteralType::Number(2)),
+                optional: false,
+            },
+            Output::Field {
+                name: "baz".into(),
+                value: Type::Literal(LiteralType::Number(3)),
+                optional: false,
+            },
+        ],
+    });
     generator.add_enum::<SomeEnum>();
     generator.add_enum::<BasicEnum>();
     generator.add_enum::<CustomFormatEnum>();

@@ -6,6 +6,8 @@ expression: "std::fs::read_to_string(&file).unwrap()"
 
 /* eslint-disable */
 
+export type TestCustom = 1 | 2 | 3;
+
 export type SomeEnum = 'a' | 'b' | 'c';
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';

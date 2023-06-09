@@ -6,6 +6,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
+export enum TestCustom {
+	foo,
+	bar,
+	baz,
+}
+
 export enum SomeEnum {
 	A,
 	B,

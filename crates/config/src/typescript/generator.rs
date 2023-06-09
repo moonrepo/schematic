@@ -38,7 +38,7 @@ pub struct TypeScriptGeneratorOptions {
     pub object_format: ObjectFormat,
 }
 
-enum Output<'cfg> {
+pub enum Output<'cfg> {
     Field {
         name: String,
         value: Type,
@@ -115,6 +115,12 @@ impl<'cfg> TypeScriptGenerator<'cfg> {
 
         self.configs.insert(T::META.name, &T::META);
 
+        self
+    }
+
+    /// Add a custom [`Output`] to be rendered.
+    pub fn add_custom(&mut self, output: Output<'cfg>) -> &mut Self {
+        self.outputs.push(output);
         self
     }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `TypeScriptGenerator::add_custom` for mapping custom types.
+
 ## 0.8.0
 
 #### 💥 Breaking
