@@ -161,10 +161,6 @@ impl FromStr for Type {
             "usize" | "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "f32"
             | "f64" => Type::Number,
             other => Type::Reference(other.to_owned()),
-            // unknown => panic!(
-            //     "Unknown or unsupported type \"{}\", unable to generate TypeScript declarations. Has this type been registered?",
-            //     unknown
-            // ),
         })
     }
 }

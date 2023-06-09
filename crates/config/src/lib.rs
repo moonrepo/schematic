@@ -8,6 +8,7 @@ mod loader;
 mod source;
 mod validator;
 
+/// Utilities for generating TypeScript declarations.
 #[cfg(feature = "typescript")]
 pub mod typescript;
 
@@ -35,7 +36,7 @@ pub use validator::*;
 
 // We can't put these in the proc-macro crate!
 
-#[cfg(all(feature = "json_schema", feature = "typescript"))]
+#[cfg(feature = "json_schema")]
 #[macro_export]
 macro_rules! derive_enum {
     ($impl:item) => {
@@ -47,29 +48,7 @@ macro_rules! derive_enum {
     };
 }
 
-#[cfg(all(feature = "json_schema", not(feature = "typescript")))]
-#[macro_export]
-macro_rules! derive_enum {
-    ($impl:item) => {
-        #[derive(
-            Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, schemars::JsonSchema,
-        )]
-        #[serde(rename_all = "kebab-case")]
-        $impl
-    };
-}
-
-#[cfg(all(not(feature = "json_schema"), feature = "typescript"))]
-#[macro_export]
-macro_rules! derive_enum {
-    ($impl:item) => {
-        #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-        #[serde(rename_all = "kebab-case")]
-        $impl
-    };
-}
-
-#[cfg(all(not(feature = "json_schema"), not(feature = "typescript")))]
+#[cfg(not(feature = "json_schema"))]
 #[macro_export]
 macro_rules! derive_enum {
     ($impl:item) => {

@@ -109,6 +109,7 @@ impl<'l> Setting<'l> {
 
     pub fn get_meta(&self, casing_format: &str) -> TokenStream {
         let optional = self.is_optional();
+
         let name = self.get_name(Some(casing_format));
 
         let value = match &self.value_type {
@@ -116,26 +117,14 @@ impl<'l> Setting<'l> {
             SettingType::NestedMap { path, .. } => path.to_token_stream().to_string(),
             SettingType::NestedValue { path, .. } => path.to_token_stream().to_string(),
             SettingType::Value { value, .. } => value.to_token_stream().to_string(),
-        };
+        }
+        .replace(' ', "");
 
-        // Token stream adds spaces, so remove them
-        let value = value.replace(' ', "");
-
-        if self.is_nested() {
-            quote! {
-                schematic::MetaField::Nested {
-                    name: #name,
-                    kind: #value,
-                    optional: #optional,
-                }
-            }
-        } else {
-            quote! {
-                schematic::MetaField::Setting {
-                    name: #name,
-                    kind: #value,
-                    optional: #optional,
-                }
+        quote! {
+            schematic::MetaField {
+                name: #name,
+                kind: #value,
+                optional: #optional,
             }
         }
     }

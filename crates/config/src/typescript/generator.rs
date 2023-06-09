@@ -1,6 +1,6 @@
 use super::converter::Type;
 use super::LiteralType;
-use crate::config::{Config, ConfigEnum, ConfigMeta, MetaField};
+use crate::config::{Config, ConfigEnum, Meta};
 use miette::IntoDiagnostic;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Write};
@@ -49,7 +49,7 @@ pub enum Output<'cfg> {
 }
 
 pub struct TypeScriptGenerator<'cfg> {
-    configs: HashMap<&'cfg str, &'cfg ConfigMeta>,
+    configs: HashMap<&'cfg str, &'cfg Meta>,
     outputs: Vec<Output<'cfg>>,
     output_file: PathBuf,
 }
@@ -68,30 +68,11 @@ impl<'cfg> TypeScriptGenerator<'cfg> {
         let mut fields = vec![];
 
         for setting in T::META.fields {
-            match setting {
-                MetaField::Setting {
-                    name,
-                    kind,
-                    optional,
-                } => {
-                    fields.push(Output::Field {
-                        name: name.to_string(),
-                        type_of: Type::from_str(kind).unwrap(),
-                        optional: *optional,
-                    });
-                }
-                MetaField::Nested {
-                    name,
-                    kind,
-                    optional,
-                } => {
-                    fields.push(Output::Field {
-                        name: name.to_string(),
-                        type_of: Type::from_str(kind).unwrap(),
-                        optional: *optional,
-                    });
-                }
-            }
+            fields.push(Output::Field {
+                name: setting.name.to_string(),
+                type_of: Type::from_str(setting.kind).unwrap(),
+                optional: setting.optional,
+            });
         }
 
         self.outputs.push(Output::Struct {

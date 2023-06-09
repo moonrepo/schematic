@@ -5,20 +5,18 @@ use serde::{de::DeserializeOwned, Serialize};
 
 type MetaString = &'static str;
 
-pub enum MetaField {
-    Setting {
-        name: MetaString,
-        kind: MetaString,
-        optional: bool,
-    },
-    Nested {
-        name: MetaString,
-        kind: MetaString,
-        optional: bool,
-    },
+pub struct MetaField {
+    /// Name of the setting, as it appears in the config file.
+    pub name: MetaString,
+
+    /// Value type of the setting, as a stringified Rust type/path.
+    pub kind: MetaString,
+
+    /// Whether the setting is optional (wrapped in [`Option`]).
+    pub optional: bool,
 }
 
-pub struct ConfigMeta {
+pub struct Meta {
     /// Name of the struct.
     pub name: MetaString,
 
@@ -81,14 +79,14 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    const META: ConfigMeta;
+    const META: Meta;
 
     /// Convert a partial configuration into a full configuration, with all values populated.
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
 pub trait ConfigEnum: Sized {
-    const META: ConfigMeta;
+    const META: Meta;
 
     /// Return a list of all variants for the enum. Only unit variants are supported.
     fn variants() -> Vec<Self>;

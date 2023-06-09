@@ -121,7 +121,7 @@ impl<'l> Config<'l> {
             .collect::<Vec<_>>();
 
         quote! {
-            schematic::ConfigMeta {
+            schematic::Meta {
                 name: #name,
                 fields: &[
                     #(#fields),*
@@ -305,7 +305,7 @@ impl<'l> ToTokens for Config<'l> {
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 
-                const META: schematic::ConfigMeta = #meta;
+                const META: schematic::Meta = #meta;
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {
