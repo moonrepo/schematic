@@ -53,12 +53,12 @@ export type OptionalValues = {
 
 export type DefaultValues = {
 	boolean: boolean,
-	boolean_fn: boolean,
+	booleanFn: boolean,
 	string: string,
-	string_fn: string,
-	file_string: string,
-	long_string: string,
-	path_string: string,
+	stringFn: string,
+	fileString: string,
+	longString: string,
+	pathString: string,
 	number: number,
 	array: number[],
 	tuple: [number, number, number, number],
@@ -113,6 +113,6 @@ export type Validations = {
 export type Comments = {
 	normal: boolean,
 	docs: boolean,
-	inline_block: boolean,
+	inlineBlock: boolean,
 	block: boolean,
 }

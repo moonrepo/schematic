@@ -1,5 +1,5 @@
 use crate::config::setting_type::SettingType;
-use crate::utils::{extract_comment, preserve_str_literal};
+use crate::utils::{extract_comment, format_case, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -95,19 +95,22 @@ impl<'l> Setting<'l> {
         self.args.skip || self.serde_args.skip
     }
 
-    pub fn get_name(&self) -> String {
+    pub fn get_name(&self, casing_format: Option<&str>) -> String {
         if let Some(local) = &self.args.rename {
             local.to_owned()
         } else if let Some(serde) = &self.serde_args.rename {
             serde.to_owned()
+        } else if let Some(format) = casing_format {
+            format_case(format, &self.name.to_string())
         } else {
             self.name.to_string()
         }
     }
 
-    pub fn get_meta(&self) -> TokenStream {
+    pub fn get_meta(&self, casing_format: &str) -> TokenStream {
         let optional = self.is_optional();
-        let name = self.get_name();
+        let name = self.get_name(Some(casing_format));
+
         let value = match &self.value_type {
             SettingType::NestedList { path, .. } => path.to_token_stream().to_string(),
             SettingType::NestedMap { path, .. } => path.to_token_stream().to_string(),
@@ -169,7 +172,7 @@ impl<'l> Setting<'l> {
         let env = if let Some(env_name) = &self.args.env {
             env_name.to_owned()
         } else if let Some(env_prefix) = prefix {
-            format!("{}{}", env_prefix, self.get_name()).to_uppercase()
+            format!("{}{}", env_prefix, self.get_name(None)).to_uppercase()
         } else {
             if self.args.parse_env.is_some() {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");

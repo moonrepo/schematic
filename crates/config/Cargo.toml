@@ -14,12 +14,12 @@ miette = { workspace = true }
 reqwest = { version = "0.11.18", default-features = false, features = ["blocking", "rustls-tls"] }
 serde = { workspace = true }
 serde_path_to_error = "0.1.11"
-starbase_styles = "0.1.8"
+starbase_styles = "0.1.9"
 thiserror = "1.0.40"
 tracing = "0.1.37"
 
 # json
-serde_json = { version = "1.0.95", optional = true }
+serde_json = { version = "1.0.96", optional = true }
 
 # json schema
 schemars = { workspace = true, optional = true }

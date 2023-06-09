@@ -36,13 +36,13 @@ export interface PartialCustomDefaults {
 
 export interface ReqOptDefaults {
 	required: number;
-	required_with_default: number;
+	requiredWithDefault: number;
 	optional: number | null;
 }
 
 export interface PartialReqOptDefaults {
 	required?: number | null;
-	required_with_default?: number | null;
+	requiredWithDefault?: number | null;
 	optional?: number | null;
 }
 
@@ -58,14 +58,14 @@ export interface PartialContextDefaults {
 
 export interface NestedDefaults {
 	nested: NativeDefaults;
-	nested_opt: NativeDefaults | null;
-	nested_vec: NativeDefaults[];
-	nested_map: Record<string, NativeDefaults>;
+	nestedOpt: NativeDefaults | null;
+	nestedVec: NativeDefaults[];
+	nestedMap: Record<string, NativeDefaults>;
 }
 
 export interface PartialNestedDefaults {
 	nested?: NativeDefaults | null;
-	nested_opt?: NativeDefaults | null;
-	nested_vec?: NativeDefaults[] | null;
-	nested_map?: Record<string, NativeDefaults> | null;
+	nestedOpt?: NativeDefaults | null;
+	nestedVec?: NativeDefaults[] | null;
+	nestedMap?: Record<string, NativeDefaults> | null;
 }

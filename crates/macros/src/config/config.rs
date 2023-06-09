@@ -106,6 +106,8 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
+        let casing_format = self.get_casing_format();
+
         let fields = self
             .settings
             .iter()
@@ -113,7 +115,7 @@ impl<'l> Config<'l> {
                 if setting.is_skipped() {
                     None
                 } else {
-                    Some(setting.get_meta())
+                    Some(setting.get_meta(casing_format))
                 }
             })
             .collect::<Vec<_>>();
@@ -126,6 +128,14 @@ impl<'l> Config<'l> {
                 ],
             }
         }
+    }
+
+    pub fn get_casing_format(&self) -> &str {
+        self.args
+            .rename_all
+            .as_deref()
+            .or(self.serde_args.rename_all.as_deref())
+            .unwrap_or("camelCase")
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
@@ -141,12 +151,7 @@ impl<'l> Config<'l> {
             meta.push(quote! { rename = #rename });
         }
 
-        let rename_all = self
-            .args
-            .rename_all
-            .as_deref()
-            .or(self.serde_args.rename_all.as_deref())
-            .unwrap_or("camelCase");
+        let rename_all = self.get_casing_format();
 
         meta.push(quote! { rename_all = #rename_all });
 

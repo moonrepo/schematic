@@ -8,42 +8,42 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 export interface StandardSettings {
 	req: string;
-	req_default: string;
+	reqDefault: string;
 	opt: string | null;
 }
 
 export interface PartialStandardSettings {
 	req?: string | null;
-	req_default?: string | null;
+	reqDefault?: string | null;
 	opt?: string | null;
 }
 
 export interface NestedSettings {
-	nested_req: StandardSettings;
-	nested_opt: StandardSettings | null;
+	nestedReq: StandardSettings;
+	nestedOpt: StandardSettings | null;
 }
 
 export interface PartialNestedSettings {
-	nested_req?: StandardSettings | null;
-	nested_opt?: StandardSettings | null;
+	nestedReq?: StandardSettings | null;
+	nestedOpt?: StandardSettings | null;
 }
 
 export interface NestedVecSettings {
-	nested_req: StandardSettings[];
-	nested_opt: StandardSettings[] | null;
+	nestedReq: StandardSettings[];
+	nestedOpt: StandardSettings[] | null;
 }
 
 export interface PartialNestedVecSettings {
-	nested_req?: StandardSettings[] | null;
-	nested_opt?: StandardSettings[] | null;
+	nestedReq?: StandardSettings[] | null;
+	nestedOpt?: StandardSettings[] | null;
 }
 
 export interface NestedMapSettings {
-	nested_req: Record<string, StandardSettings>;
-	nested_opt: Record<string, StandardSettings> | null;
+	nestedReq: Record<string, StandardSettings>;
+	nestedOpt: Record<string, StandardSettings> | null;
 }
 
 export interface PartialNestedMapSettings {
-	nested_req?: Record<string, StandardSettings> | null;
-	nested_opt?: Record<string, StandardSettings> | null;
+	nestedReq?: Record<string, StandardSettings> | null;
+	nestedOpt?: Record<string, StandardSettings> | null;
 }
