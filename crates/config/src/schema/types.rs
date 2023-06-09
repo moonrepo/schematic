@@ -8,18 +8,47 @@ pub enum LiteralType {
     String(String),
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum IntType {
+    Isize,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    Usize,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+}
+
+impl IntType {
+    pub fn is_unsigned(&self) -> bool {
+        match self {
+            IntType::Usize
+            | IntType::U8
+            | IntType::U16
+            | IntType::U32
+            | IntType::U64
+            | IntType::U128 => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Default, Eq, PartialEq)]
 pub enum Type {
     Boolean,
     Double,
     Float,
-    Int,
-    UInt,
     #[default]
     Null,
     String,
     Unknown,
     Reference(String),
+    Integer(IntType),
     Literal(LiteralType),
     Array(Box<Type>),
     Object(Box<Type>, Box<Type>),
@@ -56,6 +85,7 @@ pub enum Schema {
         fields: Vec<SchemaField>,
         partial: bool,
     },
+    // T
     // type Foo = T
     Type {
         name: String,
