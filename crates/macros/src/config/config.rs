@@ -106,11 +106,36 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
+        let casing_format = self.get_casing_format();
+
+        let fields = self
+            .settings
+            .iter()
+            .filter_map(|setting| {
+                if setting.is_skipped() {
+                    None
+                } else {
+                    Some(setting.get_meta(casing_format))
+                }
+            })
+            .collect::<Vec<_>>();
+
         quote! {
-            schematic::ConfigMeta {
+            schematic::Meta {
                 name: #name,
+                fields: &[
+                    #(#fields),*
+                ],
             }
         }
+    }
+
+    pub fn get_casing_format(&self) -> &str {
+        self.args
+            .rename_all
+            .as_deref()
+            .or(self.serde_args.rename_all.as_deref())
+            .unwrap_or("camelCase")
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
@@ -126,12 +151,7 @@ impl<'l> Config<'l> {
             meta.push(quote! { rename = #rename });
         }
 
-        let rename_all = self
-            .args
-            .rename_all
-            .as_deref()
-            .or(self.serde_args.rename_all.as_deref())
-            .unwrap_or("camelCase");
+        let rename_all = self.get_casing_format();
 
         meta.push(quote! { rename_all = #rename_all });
 
@@ -147,11 +167,6 @@ impl<'l> Config<'l> {
         #[cfg(feature = "json_schema")]
         {
             attrs.push(quote! { #[derive(schemars::JsonSchema)] });
-        }
-
-        #[cfg(feature = "typescript")]
-        {
-            attrs.push(quote! { #[derive(ts_rs::TS)] });
         }
 
         if let Some(cmt) = &self.comment {
@@ -290,7 +305,7 @@ impl<'l> ToTokens for Config<'l> {
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 
-                const META: schematic::ConfigMeta = #meta;
+                const META: schematic::Meta = #meta;
 
                 fn from_partial(partial: Self::Partial) -> Self {
                     Self {

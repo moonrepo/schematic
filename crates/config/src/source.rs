@@ -4,6 +4,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
+/// Source in which to load configuration from.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {

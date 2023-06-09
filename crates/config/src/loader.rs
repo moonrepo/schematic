@@ -8,6 +8,8 @@ use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use tracing::trace;
 
+/// The result of loading a configuration. Includes the final configuration,
+/// and all layers that were loaded.
 #[derive(Serialize)]
 pub struct ConfigLoadResult<T: Config> {
     /// Final configuration, after all layers are merged.

@@ -3,11 +3,31 @@ use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Serialize};
 
-pub struct ConfigMeta {
-    /// Name of the struct.
-    pub name: &'static str,
+type MetaString = &'static str;
+
+/// Provides metadata about fields within a configuration struct.
+pub struct MetaField {
+    /// Name of the setting, as it appears in the config file.
+    pub name: MetaString,
+
+    /// Value type of the setting, as a stringified Rust type/path.
+    pub kind: MetaString,
+
+    /// Whether the setting is optional (wrapped in [`Option`]).
+    pub optional: bool,
 }
 
+/// Provides metadata about a configuration struct or enum.
+pub struct Meta {
+    /// Name of the struct.
+    pub name: MetaString,
+
+    /// Fields within the struct.
+    pub fields: &'static [MetaField],
+}
+
+/// Represents a partial configuration of the base [`Config`], with all settings marked as optional
+/// by wrapping the values in [`Option`].
 pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
     type Context: Default;
 
@@ -60,13 +80,22 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     }
 }
 
+/// Represents the final configuration, with all settings populated with a value.
 pub trait Config: Sized {
     type Partial: PartialConfig;
 
-    const META: ConfigMeta;
+    const META: Meta;
 
     /// Convert a partial configuration into a full configuration, with all values populated.
     fn from_partial(partial: Self::Partial) -> Self;
+}
+
+/// Represents an enumerable setting for use within a [`Config`].
+pub trait ConfigEnum: Sized {
+    const META: Meta;
+
+    /// Return a list of all variants for the enum. Only unit variants are supported.
+    fn variants() -> Vec<Self>;
 }
 
 derive_enum!(

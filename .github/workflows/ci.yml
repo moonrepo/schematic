@@ -29,6 +29,10 @@ jobs:
           components: clippy
       - name: Run linter
         run: cargo clippy --workspace --all-targets
+        if: ${{ runner.os != 'Windows' }}
+      - name: Run linter
+        run: cargo clippy --workspace --all-targets --target x86_64-pc-windows-msvc
+        if: ${{ runner.os == 'Windows' }}
   test:
     name: Test
     runs-on: ${{ matrix.os }}
@@ -41,3 +45,7 @@ jobs:
       - uses: moonrepo/setup-rust@v0
       - name: Run tests
         run: cargo test --workspace
+        if: ${{ runner.os != 'Windows' }}
+      - name: Run tests
+        run: cargo test --workspace --target x86_64-pc-windows-msvc
+        if: ${{ runner.os == 'Windows' }}

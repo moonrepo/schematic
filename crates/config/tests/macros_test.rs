@@ -18,7 +18,7 @@ mod private {
 }
 
 derive_enum!(
-    #[derive(Default)]
+    #[derive(Default, ConfigEnum)]
     pub enum SomeEnum {
         #[default]
         A,
@@ -206,14 +206,14 @@ struct Comments {
     block: bool,
 }
 
-#[derive(ConfigEnum)]
+#[derive(ConfigEnum, Debug)]
 enum BasicEnum {
     Foo,
     Bar,
     Baz,
 }
 
-#[derive(ConfigEnum, Deserialize, Serialize)]
+#[derive(ConfigEnum, Debug, Deserialize, Serialize)]
 #[serde(rename = "Test", rename_all = "UPPERCASE")]
 enum CustomFormatEnum {
     Foo,
@@ -223,7 +223,7 @@ enum CustomFormatEnum {
     Baz,
 }
 
-#[derive(ConfigEnum)]
+#[derive(ConfigEnum, Debug)]
 enum OtherEnum {
     Foo,
     Bar,
@@ -232,7 +232,7 @@ enum OtherEnum {
     Other(String),
 }
 
-#[derive(ConfigEnum, Serialize)]
+#[derive(ConfigEnum, Debug, Serialize)]
 enum AliasedEnum {
     #[serde(alias = "a")]
     Foo,
@@ -240,4 +240,49 @@ enum AliasedEnum {
     Bar,
     #[serde(alias = "c")]
     Baz,
+}
+
+#[cfg(feature = "typescript")]
+#[test]
+fn generates_typescript() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+    use typescript::*;
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("config.ts");
+
+    let mut generator = TypeScriptGenerator::new(file.clone());
+    generator.add_enum::<SomeEnum>();
+    generator.add_enum::<BasicEnum>();
+    generator.add_enum::<CustomFormatEnum>();
+    generator.add_enum::<OtherEnum>();
+    generator.add_enum::<AliasedEnum>();
+    generator.add::<ValueTypes>();
+    generator.add::<OptionalValues>();
+    generator.add::<DefaultValues>();
+    generator.add::<Serde>();
+    generator.add::<SerdeNative>();
+    generator.add::<Merging>();
+    generator.add::<ExtendsString>();
+    generator.add::<ExtendsList>();
+    generator.add::<ExtendsEnum>();
+    generator.add::<ExtendsOptional>();
+    generator.add::<EnvVars>();
+    generator.add::<NestedValidations>();
+    generator.add::<Validations>();
+    generator.add::<Comments>();
+    generator.generate().unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(&file).unwrap());
+
+    generator
+        .generate_with_options(TypeScriptGeneratorOptions {
+            enum_format: EnumFormat::Enum,
+            exclude_partial: true,
+            object_format: ObjectFormat::Type,
+        })
+        .unwrap();
+
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }

@@ -9,6 +9,7 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
     (offset, length).into()
 }
 
+/// Supported formats of the source configuration files.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
@@ -23,6 +24,8 @@ pub enum Format {
 }
 
 impl Format {
+    /// Detects a format from a provided value, either a file path or URL, by
+    /// checking for a file extension.
     pub fn detect(value: &str) -> Result<Format, ConfigError> {
         let mut available = vec![];
 
