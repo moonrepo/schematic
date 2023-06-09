@@ -161,7 +161,7 @@ The `#[setting(nested)]` attribute is required, as the macro will substitute the
 its [partial struct](#partials) variant.
 
 > Nested configuration can also be wrapped in collections, like `Vec` and `HashMap`. However, these
-> are tricky to support and may now work in all situations!
+> are tricky to support and may not work in all situations!
 
 ### Contexts
 
@@ -209,7 +209,7 @@ Refer to the [default values](#default-values), [merge strategies](#merge-strate
 
 [Configuration](#configuration) supports basic metadata for use within error messages through the
 `#[config]` attribute. Right now we support a name, derived from the struct name or the serde
-`rename` attribute field.
+`rename` attribute field, and a list of fields in the struct.
 
 Metadata can be accessed with the `META` constant.
 
@@ -221,11 +221,11 @@ ExampleConfig::META.name;
 
 By default the `Config` macro will apply
 `#[serde(default, deny_unknown_fields, rename_all = "camelCase")]` to the
-[partial configuration](#partials). The `default` and `deny_unknown_fields` cannot be customized, as
-they ensure proper parsing and layer merging.
+[partial configuration](#partials). The `default` and `deny_unknown_fields` ensure proper parsing
+and layer merging.
 
-However, the `rename_all` field can be customized, and we also support the `rename` field, both via
-the top-level `#[config]` attribute.
+The `rename_all` field can be customized, and we also support the `rename` field, both via the
+top-level `#[config]` attribute.
 
 ```rust
 #[derive(Config)]
