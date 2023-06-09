@@ -101,3 +101,19 @@ vector: [x, y, z]
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
+
+#[cfg(feature = "typescript")]
+#[test]
+fn generates_typescript() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("config.ts");
+
+    let mut generator = typescript::TypeScriptGenerator::new(file.clone());
+    generator.add::<Config>().unwrap();
+    generator.generate().unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}

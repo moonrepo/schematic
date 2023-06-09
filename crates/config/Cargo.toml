@@ -44,3 +44,4 @@ valid_url = ["garde/url"]
 [dev-dependencies]
 schematic = { path = ".", features = ["json", "json_schema", "yaml", "toml", "typescript", "valid_email", "valid_url"] }
 serial_test = "2.0.0"
+starbase_sandbox = "0.1.3"
