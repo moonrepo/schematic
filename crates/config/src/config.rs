@@ -80,8 +80,12 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
     }
 }
 
+pub trait ConfigSchema {
+    fn generate_schema();
+}
+
 /// Represents the final configuration, with all settings populated with a value.
-pub trait Config: Sized {
+pub trait Config: Sized + ConfigSchema {
     type Partial: PartialConfig;
 
     const META: Meta;
@@ -91,7 +95,7 @@ pub trait Config: Sized {
 }
 
 /// Represents an enumerable setting for use within a [`Config`].
-pub trait ConfigEnum: Sized {
+pub trait ConfigEnum: Sized + ConfigSchema {
     const META: Meta;
 
     /// Return a list of all variants for the enum. Only unit variants are supported.

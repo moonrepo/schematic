@@ -44,23 +44,35 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut unit_names = vec![];
     let mut display_stmts = vec![];
     let mut from_stmts = vec![];
-    let mut has_fallback = false;
+    let mut schema_types = vec![];
+    let mut fallback_name = None;
 
     for variant in variants {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
+        schema_types.push(variant.get_schema_type());
 
         if variant.args.fallback {
-            if has_fallback {
+            if fallback_name.is_some() {
                 panic!("Only 1 fallback variant is supported.")
             }
 
-            has_fallback = true;
+            fallback_name = Some(variant.name.to_string());
         }
     }
 
-    let from_fallback = if has_fallback {
+    let enum_fallback = if let Some(name) = &fallback_name {
+        quote! {
+            Some(#name.into())
+        }
+    } else {
+        quote! {
+            None
+        }
+    };
+
+    let from_fallback = if fallback_name.is_some() {
         quote! {}
     } else {
         quote! {
@@ -70,6 +82,21 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     quote! {
         #[automatically_derived]
+        impl schematic::ConfigSchema for #enum_name {
+            fn generate_schema() {
+                use schematic::schema::*;
+
+                Schema::Enum {
+                    name: #meta_name.into(),
+                    fallback: #enum_fallback,
+                    variants: vec![
+                        #(#schema_types),*
+                    ],
+                };
+            }
+        }
+
+        #[automatically_derived]
         impl schematic::ConfigEnum for #enum_name {
             const META: schematic::Meta = schematic::Meta {
                 name: #meta_name,
@@ -78,7 +105,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
             fn variants() -> Vec<#enum_name> {
                 vec![
-                    #(#unit_names)*
+                    #(#unit_names),*
                 ]
             }
         }

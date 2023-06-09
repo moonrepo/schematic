@@ -17,6 +17,9 @@ pub mod internal;
 /// Built-in `merge` functions.
 pub mod merge;
 
+/// Utilities for generating schemas.
+pub mod schema;
+
 /// Utilities for generating TypeScript types.
 #[cfg(feature = "typescript")]
 pub mod typescript;

@@ -302,6 +302,11 @@ impl<'l> ToTokens for Config<'l> {
             }
 
             #[automatically_derived]
+            impl schematic::ConfigSchema for #name {
+                fn generate_schema() {}
+            }
+
+            #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 

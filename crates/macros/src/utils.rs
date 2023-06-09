@@ -1,5 +1,5 @@
 use convert_case::{Case, Casing};
-use syn::{AngleBracketedGenericArguments, Attribute, Expr, Meta};
+use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str) -> String {
     let case = match format {
@@ -24,21 +24,49 @@ pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
     }
 }
 
+pub fn get_meta_path(meta: &Meta) -> &Path {
+    match meta {
+        Meta::Path(path) => path,
+        Meta::List(list) => &list.path,
+        Meta::NameValue(nv) => &nv.path,
+    }
+}
+
 pub fn extract_common_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {
     let preserve = ["allow", "deprecated", "doc", "warn"];
 
     attrs
         .iter()
         .filter(|a| {
-            let path = match &a.meta {
-                Meta::Path(path) => path,
-                Meta::List(list) => &list.path,
-                Meta::NameValue(nv) => &nv.path,
-            };
+            let path = get_meta_path(&a.meta);
 
             preserve.iter().any(|n| path.is_ident(n))
         })
         .collect()
+}
+
+pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
+    for attr in attrs {
+        if let Meta::NameValue(meta) = &attr.meta {
+            if meta.path.is_ident("doc") {
+                if let Expr::Lit(ExprLit {
+                    lit: Lit::Str(value),
+                    ..
+                }) = &meta.value
+                {
+                    return Some(value.value());
+                }
+            }
+        }
+    }
+
+    None
+}
+
+pub fn has_deprecated_attr(attrs: &[&Attribute]) -> bool {
+    attrs
+        .iter()
+        .any(|a| get_meta_path(&a.meta).is_ident("deprecated"))
 }
 
 // Thanks to confique for the implementation:
