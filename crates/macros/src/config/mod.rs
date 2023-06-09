@@ -5,7 +5,7 @@ pub mod setting_type;
 
 use crate::config::config::{Config, ConfigArgs, SerdeArgs};
 use crate::config::setting::Setting;
-use crate::utils::extract_comment;
+use crate::utils::extract_common_attrs;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -28,7 +28,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let config = Config {
         args,
         serde_args,
-        comment: extract_comment(&input.attrs),
+        attrs: extract_common_attrs(&input.attrs),
         name: &input.ident,
         settings: fields.named.iter().map(Setting::from).collect::<Vec<_>>(),
     };

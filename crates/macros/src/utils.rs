@@ -1,5 +1,5 @@
 use convert_case::{Case, Casing};
-use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta};
+use syn::{AngleBracketedGenericArguments, Attribute, Expr, Meta};
 
 pub fn format_case(format: &str, value: &str) -> String {
     let case = match format {
@@ -24,22 +24,21 @@ pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
     }
 }
 
-pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
-    for attr in attrs {
-        if let Meta::NameValue(meta) = &attr.meta {
-            if meta.path.is_ident("doc") {
-                if let Expr::Lit(ExprLit {
-                    lit: Lit::Str(value),
-                    ..
-                }) = &meta.value
-                {
-                    return Some(value.value());
-                }
-            }
-        }
-    }
+pub fn extract_common_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {
+    let preserve = ["allow", "deprecated", "doc", "warn"];
 
-    None
+    attrs
+        .iter()
+        .filter(|a| {
+            let path = match &a.meta {
+                Meta::Path(path) => path,
+                Meta::List(list) => &list.path,
+                Meta::NameValue(nv) => &nv.path,
+            };
+
+            preserve.iter().any(|n| path.is_ident(n))
+        })
+        .collect()
 }
 
 // Thanks to confique for the implementation:

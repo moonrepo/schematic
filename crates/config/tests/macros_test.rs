@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, deprecated)]
 
 use schematic::*;
 use serde::{Deserialize, Serialize};
@@ -193,16 +193,19 @@ struct Validations {
 
 /// Container comment.
 #[derive(Config)]
+#[deprecated(since = "1.2.3", note = "Invalid")]
 struct Comments {
     // Normal
     normal: bool,
     /// Docs
+    #[deprecated]
     docs: bool,
     /* Inline block */
     inline_block: bool,
     /**
      * Block
      */
+    #[deprecated = "Bye"]
     block: bool,
 }
 

@@ -2,7 +2,7 @@ use super::setting::Setting;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::ExprPath;
+use syn::{Attribute, ExprPath};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
@@ -29,7 +29,7 @@ pub struct ConfigArgs {
 pub struct Config<'l> {
     pub args: ConfigArgs,
     pub serde_args: SerdeArgs,
-    pub comment: Option<String>,
+    pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub settings: Vec<Setting<'l>>,
 }
@@ -164,14 +164,14 @@ impl<'l> Config<'l> {
         let serde_meta = self.get_serde_meta();
         let mut attrs = vec![quote! { #[serde(#serde_meta) ]}];
 
+        for attr in &self.attrs {
+            attrs.push(quote! { #attr });
+        }
+
         #[cfg(feature = "json_schema")]
         {
             attrs.push(quote! { #[derive(schemars::JsonSchema)] });
         }
-
-        if let Some(cmt) = &self.comment {
-            attrs.push(quote! { #[doc = #cmt] });
-        };
 
         attrs
     }
