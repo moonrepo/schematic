@@ -7,6 +7,11 @@ description = "derive(Config)"
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
 
+[package.metadata.release]
+pre-release-replacements = [
+	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" }
+]
+
 [dependencies]
 schematic_macros = { version = "0.7.1", path = "../macros" }
 garde = { version = "0.11.2", default-features = false, features = ["pattern"] }
