@@ -83,7 +83,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl schematic::ConfigSchema for #enum_name {
-            fn generate_schema() {
+            fn generate_schema() -> schematic::schema::Schema {
                 use schematic::schema::*;
 
                 Schema::Enum {
@@ -92,7 +92,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     variants: vec![
                         #(#schema_types),*
                     ],
-                };
+                }
             }
         }
 

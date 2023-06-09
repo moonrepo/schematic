@@ -1,5 +1,6 @@
 use crate::derive_enum;
 use crate::errors::ConfigError;
+use crate::schema::Schema;
 use crate::validator::{SettingPath, ValidatorError};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -81,7 +82,9 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
 }
 
 pub trait ConfigSchema {
-    fn generate_schema();
+    fn generate_schema() -> Schema {
+        Schema::Undefined
+    }
 }
 
 /// Represents the final configuration, with all settings populated with a value.
