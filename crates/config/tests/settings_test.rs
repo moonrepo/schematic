@@ -381,3 +381,22 @@ mod nested_map {
         assert_validation_error(error, 3);
     }
 }
+
+#[cfg(feature = "typescript")]
+#[test]
+fn generates_typescript() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("config.ts");
+
+    let mut generator = typescript::TypeScriptGenerator::new(file.clone());
+    generator.add::<StandardSettings>();
+    generator.add::<NestedSettings>();
+    generator.add::<NestedVecSettings>();
+    generator.add::<NestedMapSettings>();
+    generator.generate().unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}

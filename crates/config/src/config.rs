@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::derive_enum;
 use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
@@ -85,6 +87,12 @@ pub trait Config: Sized {
 
     /// Convert a partial configuration into a full configuration, with all values populated.
     fn from_partial(partial: Self::Partial) -> Self;
+}
+
+pub trait ConfigEnum: Sized + Display {
+    const META: ConfigMeta;
+
+    fn variants() -> Vec<Self>;
 }
 
 derive_enum!(

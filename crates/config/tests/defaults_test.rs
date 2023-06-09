@@ -143,11 +143,11 @@ fn generates_typescript() {
     let file = sandbox.path().join("config.ts");
 
     let mut generator = typescript::TypeScriptGenerator::new(file.clone());
-    generator.add::<NativeDefaults>().unwrap();
-    generator.add::<CustomDefaults>().unwrap();
-    generator.add::<ReqOptDefaults>().unwrap();
-    generator.add::<ContextDefaults>().unwrap();
-    generator.add::<NestedDefaults>().unwrap();
+    generator.add::<NativeDefaults>();
+    generator.add::<CustomDefaults>();
+    generator.add::<ReqOptDefaults>();
+    generator.add::<ContextDefaults>();
+    generator.add::<NestedDefaults>();
     generator.generate().unwrap();
 
     assert!(file.exists());

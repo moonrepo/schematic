@@ -2,6 +2,12 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
+pub enum LiteralType {
+    Int(usize),
+    String(String),
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum Type {
     Boolean,
     Number,
@@ -10,6 +16,7 @@ pub enum Type {
     Object(Box<Type>, Box<Type>),
     Tuple(Vec<Box<Type>>),
     Union(Vec<Box<Type>>),
+    Literal(LiteralType),
     Reference(String),
 }
 
@@ -39,6 +46,10 @@ impl Display for Type {
                     .collect::<Vec<_>>()
                     .join(" | ")
             ),
+            Type::Literal(item) => match item {
+                LiteralType::Int(value) => write!(f, "{}", value),
+                LiteralType::String(value) => write!(f, "'{}'", value),
+            },
             Type::Reference(item) => write!(f, "{}", item),
         }
     }

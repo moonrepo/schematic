@@ -28,6 +28,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let enum_name = &input.ident;
+    let meta_name = enum_name.to_string();
     let case_format = serde_args
         .rename_all
         .unwrap_or_else(|| "kebab-case".to_owned());
@@ -68,8 +69,13 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl #enum_name {
-            pub fn variants() -> Vec<#enum_name> {
+        impl schematic::ConfigEnum for #enum_name {
+            const META: schematic::ConfigMeta = schematic::ConfigMeta {
+                name: #meta_name,
+                fields: &[],
+            };
+
+            fn variants() -> Vec<#enum_name> {
                 vec![
                     #(#unit_names)*
                 ]

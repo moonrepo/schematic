@@ -111,7 +111,7 @@ fn generates_typescript() {
     let file = sandbox.path().join("config.ts");
 
     let mut generator = typescript::TypeScriptGenerator::new(file.clone());
-    generator.add::<Config>().unwrap();
+    generator.add::<Config>();
     generator.generate().unwrap();
 
     assert!(file.exists());

@@ -218,10 +218,10 @@ fn generates_typescript() {
     let file = sandbox.path().join("config.ts");
 
     let mut generator = typescript::TypeScriptGenerator::new(file.clone());
-    generator.add::<ExtendsString>().unwrap();
-    generator.add::<ExtendsStringOptional>().unwrap();
-    generator.add::<ExtendsList>().unwrap();
-    generator.add::<ExtendsEnum>().unwrap();
+    generator.add::<ExtendsString>();
+    generator.add::<ExtendsStringOptional>();
+    generator.add::<ExtendsList>();
+    generator.add::<ExtendsEnum>();
     generator.generate().unwrap();
 
     assert!(file.exists());
