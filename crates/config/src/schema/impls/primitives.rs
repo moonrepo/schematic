@@ -3,16 +3,16 @@ use crate::schema::types::*;
 use std::path::{Path, PathBuf};
 
 macro_rules! schema_impl {
-    ($type:ty, $instance:expr) => {
-        schema_impl!($type, $instance, stringify!($type));
+    ($type:ty, $kind:expr) => {
+        schema_impl!($type, $kind, stringify!($type));
     };
-    ($type:ty, $instance:expr, $name:expr) => {
+    ($type:ty, $kind:expr, $name:expr) => {
         impl ConfigSchema for $type {
             fn generate_schema() -> Schema {
-                Schema::Builtin {
-                    // name: $name.into(),
-                    type_of: $instance,
-                    // nullable: false,
+                Schema {
+                    name: $name.into(),
+                    kind: $kind,
+                    ..Default::default()
                 }
             }
         }

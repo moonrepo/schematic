@@ -83,7 +83,7 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
 
 pub trait ConfigSchema {
     fn generate_schema() -> Schema {
-        Schema::Undefined
+        Schema::default()
     }
 }
 

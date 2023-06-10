@@ -265,7 +265,7 @@ impl<'l> Setting<'l> {
             SchemaField {
                 name: Some(#name.into()),
                 description: #description,
-                type_of: Type::Null,
+                kind: Type::Null,
                 deprecated: #deprecated,
                 hidden: #hidden,
                 nullable: #nullable,

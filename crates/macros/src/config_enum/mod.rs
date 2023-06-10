@@ -64,12 +64,12 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let enum_fallback = if let Some(name) = &fallback_name {
         quote! {
-            Some(#name.into())
+            attributes: std::collections::HashMap::from_iter([
+                ("fallback".into(), LiteralType::String(#name.into()))
+            ]),
         }
     } else {
-        quote! {
-            None
-        }
+        quote! {}
     };
 
     let from_fallback = if fallback_name.is_some() {
@@ -83,15 +83,20 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl schematic::ConfigSchema for #enum_name {
+            #[allow(clippy::needless_update)]
             fn generate_schema() -> schematic::schema::Schema {
                 use schematic::schema::*;
 
-                Schema::Enum {
+                let fields = vec![
+                    #(#schema_types),*
+                ];
+
+                Schema {
                     name: #meta_name.into(),
-                    fallback: #enum_fallback,
-                    variants: vec![
-                        #(#schema_types),*
-                    ],
+                    kind: Type::Union(fields.iter().map(|f| Box::new(f.kind.clone())).collect()),
+                    fields: Some(fields),
+                    #enum_fallback
+                    ..Default::default()
                 }
             }
         }

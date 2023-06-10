@@ -311,12 +311,19 @@ impl<'l> ToTokens for Config<'l> {
                 fn generate_schema() -> schematic::schema::Schema {
                     use schematic::schema::*;
 
-                    Schema::Shape {
+                    let fields = vec![
+                        #(#schema_types),*
+                    ];
+
+                    Schema {
                         name: #config_name.into(),
-                        fields: vec![
-                            #(#schema_types),*
-                        ],
-                        partial: false,
+                        kind: Type::Shape(std::collections::HashMap::from_iter(
+                            fields
+                                .into_iter()
+                                .map(|f| (f.name.clone().unwrap(), f))
+                                .collect::<Vec<(String, SchemaField)>>()
+                        )),
+                        ..Default::default()
                     }
                 }
             }

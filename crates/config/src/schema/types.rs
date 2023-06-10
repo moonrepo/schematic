@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LiteralType {
+    Boolean(bool),
     Float(String),
     Int(isize),
     UInt(usize),
     String(String),
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum IntType {
     Isize,
     I8,
@@ -26,26 +27,26 @@ pub enum IntType {
 
 impl IntType {
     pub fn is_unsigned(&self) -> bool {
-        match self {
+        matches!(
+            self,
             IntType::Usize
-            | IntType::U8
-            | IntType::U16
-            | IntType::U32
-            | IntType::U64
-            | IntType::U128 => true,
-            _ => false,
-        }
+                | IntType::U8
+                | IntType::U16
+                | IntType::U32
+                | IntType::U64
+                | IntType::U128
+        )
     }
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum Type {
     Boolean,
     Double,
     Float,
-    #[default]
     Null,
     String,
+    #[default]
     Unknown,
     Reference(String),
     Integer(IntType),
@@ -57,21 +58,29 @@ pub enum Type {
     Shape(HashMap<String, SchemaField>),
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SchemaField {
     pub name: Option<String>,
     pub description: Option<String>,
-    pub type_of: Type,
+    pub kind: Type,
     pub deprecated: bool,
     pub hidden: bool,
     pub nullable: bool,
     pub optional: bool,
 }
 
-pub enum Schema {
+#[derive(Debug, Default, Eq, PartialEq)]
+pub struct Schema {
+    pub name: String,
+    pub kind: Type,
+    pub fields: Option<Vec<SchemaField>>,
+    pub attributes: HashMap<String, LiteralType>,
+}
+
+pub enum Schema2 {
     Undefined,
     Builtin {
-        type_of: Type,
+        kind: Type,
     },
     // enum Foo { a, b, c }
     // type Foo = a | b | c
@@ -92,6 +101,6 @@ pub enum Schema {
     // type Foo = T
     Type {
         name: String,
-        type_of: Type,
+        kind: Type,
     },
 }
