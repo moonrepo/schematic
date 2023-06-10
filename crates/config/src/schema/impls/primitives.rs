@@ -9,10 +9,10 @@ macro_rules! schema_impl {
     ($type:ty, $instance:expr, $name:expr) => {
         impl ConfigSchema for $type {
             fn generate_schema() -> Schema {
-                Schema::Type {
-                    name: $name.into(),
+                Schema::Builtin {
+                    // name: $name.into(),
                     type_of: $instance,
-                    nullable: false,
+                    // nullable: false,
                 }
             }
         }

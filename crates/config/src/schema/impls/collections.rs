@@ -1,9 +1,9 @@
 // use crate::config::ConfigSchema;
 // use crate::schema::types::*;
 
-// impl<T: ConfigSchema> ConfigSchema for Option<T> {
+// impl<T: ConfigSchema> ConfigSchema for Vec<T> {
 //     fn generate_schema() -> Schema {
-//         let mut schema = T::generate_schema();
+//         let inner = T::generate_schema();
 
 //         if let Schema::Type {
 //             ref mut nullable, ..

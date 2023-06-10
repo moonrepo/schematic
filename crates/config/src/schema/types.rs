@@ -70,6 +70,9 @@ pub struct SchemaField {
 
 pub enum Schema {
     Undefined,
+    Builtin {
+        type_of: Type,
+    },
     // enum Foo { a, b, c }
     // type Foo = a | b | c
     Enum {
@@ -90,6 +93,5 @@ pub enum Schema {
     Type {
         name: String,
         type_of: Type,
-        nullable: bool,
     },
 }

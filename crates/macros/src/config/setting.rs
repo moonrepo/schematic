@@ -1,5 +1,7 @@
 use crate::config::setting_type::SettingType;
-use crate::utils::{extract_common_attrs, format_case, preserve_str_literal};
+use crate::utils::{
+    extract_comment, extract_common_attrs, format_case, has_deprecated_attr, preserve_str_literal,
+};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -240,6 +242,36 @@ impl<'l> Setting<'l> {
         }
 
         quote! {}
+    }
+
+    pub fn get_schema_type(&self, casing_format: &str) -> TokenStream {
+        let name = self.get_name(Some(casing_format));
+
+        let deprecated = has_deprecated_attr(&self.attrs);
+        let hidden = self.is_skipped();
+        let nullable = self.is_optional();
+
+        let description = if let Some(comment) = extract_comment(&self.attrs) {
+            quote! {
+                Some(#comment.into())
+            }
+        } else {
+            quote! {
+                None
+            }
+        };
+
+        quote! {
+            SchemaField {
+                name: Some(#name.into()),
+                description: #description,
+                type_of: Type::Null,
+                deprecated: #deprecated,
+                hidden: #hidden,
+                nullable: #nullable,
+                ..Default::default()
+            }
+        }
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
