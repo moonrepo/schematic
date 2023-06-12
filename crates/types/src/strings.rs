@@ -7,6 +7,7 @@ pub struct StringType {
     pub format: Option<String>,
     pub max_length: Option<usize>,
     pub min_length: Option<usize>,
+    pub name: Option<String>,
     pub pattern: Option<String>,
 }
 

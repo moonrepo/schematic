@@ -4,6 +4,6 @@ use crate::SchemaField;
 pub struct StructType {
     pub additional: bool,
     pub fields: Vec<SchemaField>,
-    pub name: String,
+    pub name: Option<String>,
     pub required: Vec<String>,
 }

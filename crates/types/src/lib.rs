@@ -61,8 +61,8 @@ impl SchemaType {
 
     pub fn literal(value: LiteralValue) -> SchemaType {
         SchemaType::Literal(LiteralType {
-            format: None,
             value: Some(value),
+            ..LiteralType::default()
         })
     }
 
@@ -78,12 +78,11 @@ impl SchemaType {
         SchemaType::String(StringType::default())
     }
 
-    pub fn structure<I>(name: &str, fields: I) -> SchemaType
+    pub fn structure<I>(fields: I) -> SchemaType
     where
         I: IntoIterator<Item = SchemaField>,
     {
         SchemaType::Struct(StructType {
-            name: name.to_owned(),
             fields: fields.into_iter().collect(),
             ..StructType::default()
         })
@@ -95,6 +94,7 @@ impl SchemaType {
     {
         SchemaType::Tuple(TupleType {
             items_types: items_types.into_iter().map(Box::new).collect(),
+            ..TupleType::default()
         })
     }
 

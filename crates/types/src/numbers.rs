@@ -35,6 +35,7 @@ pub struct IntegerType {
     pub min: Option<usize>,
     pub min_exclusive: Option<usize>,
     pub multiple_of: Option<usize>,
+    pub name: Option<String>,
 }
 
 macro_rules! impl_int {
@@ -77,6 +78,7 @@ pub struct FloatType {
     pub min: Option<usize>,
     pub min_exclusive: Option<usize>,
     pub multiple_of: Option<usize>,
+    pub name: Option<String>,
 }
 
 macro_rules! impl_float {

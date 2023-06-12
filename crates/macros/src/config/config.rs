@@ -327,9 +327,13 @@ impl<'l> ToTokens for Config<'l> {
                     fn generate_schema() -> schematic::SchemaType {
                         use schematic::schema::*;
 
-                        SchemaType::structure(#config_name, [
-                            #(#schema_types),*
-                        ])
+                        SchemaType::Struct(StructType {
+                            name: Some(#config_name.into()),
+                            fields: vec![
+                                #(#schema_types),*
+                            ],
+                            ..Default::default()
+                        })
                     }
                 }
             });
