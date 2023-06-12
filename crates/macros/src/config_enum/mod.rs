@@ -70,25 +70,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         }
     };
 
-    quote! {
-        #[automatically_derived]
-        impl schematic::Schematic for #enum_name {
-            // #[allow(clippy::needless_update)]
-            fn generate_schema() -> schematic::SchemaType {
-                use schematic::schema::*;
+    let mut impls = vec![];
 
-                let variants = vec![
-                    #(#schema_types),*
-                ];
-
-                SchemaType::Union(UnionType {
-                    variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
-                    variants: Some(variants),
-                    ..Default::default()
-                })
-            }
-        }
-
+    impls.push(quote! {
         #[automatically_derived]
         impl schematic::ConfigEnum for #enum_name {
             const META: schematic::Meta = schematic::Meta {
@@ -150,6 +134,40 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 })
             }
         }
+    });
+
+    #[cfg(feature = "schema")]
+    {
+        impls.push(quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #enum_name {
+                fn generate_schema() -> schematic::SchemaType {
+                    use schematic::schema::*;
+
+                    let variants = vec![
+                        #(#schema_types),*
+                    ];
+
+                    SchemaType::Union(UnionType {
+                        variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
+                        variants: Some(variants),
+                        ..Default::default()
+                    })
+                }
+            }
+        });
+    }
+
+    #[cfg(not(feature = "schema"))]
+    {
+        impls.push(quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #enum_name {}
+        });
+    }
+
+    quote! {
+        #(#impls)*
     }
     .into()
 }

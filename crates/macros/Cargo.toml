@@ -19,4 +19,5 @@ syn = { version = "2.0.18", features = ["full"] }
 [features]
 default = []
 json_schema = []
+schema = []
 typescript = []

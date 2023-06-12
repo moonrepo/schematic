@@ -180,7 +180,6 @@ impl<'l> Config<'l> {
 impl<'l> ToTokens for Config<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
-        let config_name = name.to_string();
         let casing_format = self.get_casing_format();
 
         let context = match self.args.context.as_ref() {
@@ -230,7 +229,7 @@ impl<'l> ToTokens for Config<'l> {
             validate_stmts.push(setting.get_validate_statement());
         }
 
-        let token = quote! {
+        tokens.extend(quote! {
             #[automatically_derived]
             impl schematic::PartialConfig for #partial_name {
                 type Context = #context;
@@ -288,13 +287,11 @@ impl<'l> ToTokens for Config<'l> {
                     Ok(())
                 }
             }
-        };
-
-        tokens.extend(token);
+        });
 
         let meta = self.get_meta_struct();
 
-        let token = quote! {
+        tokens.extend(quote! {
             #[automatically_derived]
             impl Default for #name {
                 fn default() -> Self {
@@ -303,17 +300,6 @@ impl<'l> ToTokens for Config<'l> {
                     let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap();
 
                     <Self as schematic::Config>::from_partial(defaults)
-                }
-            }
-
-            #[automatically_derived]
-            impl schematic::Schematic for #name {
-                fn generate_schema() -> schematic::SchemaType {
-                    use schematic::schema::*;
-
-                    SchemaType::structure(#config_name, [
-                        #(#schema_types),*
-                    ])
                 }
             }
 
@@ -329,8 +315,32 @@ impl<'l> ToTokens for Config<'l> {
                     }
                 }
             }
-        };
+        });
 
-        tokens.extend(token);
+        #[cfg(feature = "schema")]
+        {
+            let config_name = name.to_string();
+
+            tokens.extend(quote! {
+                #[automatically_derived]
+                impl schematic::Schematic for #name {
+                    fn generate_schema() -> schematic::SchemaType {
+                        use schematic::schema::*;
+
+                        SchemaType::structure(#config_name, [
+                            #(#schema_types),*
+                        ])
+                    }
+                }
+            });
+        }
+
+        #[cfg(not(feature = "schema"))]
+        {
+            tokens.extend(quote! {
+                #[automatically_derived]
+                impl schematic::Schematic for #name {}
+            });
+        }
     }
 }

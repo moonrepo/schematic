@@ -40,6 +40,7 @@ serde_yaml = { version = "0.9.21", optional = true }
 default = ["json"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "schematic_macros/json_schema"]
+schema = ["schematic_macros/schema"]
 toml = ["dep:toml"]
 typescript = ["schematic_macros/typescript"]
 yaml = ["dep:serde_yaml"]
@@ -48,6 +49,6 @@ valid_email = ["garde/email"]
 valid_url = ["garde/url"]
 
 [dev-dependencies]
-schematic = { path = ".", features = ["json", "json_schema", "yaml", "toml", "typescript", "valid_email", "valid_url"] }
+schematic = { path = ".", features = ["schema", "json", "json_schema", "yaml", "toml", "typescript", "valid_email", "valid_url"] }
 serial_test = "2.0.0"
 starbase_sandbox = "0.1.3"
