@@ -94,7 +94,7 @@ impl SchemaType {
         I: IntoIterator<Item = SchemaType>,
     {
         SchemaType::Tuple(TupleType {
-            items_types: items_types.into_iter().map(|t| Box::new(t)).collect(),
+            items_types: items_types.into_iter().map(Box::new).collect(),
         })
     }
 
@@ -103,7 +103,7 @@ impl SchemaType {
         I: IntoIterator<Item = SchemaType>,
     {
         SchemaType::Union(UnionType {
-            variants_types: variants_types.into_iter().map(|t| Box::new(t)).collect(),
+            variants_types: variants_types.into_iter().map(Box::new).collect(),
             ..UnionType::default()
         })
     }
@@ -130,6 +130,18 @@ pub trait Schematic {
 
 // CORE
 
+impl<T: Schematic> Schematic for &T {
+    fn generate_schema() -> SchemaType {
+        T::generate_schema()
+    }
+}
+
+impl<T: Schematic> Schematic for &mut T {
+    fn generate_schema() -> SchemaType {
+        T::generate_schema()
+    }
+}
+
 impl<T: Schematic> Schematic for Box<T> {
     fn generate_schema() -> SchemaType {
         T::generate_schema()
@@ -138,9 +150,6 @@ impl<T: Schematic> Schematic for Box<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn generate_schema() -> SchemaType {
-        SchemaType::Union(UnionType {
-            variants_types: vec![Box::new(T::generate_schema()), Box::new(SchemaType::Null)],
-            ..UnionType::default()
-        })
+        SchemaType::union([T::generate_schema(), SchemaType::Null])
     }
 }
