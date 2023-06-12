@@ -1228,6 +1228,7 @@ dependencies = [
  "schemars",
  "schematic",
  "schematic_macros",
+ "schematic_types",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -1252,7 +1253,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "schematic_shapes"
+name = "schematic_types"
 version = "0.1.0"
 
 [[package]]
