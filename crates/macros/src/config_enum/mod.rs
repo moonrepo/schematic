@@ -45,7 +45,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut display_stmts = vec![];
     let mut from_stmts = vec![];
     let mut schema_types = vec![];
-    let mut fallback_name = None;
+    let mut has_fallback = false;
 
     for variant in variants {
         unit_names.push(variant.get_unit_name());
@@ -54,15 +54,15 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         schema_types.push(variant.get_schema_type());
 
         if variant.args.fallback {
-            if fallback_name.is_some() {
+            if has_fallback {
                 panic!("Only 1 fallback variant is supported.")
             }
 
-            fallback_name = Some(variant.name.to_string());
+            has_fallback = true;
         }
     }
 
-    let from_fallback = if fallback_name.is_some() {
+    let from_fallback = if has_fallback {
         quote! {}
     } else {
         quote! {
@@ -73,7 +73,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl schematic::Schematic for #enum_name {
-            #[allow(clippy::needless_update)]
+            // #[allow(clippy::needless_update)]
             fn generate_schema() -> schematic::SchemaType {
                 use schematic::schema::*;
 
