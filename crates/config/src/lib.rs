@@ -33,6 +33,7 @@ pub use format::*;
 pub use layer::*;
 pub use loader::*;
 pub use schematic_macros::*;
+pub use schematic_types::{SchemaField, SchemaType, Schematic};
 pub use source::*;
 pub use validator::*;
 

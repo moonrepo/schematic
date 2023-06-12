@@ -1,3 +1,5 @@
+use crate::{SchemaType, Schematic};
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum IntegerKind {
     Isize,
@@ -35,6 +37,33 @@ pub struct IntegerType {
     pub multiple_of: Option<usize>,
 }
 
+macro_rules! impl_int {
+    ($type:ty, $kind:expr) => {
+        impl Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::Integer(IntegerType {
+                    kind: $kind,
+                    ..IntegerType::default()
+                })
+            }
+        }
+    };
+}
+
+impl_int!(usize, IntegerKind::Usize);
+impl_int!(u8, IntegerKind::U8);
+impl_int!(u16, IntegerKind::U16);
+impl_int!(u32, IntegerKind::U32);
+impl_int!(u64, IntegerKind::U64);
+impl_int!(u128, IntegerKind::U128);
+
+impl_int!(isize, IntegerKind::Isize);
+impl_int!(i8, IntegerKind::I8);
+impl_int!(i16, IntegerKind::I16);
+impl_int!(i32, IntegerKind::I32);
+impl_int!(i64, IntegerKind::I64);
+impl_int!(i128, IntegerKind::I128);
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum FloatKind {
     #[default]
@@ -52,3 +81,19 @@ pub struct FloatType {
     pub min_exclusive: Option<usize>,
     pub multiple_of: Option<usize>,
 }
+
+macro_rules! impl_float {
+    ($type:ty, $kind:expr) => {
+        impl Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::Float(FloatType {
+                    kind: $kind,
+                    ..FloatType::default()
+                })
+            }
+        }
+    };
+}
+
+impl_float!(f32, FloatKind::F32);
+impl_float!(f64, FloatKind::F64);

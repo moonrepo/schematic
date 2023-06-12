@@ -1,4 +1,5 @@
-use crate::SchemaType;
+use crate::{SchemaType, Schematic};
+use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ArrayType {
@@ -8,4 +9,41 @@ pub struct ArrayType {
     pub min_contains: Option<usize>,
     pub min_length: Option<usize>,
     pub unique: bool,
+}
+
+macro_rules! impl_list {
+    ($type:ident) => {
+        impl<T: Schematic> Schematic for $type<T> {
+            fn generate_schema() -> SchemaType {
+                SchemaType::Array(ArrayType {
+                    items_type: Box::new(T::generate_schema()),
+                    ..ArrayType::default()
+                })
+            }
+        }
+    };
+}
+
+impl_list!(Vec);
+impl_list!(HashSet);
+impl_list!(BTreeSet);
+
+impl<T: Schematic> Schematic for &[T] {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Array(ArrayType {
+            items_type: Box::new(T::generate_schema()),
+            ..ArrayType::default()
+        })
+    }
+}
+
+impl<T: Schematic, const N: usize> Schematic for [T; N] {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Array(ArrayType {
+            items_type: Box::new(T::generate_schema()),
+            max_length: Some(N),
+            min_length: Some(N),
+            ..ArrayType::default()
+        })
+    }
 }

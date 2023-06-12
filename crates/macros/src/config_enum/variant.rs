@@ -121,13 +121,16 @@ impl<'l> Variant<'l> {
             }
         };
 
-        let kind = if self.args.fallback {
+        let type_of = if self.args.fallback {
             quote! {
-                Type::String
+                SchemaType::String(StringType::default())
             }
         } else {
             quote! {
-                Type::Literal(LiteralType::String(#value.into()))
+                SchemaType::Literal(LiteralType {
+                    format: None,
+                    value: Some(LiteralValue::String(#value.into())),
+                })
             }
         };
 
@@ -135,7 +138,7 @@ impl<'l> Variant<'l> {
             SchemaField {
                 name: Some(#name.into()),
                 description: #description,
-                kind: #kind,
+                type_of: #type_of,
                 deprecated: #deprecated,
                 ..Default::default()
             }

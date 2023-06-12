@@ -41,4 +41,29 @@ pub struct SchemaField {
     pub hidden: bool,
     pub nullable: bool,
     pub optional: bool,
+    pub read_only: bool,
+    pub write_only: bool,
+}
+
+pub trait Schematic {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Unknown
+    }
+}
+
+// CORE
+
+impl<T: Schematic> Schematic for Box<T> {
+    fn generate_schema() -> SchemaType {
+        T::generate_schema()
+    }
+}
+
+impl<T: Schematic> Schematic for Option<T> {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Union(UnionType {
+            variant_types: vec![Box::new(T::generate_schema()), Box::new(SchemaType::Null)],
+            ..UnionType::default()
+        })
+    }
 }
