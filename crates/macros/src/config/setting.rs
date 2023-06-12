@@ -246,6 +246,7 @@ impl<'l> Setting<'l> {
 
     pub fn get_schema_type(&self, casing_format: &str) -> TokenStream {
         let name = self.get_name(Some(casing_format));
+        let value = self.value;
 
         let deprecated = has_deprecated_attr(&self.attrs);
         let hidden = self.is_skipped();
@@ -265,7 +266,7 @@ impl<'l> Setting<'l> {
             SchemaField {
                 name: Some(#name.into()),
                 description: #description,
-                kind: Type::Null,
+                type_of: SchemaType::infer::<#value>(),
                 deprecated: #deprecated,
                 hidden: #hidden,
                 nullable: #nullable,

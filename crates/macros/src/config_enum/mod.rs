@@ -82,7 +82,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 ];
 
                 SchemaType::Union(UnionType {
-                    variant_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
+                    variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
                     variants: Some(variants),
                     ..Default::default()
                 })

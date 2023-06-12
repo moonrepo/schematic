@@ -123,14 +123,11 @@ impl<'l> Variant<'l> {
 
         let type_of = if self.args.fallback {
             quote! {
-                SchemaType::String(StringType::default())
+                SchemaType::string()
             }
         } else {
             quote! {
-                SchemaType::Literal(LiteralType {
-                    format: None,
-                    value: Some(LiteralValue::String(#value.into())),
-                })
+                SchemaType::literal(LiteralValue::String(#value.into()))
             }
         };
 

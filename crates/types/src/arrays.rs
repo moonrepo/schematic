@@ -15,10 +15,7 @@ macro_rules! impl_list {
     ($type:ident) => {
         impl<T: Schematic> Schematic for $type<T> {
             fn generate_schema() -> SchemaType {
-                SchemaType::Array(ArrayType {
-                    items_type: Box::new(T::generate_schema()),
-                    ..ArrayType::default()
-                })
+                SchemaType::array(T::generate_schema())
             }
         }
     };
@@ -30,10 +27,7 @@ impl_list!(BTreeSet);
 
 impl<T: Schematic> Schematic for &[T] {
     fn generate_schema() -> SchemaType {
-        SchemaType::Array(ArrayType {
-            items_type: Box::new(T::generate_schema()),
-            ..ArrayType::default()
-        })
+        SchemaType::array(T::generate_schema())
     }
 }
 

@@ -29,7 +29,84 @@ pub enum SchemaType {
     Object(ObjectType),
     Struct(StructType),
     String(StringType),
+    Tuple(TupleType),
     Union(UnionType),
+}
+
+impl SchemaType {
+    pub fn infer<T: Schematic>() -> SchemaType {
+        T::generate_schema()
+    }
+
+    pub fn array(items_type: SchemaType) -> SchemaType {
+        SchemaType::Array(ArrayType {
+            items_type: Box::new(items_type),
+            ..ArrayType::default()
+        })
+    }
+
+    pub fn float(kind: FloatKind) -> SchemaType {
+        SchemaType::Float(FloatType {
+            kind,
+            ..FloatType::default()
+        })
+    }
+
+    pub fn integer(kind: IntegerKind) -> SchemaType {
+        SchemaType::Integer(IntegerType {
+            kind,
+            ..IntegerType::default()
+        })
+    }
+
+    pub fn literal(value: LiteralValue) -> SchemaType {
+        SchemaType::Literal(LiteralType {
+            format: None,
+            value: Some(value),
+        })
+    }
+
+    pub fn object(key_type: SchemaType, value_type: SchemaType) -> SchemaType {
+        SchemaType::Object(ObjectType {
+            key_type: Box::new(key_type),
+            value_type: Box::new(value_type),
+            ..ObjectType::default()
+        })
+    }
+
+    pub fn string() -> SchemaType {
+        SchemaType::String(StringType::default())
+    }
+
+    pub fn structure<I>(name: &str, fields: I) -> SchemaType
+    where
+        I: IntoIterator<Item = SchemaField>,
+    {
+        SchemaType::Struct(StructType {
+            name: name.to_owned(),
+            fields: fields.into_iter().collect(),
+            ..StructType::default()
+        })
+    }
+
+    pub fn tuple<I>(items_types: I) -> SchemaType
+    where
+        I: IntoIterator<Item = SchemaType>,
+    {
+        SchemaType::Tuple(TupleType {
+            items_types: items_types.into_iter().map(|t| Box::new(t)).collect(),
+        })
+    }
+
+    pub fn union<I>(variants_types: I) -> SchemaType
+    where
+        I: IntoIterator<Item = SchemaType>,
+    {
+        SchemaType::Union(UnionType {
+            variants_types: variants_types.into_iter().map(|t| Box::new(t)).collect(),
+            ..UnionType::default()
+        })
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -62,7 +139,7 @@ impl<T: Schematic> Schematic for Box<T> {
 impl<T: Schematic> Schematic for Option<T> {
     fn generate_schema() -> SchemaType {
         SchemaType::Union(UnionType {
-            variant_types: vec![Box::new(T::generate_schema()), Box::new(SchemaType::Null)],
+            variants_types: vec![Box::new(T::generate_schema()), Box::new(SchemaType::Null)],
             ..UnionType::default()
         })
     }

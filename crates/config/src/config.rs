@@ -112,3 +112,14 @@ impl Default for ExtendsFrom {
         Self::List(vec![])
     }
 }
+
+impl Schematic for ExtendsFrom {
+    fn generate_schema() -> schematic_types::SchemaType {
+        use schematic_types::*;
+
+        SchemaType::union([
+            SchemaType::string(),
+            SchemaType::array(SchemaType::string()),
+        ])
+    }
+}

@@ -14,11 +14,7 @@ macro_rules! impl_map {
     ($type:ident) => {
         impl<K: Schematic, V: Schematic> Schematic for $type<K, V> {
             fn generate_schema() -> SchemaType {
-                SchemaType::Object(ObjectType {
-                    key_type: Box::new(K::generate_schema()),
-                    value_type: Box::new(V::generate_schema()),
-                    ..ObjectType::default()
-                })
+                SchemaType::object(K::generate_schema(), V::generate_schema())
             }
         }
     };

@@ -41,10 +41,7 @@ macro_rules! impl_int {
     ($type:ty, $kind:expr) => {
         impl Schematic for $type {
             fn generate_schema() -> SchemaType {
-                SchemaType::Integer(IntegerType {
-                    kind: $kind,
-                    ..IntegerType::default()
-                })
+                SchemaType::integer($kind)
             }
         }
     };
@@ -86,10 +83,7 @@ macro_rules! impl_float {
     ($type:ty, $kind:expr) => {
         impl Schematic for $type {
             fn generate_schema() -> SchemaType {
-                SchemaType::Float(FloatType {
-                    kind: $kind,
-                    ..FloatType::default()
-                })
+                SchemaType::float($kind)
             }
         }
     };

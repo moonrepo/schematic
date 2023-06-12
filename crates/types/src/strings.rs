@@ -14,7 +14,7 @@ macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
             fn generate_schema() -> SchemaType {
-                SchemaType::String(StringType::default())
+                SchemaType::string()
             }
         }
     };
