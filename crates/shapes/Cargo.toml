@@ -1,0 +1,11 @@
+[package]
+name = "schematic_shapes"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Shapes for defining schemas for Rust types."
+repository = "https://github.com/moonrepo/schematic"
+
+# [dependencies]
+# schematic_macros = { version = "0.8.0", path = "../macros" }
+
