@@ -1,5 +1,9 @@
+use super::SchemaRenderer;
+use miette::IntoDiagnostic;
 use schematic_types::*;
 use std::collections::HashSet;
+use std::fs;
+use std::path::PathBuf;
 
 pub struct SchemaGenerator {
     references: HashSet<String>,
@@ -69,5 +73,22 @@ impl SchemaGenerator {
         };
 
         self.schemas.push(schema);
+    }
+
+    pub fn generate(
+        &self,
+        output_file: PathBuf,
+        renderer: impl SchemaRenderer,
+    ) -> miette::Result<()> {
+        let mut output = renderer.render(&self.schemas, &self.references)?;
+        output.push_str("\n");
+
+        if let Some(parent) = output_file.parent() {
+            fs::create_dir_all(parent).into_diagnostic()?;
+        }
+
+        fs::write(&output_file, output).into_diagnostic()?;
+
+        Ok(())
     }
 }
