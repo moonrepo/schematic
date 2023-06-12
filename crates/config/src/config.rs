@@ -1,6 +1,7 @@
 use crate::derive_enum;
 use crate::errors::ConfigError;
 use crate::validator::{SettingPath, ValidatorError};
+use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
 
 type MetaString = &'static str;
@@ -81,7 +82,7 @@ pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized 
 }
 
 /// Represents the final configuration, with all settings populated with a value.
-pub trait Config: Sized {
+pub trait Config: Sized + Schematic {
     type Partial: PartialConfig;
 
     const META: Meta;
@@ -91,7 +92,7 @@ pub trait Config: Sized {
 }
 
 /// Represents an enumerable setting for use within a [`Config`].
-pub trait ConfigEnum: Sized {
+pub trait ConfigEnum: Sized + Schematic {
     const META: Meta;
 
     /// Return a list of all variants for the enum. Only unit variants are supported.
@@ -109,5 +110,16 @@ derive_enum!(
 impl Default for ExtendsFrom {
     fn default() -> Self {
         Self::List(vec![])
+    }
+}
+
+impl Schematic for ExtendsFrom {
+    fn generate_schema() -> schematic_types::SchemaType {
+        use schematic_types::*;
+
+        SchemaType::union([
+            SchemaType::string(),
+            SchemaType::array(SchemaType::string()),
+        ])
     }
 }

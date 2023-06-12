@@ -44,12 +44,14 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut unit_names = vec![];
     let mut display_stmts = vec![];
     let mut from_stmts = vec![];
+    let mut schema_types = vec![];
     let mut has_fallback = false;
 
     for variant in variants {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
+        schema_types.push(variant.get_schema_type());
 
         if variant.args.fallback {
             if has_fallback {
@@ -68,7 +70,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         }
     };
 
-    quote! {
+    let mut impls = vec![];
+
+    impls.push(quote! {
         #[automatically_derived]
         impl schematic::ConfigEnum for #enum_name {
             const META: schematic::Meta = schematic::Meta {
@@ -78,7 +82,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
             fn variants() -> Vec<#enum_name> {
                 vec![
-                    #(#unit_names)*
+                    #(#unit_names),*
                 ]
             }
         }
@@ -130,6 +134,40 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 })
             }
         }
+    });
+
+    #[cfg(feature = "schema")]
+    {
+        impls.push(quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #enum_name {
+                fn generate_schema() -> schematic::SchemaType {
+                    use schematic::schema::*;
+
+                    let variants = vec![
+                        #(#schema_types),*
+                    ];
+
+                    SchemaType::Union(UnionType {
+                        variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
+                        variants: Some(variants),
+                        ..Default::default()
+                    })
+                }
+            }
+        });
+    }
+
+    #[cfg(not(feature = "schema"))]
+    {
+        impls.push(quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #enum_name {}
+        });
+    }
+
+    quote! {
+        #(#impls)*
     }
     .into()
 }

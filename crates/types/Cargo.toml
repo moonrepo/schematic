@@ -1,0 +1,7 @@
+[package]
+name = "schematic_types"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Shapes and types for defining schemas for Rust types."
+repository = "https://github.com/moonrepo/schematic"

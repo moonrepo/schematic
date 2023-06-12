@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a new schema layer that defines the structure of built-in Rust types, and schematic
+  configuration types.
+  - Implements the new `Schematic` trait.
+  - Types provided by the new `schematic_types` crate.
+  - Hidden behind the `schema` feature flag (very experimental).
+
 ## 0.8.1
 
 #### 🚀 Updates

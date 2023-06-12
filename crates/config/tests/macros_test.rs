@@ -212,6 +212,7 @@ struct Comments {
 #[derive(ConfigEnum, Debug)]
 enum BasicEnum {
     Foo,
+    /// Comment
     Bar,
     Baz,
 }
@@ -229,6 +230,7 @@ enum CustomFormatEnum {
 #[derive(ConfigEnum, Debug)]
 enum OtherEnum {
     Foo,
+    #[deprecated]
     Bar,
     Baz,
     #[variant(fallback)]

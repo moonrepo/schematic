@@ -17,6 +17,9 @@ pub mod internal;
 /// Built-in `merge` functions.
 pub mod merge;
 
+/// Utilities for generating schemas.
+pub mod schema;
+
 /// Utilities for generating TypeScript types.
 #[cfg(feature = "typescript")]
 pub mod typescript;
@@ -30,6 +33,7 @@ pub use format::*;
 pub use layer::*;
 pub use loader::*;
 pub use schematic_macros::*;
+pub use schematic_types::{SchemaField, SchemaType, Schematic};
 pub use source::*;
 pub use validator::*;
 
