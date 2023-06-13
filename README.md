@@ -5,6 +5,7 @@
 Schematic is a light-weight, macro-based, layered serde configuration and schema library, with
 built-in support for merge strategies, validation rules, environment variables, and more!
 
+- Supports JSON, TOML, and YAML based configs via serde.
 - Load sources from the file system or secure URLs.
 - Source layering that merge into a final configuration.
 - Extend additional files through an annotated setting.
@@ -13,8 +14,7 @@ built-in support for merge strategies, validation rules, environment variables, 
   [garde](https://crates.io/crates/garde)).
 - Environment variable parsing and overrides.
 - Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
-- Supports JSON, TOML, and YAML via serde.
-- Generates schemas that can be rendered to TypeScript, JSONSchema, and more!
+- Generates schemas that can be rendered to TypeScript types, JSON schemas, and more!
 
 > This crate was built specifically for [moon](https://github.com/moonrepo/moon), and many of the
 > design decisions are based around that project and its needs. Because of that, this crate is quite
@@ -210,7 +210,7 @@ Refer to the [default values](#default-values), [merge strategies](#merge-strate
 
 [Configuration](#configuration) supports basic metadata for use within error messages through the
 `#[config]` attribute. Right now we support a name, derived from the struct name or the serde
-`rename` attribute field, and a list of fields in the struct.
+`rename` attribute field.
 
 Metadata can be accessed with the `META` constant.
 
@@ -583,6 +583,52 @@ struct Example {
 }
 ```
 
+## Generators
+
+Schematic provides a schema modeling layer that defines the shape of types, which all configuration
+and enums implement. These schemas can then be passed to a generator, which renders the schema into
+a specific format, and writes the result to a file.
+
+```rust
+use schematic::{schema, renderers};
+
+fn main() {
+	let mut generator = schema::SchemaGenerator::default();
+	generator.add::<ConfigOne>();
+	generator.add::<ConfigTwo>();
+	generator.add::<EnumThree>();
+	generator.add::<OtherWithSchemas>();
+}
+```
+
+> Added types will recursively add all nested schemas, so you only need to add the root types, and
+> not everything!
+
+### JSON schemas
+
+- Enabled with the `json_schema` feature.
+- The last schema to be added to the generator will be the root document, while all previous schemas
+  will be definitions/references.
+
+```rust
+generator.generate(
+	output_dir.join("schema.json"),
+	renderers::json_schema::JsonSchemaRenderer::default(),
+);
+```
+
+### TypeScript types
+
+- Enabled with the `typescript` feature.
+- Each schema added to the generator will be `export`ed as a type.
+
+```rust
+generator.generate(
+	output_dir.join("types.ts"),
+	renderers::typescript::TypeScriptRenderer::default(),
+);
+```
+
 ## Features
 
 The following Cargo features are available:
@@ -602,4 +648,5 @@ The following Cargo features are available:
 ### Misc
 
 - `schema` - Generates schemas for schematic types and built-in Rust types.
+- `json_schema` - Enables JSON schema generation.
 - `typescript` - Enables TypeScript types generation.

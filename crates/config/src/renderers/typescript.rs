@@ -51,51 +51,15 @@ impl TypeScriptRenderer {
         Ok(format!("export type {} = {};", name, value))
     }
 
-    fn export_enum_type(&self, name: &str, uni: &UnionType) -> RenderResult {
-        if matches!(
-            self.options.enum_format,
-            EnumFormat::Enum | EnumFormat::ValuedEnum
-        ) {
-            let Some(variants) = &uni.variants else {
-                return self.export_type_alias(name, self.render_union(uni)?);
-            };
+    fn export_enum_type(&self, name: &str, enu: &EnumType) -> RenderResult {
+        let value = self.render_enum(enu)?;
+        let out = format!("enum {} {{\n{}\n}}", name, value);
 
-            let mut fields = vec![];
-
-            for variant in variants {
-                if variant.hidden {
-                    continue;
-                }
-
-                if let Some(variant_name) = &variant.name {
-                    let mut field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
-                        format!(
-                            "\t{} = {},",
-                            variant_name,
-                            self.render_schema(&variant.type_of)?
-                        )
-                    } else {
-                        format!("\t{},", variant_name)
-                    };
-
-                    if let Some(comment) = &variant.description {
-                        field = self.wrap_in_comment(comment.trim(), field);
-                    }
-
-                    fields.push(field);
-                }
-            }
-
-            let out = format!("enum {} {{\n{}\n}}", name, fields.join("\n"));
-
-            return Ok(if self.options.const_enum {
-                format!("export const {}", out)
-            } else {
-                format!("export {}", out)
-            });
-        }
-
-        self.export_type_alias(name, self.render_union(uni)?)
+        Ok(if self.options.const_enum {
+            format!("export const {}", out)
+        } else {
+            format!("export {}", out)
+        })
     }
 
     fn export_object_type(&self, name: &str, structure: &StructType) -> RenderResult {
@@ -125,7 +89,7 @@ impl TypeScriptRenderer {
     }
 }
 
-impl SchemaRenderer for TypeScriptRenderer {
+impl SchemaRenderer<String> for TypeScriptRenderer {
     fn is_reference(&self, name: &str) -> bool {
         self.references.contains(name)
     }
@@ -136,6 +100,36 @@ impl SchemaRenderer for TypeScriptRenderer {
 
     fn render_boolean(&self) -> RenderResult {
         Ok("boolean".into())
+    }
+
+    fn render_enum(&self, enu: &EnumType) -> RenderResult {
+        let mut fields = vec![];
+
+        for variant in enu.variants.as_ref().unwrap() {
+            if variant.hidden {
+                continue;
+            }
+
+            if let Some(variant_name) = &variant.name {
+                let mut field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
+                    format!(
+                        "\t{} = {},",
+                        variant_name,
+                        self.render_schema(&variant.type_of)?
+                    )
+                } else {
+                    format!("\t{},", variant_name)
+                };
+
+                if let Some(comment) = &variant.description {
+                    field = self.wrap_in_comment(comment.trim(), field);
+                }
+
+                fields.push(field);
+            }
+        }
+
+        Ok(fields.join("\n"))
     }
 
     fn render_float(&self, _: &FloatType) -> RenderResult {
@@ -170,6 +164,10 @@ impl SchemaRenderer for TypeScriptRenderer {
             self.render_schema(&object.key_type)?,
             self.render_schema(&object.value_type)?
         ))
+    }
+
+    fn render_reference(&self, reference: &str) -> RenderResult {
+        Ok(reference.into())
     }
 
     fn render_string(&self, _: &StringType) -> RenderResult {
@@ -249,8 +247,28 @@ impl SchemaRenderer for TypeScriptRenderer {
         for schema in schemas {
             if let Some(name) = schema.get_name() {
                 outputs.push(match schema {
+                    SchemaType::Enum(inner) => {
+                        if matches!(self.options.enum_format, EnumFormat::Union)
+                            || inner.variants.is_none()
+                        {
+                            self.export_type_alias(
+                                name,
+                                self.render_union(&UnionType {
+                                    name: inner.name.clone(),
+                                    variants_types: inner
+                                        .values
+                                        .iter()
+                                        .map(|v| Box::new(SchemaType::Literal(v.clone())))
+                                        .collect(),
+                                    variants: inner.variants.clone(),
+                                    ..Default::default()
+                                })?,
+                            )?
+                        } else {
+                            self.export_enum_type(name, inner)?
+                        }
+                    }
                     SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
-                    SchemaType::Union(inner) => self.export_enum_type(name, inner)?,
                     _ => self.export_type_alias(name, self.render_schema(schema)?)?,
                 });
             }

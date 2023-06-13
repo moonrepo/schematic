@@ -1,4 +1,5 @@
 mod arrays;
+mod enums;
 mod literals;
 mod numbers;
 mod objects;
@@ -8,6 +9,7 @@ mod tuples;
 mod unions;
 
 pub use arrays::*;
+pub use enums::*;
 pub use literals::*;
 pub use numbers::*;
 pub use objects::*;
@@ -16,13 +18,15 @@ pub use structs::*;
 pub use tuples::*;
 pub use unions::*;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+/// All possible types within a schema.
+#[derive(Clone, Debug, Default)]
 pub enum SchemaType {
     Boolean,
     Null,
     #[default]
     Unknown,
     Array(ArrayType),
+    Enum(EnumType),
     Float(FloatType),
     Integer(IntegerType),
     Literal(LiteralType),
@@ -34,10 +38,12 @@ pub enum SchemaType {
 }
 
 impl SchemaType {
+    /// Infer a schema from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>() -> SchemaType {
         T::generate_schema()
     }
 
+    /// Create an array schema with the provided item types.
     pub fn array(items_type: SchemaType) -> SchemaType {
         SchemaType::Array(ArrayType {
             items_type: Box::new(items_type),
@@ -45,6 +51,7 @@ impl SchemaType {
         })
     }
 
+    /// Create a float schema with the provided kind.
     pub fn float(kind: FloatKind) -> SchemaType {
         SchemaType::Float(FloatType {
             kind,
@@ -52,6 +59,7 @@ impl SchemaType {
         })
     }
 
+    /// Create an integer schema with the provided kind.
     pub fn integer(kind: IntegerKind) -> SchemaType {
         SchemaType::Integer(IntegerType {
             kind,
@@ -59,6 +67,7 @@ impl SchemaType {
         })
     }
 
+    /// Create a literal schema with the provided value.
     pub fn literal(value: LiteralValue) -> SchemaType {
         SchemaType::Literal(LiteralType {
             value: Some(value),
@@ -66,6 +75,7 @@ impl SchemaType {
         })
     }
 
+    /// Create an indexed/mapable object schema with the provided key and value types.
     pub fn object(key_type: SchemaType, value_type: SchemaType) -> SchemaType {
         SchemaType::Object(ObjectType {
             key_type: Box::new(key_type),
@@ -74,10 +84,12 @@ impl SchemaType {
         })
     }
 
+    /// Create a string schema.
     pub fn string() -> SchemaType {
         SchemaType::String(StringType::default())
     }
 
+    /// Create a struct/shape schema with the provided fields.
     pub fn structure<I>(fields: I) -> SchemaType
     where
         I: IntoIterator<Item = SchemaField>,
@@ -88,6 +100,7 @@ impl SchemaType {
         })
     }
 
+    /// Create a tuple schema with the provided item types.
     pub fn tuple<I>(items_types: I) -> SchemaType
     where
         I: IntoIterator<Item = SchemaType>,
@@ -98,6 +111,7 @@ impl SchemaType {
         })
     }
 
+    /// Create an "any of" union.
     pub fn union<I>(variants_types: I) -> SchemaType
     where
         I: IntoIterator<Item = SchemaType>,
@@ -108,12 +122,26 @@ impl SchemaType {
         })
     }
 
+    /// Create a "one of" union.
+    pub fn union_one<I>(variants_types: I) -> SchemaType
+    where
+        I: IntoIterator<Item = SchemaType>,
+    {
+        SchemaType::Union(UnionType {
+            operator: UnionOperator::OneOf,
+            variants_types: variants_types.into_iter().map(Box::new).collect(),
+            ..UnionType::default()
+        })
+    }
+
+    /// Return a `name` from the inner schema type.
     pub fn get_name(&self) -> Option<&String> {
         match self {
             SchemaType::Boolean => None,
             SchemaType::Null => None,
             SchemaType::Unknown => None,
             SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
+            SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
             SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
             SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
             SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
@@ -126,7 +154,7 @@ impl SchemaType {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct SchemaField {
     pub name: Option<String>,
     pub description: Option<String>,
@@ -140,6 +168,8 @@ pub struct SchemaField {
 }
 
 pub trait Schematic {
+    /// Create and return a schema that models the structure of the implementing type.
+    /// The schema can be used to generate code, documentation, or other artifacts.
     fn generate_schema() -> SchemaType {
         SchemaType::Unknown
     }
@@ -167,6 +197,6 @@ impl<T: Schematic> Schematic for Box<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn generate_schema() -> SchemaType {
-        SchemaType::union([T::generate_schema(), SchemaType::Null])
+        SchemaType::union_one([T::generate_schema(), SchemaType::Null])
     }
 }

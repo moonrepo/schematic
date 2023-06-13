@@ -7,6 +7,5 @@ publish = false
 [dependencies]
 schematic = { path = "../config" }
 miette = { workspace = true, features = ["fancy"] }
-schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0.95"

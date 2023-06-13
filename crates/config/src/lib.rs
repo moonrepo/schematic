@@ -41,21 +41,6 @@ pub use validator::*;
 /// ASCII color helpers for use within error messages.
 pub use starbase_styles::color;
 
-// We can't put these in the proc-macro crate!
-
-#[cfg(feature = "json_schema")]
-#[macro_export]
-macro_rules! derive_enum {
-    ($impl:item) => {
-        #[derive(
-            Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize, schemars::JsonSchema,
-        )]
-        #[serde(rename_all = "kebab-case")]
-        $impl
-    };
-}
-
-#[cfg(not(feature = "json_schema"))]
 #[macro_export]
 macro_rules! derive_enum {
     ($impl:item) => {

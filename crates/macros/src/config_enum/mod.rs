@@ -143,15 +143,21 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 fn generate_schema() -> schematic::SchemaType {
                     use schematic::schema::*;
 
+                    let mut values = vec![];
                     let variants = vec![
                         #(#schema_types),*
                     ];
 
-                    SchemaType::Union(UnionType {
+                    for variant in &variants {
+                        if let SchemaType::Literal(lit) = &variant.type_of {
+                            values.push(lit.to_owned());
+                        }
+                    }
+
+                    SchemaType::Enum(EnumType {
                         name: Some(#meta_name.into()),
-                        variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
+                        values,
                         variants: Some(variants),
-                        ..Default::default()
                     })
                 }
             }

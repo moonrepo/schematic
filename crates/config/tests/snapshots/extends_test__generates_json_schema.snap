@@ -1,0 +1,104 @@
+---
+source: crates/config/tests/extends_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExtendsEnum",
+  "type": "object",
+  "required": [
+    "extends",
+    "value"
+  ],
+  "properties": {
+    "extends": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "value": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "definitions": {
+    "ExtendsList": {
+      "title": "ExtendsList",
+      "type": "object",
+      "required": [
+        "extends",
+        "value"
+      ],
+      "properties": {
+        "extends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "ExtendsString": {
+      "title": "ExtendsString",
+      "type": "object",
+      "required": [
+        "extends",
+        "value"
+      ],
+      "properties": {
+        "extends": {
+          "type": "string"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "ExtendsStringOptional": {
+      "title": "ExtendsStringOptional",
+      "type": "object",
+      "required": [
+        "extends",
+        "value"
+      ],
+      "properties": {
+        "extends": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}
+

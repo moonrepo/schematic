@@ -72,7 +72,7 @@ impl SchemaGenerator {
 
     /// Generate an output by rendering all collected [`SchemaType`]s using the provided
     /// [`SchemaRenderer`], and finally write to the provided file path.
-    pub fn generate<P: AsRef<Path>, R: SchemaRenderer>(
+    pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<O>>(
         &self,
         output_file: P,
         mut renderer: R,

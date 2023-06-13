@@ -1,6 +1,6 @@
 use crate::{SchemaType, Schematic};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum LiteralValue {
     Bool(bool),
     Float(String),
@@ -9,7 +9,7 @@ pub enum LiteralValue {
     String(String),
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct LiteralType {
     pub format: Option<String>,
     pub name: Option<String>,

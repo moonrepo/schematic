@@ -1,7 +1,7 @@
 use crate::{SchemaType, Schematic};
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct ObjectType {
     pub key_type: Box<SchemaType>,
     pub max_fields: Option<usize>,
