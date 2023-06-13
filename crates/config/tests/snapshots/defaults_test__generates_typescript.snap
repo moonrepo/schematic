@@ -6,32 +6,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
-export interface NativeDefaults {
-	boolean: boolean;
-	string: string;
-	number: number;
-	vector: string[];
-}
-
-export interface PartialNativeDefaults {
-	boolean?: boolean | null;
-	string?: string | null;
-	number?: number | null;
-	vector?: string[] | null;
-}
-
 export interface CustomDefaults {
 	boolean: boolean;
 	string: string;
 	number: number;
 	vector: number[];
-}
-
-export interface PartialCustomDefaults {
-	boolean?: boolean | null;
-	string?: string | null;
-	number?: number | null;
-	vector?: number[] | null;
 }
 
 export interface ReqOptDefaults {
@@ -40,20 +19,16 @@ export interface ReqOptDefaults {
 	optional: number | null;
 }
 
-export interface PartialReqOptDefaults {
-	required?: number | null;
-	requiredWithDefault?: number | null;
-	optional?: number | null;
-}
-
 export interface ContextDefaults {
 	count: number;
 	path: string;
 }
 
-export interface PartialContextDefaults {
-	count?: number | null;
-	path?: string | null;
+export interface NativeDefaults {
+	boolean: boolean;
+	string: string;
+	number: number;
+	vector: string[];
 }
 
 export interface NestedDefaults {
@@ -63,9 +38,3 @@ export interface NestedDefaults {
 	nestedMap: Record<string, NativeDefaults>;
 }
 
-export interface PartialNestedDefaults {
-	nested?: NativeDefaults | null;
-	nestedOpt?: NativeDefaults | null;
-	nestedVec?: NativeDefaults[] | null;
-	nestedMap?: Record<string, NativeDefaults> | null;
-}

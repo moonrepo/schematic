@@ -61,8 +61,8 @@ impl SchemaType {
 
     pub fn literal(value: LiteralValue) -> SchemaType {
         SchemaType::Literal(LiteralType {
-            format: None,
             value: Some(value),
+            ..LiteralType::default()
         })
     }
 
@@ -78,12 +78,11 @@ impl SchemaType {
         SchemaType::String(StringType::default())
     }
 
-    pub fn structure<I>(name: &str, fields: I) -> SchemaType
+    pub fn structure<I>(fields: I) -> SchemaType
     where
         I: IntoIterator<Item = SchemaField>,
     {
         SchemaType::Struct(StructType {
-            name: name.to_owned(),
             fields: fields.into_iter().collect(),
             ..StructType::default()
         })
@@ -95,6 +94,7 @@ impl SchemaType {
     {
         SchemaType::Tuple(TupleType {
             items_types: items_types.into_iter().map(Box::new).collect(),
+            ..TupleType::default()
         })
     }
 
@@ -106,6 +106,23 @@ impl SchemaType {
             variants_types: variants_types.into_iter().map(Box::new).collect(),
             ..UnionType::default()
         })
+    }
+
+    pub fn get_name(&self) -> Option<&String> {
+        match self {
+            SchemaType::Boolean => None,
+            SchemaType::Null => None,
+            SchemaType::Unknown => None,
+            SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
+            SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
+            SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
+            SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
+            SchemaType::Object(ObjectType { name, .. }) => name.as_ref(),
+            SchemaType::Struct(StructType { name, .. }) => name.as_ref(),
+            SchemaType::String(StringType { name, .. }) => name.as_ref(),
+            SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
+            SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
+        }
     }
 }
 

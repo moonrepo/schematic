@@ -6,38 +6,33 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
-export enum TestCustom {
-	foo,
-	bar,
-	baz,
-}
-
-export enum SomeEnum {
+export const enum SomeEnum {
 	A,
 	B,
 	C,
 }
 
-export enum BasicEnum {
+export const enum BasicEnum {
+	Foo,
+	// Comment
+	Bar,
+	Baz,
+}
+
+export const enum CustomFormatEnum {
 	Foo,
 	Bar,
 	Baz,
 }
 
-export enum CustomFormatEnum {
+export const enum OtherEnum {
 	Foo,
 	Bar,
 	Baz,
+	Other,
 }
 
-export enum OtherEnum {
-	Foo,
-	Bar,
-	Baz,
-	Other(""),
-}
-
-export enum AliasedEnum {
+export const enum AliasedEnum {
 	Foo,
 	Bar,
 	Baz,
@@ -50,12 +45,12 @@ export type ValueTypes = {
 	vector: string[],
 	map: Record<string, number>,
 	enums: SomeEnum,
-}
+};
 
 export type OptionalValues = {
 	required: boolean,
 	optional: string | null,
-}
+};
 
 export type DefaultValues = {
 	boolean: boolean,
@@ -70,55 +65,103 @@ export type DefaultValues = {
 	tuple: [number, number, number, number],
 	vector: number[],
 	enums: SomeEnum,
-}
+};
 
 export type Serde = {
 	renamed: string,
-}
+};
 
 export type SerdeNative = {
 	renamed: string,
-}
+};
 
 export type Merging = {
 	basic: string,
-}
+};
 
 export type ExtendsString = {
 	extends: string,
-}
+};
 
 export type ExtendsList = {
 	extends: string[],
-}
+};
 
 export type ExtendsEnum = {
 	extends: string | string[],
-}
+};
 
 export type ExtendsOptional = {
 	extends: string[] | null,
-}
+};
 
 export type EnvVars = {
 	basic: string,
 	advanced: string[],
-}
+};
 
 export type NestedValidations = {
 	basic: string,
-}
+};
 
 export type Validations = {
 	basic: string,
 	optional: string | null,
 	nested: NestedValidations,
 	nested2: NestedValidations | null,
-}
+};
 
 export type Comments = {
 	normal: boolean,
+	// Docs
 	docs: boolean,
 	inlineBlock: boolean,
+	/**
+	 * Block
+	 */
 	block: boolean,
-}
+};
+
+export type PartialDefaultValues = {
+	boolean?: boolean | null,
+	booleanFn?: boolean | null,
+	string?: string | null,
+	stringFn?: string | null,
+	fileString?: string | null,
+	longString?: string | null,
+	pathString?: string | null,
+	number?: number | null,
+	array?: number[] | null,
+	tuple?: [number, number, number, number] | null,
+	vector?: number[] | null,
+	enums?: SomeEnum | null,
+};
+
+export type PartialValueTypes = {
+	boolean?: boolean | null,
+	string?: string | null,
+	number?: number | null,
+	vector?: string[] | null,
+	map?: Record<string, number> | null,
+	enums?: SomeEnum | null,
+};
+
+export type PartialNested = {
+	one?: PartialValueTypes | null,
+	two?: PartialValueTypes | null,
+	list?: PartialValueTypes[] | null,
+	map?: Record<string, PartialValueTypes> | null,
+	map2?: Record<string, PartialValueTypes> | null,
+};
+
+export type PartialNestedValidations = {
+	basic?: string | null,
+};
+
+export type PartialValidations = {
+	basic?: string | null,
+	optional?: string | null,
+	nested?: PartialNestedValidations | null,
+	nested2?: PartialNestedValidations | null,
+};
+

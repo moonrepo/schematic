@@ -4,32 +4,17 @@ use crate::validator::{SettingPath, ValidatorError};
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
 
-type MetaString = &'static str;
-
-/// Provides metadata about fields within a configuration struct.
-pub struct MetaField {
-    /// Name of the setting, as it appears in the config file.
-    pub name: MetaString,
-
-    /// Value type of the setting, as a stringified Rust type/path.
-    pub kind: MetaString,
-
-    /// Whether the setting is optional (wrapped in [`Option`]).
-    pub optional: bool,
-}
-
 /// Provides metadata about a configuration struct or enum.
 pub struct Meta {
     /// Name of the struct.
-    pub name: MetaString,
-
-    /// Fields within the struct.
-    pub fields: &'static [MetaField],
+    pub name: &'static str,
 }
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional
 /// by wrapping the values in [`Option`].
-pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
+pub trait PartialConfig:
+    Clone + Default + DeserializeOwned + Schematic + Serialize + Sized
+{
     type Context: Default;
 
     /// Return a partial configuration with values populated with default values for settings

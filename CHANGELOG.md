@@ -2,13 +2,22 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed `T::META.fields` (use `generate_schema()` instead).
+- Moved the TypeScript renderer to `schematic::renderers::typescript::TypeScriptRenderer`.
+  - Removed `schematic::typescript::TypeScriptGenerator`.
+
 #### 🚀 Updates
 
-- Added a new schema layer that defines the structure of built-in Rust types, and schematic
+- Added a new schema layer that defines the structure of built-in Rust types and schematic
   configuration types.
   - Implements the new `Schematic` trait.
   - Types provided by the new `schematic_types` crate.
   - Hidden behind the `schema` feature flag (very experimental).
+- Added `schematic::schema::SchemaGenerator` for generating outputs from schemas.
+  - Uses renderers for generating the appropriate output.
+  - Moves TypeScript to a renderer.
 
 ## 0.8.1
 

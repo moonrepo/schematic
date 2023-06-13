@@ -77,7 +77,6 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl schematic::ConfigEnum for #enum_name {
             const META: schematic::Meta = schematic::Meta {
                 name: #meta_name,
-                fields: &[],
             };
 
             fn variants() -> Vec<#enum_name> {
@@ -149,6 +148,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     ];
 
                     SchemaType::Union(UnionType {
+                        name: Some(#meta_name.into()),
                         variants_types: variants.iter().map(|v| Box::new(v.type_of.clone())).collect(),
                         variants: Some(variants),
                         ..Default::default()

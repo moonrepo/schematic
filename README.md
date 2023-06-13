@@ -2,8 +2,8 @@
 
 > derive(Config)
 
-Schematic is a light-weight, macro-based, layered serde configuration library, with built-in support
-for merge strategies, validation rules, environment variables, and more!
+Schematic is a light-weight, macro-based, layered serde configuration and schema library, with
+built-in support for merge strategies, validation rules, environment variables, and more!
 
 - Load sources from the file system or secure URLs.
 - Source layering that merge into a final configuration.
@@ -14,6 +14,7 @@ for merge strategies, validation rules, environment variables, and more!
 - Environment variable parsing and overrides.
 - Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
 - Supports JSON, TOML, and YAML via serde.
+- Generates schemas that can be rendered to TypeScript, JSONSchema, and more!
 
 > This crate was built specifically for [moon](https://github.com/moonrepo/moon), and many of the
 > design decisions are based around that project and its needs. Because of that, this crate is quite
@@ -600,4 +601,5 @@ The following Cargo features are available:
 
 ### Misc
 
+- `schema` - Generates schemas for schematic types and built-in Rust types.
 - `typescript` - Enables TypeScript types generation.

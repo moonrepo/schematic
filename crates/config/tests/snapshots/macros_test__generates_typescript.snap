@@ -6,15 +6,13 @@ expression: "std::fs::read_to_string(&file).unwrap()"
 
 /* eslint-disable */
 
-export type TestCustom = 1 | 2 | 3;
-
 export type SomeEnum = 'a' | 'b' | 'c';
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 export type CustomFormatEnum = 'FOO' | 'bAr' | 'b-a-z';
 
-export type OtherEnum = 'foo' | 'bar' | 'baz' | '';
+export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
 
 export type AliasedEnum = 'foo' | 'bar' | 'baz';
 
@@ -27,23 +25,9 @@ export interface ValueTypes {
 	enums: SomeEnum;
 }
 
-export interface PartialValueTypes {
-	boolean?: boolean | null;
-	string?: string | null;
-	number?: number | null;
-	vector?: string[] | null;
-	map?: Record<string, number> | null;
-	enums?: SomeEnum | null;
-}
-
 export interface OptionalValues {
 	required: boolean;
 	optional: string | null;
-}
-
-export interface PartialOptionalValues {
-	required?: boolean | null;
-	optional?: string | null;
 }
 
 export interface DefaultValues {
@@ -61,6 +45,61 @@ export interface DefaultValues {
 	enums: SomeEnum;
 }
 
+export interface Serde {
+	renamed: string;
+}
+
+export interface SerdeNative {
+	renamed: string;
+}
+
+export interface Merging {
+	basic: string;
+}
+
+export interface ExtendsString {
+	extends: string;
+}
+
+export interface ExtendsList {
+	extends: string[];
+}
+
+export interface ExtendsEnum {
+	extends: string | string[];
+}
+
+export interface ExtendsOptional {
+	extends: string[] | null;
+}
+
+export interface EnvVars {
+	basic: string;
+	advanced: string[];
+}
+
+export interface NestedValidations {
+	basic: string;
+}
+
+export interface Validations {
+	basic: string;
+	optional: string | null;
+	nested: NestedValidations;
+	nested2: NestedValidations | null;
+}
+
+export interface Comments {
+	normal: boolean;
+	// Docs
+	docs: boolean;
+	inlineBlock: boolean;
+	/**
+	 * Block
+	 */
+	block: boolean;
+}
+
 export interface PartialDefaultValues {
 	boolean?: boolean | null;
 	booleanFn?: boolean | null;
@@ -76,104 +115,31 @@ export interface PartialDefaultValues {
 	enums?: SomeEnum | null;
 }
 
-export interface Serde {
-	renamed: string;
+export interface PartialValueTypes {
+	boolean?: boolean | null;
+	string?: string | null;
+	number?: number | null;
+	vector?: string[] | null;
+	map?: Record<string, number> | null;
+	enums?: SomeEnum | null;
 }
 
-export interface PartialSerde {
-	renamed?: string | null;
-}
-
-export interface SerdeNative {
-	renamed: string;
-}
-
-export interface PartialSerdeNative {
-	renamed?: string | null;
-}
-
-export interface Merging {
-	basic: string;
-}
-
-export interface PartialMerging {
-	basic?: string | null;
-}
-
-export interface ExtendsString {
-	extends: string;
-}
-
-export interface PartialExtendsString {
-	extends?: string | null;
-}
-
-export interface ExtendsList {
-	extends: string[];
-}
-
-export interface PartialExtendsList {
-	extends?: string[] | null;
-}
-
-export interface ExtendsEnum {
-	extends: string | string[];
-}
-
-export interface PartialExtendsEnum {
-	extends?: string | string[] | null;
-}
-
-export interface ExtendsOptional {
-	extends: string[] | null;
-}
-
-export interface PartialExtendsOptional {
-	extends?: string[] | null;
-}
-
-export interface EnvVars {
-	basic: string;
-	advanced: string[];
-}
-
-export interface PartialEnvVars {
-	basic?: string | null;
-	advanced?: string[] | null;
-}
-
-export interface NestedValidations {
-	basic: string;
+export interface PartialNested {
+	one?: PartialValueTypes | null;
+	two?: PartialValueTypes | null;
+	list?: PartialValueTypes[] | null;
+	map?: Record<string, PartialValueTypes> | null;
+	map2?: Record<string, PartialValueTypes> | null;
 }
 
 export interface PartialNestedValidations {
 	basic?: string | null;
 }
 
-export interface Validations {
-	basic: string;
-	optional: string | null;
-	nested: NestedValidations;
-	nested2: NestedValidations | null;
-}
-
 export interface PartialValidations {
 	basic?: string | null;
 	optional?: string | null;
-	nested?: NestedValidations | null;
-	nested2?: NestedValidations | null;
+	nested?: PartialNestedValidations | null;
+	nested2?: PartialNestedValidations | null;
 }
 
-export interface Comments {
-	normal: boolean;
-	docs: boolean;
-	inlineBlock: boolean;
-	block: boolean;
-}
-
-export interface PartialComments {
-	normal?: boolean | null;
-	docs?: boolean | null;
-	inlineBlock?: boolean | null;
-	block?: boolean | null;
-}

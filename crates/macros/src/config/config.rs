@@ -106,26 +106,9 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
-        let casing_format = self.get_casing_format();
-
-        let fields = self
-            .settings
-            .iter()
-            .filter_map(|setting| {
-                if setting.is_skipped() {
-                    None
-                } else {
-                    Some(setting.get_meta(casing_format))
-                }
-            })
-            .collect::<Vec<_>>();
-
         quote! {
             schematic::Meta {
                 name: #name,
-                fields: &[
-                    #(#fields),*
-                ],
             }
         }
     }
@@ -327,9 +310,22 @@ impl<'l> ToTokens for Config<'l> {
                     fn generate_schema() -> schematic::SchemaType {
                         use schematic::schema::*;
 
-                        SchemaType::structure(#config_name, [
-                            #(#schema_types),*
-                        ])
+                        SchemaType::Struct(StructType {
+                            name: Some(#config_name.into()),
+                            fields: vec![
+                                #(#schema_types),*
+                            ],
+                            ..Default::default()
+                        })
+                    }
+                }
+
+                #[automatically_derived]
+                impl schematic::Schematic for #partial_name {
+                    fn generate_schema() -> schematic::SchemaType {
+                        let mut schema = #name::generate_schema();
+                        schematic::internal::partialize_schema(&mut schema);
+                        schema
                     }
                 }
             });
@@ -340,6 +336,9 @@ impl<'l> ToTokens for Config<'l> {
             tokens.extend(quote! {
                 #[automatically_derived]
                 impl schematic::Schematic for #name {}
+
+                #[automatically_derived]
+                impl schematic::Schematic for #partial_name {}
             });
         }
     }
