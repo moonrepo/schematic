@@ -1,7 +1,7 @@
 use crate::{SchemaType, Schematic};
 use std::collections::{BTreeSet, HashSet};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct ArrayType {
     pub items_type: Box<SchemaType>,
     pub max_contains: Option<usize>,

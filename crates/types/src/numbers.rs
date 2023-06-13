@@ -1,6 +1,6 @@
 use crate::{SchemaType, Schematic};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub enum IntegerKind {
     Isize,
     I8,
@@ -26,7 +26,7 @@ impl IntegerKind {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct IntegerType {
     pub format: Option<String>,
     pub kind: IntegerKind,
@@ -62,22 +62,22 @@ impl_int!(i32, IntegerKind::I32);
 impl_int!(i64, IntegerKind::I64);
 impl_int!(i128, IntegerKind::I128);
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub enum FloatKind {
     #[default]
     F32,
     F64,
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct FloatType {
     pub format: Option<String>,
     pub kind: FloatKind,
-    pub max: Option<usize>,
-    pub max_exclusive: Option<usize>,
-    pub min: Option<usize>,
-    pub min_exclusive: Option<usize>,
-    pub multiple_of: Option<usize>,
+    pub max: Option<f64>,
+    pub max_exclusive: Option<f64>,
+    pub min: Option<f64>,
+    pub min_exclusive: Option<f64>,
+    pub multiple_of: Option<f64>,
     pub name: Option<String>,
 }
 

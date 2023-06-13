@@ -16,7 +16,7 @@ pub use structs::*;
 pub use tuples::*;
 pub use unions::*;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub enum SchemaType {
     Boolean,
     Null,
@@ -126,7 +126,7 @@ impl SchemaType {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct SchemaField {
     pub name: Option<String>,
     pub description: Option<String>,

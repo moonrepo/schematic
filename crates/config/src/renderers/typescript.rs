@@ -125,7 +125,7 @@ impl TypeScriptRenderer {
     }
 }
 
-impl SchemaRenderer for TypeScriptRenderer {
+impl SchemaRenderer<String> for TypeScriptRenderer {
     fn is_reference(&self, name: &str) -> bool {
         self.references.contains(name)
     }
@@ -170,6 +170,10 @@ impl SchemaRenderer for TypeScriptRenderer {
             self.render_schema(&object.key_type)?,
             self.render_schema(&object.value_type)?
         ))
+    }
+
+    fn render_reference(&self, reference: &str) -> RenderResult {
+        Ok(reference.into())
     }
 
     fn render_string(&self, _: &StringType) -> RenderResult {

@@ -2,7 +2,7 @@ use crate::{SchemaType, Schematic};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct StringType {
     pub format: Option<String>,
     pub max_length: Option<usize>,
