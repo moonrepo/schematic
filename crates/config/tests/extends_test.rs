@@ -209,6 +209,27 @@ fn extends_from_optional() {
     );
 }
 
+#[cfg(feature = "json_schema")]
+#[test]
+fn generates_json_schema() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("schema.json");
+
+    let mut generator = schema::SchemaGenerator::default();
+    generator.add::<ExtendsString>();
+    generator.add::<ExtendsStringOptional>();
+    generator.add::<ExtendsList>();
+    generator.add::<ExtendsEnum>();
+    generator
+        .generate(&file, renderers::json_schema::JsonSchemaRenderer::default())
+        .unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}
+
 #[cfg(feature = "typescript")]
 #[test]
 fn generates_typescript() {

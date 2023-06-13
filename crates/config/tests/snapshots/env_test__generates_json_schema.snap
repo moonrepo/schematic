@@ -1,0 +1,67 @@
+---
+source: crates/config/tests/env_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnvVarsPrefixed",
+  "type": "object",
+  "required": [
+    "bool",
+    "list1",
+    "list2",
+    "nested",
+    "number",
+    "path",
+    "string"
+  ],
+  "properties": {
+    "bool": {
+      "type": "boolean"
+    },
+    "list1": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "list2": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "nested": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/EnvVarsNested"
+        }
+      ]
+    },
+    "number": {
+      "type": "number"
+    },
+    "path": {
+      "type": "string",
+      "format": "path"
+    },
+    "string": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "EnvVarsNested": {
+      "title": "EnvVarsNested",
+      "type": "object",
+      "required": [
+        "string"
+      ],
+      "properties": {
+        "string": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+
