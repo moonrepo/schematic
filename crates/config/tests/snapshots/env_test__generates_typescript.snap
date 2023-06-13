@@ -10,10 +10,6 @@ export interface EnvVarsNested {
 	string: string;
 }
 
-export interface PartialEnvVarsNested {
-	string?: string | null;
-}
-
 export interface EnvVarsPrefixed {
 	string: string;
 	number: number;
@@ -24,12 +20,3 @@ export interface EnvVarsPrefixed {
 	nested: EnvVarsNested;
 }
 
-export interface PartialEnvVarsPrefixed {
-	string?: string | null;
-	number?: number | null;
-	bool?: boolean | null;
-	path?: string | null;
-	list1?: string[] | null;
-	list2?: number[] | null;
-	nested?: EnvVarsNested | null;
-}

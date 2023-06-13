@@ -1,3 +1,3 @@
-/// Utilities for generating TypeScript types.
+/// Renders TypeScript types.
 #[cfg(feature = "typescript")]
 pub mod typescript;

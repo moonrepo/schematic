@@ -168,7 +168,7 @@ impl SchemaRenderer for TypeScriptRenderer {
 
             row.push_str(&self.render_schema(&field.type_of)?);
 
-            if field.nullable {
+            if field.nullable && !row.contains(" null") {
                 row.push_str(" | null");
             }
 
@@ -209,6 +209,12 @@ impl SchemaRenderer for TypeScriptRenderer {
     }
 
     fn render_schema(&self, schema: &SchemaType) -> RenderResult {
+        if let Some(name) = schema.get_name() {
+            if self.references.contains(name) {
+                return Ok(name.clone());
+            }
+        }
+
         match schema {
             SchemaType::Boolean => self.render_boolean(),
             SchemaType::Null => self.render_null(),

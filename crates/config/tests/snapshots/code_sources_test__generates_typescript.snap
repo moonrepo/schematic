@@ -13,9 +13,3 @@ export interface Config {
 	vector: string[];
 }
 
-export interface PartialConfig {
-	boolean?: boolean | null;
-	string?: string | null;
-	number?: number | null;
-	vector?: string[] | null;
-}

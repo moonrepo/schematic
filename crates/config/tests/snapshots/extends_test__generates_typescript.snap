@@ -11,19 +11,9 @@ export interface ExtendsString {
 	value: number[];
 }
 
-export interface PartialExtendsString {
-	extends?: string | null;
-	value?: number[] | null;
-}
-
 export interface ExtendsStringOptional {
 	extends: string | null;
 	value: number[];
-}
-
-export interface PartialExtendsStringOptional {
-	extends?: string | null;
-	value?: number[] | null;
 }
 
 export interface ExtendsList {
@@ -31,17 +21,8 @@ export interface ExtendsList {
 	value: number[];
 }
 
-export interface PartialExtendsList {
-	extends?: string[] | null;
-	value?: number[] | null;
-}
-
 export interface ExtendsEnum {
 	extends: string | string[];
 	value: number[];
 }
 
-export interface PartialExtendsEnum {
-	extends?: string | string[] | null;
-	value?: number[] | null;
-}

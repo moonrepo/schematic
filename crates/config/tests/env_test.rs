@@ -211,10 +211,11 @@ fn generates_typescript() {
     let sandbox = create_empty_sandbox();
     let file = sandbox.path().join("config.ts");
 
-    let mut generator = typescript::TypeScriptGenerator::new(file.clone());
-    generator.add::<EnvVarsNested>();
+    let mut generator = schema::SchemaGenerator::default();
     generator.add::<EnvVarsPrefixed>();
-    generator.generate().unwrap();
+    generator
+        .generate(&file, renderers::typescript::TypeScriptRenderer::default())
+        .unwrap();
 
     assert!(file.exists());
     assert_snapshot!(std::fs::read_to_string(file).unwrap());

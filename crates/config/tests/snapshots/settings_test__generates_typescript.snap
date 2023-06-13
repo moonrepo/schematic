@@ -12,20 +12,9 @@ export interface StandardSettings {
 	opt: string | null;
 }
 
-export interface PartialStandardSettings {
-	req?: string | null;
-	reqDefault?: string | null;
-	opt?: string | null;
-}
-
 export interface NestedSettings {
 	nestedReq: StandardSettings;
 	nestedOpt: StandardSettings | null;
-}
-
-export interface PartialNestedSettings {
-	nestedReq?: StandardSettings | null;
-	nestedOpt?: StandardSettings | null;
 }
 
 export interface NestedVecSettings {
@@ -33,17 +22,8 @@ export interface NestedVecSettings {
 	nestedOpt: StandardSettings[] | null;
 }
 
-export interface PartialNestedVecSettings {
-	nestedReq?: StandardSettings[] | null;
-	nestedOpt?: StandardSettings[] | null;
-}
-
 export interface NestedMapSettings {
 	nestedReq: Record<string, StandardSettings>;
 	nestedOpt: Record<string, StandardSettings> | null;
 }
 
-export interface PartialNestedMapSettings {
-	nestedReq?: Record<string, StandardSettings> | null;
-	nestedOpt?: Record<string, StandardSettings> | null;
-}
