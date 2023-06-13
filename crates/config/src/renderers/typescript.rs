@@ -146,7 +146,13 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     }
 
     fn render_array(&self, array: &ArrayType) -> RenderResult {
-        Ok(format!("{}[]", self.render_schema(&array.items_type)?))
+        let out = self.render_schema(&array.items_type)?;
+
+        Ok(if out.contains('|') {
+            format!("({})[]", out)
+        } else {
+            format!("{}[]", out)
+        })
     }
 
     fn render_boolean(&self) -> RenderResult {

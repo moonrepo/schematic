@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Generator
+  - Fixed an issue where nested enums/unions would sometimes not use references.
+
 ## 0.9.2
 
 #### 🐞 Fixes

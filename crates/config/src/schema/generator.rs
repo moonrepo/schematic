@@ -7,7 +7,7 @@ use std::path::Path;
 
 /// A generator collects [`SchemaType`]s and renders them to a specific file,
 /// using a renderer that implements [`SchemaRenderer`].
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct SchemaGenerator {
     references: HashSet<String>,
     schemas: Vec<SchemaType>,
@@ -16,12 +16,61 @@ pub struct SchemaGenerator {
 impl SchemaGenerator {
     /// Add a [`SchemaType`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
-        self.add_schema(T::generate_schema());
+        let schema = T::generate_schema();
+        self.add_schema(&schema);
     }
 
     /// Add an explicit [`SchemaType`] to be rendered, and recursively add any nested schemas.
     /// Schemas with a name will be considered a reference.
-    pub fn add_schema(&mut self, schema: SchemaType) {
+    pub fn add_schema(&mut self, schema: &SchemaType) {
+        // Recursively add any nested schema types
+        match &schema {
+            SchemaType::Array(ArrayType { items_type, .. }) => {
+                self.add_schema(items_type);
+            }
+            SchemaType::Enum(EnumType { variants, .. }) => {
+                if let Some(variants) = variants.as_ref() {
+                    for field in variants {
+                        self.add_schema(&field.type_of);
+                    }
+                }
+            }
+            SchemaType::Object(ObjectType {
+                key_type,
+                value_type,
+                ..
+            }) => {
+                self.add_schema(key_type);
+                self.add_schema(value_type);
+            }
+            SchemaType::Struct(StructType { fields, .. }) => {
+                for field in fields {
+                    self.add_schema(&field.type_of);
+                }
+            }
+            SchemaType::Tuple(TupleType { items_types, .. }) => {
+                for item in items_types {
+                    self.add_schema(item);
+                }
+            }
+            SchemaType::Union(UnionType {
+                variants_types,
+                variants,
+                ..
+            }) => {
+                for variant in variants_types {
+                    self.add_schema(variant);
+                }
+
+                if let Some(variants) = variants.as_ref() {
+                    for field in variants {
+                        self.add_schema(&field.type_of);
+                    }
+                }
+            }
+            _ => {}
+        };
+
         // Store the name so that we can use it as a reference for other types
         if let Some(name) = schema.get_name() {
             // Type has already been added
@@ -36,38 +85,7 @@ impl SchemaGenerator {
             return;
         }
 
-        // Recursively add any nested schema types
-        match &schema {
-            SchemaType::Array(ArrayType { items_type, .. }) => {
-                self.add_schema(*(*items_type).clone());
-            }
-            SchemaType::Object(ObjectType {
-                key_type,
-                value_type,
-                ..
-            }) => {
-                self.add_schema(*(*key_type).clone());
-                self.add_schema(*(*value_type).clone());
-            }
-            SchemaType::Struct(StructType { fields, .. }) => {
-                for field in fields {
-                    self.add_schema(field.type_of.clone());
-                }
-            }
-            SchemaType::Tuple(TupleType { items_types, .. }) => {
-                for item in items_types {
-                    self.add_schema(*(*item).clone());
-                }
-            }
-            SchemaType::Union(UnionType { variants_types, .. }) => {
-                for variant in variants_types {
-                    self.add_schema(*(*variant).clone());
-                }
-            }
-            _ => {}
-        };
-
-        self.schemas.push(schema);
+        self.schemas.push(schema.to_owned());
     }
 
     /// Generate an output by rendering all collected [`SchemaType`]s using the provided
