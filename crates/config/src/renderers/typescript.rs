@@ -33,6 +33,7 @@ pub struct TypeScriptOptions {
     pub object_format: ObjectFormat,
 }
 
+/// Renders TypeScript types from a schema.
 #[derive(Default)]
 pub struct TypeScriptRenderer {
     options: TypeScriptOptions,
@@ -47,17 +48,17 @@ impl TypeScriptRenderer {
         }
     }
 
-    pub fn export_type_alias(&self, name: &str, value: &str) -> RenderResult {
+    fn export_type_alias(&self, name: &str, value: String) -> RenderResult {
         Ok(format!("export type {} = {};", name, value))
     }
 
-    pub fn export_enum_type(&self, name: &str, uni: &UnionType) -> RenderResult {
+    fn export_enum_type(&self, name: &str, uni: &UnionType) -> RenderResult {
         if matches!(
             self.options.enum_format,
             EnumFormat::Enum | EnumFormat::ValuedEnum
         ) {
             let Some(variants) = &uni.variants else {
-                return self.export_type_alias(name, &self.render_union(uni)?);
+                return self.export_type_alias(name, self.render_union(uni)?);
             };
 
             let mut fields = vec![];
@@ -89,17 +90,17 @@ impl TypeScriptRenderer {
             });
         }
 
-        self.export_type_alias(name, &self.render_union(uni)?)
+        self.export_type_alias(name, self.render_union(uni)?)
     }
 
-    pub fn export_object_type(&self, name: &str, structure: &StructType) -> RenderResult {
+    fn export_object_type(&self, name: &str, structure: &StructType) -> RenderResult {
         let value = self.render_struct(structure)?;
 
         if matches!(self.options.object_format, ObjectFormat::Interface) {
             return Ok(format!("export interface {} {}", name, value));
         }
 
-        self.export_type_alias(name, &value)
+        self.export_type_alias(name, value)
     }
 }
 
@@ -173,9 +174,9 @@ impl SchemaRenderer for TypeScriptRenderer {
             }
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
-                row.push_str(";");
+                row.push(';');
             } else {
-                row.push_str(",");
+                row.push(',');
             }
 
             out.push(row);
@@ -244,7 +245,7 @@ impl SchemaRenderer for TypeScriptRenderer {
                 outputs.push(match schema {
                     SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
                     SchemaType::Union(inner) => self.export_enum_type(name, inner)?,
-                    _ => self.export_type_alias(name, &self.render_schema(schema)?)?,
+                    _ => self.export_type_alias(name, self.render_schema(schema)?)?,
                 });
             }
         }

@@ -17,15 +17,13 @@ pub mod internal;
 /// Built-in `merge` functions.
 pub mod merge;
 
+/// Renderers for generating schemas.
+#[cfg(feature = "schema")]
+pub mod renderers;
+
 /// Utilities for generating schemas.
 #[cfg(feature = "schema")]
 pub mod schema;
-
-pub mod renderers;
-
-/// Utilities for generating TypeScript types.
-#[cfg(feature = "typescript")]
-pub mod typescript;
 
 /// Built-in `validate` functions.
 pub mod validate;

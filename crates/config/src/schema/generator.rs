@@ -73,13 +73,13 @@ impl SchemaGenerator {
         let output_file = output_file.as_ref();
 
         let mut output = renderer.render(&self.schemas, &self.references)?;
-        output.push_str("\n");
+        output.push('\n');
 
         if let Some(parent) = output_file.parent() {
             fs::create_dir_all(parent).into_diagnostic()?;
         }
 
-        fs::write(&output_file, output).into_diagnostic()?;
+        fs::write(output_file, output).into_diagnostic()?;
 
         Ok(())
     }

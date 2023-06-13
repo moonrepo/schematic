@@ -42,7 +42,7 @@ json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "schematic_macros/json_schema"]
 schema = ["schematic_macros/schema"]
 toml = ["dep:toml"]
-typescript = ["schematic_macros/typescript"]
+typescript = ["schema", "schematic_macros/typescript"]
 yaml = ["dep:serde_yaml"]
 
 valid_email = ["garde/email"]
