@@ -1,0 +1,33 @@
+---
+source: crates/config/tests/code_sources_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Config",
+  "type": "object",
+  "required": [
+    "boolean",
+    "number",
+    "string",
+    "vector"
+  ],
+  "properties": {
+    "boolean": {
+      "type": "boolean"
+    },
+    "number": {
+      "type": "number"
+    },
+    "string": {
+      "type": "string"
+    },
+    "vector": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
+

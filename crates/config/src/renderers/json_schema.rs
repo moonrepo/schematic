@@ -1,10 +1,10 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use schemars::gen::SchemaSettings;
 use schemars::schema::*;
 use schematic_types::*;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-#[derive(Default)]
-pub struct JsonSchemaOptions {}
+pub type JsonSchemaOptions = SchemaSettings;
 
 /// Renders JsonSchema types from a schema.
 #[derive(Default)]
@@ -21,23 +21,12 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_metadata(&self, name: Option<&String>) -> Option<Box<Metadata>> {
-        if let Some(name) = name {
-            Some(Box::new(Metadata {
-                title: Some(name.to_owned()),
-                ..Default::default()
-            }))
-        } else {
-            None
-        }
-    }
-
     fn create_schema_from_field(&self, field: &SchemaField) -> RenderResult<Schema> {
         let mut schema = self.render_schema(&field.type_of)?;
 
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
-                title: field.name.clone(),
+                // title: field.name.clone(),
                 description: field.description.clone(),
                 deprecated: field.deprecated,
                 read_only: field.read_only,
@@ -58,14 +47,13 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_array(&self, array: &ArrayType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
-            metadata: self.create_metadata(array.name.as_ref()),
             array: Some(Box::new(ArrayValidation {
                 items: Some(SingleOrVec::Single(Box::new(
                     self.render_schema(&array.items_type)?,
                 ))),
                 max_items: array.max_length.map(|i| i as u32),
                 min_items: array.min_length.map(|i| i as u32),
-                unique_items: Some(array.unique),
+                unique_items: array.unique,
                 ..Default::default()
             })),
             ..Default::default()
@@ -84,7 +72,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_float(&self, float: &FloatType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
-            metadata: self.create_metadata(float.name.as_ref()),
             format: float.format.clone(),
             number: Some(Box::new(NumberValidation {
                 exclusive_maximum: float.max_exclusive,
@@ -102,7 +89,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_integer(&self, integer: &IntegerType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
-            metadata: self.create_metadata(integer.name.as_ref()),
             format: integer.format.clone(),
             number: Some(Box::new(NumberValidation {
                 exclusive_maximum: integer.max_exclusive.map(|i| i as f64),
@@ -142,7 +128,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_object(&self, object: &ObjectType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            metadata: self.create_metadata(object.name.as_ref()),
             object: Some(Box::new(ObjectValidation {
                 max_properties: object.max_fields.map(|i| i as u32),
                 min_properties: object.min_fields.map(|i| i as u32),
@@ -167,7 +152,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_string(&self, string: &StringType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
-            metadata: self.create_metadata(string.name.as_ref()),
             format: string.format.clone(),
             string: Some(Box::new(StringValidation {
                 max_length: string.max_length.map(|i| i as u32),
@@ -196,7 +180,14 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            metadata: self.create_metadata(structure.name.as_ref()),
+            metadata: if let Some(name) = &structure.name {
+                Some(Box::new(Metadata {
+                    title: Some(name.to_owned()),
+                    ..Default::default()
+                }))
+            } else {
+                None
+            },
             object: Some(Box::new(ObjectValidation {
                 required,
                 properties,
@@ -217,7 +208,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
-            metadata: self.create_metadata(tuple.name.as_ref()),
             array: Some(Box::new(ArrayValidation {
                 items: Some(SingleOrVec::Vec(items)),
                 max_items: Some(tuple.items_types.len() as u32),
@@ -253,19 +243,27 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         self.references.extend(references.to_owned());
 
         let mut root_schema = RootSchema::default();
+        root_schema.meta_schema = self.options.meta_schema.clone();
 
         for (i, schema) in schemas.iter().enumerate() {
+            let name = schema.get_name().unwrap().to_owned();
+
             // The last schema in the generator is the root schema
             if i == schemas.len() - 1 {
+                self.references.remove(&name);
+
                 root_schema.schema = self.render_schema(schema)?.into_object();
 
             // Otherwise the others are all ref definitions
             } else {
-                root_schema.definitions.insert(
-                    schema.get_name().unwrap().to_owned(),
-                    self.render_schema(schema)?,
-                );
+                root_schema
+                    .definitions
+                    .insert(name, self.render_schema(schema)?);
             }
+        }
+
+        for visitor in &mut self.options.visitors {
+            visitor.visit_root_schema(&mut root_schema)
         }
 
         Ok(serde_json::to_string_pretty(&root_schema).unwrap())

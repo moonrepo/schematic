@@ -9,7 +9,7 @@ pub struct ArrayType {
     pub min_contains: Option<usize>,
     pub min_length: Option<usize>,
     pub name: Option<String>,
-    pub unique: bool,
+    pub unique: Option<bool>,
 }
 
 macro_rules! impl_list {
