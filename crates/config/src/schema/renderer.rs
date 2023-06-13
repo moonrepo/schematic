@@ -8,16 +8,19 @@ pub trait SchemaRenderer<O = String> {
     /// Return true of the provided name is a referenced type.
     fn is_reference(&self, name: &str) -> bool;
 
-    /// Render a [`ArrayType`] to a string.
+    /// Render an [`ArrayType`] to a string.
     fn render_array(&self, array: &ArrayType) -> RenderResult<O>;
 
     /// Render a boolean type to a string.
     fn render_boolean(&self) -> RenderResult<O>;
 
+    /// Render an [`EnumType`] to a string.
+    fn render_enum(&self, enu: &EnumType) -> RenderResult<O>;
+
     /// Render a [`FloatType`] to a string.
     fn render_float(&self, float: &FloatType) -> RenderResult<O>;
 
-    /// Render a [`IntegerType`] to a string.
+    /// Render an [`IntegerType`] to a string.
     fn render_integer(&self, integer: &IntegerType) -> RenderResult<O>;
 
     /// Render a [`LiteralType`] to a string.
@@ -26,7 +29,7 @@ pub trait SchemaRenderer<O = String> {
     /// Render a null type to a string.
     fn render_null(&self) -> RenderResult<O>;
 
-    /// Render a [`ObjectType`] to a string.
+    /// Render an [`ObjectType`] to a string.
     fn render_object(&self, object: &ObjectType) -> RenderResult<O>;
 
     /// Render a referenced type to a string.
@@ -67,6 +70,7 @@ pub trait SchemaRenderer<O = String> {
             SchemaType::Null => self.render_null(),
             SchemaType::Unknown => self.render_unknown(),
             SchemaType::Array(array) => self.render_array(array),
+            SchemaType::Enum(enu) => self.render_enum(enu),
             SchemaType::Float(float) => self.render_float(float),
             SchemaType::Integer(integer) => self.render_integer(integer),
             SchemaType::Literal(literal) => self.render_literal(literal),

@@ -1,0 +1,616 @@
+---
+source: crates/config/tests/macros_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PartialValidations",
+  "type": "object",
+  "properties": {
+    "basic": {
+      "type": "string"
+    },
+    "nested": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/PartialNestedValidations"
+        }
+      ]
+    },
+    "nested2": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/PartialNestedValidations"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "optional": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "AliasedEnum": {
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
+    "BasicEnum": {
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
+    "Comments": {
+      "title": "Comments",
+      "type": "object",
+      "required": [
+        "block",
+        "docs",
+        "inlineBlock",
+        "normal"
+      ],
+      "properties": {
+        "block": {
+          "description": "Block",
+          "deprecated": true,
+          "type": "boolean"
+        },
+        "docs": {
+          "description": "Docs",
+          "deprecated": true,
+          "type": "boolean"
+        },
+        "inlineBlock": {
+          "type": "boolean"
+        },
+        "normal": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CustomFormatEnum": {
+      "type": "string",
+      "enum": [
+        "FOO",
+        "bAr",
+        "b-a-z"
+      ]
+    },
+    "DefaultValues": {
+      "title": "DefaultValues",
+      "type": "object",
+      "required": [
+        "array",
+        "boolean",
+        "booleanFn",
+        "enums",
+        "fileString",
+        "longString",
+        "number",
+        "pathString",
+        "string",
+        "stringFn",
+        "tuple",
+        "vector"
+      ],
+      "properties": {
+        "array": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "booleanFn": {
+          "type": "boolean"
+        },
+        "enums": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/SomeEnum"
+            }
+          ]
+        },
+        "fileString": {
+          "type": "string"
+        },
+        "longString": {
+          "type": "string"
+        },
+        "number": {
+          "type": "number"
+        },
+        "pathString": {
+          "type": "string",
+          "format": "path"
+        },
+        "string": {
+          "type": "string"
+        },
+        "stringFn": {
+          "type": "string"
+        },
+        "tuple": {
+          "type": "array",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 4,
+          "minItems": 4
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "EnvVars": {
+      "title": "EnvVars",
+      "type": "object",
+      "required": [
+        "advanced",
+        "basic"
+      ],
+      "properties": {
+        "advanced": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "basic": {
+          "type": "string"
+        }
+      }
+    },
+    "ExtendsEnum": {
+      "title": "ExtendsEnum",
+      "type": "object",
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ExtendsList": {
+      "title": "ExtendsList",
+      "type": "object",
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ExtendsOptional": {
+      "title": "ExtendsOptional",
+      "type": "object",
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ExtendsString": {
+      "title": "ExtendsString",
+      "type": "object",
+      "required": [
+        "extends"
+      ],
+      "properties": {
+        "extends": {
+          "type": "string"
+        }
+      }
+    },
+    "Merging": {
+      "title": "Merging",
+      "type": "object",
+      "required": [
+        "basic"
+      ],
+      "properties": {
+        "basic": {
+          "type": "string"
+        }
+      }
+    },
+    "NestedValidations": {
+      "title": "NestedValidations",
+      "type": "object",
+      "required": [
+        "basic"
+      ],
+      "properties": {
+        "basic": {
+          "type": "string"
+        }
+      }
+    },
+    "OptionalValues": {
+      "title": "OptionalValues",
+      "type": "object",
+      "required": [
+        "optional",
+        "required"
+      ],
+      "properties": {
+        "optional": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "OtherEnum": {
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
+    "PartialDefaultValues": {
+      "title": "PartialDefaultValues",
+      "type": "object",
+      "properties": {
+        "array": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "booleanFn": {
+          "type": "boolean"
+        },
+        "enums": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/SomeEnum"
+            }
+          ]
+        },
+        "fileString": {
+          "type": "string"
+        },
+        "longString": {
+          "type": "string"
+        },
+        "number": {
+          "type": "number"
+        },
+        "pathString": {
+          "type": "string",
+          "format": "path"
+        },
+        "string": {
+          "type": "string"
+        },
+        "stringFn": {
+          "type": "string"
+        },
+        "tuple": {
+          "type": "array",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 4,
+          "minItems": 4
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "PartialNested": {
+      "title": "PartialNested",
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PartialValueTypes"
+          }
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PartialValueTypes"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "map2": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/PartialValueTypes"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "one": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/PartialValueTypes"
+            }
+          ]
+        },
+        "two": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/PartialValueTypes"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "PartialNestedValidations": {
+      "title": "PartialNestedValidations",
+      "type": "object",
+      "properties": {
+        "basic": {
+          "type": "string"
+        }
+      }
+    },
+    "PartialValueTypes": {
+      "title": "PartialValueTypes",
+      "type": "object",
+      "properties": {
+        "boolean": {
+          "type": "boolean"
+        },
+        "enums": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/SomeEnum"
+            }
+          ]
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "number": {
+          "type": "number"
+        },
+        "string": {
+          "type": "string"
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Serde": {
+      "title": "Serde",
+      "type": "object",
+      "required": [
+        "renamed"
+      ],
+      "properties": {
+        "renamed": {
+          "type": "string"
+        }
+      }
+    },
+    "SerdeNative": {
+      "title": "SerdeNative",
+      "type": "object",
+      "required": [
+        "renamed"
+      ],
+      "properties": {
+        "renamed": {
+          "type": "string"
+        }
+      }
+    },
+    "SomeEnum": {
+      "type": "string",
+      "enum": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "Validations": {
+      "title": "Validations",
+      "type": "object",
+      "required": [
+        "basic",
+        "nested",
+        "nested2",
+        "optional"
+      ],
+      "properties": {
+        "basic": {
+          "type": "string"
+        },
+        "nested": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/NestedValidations"
+            }
+          ]
+        },
+        "nested2": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/NestedValidations"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "optional": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ValueTypes": {
+      "title": "ValueTypes",
+      "type": "object",
+      "required": [
+        "boolean",
+        "enums",
+        "map",
+        "number",
+        "string",
+        "vector"
+      ],
+      "properties": {
+        "boolean": {
+          "type": "boolean"
+        },
+        "enums": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/SomeEnum"
+            }
+          ]
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "number": {
+          "type": "number"
+        },
+        "string": {
+          "type": "string"
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
+

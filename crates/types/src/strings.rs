@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default)]
 pub struct StringType {
+    pub enum_values: Option<Vec<String>>,
     pub format: Option<String>,
     pub max_length: Option<usize>,
     pub min_length: Option<usize>,

@@ -1,4 +1,5 @@
 mod arrays;
+mod enums;
 mod literals;
 mod numbers;
 mod objects;
@@ -8,6 +9,7 @@ mod tuples;
 mod unions;
 
 pub use arrays::*;
+pub use enums::*;
 pub use literals::*;
 pub use numbers::*;
 pub use objects::*;
@@ -23,6 +25,7 @@ pub enum SchemaType {
     #[default]
     Unknown,
     Array(ArrayType),
+    Enum(EnumType),
     Float(FloatType),
     Integer(IntegerType),
     Literal(LiteralType),
@@ -114,6 +117,7 @@ impl SchemaType {
             SchemaType::Null => None,
             SchemaType::Unknown => None,
             SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
+            SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
             SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
             SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
             SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),

@@ -12,7 +12,7 @@ export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 export type CustomFormatEnum = 'FOO' | 'bAr' | 'b-a-z';
 
-export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
+export type OtherEnum = 'foo' | 'bar' | 'baz';
 
 export type AliasedEnum = 'foo' | 'bar' | 'baz';
 

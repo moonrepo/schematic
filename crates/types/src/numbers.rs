@@ -28,6 +28,7 @@ impl IntegerKind {
 
 #[derive(Clone, Debug, Default)]
 pub struct IntegerType {
+    pub enum_values: Option<Vec<isize>>,
     pub format: Option<String>,
     pub kind: IntegerKind,
     pub max: Option<usize>,
@@ -71,6 +72,7 @@ pub enum FloatKind {
 
 #[derive(Clone, Debug, Default)]
 pub struct FloatType {
+    pub enum_values: Option<Vec<f64>>,
     pub format: Option<String>,
     pub kind: FloatKind,
     pub max: Option<f64>,

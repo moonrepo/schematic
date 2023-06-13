@@ -2,6 +2,7 @@ use crate::schema::{RenderResult, SchemaRenderer};
 use schemars::gen::SchemaSettings;
 use schemars::schema::*;
 use schematic_types::*;
+use serde_json::{Number, Value};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 pub type JsonSchemaOptions = SchemaSettings;
@@ -27,7 +28,10 @@ impl JsonSchemaRenderer {
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
                 // title: field.name.clone(),
-                description: field.description.clone(),
+                description: field
+                    .description
+                    .clone()
+                    .map(|d| d.trim().replace("* ", "").replace(" * ", "")),
                 deprecated: field.deprecated,
                 read_only: field.read_only,
                 write_only: field.write_only,
@@ -69,9 +73,51 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }))
     }
 
+    fn render_enum(&self, enu: &EnumType) -> RenderResult<Schema> {
+        let mut instance_type = InstanceType::String;
+        let mut enum_values = vec![];
+
+        for value in &enu.values {
+            match value.value.clone().unwrap() {
+                LiteralValue::Bool(v) => {
+                    instance_type = InstanceType::Boolean;
+                    enum_values.push(Value::Bool(v));
+                }
+                LiteralValue::Float(v) => {
+                    instance_type = InstanceType::Number;
+                    enum_values.push(Value::Number(Number::from_f64(v.parse().unwrap()).unwrap()));
+                }
+                LiteralValue::Int(v) => {
+                    instance_type = InstanceType::Number;
+                    enum_values.push(Value::Number(Number::from(v)));
+                }
+                LiteralValue::UInt(v) => {
+                    instance_type = InstanceType::Number;
+                    enum_values.push(Value::Number(Number::from(v)));
+                }
+                LiteralValue::String(v) => {
+                    instance_type = InstanceType::String;
+                    enum_values.push(Value::String(v));
+                }
+            };
+        }
+
+        Ok(Schema::Object(SchemaObject {
+            instance_type: Some(SingleOrVec::Single(Box::new(instance_type))),
+            enum_values: Some(enum_values),
+            ..Default::default()
+        }))
+    }
+
     fn render_float(&self, float: &FloatType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
+            enum_values: float.enum_values.clone().map(|values| {
+                values
+                    .into_iter()
+                    .map(|v| Value::Number(Number::from_f64(v).unwrap()))
+                    .collect()
+            }),
             format: float.format.clone(),
             number: Some(Box::new(NumberValidation {
                 exclusive_maximum: float.max_exclusive,
@@ -89,6 +135,12 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_integer(&self, integer: &IntegerType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
+            enum_values: integer.enum_values.clone().map(|values| {
+                values
+                    .into_iter()
+                    .map(|v| Value::Number(Number::from(v)))
+                    .collect()
+            }),
             format: integer.format.clone(),
             number: Some(Box::new(NumberValidation {
                 exclusive_maximum: integer.max_exclusive.map(|i| i as f64),
@@ -103,18 +155,8 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_literal(&self, literal: &LiteralType) -> RenderResult<Schema> {
-        // TODO?
-        // if let Some(value) = &literal.value {
-        //     return Ok(match value {
-        //         LiteralValue::Bool(inner) => inner.to_string(),
-        //         LiteralValue::Float(inner) => inner.to_owned(),
-        //         LiteralValue::Int(inner) => inner.to_string(),
-        //         LiteralValue::UInt(inner) => inner.to_string(),
-        //         LiteralValue::String(inner) => format!("'{inner}'"),
-        //     });
-        // }
-
+    // Note: This isn't used...
+    fn render_literal(&self, _: &LiteralType) -> RenderResult<Schema> {
         self.render_unknown()
     }
 
@@ -152,6 +194,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_string(&self, string: &StringType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
+            enum_values: string
+                .enum_values
+                .clone()
+                .map(|values| values.into_iter().map(Value::String).collect()),
             format: string.format.clone(),
             string: Some(Box::new(StringValidation {
                 max_length: string.max_length.map(|i| i as u32),
@@ -169,6 +215,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let mut required = BTreeSet::from_iter(structure.required.clone());
 
         for field in &structure.fields {
+            if field.hidden {
+                continue;
+            }
+
             let name = field.name.clone().unwrap();
 
             if !field.optional {
@@ -180,14 +230,12 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            metadata: if let Some(name) = &structure.name {
-                Some(Box::new(Metadata {
-                    title: Some(name.to_owned()),
+            metadata: structure.name.as_ref().map(|n| {
+                Box::new(Metadata {
+                    title: Some(n.to_owned()),
                     ..Default::default()
-                }))
-            } else {
-                None
-            },
+                })
+            }),
             object: Some(Box::new(ObjectValidation {
                 required,
                 properties,
@@ -254,8 +302,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
         self.references.extend(references.to_owned());
 
-        let mut root_schema = RootSchema::default();
-        root_schema.meta_schema = self.options.meta_schema.clone();
+        let mut root_schema = RootSchema {
+            meta_schema: self.options.meta_schema.clone(),
+            ..RootSchema::default()
+        };
 
         for (i, schema) in schemas.iter().enumerate() {
             let name = schema.get_name().unwrap().to_owned();
