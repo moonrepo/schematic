@@ -14,7 +14,7 @@ built-in support for merge strategies, validation rules, environment variables, 
   [garde](https://crates.io/crates/garde)).
 - Environment variable parsing and overrides.
 - Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
-- Generates schemas that can be rendered to TypeScript type, JSON Schemas, and more!
+- Generates schemas that can be rendered to TypeScript types, JSON schemas, and more!
 
 > This crate was built specifically for [moon](https://github.com/moonrepo/moon), and many of the
 > design decisions are based around that project and its needs. Because of that, this crate is quite
@@ -650,7 +650,3 @@ The following Cargo features are available:
 - `schema` - Generates schemas for schematic types and built-in Rust types.
 - `json_schema` - Enables JSON schema generation.
 - `typescript` - Enables TypeScript types generation.
-
-```
-
-```

@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use miette::IntoDiagnostic;
 use schemars::gen::SchemaSettings;
 use schemars::schema::*;
 use schematic_types::*;
@@ -23,7 +24,7 @@ impl JsonSchemaRenderer {
     }
 
     fn create_schema_from_field(&self, field: &SchemaField, partial: bool) -> RenderResult<Schema> {
-        let mut schema = if partial {
+        let mut schema = if partial && !matches!(&field.type_of, SchemaType::Union(_)) {
             self.render_union(&UnionType {
                 name: field.name.clone(),
                 operator: UnionOperator::OneOf,
@@ -338,6 +339,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             visitor.visit_root_schema(&mut root_schema)
         }
 
-        Ok(serde_json::to_string_pretty(&root_schema).unwrap())
+        serde_json::to_string_pretty(&root_schema).into_diagnostic()
     }
 }

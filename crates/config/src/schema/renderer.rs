@@ -3,7 +3,8 @@ use std::collections::HashSet;
 
 pub type RenderResult<T = String> = miette::Result<T>;
 
-/// Renders [`SchemaType`]s to a string for use within a [`SchemaGenerator`].
+/// Renders [`SchemaType`]s to a distinct format (derived from generic `O`)
+/// for use within a [`SchemaGenerator`].
 pub trait SchemaRenderer<O = String> {
     /// Return true of the provided name is a referenced type.
     fn is_reference(&self, name: &str) -> bool;

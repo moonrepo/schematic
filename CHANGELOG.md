@@ -18,7 +18,7 @@
 - Added `schematic::schema::SchemaGenerator` for generating outputs from schemas.
   - Uses renderers for generating the appropriate output.
   - Moves TypeScript to a renderer.
-- Added JSON schema generation
+- Added JSON schema generation.
   - Behind a new `json_schema` feature.
 
 ## 0.8.1
