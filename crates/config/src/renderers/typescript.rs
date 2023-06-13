@@ -251,18 +251,19 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                         if matches!(self.options.enum_format, EnumFormat::Union)
                             || inner.variants.is_none()
                         {
-                            let uni = UnionType {
-                                name: inner.name.clone(),
-                                variants_types: inner
-                                    .values
-                                    .iter()
-                                    .map(|v| Box::new(SchemaType::Literal(v.clone())))
-                                    .collect(),
-                                variants: inner.variants.clone(),
-                                ..Default::default()
-                            };
-
-                            self.export_type_alias(name, self.render_union(&uni)?)?
+                            self.export_type_alias(
+                                name,
+                                self.render_union(&UnionType {
+                                    name: inner.name.clone(),
+                                    variants_types: inner
+                                        .values
+                                        .iter()
+                                        .map(|v| Box::new(SchemaType::Literal(v.clone())))
+                                        .collect(),
+                                    variants: inner.variants.clone(),
+                                    ..Default::default()
+                                })?,
+                            )?
                         } else {
                             self.export_enum_type(name, inner)?
                         }

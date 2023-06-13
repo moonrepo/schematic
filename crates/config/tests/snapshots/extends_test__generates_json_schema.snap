@@ -12,7 +12,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "extends": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },

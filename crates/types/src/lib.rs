@@ -111,6 +111,17 @@ impl SchemaType {
         })
     }
 
+    pub fn union_one<I>(variants_types: I) -> SchemaType
+    where
+        I: IntoIterator<Item = SchemaType>,
+    {
+        SchemaType::Union(UnionType {
+            operator: UnionOperator::OneOf,
+            variants_types: variants_types.into_iter().map(Box::new).collect(),
+            ..UnionType::default()
+        })
+    }
+
     pub fn get_name(&self) -> Option<&String> {
         match self {
             SchemaType::Boolean => None,
@@ -171,6 +182,6 @@ impl<T: Schematic> Schematic for Box<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn generate_schema() -> SchemaType {
-        SchemaType::union([T::generate_schema(), SchemaType::Null])
+        SchemaType::union_one([T::generate_schema(), SchemaType::Null])
     }
 }

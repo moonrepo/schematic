@@ -8,12 +8,22 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "type": "object",
   "properties": {
     "basic": {
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "nested": {
-      "allOf": [
+      "oneOf": [
         {
           "$ref": "#/definitions/PartialNestedValidations"
+        },
+        {
+          "type": "null"
         }
       ]
     },
@@ -203,7 +213,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "extends": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -326,69 +336,149 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "array": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          },
-          "maxItems": 4,
-          "minItems": 4
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "boolean": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "booleanFn": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "enums": {
-          "allOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/SomeEnum"
+            },
+            {
+              "type": "null"
             }
           ]
         },
         "fileString": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "longString": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "number": {
-          "type": "number"
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "pathString": {
-          "type": "string",
-          "format": "path"
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "path"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "string": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "stringFn": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "tuple": {
-          "type": "array",
-          "items": [
+          "oneOf": [
             {
-              "type": "number"
+              "type": "array",
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 4,
+              "minItems": 4
             },
             {
-              "type": "number"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "number"
+              "type": "null"
             }
-          ],
-          "maxItems": 4,
-          "minItems": 4
+          ]
         },
         "vector": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -397,19 +487,33 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "list": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/PartialValueTypes"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PartialValueTypes"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "map": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/PartialValueTypes"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/PartialValueTypes"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "map2": {
           "oneOf": [
@@ -428,9 +532,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "one": {
-          "allOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PartialValueTypes"
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -451,7 +558,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "basic": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -460,35 +574,73 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "boolean": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "enums": {
-          "allOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/SomeEnum"
+            },
+            {
+              "type": "null"
             }
           ]
         },
         "map": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "number"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "number": {
-          "type": "number"
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "string": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "vector": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },

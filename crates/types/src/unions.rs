@@ -2,8 +2,8 @@ use crate::{SchemaField, SchemaType};
 
 #[derive(Clone, Debug, Default)]
 pub enum UnionOperator {
-    AnyOf,
     #[default]
+    AnyOf,
     OneOf,
 }
 
