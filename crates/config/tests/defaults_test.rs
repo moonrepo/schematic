@@ -134,6 +134,27 @@ fn handles_nested_defaults() {
     assert!(!result.config.nested.boolean);
 }
 
+#[cfg(feature = "json_schema")]
+#[test]
+fn generates_json_schema() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("schema.json");
+
+    let mut generator = schema::SchemaGenerator::default();
+    generator.add::<CustomDefaults>();
+    generator.add::<ReqOptDefaults>();
+    generator.add::<ContextDefaults>();
+    generator.add::<NestedDefaults>();
+    generator
+        .generate(&file, renderers::json_schema::JsonSchemaRenderer::default())
+        .unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}
+
 #[cfg(feature = "typescript")]
 #[test]
 fn generates_typescript() {

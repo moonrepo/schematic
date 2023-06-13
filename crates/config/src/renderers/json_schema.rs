@@ -144,7 +144,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
     fn render_reference(&self, reference: &str) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
-            reference: Some(reference.into()),
+            reference: Some(format!("{}{}", self.options.definitions_path, reference)),
             ..Default::default()
         }))
     }
@@ -221,15 +221,27 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     }
 
     fn render_union(&self, uni: &UnionType) -> RenderResult<Schema> {
-        // let mut items = vec![];
+        let mut items = vec![];
 
-        // for item in &uni.variants_types {
-        //     items.push(self.render_schema(item)?);
-        // }
+        for item in &uni.variants_types {
+            items.push(self.render_schema(item)?);
+        }
 
-        // Ok(items.join(" | "))
+        let subschema = match uni.operator {
+            UnionOperator::AnyOf => SubschemaValidation {
+                any_of: Some(items),
+                ..Default::default()
+            },
+            UnionOperator::OneOf => SubschemaValidation {
+                one_of: Some(items),
+                ..Default::default()
+            },
+        };
 
-        self.render_unknown()
+        Ok(Schema::Object(SchemaObject {
+            subschemas: Some(Box::new(subschema)),
+            ..Default::default()
+        }))
     }
 
     fn render_unknown(&self) -> RenderResult<Schema> {
@@ -250,15 +262,13 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
             // The last schema in the generator is the root schema
             if i == schemas.len() - 1 {
-                self.references.remove(&name);
-
-                root_schema.schema = self.render_schema(schema)?.into_object();
+                root_schema.schema = self.render_schema_without_reference(schema)?.into_object();
 
             // Otherwise the others are all ref definitions
             } else {
                 root_schema
                     .definitions
-                    .insert(name, self.render_schema(schema)?);
+                    .insert(name, self.render_schema_without_reference(schema)?);
             }
         }
 
