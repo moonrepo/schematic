@@ -106,26 +106,9 @@ impl<'l> Config<'l> {
             format!("{}", self.name)
         };
 
-        let casing_format = self.get_casing_format();
-
-        let fields = self
-            .settings
-            .iter()
-            .filter_map(|setting| {
-                if setting.is_skipped() {
-                    None
-                } else {
-                    Some(setting.get_meta(casing_format))
-                }
-            })
-            .collect::<Vec<_>>();
-
         quote! {
             schematic::Meta {
                 name: #name,
-                fields: &[
-                    #(#fields),*
-                ],
             }
         }
     }
