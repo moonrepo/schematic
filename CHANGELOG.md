@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `HashMap` and `HashSet` schematic implementations.
+
 ## 0.9.0
 
 #### 💥 Breaking

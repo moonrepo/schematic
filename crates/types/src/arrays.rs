@@ -23,7 +23,6 @@ macro_rules! impl_list {
 }
 
 impl_list!(Vec);
-impl_list!(HashSet);
 impl_list!(BTreeSet);
 
 impl<T: Schematic> Schematic for &[T] {
@@ -40,5 +39,11 @@ impl<T: Schematic, const N: usize> Schematic for [T; N] {
             min_length: Some(N),
             ..ArrayType::default()
         })
+    }
+}
+
+impl<T: Schematic, S> Schematic for HashSet<T, S> {
+    fn generate_schema() -> SchemaType {
+        SchemaType::array(T::generate_schema())
     }
 }

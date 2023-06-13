@@ -11,15 +11,14 @@ pub struct ObjectType {
     pub value_type: Box<SchemaType>,
 }
 
-macro_rules! impl_map {
-    ($type:ident) => {
-        impl<K: Schematic, V: Schematic> Schematic for $type<K, V> {
-            fn generate_schema() -> SchemaType {
-                SchemaType::object(K::generate_schema(), V::generate_schema())
-            }
-        }
-    };
+impl<K: Schematic, V: Schematic> Schematic for BTreeMap<K, V> {
+    fn generate_schema() -> SchemaType {
+        SchemaType::object(K::generate_schema(), V::generate_schema())
+    }
 }
 
-impl_map!(BTreeMap);
-impl_map!(HashMap);
+impl<K: Schematic, V: Schematic, S> Schematic for HashMap<K, V, S> {
+    fn generate_schema() -> SchemaType {
+        SchemaType::object(K::generate_schema(), V::generate_schema())
+    }
+}
