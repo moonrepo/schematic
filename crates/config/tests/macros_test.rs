@@ -291,9 +291,8 @@ fn generates_typescript() {
         .generate(
             &file,
             TypeScriptRenderer::new(TypeScriptOptions {
-                const_enum: false,
+                const_enum: true,
                 enum_format: EnumFormat::Enum,
-                exclude_partial: true,
                 object_format: ObjectFormat::Type,
             }),
         )

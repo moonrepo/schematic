@@ -17,11 +17,11 @@ pub mod internal;
 /// Built-in `merge` functions.
 pub mod merge;
 
-/// Renderers for generating schemas.
+/// Renderers for rendering schema output.
 #[cfg(feature = "schema")]
 pub mod renderers;
 
-/// Utilities for generating schemas.
+/// Generate schemas for config and Rust types.
 #[cfg(feature = "schema")]
 pub mod schema;
 

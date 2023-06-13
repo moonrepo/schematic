@@ -29,7 +29,6 @@ pub enum ObjectFormat {
 pub struct TypeScriptOptions {
     pub const_enum: bool,
     pub enum_format: EnumFormat,
-    pub exclude_partial: bool,
     pub object_format: ObjectFormat,
 }
 
@@ -105,6 +104,10 @@ impl TypeScriptRenderer {
 }
 
 impl SchemaRenderer for TypeScriptRenderer {
+    fn is_reference(&self, name: &str) -> bool {
+        self.references.contains(name)
+    }
+
     fn render_array(&self, array: &ArrayType) -> RenderResult {
         Ok(format!("{}[]", self.render_schema(&array.items_type)?))
     }
@@ -207,29 +210,6 @@ impl SchemaRenderer for TypeScriptRenderer {
 
     fn render_unknown(&self) -> RenderResult {
         Ok("unknown".into())
-    }
-
-    fn render_schema(&self, schema: &SchemaType) -> RenderResult {
-        if let Some(name) = schema.get_name() {
-            if self.references.contains(name) {
-                return Ok(name.clone());
-            }
-        }
-
-        match schema {
-            SchemaType::Boolean => self.render_boolean(),
-            SchemaType::Null => self.render_null(),
-            SchemaType::Unknown => self.render_unknown(),
-            SchemaType::Array(array) => self.render_array(array),
-            SchemaType::Float(float) => self.render_float(float),
-            SchemaType::Integer(integer) => self.render_integer(integer),
-            SchemaType::Literal(literal) => self.render_literal(literal),
-            SchemaType::Object(object) => self.render_object(object),
-            SchemaType::Struct(structure) => self.render_struct(structure),
-            SchemaType::String(string) => self.render_string(string),
-            SchemaType::Tuple(tuple) => self.render_tuple(tuple),
-            SchemaType::Union(uni) => self.render_union(uni),
-        }
     }
 
     fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
