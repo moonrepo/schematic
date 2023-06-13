@@ -1,0 +1,126 @@
+---
+source: crates/config/tests/settings_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NestedMapSettings",
+  "type": "object",
+  "required": [
+    "nestedOpt",
+    "nestedReq"
+  ],
+  "properties": {
+    "nestedOpt": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/StandardSettings"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nestedReq": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/StandardSettings"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    }
+  },
+  "definitions": {
+    "NestedSettings": {
+      "title": "NestedSettings",
+      "type": "object",
+      "required": [
+        "nestedOpt",
+        "nestedReq"
+      ],
+      "properties": {
+        "nestedOpt": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/StandardSettings"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nestedReq": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/StandardSettings"
+            }
+          ]
+        }
+      }
+    },
+    "NestedVecSettings": {
+      "title": "NestedVecSettings",
+      "type": "object",
+      "required": [
+        "nestedOpt",
+        "nestedReq"
+      ],
+      "properties": {
+        "nestedOpt": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/StandardSettings"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nestedReq": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StandardSettings"
+          }
+        }
+      }
+    },
+    "StandardSettings": {
+      "title": "StandardSettings",
+      "type": "object",
+      "required": [
+        "opt",
+        "req",
+        "reqDefault"
+      ],
+      "properties": {
+        "opt": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "req": {
+          "type": "string"
+        },
+        "reqDefault": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+

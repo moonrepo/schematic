@@ -5,4 +5,3 @@ members = ["crates/*"]
 [workspace.dependencies]
 miette = "5.9.0"
 serde = { version = "1.0.164", features = ["derive"] }
-schemars = "0.8.12"

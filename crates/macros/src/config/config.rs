@@ -151,11 +151,6 @@ impl<'l> Config<'l> {
             attrs.push(quote! { #attr });
         }
 
-        #[cfg(feature = "json_schema")]
-        {
-            attrs.push(quote! { #[derive(schemars::JsonSchema)] });
-        }
-
         attrs
     }
 }
