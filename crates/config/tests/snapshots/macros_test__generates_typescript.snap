@@ -91,8 +91,12 @@ export interface Validations {
 
 export interface Comments {
 	normal: boolean;
+	// Docs
 	docs: boolean;
 	inlineBlock: boolean;
+	/**
+	 * Block
+	 */
 	block: boolean;
 }
 

@@ -6,32 +6,33 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
-export enum SomeEnum {
+export const enum SomeEnum {
 	A,
 	B,
 	C,
 }
 
-export enum BasicEnum {
+export const enum BasicEnum {
+	Foo,
+	// Comment
+	Bar,
+	Baz,
+}
+
+export const enum CustomFormatEnum {
 	Foo,
 	Bar,
 	Baz,
 }
 
-export enum CustomFormatEnum {
-	Foo,
-	Bar,
-	Baz,
-}
-
-export enum OtherEnum {
+export const enum OtherEnum {
 	Foo,
 	Bar,
 	Baz,
 	Other,
 }
 
-export enum AliasedEnum {
+export const enum AliasedEnum {
 	Foo,
 	Bar,
 	Baz,
@@ -112,8 +113,55 @@ export type Validations = {
 
 export type Comments = {
 	normal: boolean,
+	// Docs
 	docs: boolean,
 	inlineBlock: boolean,
+	/**
+	 * Block
+	 */
 	block: boolean,
+};
+
+export type PartialDefaultValues = {
+	boolean?: boolean | null,
+	booleanFn?: boolean | null,
+	string?: string | null,
+	stringFn?: string | null,
+	fileString?: string | null,
+	longString?: string | null,
+	pathString?: string | null,
+	number?: number | null,
+	array?: number[] | null,
+	tuple?: [number, number, number, number] | null,
+	vector?: number[] | null,
+	enums?: SomeEnum | null,
+};
+
+export type PartialValueTypes = {
+	boolean?: boolean | null,
+	string?: string | null,
+	number?: number | null,
+	vector?: string[] | null,
+	map?: Record<string, number> | null,
+	enums?: SomeEnum | null,
+};
+
+export type PartialNested = {
+	one?: PartialValueTypes | null,
+	two?: PartialValueTypes | null,
+	list?: PartialValueTypes[] | null,
+	map?: Record<string, PartialValueTypes> | null,
+	map2?: Record<string, PartialValueTypes> | null,
+};
+
+export type PartialNestedValidations = {
+	basic?: string | null,
+};
+
+export type PartialValidations = {
+	basic?: string | null,
+	optional?: string | null,
+	nested?: PartialNestedValidations | null,
+	nested2?: PartialNestedValidations | null,
 };
 

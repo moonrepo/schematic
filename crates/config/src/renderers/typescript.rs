@@ -68,15 +68,21 @@ impl TypeScriptRenderer {
                 }
 
                 if let Some(variant_name) = &variant.name {
-                    if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
-                        fields.push(format!(
+                    let mut field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
+                        format!(
                             "\t{} = {},",
                             variant_name,
                             self.render_schema(&variant.type_of)?
-                        ));
+                        )
                     } else {
-                        fields.push(format!("\t{},", variant_name));
+                        format!("\t{},", variant_name)
+                    };
+
+                    if let Some(comment) = &variant.description {
+                        field = self.wrap_in_comment(comment.trim(), field);
                     }
+
+                    fields.push(field);
                 }
             }
 
@@ -100,6 +106,22 @@ impl TypeScriptRenderer {
         }
 
         self.export_type_alias(name, value)
+    }
+
+    fn wrap_in_comment(&self, comment: &str, value: String) -> String {
+        if comment.starts_with('*') {
+            let mut out = vec!["\t/**".to_owned()];
+
+            for line in comment.split('\n') {
+                out.push(format!("\t {}", line.trim()));
+            }
+
+            out.push("\t */".to_owned());
+
+            format!("{}\n{}", out.join("\n"), value)
+        } else {
+            format!("\t// {}\n{}", comment.trim(), value)
+        }
     }
 }
 
@@ -180,6 +202,10 @@ impl SchemaRenderer for TypeScriptRenderer {
                 row.push(';');
             } else {
                 row.push(',');
+            }
+
+            if let Some(comment) = &field.description {
+                row = self.wrap_in_comment(comment.trim(), row);
             }
 
             out.push(row);
