@@ -207,6 +207,17 @@ pub struct SchemaField {
     pub write_only: bool,
 }
 
+impl SchemaField {
+    /// Create a new field with the provided name and type.
+    pub fn new(name: &str, type_of: SchemaType) -> SchemaField {
+        SchemaField {
+            name: Some(name.to_owned()),
+            type_of,
+            ..SchemaField::default()
+        }
+    }
+}
+
 pub trait Schematic {
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.

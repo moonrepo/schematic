@@ -87,8 +87,10 @@ export type ExtendsList = {
 	extends: string[],
 };
 
+export type ExtendsFrom = string | string[];
+
 export type ExtendsEnum = {
-	extends: string | string[],
+	extends: ExtendsFrom,
 };
 
 export type ExtendsOptional = {
