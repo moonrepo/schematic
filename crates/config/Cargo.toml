@@ -39,7 +39,7 @@ serde_yaml = { version = "0.9.21", optional = true }
 [features]
 default = ["json"]
 json = ["dep:serde_json"]
-json_schema = ["dep:schemars", "schematic_macros/json_schema"]
+json_schema = ["dep:schemars", "json", "schematic_macros/json_schema"]
 schema = ["schematic_macros/schema"]
 toml = ["dep:toml"]
 typescript = ["schema", "schematic_macros/typescript"]
