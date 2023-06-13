@@ -40,31 +40,31 @@ export const enum AliasedEnum {
 
 export type ValueTypes = {
 	boolean: boolean,
-	string: string,
-	number: number,
-	vector: string[],
-	map: Record<string, number>,
 	enums: SomeEnum,
+	map: Record<string, number>,
+	number: number,
+	string: string,
+	vector: string[],
 };
 
 export type OptionalValues = {
-	required: boolean,
 	optional: string | null,
+	required: boolean,
 };
 
 export type DefaultValues = {
+	array: number[],
 	boolean: boolean,
 	booleanFn: boolean,
-	string: string,
-	stringFn: string,
+	enums: SomeEnum,
 	fileString: string,
 	longString: string,
-	pathString: string,
 	number: number,
-	array: number[],
+	pathString: string,
+	string: string,
+	stringFn: string,
 	tuple: [number, number, number, number],
 	vector: number[],
-	enums: SomeEnum,
 };
 
 export type Serde = {
@@ -98,8 +98,8 @@ export type ExtendsOptional = {
 };
 
 export type EnvVars = {
-	basic: string,
 	advanced: string[],
+	basic: string,
 };
 
 export type NestedValidations = {
@@ -108,52 +108,52 @@ export type NestedValidations = {
 
 export type Validations = {
 	basic: string,
-	optional: string | null,
 	nested: NestedValidations,
 	nested2: NestedValidations | null,
+	optional: string | null,
 };
 
 export type Comments = {
-	normal: boolean,
-	// Docs
-	docs: boolean,
-	inlineBlock: boolean,
 	/**
 	 * Block
 	 */
 	block: boolean,
+	// Docs
+	docs: boolean,
+	inlineBlock: boolean,
+	normal: boolean,
 };
 
 export type PartialDefaultValues = {
+	array?: number[] | null,
 	boolean?: boolean | null,
 	booleanFn?: boolean | null,
-	string?: string | null,
-	stringFn?: string | null,
+	enums?: SomeEnum | null,
 	fileString?: string | null,
 	longString?: string | null,
-	pathString?: string | null,
 	number?: number | null,
-	array?: number[] | null,
+	pathString?: string | null,
+	string?: string | null,
+	stringFn?: string | null,
 	tuple?: [number, number, number, number] | null,
 	vector?: number[] | null,
-	enums?: SomeEnum | null,
 };
 
 export type PartialValueTypes = {
 	boolean?: boolean | null,
-	string?: string | null,
-	number?: number | null,
-	vector?: string[] | null,
-	map?: Record<string, number> | null,
 	enums?: SomeEnum | null,
+	map?: Record<string, number> | null,
+	number?: number | null,
+	string?: string | null,
+	vector?: string[] | null,
 };
 
 export type PartialNested = {
-	one?: PartialValueTypes | null,
-	two?: PartialValueTypes | null,
 	list?: PartialValueTypes[] | null,
 	map?: Record<string, PartialValueTypes> | null,
 	map2?: Record<string, PartialValueTypes> | null,
+	one?: PartialValueTypes | null,
+	two?: PartialValueTypes | null,
 };
 
 export type PartialNestedValidations = {
@@ -162,8 +162,8 @@ export type PartialNestedValidations = {
 
 export type PartialValidations = {
 	basic?: string | null,
-	optional?: string | null,
 	nested?: PartialNestedValidations | null,
 	nested2?: PartialNestedValidations | null,
+	optional?: string | null,
 };
 

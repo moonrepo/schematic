@@ -8,15 +8,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 export interface CustomDefaults {
 	boolean: boolean;
-	string: string;
 	number: number;
+	string: string;
 	vector: number[];
 }
 
 export interface ReqOptDefaults {
+	optional: number | null;
 	required: number;
 	requiredWithDefault: number;
-	optional: number | null;
 }
 
 export interface ContextDefaults {
@@ -26,15 +26,15 @@ export interface ContextDefaults {
 
 export interface NativeDefaults {
 	boolean: boolean;
-	string: string;
 	number: number;
+	string: string;
 	vector: string[];
 }
 
 export interface NestedDefaults {
 	nested: NativeDefaults;
+	nestedMap: Record<string, NativeDefaults>;
 	nestedOpt: NativeDefaults | null;
 	nestedVec: NativeDefaults[];
-	nestedMap: Record<string, NativeDefaults>;
 }
 

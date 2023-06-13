@@ -23,10 +23,12 @@ impl SchemaGenerator {
     /// Add an explicit [`SchemaType`] to be rendered, and recursively add any nested schemas.
     /// Schemas with a name will be considered a reference.
     pub fn add_schema(&mut self, schema: &SchemaType) {
+        let mut schema = schema.to_owned();
+
         // Recursively add any nested schema types
-        match &schema {
+        match &mut schema {
             SchemaType::Array(ArrayType { items_type, .. }) => {
-                self.add_schema(items_type);
+                self.add_schema(&items_type);
             }
             SchemaType::Enum(EnumType { variants, .. }) => {
                 if let Some(variants) = variants.as_ref() {
@@ -40,17 +42,19 @@ impl SchemaGenerator {
                 value_type,
                 ..
             }) => {
-                self.add_schema(key_type);
-                self.add_schema(value_type);
+                self.add_schema(&key_type);
+                self.add_schema(&value_type);
             }
-            SchemaType::Struct(StructType { fields, .. }) => {
+            SchemaType::Struct(StructType { ref mut fields, .. }) => {
+                fields.sort_by(|a, d| a.name.cmp(&d.name));
+
                 for field in fields {
                     self.add_schema(&field.type_of);
                 }
             }
             SchemaType::Tuple(TupleType { items_types, .. }) => {
                 for item in items_types {
-                    self.add_schema(item);
+                    self.add_schema(&item);
                 }
             }
             SchemaType::Union(UnionType {
@@ -59,7 +63,7 @@ impl SchemaGenerator {
                 ..
             }) => {
                 for variant in variants_types {
-                    self.add_schema(variant);
+                    self.add_schema(&variant);
                 }
 
                 if let Some(variants) = variants.as_ref() {
@@ -85,7 +89,7 @@ impl SchemaGenerator {
             return;
         }
 
-        self.schemas.push(schema.to_owned());
+        self.schemas.push(schema);
     }
 
     /// Generate an output by rendering all collected [`SchemaType`]s using the provided

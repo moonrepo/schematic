@@ -334,6 +334,7 @@ fn generates_typescript() {
                 const_enum: true,
                 enum_format: EnumFormat::Enum,
                 object_format: ObjectFormat::Type,
+                ..Default::default()
             }),
         )
         .unwrap();

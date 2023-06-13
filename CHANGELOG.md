@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Generator
+  - Updated struct fields to be sorted alphabetically.
+
 #### 🐞 Fixes
 
 - Generator
