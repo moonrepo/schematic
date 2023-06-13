@@ -12,7 +12,9 @@ pub struct Meta {
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional
 /// by wrapping the values in [`Option`].
-pub trait PartialConfig: Clone + Default + DeserializeOwned + Serialize + Sized {
+pub trait PartialConfig:
+    Clone + Default + DeserializeOwned + Schematic + Serialize + Sized
+{
     type Context: Default;
 
     /// Return a partial configuration with values populated with default values for settings

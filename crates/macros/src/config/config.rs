@@ -319,6 +319,15 @@ impl<'l> ToTokens for Config<'l> {
                         })
                     }
                 }
+
+                #[automatically_derived]
+                impl schematic::Schematic for #partial_name {
+                    fn generate_schema() -> schematic::SchemaType {
+                        let mut schema = #name::generate_schema();
+                        schematic::internal::partialize_schema(&mut schema);
+                        schema
+                    }
+                }
             });
         }
 
@@ -327,6 +336,9 @@ impl<'l> ToTokens for Config<'l> {
             tokens.extend(quote! {
                 #[automatically_derived]
                 impl schematic::Schematic for #name {}
+
+                #[automatically_derived]
+                impl schematic::Schematic for #partial_name {}
             });
         }
     }

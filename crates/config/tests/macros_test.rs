@@ -276,6 +276,10 @@ fn generates_typescript() {
     generator.add::<NestedValidations>();
     generator.add::<Validations>();
     generator.add::<Comments>();
+    // Partials are separate
+    generator.add::<PartialDefaultValues>();
+    generator.add::<PartialNested>();
+    generator.add::<PartialValidations>();
     generator
         .generate(&file, TypeScriptRenderer::default())
         .unwrap();

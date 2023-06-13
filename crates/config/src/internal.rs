@@ -1,6 +1,7 @@
 use crate::config::PartialConfig;
 use crate::errors::ConfigError;
 use crate::merge::merge_partial;
+use schematic_types::SchemaType;
 use std::{env, str::FromStr};
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {
@@ -64,4 +65,60 @@ pub fn merge_partial_setting<T: PartialConfig>(
     } else {
         Ok(prev)
     }
+}
+
+pub fn partialize_schema(schema: &mut SchemaType) {
+    use schematic_types::*;
+
+    match schema {
+        SchemaType::Array(ArrayType { items_type, .. }) => {
+            partialize_schema(items_type);
+        }
+        SchemaType::Object(ObjectType {
+            key_type,
+            value_type,
+            ..
+        }) => {
+            partialize_schema(key_type);
+            partialize_schema(value_type);
+        }
+        SchemaType::Struct(inner) => {
+            if let Some(name) = &inner.name {
+                inner.name = Some(format!("Partial{}", name));
+            }
+
+            inner.partial = true;
+
+            for field in inner.fields.iter_mut() {
+                field.optional = true;
+                field.nullable = true;
+
+                partialize_schema(&mut field.type_of);
+            }
+        }
+        SchemaType::Tuple(TupleType { items_types, .. }) => {
+            for item in items_types {
+                partialize_schema(item);
+            }
+        }
+        SchemaType::Union(UnionType {
+            variants_types,
+            variants,
+            ..
+        }) => {
+            for variant in variants_types {
+                partialize_schema(variant);
+            }
+
+            if let Some(fields) = variants {
+                for field in fields.iter_mut() {
+                    field.optional = true;
+                    field.nullable = true;
+
+                    partialize_schema(&mut field.type_of);
+                }
+            }
+        }
+        _ => {}
+    };
 }
