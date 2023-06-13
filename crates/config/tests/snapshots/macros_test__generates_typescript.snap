@@ -65,8 +65,10 @@ export interface ExtendsList {
 	extends: string[];
 }
 
+export type ExtendsFrom = string | string[];
+
 export interface ExtendsEnum {
-	extends: string | string[];
+	extends: ExtendsFrom;
 }
 
 export interface ExtendsOptional {

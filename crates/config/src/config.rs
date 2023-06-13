@@ -102,9 +102,11 @@ impl Schematic for ExtendsFrom {
     fn generate_schema() -> schematic_types::SchemaType {
         use schematic_types::*;
 
-        SchemaType::union([
+        let mut schema = SchemaType::union([
             SchemaType::string(),
             SchemaType::array(SchemaType::string()),
-        ])
+        ]);
+        schema.set_name("ExtendsFrom");
+        schema
     }
 }

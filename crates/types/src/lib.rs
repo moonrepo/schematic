@@ -152,6 +152,46 @@ impl SchemaType {
             SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
         }
     }
+
+    /// Set the `name` of the inner schema type. If the inner type does not support
+    /// names, this is a no-op.
+    pub fn set_name<S: AsRef<str>>(&mut self, name: S) {
+        let name = Some(name.as_ref().to_owned());
+
+        match self {
+            SchemaType::Array(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Enum(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Float(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Integer(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Literal(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Object(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Struct(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::String(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Tuple(ref mut inner) => {
+                inner.name = name;
+            }
+            SchemaType::Union(ref mut inner) => {
+                inner.name = name;
+            }
+            _ => {}
+        };
+    }
 }
 
 #[derive(Clone, Debug, Default)]

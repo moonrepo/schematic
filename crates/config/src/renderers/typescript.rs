@@ -254,7 +254,6 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                             self.export_type_alias(
                                 name,
                                 self.render_union(&UnionType {
-                                    name: inner.name.clone(),
                                     variants_types: inner
                                         .values
                                         .iter()
@@ -269,7 +268,9 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                         }
                     }
                     SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
-                    _ => self.export_type_alias(name, self.render_schema(schema)?)?,
+                    _ => {
+                        self.export_type_alias(name, self.render_schema_without_reference(schema)?)?
+                    }
                 });
             }
         }

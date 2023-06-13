@@ -4,6 +4,7 @@
 
 #### 🐞 Fixes
 
+- Allow the schema name to be customized after creation.
 - Fixed `HashMap` and `HashSet` schematic implementations.
 
 ## 0.9.0

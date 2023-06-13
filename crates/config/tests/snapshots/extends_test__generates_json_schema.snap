@@ -12,6 +12,21 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "extends": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExtendsFrom"
+        }
+      ]
+    },
+    "value": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    }
+  },
+  "definitions": {
+    "ExtendsFrom": {
       "anyOf": [
         {
           "type": "string"
@@ -24,14 +39,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "value": {
-      "type": "array",
-      "items": {
-        "type": "number"
-      }
-    }
-  },
-  "definitions": {
     "ExtendsList": {
       "title": "ExtendsList",
       "type": "object",

@@ -213,19 +213,26 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "extends": {
-          "anyOf": [
+          "allOf": [
             {
-              "type": "string"
-            },
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "$ref": "#/definitions/ExtendsFrom"
             }
           ]
         }
       }
+    },
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     },
     "ExtendsList": {
       "title": "ExtendsList",

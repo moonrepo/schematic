@@ -21,8 +21,10 @@ export interface ExtendsList {
 	value: number[];
 }
 
+export type ExtendsFrom = string | string[];
+
 export interface ExtendsEnum {
-	extends: string | string[];
+	extends: ExtendsFrom;
 	value: number[];
 }
 
