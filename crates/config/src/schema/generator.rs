@@ -12,23 +12,8 @@ pub struct SchemaGenerator {
 
 impl SchemaGenerator {
     pub fn add(&mut self, schema: SchemaType) {
-        let maybe_name = match &schema {
-            SchemaType::Boolean => None,
-            SchemaType::Null => None,
-            SchemaType::Unknown => None,
-            SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
-            SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
-            SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
-            SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
-            SchemaType::Object(ObjectType { name, .. }) => name.as_ref(),
-            SchemaType::Struct(StructType { name, .. }) => name.as_ref(),
-            SchemaType::String(StringType { name, .. }) => name.as_ref(),
-            SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
-            SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
-        };
-
         // Store the name so that we can use it as a reference for other types
-        if let Some(name) = maybe_name {
+        if let Some(name) = schema.get_name() {
             // Type has already been added
             if self.references.contains(name) {
                 return;
@@ -75,10 +60,10 @@ impl SchemaGenerator {
         self.schemas.push(schema);
     }
 
-    pub fn generate(
+    pub fn generate<R: SchemaRenderer>(
         &self,
         output_file: PathBuf,
-        renderer: impl SchemaRenderer,
+        mut renderer: R,
     ) -> miette::Result<()> {
         let mut output = renderer.render(&self.schemas, &self.references)?;
         output.push_str("\n");
