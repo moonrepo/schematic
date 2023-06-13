@@ -12,6 +12,9 @@ pre-release-replacements = [
 	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" }
 ]
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 schematic_macros = { version = "0.8.0", path = "../macros" }
 schematic_types = { path = "../types" }

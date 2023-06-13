@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 pub type JsonSchemaOptions = SchemaSettings;
 
-/// Renders JsonSchema types from a schema.
+/// Renders JSON schema documents from a schema.
 #[derive(Default)]
 pub struct JsonSchemaRenderer {
     options: JsonSchemaOptions,

@@ -6,6 +6,9 @@ license = "MIT"
 description = "Macros for the schematic crate."
 repository = "https://github.com/moonrepo/schematic"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lib]
 proc-macro = true
 

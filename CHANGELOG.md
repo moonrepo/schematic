@@ -18,6 +18,8 @@
 - Added `schematic::schema::SchemaGenerator` for generating outputs from schemas.
   - Uses renderers for generating the appropriate output.
   - Moves TypeScript to a renderer.
+- Added JSON schema generation
+  - Behind a new `json_schema` feature.
 
 ## 0.8.1
 
@@ -39,7 +41,7 @@
 - Added `fields` to `Meta` trait.
   - Updated `Config` trait to implement fields.
 - Added TypeScript type generation (experimental, will probably change).
-  - Behind a new `typescript` flag.
+  - Behind a new `typescript` feature.
   - Code can be generated with the `schematic::typescript::TypeScriptGenerator`.
 - Updated partials to inherit `#[allow]`, `#[warn]`, and `#[deprecated]` attributes.
 
