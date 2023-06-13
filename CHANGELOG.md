@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed TypeScript enum/union rendering discrepancies.
+
 ## 0.9.1
 
 #### 🐞 Fixes
