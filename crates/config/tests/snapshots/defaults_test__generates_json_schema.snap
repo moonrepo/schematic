@@ -30,7 +30,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       }
     },
     "nestedOpt": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/NativeDefaults"
         },
@@ -128,7 +128,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "optional": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },

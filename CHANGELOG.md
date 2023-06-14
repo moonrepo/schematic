@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Changed nullable schemas from "one of" to "any of" union types.
+
 ## 0.9.3
 
 #### 🚀 Updates

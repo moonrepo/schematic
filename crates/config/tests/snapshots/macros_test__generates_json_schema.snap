@@ -28,7 +28,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "nested2": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialNestedValidations"
         },
@@ -38,7 +38,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "optional": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -257,7 +257,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "extends": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -316,7 +316,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "optional": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -523,7 +523,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map2": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -549,7 +549,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "two": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/PartialValueTypes"
             },
@@ -704,7 +704,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "nested2": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/NestedValidations"
             },
@@ -714,7 +714,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "optional": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
