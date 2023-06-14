@@ -64,7 +64,7 @@ pub trait SchemaRenderer<O = String> {
         self.render_schema_without_reference(schema)
     }
 
-    /// Like [`SchemaRenderer.render_schema`] but does not check for references.
+    /// Like [`render_schema`] but does not check for references.
     fn render_schema_without_reference(&self, schema: &SchemaType) -> RenderResult<O> {
         match schema {
             SchemaType::Boolean => self.render_boolean(),

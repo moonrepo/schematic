@@ -85,6 +85,7 @@ pub trait ConfigEnum: Sized + Schematic {
 }
 
 derive_enum!(
+    /// Represents an extendable setting, either a string or a list of strings.
     #[serde(untagged)]
     pub enum ExtendsFrom {
         String(String),
