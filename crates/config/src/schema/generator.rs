@@ -28,7 +28,7 @@ impl SchemaGenerator {
         // Recursively add any nested schema types
         match &mut schema {
             SchemaType::Array(ArrayType { items_type, .. }) => {
-                self.add_schema(&items_type);
+                self.add_schema(items_type);
             }
             SchemaType::Enum(EnumType { variants, .. }) => {
                 if let Some(variants) = variants.as_ref() {
@@ -42,8 +42,8 @@ impl SchemaGenerator {
                 value_type,
                 ..
             }) => {
-                self.add_schema(&key_type);
-                self.add_schema(&value_type);
+                self.add_schema(key_type);
+                self.add_schema(value_type);
             }
             SchemaType::Struct(StructType { ref mut fields, .. }) => {
                 fields.sort_by(|a, d| a.name.cmp(&d.name));
@@ -54,7 +54,7 @@ impl SchemaGenerator {
             }
             SchemaType::Tuple(TupleType { items_types, .. }) => {
                 for item in items_types {
-                    self.add_schema(&item);
+                    self.add_schema(item);
                 }
             }
             SchemaType::Union(UnionType {
@@ -63,7 +63,7 @@ impl SchemaGenerator {
                 ..
             }) => {
                 for variant in variants_types {
-                    self.add_schema(&variant);
+                    self.add_schema(variant);
                 }
 
                 if let Some(variants) = variants.as_ref() {

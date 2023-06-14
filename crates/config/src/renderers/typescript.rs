@@ -30,6 +30,9 @@ pub struct TypeScriptOptions {
     /// Render a `const enum` instead of a `enum`.
     pub const_enum: bool,
 
+    /// Disable references and render all types inline recursively.
+    pub disable_references: bool,
+
     /// Format to render enums, either an `enum` or a `type` union.
     pub enum_format: EnumFormat,
 
@@ -77,11 +80,11 @@ impl TypeScriptRenderer {
         matches!(self.options.enum_format, EnumFormat::Union) || enu.variants.is_none()
     }
 
-    fn export_type_alias(&self, name: &str, value: String) -> RenderResult {
+    fn export_type_alias(&mut self, name: &str, value: String) -> RenderResult {
         Ok(format!("export type {} = {};", name, value))
     }
 
-    fn export_enum_type(&self, name: &str, enu: &EnumType) -> RenderResult {
+    fn export_enum_type(&mut self, name: &str, enu: &EnumType) -> RenderResult {
         let value = self.render_enum(enu)?;
 
         if self.is_string_union_enum(enu) {
@@ -97,7 +100,7 @@ impl TypeScriptRenderer {
         })
     }
 
-    fn export_object_type(&self, name: &str, structure: &StructType) -> RenderResult {
+    fn export_object_type(&mut self, name: &str, structure: &StructType) -> RenderResult {
         let value = self.render_struct(structure)?;
 
         if matches!(self.options.object_format, ObjectFormat::Interface) {
@@ -107,7 +110,7 @@ impl TypeScriptRenderer {
         self.export_type_alias(name, value)
     }
 
-    fn render_enum_or_union(&self, enu: &EnumType) -> RenderResult {
+    fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {
         if self.is_string_union_enum(enu) {
             return self.render_union(&UnionType {
                 variants_types: enu
@@ -168,6 +171,10 @@ impl TypeScriptRenderer {
 
 impl SchemaRenderer<String> for TypeScriptRenderer {
     fn is_reference(&self, name: &str) -> bool {
+        if self.options.disable_references {
+            return false;
+        }
+
         if self.references.contains(name) {
             return true;
         }
@@ -175,7 +182,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         self.is_external(name)
     }
 
-    fn render_array(&self, array: &ArrayType) -> RenderResult {
+    fn render_array(&mut self, array: &ArrayType) -> RenderResult {
         let out = self.render_schema(&array.items_type)?;
 
         Ok(if out.contains('|') {
@@ -185,23 +192,23 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         })
     }
 
-    fn render_boolean(&self) -> RenderResult {
+    fn render_boolean(&mut self) -> RenderResult {
         Ok("boolean".into())
     }
 
-    fn render_enum(&self, enu: &EnumType) -> RenderResult {
+    fn render_enum(&mut self, enu: &EnumType) -> RenderResult {
         self.render_enum_or_union(enu)
     }
 
-    fn render_float(&self, _: &FloatType) -> RenderResult {
+    fn render_float(&mut self, _: &FloatType) -> RenderResult {
         Ok("number".into())
     }
 
-    fn render_integer(&self, _: &IntegerType) -> RenderResult {
+    fn render_integer(&mut self, _: &IntegerType) -> RenderResult {
         Ok("number".into())
     }
 
-    fn render_literal(&self, literal: &LiteralType) -> RenderResult {
+    fn render_literal(&mut self, literal: &LiteralType) -> RenderResult {
         if let Some(value) = &literal.value {
             return Ok(match value {
                 LiteralValue::Bool(inner) => inner.to_string(),
@@ -215,11 +222,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         self.render_unknown()
     }
 
-    fn render_null(&self) -> RenderResult {
+    fn render_null(&mut self) -> RenderResult {
         Ok("null".into())
     }
 
-    fn render_object(&self, object: &ObjectType) -> RenderResult {
+    fn render_object(&mut self, object: &ObjectType) -> RenderResult {
         Ok(format!(
             "Record<{}, {}>",
             self.render_schema(&object.key_type)?,
@@ -227,15 +234,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         ))
     }
 
-    fn render_reference(&self, reference: &str) -> RenderResult {
+    fn render_reference(&mut self, reference: &str) -> RenderResult {
         Ok(reference.into())
     }
 
-    fn render_string(&self, _: &StringType) -> RenderResult {
+    fn render_string(&mut self, _: &StringType) -> RenderResult {
         Ok("string".into())
     }
 
-    fn render_struct(&self, structure: &StructType) -> RenderResult {
+    fn render_struct(&mut self, structure: &StructType) -> RenderResult {
         let mut out = vec![];
 
         for field in &structure.fields {
@@ -273,7 +280,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(format!("{{\n{}\n}}", out.join("\n")))
     }
 
-    fn render_tuple(&self, tuple: &TupleType) -> RenderResult {
+    fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult {
         let mut items = vec![];
 
         for item in &tuple.items_types {
@@ -283,7 +290,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(format!("[{}]", items.join(", ")))
     }
 
-    fn render_union(&self, uni: &UnionType) -> RenderResult {
+    fn render_union(&mut self, uni: &UnionType) -> RenderResult {
         let mut items = vec![];
 
         for item in &uni.variants_types {
@@ -293,7 +300,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(items.join(" | "))
     }
 
-    fn render_unknown(&self) -> RenderResult {
+    fn render_unknown(&mut self) -> RenderResult {
         Ok("unknown".into())
     }
 
@@ -332,7 +339,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                     SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
                     SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
                     _ => {
-                        self.export_type_alias(name, self.render_schema_without_reference(schema)?)?
+                        let out = self.render_schema_without_reference(schema)?;
+                        self.export_type_alias(name, out)?
                     }
                 });
             }
