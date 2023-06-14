@@ -15,6 +15,10 @@ pub struct JsonSchemaRenderer {
     references: HashSet<String>,
 }
 
+fn clean_comment(comment: String) -> String {
+    comment.trim().replace("* ", "").replace(" * ", "")
+}
+
 impl JsonSchemaRenderer {
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
@@ -29,10 +33,7 @@ impl JsonSchemaRenderer {
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
                 // title: field.name.clone(),
-                description: field
-                    .description
-                    .clone()
-                    .map(|d| d.trim().replace("* ", "").replace(" * ", "")),
+                description: field.description.clone().map(clean_comment),
                 deprecated: field.deprecated,
                 read_only: field.read_only,
                 write_only: field.write_only,
@@ -231,12 +232,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            metadata: structure.name.as_ref().map(|n| {
-                Box::new(Metadata {
-                    title: Some(n.to_owned()),
-                    ..Default::default()
-                })
-            }),
+            metadata: Some(Box::new(Metadata {
+                title: structure.name.clone(),
+                description: structure.description.clone().map(clean_comment),
+                ..Default::default()
+            })),
             object: Some(Box::new(ObjectValidation {
                 additional_properties: Some(Box::new(Schema::Bool(false))),
                 required,

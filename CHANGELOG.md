@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Generator
+  - Added description to struct types.
   - Updated structs to render `additionalProperties: false` for JSON schemas.
 
 #### 🐞 Fixes

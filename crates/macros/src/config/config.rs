@@ -297,7 +297,16 @@ impl<'l> ToTokens for Config<'l> {
 
         #[cfg(feature = "schema")]
         {
+            use crate::utils::extract_comment;
+
             let config_name = name.to_string();
+            let description = if let Some(comment) = extract_comment(&self.attrs) {
+                quote! {
+                    structure.description = Some(#comment.into());
+                }
+            } else {
+                quote! {}
+            };
 
             tokens.extend(quote! {
                 #[automatically_derived]
@@ -305,13 +314,17 @@ impl<'l> ToTokens for Config<'l> {
                     fn generate_schema() -> schematic::SchemaType {
                         use schematic::schema::*;
 
-                        SchemaType::Struct(StructType {
+                        let mut structure = StructType {
                             name: Some(#config_name.into()),
                             fields: vec![
                                 #(#schema_types),*
                             ],
                             ..Default::default()
-                        })
+                        };
+
+                        #description
+
+                        SchemaType::Struct(structure)
                     }
                 }
 

@@ -68,6 +68,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "Comments": {
       "title": "Comments",
+      "description": "Container comment.",
       "type": "object",
       "required": [
         "block",
