@@ -27,10 +27,20 @@ pub enum ObjectFormat {
 /// Options to control the rendered TypeScript output.
 #[derive(Default)]
 pub struct TypeScriptOptions {
+    /// Render a `const enum` instead of a `enum`.
     pub const_enum: bool,
+
+    /// Format to render enums, either an `enum` or a `type` union.
     pub enum_format: EnumFormat,
-    pub exclude_exports: HashSet<String>,
+
+    /// List of references to exclude from exporting as a type.
+    pub exclude_references: HashSet<String>,
+
+    /// Map of relative import file paths to a list of types to import.
+    /// Will be rendered as an `import type {} from 'path';` declaration.
     pub external_types: HashMap<String, HashSet<String>>,
+
+    // Format to render objects, either an `interface` or `type`.
     pub object_format: ObjectFormat,
 }
 
@@ -50,7 +60,7 @@ impl TypeScriptRenderer {
     }
 
     fn is_excluded(&self, name: &str) -> bool {
-        self.options.exclude_exports.contains(name)
+        self.options.exclude_references.contains(name)
     }
 
     fn is_external(&self, name: &str) -> bool {
