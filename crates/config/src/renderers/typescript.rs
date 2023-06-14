@@ -29,6 +29,7 @@ pub enum ObjectFormat {
 pub struct TypeScriptOptions {
     pub const_enum: bool,
     pub enum_format: EnumFormat,
+    pub exclude_exports: HashSet<String>,
     pub external_types: HashMap<String, HashSet<String>>,
     pub object_format: ObjectFormat,
 }
@@ -46,6 +47,20 @@ impl TypeScriptRenderer {
             options,
             references: HashSet::new(),
         }
+    }
+
+    fn is_excluded(&self, name: &str) -> bool {
+        self.options.exclude_exports.contains(name)
+    }
+
+    fn is_external(&self, name: &str) -> bool {
+        for externals in self.options.external_types.values() {
+            if externals.contains(name) {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn is_string_union_enum(&self, enu: &EnumType) -> bool {
@@ -147,13 +162,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             return true;
         }
 
-        for externals in self.options.external_types.values() {
-            if externals.contains(name) {
-                return true;
-            }
-        }
-
-        false
+        self.is_external(name)
     }
 
     fn render_array(&self, array: &ArrayType) -> RenderResult {
@@ -289,9 +298,12 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut imports = vec![];
 
         for (import, types) in &self.options.external_types {
+            let mut imported_types = types.iter().cloned().collect::<Vec<_>>();
+            imported_types.sort();
+
             imports.push(format!(
                 "import type {{ {} }} from '{}';",
-                types.iter().cloned().collect::<Vec<_>>().join(", "),
+                imported_types.join(", "),
                 import
             ));
         }
@@ -302,6 +314,10 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
         for schema in schemas {
             if let Some(name) = schema.get_name() {
+                if self.is_excluded(name) {
+                    continue;
+                }
+
                 outputs.push(match schema {
                     SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
                     SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
