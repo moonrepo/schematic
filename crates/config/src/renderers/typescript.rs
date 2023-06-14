@@ -43,6 +43,9 @@ pub struct TypeScriptOptions {
     /// Will be rendered as an `import type {} from 'path';` declaration.
     pub external_types: HashMap<String, HashSet<String>>,
 
+    /// Character(s) to use for indentation.
+    pub indent_char: String,
+
     // Format to render objects, either an `interface` or `type`.
     pub object_format: ObjectFormat,
 }
@@ -50,6 +53,7 @@ pub struct TypeScriptOptions {
 /// Renders TypeScript types from a schema.
 #[derive(Default)]
 pub struct TypeScriptRenderer {
+    depth: usize,
     options: TypeScriptOptions,
     references: HashSet<String>,
 }
@@ -57,8 +61,23 @@ pub struct TypeScriptRenderer {
 impl TypeScriptRenderer {
     pub fn new(options: TypeScriptOptions) -> Self {
         Self {
+            depth: 0,
             options,
             references: HashSet::new(),
+        }
+    }
+
+    fn indent(&self) -> String {
+        let chars = if self.options.indent_char.is_empty() {
+            "\t"
+        } else {
+            &self.options.indent_char
+        };
+
+        if self.depth == 0 {
+            String::new()
+        } else {
+            chars.repeat(self.depth)
         }
     }
 
@@ -91,7 +110,7 @@ impl TypeScriptRenderer {
             return self.export_type_alias(name, value);
         }
 
-        let out = format!("enum {} {{\n{}\n}}", name, value);
+        let out = format!("enum {} {}", name, value);
 
         Ok(if self.options.const_enum {
             format!("export const {}", out)
@@ -123,7 +142,10 @@ impl TypeScriptRenderer {
             });
         }
 
-        let mut fields = vec![];
+        self.depth += 1;
+
+        let mut out = vec![];
+        let indent = self.indent();
 
         for variant in enu.variants.as_ref().unwrap() {
             if variant.hidden {
@@ -133,38 +155,43 @@ impl TypeScriptRenderer {
             if let Some(variant_name) = &variant.name {
                 let mut field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
                     format!(
-                        "\t{} = {},",
+                        "{}{} = {},",
+                        indent,
                         variant_name,
                         self.render_schema(&variant.type_of)?
                     )
                 } else {
-                    format!("\t{},", variant_name)
+                    format!("{}{},", indent, variant_name)
                 };
 
                 if let Some(comment) = &variant.description {
                     field = self.wrap_in_comment(comment.trim(), field);
                 }
 
-                fields.push(field);
+                out.push(field);
             }
         }
 
-        Ok(fields.join("\n"))
+        self.depth -= 1;
+
+        Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
     }
 
     fn wrap_in_comment(&self, comment: &str, value: String) -> String {
+        let indent = self.indent();
+
         if comment.starts_with('*') {
-            let mut out = vec!["\t/**".to_owned()];
+            let mut out = vec![format!("{}/**", indent)];
 
             for line in comment.split('\n') {
-                out.push(format!("\t {}", line.trim()));
+                out.push(format!("{} {}", indent, line.trim()));
             }
 
-            out.push("\t */".to_owned());
+            out.push(format!("{} */", indent));
 
             format!("{}\n{}", out.join("\n"), value)
         } else {
-            format!("\t// {}\n{}", comment.trim(), value)
+            format!("{}// {}\n{}", indent, comment.trim(), value)
         }
     }
 }
@@ -243,14 +270,17 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     }
 
     fn render_struct(&mut self, structure: &StructType) -> RenderResult {
+        self.depth += 1;
+
         let mut out = vec![];
+        let indent = self.indent();
 
         for field in &structure.fields {
             if field.hidden {
                 continue;
             }
 
-            let mut row = format!("\t{}", field.name.as_ref().unwrap());
+            let mut row = format!("{}{}", indent, field.name.as_ref().unwrap());
 
             if field.optional {
                 row.push_str("?: ");
@@ -277,7 +307,9 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             out.push(row);
         }
 
-        Ok(format!("{{\n{}\n}}", out.join("\n")))
+        self.depth -= 1;
+
+        Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult {

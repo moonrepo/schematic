@@ -112,4 +112,13 @@ mod typescript {
             ..TypeScriptOptions::default()
         }));
     }
+
+    #[test]
+    fn no_refs() {
+        assert_snapshot!(generate(TypeScriptOptions {
+            disable_references: true,
+            indent_char: "  ".into(),
+            ..TypeScriptOptions::default()
+        }));
+    }
 }
