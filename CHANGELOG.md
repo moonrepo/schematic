@@ -13,6 +13,7 @@
 
 - Generator
   - Fixed an issue where nested enums/unions would sometimes not use references.
+  - Fixed an issue with TypeScript arrays and unions. Will now wrap in parens.
 
 ## 0.9.2
 

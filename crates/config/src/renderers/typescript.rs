@@ -46,7 +46,7 @@ pub struct TypeScriptOptions {
     /// Character(s) to use for indentation.
     pub indent_char: String,
 
-    // Format to render objects, either an `interface` or `type`.
+    /// Format to render objects, either an `interface` or `type`.
     pub object_format: ObjectFormat,
 }
 
@@ -96,7 +96,9 @@ impl TypeScriptRenderer {
     }
 
     fn is_string_union_enum(&self, enu: &EnumType) -> bool {
-        matches!(self.options.enum_format, EnumFormat::Union) || enu.variants.is_none()
+        matches!(self.options.enum_format, EnumFormat::Union)
+            || enu.variants.is_none()
+            || self.options.disable_references
     }
 
     fn export_type_alias(&mut self, name: &str, value: String) -> RenderResult {
