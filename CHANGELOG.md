@@ -10,6 +10,8 @@
 
 #### 🐞 Fixes
 
+- Generator
+  - Fixed string/number/float enum values not rendering for TypeScript types.
 - Schema
   - Changed nullable schemas from "one of" to "any of" union types.
   - Fixed deeply nested partial values not being marked nullable.

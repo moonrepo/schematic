@@ -229,11 +229,27 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         self.render_enum_or_union(enu)
     }
 
-    fn render_float(&mut self, _: &FloatType) -> RenderResult {
+    fn render_float(&mut self, float: &FloatType) -> RenderResult {
+        if let Some(values) = &float.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("number".into())
     }
 
-    fn render_integer(&mut self, _: &IntegerType) -> RenderResult {
+    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult {
+        if let Some(values) = &integer.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("number".into())
     }
 
@@ -267,7 +283,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(reference.into())
     }
 
-    fn render_string(&mut self, _: &StringType) -> RenderResult {
+    fn render_string(&mut self, string: &StringType) -> RenderResult {
+        if let Some(values) = &string.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| format!("'{}'", v))
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("string".into())
     }
 
