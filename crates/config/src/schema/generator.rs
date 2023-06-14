@@ -1,4 +1,5 @@
 use super::SchemaRenderer;
+use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use schematic_types::*;
 use std::collections::HashSet;
@@ -10,7 +11,7 @@ use std::path::Path;
 #[derive(Debug, Default)]
 pub struct SchemaGenerator {
     references: HashSet<String>,
-    schemas: Vec<SchemaType>,
+    schemas: IndexMap<String, SchemaType>,
 }
 
 impl SchemaGenerator {
@@ -77,19 +78,11 @@ impl SchemaGenerator {
 
         // Store the name so that we can use it as a reference for other types
         if let Some(name) = schema.get_name() {
-            // Type has already been added
-            if self.references.contains(name) {
-                return;
-            }
-
             self.references.insert(name.to_owned());
 
-        // Types without a name cannot be rendered at the root
-        } else {
-            return;
+            // Types without a name cannot be rendered at the root
+            self.schemas.insert(name.to_owned(), schema);
         }
-
-        self.schemas.push(schema);
     }
 
     /// Generate an output by rendering all collected [`SchemaType`]s using the provided

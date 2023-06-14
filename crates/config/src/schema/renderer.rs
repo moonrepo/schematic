@@ -1,3 +1,4 @@
+use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::HashSet;
 
@@ -85,5 +86,9 @@ pub trait SchemaRenderer<O = String> {
 
     /// Render the list of [`SchemaType`]s to a string, in the order they are listed.
     /// References between types can be resolved using the provided `references` set.
-    fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult;
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, SchemaType>,
+        references: &HashSet<String>,
+    ) -> RenderResult;
 }

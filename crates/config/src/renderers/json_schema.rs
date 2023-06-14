@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use schemars::gen::SchemaSettings;
 use schemars::schema::*;
@@ -27,8 +28,16 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_schema_from_field(&mut self, field: &SchemaField) -> RenderResult<Schema> {
-        let mut schema = self.render_schema(&field.type_of)?;
+    fn create_schema_from_field(
+        &mut self,
+        field: &SchemaField,
+        partial: bool,
+    ) -> RenderResult<Schema> {
+        let mut schema = if partial || field.nullable {
+            self.render_schema(&SchemaType::nullable(field.type_of.clone()))?
+        } else {
+            self.render_schema(&field.type_of)?
+        };
 
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
@@ -227,7 +236,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 required.insert(name.clone());
             }
 
-            properties.insert(name, self.create_schema_from_field(field)?);
+            properties.insert(
+                name,
+                self.create_schema_from_field(field, structure.partial)?,
+            );
         }
 
         let data = SchemaObject {
@@ -301,7 +313,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }))
     }
 
-    fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, SchemaType>,
+        references: &HashSet<String>,
+    ) -> RenderResult {
         self.references.extend(references.to_owned());
 
         let mut root_schema = RootSchema {
@@ -309,18 +325,17 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             ..RootSchema::default()
         };
 
-        for (i, schema) in schemas.iter().enumerate() {
-            let name = schema.get_name().unwrap().to_owned();
-
+        for (i, (name, schema)) in schemas.iter().enumerate() {
             // The last schema in the generator is the root schema
             if i == schemas.len() - 1 {
                 root_schema.schema = self.render_schema_without_reference(schema)?.into_object();
 
             // Otherwise the others are all ref definitions
             } else {
-                root_schema
-                    .definitions
-                    .insert(name, self.render_schema_without_reference(schema)?);
+                root_schema.definitions.insert(
+                    name.to_owned(),
+                    self.render_schema_without_reference(schema)?,
+                );
             }
         }
 

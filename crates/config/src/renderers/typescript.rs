@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::{HashMap, HashSet};
 
@@ -314,10 +315,10 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push_str(": ");
             }
 
-            row.push_str(&self.render_schema(&field.type_of)?);
-
-            if field.nullable && !row.contains(" null") {
-                row.push_str(" | null");
+            if field.nullable {
+                row.push_str(&self.render_schema(&SchemaType::nullable(field.type_of.clone()))?);
+            } else {
+                row.push_str(&self.render_schema(&field.type_of)?);
             }
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
@@ -362,7 +363,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok("unknown".into())
     }
 
-    fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, SchemaType>,
+        references: &HashSet<String>,
+    ) -> RenderResult {
         self.references.extend(references.to_owned());
 
         let mut outputs = vec![
@@ -387,21 +392,19 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             outputs.push(imports.join("\n"));
         }
 
-        for schema in schemas {
-            if let Some(name) = schema.get_name() {
-                if self.is_excluded(name) {
-                    continue;
-                }
-
-                outputs.push(match schema {
-                    SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
-                    SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
-                    _ => {
-                        let out = self.render_schema_without_reference(schema)?;
-                        self.export_type_alias(name, out)?
-                    }
-                });
+        for (name, schema) in schemas {
+            if self.is_excluded(name) {
+                continue;
             }
+
+            outputs.push(match schema {
+                SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
+                SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
+                _ => {
+                    let out = self.render_schema_without_reference(schema)?;
+                    self.export_type_alias(name, out)?
+                }
+            });
         }
 
         Ok(outputs.join("\n\n"))
