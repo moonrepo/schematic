@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Generator
+  - Updated literal types in JSON schemas to use `const`.
+
 ## 0.9.4
 
 #### 🚀 Updates

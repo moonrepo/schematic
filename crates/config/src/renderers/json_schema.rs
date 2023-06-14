@@ -158,8 +158,24 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    // Note: This isn't used...
-    fn render_literal(&mut self, _: &LiteralType) -> RenderResult<Schema> {
+    fn render_literal(&mut self, literal: &LiteralType) -> RenderResult<Schema> {
+        if let Some(value) = &literal.value {
+            let value = match value {
+                LiteralValue::Bool(inner) => Value::Bool(*inner),
+                LiteralValue::Float(inner) => {
+                    Value::Number(Number::from_f64(inner.parse().unwrap()).unwrap())
+                }
+                LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
+                LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
+                LiteralValue::String(inner) => Value::String(inner.to_owned()),
+            };
+
+            return Ok(Schema::Object(SchemaObject {
+                const_value: Some(value),
+                ..Default::default()
+            }));
+        }
+
         self.render_unknown()
     }
 
