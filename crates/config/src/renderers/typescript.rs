@@ -315,7 +315,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push_str(": ");
             }
 
-            if field.nullable {
+            if structure.partial || field.nullable {
                 row.push_str(&self.render_schema(&SchemaType::nullable(field.type_of.clone()))?);
             } else {
                 row.push_str(&self.render_schema(&field.type_of)?);
