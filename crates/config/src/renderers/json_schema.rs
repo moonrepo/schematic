@@ -28,16 +28,8 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_schema_from_field(
-        &mut self,
-        field: &SchemaField,
-        partial: bool,
-    ) -> RenderResult<Schema> {
-        let mut schema = if partial || field.nullable {
-            self.render_schema(&SchemaType::nullable(field.type_of.clone()))?
-        } else {
-            self.render_schema(&field.type_of)?
-        };
+    fn create_schema_from_field(&mut self, field: &SchemaField) -> RenderResult<Schema> {
+        let mut schema = self.render_schema(&field.type_of)?;
 
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
@@ -236,10 +228,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 required.insert(name.clone());
             }
 
-            properties.insert(
-                name,
-                self.create_schema_from_field(field, structure.partial)?,
-            );
+            properties.insert(name, self.create_schema_from_field(field)?);
         }
 
         let data = SchemaObject {
