@@ -75,6 +75,29 @@ impl SchemaType {
         })
     }
 
+    /// Create a nullable type for the provided schema. If already nullabe,
+    /// do nothing and return, otherwise convert to a union.
+    pub fn nullable(mut schema: SchemaType) -> SchemaType {
+        if let SchemaType::Union(inner) = &mut schema {
+            // If the union has an explicit name, then we can assume it's a distinct
+            // type, so we shouldn't add null to it and alter the intended type.
+            if inner.name.is_none() {
+                if !inner
+                    .variants_types
+                    .iter()
+                    .any(|t| matches!(**t, SchemaType::Null))
+                {
+                    inner.variants_types.push(Box::new(SchemaType::Null));
+                }
+
+                return schema;
+            }
+        }
+
+        // Convert to a nullable union
+        SchemaType::union([schema, SchemaType::Null])
+    }
+
     /// Create an indexed/mapable object schema with the provided key and value types.
     pub fn object(key_type: SchemaType, value_type: SchemaType) -> SchemaType {
         SchemaType::Object(ObjectType {
@@ -219,7 +242,7 @@ impl SchemaField {
     }
 }
 
-/// Represents the shape of the implementing type.
+/// Defines a schema that represents the shape of the implementing type.
 pub trait Schematic {
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
@@ -250,6 +273,6 @@ impl<T: Schematic> Schematic for Box<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn generate_schema() -> SchemaType {
-        SchemaType::union_one([T::generate_schema(), SchemaType::Null])
+        SchemaType::nullable(T::generate_schema())
     }
 }

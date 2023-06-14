@@ -1210,6 +1210,7 @@ name = "schematic"
 version = "0.9.3"
 dependencies = [
  "garde",
+ "indexmap",
  "miette",
  "reqwest",
  "schemars",

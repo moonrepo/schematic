@@ -8,7 +8,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "type": "object",
   "properties": {
     "basic": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -18,7 +18,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "nested": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialNestedValidations"
         },
@@ -28,7 +28,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "nested2": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialNestedValidations"
         },
@@ -38,7 +38,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "optional": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -48,6 +48,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "AliasedEnum": {
       "type": "string",
@@ -67,6 +68,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "Comments": {
       "title": "Comments",
+      "description": "Container comment.",
       "type": "object",
       "required": [
         "block",
@@ -91,7 +93,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "normal": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CustomFormatEnum": {
       "type": "string",
@@ -184,7 +187,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "EnvVars": {
       "title": "EnvVars",
@@ -203,7 +207,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsEnum": {
       "title": "ExtendsEnum",
@@ -219,7 +224,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsFrom": {
       "anyOf": [
@@ -247,7 +253,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsOptional": {
       "title": "ExtendsOptional",
@@ -257,7 +264,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "extends": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -269,7 +276,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsString": {
       "title": "ExtendsString",
@@ -281,7 +289,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "extends": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Merging": {
       "title": "Merging",
@@ -293,7 +302,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NestedValidations": {
       "title": "NestedValidations",
@@ -305,7 +315,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "OptionalValues": {
       "title": "OptionalValues",
@@ -316,7 +327,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "optional": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -328,7 +339,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "required": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "OtherEnum": {
       "type": "string",
@@ -343,7 +355,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "array": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -358,7 +370,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "boolean": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -368,7 +380,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "booleanFn": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -378,7 +390,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
             },
@@ -388,7 +400,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "fileString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -398,7 +410,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "longString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -408,7 +420,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "number": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },
@@ -418,7 +430,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "pathString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string",
               "format": "path"
@@ -429,7 +441,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "string": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -439,7 +451,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "stringFn": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -449,7 +461,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "tuple": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": [
@@ -475,7 +487,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "vector": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -487,14 +499,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialNested": {
       "title": "PartialNested",
       "type": "object",
       "properties": {
         "list": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -507,7 +520,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -523,7 +536,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map2": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -539,7 +552,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "one": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/PartialValueTypes"
             },
@@ -549,7 +562,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "two": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/PartialValueTypes"
             },
@@ -558,14 +571,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialNestedValidations": {
       "title": "PartialNestedValidations",
       "type": "object",
       "properties": {
         "basic": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -574,14 +588,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialValueTypes": {
       "title": "PartialValueTypes",
       "type": "object",
       "properties": {
         "boolean": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -591,7 +606,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
             },
@@ -601,7 +616,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -617,7 +632,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "number": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },
@@ -627,7 +642,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "string": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -637,7 +652,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "vector": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -649,7 +664,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Serde": {
       "title": "Serde",
@@ -661,7 +677,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "renamed": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SerdeNative": {
       "title": "SerdeNative",
@@ -673,7 +690,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "renamed": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SomeEnum": {
       "type": "string",
@@ -704,7 +722,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "nested2": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/NestedValidations"
             },
@@ -714,7 +732,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "optional": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -723,7 +741,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ValueTypes": {
       "title": "ValueTypes",
@@ -768,7 +787,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

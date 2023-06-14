@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::{HashMap, HashSet};
 
@@ -229,11 +230,27 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         self.render_enum_or_union(enu)
     }
 
-    fn render_float(&mut self, _: &FloatType) -> RenderResult {
+    fn render_float(&mut self, float: &FloatType) -> RenderResult {
+        if let Some(values) = &float.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("number".into())
     }
 
-    fn render_integer(&mut self, _: &IntegerType) -> RenderResult {
+    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult {
+        if let Some(values) = &integer.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("number".into())
     }
 
@@ -267,7 +284,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(reference.into())
     }
 
-    fn render_string(&mut self, _: &StringType) -> RenderResult {
+    fn render_string(&mut self, string: &StringType) -> RenderResult {
+        if let Some(values) = &string.enum_values {
+            return Ok(values
+                .iter()
+                .map(|v| format!("'{}'", v))
+                .collect::<Vec<_>>()
+                .join(" | "));
+        }
+
         Ok("string".into())
     }
 
@@ -291,10 +316,6 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             }
 
             row.push_str(&self.render_schema(&field.type_of)?);
-
-            if field.nullable && !row.contains(" null") {
-                row.push_str(" | null");
-            }
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
                 row.push(';');
@@ -338,7 +359,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok("unknown".into())
     }
 
-    fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, SchemaType>,
+        references: &HashSet<String>,
+    ) -> RenderResult {
         self.references.extend(references.to_owned());
 
         let mut outputs = vec![
@@ -363,21 +388,19 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             outputs.push(imports.join("\n"));
         }
 
-        for schema in schemas {
-            if let Some(name) = schema.get_name() {
-                if self.is_excluded(name) {
-                    continue;
-                }
-
-                outputs.push(match schema {
-                    SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
-                    SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
-                    _ => {
-                        let out = self.render_schema_without_reference(schema)?;
-                        self.export_type_alias(name, out)?
-                    }
-                });
+        for (name, schema) in schemas {
+            if self.is_excluded(name) {
+                continue;
             }
+
+            outputs.push(match schema {
+                SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
+                SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
+                _ => {
+                    let out = self.render_schema_without_reference(schema)?;
+                    self.export_type_alias(name, out)?
+                }
+            });
         }
 
         Ok(outputs.join("\n\n"))

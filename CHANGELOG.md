@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Generator
+  - Added description to struct types.
+  - Updated structs to render `additionalProperties: false` for JSON schemas.
+
+#### 🐞 Fixes
+
+- Generator
+  - Fixed string/number/float enum values not rendering for TypeScript types.
+- Schema
+  - Changed nullable schemas from "one of" to "any of" union types.
+  - Fixed deeply nested partial values not being marked nullable.
+
 ## 0.9.3
 
 #### 🚀 Updates

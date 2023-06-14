@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use schemars::gen::SchemaSettings;
 use schemars::schema::*;
@@ -15,6 +16,10 @@ pub struct JsonSchemaRenderer {
     references: HashSet<String>,
 }
 
+fn clean_comment(comment: String) -> String {
+    comment.trim().replace("* ", "").replace(" * ", "")
+}
+
 impl JsonSchemaRenderer {
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
@@ -23,29 +28,13 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_schema_from_field(
-        &mut self,
-        field: &SchemaField,
-        partial: bool,
-    ) -> RenderResult<Schema> {
-        let mut schema = if partial && !matches!(&field.type_of, SchemaType::Union(_)) {
-            self.render_union(&UnionType {
-                name: field.name.clone(),
-                operator: UnionOperator::OneOf,
-                variants_types: vec![Box::new(field.type_of.clone()), Box::new(SchemaType::Null)],
-                ..Default::default()
-            })?
-        } else {
-            self.render_schema(&field.type_of)?
-        };
+    fn create_schema_from_field(&mut self, field: &SchemaField) -> RenderResult<Schema> {
+        let mut schema = self.render_schema(&field.type_of)?;
 
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
                 // title: field.name.clone(),
-                description: field
-                    .description
-                    .clone()
-                    .map(|d| d.trim().replace("* ", "").replace(" * ", "")),
+                description: field.description.clone().map(clean_comment),
                 deprecated: field.deprecated,
                 read_only: field.read_only,
                 write_only: field.write_only,
@@ -239,21 +228,18 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 required.insert(name.clone());
             }
 
-            properties.insert(
-                name,
-                self.create_schema_from_field(field, structure.partial)?,
-            );
+            properties.insert(name, self.create_schema_from_field(field)?);
         }
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            metadata: structure.name.as_ref().map(|n| {
-                Box::new(Metadata {
-                    title: Some(n.to_owned()),
-                    ..Default::default()
-                })
-            }),
+            metadata: Some(Box::new(Metadata {
+                title: structure.name.clone(),
+                description: structure.description.clone().map(clean_comment),
+                ..Default::default()
+            })),
             object: Some(Box::new(ObjectValidation {
+                additional_properties: Some(Box::new(Schema::Bool(false))),
                 required,
                 properties,
                 ..Default::default()
@@ -316,7 +302,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }))
     }
 
-    fn render(&mut self, schemas: &[SchemaType], references: &HashSet<String>) -> RenderResult {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, SchemaType>,
+        references: &HashSet<String>,
+    ) -> RenderResult {
         self.references.extend(references.to_owned());
 
         let mut root_schema = RootSchema {
@@ -324,18 +314,17 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             ..RootSchema::default()
         };
 
-        for (i, schema) in schemas.iter().enumerate() {
-            let name = schema.get_name().unwrap().to_owned();
-
+        for (i, (name, schema)) in schemas.iter().enumerate() {
             // The last schema in the generator is the root schema
             if i == schemas.len() - 1 {
                 root_schema.schema = self.render_schema_without_reference(schema)?.into_object();
 
             // Otherwise the others are all ref definitions
             } else {
-                root_schema
-                    .definitions
-                    .insert(name, self.render_schema_without_reference(schema)?);
+                root_schema.definitions.insert(
+                    name.to_owned(),
+                    self.render_schema_without_reference(schema)?,
+                );
             }
         }
 

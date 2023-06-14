@@ -12,7 +12,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "nestedOpt": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "object",
           "additionalProperties": {
@@ -37,6 +37,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "NestedSettings": {
       "title": "NestedSettings",
@@ -47,7 +48,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "nestedOpt": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/StandardSettings"
             },
@@ -63,7 +64,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NestedVecSettings": {
       "title": "NestedVecSettings",
@@ -74,7 +76,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "nestedOpt": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -92,7 +94,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "$ref": "#/definitions/StandardSettings"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "StandardSettings": {
       "title": "StandardSettings",
@@ -104,7 +107,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "opt": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -119,7 +122,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "reqDefault": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

@@ -94,6 +94,8 @@ pub fn partialize_schema(schema: &mut SchemaType) {
                 field.nullable = true;
 
                 partialize_schema(&mut field.type_of);
+
+                field.type_of = SchemaType::nullable(field.type_of.clone());
             }
         }
         SchemaType::Tuple(TupleType { items_types, .. }) => {
