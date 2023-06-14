@@ -2,10 +2,16 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Generator
+  - Updated structs to render `additionalProperties: false` for JSON schemas.
+
 #### 🐞 Fixes
 
-- Changed nullable schemas from "one of" to "any of" union types.
-- Fixed deeply nested partial values not being marked nullable.
+- Schema
+  - Changed nullable schemas from "one of" to "any of" union types.
+  - Fixed deeply nested partial values not being marked nullable.
 
 ## 0.9.3
 

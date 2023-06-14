@@ -25,6 +25,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "ExtendsFrom": {
       "anyOf": [
@@ -59,7 +60,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsString": {
       "title": "ExtendsString",
@@ -78,7 +80,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsStringOptional": {
       "title": "ExtendsStringOptional",
@@ -104,7 +107,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

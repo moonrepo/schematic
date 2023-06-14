@@ -23,21 +23,8 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_schema_from_field(
-        &mut self,
-        field: &SchemaField,
-        partial: bool,
-    ) -> RenderResult<Schema> {
-        let mut schema = if partial && !matches!(&field.type_of, SchemaType::Union(_)) {
-            self.render_union(&UnionType {
-                name: field.name.clone(),
-                operator: UnionOperator::OneOf,
-                variants_types: vec![Box::new(field.type_of.clone()), Box::new(SchemaType::Null)],
-                ..Default::default()
-            })?
-        } else {
-            self.render_schema(&field.type_of)?
-        };
+    fn create_schema_from_field(&mut self, field: &SchemaField) -> RenderResult<Schema> {
+        let mut schema = self.render_schema(&field.type_of)?;
 
         if let Schema::Object(ref mut inner) = schema {
             inner.metadata = Some(Box::new(Metadata {
@@ -239,10 +226,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 required.insert(name.clone());
             }
 
-            properties.insert(
-                name,
-                self.create_schema_from_field(field, structure.partial)?,
-            );
+            properties.insert(name, self.create_schema_from_field(field)?);
         }
 
         let data = SchemaObject {
@@ -254,6 +238,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 })
             }),
             object: Some(Box::new(ObjectValidation {
+                additional_properties: Some(Box::new(Schema::Bool(false))),
                 required,
                 properties,
                 ..Default::default()

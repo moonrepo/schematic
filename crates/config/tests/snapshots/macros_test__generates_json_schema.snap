@@ -48,6 +48,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "AliasedEnum": {
       "type": "string",
@@ -91,7 +92,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "normal": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CustomFormatEnum": {
       "type": "string",
@@ -184,7 +186,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "EnvVars": {
       "title": "EnvVars",
@@ -203,7 +206,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsEnum": {
       "title": "ExtendsEnum",
@@ -219,7 +223,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsFrom": {
       "anyOf": [
@@ -247,7 +252,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsOptional": {
       "title": "ExtendsOptional",
@@ -269,7 +275,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ExtendsString": {
       "title": "ExtendsString",
@@ -281,7 +288,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "extends": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Merging": {
       "title": "Merging",
@@ -293,7 +301,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NestedValidations": {
       "title": "NestedValidations",
@@ -305,7 +314,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "OptionalValues": {
       "title": "OptionalValues",
@@ -328,7 +338,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "required": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "OtherEnum": {
       "type": "string",
@@ -487,7 +498,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialNested": {
       "title": "PartialNested",
@@ -558,7 +570,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialNestedValidations": {
       "title": "PartialNestedValidations",
@@ -574,7 +587,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialValueTypes": {
       "title": "PartialValueTypes",
@@ -649,7 +663,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "Serde": {
       "title": "Serde",
@@ -661,7 +676,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "renamed": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SerdeNative": {
       "title": "SerdeNative",
@@ -673,7 +689,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "renamed": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "SomeEnum": {
       "type": "string",
@@ -723,7 +740,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ValueTypes": {
       "title": "ValueTypes",
@@ -768,7 +786,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

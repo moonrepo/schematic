@@ -46,6 +46,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "ContextDefaults": {
       "title": "ContextDefaults",
@@ -62,7 +63,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "string",
           "format": "path"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CustomDefaults": {
       "title": "CustomDefaults",
@@ -89,7 +91,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "number"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NativeDefaults": {
       "title": "NativeDefaults",
@@ -116,7 +119,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ReqOptDefaults": {
       "title": "ReqOptDefaults",
@@ -143,7 +147,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "requiredWithDefault": {
           "type": "number"
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }
