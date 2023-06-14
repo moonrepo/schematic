@@ -78,18 +78,20 @@ impl SchemaType {
     /// Create a nullable type for the provided schema. If already nullabe,
     /// do nothing and return, otherwise convert to a union.
     pub fn nullable(mut schema: SchemaType) -> SchemaType {
-        // Already a union
         if let SchemaType::Union(inner) = &mut schema {
-            // Make nullable
-            if !inner
-                .variants_types
-                .iter()
-                .any(|t| matches!(**t, SchemaType::Null))
-            {
-                inner.variants_types.push(Box::new(SchemaType::Null));
-            }
+            // If the union has an explicit name, then we can assume it's a distinct
+            // type, so we shouldn't add null to it and alter the intended type.
+            if inner.name.is_none() {
+                if !inner
+                    .variants_types
+                    .iter()
+                    .any(|t| matches!(**t, SchemaType::Null))
+                {
+                    inner.variants_types.push(Box::new(SchemaType::Null));
+                }
 
-            return schema;
+                return schema;
+            }
         }
 
         // Convert to a nullable union
