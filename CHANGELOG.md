@@ -6,7 +6,7 @@
 
 - Generator
   - Updated struct fields to be sorted alphabetically.
-  - Added `excluded_exports` and `external_types` options to TypeScript.
+  - Added `excluded_references` and `external_types` options to TypeScript.
 
 #### 🐞 Fixes
 
