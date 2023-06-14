@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Generator
+  - Updated struct fields to be sorted alphabetically.
+  - Added `disable_references`, `exclude_references`, `external_types`, and `indent_char` options to
+    TypeScript.
+
+#### 🐞 Fixes
+
+- Generator
+  - Fixed an issue where nested enums/unions would sometimes not use references.
+  - Fixed an issue with TypeScript arrays and unions. Will now wrap in parens.
+
 ## 0.9.2
 
 #### 🐞 Fixes

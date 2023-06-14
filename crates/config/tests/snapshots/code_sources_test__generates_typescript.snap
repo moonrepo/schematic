@@ -8,8 +8,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 export interface Config {
 	boolean: boolean;
-	string: string;
 	number: number;
+	string: string;
 	vector: string[];
 }
 

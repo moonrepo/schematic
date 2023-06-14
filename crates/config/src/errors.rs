@@ -4,6 +4,7 @@ use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
+/// All configuration based errors.
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
     #[error("{0}")]

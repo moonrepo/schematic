@@ -194,6 +194,7 @@ impl SchemaType {
     }
 }
 
+/// Represents a field within a schema struct, or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default)]
 pub struct SchemaField {
     pub name: Option<String>,
@@ -218,6 +219,7 @@ impl SchemaField {
     }
 }
 
+/// Represents the shape of the implementing type.
 pub trait Schematic {
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.

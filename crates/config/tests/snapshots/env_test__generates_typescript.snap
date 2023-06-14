@@ -11,12 +11,12 @@ export interface EnvVarsNested {
 }
 
 export interface EnvVarsPrefixed {
-	string: string;
-	number: number;
 	bool: boolean;
-	path: string;
 	list1: string[];
 	list2: number[];
 	nested: EnvVarsNested;
+	number: number;
+	path: string;
+	string: string;
 }
 

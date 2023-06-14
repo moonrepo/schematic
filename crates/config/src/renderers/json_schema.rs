@@ -23,7 +23,11 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_schema_from_field(&self, field: &SchemaField, partial: bool) -> RenderResult<Schema> {
+    fn create_schema_from_field(
+        &mut self,
+        field: &SchemaField,
+        partial: bool,
+    ) -> RenderResult<Schema> {
         let mut schema = if partial && !matches!(&field.type_of, SchemaType::Union(_)) {
             self.render_union(&UnionType {
                 name: field.name.clone(),
@@ -58,7 +62,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         self.references.contains(name)
     }
 
-    fn render_array(&self, array: &ArrayType) -> RenderResult<Schema> {
+    fn render_array(&mut self, array: &ArrayType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
             array: Some(Box::new(ArrayValidation {
@@ -76,14 +80,14 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_boolean(&self) -> RenderResult<Schema> {
+    fn render_boolean(&mut self) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Boolean))),
             ..Default::default()
         }))
     }
 
-    fn render_enum(&self, enu: &EnumType) -> RenderResult<Schema> {
+    fn render_enum(&mut self, enu: &EnumType) -> RenderResult<Schema> {
         let mut instance_type = InstanceType::String;
         let mut enum_values = vec![];
 
@@ -119,7 +123,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }))
     }
 
-    fn render_float(&self, float: &FloatType) -> RenderResult<Schema> {
+    fn render_float(&mut self, float: &FloatType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
             enum_values: float.enum_values.clone().map(|values| {
@@ -142,7 +146,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_integer(&self, integer: &IntegerType) -> RenderResult<Schema> {
+    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
             enum_values: integer.enum_values.clone().map(|values| {
@@ -166,18 +170,18 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     }
 
     // Note: This isn't used...
-    fn render_literal(&self, _: &LiteralType) -> RenderResult<Schema> {
+    fn render_literal(&mut self, _: &LiteralType) -> RenderResult<Schema> {
         self.render_unknown()
     }
 
-    fn render_null(&self) -> RenderResult<Schema> {
+    fn render_null(&mut self) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Null))),
             ..Default::default()
         }))
     }
 
-    fn render_object(&self, object: &ObjectType) -> RenderResult<Schema> {
+    fn render_object(&mut self, object: &ObjectType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             object: Some(Box::new(ObjectValidation {
@@ -194,14 +198,14 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_reference(&self, reference: &str) -> RenderResult<Schema> {
+    fn render_reference(&mut self, reference: &str) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
             reference: Some(format!("{}{}", self.options.definitions_path, reference)),
             ..Default::default()
         }))
     }
 
-    fn render_string(&self, string: &StringType) -> RenderResult<Schema> {
+    fn render_string(&mut self, string: &StringType) -> RenderResult<Schema> {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
             enum_values: string
@@ -220,7 +224,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_struct(&self, structure: &StructType) -> RenderResult<Schema> {
+    fn render_struct(&mut self, structure: &StructType) -> RenderResult<Schema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone());
 
@@ -260,7 +264,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_tuple(&self, tuple: &TupleType) -> RenderResult<Schema> {
+    fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<Schema> {
         let mut items = vec![];
 
         for item in &tuple.items_types {
@@ -281,7 +285,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_union(&self, uni: &UnionType) -> RenderResult<Schema> {
+    fn render_union(&mut self, uni: &UnionType) -> RenderResult<Schema> {
         let mut items = vec![];
 
         for item in &uni.variants_types {
@@ -305,7 +309,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }))
     }
 
-    fn render_unknown(&self) -> RenderResult<Schema> {
+    fn render_unknown(&mut self) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Null))),
             ..Default::default()
