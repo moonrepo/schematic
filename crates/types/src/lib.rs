@@ -240,7 +240,7 @@ impl SchemaField {
     }
 }
 
-/// Represents the shape of the implementing type.
+/// Defines a schema that represents the shape of the implementing type.
 pub trait Schematic {
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.

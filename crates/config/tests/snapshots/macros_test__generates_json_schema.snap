@@ -8,7 +8,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "type": "object",
   "properties": {
     "basic": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -18,7 +18,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "nested": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialNestedValidations"
         },
@@ -343,7 +343,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "array": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -358,7 +358,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "boolean": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -368,7 +368,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "booleanFn": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -378,7 +378,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
             },
@@ -388,7 +388,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "fileString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -398,7 +398,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "longString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -408,7 +408,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "number": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },
@@ -418,7 +418,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "pathString": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string",
               "format": "path"
@@ -429,7 +429,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "string": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -439,7 +439,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "stringFn": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -449,7 +449,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "tuple": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": [
@@ -475,7 +475,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "vector": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -494,7 +494,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "list": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -507,7 +507,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -539,7 +539,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "one": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/PartialValueTypes"
             },
@@ -565,7 +565,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "basic": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -581,7 +581,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "boolean": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -591,7 +591,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
             },
@@ -601,7 +601,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "map": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -617,7 +617,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "number": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },
@@ -627,7 +627,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "string": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -637,7 +637,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "vector": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
