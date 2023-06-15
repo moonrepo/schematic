@@ -1,4 +1,4 @@
-use crate::validator::ValidatorError;
+use crate::config::validator::ValidatorError;
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;

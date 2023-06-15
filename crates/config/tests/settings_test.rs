@@ -396,7 +396,7 @@ fn generates_json_schema() {
     generator.add::<NestedVecSettings>();
     generator.add::<NestedMapSettings>();
     generator
-        .generate(&file, renderers::json_schema::JsonSchemaRenderer::default())
+        .generate(&file, schema::json_schema::JsonSchemaRenderer::default())
         .unwrap();
 
     assert!(file.exists());
@@ -417,7 +417,7 @@ fn generates_typescript() {
     generator.add::<NestedVecSettings>();
     generator.add::<NestedMapSettings>();
     generator
-        .generate(&file, renderers::typescript::TypeScriptRenderer::default())
+        .generate(&file, schema::typescript::TypeScriptRenderer::default())
         .unwrap();
 
     assert!(file.exists());

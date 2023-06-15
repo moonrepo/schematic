@@ -1,4 +1,4 @@
-use crate::errors::ConfigError;
+use crate::config::ConfigError;
 use crate::internal;
 use std::str::FromStr;
 

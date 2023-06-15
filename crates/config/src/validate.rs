@@ -1,6 +1,7 @@
-use crate::source::{is_file_like, is_secure_url, is_source_format, is_url_like};
-use crate::validator::{Segment, SettingPath, ValidateError};
-use crate::ExtendsFrom;
+use crate::config::{
+    is_file_like, is_secure_url, is_source_format, is_url_like, ExtendsFrom, Segment, SettingPath,
+    ValidateError,
+};
 use garde::rules as r;
 
 /// A validator function that receives a setting value to validate, the parent

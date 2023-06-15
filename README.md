@@ -613,7 +613,7 @@ fn main() {
 ```rust
 generator.generate(
 	output_dir.join("schema.json"),
-	renderers::json_schema::JsonSchemaRenderer::default(),
+	schema::json_schema::JsonSchemaRenderer::default(),
 );
 ```
 
@@ -625,7 +625,7 @@ generator.generate(
 ```rust
 generator.generate(
 	output_dir.join("types.ts"),
-	renderers::typescript::TypeScriptRenderer::default(),
+	schema::typescript::TypeScriptRenderer::default(),
 );
 ```
 

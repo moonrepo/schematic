@@ -1,12 +1,6 @@
 #![allow(clippy::result_large_err)]
 
 mod config;
-mod errors;
-mod format;
-mod layer;
-mod loader;
-mod source;
-mod validator;
 
 /// Built-in `parse_env` functions.
 pub mod env;
@@ -17,29 +11,19 @@ pub mod internal;
 /// Built-in `merge` functions.
 pub mod merge;
 
-/// Renderers for rendering schema output.
-#[cfg(feature = "schema")]
-pub mod renderers;
-
-/// Generate schemas for config and Rust types.
+/// Generate schemas to render into outputs.
 #[cfg(feature = "schema")]
 pub mod schema;
 
 /// Built-in `validate` functions.
 pub mod validate;
 
-pub use config::*;
-pub use errors::*;
-pub use format::*;
-pub use layer::*;
-pub use loader::*;
-pub use schematic_macros::*;
-pub use schematic_types::{SchemaField, SchemaType, Schematic};
-pub use source::*;
-pub use validator::*;
-
 /// ASCII color helpers for use within error messages.
 pub use starbase_styles::color;
+
+pub use config::*;
+pub use schematic_macros::*;
+pub use schematic_types::{SchemaField, SchemaType, Schematic};
 
 #[macro_export]
 macro_rules! derive_enum {

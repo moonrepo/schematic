@@ -1,6 +1,6 @@
+use crate::config::errors::ConfigError;
+use crate::config::validator::{SettingPath, ValidatorError};
 use crate::derive_enum;
-use crate::errors::ConfigError;
-use crate::validator::{SettingPath, ValidatorError};
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
 

@@ -280,7 +280,7 @@ fn generates_json_schema() {
     generator.add::<PartialNested>();
     generator.add::<PartialValidations>();
     generator
-        .generate(&file, renderers::json_schema::JsonSchemaRenderer::default())
+        .generate(&file, schema::json_schema::JsonSchemaRenderer::default())
         .unwrap();
 
     assert!(file.exists());
@@ -290,7 +290,7 @@ fn generates_json_schema() {
 #[cfg(feature = "typescript")]
 #[test]
 fn generates_typescript() {
-    use renderers::typescript::*;
+    use schema::typescript::*;
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 
     let sandbox = create_empty_sandbox();

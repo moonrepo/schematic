@@ -1,5 +1,4 @@
-use crate::config::PartialConfig;
-use crate::errors::ConfigError;
+use crate::config::{ConfigError, PartialConfig};
 use crate::merge::merge_partial;
 use schematic_types::SchemaType;
 use std::{env, str::FromStr};

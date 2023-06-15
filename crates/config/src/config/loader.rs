@@ -1,8 +1,8 @@
+use crate::config::errors::ConfigError;
+use crate::config::format::Format;
+use crate::config::layer::Layer;
+use crate::config::source::Source;
 use crate::config::{Config, ExtendsFrom, PartialConfig};
-use crate::errors::ConfigError;
-use crate::format::Format;
-use crate::layer::Layer;
-use crate::source::Source;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};

@@ -1,5 +1,5 @@
+use crate::config::source::Source;
 use crate::config::Config;
-use crate::source::Source;
 use serde::Serialize;
 
 /// A layer of configuration that was loaded, and used to create the final state.

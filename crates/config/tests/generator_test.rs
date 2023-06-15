@@ -43,7 +43,7 @@ fn create_generator() -> SchemaGenerator {
 #[cfg(feature = "typescript")]
 mod typescript {
     use super::*;
-    use schematic::renderers::typescript::*;
+    use schematic::schema::typescript::*;
 
     fn generate(options: TypeScriptOptions) -> String {
         let sandbox = create_empty_sandbox();

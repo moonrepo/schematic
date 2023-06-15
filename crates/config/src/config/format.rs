@@ -1,4 +1,4 @@
-use crate::errors::{ConfigError, ParserError};
+use crate::config::errors::{ConfigError, ParserError};
 use miette::{NamedSource, SourceOffset, SourceSpan};
 use serde::{de::DeserializeOwned, Serialize};
 

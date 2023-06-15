@@ -1,5 +1,5 @@
-use crate::errors::ConfigError;
-use crate::format::Format;
+use crate::config::errors::ConfigError;
+use crate::config::format::Format;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
