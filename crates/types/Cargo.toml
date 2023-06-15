@@ -5,3 +5,10 @@ edition = "2021"
 license = "MIT"
 description = "Shapes and types for defining schemas for Rust types."
 repository = "https://github.com/moonrepo/schematic"
+
+[dependencies]
+regex = { version = "1.8.4", optional = true }
+
+[features]
+default = []
+regex = ["dep:regex"]

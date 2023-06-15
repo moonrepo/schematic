@@ -1,5 +1,6 @@
 mod arrays;
 mod enums;
+mod externals;
 mod literals;
 mod numbers;
 mod objects;
@@ -10,6 +11,7 @@ mod unions;
 
 pub use arrays::*;
 pub use enums::*;
+pub use externals::*;
 pub use literals::*;
 pub use numbers::*;
 pub use objects::*;

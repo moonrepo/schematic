@@ -645,8 +645,10 @@ The following Cargo features are available:
 - `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
   functions.
 
-### Misc
+### Schema generation
 
 - `schema` - Generates schemas for schematic types and built-in Rust types.
 - `json_schema` - Enables JSON schema generation.
 - `typescript` - Enables TypeScript types generation.
+
+- `type_regex` - Implements schematic for the `regex` crate.
