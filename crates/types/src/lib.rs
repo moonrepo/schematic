@@ -77,7 +77,7 @@ impl SchemaType {
         })
     }
 
-    /// Create a nullable type for the provided schema. If already nullabe,
+    /// Convert the provided schema to a nullable type. If already nullable,
     /// do nothing and return, otherwise convert to a union.
     pub fn nullable(mut schema: SchemaType) -> SchemaType {
         if let SchemaType::Union(inner) = &mut schema {

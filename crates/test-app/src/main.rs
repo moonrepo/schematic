@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use miette::Result;
 use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
@@ -32,6 +33,8 @@ struct TestConfig {
     number: usize,
     #[setting(nested)]
     nested: NestedConfig,
+    datetime: NaiveDateTime,
+    // regex: Regex,
 }
 
 fn main() -> Result<()> {

@@ -49,12 +49,24 @@ toml = ["dep:toml"]
 typescript = ["schema"]
 yaml = ["dep:serde_yaml"]
 
+type_chrono = ["schematic_types/chrono"]
 type_regex = ["schematic_types/regex"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
 
 [dev-dependencies]
-schematic = { path = ".", features = ["schema", "json", "json_schema", "yaml", "toml", "typescript", "valid_email", "valid_url"] }
+schematic = { path = ".", features = [
+	"json_schema",
+	"json",
+	"schema",
+	"toml",
+	"typescript",
+	"type_chrono",
+	"type_regex",
+	"valid_email",
+	"valid_url",
+	"yaml",
+] }
 serial_test = "2.0.0"
 starbase_sandbox = "0.1.3"

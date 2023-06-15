@@ -7,8 +7,10 @@ description = "Shapes and types for defining schemas for Rust types."
 repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
-regex = { version = "1.8.4", optional = true }
+chrono = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
 
 [features]
 default = []
+chrono = ["dep:chrono"]
 regex = ["dep:regex"]

@@ -651,4 +651,5 @@ The following Cargo features are available:
 - `json_schema` - Enables JSON schema generation.
 - `typescript` - Enables TypeScript types generation.
 
+- `type_chrono` - Implements schematic for the `chrono` crate.
 - `type_regex` - Implements schematic for the `regex` crate.

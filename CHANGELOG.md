@@ -12,6 +12,7 @@
 - Generator
   - Updated JSON schema arrays to use `contains` when applicable.
 - Schema
+  - Added support for `chrono` types (behind the `type_chrono` feature).
   - Added support for `regex` types (behind the `type_regex` feature).
 
 #### 🐞 Fixes
