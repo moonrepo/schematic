@@ -5,3 +5,12 @@ edition = "2021"
 license = "MIT"
 description = "Shapes and types for defining schemas for Rust types."
 repository = "https://github.com/moonrepo/schematic"
+
+[dependencies]
+chrono = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+
+[features]
+default = []
+chrono = ["dep:chrono"]
+regex = ["dep:regex"]

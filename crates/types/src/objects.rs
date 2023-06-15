@@ -4,8 +4,8 @@ use std::collections::{BTreeMap, HashMap};
 #[derive(Clone, Debug, Default)]
 pub struct ObjectType {
     pub key_type: Box<SchemaType>,
-    pub max_fields: Option<usize>,
-    pub min_fields: Option<usize>,
+    pub max_length: Option<usize>,
+    pub min_length: Option<usize>,
     pub name: Option<String>,
     pub required: Vec<String>,
     pub value_type: Box<SchemaType>,

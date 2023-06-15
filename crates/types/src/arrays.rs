@@ -3,6 +3,7 @@ use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default)]
 pub struct ArrayType {
+    pub contains: Option<bool>,
     pub items_type: Box<SchemaType>,
     pub max_contains: Option<usize>,
     pub max_length: Option<usize>,

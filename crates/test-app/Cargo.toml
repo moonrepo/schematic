@@ -5,7 +5,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-schematic = { path = "../config" }
+schematic = { path = "../config", features = ["schema", "type_chrono", "type_regex"] }
+chrono = { workspace = true, features = ["serde"] }
 miette = { workspace = true, features = ["fancy"] }
+regex = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0.95"

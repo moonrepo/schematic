@@ -1,97 +1,9 @@
+use crate::config::path::{Path, PathSegment};
 use miette::Diagnostic;
 use starbase_styles::color;
 use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};
 use thiserror::Error;
-
-/// Represents all the different forms a path is composed of.
-#[derive(Clone, Debug)]
-pub enum Segment {
-    /// List index: `[0]`
-    Index(usize),
-    /// Map key: `name.`
-    Key(String),
-    /// Enum variant: `name.`
-    Variant(String),
-    /// Unknown segment: `?`
-    Unknown,
-}
-
-/// Represents the path from the struct root to a field or field value.
-#[derive(Clone, Debug, Default)]
-pub struct SettingPath {
-    /// List of path segments.
-    segments: Vec<Segment>,
-}
-
-impl SettingPath {
-    /// Create a new instance with the provided [`Segment`]s.
-    pub fn new(segments: Vec<Segment>) -> Self {
-        Self { segments }
-    }
-
-    /// Create a new instance and append the provided [`Segment`]
-    /// to the end of the current path.
-    pub fn join(&self, segment: Segment) -> Self {
-        let mut path = self.clone();
-        path.segments.push(segment);
-        path
-    }
-
-    /// Create a new instance and append an `Index` [`Segment`]
-    /// to the end of the current path.
-    pub fn join_index(&self, index: usize) -> Self {
-        self.join(Segment::Index(index))
-    }
-
-    /// Create a new instance and append an `Key` [`Segment`]
-    /// to the end of the current path.
-    pub fn join_key(&self, key: &str) -> Self {
-        self.join(Segment::Key(key.to_owned()))
-    }
-
-    /// Create a new instance and append another [`SettingPath`]
-    /// to the end of the current path.
-    pub fn join_path(&self, other: &Self) -> Self {
-        let mut path = self.clone();
-        path.segments.extend(other.segments.clone());
-        path
-    }
-
-    /// Create a new instance and append an `Variant` [`Segment`]
-    /// to the end of the current path.
-    pub fn join_variant(&self, variant: &str) -> Self {
-        self.join(Segment::Variant(variant.to_owned()))
-    }
-}
-
-impl Display for SettingPath {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        if self.segments.is_empty() {
-            return formatter.write_str(".");
-        }
-
-        let mut separator = "";
-
-        for segment in &self.segments {
-            match segment {
-                Segment::Index(index) => {
-                    write!(formatter, "[{}]", index)?;
-                }
-                Segment::Key(key) | Segment::Variant(key) => {
-                    write!(formatter, "{}{}", separator, key)?;
-                }
-                Segment::Unknown => {
-                    write!(formatter, "{}?", separator)?;
-                }
-            }
-
-            separator = ".";
-        }
-
-        Ok(())
-    }
-}
 
 /// Error for a single validation failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
@@ -101,7 +13,7 @@ pub struct ValidateError {
     pub message: String,
 
     /// Relative path to the setting that failed validation.
-    pub path: SettingPath,
+    pub path: Path,
 }
 
 impl ValidateError {
@@ -109,31 +21,31 @@ impl ValidateError {
     pub fn new<T: AsRef<str>>(message: T) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: SettingPath::default(),
+            path: Path::default(),
         }
     }
 
-    /// Create a new validation error with the provided message and [`SettingPath`].
-    pub fn with_path<T: AsRef<str>>(message: T, path: SettingPath) -> Self {
+    /// Create a new validation error with the provided message and [`Path`].
+    pub fn with_path<T: AsRef<str>>(message: T, path: Path) -> Self {
         ValidateError {
             message: message.as_ref().to_owned(),
             path,
         }
     }
 
-    /// Create a new validation error with the provided message and path [`Segment`].
-    pub fn with_segment<T: AsRef<str>>(message: T, segment: Segment) -> Self {
+    /// Create a new validation error with the provided message and path [`PathSegment`].
+    pub fn with_segment<T: AsRef<str>>(message: T, segment: PathSegment) -> Self {
         Self::with_segments(message, [segment])
     }
 
-    /// Create a new validation error with the provided message and multiple path [`Segment`]s.
+    /// Create a new validation error with the provided message and multiple path [`PathSegment`]s.
     pub fn with_segments<T: AsRef<str>, I>(message: T, segments: I) -> Self
     where
-        I: IntoIterator<Item = Segment>,
+        I: IntoIterator<Item = PathSegment>,
     {
         ValidateError {
             message: message.as_ref().to_owned(),
-            path: SettingPath::new(segments.into_iter().collect()),
+            path: Path::new(segments.into_iter().collect()),
         }
     }
 }
@@ -141,18 +53,13 @@ impl ValidateError {
 /// Either contains a single or multiple validation errors.
 #[derive(Clone, Debug)]
 pub enum ValidateErrorType {
-    Setting {
-        path: SettingPath,
-        error: ValidateError,
-    },
+    Setting { path: Path, error: ValidateError },
 
-    Nested {
-        error: ValidatorError,
-    },
+    Nested { error: ValidatorError },
 }
 
 impl ValidateErrorType {
-    pub fn setting(path: SettingPath, error: ValidateError) -> Self {
+    pub fn setting(path: Path, error: ValidateError) -> Self {
         ValidateErrorType::Setting { path, error }
     }
 
@@ -201,7 +108,7 @@ impl ValidateErrorType {
 #[derive(Clone, Debug, Diagnostic, Error)]
 pub struct ValidatorError {
     /// When nested, the path to the setting that contains the nested error.
-    pub path: SettingPath,
+    pub path: Path,
 
     /// A list of validation errors for the current path. Includes nested errors.
     pub errors: Vec<ValidateErrorType>,

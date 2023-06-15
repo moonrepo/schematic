@@ -171,7 +171,7 @@ impl<'l> ToTokens for Config<'l> {
         let partial_fields = &self.settings;
 
         let token = quote! {
-            #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+            #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
             #(#partial_attrs)*
             pub struct #partial_name {
                 #(#partial_fields)*
@@ -249,7 +249,7 @@ impl<'l> ToTokens for Config<'l> {
                 fn validate_with_path(
                     &self,
                     context: &Self::Context,
-                    path: schematic::SettingPath
+                    path: schematic::Path
                 ) -> Result<(), schematic::ValidatorError> {
                     let mut errors: Vec<schematic::ValidateErrorType> = vec![];
 

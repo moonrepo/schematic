@@ -1,12 +1,13 @@
+use chrono::NaiveDateTime;
 use miette::Result;
 use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
-    use schematic::Segment;
+    use schematic::PathSegment;
     Err(ValidateError::with_segments(
         "This string is ugly!",
-        vec![Segment::Index(1), Segment::Key("foo".to_owned())],
+        vec![PathSegment::Index(1), PathSegment::Key("foo".to_owned())],
     ))
     // Ok(())
 }
@@ -32,6 +33,8 @@ struct TestConfig {
     number: usize,
     #[setting(nested)]
     nested: NestedConfig,
+    datetime: NaiveDateTime,
+    // regex: Regex,
 }
 
 fn main() -> Result<()> {

@@ -4,7 +4,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-/// Source in which to load configuration from.
+/// Source from which to load a configuration.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
@@ -28,7 +28,7 @@ impl Source {
     ///
     /// - Will be a URL, if the value starts with `http://`, `https://`, or `www`.
     /// - Will be a file, if the file ends in an extension, or contains path separators.
-    /// - Otherwise will be a code snippet.
+    /// - Otherwise will be an error.
     pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {
         // Extending from a URL is allowed from any parent source
         if is_url_like(value) {
@@ -85,7 +85,7 @@ impl Source {
         })
     }
 
-    /// Create a new URL source with the provided URL. Will error if that URL is not secure.
+    /// Create a new URL source with the provided URL.
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
@@ -146,14 +146,13 @@ pub fn is_source_format(value: &str) -> bool {
 /// Returns true if the value looks like a file, by checking for `file://`,
 /// path separators, or supported file extensions.
 pub fn is_file_like(value: &str) -> bool {
-    (value.starts_with("file://")
+    value.starts_with("file://")
         || value.starts_with('/')
         || value.starts_with('\\')
         || value.starts_with('.')
         || value.contains('/')
         || value.contains('\\')
-        || value.contains('.'))
-        && is_source_format(value)
+        || value.contains('.')
 }
 
 /// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www`.

@@ -561,12 +561,12 @@ If validating an item in a vector or collection, you can specifiy the nested pat
 This is extremely useful when building error messages.
 
 ```rust
-use schematic::Segment;
+use schematic::PathSegment;
 
 ValidateError::with_segments(
 	"Some failure message",
 	// [i].key
-	[Segment::Index(i), Segment::Key(key.to_string())]
+	[PathSegment::Index(i), PathSegment::Key(key.to_string())]
 )
 ```
 
@@ -645,8 +645,11 @@ The following Cargo features are available:
 - `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
   functions.
 
-### Misc
+### Schema generation
 
 - `schema` - Generates schemas for schematic types and built-in Rust types.
 - `json_schema` - Enables JSON schema generation.
 - `typescript` - Enables TypeScript types generation.
+
+- `type_chrono` - Implements schematic for the `chrono` crate.
+- `type_regex` - Implements schematic for the `regex` crate.
