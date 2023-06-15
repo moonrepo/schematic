@@ -3,7 +3,8 @@ use crate::{SchemaType, Schematic};
 #[derive(Clone, Debug)]
 pub enum LiteralValue {
     Bool(bool),
-    Float(String),
+    F32(f32),
+    F64(f64),
     Int(isize),
     UInt(usize),
     String(String),

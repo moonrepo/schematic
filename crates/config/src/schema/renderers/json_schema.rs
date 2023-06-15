@@ -52,12 +52,23 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType) -> RenderResult<Schema> {
+        let use_contains = array.contains.is_some_and(|v| v == true);
+
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
             array: Some(Box::new(ArrayValidation {
-                items: Some(SingleOrVec::Single(Box::new(
-                    self.render_schema(&array.items_type)?,
-                ))),
+                contains: if use_contains {
+                    Some(Box::new(self.render_schema(&array.items_type)?))
+                } else {
+                    None
+                },
+                items: if use_contains {
+                    None
+                } else {
+                    Some(SingleOrVec::Single(Box::new(
+                        self.render_schema(&array.items_type)?,
+                    )))
+                },
                 max_items: array.max_length.map(|i| i as u32),
                 min_items: array.min_length.map(|i| i as u32),
                 unique_items: array.unique,
@@ -86,9 +97,13 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                     instance_type = InstanceType::Boolean;
                     enum_values.push(Value::Bool(v));
                 }
-                LiteralValue::Float(v) => {
+                LiteralValue::F32(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from_f64(v.parse().unwrap()).unwrap()));
+                    enum_values.push(Value::Number(Number::from_f64(v as f64).unwrap()));
+                }
+                LiteralValue::F64(v) => {
+                    instance_type = InstanceType::Number;
+                    enum_values.push(Value::Number(Number::from_f64(v).unwrap()));
                 }
                 LiteralValue::Int(v) => {
                     instance_type = InstanceType::Number;
@@ -162,9 +177,8 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         if let Some(value) = &literal.value {
             let value = match value {
                 LiteralValue::Bool(inner) => Value::Bool(*inner),
-                LiteralValue::Float(inner) => {
-                    Value::Number(Number::from_f64(inner.parse().unwrap()).unwrap())
-                }
+                LiteralValue::F32(inner) => Value::Number(Number::from_f64(*inner as f64).unwrap()),
+                LiteralValue::F64(inner) => Value::Number(Number::from_f64(*inner).unwrap()),
                 LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
                 LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
                 LiteralValue::String(inner) => Value::String(inner.to_owned()),
@@ -190,8 +204,8 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             object: Some(Box::new(ObjectValidation {
-                max_properties: object.max_fields.map(|i| i as u32),
-                min_properties: object.min_fields.map(|i| i as u32),
+                max_properties: object.max_length.map(|i| i as u32),
+                min_properties: object.min_length.map(|i| i as u32),
                 required: BTreeSet::from_iter(object.required.clone()),
                 additional_properties: Some(Box::new(self.render_schema(&object.value_type)?)),
                 property_names: Some(Box::new(self.render_schema(&object.key_type)?)),

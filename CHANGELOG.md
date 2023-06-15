@@ -7,6 +7,11 @@
 - Renamed `SettingPath` to `Path`.
 - Renamed `Segment` to `PathSegment`.
 
+#### 🚀 Updates
+
+- Generator
+  - Updated JSON schema arrays to use `contains` when applicable.
+
 #### 🐞 Fixes
 
 - Generator

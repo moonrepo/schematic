@@ -258,7 +258,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         if let Some(value) = &literal.value {
             return Ok(match value {
                 LiteralValue::Bool(inner) => inner.to_string(),
-                LiteralValue::Float(inner) => inner.to_owned(),
+                LiteralValue::F32(inner) => inner.to_string(),
+                LiteralValue::F64(inner) => inner.to_string(),
                 LiteralValue::Int(inner) => inner.to_string(),
                 LiteralValue::UInt(inner) => inner.to_string(),
                 LiteralValue::String(inner) => format!("'{inner}'"),
