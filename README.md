@@ -561,12 +561,12 @@ If validating an item in a vector or collection, you can specifiy the nested pat
 This is extremely useful when building error messages.
 
 ```rust
-use schematic::Segment;
+use schematic::PathSegment;
 
 ValidateError::with_segments(
 	"Some failure message",
 	// [i].key
-	[Segment::Index(i), Segment::Key(key.to_string())]
+	[PathSegment::Index(i), PathSegment::Key(key.to_string())]
 )
 ```
 

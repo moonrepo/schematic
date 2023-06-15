@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Renamed `SettingPath` to `Path`.
+- Renamed `Segment` to `PathSegment`.
+
 #### 🐞 Fixes
 
 - Generator

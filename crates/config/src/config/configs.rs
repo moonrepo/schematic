@@ -1,5 +1,6 @@
 use crate::config::errors::ConfigError;
-use crate::config::validator::{SettingPath, ValidatorError};
+use crate::config::path::Path;
+use crate::config::validator::ValidatorError;
 use crate::derive_enum;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
@@ -52,15 +53,15 @@ pub trait PartialConfig:
     /// Recursively validate the configuration with the provided context.
     /// Validation should be done on the final state, after merging partials.
     fn validate(&self, context: &Self::Context) -> Result<(), ValidatorError> {
-        self.validate_with_path(context, SettingPath::default())
+        self.validate_with_path(context, Path::default())
     }
 
     #[doc(hidden)]
-    /// Internal use only, use [`Config.validate`] instead.
+    /// Internal use only, use [`validate`] instead.
     fn validate_with_path(
         &self,
         _context: &Self::Context,
-        _path: SettingPath,
+        _path: Path,
     ) -> Result<(), ValidatorError> {
         Ok(())
     }

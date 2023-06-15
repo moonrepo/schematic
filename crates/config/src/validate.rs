@@ -1,5 +1,5 @@
 use crate::config::{
-    is_file_like, is_secure_url, is_source_format, is_url_like, ExtendsFrom, Segment, SettingPath,
+    is_file_like, is_secure_url, is_source_format, is_url_like, ExtendsFrom, Path, PathSegment,
     ValidateError,
 };
 use garde::rules as r;
@@ -160,7 +160,7 @@ pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), 
 pub fn extends_list<D, C>(values: &[String], data: &D, context: &C) -> Result<(), ValidateError> {
     for (i, value) in values.iter().enumerate() {
         if let Err(mut error) = extends_string(value, data, context) {
-            error.path = SettingPath::new(vec![Segment::Index(i)]);
+            error.path = Path::new(vec![PathSegment::Index(i)]);
 
             return Err(error);
         }

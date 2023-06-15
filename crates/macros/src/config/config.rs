@@ -249,7 +249,7 @@ impl<'l> ToTokens for Config<'l> {
                 fn validate_with_path(
                     &self,
                     context: &Self::Context,
-                    path: schematic::SettingPath
+                    path: schematic::Path
                 ) -> Result<(), schematic::ValidatorError> {
                     let mut errors: Vec<schematic::ValidateErrorType> = vec![];
 
