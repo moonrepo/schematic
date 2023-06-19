@@ -1,6 +1,6 @@
 use crate::config::setting_type::SettingType;
 use crate::utils::{
-    extract_comment, extract_common_attrs, format_case, has_deprecated_attr, preserve_str_literal,
+    extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -234,7 +234,7 @@ impl<'l> Setting<'l> {
         let name = self.get_name(Some(casing_format));
         let value = self.value;
 
-        let deprecated = has_deprecated_attr(&self.attrs);
+        let deprecated = has_attr(&self.attrs, "deprecated");
         let hidden = self.is_skipped();
         let nullable = self.is_optional();
 

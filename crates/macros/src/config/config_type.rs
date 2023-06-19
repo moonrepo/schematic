@@ -1,4 +1,5 @@
 use super::setting::Setting;
+use crate::utils::has_attr;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Fields, FieldsNamed, Variant};
@@ -14,6 +15,21 @@ pub enum ConfigEnumType<'l> {
         variant: &'l Variant,
         settings: Vec<Setting<'l>>,
     },
+}
+
+impl<'l> ConfigEnumType<'l> {
+    pub fn is_default(&self) -> bool {
+        let variant = match self {
+            ConfigEnumType::Unit { variant } => variant,
+            ConfigEnumType::Unnamed { variant } => variant,
+            ConfigEnumType::Named { variant, .. } => variant,
+        };
+
+        has_attr(
+            &variant.attrs.iter().map(|v| v).collect::<Vec<_>>(),
+            "default",
+        )
+    }
 }
 
 pub enum ConfigType<'l> {
