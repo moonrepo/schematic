@@ -1,5 +1,6 @@
 #[allow(clippy::module_inception)]
 pub mod config;
+pub mod config_type;
 pub mod setting;
 pub mod setting_type;
 
