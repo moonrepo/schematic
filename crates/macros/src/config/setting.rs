@@ -40,6 +40,7 @@ pub struct Setting<'l> {
     pub name: &'l Ident,
     pub value: &'l Type,
     pub value_type: SettingType<'l>,
+    pub in_variant: bool,
 }
 
 impl<'l> Setting<'l> {
@@ -62,6 +63,7 @@ impl<'l> Setting<'l> {
             },
             args,
             serde_args,
+            in_variant: false,
         };
 
         if setting.has_default() {
@@ -74,6 +76,12 @@ impl<'l> Setting<'l> {
             }
         }
 
+        setting
+    }
+
+    pub fn from_variant(field: &Field) -> Setting {
+        let mut setting = Setting::from(field);
+        setting.in_variant = true;
         setting
     }
 
@@ -131,9 +139,9 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
-    pub fn get_env_statement(&self, prefix: Option<&String>) -> TokenStream {
+    pub fn get_env_statement(&self, prefix: Option<&String>) -> Option<TokenStream> {
         if self.is_nested() {
-            return quote! {};
+            return None;
         }
 
         let name = self.name;
@@ -147,7 +155,7 @@ impl<'l> Setting<'l> {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
             }
 
-            return quote! {};
+            return None;
         };
 
         let value = if let Some(parse_env) = &self.args.parse_env {
@@ -160,7 +168,7 @@ impl<'l> Setting<'l> {
             }
         };
 
-        quote! { partial.#name = #value; }
+        Some(quote! { partial.#name = #value; })
     }
 
     pub fn get_from_partial_value(&self) -> TokenStream {
@@ -278,6 +286,11 @@ impl<'l> ToTokens for Setting<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
         let value = &self.value_type;
+        let vis = if self.in_variant {
+            quote! {}
+        } else {
+            quote! { pub }
+        };
 
         // Gather all attributes
         let serde_meta = self.get_serde_meta();
@@ -289,7 +302,7 @@ impl<'l> ToTokens for Setting<'l> {
 
         tokens.extend(quote! {
             #(#attrs)*
-            pub #name: #value,
+            #vis #name: #value,
         });
     }
 }

@@ -14,7 +14,7 @@ pub struct SerdeArgs {
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]
-#[darling(default, attributes(config), supports(struct_named))]
+#[darling(default, attributes(config), supports(struct_named, enum_any))]
 pub struct ConfigArgs {
     allow_unknown_fields: bool,
     context: Option<ExprPath>,
@@ -58,7 +58,11 @@ impl<'l> Config<'l> {
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![quote! { default }];
+        let mut meta = vec![];
+
+        if matches!(&self.type_of, ConfigType::NamedStruct { .. }) {
+            meta.push(quote! { default });
+        }
 
         if !self.args.allow_unknown_fields {
             meta.push(quote! { deny_unknown_fields });
@@ -128,11 +132,11 @@ impl<'l> ToTokens for Config<'l> {
             impl schematic::PartialConfig for #partial_name {
                 type Context = #context;
 
-                fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
+                fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
                     #default_values
                 }
 
-                fn env_values() -> Result<Self, schematic::ConfigError> {
+                fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
                     #env_values
                 }
 
@@ -177,7 +181,7 @@ impl<'l> ToTokens for Config<'l> {
                 fn default() -> Self {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
-                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap();
+                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap().unwrap();
 
                     <Self as schematic::Config>::from_partial(defaults)
                 }

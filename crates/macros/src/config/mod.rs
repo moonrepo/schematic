@@ -5,7 +5,7 @@ pub mod setting;
 pub mod setting_type;
 
 use crate::config::config::{Config, ConfigArgs, SerdeArgs};
-use crate::config::config_type::ConfigType;
+use crate::config::config_type::{ConfigEnumType, ConfigType};
 use crate::config::setting::Setting;
 use crate::utils::extract_common_attrs;
 use darling::FromDeriveInput;
@@ -32,6 +32,24 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 panic!("Unit structs are not supported.");
             }
         },
+        // Data::Enum(data) => ConfigType::Enum {
+        //     variants: data
+        //         .variants
+        //         .iter()
+        //         .map(|variant| match &variant.fields {
+        //             Fields::Named(fields) => ConfigEnumType::Named {
+        //                 settings: fields
+        //                     .named
+        //                     .iter()
+        //                     .map(Setting::from_variant)
+        //                     .collect::<Vec<_>>(),
+        //                 variant,
+        //             },
+        //             Fields::Unnamed(_) => ConfigEnumType::Unnamed { variant },
+        //             Fields::Unit => ConfigEnumType::Unit { variant },
+        //         })
+        //         .collect(),
+        // },
         Data::Enum(_) => {
             panic!("Enums are not supported.");
         }

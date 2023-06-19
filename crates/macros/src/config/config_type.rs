@@ -3,13 +3,26 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Fields, FieldsNamed, Variant};
 
+pub enum ConfigEnumType<'l> {
+    Unit {
+        variant: &'l Variant,
+    },
+    Unnamed {
+        variant: &'l Variant,
+    },
+    Named {
+        variant: &'l Variant,
+        settings: Vec<Setting<'l>>,
+    },
+}
+
 pub enum ConfigType<'l> {
     NamedStruct {
         fields: &'l FieldsNamed,
         settings: Vec<Setting<'l>>,
     },
     Enum {
-        variants: Vec<&'l Variant>,
+        variants: Vec<ConfigEnumType<'l>>,
     },
 }
 
@@ -26,12 +39,16 @@ impl<'l> ConfigType<'l> {
                 }
 
                 quote! {
-                    Ok(Self {
+                    Ok(Some(Self {
                         #(#field_names: #default_values),*
-                    })
+                    }))
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { .. } => {
+                quote! {
+                    Ok(None)
+                }
+            }
         }
     }
 
@@ -40,16 +57,26 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let env_stmts = settings
                     .iter()
-                    .map(|s| s.get_env_statement(prefix))
+                    .filter_map(|s| s.get_env_statement(prefix))
                     .collect::<Vec<_>>();
 
-                quote! {
-                    let mut partial = Self::default();
-                    #(#env_stmts)*
-                    Ok(partial)
+                if env_stmts.is_empty() {
+                    quote! {
+                        Ok(None)
+                    }
+                } else {
+                    quote! {
+                        let mut partial = Self::default();
+                        #(#env_stmts)*
+                        Ok(Some(partial))
+                    }
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { .. } => {
+                quote! {
+                    Ok(None)
+                }
+            }
         }
     }
 
@@ -116,12 +143,10 @@ impl<'l> ConfigType<'l> {
                     }
                 }
 
-                quote! {
-                    None
-                }
+                quote! { None }
             }
             ConfigType::Enum { .. } => {
-                panic!("Enums do not support `extend`!")
+                quote! { None }
             }
         }
     }
@@ -135,14 +160,26 @@ impl<'l> ConfigType<'l> {
                     .collect::<Vec<_>>();
 
                 quote! {
-                    let mut partial = Self::default_values(context)?;
+                    let mut partial = Self::default();
+
+                    if let Some(data) = Self::default_values(context)? {
+                        partial.merge(context, data)?;
+                    }
+
                     partial.merge(context, self)?;
-                    partial.merge(context, Self::env_values()?)?;
+
+                    if let Some(data) = Self::env_values()? {
+                        partial.merge(context, data)?;
+                    }
+
                     #(#finalize_stmts)*
+
                     Ok(partial)
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
         }
     }
 
@@ -159,7 +196,9 @@ impl<'l> ConfigType<'l> {
                     Ok(())
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
         }
     }
 
@@ -175,7 +214,9 @@ impl<'l> ConfigType<'l> {
                     #(#validate_stmts)*
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
         }
     }
 
@@ -196,7 +237,9 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
         }
     }
 
@@ -236,7 +279,9 @@ impl<'l> ConfigType<'l> {
                     SchemaType::Struct(structure)
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
         }
     }
 
@@ -249,7 +294,30 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                let variants = variants
+                    .iter()
+                    .map(|v| match v {
+                        ConfigEnumType::Unit { variant } => quote! { #variant },
+                        ConfigEnumType::Unnamed { variant } => quote! { #variant },
+                        ConfigEnumType::Named { variant, settings } => {
+                            let name = &variant.ident;
+
+                            quote! {
+                                #name {
+                                    #(#settings),*
+                                }
+                            }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    pub enum #partial_name {
+                        #(#variants),*
+                    }
+                }
+            }
         }
     }
 
@@ -266,7 +334,41 @@ impl<'l> ConfigType<'l> {
                     schema
                 }
             }
-            ConfigType::Enum { variants } => todo!(),
+            ConfigType::Enum { variants } => {
+                quote! {}
+            }
+        }
+    }
+
+    fn map_enum_self(&self) -> TokenStream {
+        match self {
+            ConfigType::NamedStruct { .. } => {
+                quote! {}
+            }
+            ConfigType::Enum { variants } => {
+                let variants = variants
+                    .iter()
+                    .map(|v| match v {
+                        ConfigEnumType::Unit { variant } => quote! { #variant },
+                        ConfigEnumType::Unnamed { variant } => quote! { #variant },
+                        ConfigEnumType::Named { variant, settings } => {
+                            let name = &variant.ident;
+
+                            quote! {
+                                #name {
+                                    #(#settings),*
+                                }
+                            }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    match self {
+                        #(#variants),*
+                    }
+                }
+            }
         }
     }
 }

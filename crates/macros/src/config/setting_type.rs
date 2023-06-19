@@ -135,7 +135,7 @@ impl<'l> SettingType<'l> {
             SettingType::NestedValue { config, .. } => {
                 let partial_name = format_ident!("Partial{}", config);
 
-                quote! { Some(#partial_name::default_values(context)?) }
+                quote! { #partial_name::default_values(context)? }
             }
             SettingType::Value { value, .. } => {
                 if let Some(expr) = args.default.as_ref() {
