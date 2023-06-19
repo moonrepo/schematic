@@ -1,14 +1,14 @@
 use super::setting::Setting;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Fields, Variant};
+use syn::{Fields, FieldsNamed, Variant};
 
 pub enum ConfigType<'l> {
     NamedStruct {
-        fields: &'l Fields,
+        fields: &'l FieldsNamed,
         settings: Vec<Setting<'l>>,
     },
-    NonUnitEnum {
+    Enum {
         variants: Vec<&'l Variant>,
     },
 }
@@ -31,7 +31,7 @@ impl<'l> ConfigType<'l> {
                     })
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -49,7 +49,7 @@ impl<'l> ConfigType<'l> {
                     Ok(partial)
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -120,13 +120,13 @@ impl<'l> ConfigType<'l> {
                     None
                 }
             }
-            ConfigType::NonUnitEnum { .. } => {
+            ConfigType::Enum { .. } => {
                 panic!("Enums do not support `extend`!")
             }
         }
     }
 
-    pub fn generate_finalize(&self, prefix: Option<&String>) -> TokenStream {
+    pub fn generate_finalize(&self) -> TokenStream {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
                 let finalize_stmts = settings
@@ -142,7 +142,7 @@ impl<'l> ConfigType<'l> {
                     Ok(partial)
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -159,7 +159,7 @@ impl<'l> ConfigType<'l> {
                     Ok(())
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -175,7 +175,7 @@ impl<'l> ConfigType<'l> {
                     #(#validate_stmts)*
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -196,19 +196,27 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
     pub fn generate_schema(
         &self,
         config_name: &Ident,
-        description: &str,
+        description: Option<String>,
         casing_format: &str,
     ) -> TokenStream {
+        let config_name = config_name.to_string();
+        let description = if let Some(comment) = description {
+            quote! {
+                structure.description = Some(#comment.into());
+            }
+        } else {
+            quote! {}
+        };
+
         match self {
             ConfigType::NamedStruct { settings, .. } => {
-                let config_name = config_name.to_string();
                 let schema_types = settings
                     .iter()
                     .map(|s| s.get_schema_type(casing_format))
@@ -228,7 +236,20 @@ impl<'l> ConfigType<'l> {
                     SchemaType::Struct(structure)
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
+        }
+    }
+
+    pub fn generate_partial(&self, partial_name: &Ident) -> TokenStream {
+        match self {
+            ConfigType::NamedStruct { settings, .. } => {
+                quote! {
+                    pub struct #partial_name {
+                        #(#settings)*
+                    }
+                }
+            }
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 
@@ -245,7 +266,7 @@ impl<'l> ConfigType<'l> {
                     schema
                 }
             }
-            ConfigType::NonUnitEnum { variants } => todo!(),
+            ConfigType::Enum { variants } => todo!(),
         }
     }
 }

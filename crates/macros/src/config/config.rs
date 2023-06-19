@@ -1,4 +1,4 @@
-use super::setting::Setting;
+use super::config_type::ConfigType;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -31,74 +31,10 @@ pub struct Config<'l> {
     pub serde_args: SerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
-    pub settings: Vec<Setting<'l>>,
+    pub type_of: ConfigType<'l>,
 }
 
 impl<'l> Config<'l> {
-    pub fn extends_from(&self) -> TokenStream {
-        // Validate only 1 setting is using it
-        let mut names = vec![];
-
-        for setting in &self.settings {
-            if setting.is_extendable() {
-                names.push(setting.name.to_string());
-            }
-        }
-
-        if names.len() > 1 {
-            panic!(
-                "Only 1 setting may use `extend`, found: {}",
-                names.join(", ")
-            );
-        }
-
-        // Loop again and generate the necessary code
-        for setting in &self.settings {
-            if !setting.is_extendable() {
-                continue;
-            }
-
-            if let Some(inner_type) = setting.value_type.get_inner_type() {
-                let name = setting.name;
-                let value = format!("{}", inner_type.to_token_stream());
-
-                // Janky but works!
-                match value.as_str() {
-                    "String" => {
-                        return quote! {
-                            if let Some(value) = self.#name.as_ref() {
-                                return Some(schematic::ExtendsFrom::String(value.clone()));
-                            }
-                        };
-                    }
-                    "Vec<String>" | "Vec < String >" => {
-                        return quote! {
-                            if let Some(value) = self.#name.as_ref() {
-                                return Some(schematic::ExtendsFrom::List(value.clone()));
-                            }
-                        };
-                    }
-                    "ExtendsFrom" | "schematic::ExtendsFrom" | "schematic :: ExtendsFrom" => {
-                        return quote! {
-                            if let Some(value) = self.#name.as_ref() {
-                                return Some(value.clone());
-                            }
-                        };
-                    }
-                    inner => {
-                        let inner = inner.to_string();
-
-                        panic!(
-                            "Only `String`, `Vec<String>`, or `ExtendsFrom` are supported when using `extend` for {name}. Received `{inner}`."
-                        );
-                    }
-                };
-            }
-        }
-
-        quote! {}
-    }
-
     pub fn get_meta_struct(&self) -> TokenStream {
         let name = if let Some(rename) = &self.args.rename {
             rename.to_string()
@@ -159,53 +95,33 @@ impl<'l> ToTokens for Config<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
         let casing_format = self.get_casing_format();
+        let env_prefix = self.args.env_prefix.as_ref();
 
         let context = match self.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },
             None => quote! { () },
         };
 
-        // Generate the partial struct
+        // Generate the partial implementation
         let partial_name = format_ident!("Partial{}", self.name);
         let partial_attrs = self.get_partial_attrs();
-        let partial_fields = &self.settings;
+        let partial = self.type_of.generate_partial(&partial_name);
 
-        let token = quote! {
+        tokens.extend(quote! {
             #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
             #(#partial_attrs)*
-            pub struct #partial_name {
-                #(#partial_fields)*
-            }
-        };
-
-        tokens.extend(token);
+            #partial
+        });
 
         // Generate implementations
-        let mut field_names = vec![];
-        let env_prefix = self.args.env_prefix.as_ref();
-        let extends_from = self.extends_from();
-
-        let mut default_values = vec![];
-        let mut from_partial_values = vec![];
-        let mut schema_types = vec![];
-
-        let mut env_stmts = vec![];
-        let mut finalize_stmts = vec![];
-        let mut merge_stmts = vec![];
-        let mut validate_stmts = vec![];
-
-        for setting in &self.settings {
-            field_names.push(setting.name);
-
-            default_values.push(setting.get_default_value());
-            from_partial_values.push(setting.get_from_partial_value());
-            schema_types.push(setting.get_schema_type(casing_format));
-
-            env_stmts.push(setting.get_env_statement(env_prefix));
-            finalize_stmts.push(setting.get_finalize_statement());
-            merge_stmts.push(setting.get_merge_statement());
-            validate_stmts.push(setting.get_validate_statement());
-        }
+        let meta = self.get_meta_struct();
+        let default_values = self.type_of.generate_default_values();
+        let env_values = self.type_of.generate_env_values(env_prefix);
+        let extends_from = self.type_of.generate_extends_from();
+        let finalize = self.type_of.generate_finalize();
+        let merge = self.type_of.generate_merge();
+        let validate = self.type_of.generate_validate();
+        let from_partial = self.type_of.generate_from_partial();
 
         tokens.extend(quote! {
             #[automatically_derived]
@@ -213,28 +129,19 @@ impl<'l> ToTokens for Config<'l> {
                 type Context = #context;
 
                 fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    Ok(Self {
-                        #(#field_names: #default_values),*
-                    })
+                    #default_values
                 }
 
                 fn env_values() -> Result<Self, schematic::ConfigError> {
-                    let mut partial = Self::default();
-                    #(#env_stmts)*
-                    Ok(partial)
+                    #env_values
                 }
 
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
                     #extends_from
-                    None
                 }
 
                 fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    let mut partial = Self::default_values(context)?;
-                    partial.merge(context, self)?;
-                    partial.merge(context, Self::env_values()?)?;
-                    #(#finalize_stmts)*
-                    Ok(partial)
+                    #finalize
                 }
 
                 fn merge(
@@ -242,8 +149,7 @@ impl<'l> ToTokens for Config<'l> {
                     context: &Self::Context,
                     mut next: Self,
                 ) -> Result<(), schematic::ConfigError> {
-                    #(#merge_stmts)*
-                    Ok(())
+                    #merge
                 }
 
                 fn validate_with_path(
@@ -253,7 +159,7 @@ impl<'l> ToTokens for Config<'l> {
                 ) -> Result<(), schematic::ValidatorError> {
                     let mut errors: Vec<schematic::ValidateErrorType> = vec![];
 
-                    #(#validate_stmts)*
+                    #validate
 
                     if !errors.is_empty() {
                         return Err(schematic::ValidatorError {
@@ -265,11 +171,7 @@ impl<'l> ToTokens for Config<'l> {
                     Ok(())
                 }
             }
-        });
 
-        let meta = self.get_meta_struct();
-
-        tokens.extend(quote! {
             #[automatically_derived]
             impl Default for #name {
                 fn default() -> Self {
@@ -288,9 +190,7 @@ impl<'l> ToTokens for Config<'l> {
                 const META: schematic::Meta = #meta;
 
                 fn from_partial(partial: Self::Partial) -> Self {
-                    Self {
-                        #(#field_names: #from_partial_values),*
-                    }
+                    #from_partial
                 }
             }
         });
@@ -299,41 +199,25 @@ impl<'l> ToTokens for Config<'l> {
         {
             use crate::utils::extract_comment;
 
-            let config_name = name.to_string();
-            let description = if let Some(comment) = extract_comment(&self.attrs) {
-                quote! {
-                    structure.description = Some(#comment.into());
-                }
-            } else {
-                quote! {}
-            };
+            let schema =
+                self.type_of
+                    .generate_schema(name, extract_comment(&self.attrs), casing_format);
+            let partial_schema = self.type_of.generate_partial_schema(name, &partial_name);
 
             tokens.extend(quote! {
                 #[automatically_derived]
                 impl schematic::Schematic for #name {
                     fn generate_schema() -> schematic::SchemaType {
                         use schematic::schema::*;
-
-                        let mut structure = StructType {
-                            name: Some(#config_name.into()),
-                            fields: vec![
-                                #(#schema_types),*
-                            ],
-                            ..Default::default()
-                        };
-
-                        #description
-
-                        SchemaType::Struct(structure)
+                        #schema
                     }
                 }
 
                 #[automatically_derived]
                 impl schematic::Schematic for #partial_name {
                     fn generate_schema() -> schematic::SchemaType {
-                        let mut schema = #name::generate_schema();
-                        schematic::internal::partialize_schema(&mut schema);
-                        schema
+                        use schematic::schema::*;
+                        #partial_schema
                     }
                 }
             });

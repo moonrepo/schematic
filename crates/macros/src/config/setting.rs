@@ -288,7 +288,7 @@ impl<'l> ToTokens for Setting<'l> {
         }
 
         tokens.extend(quote! {
-             #(#attrs)*
+            #(#attrs)*
             pub #name: #value,
         });
     }
