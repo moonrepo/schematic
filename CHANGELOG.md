@@ -11,7 +11,9 @@
 
 #### 🚀 Updates
 
+- Added `Deserialize` to `Format`, `Layer`, and `Source`.
 - Improved file system and HTTP error handling.
+- Improved and cleaned up tracing logs.
 - Generator
   - Updated JSON schema arrays to use `contains` when applicable.
 - Schema

@@ -1,11 +1,12 @@
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
+use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
 /// Source from which to load a configuration.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
