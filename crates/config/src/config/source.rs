@@ -133,6 +133,14 @@ impl Source {
             error,
         })
     }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Source::Code { .. } => "<code>",
+            Source::File { path, .. } => path.to_str().unwrap_or_default(),
+            Source::Url { url, .. } => url,
+        }
+    }
 }
 
 /// Returns true if the value ends in a supported file extension.

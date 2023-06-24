@@ -85,9 +85,9 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!("Loading {} configuration", T::META.name);
+        trace!(config = T::META.name, "Loading configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context, false)?;
+        let layers = self.parse_into_layers(&self.sources, context)?;
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
@@ -116,9 +116,9 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!("Loading partial {} configuration", T::META.name);
+        trace!(config = T::META.name, "Loading partial configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context, false)?;
+        let layers = self.parse_into_layers(&self.sources, context)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
@@ -146,7 +146,11 @@ impl<T: Config> ConfigLoader<T> {
                 return Err(ConfigError::ExtendsFromNoCode);
             }
 
-            trace!(source = ?source, "Extending additional source");
+            trace!(
+                config = T::META.name,
+                source = source.as_str(),
+                "Extending additional source"
+            );
 
             sources.push(source);
 
@@ -164,7 +168,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources, context, true)
+        self.parse_into_layers(&sources, context)
     }
 
     fn get_location<'l>(&self, source: &'l Source) -> &'l str {
@@ -192,7 +196,10 @@ impl<T: Config> ConfigLoader<T> {
         layers: &[Layer<T>],
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!("Merging partial layers into a final result");
+        trace!(
+            config = T::META.name,
+            "Merging partial layers into a final result"
+        );
 
         // All `None` by default
         let mut merged = T::Partial::default();
@@ -209,16 +216,15 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         sources_to_parse: &[Source],
         context: &<T::Partial as PartialConfig>::Context,
-        extending: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
 
-        if !extending {
-            trace!("Parsing sources into partial layers");
-        }
-
         for source in sources_to_parse {
-            trace!(source = ?source, "Parsing source");
+            trace!(
+                config = T::META.name,
+                source = source.as_str(),
+                "Creating layer from source"
+            );
 
             // Determine the source location for use in error messages
             let location = self.get_location(source);
@@ -237,8 +243,6 @@ impl<T: Config> ConfigLoader<T> {
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
             }
-
-            trace!(source = ?source, "Created layer from source");
 
             layers.push(Layer {
                 partial,
