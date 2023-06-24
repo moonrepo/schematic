@@ -56,11 +56,7 @@ pub fn merge_partial_setting<T: PartialConfig>(
     if prev.is_some() && next.is_some() {
         merge_partial(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {
-        // For optional nested configs, defaults values are not provided by the
-        // `default_values` method since we return `None`. However, if a value
-        // is provided during the merging process, then we need to lazily load
-        // the default values to merge against.
-        merge_partial(T::default_values(context)?, next.unwrap(), context)
+        Ok(next)
     } else {
         Ok(prev)
     }

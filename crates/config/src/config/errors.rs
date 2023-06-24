@@ -46,9 +46,25 @@ pub enum ConfigError {
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
+    #[diagnostic(code(config::file::read_failed))]
+    #[error("Failed to read file {}.", .path.style(Style::Path))]
+    ReadFileFailed {
+        path: PathBuf,
+        #[source]
+        error: std::io::Error,
+    },
+
     #[diagnostic(code(config::url::invalid))]
     #[error("Invalid URL used as a source.")]
     InvalidUrl,
+
+    #[diagnostic(code(config::url::read_failed))]
+    #[error("Failed to read URL {}.", .url.style(Style::Url))]
+    ReadUrlFailed {
+        url: String,
+        #[source]
+        error: reqwest::Error,
+    },
 
     #[diagnostic(code(config::url::https_only))]
     #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
@@ -57,16 +73,6 @@ pub enum ConfigError {
     #[diagnostic(code(config::format::unsupported))]
     #[error("Unsupported format for {0}, expected {1}.")]
     UnsupportedFormat(String, String),
-
-    // IO
-    #[diagnostic(code(config::fs))]
-    #[error("Failed to read source file.")]
-    Io(#[from] std::io::Error),
-
-    // HTTP
-    #[diagnostic(code(config::http))]
-    #[error("Failed to download source from URL.")]
-    Http(#[from] reqwest::Error),
 
     // Parser
     #[diagnostic(code(config::parse::failed))]
@@ -108,11 +114,11 @@ impl ConfigError {
         };
 
         match self {
-            ConfigError::Io(inner) => {
+            ConfigError::ReadFileFailed { error: inner, .. } => {
                 push_end();
                 message.push_str(&inner.to_string());
             }
-            ConfigError::Http(inner) => {
+            ConfigError::ReadUrlFailed { error: inner, .. } => {
                 push_end();
                 message.push_str(&inner.to_string());
             }

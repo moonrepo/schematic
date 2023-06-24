@@ -6,9 +6,14 @@
 
 - Renamed `SettingPath` to `Path`.
 - Renamed `Segment` to `PathSegment`.
+- Updated `PartialConfig.default_values` and `env_values` to return `Result<Option<Self>>` instead
+  of `Result<Self>`.
 
 #### 🚀 Updates
 
+- Added `Deserialize` to `Format`, `Layer`, and `Source`.
+- Improved file system and HTTP error handling.
+- Improved and cleaned up tracing logs.
 - Generator
   - Updated JSON schema arrays to use `contains` when applicable.
 - Schema

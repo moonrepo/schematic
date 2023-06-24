@@ -212,16 +212,16 @@ impl<'l> ToTokens for Config<'l> {
             impl schematic::PartialConfig for #partial_name {
                 type Context = #context;
 
-                fn default_values(context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    Ok(Self {
+                fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
+                    Ok(Some(Self {
                         #(#field_names: #default_values),*
-                    })
+                    }))
                 }
 
-                fn env_values() -> Result<Self, schematic::ConfigError> {
+                fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
                     let mut partial = Self::default();
                     #(#env_stmts)*
-                    Ok(partial)
+                    Ok(Some(partial))
                 }
 
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
@@ -230,10 +230,20 @@ impl<'l> ToTokens for Config<'l> {
                 }
 
                 fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    let mut partial = Self::default_values(context)?;
+                    let mut partial = Self::default();
+
+                    if let Some(data) = Self::default_values(context)? {
+                        partial.merge(context, data)?;
+                    }
+
                     partial.merge(context, self)?;
-                    partial.merge(context, Self::env_values()?)?;
+
+                    if let Some(data) = Self::env_values()? {
+                        partial.merge(context, data)?;
+                    }
+
                     #(#finalize_stmts)*
+
                     Ok(partial)
                 }
 
@@ -275,7 +285,7 @@ impl<'l> ToTokens for Config<'l> {
                 fn default() -> Self {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
-                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap();
+                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap().unwrap_or_default();
 
                     <Self as schematic::Config>::from_partial(defaults)
                 }

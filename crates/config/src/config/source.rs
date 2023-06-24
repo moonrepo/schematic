@@ -1,11 +1,12 @@
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
+use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
 /// Source from which to load a configuration.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
@@ -108,7 +109,10 @@ impl Source {
                 required,
             } => {
                 let content = if path.exists() {
-                    fs::read_to_string(path)?
+                    fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
+                        path: path.to_path_buf(),
+                        error,
+                    })?
                 } else {
                     if *required {
                         return Err(ConfigError::MissingFile(path.to_path_buf()));
@@ -124,7 +128,18 @@ impl Source {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                format.parse(reqwest::blocking::get(url)?.text()?, location)
+                let handle_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    url: url.to_owned(),
+                    error,
+                };
+
+                format.parse(
+                    reqwest::blocking::get(url)
+                        .map_err(handle_error)?
+                        .text()
+                        .map_err(handle_error)?,
+                    location,
+                )
             }
         };
 
@@ -132,6 +147,14 @@ impl Source {
             config: location.to_owned(),
             error,
         })
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Source::Code { .. } => "<code>",
+            Source::File { path, .. } => path.to_str().unwrap_or_default(),
+            Source::Url { url, .. } => url,
+        }
     }
 }
 

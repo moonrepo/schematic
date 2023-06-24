@@ -1,5 +1,6 @@
 use crate::config::errors::{ConfigError, ParserError};
 use miette::{NamedSource, SourceOffset, SourceSpan};
+use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 
 fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
@@ -10,7 +11,7 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
 }
 
 /// Supported source configuration formats.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
     #[cfg(feature = "json")]
