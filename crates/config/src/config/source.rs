@@ -108,7 +108,10 @@ impl Source {
                 required,
             } => {
                 let content = if path.exists() {
-                    fs::read_to_string(path)?
+                    fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
+                        path: path.to_path_buf(),
+                        error,
+                    })?
                 } else {
                     if *required {
                         return Err(ConfigError::MissingFile(path.to_path_buf()));
@@ -124,7 +127,18 @@ impl Source {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                format.parse(reqwest::blocking::get(url)?.text()?, location)
+                let handle_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    url: url.to_owned(),
+                    error,
+                };
+
+                format.parse(
+                    reqwest::blocking::get(url)
+                        .map_err(handle_error)?
+                        .text()
+                        .map_err(handle_error)?,
+                    location,
+                )
             }
         };
 

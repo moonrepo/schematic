@@ -11,6 +11,7 @@
 
 #### 🚀 Updates
 
+- Improved file system and HTTP error handling.
 - Generator
   - Updated JSON schema arrays to use `contains` when applicable.
 - Schema
