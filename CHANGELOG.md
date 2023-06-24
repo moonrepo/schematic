@@ -6,6 +6,8 @@
 
 - Renamed `SettingPath` to `Path`.
 - Renamed `Segment` to `PathSegment`.
+- Updated `PartialConfig.default_values` and `env_values` to return `Result<Option<Self>>` instead
+  of `Result<Self>`.
 
 #### 🚀 Updates
 

@@ -22,14 +22,14 @@ pub trait PartialConfig:
     /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
     ///
     /// If a default value fails to parse or cast into the correct type, an error is returned.
-    fn default_values(context: &Self::Context) -> Result<Self, ConfigError>;
+    fn default_values(context: &Self::Context) -> Result<Option<Self>, ConfigError>;
 
     /// Return a partial configuration with values populated from environment variables
     /// for settings marked with `#[setting(env)]`. Unmarked settings will be [`None`].
     ///
     /// If an environment variable does not exist, the value will be [`None`]. If
     /// the variable fails to parse or cast into the correct type, an error is returned.
-    fn env_values() -> Result<Self, ConfigError>;
+    fn env_values() -> Result<Option<Self>, ConfigError>;
 
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
     /// [`ExtendsFrom`] with the extended sources, either a list of strings or a single string.

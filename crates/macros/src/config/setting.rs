@@ -131,9 +131,9 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
-    pub fn get_env_statement(&self, prefix: Option<&String>) -> TokenStream {
+    pub fn get_env_statement(&self, prefix: Option<&String>) -> Option<TokenStream> {
         if self.is_nested() {
-            return quote! {};
+            return None;
         }
 
         let name = self.name;
@@ -147,7 +147,7 @@ impl<'l> Setting<'l> {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
             }
 
-            return quote! {};
+            return None;
         };
 
         let value = if let Some(parse_env) = &self.args.parse_env {
@@ -160,7 +160,7 @@ impl<'l> Setting<'l> {
             }
         };
 
-        quote! { partial.#name = #value; }
+        Some(quote! { partial.#name = #value; })
     }
 
     pub fn get_from_partial_value(&self) -> TokenStream {
