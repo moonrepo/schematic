@@ -52,7 +52,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType) -> RenderResult<Schema> {
-        let use_contains = array.contains.is_some_and(|v| v == true);
+        let use_contains = array.contains.is_some_and(|v| v);
 
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
