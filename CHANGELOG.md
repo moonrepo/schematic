@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Added back `Eq` and `PartialEq` to partial configs.
+
 ## 0.10.0
 
 #### 💥 Breaking
