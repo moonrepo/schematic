@@ -60,10 +60,13 @@ impl<'l> Variant<'l> {
         match &self.value.fields {
             Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
-                let fields = fields.unnamed.iter().map(|f| {
-                    let ty = &f.ty;
-                    quote! { <#ty as Default>::default() }
-                });
+                let fields = fields
+                    .unnamed
+                    .iter()
+                    .map(|_| {
+                        quote! { Default::default() }
+                    })
+                    .collect::<Vec<_>>();
 
                 quote! { #name(#(#fields),*) }
             }

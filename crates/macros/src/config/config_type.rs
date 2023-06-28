@@ -56,7 +56,7 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let env_stmts = settings
                     .iter()
-                    .filter_map(|s| s.get_env_statement(prefix))
+                    .filter_map(|s| s.generate_env_statement(prefix))
                     .collect::<Vec<_>>();
 
                 if env_stmts.is_empty() {
@@ -155,7 +155,7 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let finalize_stmts = settings
                     .iter()
-                    .map(|s| s.get_finalize_statement())
+                    .map(|s| s.generate_finalize_statement())
                     .collect::<Vec<_>>();
 
                 quote! {
@@ -176,8 +176,10 @@ impl<'l> ConfigType<'l> {
                     Ok(partial)
                 }
             }
-            ConfigType::Enum { variants } => {
-                quote! {}
+            ConfigType::Enum { .. } => {
+                quote! {
+                    Ok(self)
+                }
             }
         }
     }
@@ -187,7 +189,7 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let merge_stmts = settings
                     .iter()
-                    .map(|s| s.get_merge_statement())
+                    .map(|s| s.generate_merge_statement())
                     .collect::<Vec<_>>();
 
                 quote! {
@@ -195,8 +197,11 @@ impl<'l> ConfigType<'l> {
                     Ok(())
                 }
             }
-            ConfigType::Enum { variants } => {
-                quote! {}
+            ConfigType::Enum { .. } => {
+                quote! {
+                    // *self = next;
+                    Ok(())
+                }
             }
         }
     }
@@ -206,7 +211,7 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let validate_stmts = settings
                     .iter()
-                    .map(|s| s.get_validate_statement())
+                    .map(|s| s.generate_validate_statement())
                     .collect::<Vec<_>>();
 
                 quote! {
@@ -222,21 +227,22 @@ impl<'l> ConfigType<'l> {
     pub fn generate_from_partial(&self) -> TokenStream {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
-                let mut field_names = vec![];
+                let mut setting_names = vec![];
                 let mut from_partial_values = vec![];
 
                 for setting in settings {
-                    field_names.push(setting.name);
-                    from_partial_values.push(setting.get_from_partial_value());
+                    setting_names.push(setting.name);
+                    from_partial_values.push(setting.generate_from_partial_value());
                 }
 
                 quote! {
                     Self {
-                        #(#field_names: #from_partial_values),*
+                        #(#setting_names: #from_partial_values),*
                     }
                 }
             }
             ConfigType::Enum { variants } => {
+                // TODO
                 quote! {}
             }
         }
@@ -261,7 +267,7 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { settings, .. } => {
                 let schema_types = settings
                     .iter()
-                    .map(|s| s.get_schema_type(casing_format))
+                    .map(|s| s.generate_schema_type(casing_format))
                     .collect::<Vec<_>>();
 
                 quote! {
@@ -279,22 +285,32 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
+                // TODO
                 quote! {}
             }
         }
     }
 
-    pub fn generate_partial(&self, partial_name: &Ident) -> TokenStream {
+    pub fn generate_partial(
+        &self,
+        partial_name: &Ident,
+        partial_attrs: &[TokenStream],
+    ) -> TokenStream {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
                 quote! {
+                    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #(#partial_attrs)*
                     pub struct #partial_name {
                         #(#settings)*
                     }
                 }
             }
+            // TODO
             ConfigType::Enum { variants } => {
                 quote! {
+                    #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #(#partial_attrs)*
                     pub enum #partial_name {
                     }
                 }
@@ -315,6 +331,7 @@ impl<'l> ConfigType<'l> {
                     schema
                 }
             }
+            // tODO
             ConfigType::Enum { variants } => {
                 quote! {}
             }

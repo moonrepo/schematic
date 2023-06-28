@@ -118,21 +118,7 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_finalize_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_finalize_value() {
-            let name = self.name;
-
-            return quote! {
-                if let Some(data) = partial.#name {
-                    partial.#name = Some(#value);
-                }
-            };
-        }
-
-        quote! {}
-    }
-
-    pub fn get_env_statement(&self, prefix: Option<&String>) -> Option<TokenStream> {
+    pub fn generate_env_statement(&self, prefix: Option<&String>) -> Option<TokenStream> {
         if self.is_nested() {
             return None;
         }
@@ -164,7 +150,21 @@ impl<'l> Setting<'l> {
         Some(quote! { partial.#name = #value; })
     }
 
-    pub fn get_from_partial_value(&self) -> TokenStream {
+    pub fn generate_finalize_statement(&self) -> TokenStream {
+        if let Some(value) = self.value_type.get_finalize_value() {
+            let name = self.name;
+
+            return quote! {
+                if let Some(data) = partial.#name {
+                    partial.#name = Some(#value);
+                }
+            };
+        }
+
+        quote! {}
+    }
+
+    pub fn generate_from_partial_value(&self) -> TokenStream {
         let name = self.name;
         let value = self.value_type.get_from_partial_value();
 
@@ -202,11 +202,11 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_merge_statement(&self) -> TokenStream {
+    pub fn generate_merge_statement(&self) -> TokenStream {
         self.value_type.get_merge_statement(self.name, &self.args)
     }
 
-    pub fn get_validate_statement(&self) -> TokenStream {
+    pub fn generate_validate_statement(&self) -> TokenStream {
         let name = self.name;
 
         if let Some(validator) = self
@@ -223,7 +223,7 @@ impl<'l> Setting<'l> {
         quote! {}
     }
 
-    pub fn get_schema_type(&self, casing_format: &str) -> TokenStream {
+    pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
         let name = self.get_name(Some(casing_format));
         let value = self.value;
 
