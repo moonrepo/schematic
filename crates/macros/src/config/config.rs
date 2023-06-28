@@ -197,7 +197,7 @@ impl<'l> ToTokens for Config<'l> {
         for setting in &self.settings {
             field_names.push(setting.name);
 
-            default_values.push(setting.get_default_value());
+            default_values.push(setting.generate_default_value());
             from_partial_values.push(setting.get_from_partial_value());
             schema_types.push(setting.get_schema_type(casing_format));
 

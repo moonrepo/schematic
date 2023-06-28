@@ -1,6 +1,6 @@
 use crate::config::setting_type::SettingType;
 use crate::utils::{
-    extract_comment, extract_common_attrs, format_case, has_deprecated_attr, preserve_str_literal,
+    extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -109,11 +109,12 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_default_value(&self) -> TokenStream {
+    pub fn generate_default_value(&self) -> TokenStream {
         if self.is_optional() {
             quote! { None }
         } else {
-            self.value_type.get_default_value(self.name, &self.args)
+            self.value_type
+                .generate_default_value(self.name, &self.args)
         }
     }
 
@@ -226,7 +227,7 @@ impl<'l> Setting<'l> {
         let name = self.get_name(Some(casing_format));
         let value = self.value;
 
-        let deprecated = has_deprecated_attr(&self.attrs);
+        let deprecated = has_attr(&self.attrs, "deprecated");
         let hidden = self.is_skipped();
         let nullable = self.is_optional();
 

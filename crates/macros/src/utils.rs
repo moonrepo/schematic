@@ -63,10 +63,8 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
     None
 }
 
-pub fn has_deprecated_attr(attrs: &[&Attribute]) -> bool {
-    attrs
-        .iter()
-        .any(|a| get_meta_path(&a.meta).is_ident("deprecated"))
+pub fn has_attr(attrs: &[&Attribute], name: &str) -> bool {
+    attrs.iter().any(|a| get_meta_path(&a.meta).is_ident(name))
 }
 
 // Thanks to confique for the implementation:

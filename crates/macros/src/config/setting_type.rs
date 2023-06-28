@@ -127,7 +127,7 @@ impl<'l> SettingType<'l> {
         }
     }
 
-    pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+    pub fn generate_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::NestedList { .. } | SettingType::NestedMap { .. } => {
                 quote! { Some(Default::default()) }

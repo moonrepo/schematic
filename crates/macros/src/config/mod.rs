@@ -1,7 +1,9 @@
 #[allow(clippy::module_inception)]
 pub mod config;
+pub mod config_type;
 pub mod setting;
 pub mod setting_type;
+pub mod variant;
 
 use crate::config::config::{Config, ConfigArgs, SerdeArgs};
 use crate::config::setting::Setting;
