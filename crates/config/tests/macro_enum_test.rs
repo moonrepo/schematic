@@ -1,9 +1,10 @@
 use schematic::*;
+use serde::Serialize;
 
 #[derive(Config)]
 enum AllUnit {
     Foo,
-    #[variant(default)]
+    #[setting(default)]
     Bar,
     Baz,
 }
@@ -15,14 +16,31 @@ enum AllUnnamed {
     Baz(usize),
 }
 
-impl Default for PartialAllUnnamed {
-    fn default() -> Self {
-        Self::Foo(String::from("default"))
-    }
-}
-
 #[derive(Config)]
 enum OfBothTypes {
     Foo,
+    #[setting(default)]
     Bar(bool),
+}
+
+#[derive(Config, Serialize)]
+#[serde(untagged, expecting = "asd")]
+enum WithSerde {
+    #[serde(rename = "fooooo")]
+    Foo(String),
+    #[serde(alias = "barrrrr")]
+    Bar(bool),
+    #[setting(rename = "bazzzzz")]
+    Baz(usize),
+}
+
+/// Container
+#[derive(Config)]
+enum WithComments {
+    // Variant
+    Foo,
+    /// Variant
+    Bar,
+    /** Variant */
+    Baz,
 }

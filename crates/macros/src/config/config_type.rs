@@ -1,9 +1,8 @@
 use super::setting::Setting;
 use super::variant::Variant;
-use crate::utils::has_attr;
 use proc_macro2::{Ident, TokenStream};
-use quote::{format_ident, quote, ToTokens};
-use syn::{Fields, FieldsNamed, Variant as NativeVariant};
+use quote::{quote, ToTokens};
+use syn::FieldsNamed;
 
 pub enum ConfigType<'l> {
     NamedStruct {
@@ -306,12 +305,31 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            // TODO
             ConfigType::Enum { variants } => {
+                let default_variant = variants
+                    .iter()
+                    .find(|v| v.is_default())
+                    .or_else(|| variants.first());
+
+                let default_impl = if let Some(default) = default_variant {
+                    let value = default.generate_default_value();
+
+                    quote! { Self::#value }
+                } else {
+                    quote! { panic!("No variant has been marked as default!"); }
+                };
+
                 quote! {
                     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
                     #(#partial_attrs)*
                     pub enum #partial_name {
+                        #(#variants)*
+                    }
+
+                    impl Default for #partial_name {
+                        fn default() -> Self {
+                            #default_impl
+                        }
                     }
                 }
             }

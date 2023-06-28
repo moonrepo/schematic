@@ -8,8 +8,15 @@ use syn::{Attribute, ExprPath};
 #[derive(FromDeriveInput, Default)]
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct SerdeArgs {
+    // struct
     rename: Option<String>,
     rename_all: Option<String>,
+
+    // enum
+    content: Option<String>,
+    expecting: Option<String>,
+    tag: Option<String>,
+    untagged: Option<bool>,
 }
 
 // #[config()]
@@ -35,6 +42,10 @@ pub struct Config<'l> {
 }
 
 impl<'l> Config<'l> {
+    pub fn is_enum(&self) -> bool {
+        matches!(self.type_of, ConfigType::Enum { .. })
+    }
+
     pub fn get_meta_struct(&self) -> TokenStream {
         let name = if let Some(rename) = &self.args.rename {
             rename.to_string()
@@ -54,19 +65,40 @@ impl<'l> Config<'l> {
             .rename_all
             .as_deref()
             .or(self.serde_args.rename_all.as_deref())
-            .unwrap_or("camelCase")
+            .unwrap_or(if self.is_enum() {
+                "kebab-case"
+            } else {
+                "camelCase"
+            })
     }
 
     pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![];
+        let mut meta = vec![quote! { default }];
 
-        if matches!(&self.type_of, ConfigType::NamedStruct { .. }) {
-            meta.push(quote! { default });
-
-            if !self.args.allow_unknown_fields {
-                meta.push(quote! { deny_unknown_fields });
+        match &self.type_of {
+            ConfigType::NamedStruct { .. } => {
+                if !self.args.allow_unknown_fields {
+                    meta.push(quote! { deny_unknown_fields });
+                }
             }
-        }
+            ConfigType::Enum { .. } => {
+                if let Some(content) = &self.serde_args.content {
+                    meta.push(quote! { content = #content });
+                }
+
+                if let Some(expecting) = &self.serde_args.expecting {
+                    meta.push(quote! { expecting = #expecting });
+                }
+
+                if let Some(tag) = &self.serde_args.tag {
+                    meta.push(quote! { tag = #tag });
+                }
+
+                if let Some(untagged) = &self.serde_args.untagged {
+                    meta.push(quote! { untagged = #untagged });
+                }
+            }
+        };
 
         if let Some(rename) = &self.args.rename {
             meta.push(quote! { rename = #rename });
@@ -101,11 +133,6 @@ impl<'l> ToTokens for Config<'l> {
         let casing_format = self.get_casing_format();
         let env_prefix = self.args.env_prefix.as_ref();
 
-        let context = match self.args.context.as_ref() {
-            Some(ctx) => quote! { #ctx },
-            None => quote! { () },
-        };
-
         // Generate the partial implementation
         let partial_name = format_ident!("Partial{}", self.name);
         let partial_attrs = self.get_partial_attrs();
@@ -124,6 +151,11 @@ impl<'l> ToTokens for Config<'l> {
         let merge = self.type_of.generate_merge();
         let validate = self.type_of.generate_validate();
         let from_partial = self.type_of.generate_from_partial();
+
+        let context = match self.args.context.as_ref() {
+            Some(ctx) => quote! { #ctx },
+            None => quote! { () },
+        };
 
         tokens.extend(quote! {
             #[automatically_derived]
@@ -205,15 +237,6 @@ impl<'l> ToTokens for Config<'l> {
                 self.type_of
                     .generate_schema(name, extract_comment(&self.attrs), casing_format);
             let partial_schema = self.type_of.generate_partial_schema(name, &partial_name);
-
-            let config_name = name.to_string();
-            let description = if let Some(comment) = extract_comment(&self.attrs) {
-                quote! {
-                    structure.description = Some(#comment.into());
-                }
-            } else {
-                quote! {}
-            };
 
             tokens.extend(quote! {
                 #[automatically_derived]

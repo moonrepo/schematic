@@ -254,7 +254,7 @@ impl<'l> Setting<'l> {
         }
     }
 
-    pub fn get_serde_meta(&self) -> TokenStream {
+    pub fn get_serde_meta(&self) -> Option<TokenStream> {
         let mut meta = vec![];
 
         if let Some(rename) = &self.args.rename {
@@ -269,9 +269,13 @@ impl<'l> Setting<'l> {
             meta.push(quote! { skip_serializing_if = "Option::is_none" });
         }
 
-        quote! {
-            #(#meta),*
+        if meta.is_empty() {
+            return None;
         }
+
+        Some(quote! {
+            #(#meta),*
+        })
     }
 }
 
@@ -281,8 +285,11 @@ impl<'l> ToTokens for Setting<'l> {
         let value = &self.value_type;
 
         // Gather all attributes
-        let serde_meta = self.get_serde_meta();
-        let mut attrs = vec![quote! { #[serde(#serde_meta)] }];
+        let mut attrs = vec![];
+
+        if let Some(serde_meta) = self.get_serde_meta() {
+            attrs.push(quote! { #[serde(#serde_meta)] });
+        }
 
         for attr in &self.attrs {
             attrs.push(quote! { #attr });

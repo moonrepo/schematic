@@ -17,7 +17,7 @@ pub struct SerdeArgs {
 
 // #[variant()]
 #[derive(FromAttributes, Default)]
-#[darling(default, attributes(variant))]
+#[darling(default, attributes(setting))]
 pub struct VariantArgs {
     pub default: bool,
     pub nested: bool,
@@ -54,6 +54,32 @@ impl<'l> Variant<'l> {
         self.args.nested
     }
 
+    pub fn get_serde_meta(&self) -> Option<TokenStream> {
+        let mut meta = vec![];
+
+        if let Some(alias) = &self.serde_args.alias {
+            meta.push(quote! { alias = #alias });
+        }
+
+        if let Some(rename) = &self.args.rename {
+            meta.push(quote! { rename = #rename });
+        } else if let Some(rename) = &self.serde_args.rename {
+            meta.push(quote! { rename = #rename });
+        }
+
+        if self.args.skip || self.serde_args.skip {
+            meta.push(quote! { skip });
+        }
+
+        if meta.is_empty() {
+            return None;
+        }
+
+        Some(quote! {
+            #(#meta),*
+        })
+    }
+
     pub fn generate_default_value(&self) -> TokenStream {
         let name = &self.name;
 
@@ -72,5 +98,47 @@ impl<'l> Variant<'l> {
             }
             Fields::Unit => quote! { #name },
         }
+    }
+}
+
+impl<'l> ToTokens for Variant<'l> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = self.name;
+
+        // Gather all attributes
+        let mut attrs = vec![];
+
+        if let Some(serde_meta) = self.get_serde_meta() {
+            attrs.push(quote! { #[serde(#serde_meta)] });
+        }
+
+        for attr in &self.attrs {
+            attrs.push(quote! { #attr });
+        }
+
+        tokens.extend(match &self.value.fields {
+            Fields::Named(_) => unreachable!(),
+            Fields::Unnamed(fields) => {
+                let fields = fields
+                    .unnamed
+                    .iter()
+                    .map(|field| {
+                        let vis = &field.vis;
+                        let ty = &field.ty;
+
+                        quote! { #vis #ty }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #(#attrs)*
+                    #name(#(#fields),*),
+                }
+            }
+            Fields::Unit => quote! {
+                #(#attrs)*
+                #name,
+            },
+        });
     }
 }
