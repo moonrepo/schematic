@@ -198,7 +198,7 @@ impl<'l> ConfigType<'l> {
             }
             ConfigType::Enum { .. } => {
                 quote! {
-                    // *self = next;
+                    *self = next;
                     Ok(())
                 }
             }
@@ -218,7 +218,14 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                quote! {}
+                let validate_stmts = variants
+                    .iter()
+                    .map(|s| s.generate_validate_statement())
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #(#validate_stmts)*
+                }
             }
         }
     }
@@ -242,7 +249,9 @@ impl<'l> ConfigType<'l> {
             }
             ConfigType::Enum { variants } => {
                 // TODO
-                quote! {}
+                quote! {
+                    Self::default()
+                }
             }
         }
     }

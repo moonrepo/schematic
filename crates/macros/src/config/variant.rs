@@ -1,7 +1,7 @@
 use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use syn::{Attribute, Fields, Variant as NativeVariant};
 
 pub enum TaggedFormat {
@@ -54,6 +54,10 @@ impl<'l> Variant<'l> {
 
     pub fn is_default(&self) -> bool {
         self.args.default
+    }
+
+    pub fn is_nested(&self) -> bool {
+        self.args.nested
     }
 
     pub fn get_name(&self, casing_format: Option<&str>) -> String {
@@ -112,6 +116,42 @@ impl<'l> Variant<'l> {
             }
             Fields::Unit => quote! { #name },
         }
+    }
+
+    pub fn generate_validate_statement(&self) -> TokenStream {
+        if !self.is_nested() {
+            return quote! {};
+        }
+
+        let name = &self.name;
+
+        if let Fields::Unnamed(fields) = &self.value.fields {
+            let mut count: u8 = 97; // a
+            let mut var_names = vec![];
+            let mut var_stmts = vec![];
+
+            for _ in &fields.unnamed {
+                let var_name = format_ident!("{}", count as char);
+
+                var_stmts.push(quote! {
+                    if let Err(nested_error) = #var_name.validate_with_path(context, path.clone()) {
+                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    }
+                });
+
+                var_names.push(var_name);
+
+                count += 1;
+            }
+
+            return quote! {
+                if let Self::#name(#(#var_names),*) = self {
+                    #(#var_stmts)*
+                }
+            };
+        }
+
+        quote! {}
     }
 
     pub fn generate_schema_type(
@@ -173,7 +213,7 @@ impl<'l> Variant<'l> {
                 }
             }
             // Not sure how to render this one since we don't allow named fields?
-            // I think we can just ignore it for now.
+            // I think we can just ignore it for now...
             TaggedFormat::Internal(_) => {
                 panic!("Internal tagged enums are not supported!");
             }
@@ -214,7 +254,11 @@ impl<'l> ToTokens for Variant<'l> {
                         let vis = &field.vis;
                         let ty = &field.ty;
 
-                        quote! { #vis #ty }
+                        if self.is_nested() {
+                            quote! { #vis <#ty as schematic::Config>::Partial }
+                        } else {
+                            quote! { #vis #ty }
+                        }
                     })
                     .collect::<Vec<_>>();
 

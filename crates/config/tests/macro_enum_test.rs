@@ -1,5 +1,13 @@
+#![allow(dead_code, deprecated)]
+
 use schematic::*;
 use serde::Serialize;
+
+#[derive(Config)]
+pub struct SomeConfig {
+    foo: String,
+    bar: usize,
+}
 
 #[derive(Config)]
 enum AllUnit {
@@ -24,8 +32,17 @@ enum OfBothTypes {
     Bar(bool, usize),
 }
 
+#[derive(Config)]
+enum NestedConfigs {
+    String(String),
+    #[setting(default, nested)]
+    Object(SomeConfig),
+    #[setting(nested)]
+    Objects(SomeConfig, SomeConfig),
+}
+
 #[derive(Config, Serialize)]
-#[serde(untagged, expecting = "asd")]
+#[serde(untagged, expecting = "something")]
 enum WithSerde {
     #[serde(rename = "fooooo")]
     Foo(String),
