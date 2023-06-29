@@ -1,10 +1,15 @@
-use crate::utils::{
-    extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
-};
+use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Attribute, Expr, ExprPath, Field, Fields, Type, Variant as NativeVariant};
+use syn::{Attribute, Fields, Variant as NativeVariant};
+
+pub enum TaggedFormat {
+    Untagged,
+    External,
+    Internal(String),
+    Adjacent(String, String),
+}
 
 // #[serde()]
 #[derive(FromAttributes, Default)]
@@ -21,6 +26,7 @@ pub struct SerdeArgs {
 pub struct VariantArgs {
     pub default: bool,
     pub nested: bool,
+    pub null: bool,
 
     // serde
     pub rename: Option<String>,
@@ -50,8 +56,16 @@ impl<'l> Variant<'l> {
         self.args.default
     }
 
-    pub fn is_nested(&self) -> bool {
-        self.args.nested
+    pub fn get_name(&self, casing_format: Option<&str>) -> String {
+        if let Some(local) = &self.args.rename {
+            local.to_owned()
+        } else if let Some(serde) = &self.serde_args.rename {
+            serde.to_owned()
+        } else if let Some(format) = casing_format {
+            format_case(format, &self.name.to_string())
+        } else {
+            self.name.to_string()
+        }
     }
 
     pub fn get_serde_meta(&self) -> Option<TokenStream> {
@@ -97,6 +111,80 @@ impl<'l> Variant<'l> {
                 quote! { #name(#(#fields),*) }
             }
             Fields::Unit => quote! { #name },
+        }
+    }
+
+    pub fn generate_schema_type(
+        &self,
+        casing_format: &str,
+        tagged_format: &TaggedFormat,
+    ) -> TokenStream {
+        let name = self.get_name(Some(casing_format));
+        let untagged = matches!(tagged_format, TaggedFormat::Untagged);
+
+        let inner = match &self.value.fields {
+            Fields::Named(_) => unreachable!(),
+            Fields::Unnamed(fields) => {
+                if self.args.null {
+                    panic!("Only unit variants can be marked as `null`.");
+                }
+
+                let fields = fields
+                    .unnamed
+                    .iter()
+                    .map(|field| {
+                        let ty = &field.ty;
+                        quote! { SchemaType::infer::<#ty>() }
+                    })
+                    .collect::<Vec<_>>();
+
+                if fields.len() == 1 {
+                    let inner = &fields[0];
+
+                    quote! { #inner }
+                } else {
+                    quote! {
+                        SchemaType::tuple([
+                            #(#fields),*
+                        ])
+                    }
+                }
+            }
+            Fields::Unit => {
+                if self.args.null || untagged {
+                    quote! {
+                        SchemaType::Null
+                    }
+                } else {
+                    quote! {
+                        SchemaType::literal(LiteralValue::String(#name.into()))
+                    }
+                }
+            }
+        };
+
+        match tagged_format {
+            TaggedFormat::Untagged => inner,
+            TaggedFormat::External => {
+                quote! {
+                    SchemaType::structure([
+                        SchemaField::new(#name, #inner),
+                    ])
+                }
+            }
+            // Not sure how to render this one since we don't allow named fields?
+            // I think we can just ignore it for now.
+            TaggedFormat::Internal(_) => {
+                panic!("Internal tagged enums are not supported!");
+            }
+            TaggedFormat::Adjacent(tag, content) => {
+                quote! {
+                    SchemaType::structure([
+                        SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))),
+                        SchemaField::new(#content, #inner),
+                    ])
+                }
+            }
         }
     }
 }

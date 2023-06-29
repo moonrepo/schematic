@@ -18,9 +18,10 @@ enum AllUnnamed {
 
 #[derive(Config)]
 enum OfBothTypes {
+    #[setting(null)]
     Foo,
     #[setting(default)]
-    Bar(bool),
+    Bar(bool, usize),
 }
 
 #[derive(Config, Serialize)]
@@ -43,4 +44,39 @@ enum WithComments {
     Bar,
     /** Variant */
     Baz,
+}
+
+#[derive(Config, Serialize)]
+#[serde(untagged)]
+enum Untagged {
+    Foo,
+    Bar(bool),
+    #[setting(rename = "bazzer")]
+    Baz(usize, String),
+}
+
+#[derive(Config, Serialize)]
+enum ExternalTagged {
+    Foo,
+    Bar(bool),
+    #[setting(rename = "bazzer")]
+    Baz(usize),
+}
+
+// #[derive(Config, Serialize)]
+// #[serde(tag = "type")]
+// enum InternalTagged {
+//     Foo,
+//     Bar(bool),
+//     #[setting(rename = "bazzer")]
+//     Baz(usize),
+// }
+
+#[derive(Config, Serialize)]
+#[serde(tag = "type", content = "content")]
+enum AdjacentTagged {
+    Foo,
+    Bar(bool),
+    #[setting(rename = "bazzer")]
+    Baz(usize),
 }

@@ -1,4 +1,5 @@
 use super::config_type::ConfigType;
+use super::variant::TaggedFormat;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
@@ -72,11 +73,30 @@ impl<'l> Config<'l> {
             })
     }
 
+    pub fn get_tagged_format(&self) -> TaggedFormat {
+        if self.serde_args.untagged.is_some_and(|v| v) {
+            return TaggedFormat::Untagged;
+        }
+
+        match (
+            self.serde_args.tag.as_ref(),
+            self.serde_args.content.as_ref(),
+        ) {
+            (Some(tag), Some(content)) => {
+                TaggedFormat::Adjacent(tag.to_owned(), content.to_owned())
+            }
+            (Some(tag), None) => TaggedFormat::Internal(tag.to_owned()),
+            _ => TaggedFormat::External,
+        }
+    }
+
     pub fn get_serde_meta(&self) -> TokenStream {
-        let mut meta = vec![quote! { default }];
+        let mut meta = vec![];
 
         match &self.type_of {
             ConfigType::NamedStruct { .. } => {
+                meta.push(quote! { default });
+
                 if !self.args.allow_unknown_fields {
                     meta.push(quote! { deny_unknown_fields });
                 }
@@ -94,8 +114,8 @@ impl<'l> Config<'l> {
                     meta.push(quote! { tag = #tag });
                 }
 
-                if let Some(untagged) = &self.serde_args.untagged {
-                    meta.push(quote! { untagged = #untagged });
+                if self.serde_args.untagged.is_some_and(|v| v) {
+                    meta.push(quote! { untagged });
                 }
             }
         };
@@ -131,6 +151,7 @@ impl<'l> ToTokens for Config<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
         let casing_format = self.get_casing_format();
+        let tagged_format = self.get_tagged_format();
         let env_prefix = self.args.env_prefix.as_ref();
 
         // Generate the partial implementation
@@ -233,9 +254,12 @@ impl<'l> ToTokens for Config<'l> {
         {
             use crate::utils::extract_comment;
 
-            let schema =
-                self.type_of
-                    .generate_schema(name, extract_comment(&self.attrs), casing_format);
+            let schema = self.type_of.generate_schema(
+                name,
+                extract_comment(&self.attrs),
+                casing_format,
+                tagged_format,
+            );
             let partial_schema = self.type_of.generate_partial_schema(name, &partial_name);
 
             tokens.extend(quote! {

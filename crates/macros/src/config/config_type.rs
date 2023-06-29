@@ -1,5 +1,5 @@
 use super::setting::Setting;
-use super::variant::Variant;
+use super::variant::{TaggedFormat, Variant};
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::FieldsNamed;
@@ -252,11 +252,12 @@ impl<'l> ConfigType<'l> {
         config_name: &Ident,
         description: Option<String>,
         casing_format: &str,
+        tagged_format: TaggedFormat,
     ) -> TokenStream {
         let config_name = config_name.to_string();
         let description = if let Some(comment) = description {
             quote! {
-                structure.description = Some(#comment.into());
+                schema.description = Some(#comment.into());
             }
         } else {
             quote! {}
@@ -270,7 +271,7 @@ impl<'l> ConfigType<'l> {
                     .collect::<Vec<_>>();
 
                 quote! {
-                    let mut structure = StructType {
+                    let mut schema = StructType {
                         name: Some(#config_name.into()),
                         fields: vec![
                             #(#schema_types),*
@@ -280,12 +281,27 @@ impl<'l> ConfigType<'l> {
 
                     #description
 
-                    SchemaType::Struct(structure)
+                    SchemaType::Struct(schema)
                 }
             }
             ConfigType::Enum { variants } => {
-                // TODO
-                quote! {}
+                let variants_types = variants
+                    .iter()
+                    .map(|s| s.generate_schema_type(casing_format, &tagged_format))
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    let mut schema = UnionType {
+                        variants_types: vec![
+                            #(Box::new(#variants_types)),*
+                        ],
+                        ..Default::default()
+                    };
+
+                    #description
+
+                    SchemaType::Union(schema)
+                }
             }
         }
     }
@@ -349,9 +365,12 @@ impl<'l> ConfigType<'l> {
                     schema
                 }
             }
-            // tODO
-            ConfigType::Enum { variants } => {
-                quote! {}
+            ConfigType::Enum { .. } => {
+                quote! {
+                    let mut schema = #config_name::generate_schema();
+                    schematic::internal::partialize_schema(&mut schema);
+                    schema
+                }
             }
         }
     }

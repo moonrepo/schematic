@@ -9,6 +9,7 @@ pub enum UnionOperator {
 
 #[derive(Clone, Debug, Default)]
 pub struct UnionType {
+    pub description: Option<String>,
     pub name: Option<String>,
     pub operator: UnionOperator,
     pub variants: Option<Vec<SchemaField>>,
