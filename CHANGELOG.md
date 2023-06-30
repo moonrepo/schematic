@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for` #[derive(Config)]` on enums with unit/tuple variants (struct variants not
+  supported).
+  - This allows for nested partials and configs to be properly handled.
+  - Derived enums also automatically generate accurate schemas.
+- Added support for `#[config(serde(...))]` attribute (doesn't support everything, mainly enum
+  tagging).
+
+#### 🐞 Fixes
+
+- Fixed a handful of issues with schema generation and partial detection.
+
 ## 0.10.1
 
 #### 🐞 Fixes
