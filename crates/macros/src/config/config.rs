@@ -171,7 +171,7 @@ impl<'l> ToTokens for Config<'l> {
         let finalize = self.type_of.generate_finalize();
         let merge = self.type_of.generate_merge();
         let validate = self.type_of.generate_validate();
-        let from_partial = self.type_of.generate_from_partial();
+        let from_partial = self.type_of.generate_from_partial(&partial_name);
 
         let context = match self.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },

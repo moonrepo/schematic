@@ -208,6 +208,40 @@ impl<'l> Variant<'l> {
         None
     }
 
+    pub fn generate_from_partial_value(&self, partial_name: &Ident) -> TokenStream {
+        let name = &self.name;
+
+        match &self.value.fields {
+            Fields::Named(_) => unreachable!(),
+            Fields::Unnamed(fields) => {
+                self.map_unnamed_match_custom(self.name, partial_name, fields, |outer_names, _| {
+                    let stmts = outer_names
+                        .iter()
+                        .enumerate()
+                        .map(|(index, o)| {
+                            if self.is_nested() {
+                                let ty = &fields.unnamed[index].ty;
+
+                                quote! { #ty::from_partial(#o) }
+                            } else {
+                                quote! { #o }
+                            }
+                        })
+                        .collect::<Vec<_>>();
+
+                    quote! {
+                        Self::#name(#(#stmts),*)
+                    }
+                })
+            }
+            Fields::Unit => {
+                quote! {
+                    #partial_name::#name => Self::#name,
+                }
+            }
+        }
+    }
+
     pub fn generate_schema_type(
         &self,
         casing_format: &str,
@@ -286,6 +320,21 @@ impl<'l> Variant<'l> {
     where
         F: FnOnce(&[Ident], &[Ident]) -> TokenStream,
     {
+        let self_name = format_ident!("Self");
+
+        self.map_unnamed_match_custom(name, &self_name, fields, factory)
+    }
+
+    fn map_unnamed_match_custom<F>(
+        &self,
+        name: &Ident,
+        self_name: &Ident,
+        fields: &FieldsUnnamed,
+        factory: F,
+    ) -> TokenStream
+    where
+        F: FnOnce(&[Ident], &[Ident]) -> TokenStream,
+    {
         let mut count: u8 = 97; // a
         let mut outer_names = vec![];
         let mut inner_names = vec![];
@@ -308,7 +357,7 @@ impl<'l> Variant<'l> {
         let inner = factory(&outer_names, &inner_names);
 
         quote! {
-            Self::#name(#(#outer_names),*) => {
+            #self_name::#name(#(#outer_names),*) => {
                 #inner
             },
         }

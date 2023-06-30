@@ -275,7 +275,7 @@ impl<'l> ConfigType<'l> {
         }
     }
 
-    pub fn generate_from_partial(&self) -> TokenStream {
+    pub fn generate_from_partial(&self, partial_name: &Ident) -> TokenStream {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
                 let mut setting_names = vec![];
@@ -293,9 +293,15 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                // TODO
+                let from_partial_values = variants
+                    .iter()
+                    .map(|s| s.generate_from_partial_value(partial_name))
+                    .collect::<Vec<_>>();
+
                 quote! {
-                    Self::default()
+                    match partial {
+                        #(#from_partial_values)*
+                    }
                 }
             }
         }
