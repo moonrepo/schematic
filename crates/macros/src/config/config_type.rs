@@ -196,9 +196,19 @@ impl<'l> ConfigType<'l> {
                     Ok(())
                 }
             }
-            ConfigType::Enum { .. } => {
+            ConfigType::Enum { variants } => {
+                let merge_stmts = variants
+                    .iter()
+                    .filter_map(|s| s.generate_merge_statement())
+                    .collect::<Vec<_>>();
+
                 quote! {
-                    *self = next;
+                    match self {
+                        #(#merge_stmts)*
+                        _ => {
+                            *self = next;
+                        }
+                    };
                     Ok(())
                 }
             }

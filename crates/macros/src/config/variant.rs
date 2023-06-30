@@ -118,6 +118,49 @@ impl<'l> Variant<'l> {
         }
     }
 
+    pub fn generate_merge_statement(&self) -> Option<TokenStream> {
+        let name = &self.name;
+
+        match &self.value.fields {
+            Fields::Named(_) => unreachable!(),
+            Fields::Unnamed(fields) => {
+                if !self.is_nested() {
+                    return None;
+                }
+
+                let mut count: u8 = 97; // a
+                let mut outer_names = vec![];
+                let mut inner_names = vec![];
+                let mut merge_stmts = vec![];
+
+                for _ in &fields.unnamed {
+                    let outer_name = format_ident!("{}o", count as char);
+                    let inner_name = format_ident!("{}i", count as char);
+
+                    merge_stmts.push(quote! {
+                        #outer_name.merge(context, #inner_name)?;
+                    });
+
+                    outer_names.push(outer_name);
+                    inner_names.push(inner_name);
+
+                    count += 1;
+                }
+
+                Some(quote! {
+                    Self::#name(#(#outer_names),*) => {
+                        if let Self::#name(#(#inner_names),*) = next {
+                            #(#merge_stmts)*
+                        } else {
+                            *self = next;
+                        }
+                    },
+                })
+            }
+            Fields::Unit => None,
+        }
+    }
+
     pub fn generate_validate_statement(&self) -> TokenStream {
         if !self.is_nested() {
             return quote! {};
