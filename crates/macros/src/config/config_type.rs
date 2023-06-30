@@ -15,6 +15,13 @@ pub enum ConfigType<'l> {
 }
 
 impl<'l> ConfigType<'l> {
+    pub fn has_nested(&self) -> bool {
+        match self {
+            ConfigType::NamedStruct { settings, .. } => settings.iter().any(|v| v.is_nested()),
+            ConfigType::Enum { variants } => variants.iter().any(|v| v.is_nested()),
+        }
+    }
+
     pub fn generate_default_values(&self) -> TokenStream {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
@@ -175,9 +182,23 @@ impl<'l> ConfigType<'l> {
                     Ok(partial)
                 }
             }
-            ConfigType::Enum { .. } => {
-                quote! {
-                    Ok(self)
+            ConfigType::Enum { variants } => {
+                if self.has_nested() {
+                    let finalize_stmts = variants
+                        .iter()
+                        .flat_map(|s| s.generate_finalize_statement())
+                        .collect::<Vec<_>>();
+
+                    quote! {
+                        Ok(match self {
+                            #(#finalize_stmts)*
+                            _ => self
+                        })
+                    }
+                } else {
+                    quote! {
+                        Ok(self)
+                    }
                 }
             }
         }
@@ -197,19 +218,26 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                let merge_stmts = variants
-                    .iter()
-                    .filter_map(|s| s.generate_merge_statement())
-                    .collect::<Vec<_>>();
+                if self.has_nested() {
+                    let merge_stmts = variants
+                        .iter()
+                        .filter_map(|s| s.generate_merge_statement())
+                        .collect::<Vec<_>>();
 
-                quote! {
-                    match self {
-                        #(#merge_stmts)*
-                        _ => {
-                            *self = next;
-                        }
-                    };
-                    Ok(())
+                    quote! {
+                        match self {
+                            #(#merge_stmts)*
+                            _ => {
+                                *self = next;
+                            }
+                        };
+                        Ok(())
+                    }
+                } else {
+                    quote! {
+                        *self = next;
+                        Ok(())
+                    }
                 }
             }
         }
@@ -228,13 +256,20 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                let validate_stmts = variants
-                    .iter()
-                    .map(|s| s.generate_validate_statement())
-                    .collect::<Vec<_>>();
+                if self.has_nested() {
+                    let validate_stmts = variants
+                        .iter()
+                        .filter_map(|s| s.generate_validate_statement())
+                        .collect::<Vec<_>>();
 
-                quote! {
-                    #(#validate_stmts)*
+                    quote! {
+                        match self {
+                            #(#validate_stmts)*
+                            _ => {}
+                        };
+                    }
+                } else {
+                    quote! {}
                 }
             }
         }
