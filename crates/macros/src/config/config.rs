@@ -1,6 +1,6 @@
 use super::config_type::ConfigType;
 use super::variant::TaggedFormat;
-use darling::FromDeriveInput;
+use darling::{FromDeriveInput, FromMeta};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Attribute, ExprPath};
@@ -17,7 +17,16 @@ pub struct SerdeArgs {
     content: Option<String>,
     expecting: Option<String>,
     tag: Option<String>,
-    untagged: Option<bool>,
+    untagged: bool,
+}
+
+#[derive(FromMeta, Default)]
+#[darling(default)]
+pub struct SerdeMeta {
+    content: Option<String>,
+    expecting: Option<String>,
+    tag: Option<String>,
+    untagged: bool,
 }
 
 // #[config()]
@@ -30,9 +39,9 @@ pub struct ConfigArgs {
     file: Option<String>,
 
     // serde
-    expecting: Option<String>,
     rename: Option<String>,
     rename_all: Option<String>,
+    serde: SerdeMeta,
 }
 
 pub struct Config<'l> {
@@ -75,13 +84,21 @@ impl<'l> Config<'l> {
     }
 
     pub fn get_tagged_format(&self) -> TaggedFormat {
-        if self.serde_args.untagged.is_some_and(|v| v) {
+        if self.args.serde.untagged || self.serde_args.untagged {
             return TaggedFormat::Untagged;
         }
 
         match (
-            self.serde_args.tag.as_ref(),
-            self.serde_args.content.as_ref(),
+            self.args
+                .serde
+                .tag
+                .as_ref()
+                .or(self.serde_args.tag.as_ref()),
+            self.args
+                .serde
+                .content
+                .as_ref()
+                .or(self.serde_args.content.as_ref()),
         ) {
             (Some(tag), Some(content)) => {
                 TaggedFormat::Adjacent(tag.to_owned(), content.to_owned())
@@ -103,30 +120,25 @@ impl<'l> Config<'l> {
                 }
             }
             ConfigType::Enum { .. } => {
-                let mut has_tagged = false;
-
-                if let Some(content) = &self.serde_args.content {
-                    has_tagged = true;
+                if let Some(content) = &self.args.serde.content {
+                    meta.push(quote! { content = #content });
+                } else if let Some(content) = &self.serde_args.content {
                     meta.push(quote! { content = #content });
                 }
 
-                if let Some(tag) = &self.serde_args.tag {
-                    has_tagged = true;
+                if let Some(tag) = &self.args.serde.tag {
+                    meta.push(quote! { tag = #tag });
+                } else if let Some(tag) = &self.serde_args.tag {
                     meta.push(quote! { tag = #tag });
                 }
 
-                if self.serde_args.untagged.is_some_and(|v| v) {
-                    has_tagged = true;
-                    meta.push(quote! { untagged });
-                }
-
-                if !has_tagged {
+                if self.args.serde.untagged || self.serde_args.untagged {
                     meta.push(quote! { untagged });
                 }
             }
         };
 
-        if let Some(expecting) = &self.args.expecting {
+        if let Some(expecting) = &self.args.serde.expecting {
             meta.push(quote! { expecting = #expecting });
         } else if let Some(expecting) = &self.serde_args.expecting {
             meta.push(quote! { expecting = #expecting });

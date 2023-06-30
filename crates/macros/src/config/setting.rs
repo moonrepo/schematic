@@ -230,6 +230,7 @@ impl<'l> Setting<'l> {
         let deprecated = has_attr(&self.attrs, "deprecated");
         let hidden = self.is_skipped();
         let nullable = self.is_optional();
+        let partial = self.is_nested();
 
         let description = if let Some(comment) = extract_comment(&self.attrs) {
             quote! {
@@ -241,11 +242,17 @@ impl<'l> Setting<'l> {
             }
         };
 
+        let type_of = if partial {
+            quote! { SchemaType::infer_partial::<#value>() }
+        } else {
+            quote! { SchemaType::infer::<#value>() }
+        };
+
         quote! {
             SchemaField {
                 name: Some(#name.into()),
                 description: #description,
-                type_of: SchemaType::infer::<#value>(),
+                type_of: #type_of,
                 deprecated: #deprecated,
                 hidden: #hidden,
                 nullable: #nullable,

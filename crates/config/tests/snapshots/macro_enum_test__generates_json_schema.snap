@@ -1,0 +1,852 @@
+---
+source: crates/config/tests/macro_enum_test.rs
+expression: "std::fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "content",
+        "type"
+      ],
+      "properties": {
+        "content": {
+          "const": "foo"
+        },
+        "type": {
+          "const": "foo"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "content",
+        "type"
+      ],
+      "properties": {
+        "content": {
+          "type": "boolean"
+        },
+        "type": {
+          "const": "bar"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "content",
+        "type"
+      ],
+      "properties": {
+        "content": {
+          "type": "number"
+        },
+        "type": {
+          "const": "bazzer"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "content": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialSomeConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "const": "qux"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "AdjacentTagged": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "content",
+            "type"
+          ],
+          "properties": {
+            "content": {
+              "const": "foo"
+            },
+            "type": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "content",
+            "type"
+          ],
+          "properties": {
+            "content": {
+              "type": "boolean"
+            },
+            "type": {
+              "const": "bar"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "content",
+            "type"
+          ],
+          "properties": {
+            "content": {
+              "type": "number"
+            },
+            "type": {
+              "const": "bazzer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "content",
+            "type"
+          ],
+          "properties": {
+            "content": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/SomeConfig"
+                }
+              ]
+            },
+            "type": {
+              "const": "qux"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AllUnit": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "const": "bar"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "const": "baz"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AllUnnamed": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExternalTagged": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bazzer"
+          ],
+          "properties": {
+            "bazzer": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "qux"
+          ],
+          "properties": {
+            "qux": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/SomeConfig"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "InternalTagged": {
+      "anyOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/SomeConfig"
+        }
+      ]
+    },
+    "NestedConfigs": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "string"
+          ],
+          "properties": {
+            "string": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "object"
+          ],
+          "properties": {
+            "object": {
+              "allOf": [
+                {
+                  "$ref": "#/definitions/SomeConfig"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "objects"
+          ],
+          "properties": {
+            "objects": {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/SomeConfig"
+                },
+                {
+                  "$ref": "#/definitions/SomeConfig"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "OfBothTypes": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialAllUnit": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "const": "bar"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "const": "baz"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialAllUnnamed": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialExternalTagged": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bazzer"
+          ],
+          "properties": {
+            "bazzer": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "qux": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PartialSomeConfig"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialInternalTagged": {
+      "anyOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/PartialSomeConfig"
+        }
+      ]
+    },
+    "PartialNestedConfigs": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "string"
+          ],
+          "properties": {
+            "string": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "object": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PartialSomeConfig"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "objects": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": [
+                    {
+                      "$ref": "#/definitions/PartialSomeConfig"
+                    },
+                    {
+                      "$ref": "#/definitions/PartialSomeConfig"
+                    }
+                  ],
+                  "maxItems": 2,
+                  "minItems": 2
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialOfBothTypes": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialSomeConfig": {
+      "title": "PartialSomeConfig",
+      "type": "object",
+      "properties": {
+        "bar": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "foo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialUntagged": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "maxItems": 2,
+          "minItems": 2
+        },
+        {
+          "$ref": "#/definitions/PartialSomeConfig"
+        }
+      ]
+    },
+    "PartialWithComments": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "const": "bar"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "const": "baz"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialWithSerde": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "SomeConfig": {
+      "title": "SomeConfig",
+      "type": "object",
+      "required": [
+        "bar",
+        "foo"
+      ],
+      "properties": {
+        "bar": {
+          "type": "number"
+        },
+        "foo": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Untagged": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "maxItems": 2,
+          "minItems": 2
+        },
+        {
+          "$ref": "#/definitions/SomeConfig"
+        }
+      ]
+    },
+    "WithComments": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "foo"
+          ],
+          "properties": {
+            "foo": {
+              "const": "foo"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bar"
+          ],
+          "properties": {
+            "bar": {
+              "const": "bar"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "baz"
+          ],
+          "properties": {
+            "baz": {
+              "const": "baz"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WithSerde": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    }
+  }
+}
+

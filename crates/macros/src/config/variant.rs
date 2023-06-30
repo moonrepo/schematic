@@ -249,6 +249,7 @@ impl<'l> Variant<'l> {
     ) -> TokenStream {
         let name = self.get_name(Some(casing_format));
         let untagged = matches!(tagged_format, TaggedFormat::Untagged);
+        let partial = self.is_nested();
 
         let inner = match &self.value.fields {
             Fields::Named(_) => unreachable!(),
@@ -262,7 +263,12 @@ impl<'l> Variant<'l> {
                     .iter()
                     .map(|field| {
                         let ty = &field.ty;
-                        quote! { SchemaType::infer::<#ty>() }
+
+                        if partial {
+                            quote! { SchemaType::infer_partial::<#ty>() }
+                        } else {
+                            quote! { SchemaType::infer::<#ty>() }
+                        }
                     })
                     .collect::<Vec<_>>();
 
@@ -291,7 +297,7 @@ impl<'l> Variant<'l> {
             }
         };
 
-        match tagged_format {
+        let outer = match tagged_format {
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
                 quote! {
@@ -301,13 +307,14 @@ impl<'l> Variant<'l> {
                 }
             }
             TaggedFormat::Internal(tag) => {
-                quote! {
+                return quote! {
                     {
                         let mut schema = #inner;
                         schema.add_field(SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))));
+                        schema.set_partial(#partial);
                         schema
                     }
-                }
+                };
             }
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
@@ -317,6 +324,18 @@ impl<'l> Variant<'l> {
                     ])
                 }
             }
+        };
+
+        if partial {
+            quote! {
+                {
+                    let mut schema = #outer;
+                    schema.set_partial(#partial);
+                    schema
+                }
+            }
+        } else {
+            outer
         }
     }
 

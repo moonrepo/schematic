@@ -422,14 +422,14 @@ impl<'l> ConfigType<'l> {
             ConfigType::NamedStruct { .. } => {
                 quote! {
                     let mut schema = #config_name::generate_schema();
-                    schematic::internal::partialize_schema(&mut schema);
+                    schematic::internal::partialize_schema(&mut schema, true);
                     schema
                 }
             }
             ConfigType::Enum { .. } => {
                 quote! {
                     let mut schema = #config_name::generate_schema();
-                    schematic::internal::partialize_schema(&mut schema);
+                    schematic::internal::partialize_schema(&mut schema, true);
                     schema
                 }
             }

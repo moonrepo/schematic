@@ -63,37 +63,104 @@ enum WithComments {
     Baz,
 }
 
-#[derive(Config, Serialize)]
-#[serde(untagged)]
+#[derive(Config)]
+#[config(serde(untagged, expecting = "something"))]
 enum Untagged {
     Foo,
     Bar(bool),
     #[setting(rename = "bazzer")]
     Baz(usize, String),
+    #[setting(nested)]
+    Qux(SomeConfig),
 }
 
-#[derive(Config, Serialize)]
+#[derive(Config)]
 enum ExternalTagged {
     Foo,
     Bar(bool),
     #[setting(rename = "bazzer")]
     Baz(usize),
+    #[setting(nested)]
+    Qux(SomeConfig),
 }
 
-#[derive(Config, Serialize)]
-#[serde(tag = "type")]
+#[derive(Config)]
+#[config(serde(tag = "type"))]
 enum InternalTagged {
     Foo,
     Bar(bool),
     #[setting(rename = "bazzer")]
     Baz(usize),
+    #[setting(nested)]
+    Qux(SomeConfig),
 }
 
-#[derive(Config, Serialize)]
-#[serde(tag = "type", content = "content")]
+#[derive(Config)]
+#[config(serde(tag = "type", content = "content"))]
 enum AdjacentTagged {
     Foo,
     Bar(bool),
     #[setting(rename = "bazzer")]
     Baz(usize),
+    #[setting(nested)]
+    Qux(SomeConfig),
+}
+
+fn create_gen() -> schema::SchemaGenerator {
+    let mut generator = schema::SchemaGenerator::default();
+    generator.add::<AllUnit>();
+    generator.add::<AllUnnamed>();
+    generator.add::<OfBothTypes>();
+    generator.add::<NestedConfigs>();
+    generator.add::<WithSerde>();
+    generator.add::<WithComments>();
+    generator.add::<Untagged>();
+    generator.add::<ExternalTagged>();
+    generator.add::<InternalTagged>();
+    generator.add::<AdjacentTagged>();
+    generator.add::<PartialAllUnit>();
+    generator.add::<PartialAllUnnamed>();
+    generator.add::<PartialOfBothTypes>();
+    generator.add::<PartialNestedConfigs>();
+    generator.add::<PartialWithSerde>();
+    generator.add::<PartialWithComments>();
+    generator.add::<PartialUntagged>();
+    generator.add::<PartialExternalTagged>();
+    generator.add::<PartialInternalTagged>();
+    generator.add::<PartialAdjacentTagged>();
+    generator
+}
+
+#[cfg(feature = "json_schema")]
+#[test]
+fn generates_json_schema() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("schema.json");
+
+    let generator = create_gen();
+    generator
+        .generate(&file, schema::json_schema::JsonSchemaRenderer::default())
+        .unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}
+
+#[cfg(feature = "typescript")]
+#[test]
+fn generates_typescript() {
+    use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
+
+    let sandbox = create_empty_sandbox();
+    let file = sandbox.path().join("config.ts");
+
+    let generator = create_gen();
+    generator
+        .generate(&file, schema::typescript::TypeScriptRenderer::default())
+        .unwrap();
+
+    assert!(file.exists());
+    assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }

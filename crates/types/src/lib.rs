@@ -45,6 +45,14 @@ impl SchemaType {
         T::generate_schema()
     }
 
+    /// Infer a schema from a type that implements [`Schematic`],
+    /// and mark the schema is partial (is marked as `nested`).
+    pub fn infer_partial<T: Schematic>() -> SchemaType {
+        let mut schema = T::generate_schema();
+        schema.set_partial(true);
+        schema
+    }
+
     /// Create an array schema with the provided item types.
     pub fn array(items_type: SchemaType) -> SchemaType {
         SchemaType::Array(ArrayType {
@@ -213,6 +221,35 @@ impl SchemaType {
             }
             SchemaType::Union(ref mut inner) => {
                 inner.name = name;
+            }
+            _ => {}
+        };
+    }
+
+    /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
+    /// but arrays and objects will also be recursively set to update the inner type.
+    pub fn set_partial(&mut self, state: bool) {
+        match self {
+            SchemaType::Array(ref mut inner) => inner.items_type.set_partial(state),
+            SchemaType::Object(ref mut inner) => inner.value_type.set_partial(state),
+            SchemaType::Struct(ref mut inner) => {
+                inner.partial = state;
+            }
+            SchemaType::Union(ref mut inner) => {
+                inner.partial = state;
+
+                // This is to handle things wrapped in `Option`, is it correct?
+                // Not sure of a better way to do this at the moment...
+                let is_nullable = inner
+                    .variants_types
+                    .iter()
+                    .any(|t| matches!(**t, SchemaType::Null));
+
+                if is_nullable {
+                    for item in inner.variants_types.iter_mut() {
+                        item.set_partial(state);
+                    }
+                }
             }
             _ => {}
         };

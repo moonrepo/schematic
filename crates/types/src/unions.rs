@@ -11,6 +11,7 @@ pub enum UnionOperator {
 pub struct UnionType {
     pub description: Option<String>,
     pub name: Option<String>,
+    pub partial: bool,
     pub operator: UnionOperator,
     pub variants: Option<Vec<SchemaField>>,
     pub variants_types: Vec<Box<SchemaType>>,
