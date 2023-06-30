@@ -218,12 +218,17 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                if self.has_nested() {
-                    let merge_stmts = variants
-                        .iter()
-                        .filter_map(|s| s.generate_merge_statement())
-                        .collect::<Vec<_>>();
+                let merge_stmts = variants
+                    .iter()
+                    .filter_map(|s| s.generate_merge_statement())
+                    .collect::<Vec<_>>();
 
+                if merge_stmts.is_empty() {
+                    quote! {
+                        *self = next;
+                        Ok(())
+                    }
+                } else {
                     quote! {
                         match self {
                             #(#merge_stmts)*
@@ -231,11 +236,6 @@ impl<'l> ConfigType<'l> {
                                 *self = next;
                             }
                         };
-                        Ok(())
-                    }
-                } else {
-                    quote! {
-                        *self = next;
                         Ok(())
                     }
                 }

@@ -2,6 +2,7 @@
 
 use schematic::*;
 use serde::Serialize;
+use std::collections::BTreeMap;
 
 #[derive(Config)]
 pub struct SomeConfig {
@@ -30,6 +31,24 @@ enum OfBothTypes {
     Foo,
     #[setting(default)]
     Bar(bool, usize),
+}
+
+fn merge_tuple<C>(
+    prev: (String, usize),
+    next: (String, usize),
+    _: &C,
+) -> Result<Option<(String, usize)>, ConfigError> {
+    Ok(Some((format!("{}-{}", prev.0, next.0), (prev.1 + next.1))))
+}
+
+#[derive(Config)]
+enum Collections {
+    #[setting(merge = merge::append_vec)]
+    List(Vec<String>),
+    #[setting(merge = merge::merge_btreemap)]
+    Map(BTreeMap<String, String>),
+    #[setting(merge = merge_tuple)]
+    Tuple(String, usize),
 }
 
 #[derive(Config)]

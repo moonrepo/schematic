@@ -241,8 +241,8 @@ struct Example {
 ## Configuration enums
 
 Configurations typically use enums to handle value variations of a specific [setting](#settings). To
-simplify this process, we offer a `ConfigEnum` macro/trait that can be derived for enums. At this
-point in time, _only unit variants_ are supported.
+simplify this process, we offer a `ConfigEnum` macro/trait that can be derived for enums with
+unit-only variants.
 
 ```rust
 #[derive(ConfigEnum)]
@@ -321,6 +321,8 @@ optional `#[setting]` attribute.
 
 ### Default values
 
+> Structs only.
+
 In schematic, there are 2 forms of default values:
 
 - The first is on the [partial configuration](#partials), is defined with the `#[setting]`
@@ -347,7 +349,17 @@ struct AppConfig {
 	#[setting(default = vec!["localhost".into()])]
 	allowed_hosts: Vec<String>,
 }
+
+#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Remote(HostConfig),
+}
 ```
+
+> Enums only support `#[setting(default)]`, which denotes that variant as the default. It does not
+> support setting values for the variant itself, or its inner tuple fields.
 
 If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the [context](#contexts) as the first argument (use `()` or
@@ -368,6 +380,8 @@ struct AppConfig {
 ```
 
 ### Environment variables
+
+> Structs only.
 
 Settings can also inherit values from environment variables via the `env` attribute field. When
 using this, variables take the _highest_ precedence, and are merged as the last layer.
@@ -433,6 +447,8 @@ pub fn custom_parse(var: String) -> Result<Some<ReturnValue>, ConfigError> {
 
 ### Extendable
 
+> Structs only.
+
 Configs can extend other configs, generating an accurate layer chain, via the `extend` attribute
 field. Extended configs can either be a file path (relative from the current config) or a secure
 URL. For example:
@@ -490,6 +506,13 @@ This can be achieved with the `merge` attribute field, which requires a path to 
 struct AppConfig {
 	#[setting(merge = schematic::merge::append_vec)]
 	allowed_hosts: Vec<String>,
+}
+
+#[derive(Config)]
+enum Projects {
+	#[setting(merge = schematic::merge::append_vec)]
+	List(Vec<String>),
+	// ...
 }
 ```
 

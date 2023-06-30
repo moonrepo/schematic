@@ -2,7 +2,7 @@ use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
-use syn::{Attribute, Fields, FieldsUnnamed, Variant as NativeVariant};
+use syn::{Attribute, Expr, ExprPath, Fields, FieldsUnnamed, Variant as NativeVariant};
 
 pub enum TaggedFormat {
     Untagged,
@@ -25,8 +25,10 @@ pub struct SerdeArgs {
 #[darling(default, attributes(setting))]
 pub struct VariantArgs {
     pub default: bool,
+    pub merge: Option<ExprPath>,
     pub nested: bool,
     pub null: bool,
+    pub validate: Option<Expr>,
 
     // serde
     pub rename: Option<String>,
@@ -147,36 +149,92 @@ impl<'l> Variant<'l> {
 
     pub fn generate_merge_statement(&self) -> Option<TokenStream> {
         let name = &self.name;
+        let args = &self.args;
 
         match &self.value.fields {
             Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
-                if !self.is_nested() {
-                    return None;
+                if self.is_nested() {
+                    if args.merge.is_some() {
+                        panic!("Nested variants do not support `merge`.");
+                    }
+
+                    return Some(self.map_unnamed_match(
+                        self.name,
+                        fields,
+                        |outer_names, inner_names| {
+                            let merge_stmts = outer_names
+                                .iter()
+                                .enumerate()
+                                .map(|(index, o)| {
+                                    let i = &inner_names[index];
+                                    quote! { #o.merge(context, #i)?; }
+                                })
+                                .collect::<Vec<_>>();
+
+                            quote! {
+                                if let Self::#name(#(#inner_names),*) = next {
+                                    #(#merge_stmts)*
+                                } else {
+                                    *self = next;
+                                }
+                            }
+                        },
+                    ));
                 }
 
-                Some(
-                    self.map_unnamed_match(self.name, fields, |outer_names, inner_names| {
-                        let merge_stmts = outer_names
-                            .iter()
-                            .enumerate()
-                            .map(|(index, o)| {
-                                let i = &inner_names[index];
-                                quote! { #o.merge(context, #i)?; }
-                            })
-                            .collect::<Vec<_>>();
-
-                        quote! {
-                            if let Self::#name(#(#inner_names),*) = next {
-                                #(#merge_stmts)*
+                if let Some(func) = args.merge.as_ref() {
+                    return Some(self.map_unnamed_match(
+                        self.name,
+                        fields,
+                        |outer_names, inner_names| {
+                            if outer_names.len() == 1 {
+                                quote! {
+                                    if let Self::#name(ai) = next {
+                                        *self = Self::#name(
+                                            #func(ao.to_owned(), ai, context)?.unwrap_or_default(),
+                                        );
+                                    } else {
+                                        *self = next;
+                                    }
+                                }
                             } else {
-                                *self = next;
+                                let defaults = outer_names
+                                    .iter()
+                                    .map(|_| {
+                                        quote! { Default::default() }
+                                    })
+                                    .collect::<Vec<_>>();
+
+                                quote! {
+                                    if let Self::#name(#(#inner_names),*) = next {
+                                        if let Some((#(#outer_names),*)) = #func(
+                                            (#(#outer_names.to_owned()),*),
+                                            (#(#inner_names),*),
+                                            context,
+                                        )? {
+                                            *self = Self::#name(#(#outer_names),*);
+                                        } else {
+                                            *self = Self::#name(#(#defaults),*);
+                                        }
+                                    } else {
+                                        *self = next;
+                                    }
+                                }
                             }
-                        }
-                    }),
-                )
+                        },
+                    ));
+                }
+
+                None
             }
-            Fields::Unit => None,
+            Fields::Unit => {
+                if args.merge.is_some() {
+                    panic!("Unit variants do not support `merge`.")
+                }
+
+                None
+            }
         }
     }
 
