@@ -80,14 +80,14 @@ enum ExternalTagged {
     Baz(usize),
 }
 
-// #[derive(Config, Serialize)]
-// #[serde(tag = "type")]
-// enum InternalTagged {
-//     Foo,
-//     Bar(bool),
-//     #[setting(rename = "bazzer")]
-//     Baz(usize),
-// }
+#[derive(Config, Serialize)]
+#[serde(tag = "type")]
+enum InternalTagged {
+    Foo,
+    Bar(bool),
+    #[setting(rename = "bazzer")]
+    Baz(usize),
+}
 
 #[derive(Config, Serialize)]
 #[serde(tag = "type", content = "content")]

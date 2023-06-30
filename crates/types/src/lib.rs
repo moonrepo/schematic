@@ -217,6 +217,23 @@ impl SchemaType {
             _ => {}
         };
     }
+
+    /// Add the field to the inner schema type. This is only applicable to enums, structs,
+    /// and unions, otherwise this is a no-op.
+    pub fn add_field(&mut self, field: SchemaField) {
+        match self {
+            SchemaType::Enum(ref mut inner) => {
+                inner.variants.get_or_insert(vec![]).push(field);
+            }
+            SchemaType::Struct(ref mut inner) => {
+                inner.fields.push(field);
+            }
+            SchemaType::Union(ref mut inner) => {
+                inner.variants.get_or_insert(vec![]).push(field);
+            }
+            _ => {}
+        };
+    }
 }
 
 /// Represents a field within a schema struct, or a variant within a schema enum/union.

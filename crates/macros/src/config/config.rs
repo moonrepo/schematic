@@ -30,6 +30,7 @@ pub struct ConfigArgs {
     file: Option<String>,
 
     // serde
+    expecting: Option<String>,
     rename: Option<String>,
     rename_all: Option<String>,
 }
@@ -102,23 +103,34 @@ impl<'l> Config<'l> {
                 }
             }
             ConfigType::Enum { .. } => {
+                let mut has_tagged = false;
+
                 if let Some(content) = &self.serde_args.content {
+                    has_tagged = true;
                     meta.push(quote! { content = #content });
                 }
 
-                if let Some(expecting) = &self.serde_args.expecting {
-                    meta.push(quote! { expecting = #expecting });
-                }
-
                 if let Some(tag) = &self.serde_args.tag {
+                    has_tagged = true;
                     meta.push(quote! { tag = #tag });
                 }
 
                 if self.serde_args.untagged.is_some_and(|v| v) {
+                    has_tagged = true;
+                    meta.push(quote! { untagged });
+                }
+
+                if !has_tagged {
                     meta.push(quote! { untagged });
                 }
             }
         };
+
+        if let Some(expecting) = &self.args.expecting {
+            meta.push(quote! { expecting = #expecting });
+        } else if let Some(expecting) = &self.serde_args.expecting {
+            meta.push(quote! { expecting = #expecting });
+        }
 
         if let Some(rename) = &self.args.rename {
             meta.push(quote! { rename = #rename });

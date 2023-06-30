@@ -352,6 +352,7 @@ impl<'l> ConfigType<'l> {
 
                 quote! {
                     let mut schema = UnionType {
+                        name: Some(#config_name.into()),
                         variants_types: vec![
                             #(Box::new(#variants_types)),*
                         ],

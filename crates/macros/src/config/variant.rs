@@ -300,10 +300,14 @@ impl<'l> Variant<'l> {
                     ])
                 }
             }
-            // Not sure how to render this one since we don't allow named fields?
-            // I think we can just ignore it for now...
-            TaggedFormat::Internal(_) => {
-                panic!("Internal tagged enums are not supported!");
+            TaggedFormat::Internal(tag) => {
+                quote! {
+                    {
+                        let mut schema = #inner;
+                        schema.add_field(SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))));
+                        schema
+                    }
+                }
             }
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
