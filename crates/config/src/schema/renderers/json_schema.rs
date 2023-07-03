@@ -312,8 +312,20 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     fn render_union(&mut self, uni: &UnionType) -> RenderResult<Schema> {
         let mut items = vec![];
 
+        let mut metadata = Metadata {
+            title: uni.name.clone(),
+            description: uni.description.clone().map(clean_comment),
+            ..Default::default()
+        };
+
         for item in &uni.variants_types {
             items.push(self.render_schema(item)?);
+
+            if metadata.default.is_none() {
+                if let Some(def) = item.get_default() {
+                    metadata.default = Some(lit_to_value(def));
+                }
+            }
         }
 
         let subschema = match uni.operator {
@@ -328,6 +340,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         };
 
         Ok(Schema::Object(SchemaObject {
+            metadata: Some(Box::new(metadata)),
             subschemas: Some(Box::new(subschema)),
             ..Default::default()
         }))

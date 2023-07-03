@@ -141,13 +141,19 @@ export type Comments = {
 
 export type PartialDefaultValues = {
 	array?: number[] | null,
+	/** @default true */
 	boolean?: boolean | null,
 	booleanFn?: boolean | null,
 	enums?: SomeEnum | null,
+	/** @default 'foo.json' */
 	fileString?: string | null,
+	/** @default 'foo with. many values!' */
 	longString?: string | null,
+	/** @default 123 */
 	number?: number | null,
+	/** @default 'foo/bar' */
 	pathString?: string | null,
+	/** @default 'foo' */
 	string?: string | null,
 	stringFn?: string | null,
 	tuple?: [number, number, number, number] | null,

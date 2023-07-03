@@ -189,6 +189,15 @@ impl SchemaType {
             SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
             SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
             SchemaType::String(StringType { default, .. }) => default.as_ref(),
+            SchemaType::Union(UnionType { variants_types, .. }) => {
+                for variant in variants_types {
+                    if let Some(value) = variant.get_default() {
+                        return Some(value);
+                    }
+                }
+
+                None
+            }
             _ => None,
         }
     }

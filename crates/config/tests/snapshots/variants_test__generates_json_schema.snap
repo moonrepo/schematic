@@ -21,6 +21,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "additionalProperties": false,
   "definitions": {
     "Projects": {
+      "title": "Projects",
       "anyOf": [
         {
           "$ref": "#/definitions/ProjectsConfig"

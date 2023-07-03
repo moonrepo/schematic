@@ -244,6 +244,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "additionalProperties": false
     },
     "ExtendsFrom": {
+      "title": "ExtendsFrom",
       "anyOf": [
         {
           "type": "string"
@@ -386,6 +387,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "boolean": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -416,6 +418,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "fileString": {
+          "default": "foo.json",
           "anyOf": [
             {
               "type": "string"
@@ -426,6 +429,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "longString": {
+          "default": "foo with. many values!",
           "anyOf": [
             {
               "type": "string"
@@ -436,6 +440,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "number": {
+          "default": 123,
           "anyOf": [
             {
               "type": "number"
@@ -446,6 +451,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "pathString": {
+          "default": "foo/bar",
           "anyOf": [
             {
               "type": "string",
@@ -457,6 +463,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "string": {
+          "default": "foo",
           "anyOf": [
             {
               "type": "string"

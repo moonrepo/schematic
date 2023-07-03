@@ -19,6 +19,7 @@
 - Fixed a handful of issues with schema generation and partial detection.
 - Fixed an issue where multiline comments weren't parsed correctly.
 - Fixed an issue with string formatting that would incorrectly handle digit characters.
+- Fixed a missing title/description for union types.
 
 ## 0.10.1
 
