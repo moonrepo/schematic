@@ -55,13 +55,19 @@ export type OptionalValues = {
 
 export type DefaultValues = {
 	array: number[],
+	/** @default true */
 	boolean: boolean,
 	booleanFn: boolean,
 	enums: SomeEnum,
+	/** @default 'foo.json' */
 	fileString: string,
+	/** @default 'foo with. many values!' */
 	longString: string,
+	/** @default 123 */
 	number: number,
+	/** @default 'foo/bar' */
 	pathString: string,
+	/** @default 'foo' */
 	string: string,
 	stringFn: string,
 	tuple: [number, number, number, number],
