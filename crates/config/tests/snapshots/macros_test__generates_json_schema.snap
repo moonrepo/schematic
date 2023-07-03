@@ -72,7 +72,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "block",
+        "blockLong",
         "docs",
+        "docsLong",
         "inlineBlock",
         "normal"
       ],
@@ -82,9 +84,17 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "deprecated": true,
           "type": "boolean"
         },
+        "blockLong": {
+          "description": "Block with a super long comment that will span multiple lines. Block with a super long comment that will span multiple lines.",
+          "type": "boolean"
+        },
         "docs": {
           "description": "Docs",
           "deprecated": true,
+          "type": "boolean"
+        },
+        "docsLong": {
+          "description": "Docs with a super long comment that will span multiple lines. Docs with a super long comment that will span multiple lines.",
           "type": "boolean"
         },
         "inlineBlock": {
@@ -641,6 +651,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
+        "s3_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "string": {
           "anyOf": [
             {
@@ -752,6 +772,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "enums",
         "map",
         "number",
+        "s3_value",
         "string",
         "vector"
       ],
@@ -777,6 +798,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         "number": {
           "type": "number"
+        },
+        "s3_value": {
+          "type": "string"
         },
         "string": {
           "type": "string"

@@ -28,6 +28,7 @@ derive_enum!(
 );
 
 #[derive(Config)]
+#[config(rename_all = "snake_case")]
 pub struct ValueTypes {
     boolean: bool,
     string: String,
@@ -35,6 +36,7 @@ pub struct ValueTypes {
     vector: Vec<String>,
     map: HashMap<String, u64>,
     enums: SomeEnum,
+    s3_value: String,
 }
 
 #[derive(Config)]
@@ -173,6 +175,10 @@ fn validate_test<T, C>(_: &str, _: &T, _: &C) -> Result<(), ValidateError> {
     Ok(())
 }
 
+fn validate_nested<T, C>(_: &PartialNestedValidations, _: &T, _: &C) -> Result<(), ValidateError> {
+    Ok(())
+}
+
 #[derive(Config)]
 pub struct NestedValidations {
     #[setting(validate = validate_test)]
@@ -185,9 +191,9 @@ struct Validations {
     basic: String,
     #[setting(validate = validate_test)]
     optional: Option<String>,
-    #[setting(nested)]
+    #[setting(nested, validate = validate_nested)]
     nested: NestedValidations,
-    #[setting(nested)]
+    #[setting(nested, validate = validate_nested)]
     nested2: Option<NestedValidations>,
 }
 
@@ -200,6 +206,9 @@ struct Comments {
     /// Docs
     #[deprecated]
     docs: bool,
+    /// Docs with a super long comment that will span multiple lines.
+    /// Docs with a super long comment that will span multiple lines.
+    docs_long: bool,
     /* Inline block */
     inline_block: bool,
     /**
@@ -207,6 +216,11 @@ struct Comments {
      */
     #[deprecated = "Bye"]
     block: bool,
+    /**
+     * Block with a super long comment that will span multiple lines.
+     * Block with a super long comment that will span multiple lines.
+     */
+    block_long: bool,
 }
 
 #[derive(ConfigEnum, Debug)]

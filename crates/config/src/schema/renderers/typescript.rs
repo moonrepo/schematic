@@ -182,20 +182,21 @@ impl TypeScriptRenderer {
 
     fn wrap_in_comment(&self, comment: &str, value: String) -> String {
         let indent = self.indent();
+        let lines = comment.split('\n').collect::<Vec<_>>();
 
-        if comment.starts_with('*') {
-            let mut out = vec![format!("{}/**", indent)];
-
-            for line in comment.split('\n') {
-                out.push(format!("{} {}", indent, line.trim()));
-            }
-
-            out.push(format!("{} */", indent));
-
-            format!("{}\n{}", out.join("\n"), value)
-        } else {
-            format!("{}// {}\n{}", indent, comment.trim(), value)
+        if lines.len() == 1 {
+            return format!("{}/** {} */\n{}", indent, lines[0], value);
         }
+
+        let mut out = vec![format!("{}/**", indent)];
+
+        for line in lines {
+            out.push(format!("{} * {}", indent, line.trim()));
+        }
+
+        out.push(format!("{} */", indent));
+
+        format!("{}\n{}", out.join("\n"), value)
     }
 }
 

@@ -227,7 +227,7 @@ impl<'l> SettingType<'l> {
         }
     }
 
-    pub fn get_validate_statement(&self, name: &Ident, args: &SettingArgs) -> Option<TokenStream> {
+    pub fn get_validate_statement(&self, name: &Ident) -> Option<TokenStream> {
         let name_quoted = format!("{}", name);
 
         match self {
@@ -251,28 +251,8 @@ impl<'l> SettingType<'l> {
                 }
             }),
             SettingType::Value { .. } => {
-                if let Some(expr) = args.validate.as_ref() {
-                    let func = match expr {
-                        // func(arg)()
-                        Expr::Call(func) => quote! { #func },
-                        // func()
-                        Expr::Path(func) => quote! { #func },
-                        _ => {
-                            panic!("Unsupported `validate` syntax.");
-                        }
-                    };
-
-                    Some(quote! {
-                        if let Err(error) = #func(setting, self, context) {
-                            errors.push(schematic::ValidateErrorType::setting(
-                                path.join_key(#name_quoted),
-                                error,
-                            ));
-                        }
-                    })
-                } else {
-                    None
-                }
+                // Handled in parent struct
+                None
             }
         }
     }

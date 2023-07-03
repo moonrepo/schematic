@@ -1,7 +1,7 @@
-use convert_case::{Case, Casing};
+use convert_case::{Boundary, Case, Casing};
 use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
 
-pub fn format_case(format: &str, value: &str) -> String {
+pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
     let case = match format {
         "lowercase" => Case::Lower,
         "UPPERCASE" => Case::Upper,
@@ -13,7 +13,14 @@ pub fn format_case(format: &str, value: &str) -> String {
         _ => Case::Kebab,
     };
 
-    value.to_case(case)
+    value
+        .from_case(if is_variant {
+            Case::Pascal
+        } else {
+            Case::Snake
+        })
+        .without_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
+        .to_case(case)
 }
 
 pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
@@ -46,6 +53,8 @@ pub fn extract_common_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {
 }
 
 pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
+    let mut lines = vec![];
+
     for attr in attrs {
         if let Meta::NameValue(meta) = &attr.meta {
             if meta.path.is_ident("doc") {
@@ -54,13 +63,19 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
                     ..
                 }) = &meta.value
                 {
-                    return Some(value.value());
+                    for line in value.value().split('\n') {
+                        lines.push(line.trim().replace("* ", "").replace(" * ", ""));
+                    }
                 }
             }
         }
     }
 
-    None
+    if lines.is_empty() {
+        None
+    } else {
+        Some(lines.join("\n"))
+    }
 }
 
 pub fn has_attr(attrs: &[&Attribute], name: &str) -> bool {

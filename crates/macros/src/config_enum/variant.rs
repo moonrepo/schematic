@@ -56,7 +56,7 @@ impl<'l> Variant<'l> {
         } else if let Some(v) = &serde_args.rename {
             v.to_owned()
         } else {
-            format_case(format, variant.ident.to_string().as_str())
+            format_case(format, variant.ident.to_string().as_str(), true)
         };
 
         Variant {

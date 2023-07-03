@@ -45,6 +45,10 @@ fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C) -> Result<(), Valida
     Ok(())
 }
 
+fn validate_nested<T, C>(_: &PartialSomeConfig, _: &T, _: &C) -> Result<(), ValidateError> {
+    Ok(())
+}
+
 #[derive(Config)]
 enum Collections {
     #[setting(merge = merge::append_vec, validate = validate::min_length(1))]
@@ -58,7 +62,7 @@ enum Collections {
 #[derive(Config)]
 enum NestedConfigs {
     String(String),
-    #[setting(default, nested)]
+    #[setting(default, nested, validate = validate_nested)]
     Object(SomeConfig),
     #[setting(nested)]
     Objects(SomeConfig, SomeConfig),
