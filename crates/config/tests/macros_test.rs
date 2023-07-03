@@ -28,6 +28,7 @@ derive_enum!(
 );
 
 #[derive(Config)]
+#[config(rename_all = "snake_case")]
 pub struct ValueTypes {
     boolean: bool,
     string: String,
@@ -35,6 +36,7 @@ pub struct ValueTypes {
     vector: Vec<String>,
     map: HashMap<String, u64>,
     enums: SomeEnum,
+    s3_value: String,
 }
 
 #[derive(Config)]

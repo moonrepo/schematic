@@ -1,7 +1,7 @@
-use convert_case::{Case, Casing};
+use convert_case::{Boundary, Case, Casing};
 use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
 
-pub fn format_case(format: &str, value: &str) -> String {
+pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
     let case = match format {
         "lowercase" => Case::Lower,
         "UPPERCASE" => Case::Upper,
@@ -13,7 +13,14 @@ pub fn format_case(format: &str, value: &str) -> String {
         _ => Case::Kebab,
     };
 
-    value.to_case(case)
+    value
+        .from_case(if is_variant {
+            Case::Pascal
+        } else {
+            Case::Snake
+        })
+        .without_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
+        .to_case(case)
 }
 
 pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
@@ -56,7 +63,7 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
                     ..
                 }) = &meta.value
                 {
-                    for line in value.value().split("\n") {
+                    for line in value.value().split('\n') {
                         lines.push(line.trim().replace("* ", "").replace(" * ", ""));
                     }
                 }

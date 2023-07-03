@@ -68,7 +68,7 @@ impl<'l> Variant<'l> {
         } else if let Some(serde) = &self.serde_args.rename {
             serde.to_owned()
         } else if let Some(format) = casing_format {
-            format_case(format, &self.name.to_string())
+            format_case(format, &self.name.to_string(), true)
         } else {
             self.name.to_string()
         }

@@ -16,6 +16,7 @@
 
 - Fixed a handful of issues with schema generation and partial detection.
 - Fixed an issue where multiline comments weren't parsed correctly.
+- Fixed an issue with string formatting that would incorrectly handle digit characters.
 
 ## 0.10.1
 

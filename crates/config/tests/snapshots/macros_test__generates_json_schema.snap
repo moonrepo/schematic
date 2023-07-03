@@ -651,6 +651,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
+        "s3_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "string": {
           "anyOf": [
             {
@@ -762,6 +772,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "enums",
         "map",
         "number",
+        "s3_value",
         "string",
         "vector"
       ],
@@ -787,6 +798,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         "number": {
           "type": "number"
+        },
+        "s3_value": {
+          "type": "string"
         },
         "string": {
           "type": "string"
