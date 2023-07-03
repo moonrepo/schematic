@@ -141,6 +141,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "minItems": 4
         },
         "boolean": {
+          "default": true,
           "type": "boolean"
         },
         "booleanFn": {
@@ -154,19 +155,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "fileString": {
+          "default": "foo.json",
           "type": "string"
         },
         "longString": {
+          "default": "foo with. many values!",
           "type": "string"
         },
         "number": {
+          "default": 123,
           "type": "number"
         },
         "pathString": {
+          "default": "foo/bar",
           "type": "string",
           "format": "path"
         },
         "string": {
+          "default": "foo",
           "type": "string"
         },
         "stringFn": {

@@ -48,6 +48,14 @@ impl SchemaType {
     }
 
     /// Infer a schema from a type that implements [`Schematic`],
+    /// and also provide a default literal value.
+    pub fn infer_with_default<T: Schematic>(default: LiteralValue) -> SchemaType {
+        let mut schema = T::generate_schema();
+        schema.set_default(default);
+        schema
+    }
+
+    /// Infer a schema from a type that implements [`Schematic`],
     /// and mark the schema is partial (is marked as `nested`).
     pub fn infer_partial<T: Schematic>() -> SchemaType {
         let mut schema = T::generate_schema();
@@ -174,6 +182,17 @@ impl SchemaType {
         })
     }
 
+    /// Return a `default` value from the inner schema type.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        match self {
+            SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
+            SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
+            SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
+            SchemaType::String(StringType { default, .. }) => default.as_ref(),
+            _ => None,
+        }
+    }
+
     /// Return a `name` from the inner schema type.
     pub fn get_name(&self) -> Option<&String> {
         match self {
@@ -191,6 +210,25 @@ impl SchemaType {
             SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
             SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
         }
+    }
+
+    /// Set the `default` of the inner schema type.
+    pub fn set_default(&mut self, default: LiteralValue) {
+        match self {
+            SchemaType::Boolean(ref mut inner) => {
+                inner.default = Some(default);
+            }
+            SchemaType::Float(ref mut inner) => {
+                inner.default = Some(default);
+            }
+            SchemaType::Integer(ref mut inner) => {
+                inner.default = Some(default);
+            }
+            SchemaType::String(ref mut inner) => {
+                inner.default = Some(default);
+            }
+            _ => {}
+        };
     }
 
     /// Set the `name` of the inner schema type. If the inner type does not support

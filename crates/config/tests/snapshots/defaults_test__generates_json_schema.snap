@@ -77,12 +77,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "boolean": {
+          "default": true,
           "type": "boolean"
         },
         "number": {
+          "default": 123,
           "type": "number"
         },
         "string": {
+          "default": "foo",
           "type": "string"
         },
         "vector": {
@@ -145,6 +148,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "number"
         },
         "requiredWithDefault": {
+          "default": 123,
           "type": "number"
         }
       },

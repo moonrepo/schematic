@@ -120,6 +120,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "string"
         },
         "reqDefault": {
+          "default": "abc",
           "type": "string"
         }
       },

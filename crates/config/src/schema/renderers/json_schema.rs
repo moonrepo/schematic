@@ -20,6 +20,17 @@ fn clean_comment(comment: String) -> String {
     comment.trim().replace('\n', " ")
 }
 
+fn lit_to_value(lit: &LiteralValue) -> Value {
+    match lit {
+        LiteralValue::Bool(inner) => Value::Bool(*inner),
+        LiteralValue::F32(inner) => Value::Number(Number::from_f64(*inner as f64).unwrap()),
+        LiteralValue::F64(inner) => Value::Number(Number::from_f64(*inner).unwrap()),
+        LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
+        LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
+        LiteralValue::String(inner) => Value::String(inner.to_owned()),
+    }
+}
+
 impl JsonSchemaRenderer {
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
@@ -32,14 +43,20 @@ impl JsonSchemaRenderer {
         let mut schema = self.render_schema(&field.type_of)?;
 
         if let Schema::Object(ref mut inner) = schema {
-            inner.metadata = Some(Box::new(Metadata {
+            let mut metadata = Metadata {
                 // title: field.name.clone(),
                 description: field.description.clone().map(clean_comment),
                 deprecated: field.deprecated,
                 read_only: field.read_only,
                 write_only: field.write_only,
                 ..Default::default()
-            }));
+            };
+
+            if let Some(default) = field.type_of.get_default() {
+                metadata.default = Some(lit_to_value(default));
+            }
+
+            inner.metadata = Some(Box::new(metadata));
         }
 
         Ok(schema)
@@ -175,17 +192,8 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
     fn render_literal(&mut self, literal: &LiteralType) -> RenderResult<Schema> {
         if let Some(value) = &literal.value {
-            let value = match value {
-                LiteralValue::Bool(inner) => Value::Bool(*inner),
-                LiteralValue::F32(inner) => Value::Number(Number::from_f64(*inner as f64).unwrap()),
-                LiteralValue::F64(inner) => Value::Number(Number::from_f64(*inner).unwrap()),
-                LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
-                LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
-                LiteralValue::String(inner) => Value::String(inner.to_owned()),
-            };
-
             return Ok(Schema::Object(SchemaObject {
-                const_value: Some(value),
+                const_value: Some(lit_to_value(value)),
                 ..Default::default()
             }));
         }
