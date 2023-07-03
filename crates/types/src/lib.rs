@@ -1,4 +1,5 @@
 mod arrays;
+mod bools;
 mod enums;
 mod externals;
 mod literals;
@@ -10,6 +11,7 @@ mod tuples;
 mod unions;
 
 pub use arrays::*;
+pub use bools::*;
 pub use enums::*;
 pub use externals::*;
 pub use literals::*;
@@ -23,11 +25,11 @@ pub use unions::*;
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default)]
 pub enum SchemaType {
-    Boolean,
     Null,
     #[default]
     Unknown,
     Array(ArrayType),
+    Boolean(BooleanType),
     Enum(EnumType),
     Float(FloatType),
     Integer(IntegerType),
@@ -59,6 +61,11 @@ impl SchemaType {
             items_type: Box::new(items_type),
             ..ArrayType::default()
         })
+    }
+
+    /// Create a boolean type.
+    pub fn boolean() -> SchemaType {
+        SchemaType::Boolean(BooleanType::default())
     }
 
     /// Create a float schema with the provided kind.
@@ -170,10 +177,10 @@ impl SchemaType {
     /// Return a `name` from the inner schema type.
     pub fn get_name(&self) -> Option<&String> {
         match self {
-            SchemaType::Boolean => None,
             SchemaType::Null => None,
             SchemaType::Unknown => None,
             SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
+            SchemaType::Boolean(BooleanType { name, .. }) => name.as_ref(),
             SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
             SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
             SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),

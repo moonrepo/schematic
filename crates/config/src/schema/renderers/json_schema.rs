@@ -80,7 +80,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         Ok(Schema::Object(data))
     }
 
-    fn render_boolean(&mut self) -> RenderResult<Schema> {
+    fn render_boolean(&mut self, _boolean: &BooleanType) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Boolean))),
             ..Default::default()

@@ -223,7 +223,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         })
     }
 
-    fn render_boolean(&mut self) -> RenderResult {
+    fn render_boolean(&mut self, _boolean: &BooleanType) -> RenderResult {
         Ok("boolean".into())
     }
 

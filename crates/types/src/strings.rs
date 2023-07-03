@@ -1,10 +1,11 @@
-use crate::{SchemaType, Schematic};
+use crate::{LiteralValue, SchemaType, Schematic};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 #[derive(Clone, Debug, Default)]
 pub struct StringType {
+    pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<String>>,
     pub format: Option<String>,
     pub max_length: Option<usize>,
