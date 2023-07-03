@@ -15,6 +15,7 @@
 #### 🐞 Fixes
 
 - Fixed a handful of issues with schema generation and partial detection.
+- Fixed an issue where multiline comments weren't parsed correctly.
 
 ## 0.10.1
 

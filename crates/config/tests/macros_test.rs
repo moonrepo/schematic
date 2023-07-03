@@ -204,6 +204,9 @@ struct Comments {
     /// Docs
     #[deprecated]
     docs: bool,
+    /// Docs with a super long comment that will span multiple lines.
+    /// Docs with a super long comment that will span multiple lines.
+    docs_long: bool,
     /* Inline block */
     inline_block: bool,
     /**
@@ -211,6 +214,11 @@ struct Comments {
      */
     #[deprecated = "Bye"]
     block: bool,
+    /**
+     * Block with a super long comment that will span multiple lines.
+     * Block with a super long comment that will span multiple lines.
+     */
+    block_long: bool,
 }
 
 #[derive(ConfigEnum, Debug)]

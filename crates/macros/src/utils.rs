@@ -46,6 +46,8 @@ pub fn extract_common_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {
 }
 
 pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
+    let mut lines = vec![];
+
     for attr in attrs {
         if let Meta::NameValue(meta) = &attr.meta {
             if meta.path.is_ident("doc") {
@@ -54,13 +56,19 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
                     ..
                 }) = &meta.value
                 {
-                    return Some(value.value());
+                    for line in value.value().split("\n") {
+                        lines.push(line.trim().replace("* ", "").replace(" * ", ""));
+                    }
                 }
             }
         }
     }
 
-    None
+    if lines.is_empty() {
+        None
+    } else {
+        Some(lines.join("\n"))
+    }
 }
 
 pub fn has_attr(attrs: &[&Attribute], name: &str) -> bool {

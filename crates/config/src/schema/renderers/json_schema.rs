@@ -17,7 +17,7 @@ pub struct JsonSchemaRenderer {
 }
 
 fn clean_comment(comment: String) -> String {
-    comment.trim().replace("* ", "").replace(" * ", "")
+    comment.trim().replace("\n", " ")
 }
 
 impl JsonSchemaRenderer {

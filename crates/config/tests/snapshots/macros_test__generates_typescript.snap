@@ -92,12 +92,20 @@ export interface Validations {
 }
 
 export interface Comments {
-	/**
-	 * Block
-	 */
+	/** Block */
 	block: boolean;
-	// Docs
+	/**
+	 * Block with a super long comment that will span multiple lines.
+	 * Block with a super long comment that will span multiple lines.
+	 */
+	blockLong: boolean;
+	/** Docs */
 	docs: boolean;
+	/**
+	 * Docs with a super long comment that will span multiple lines.
+	 * Docs with a super long comment that will span multiple lines.
+	 */
+	docsLong: boolean;
 	inlineBlock: boolean;
 	normal: boolean;
 }
