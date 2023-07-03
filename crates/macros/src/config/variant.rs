@@ -239,13 +239,42 @@ impl<'l> Variant<'l> {
     }
 
     pub fn generate_validate_statement(&self) -> Option<TokenStream> {
-        if !self.is_nested() {
+        let Fields::Unnamed(fields) = &self.value.fields else {
             return None;
-        }
+        };
 
-        if let Fields::Unnamed(fields) = &self.value.fields {
-            return Some(self.map_unnamed_match(self.name, fields, |outer_names, _| {
-                let stmts = outer_names
+        Some(self.map_unnamed_match(self.name, fields, |outer_names, _| {
+            let mut stmts = vec![];
+
+            if let Some(expr) = self.args.validate.as_ref() {
+                let func = match expr {
+                    // func(arg)()
+                    Expr::Call(func) => quote! { #func },
+                    // func()
+                    Expr::Path(func) => quote! { #func },
+                    _ => {
+                        panic!("Unsupported `validate` syntax.");
+                    }
+                };
+
+                let value = if outer_names.len() == 1 {
+                    quote! { #(#outer_names),* }
+                } else {
+                    quote! { (#(#outer_names),*) }
+                };
+
+                stmts.push(quote! {
+                    if let Err(error) = #func(#value, self, context) {
+                        errors.push(schematic::ValidateErrorType::setting(
+                            path.clone(),
+                            error,
+                        ));
+                    }
+                });
+            }
+
+            if self.is_nested() {
+                stmts.extend(outer_names
                     .iter()
                     .enumerate()
                     .map(|(index, o)| {
@@ -255,15 +284,13 @@ impl<'l> Variant<'l> {
                             }
                         }
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<Vec<_>>());
+            }
 
-                quote! {
-                    #(#stmts)*
-                }
-            }));
-        }
-
-        None
+            quote! {
+                #(#stmts)*
+            }
+        }))
     }
 
     pub fn generate_from_partial_value(&self, partial_name: &Ident) -> TokenStream {

@@ -41,13 +41,17 @@ fn merge_tuple<C>(
     Ok(Some((format!("{}-{}", prev.0, next.0), (prev.1 + next.1))))
 }
 
+fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C) -> Result<(), ValidateError> {
+    Ok(())
+}
+
 #[derive(Config)]
 enum Collections {
-    #[setting(merge = merge::append_vec)]
+    #[setting(merge = merge::append_vec, validate = validate::min_length(1))]
     List(Vec<String>),
-    #[setting(merge = merge::merge_btreemap)]
+    #[setting(merge = merge::merge_btreemap, validate = validate::min_length(1))]
     Map(BTreeMap<String, String>),
-    #[setting(merge = merge_tuple)]
+    #[setting(merge = merge_tuple, validate = validate_tuple)]
     Tuple(String, usize),
 }
 

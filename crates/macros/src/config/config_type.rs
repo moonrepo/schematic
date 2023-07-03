@@ -256,20 +256,20 @@ impl<'l> ConfigType<'l> {
                 }
             }
             ConfigType::Enum { variants } => {
-                if self.has_nested() {
-                    let validate_stmts = variants
-                        .iter()
-                        .filter_map(|s| s.generate_validate_statement())
-                        .collect::<Vec<_>>();
+                let validate_stmts = variants
+                    .iter()
+                    .filter_map(|s| s.generate_validate_statement())
+                    .collect::<Vec<_>>();
 
+                if validate_stmts.is_empty() {
+                    quote! {}
+                } else {
                     quote! {
                         match self {
                             #(#validate_stmts)*
                             _ => {}
                         };
                     }
-                } else {
-                    quote! {}
                 }
             }
         }

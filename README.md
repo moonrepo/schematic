@@ -543,8 +543,7 @@ In schematic, validation _does not_ happen as part of the serde parsing process,
 _for each_ [partial configuration](#partials) to be merged.
 
 Validation can be applied on a per-setting basis with the `validate` attribute field, which requires
-a path to a function to call. Furthermore, some functions are factories which can be called to
-produce a validator.
+a path to a function to call.
 
 ```rust
 #[derive(Config)]
@@ -557,8 +556,20 @@ struct AppConfig {
 }
 ```
 
+Or on a per-variant basis when using an enum.
+
+```rust
+#[derive(Config)]
+enum Projects {
+	#[setting(validate = schematic::validate::min_length(1))]
+	List(Vec<String>),
+	// ...
+}
+```
+
 > We provide a handful of built-in validation functions in the
-> [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html).
+> [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
+> some functions are factories which can be called to produce a validator.
 
 When defining a custom validate function, the value to check is passed as the first argument, the
 current partial as the second, and the [context](#contexts) as the third. The `ValidateError` type
