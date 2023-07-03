@@ -167,9 +167,11 @@ impl TypeScriptRenderer {
                     format!("{}{},", indent, variant_name)
                 };
 
-                if let Some(comment) = &variant.description {
-                    field = self.wrap_in_comment(comment.trim(), field);
-                }
+                field = self.wrap_in_comment(
+                    variant.description.as_ref(),
+                    variant.type_of.get_default(),
+                    field,
+                );
 
                 out.push(field);
             }
@@ -180,9 +182,43 @@ impl TypeScriptRenderer {
         Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
     }
 
-    fn wrap_in_comment(&self, comment: &str, value: String) -> String {
+    fn lit_to_string(&self, lit: &LiteralValue) -> String {
+        match lit {
+            LiteralValue::Bool(inner) => inner.to_string(),
+            LiteralValue::F32(inner) => inner.to_string(),
+            LiteralValue::F64(inner) => inner.to_string(),
+            LiteralValue::Int(inner) => inner.to_string(),
+            LiteralValue::UInt(inner) => inner.to_string(),
+            LiteralValue::String(inner) => format!("'{inner}'"),
+        }
+    }
+
+    fn wrap_in_comment(
+        &self,
+        comment: Option<&String>,
+        default: Option<&LiteralValue>,
+        value: String,
+    ) -> String {
         let indent = self.indent();
-        let lines = comment.split('\n').collect::<Vec<_>>();
+        let mut lines = vec![];
+
+        if let Some(comment) = comment {
+            lines.extend(
+                comment
+                    .trim()
+                    .split('\n')
+                    .map(|c| c.trim().to_owned())
+                    .collect::<Vec<_>>(),
+            );
+        }
+
+        if let Some(default) = default {
+            lines.push(format!("@default {}", self.lit_to_string(default)));
+        }
+
+        if lines.is_empty() {
+            return value;
+        }
 
         if lines.len() == 1 {
             return format!("{}/** {} */\n{}", indent, lines[0], value);
@@ -257,14 +293,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
     fn render_literal(&mut self, literal: &LiteralType) -> RenderResult {
         if let Some(value) = &literal.value {
-            return Ok(match value {
-                LiteralValue::Bool(inner) => inner.to_string(),
-                LiteralValue::F32(inner) => inner.to_string(),
-                LiteralValue::F64(inner) => inner.to_string(),
-                LiteralValue::Int(inner) => inner.to_string(),
-                LiteralValue::UInt(inner) => inner.to_string(),
-                LiteralValue::String(inner) => format!("'{inner}'"),
-            });
+            return Ok(self.lit_to_string(value));
         }
 
         self.render_unknown()
@@ -325,9 +354,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push(',');
             }
 
-            if let Some(comment) = &field.description {
-                row = self.wrap_in_comment(comment.trim(), row);
-            }
+            row =
+                self.wrap_in_comment(field.description.as_ref(), field.type_of.get_default(), row);
 
             out.push(row);
         }
