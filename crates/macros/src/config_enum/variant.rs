@@ -1,4 +1,4 @@
-use crate::utils::{extract_comment, extract_common_attrs, format_case, has_deprecated_attr};
+use crate::utils::{extract_comment, extract_common_attrs, format_case, has_attr};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
@@ -109,7 +109,7 @@ impl<'l> Variant<'l> {
     pub fn get_schema_type(&self) -> TokenStream {
         let name = self.name.to_string();
         let value = &self.value;
-        let deprecated = has_deprecated_attr(&self.attrs);
+        let deprecated = has_attr(&self.attrs, "deprecated");
 
         let description = if let Some(comment) = extract_comment(&self.attrs) {
             quote! {

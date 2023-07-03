@@ -62,57 +62,67 @@ pub fn merge_partial_setting<T: PartialConfig>(
     }
 }
 
-pub fn partialize_schema(schema: &mut SchemaType) {
+pub fn partialize_schema(schema: &mut SchemaType, force_partial: bool) {
     use schematic_types::*;
 
     match schema {
         SchemaType::Array(ArrayType { items_type, .. }) => {
-            partialize_schema(items_type);
+            partialize_schema(items_type, false);
         }
         SchemaType::Object(ObjectType {
             key_type,
             value_type,
             ..
         }) => {
-            partialize_schema(key_type);
-            partialize_schema(value_type);
+            partialize_schema(key_type, false);
+            partialize_schema(value_type, false);
         }
         SchemaType::Struct(inner) => {
-            if let Some(name) = &inner.name {
-                inner.name = Some(format!("Partial{}", name));
-            }
+            if inner.partial || force_partial {
+                if let Some(name) = &inner.name {
+                    inner.name = Some(format!("Partial{}", name));
+                }
 
-            inner.partial = true;
+                for field in inner.fields.iter_mut() {
+                    field.optional = true;
+                    field.nullable = true;
 
-            for field in inner.fields.iter_mut() {
-                field.optional = true;
-                field.nullable = true;
+                    partialize_schema(&mut field.type_of, true);
 
-                partialize_schema(&mut field.type_of);
-
-                field.type_of = SchemaType::nullable(field.type_of.clone());
+                    field.type_of = SchemaType::nullable(field.type_of.clone());
+                }
+            } else {
+                for field in inner.fields.iter_mut() {
+                    partialize_schema(&mut field.type_of, false);
+                }
             }
         }
         SchemaType::Tuple(TupleType { items_types, .. }) => {
             for item in items_types {
-                partialize_schema(item);
+                partialize_schema(item, false);
             }
         }
-        SchemaType::Union(UnionType {
-            variants_types,
-            variants,
-            ..
-        }) => {
-            for variant in variants_types {
-                partialize_schema(variant);
+        SchemaType::Union(inner) => {
+            for variant in inner.variants_types.iter_mut() {
+                partialize_schema(variant, false);
             }
 
-            if let Some(fields) = variants {
-                for field in fields.iter_mut() {
-                    field.optional = true;
-                    field.nullable = true;
+            if inner.partial || force_partial {
+                if let Some(name) = &inner.name {
+                    inner.name = Some(format!("Partial{}", name));
+                }
+            }
 
-                    partialize_schema(&mut field.type_of);
+            if let Some(fields) = &mut inner.variants {
+                for field in fields.iter_mut() {
+                    if inner.partial || force_partial {
+                        field.optional = true;
+                        field.nullable = true;
+
+                        partialize_schema(&mut field.type_of, true);
+                    } else {
+                        partialize_schema(&mut field.type_of, false);
+                    }
                 }
             }
         }

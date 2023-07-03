@@ -241,8 +241,8 @@ struct Example {
 ## Configuration enums
 
 Configurations typically use enums to handle value variations of a specific [setting](#settings). To
-simplify this process, we offer a `ConfigEnum` macro/trait that can be derived for enums. At this
-point in time, _only unit variants_ are supported.
+simplify this process, we offer a `ConfigEnum` macro/trait that can be derived for enums with
+unit-only variants.
 
 ```rust
 #[derive(ConfigEnum)]
@@ -321,6 +321,8 @@ optional `#[setting]` attribute.
 
 ### Default values
 
+> Structs only.
+
 In schematic, there are 2 forms of default values:
 
 - The first is on the [partial configuration](#partials), is defined with the `#[setting]`
@@ -347,7 +349,17 @@ struct AppConfig {
 	#[setting(default = vec!["localhost".into()])]
 	allowed_hosts: Vec<String>,
 }
+
+#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Remote(HostConfig),
+}
 ```
+
+> Enums only support `#[setting(default)]`, which denotes that variant as the default. It does not
+> support setting values for the variant itself, or its inner tuple fields.
 
 If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the [context](#contexts) as the first argument (use `()` or
@@ -368,6 +380,8 @@ struct AppConfig {
 ```
 
 ### Environment variables
+
+> Structs only.
 
 Settings can also inherit values from environment variables via the `env` attribute field. When
 using this, variables take the _highest_ precedence, and are merged as the last layer.
@@ -433,6 +447,8 @@ pub fn custom_parse(var: String) -> Result<Some<ReturnValue>, ConfigError> {
 
 ### Extendable
 
+> Structs only.
+
 Configs can extend other configs, generating an accurate layer chain, via the `extend` attribute
 field. Extended configs can either be a file path (relative from the current config) or a secure
 URL. For example:
@@ -491,6 +507,13 @@ struct AppConfig {
 	#[setting(merge = schematic::merge::append_vec)]
 	allowed_hosts: Vec<String>,
 }
+
+#[derive(Config)]
+enum Projects {
+	#[setting(merge = schematic::merge::append_vec)]
+	List(Vec<String>),
+	// ...
+}
 ```
 
 > We provide a handful of built-in merge functions in the
@@ -520,8 +543,7 @@ In schematic, validation _does not_ happen as part of the serde parsing process,
 _for each_ [partial configuration](#partials) to be merged.
 
 Validation can be applied on a per-setting basis with the `validate` attribute field, which requires
-a path to a function to call. Furthermore, some functions are factories which can be called to
-produce a validator.
+a path to a function to call.
 
 ```rust
 #[derive(Config)]
@@ -534,8 +556,20 @@ struct AppConfig {
 }
 ```
 
+Or on a per-variant basis when using an enum.
+
+```rust
+#[derive(Config)]
+enum Projects {
+	#[setting(validate = schematic::validate::min_length(1))]
+	List(Vec<String>),
+	// ...
+}
+```
+
 > We provide a handful of built-in validation functions in the
-> [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html).
+> [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
+> some functions are factories which can be called to produce a validator.
 
 When defining a custom validate function, the value to check is passed as the first argument, the
 current partial as the second, and the [context](#contexts) as the third. The `ValidateError` type

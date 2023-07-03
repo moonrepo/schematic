@@ -127,7 +127,7 @@ impl<'l> SettingType<'l> {
         }
     }
 
-    pub fn get_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
+    pub fn generate_default_value(&self, name: &Ident, args: &SettingArgs) -> TokenStream {
         match self {
             SettingType::NestedList { .. } | SettingType::NestedMap { .. } => {
                 quote! { Some(Default::default()) }
@@ -282,7 +282,7 @@ impl<'l> SettingType<'l> {
             SettingType::NestedList { collection, .. } => {
                 quote! {
                     {
-                        let mut result = #collection::new();
+                        let mut result = #collection::default();
                         for value in data {
                             result.push(#mapped_data);
                         }
@@ -293,7 +293,7 @@ impl<'l> SettingType<'l> {
             SettingType::NestedMap { collection, .. } => {
                 quote! {
                     {
-                        let mut result = #collection::new();
+                        let mut result = #collection::default();
                         for (key, value) in data {
                             result.insert(key, #mapped_data);
                         }
