@@ -22,9 +22,3 @@ impl Schematic for () {
         SchemaType::Null
     }
 }
-
-impl Schematic for bool {
-    fn generate_schema() -> SchemaType {
-        SchemaType::Boolean
-    }
-}

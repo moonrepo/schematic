@@ -14,7 +14,7 @@ pub trait SchemaRenderer<O = String> {
     fn render_array(&mut self, array: &ArrayType) -> RenderResult<O>;
 
     /// Render a boolean type to a string.
-    fn render_boolean(&mut self) -> RenderResult<O>;
+    fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<O>;
 
     /// Render an [`EnumType`] to a string.
     fn render_enum(&mut self, enu: &EnumType) -> RenderResult<O>;
@@ -68,10 +68,10 @@ pub trait SchemaRenderer<O = String> {
     /// Like [`render_schema`] but does not check for references.
     fn render_schema_without_reference(&mut self, schema: &SchemaType) -> RenderResult<O> {
         match schema {
-            SchemaType::Boolean => self.render_boolean(),
             SchemaType::Null => self.render_null(),
             SchemaType::Unknown => self.render_unknown(),
             SchemaType::Array(array) => self.render_array(array),
+            SchemaType::Boolean(boolean) => self.render_boolean(boolean),
             SchemaType::Enum(enu) => self.render_enum(enu),
             SchemaType::Float(float) => self.render_float(float),
             SchemaType::Integer(integer) => self.render_integer(integer),

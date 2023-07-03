@@ -1,4 +1,4 @@
-use crate::{SchemaType, Schematic};
+use crate::{LiteralValue, SchemaType, Schematic};
 
 #[derive(Clone, Debug, Default)]
 pub enum IntegerKind {
@@ -28,6 +28,7 @@ impl IntegerKind {
 
 #[derive(Clone, Debug, Default)]
 pub struct IntegerType {
+    pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<isize>>,
     pub format: Option<String>,
     pub kind: IntegerKind,
@@ -72,6 +73,7 @@ pub enum FloatKind {
 
 #[derive(Clone, Debug, Default)]
 pub struct FloatType {
+    pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<f64>>,
     pub format: Option<String>,
     pub kind: FloatKind,

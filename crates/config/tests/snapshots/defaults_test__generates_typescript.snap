@@ -7,8 +7,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
 /* eslint-disable */
 
 export interface CustomDefaults {
+	/** @default true */
 	boolean: boolean;
+	/** @default 123 */
 	number: number;
+	/** @default 'foo' */
 	string: string;
 	vector: number[];
 }
@@ -16,6 +19,7 @@ export interface CustomDefaults {
 export interface ReqOptDefaults {
 	optional: number | null;
 	required: number;
+	/** @default 123 */
 	requiredWithDefault: number;
 }
 

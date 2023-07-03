@@ -4,6 +4,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PartialAdjacentTagged",
   "anyOf": [
     {
       "type": "object",
@@ -82,6 +83,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "definitions": {
     "AdjacentTagged": {
+      "title": "AdjacentTagged",
       "anyOf": [
         {
           "type": "object",
@@ -154,6 +156,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "AllUnit": {
+      "title": "AllUnit",
       "anyOf": [
         {
           "type": "object",
@@ -194,6 +197,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "AllUnnamed": {
+      "title": "AllUnnamed",
       "anyOf": [
         {
           "type": "object",
@@ -234,6 +238,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "ExternalTagged": {
+      "title": "ExternalTagged",
       "anyOf": [
         {
           "type": "object",
@@ -290,6 +295,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "InternalTagged": {
+      "title": "InternalTagged",
       "anyOf": [
         {
           "const": "foo"
@@ -306,6 +312,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "NestedConfigs": {
+      "title": "NestedConfigs",
       "anyOf": [
         {
           "type": "object",
@@ -360,6 +367,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "OfBothTypes": {
+      "title": "OfBothTypes",
       "anyOf": [
         {
           "type": "object",
@@ -398,6 +406,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialAllUnit": {
+      "title": "PartialAllUnit",
       "anyOf": [
         {
           "type": "object",
@@ -438,6 +447,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialAllUnnamed": {
+      "title": "PartialAllUnnamed",
       "anyOf": [
         {
           "type": "object",
@@ -478,6 +488,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialExternalTagged": {
+      "title": "PartialExternalTagged",
       "anyOf": [
         {
           "type": "object",
@@ -534,6 +545,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialInternalTagged": {
+      "title": "PartialInternalTagged",
       "anyOf": [
         {
           "const": "foo"
@@ -550,6 +562,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialNestedConfigs": {
+      "title": "PartialNestedConfigs",
       "anyOf": [
         {
           "type": "object",
@@ -608,6 +621,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialOfBothTypes": {
+      "title": "PartialOfBothTypes",
       "anyOf": [
         {
           "type": "object",
@@ -673,6 +687,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "additionalProperties": false
     },
     "PartialUntagged": {
+      "title": "PartialUntagged",
       "anyOf": [
         {
           "type": "null"
@@ -699,6 +714,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialWithComments": {
+      "title": "PartialWithComments",
+      "description": "Container",
       "anyOf": [
         {
           "type": "object",
@@ -739,6 +756,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "PartialWithSerde": {
+      "title": "PartialWithSerde",
       "anyOf": [
         {
           "type": "string"
@@ -769,6 +787,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "additionalProperties": false
     },
     "Untagged": {
+      "title": "Untagged",
       "anyOf": [
         {
           "type": "null"
@@ -795,6 +814,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "WithComments": {
+      "title": "WithComments",
+      "description": "Container",
       "anyOf": [
         {
           "type": "object",
@@ -835,6 +856,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ]
     },
     "WithSerde": {
+      "title": "WithSerde",
       "anyOf": [
         {
           "type": "string"

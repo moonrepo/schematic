@@ -9,6 +9,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
 export interface StandardSettings {
 	opt: string | null;
 	req: string;
+	/** @default 'abc' */
 	reqDefault: string;
 }
 

@@ -28,6 +28,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "additionalProperties": false,
   "definitions": {
     "ExtendsFrom": {
+      "title": "ExtendsFrom",
       "anyOf": [
         {
           "type": "string"

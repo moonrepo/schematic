@@ -11,12 +11,15 @@
 - Added support for `#[config(serde(...))]` attribute (doesn't support everything, mainly enum
   tagging).
 - Added support for `#[setting(validate)]` on nested fields (was previously an error).
+- Updated primitive schema types to include the default value.
+  - Renderers will now include the default when applicable.
 
 #### 🐞 Fixes
 
 - Fixed a handful of issues with schema generation and partial detection.
 - Fixed an issue where multiline comments weren't parsed correctly.
 - Fixed an issue with string formatting that would incorrectly handle digit characters.
+- Fixed a missing title/description for union types.
 
 ## 0.10.1
 
