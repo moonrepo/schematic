@@ -10,6 +10,7 @@
   - Derived enums also automatically generate accurate schemas.
 - Added support for `#[config(serde(...))]` attribute (doesn't support everything, mainly enum
   tagging).
+- Added support for `#[setting(validate)]` on nested fields (was previously an error).
 
 #### 🐞 Fixes
 

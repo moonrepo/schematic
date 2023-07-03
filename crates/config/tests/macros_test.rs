@@ -173,6 +173,10 @@ fn validate_test<T, C>(_: &str, _: &T, _: &C) -> Result<(), ValidateError> {
     Ok(())
 }
 
+fn validate_nested<T, C>(_: &PartialNestedValidations, _: &T, _: &C) -> Result<(), ValidateError> {
+    Ok(())
+}
+
 #[derive(Config)]
 pub struct NestedValidations {
     #[setting(validate = validate_test)]
@@ -185,9 +189,9 @@ struct Validations {
     basic: String,
     #[setting(validate = validate_test)]
     optional: Option<String>,
-    #[setting(nested)]
+    #[setting(nested, validate = validate_nested)]
     nested: NestedValidations,
-    #[setting(nested)]
+    #[setting(nested, validate = validate_nested)]
     nested2: Option<NestedValidations>,
 }
 

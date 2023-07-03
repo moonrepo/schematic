@@ -47,10 +47,6 @@ impl<'l> Setting<'l> {
         let args = SettingArgs::from_attributes(&field.attrs).unwrap_or_default();
         let serde_args = SerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
 
-        if args.validate.is_some() && args.nested {
-            panic!("Cannot use `validate` for `nested` configs.");
-        }
-
         let setting = Setting {
             name: field.ident.as_ref().unwrap(),
             attrs: extract_common_attrs(&field.attrs),
@@ -208,19 +204,44 @@ impl<'l> Setting<'l> {
 
     pub fn generate_validate_statement(&self) -> TokenStream {
         let name = self.name;
+        let mut stmts = vec![];
 
-        if let Some(validator) = self
-            .value_type
-            .get_validate_statement(self.name, &self.args)
-        {
-            return quote! {
-                if let Some(setting) = self.#name.as_ref() {
-                    #validator
+        if let Some(expr) = self.args.validate.as_ref() {
+            let name_quoted = format!("{}", name);
+
+            let func = match expr {
+                // func(arg)()
+                Expr::Call(func) => quote! { #func },
+                // func()
+                Expr::Path(func) => quote! { #func },
+                _ => {
+                    panic!("Unsupported `validate` syntax.");
                 }
             };
+
+            stmts.push(quote! {
+                if let Err(error) = #func(setting, self, context) {
+                    errors.push(schematic::ValidateErrorType::setting(
+                        path.join_key(#name_quoted),
+                        error,
+                    ));
+                }
+            });
         }
 
-        quote! {}
+        if let Some(validator) = self.value_type.get_validate_statement(self.name) {
+            stmts.push(validator);
+        }
+
+        if stmts.is_empty() {
+            quote! {}
+        } else {
+            quote! {
+                if let Some(setting) = self.#name.as_ref() {
+                    #(#stmts)*
+                }
+            }
+        }
     }
 
     pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
@@ -303,7 +324,7 @@ impl<'l> ToTokens for Setting<'l> {
         }
 
         tokens.extend(quote! {
-             #(#attrs)*
+            #(#attrs)*
             pub #name: #value,
         });
     }
