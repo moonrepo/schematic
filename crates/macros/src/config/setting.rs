@@ -269,30 +269,28 @@ impl<'l> Setting<'l> {
             quote! { SchemaType::infer::<#value>() }
         };
 
-        if let Some(default) = &self.args.default {
-            if let Expr::Lit(lit) = &default {
-                let lit_value = match &lit.lit {
-                    Lit::Str(v) => quote! { LiteralValue::String(#v.into()) },
-                    Lit::Int(v) => {
-                        if v.suffix().starts_with('u') {
-                            quote! { LiteralValue::Uint(#v) }
-                        } else {
-                            quote! { LiteralValue::Int(#v) }
-                        }
+        if let Some(Expr::Lit(lit)) = &self.args.default {
+            let lit_value = match &lit.lit {
+                Lit::Str(v) => quote! { LiteralValue::String(#v.into()) },
+                Lit::Int(v) => {
+                    if v.suffix().starts_with('u') {
+                        quote! { LiteralValue::Uint(#v) }
+                    } else {
+                        quote! { LiteralValue::Int(#v) }
                     }
-                    Lit::Float(v) => {
-                        if v.suffix() == "f32" {
-                            quote! { LiteralValue::F32(#v) }
-                        } else {
-                            quote! { LiteralValue::F64(#v) }
-                        }
+                }
+                Lit::Float(v) => {
+                    if v.suffix() == "f32" {
+                        quote! { LiteralValue::F32(#v) }
+                    } else {
+                        quote! { LiteralValue::F64(#v) }
                     }
-                    Lit::Bool(v) => quote! { LiteralValue::Bool(#v) },
-                    _ => unimplemented!(),
-                };
+                }
+                Lit::Bool(v) => quote! { LiteralValue::Bool(#v) },
+                _ => unimplemented!(),
+            };
 
-                type_of = quote! { SchemaType::infer_with_default::<#value>(#lit_value) };
-            }
+            type_of = quote! { SchemaType::infer_with_default::<#value>(#lit_value) };
         }
 
         quote! {
