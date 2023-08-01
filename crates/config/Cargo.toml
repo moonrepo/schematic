@@ -9,7 +9,7 @@ readme = "../../README.md"
 
 [package.metadata.release]
 pre-release-replacements = [
-	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" }
+	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" },
 ]
 
 [package.metadata.docs.rs]
@@ -18,27 +18,30 @@ all-features = true
 [dependencies]
 schematic_macros = { version = "0.11.0", path = "../macros" }
 schematic_types = { version = "0.4.0", path = "../types" }
-garde = { version = "0.11.2", default-features = false, features = ["pattern"] }
+garde = { version = "0.14.0", default-features = false, features = ["regex"] }
 indexmap = "2.0.0"
 miette = { workspace = true }
-reqwest = { version = "0.11.18", default-features = false, features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.11.18", default-features = false, features = [
+	"blocking",
+	"rustls-tls",
+] }
 serde = { workspace = true }
-serde_path_to_error = "0.1.11"
-starbase_styles = "0.1.11"
-thiserror = "1.0.40"
+serde_path_to_error = "0.1.14"
+starbase_styles = "0.1.12"
+thiserror = "1.0.44"
 tracing = "0.1.37"
 
 # json
-serde_json = { version = "1.0.99", optional = true }
+serde_json = { version = "1.0.104", optional = true }
 
 # json schema
 schemars = { version = "0.8.12", optional = true, default-features = false }
 
 # toml
-toml = { version = "0.7.5", optional = true }
+toml = { version = "0.7.6", optional = true }
 
 # yaml
-serde_yaml = { version = "0.9.22", optional = true }
+serde_yaml = { version = "0.9.25", optional = true }
 
 [features]
 default = ["json"]
@@ -69,4 +72,4 @@ schematic = { path = ".", features = [
 	"yaml",
 ] }
 serial_test = "2.0.0"
-starbase_sandbox = "0.1.5"
+starbase_sandbox = "0.1.8"
