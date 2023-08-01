@@ -4,8 +4,9 @@
 
 #### ⚙️ Internal
 
-- Updated dependencies.
+- Updated Rust to v1.71.
 - Updated `garde` (validation) to v0.14.
+- Updated dependencies.
 
 ## 0.11.0
 
