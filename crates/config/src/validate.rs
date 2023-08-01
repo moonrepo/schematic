@@ -3,6 +3,7 @@ use crate::config::{
     ValidateError,
 };
 use garde::rules as r;
+use std::fmt::Display;
 
 /// A validator function that receives a setting value to validate, the parent
 /// configuration the setting belongs to, the current context, and can return
@@ -114,9 +115,9 @@ pub fn url_secure<T: AsRef<str>, D, C>(
     data: &D,
     context: &C,
 ) -> Result<(), ValidateError> {
-    url(&value, data, context)?;
-
     let value = value.as_ref();
+
+    url(&value, data, context)?;
 
     if !is_secure_url(value) {
         return Err(ValidateError::new("only secure URLs are allowed"));
@@ -128,7 +129,10 @@ pub fn url_secure<T: AsRef<str>, D, C>(
 pub use r::range::Bounds;
 
 /// Validate a numeric value is between the provided bounds (non-inclusive).
-pub fn in_range<T: Bounds + 'static, D, C>(min: T, max: T) -> Validator<T, D, C> {
+pub fn in_range<T: Bounds + Display + 'static, D, C>(
+    min: T::Size,
+    max: T::Size,
+) -> Validator<T, D, C> {
     Box::new(move |value, _, _| r::range::apply(value, (&min, &max)).map_err(map_err))
 }
 
