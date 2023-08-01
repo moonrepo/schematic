@@ -68,7 +68,7 @@ pub use r::pattern::Pattern;
 
 /// Validate a string matches the provided regex pattern.
 pub fn regex<T: Pattern, D, C>(pattern: &str) -> Validator<T, D, C> {
-    let pattern = r::pattern::Regex::new(pattern).unwrap();
+    let pattern = r::pattern::regex::Regex::new(pattern).unwrap();
 
     Box::new(move |value, _, _| r::pattern::apply(value, (&pattern,)).map_err(map_err))
 }
