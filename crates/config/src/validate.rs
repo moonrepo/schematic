@@ -133,7 +133,7 @@ pub fn in_range<T: Bounds + Display + 'static, D, C>(
     min: T::Size,
     max: T::Size,
 ) -> Validator<T, D, C> {
-    Box::new(move |value, _, _| r::range::apply(value, (&min, &max)).map_err(map_err))
+    Box::new(move |value, _, _| r::range::apply(value, (Some(min), Some(max))).map_err(map_err))
 }
 
 /// Validate an `extend` value is either a file path or secure URL.
