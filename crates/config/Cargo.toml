@@ -54,6 +54,7 @@ yaml = ["dep:serde_yaml"]
 
 type_chrono = ["schematic_types/chrono"]
 type_regex = ["schematic_types/regex"]
+type_relative_path = ["schematic_types/relative-path"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -67,6 +68,7 @@ schematic = { path = ".", features = [
 	"typescript",
 	"type_chrono",
 	"type_regex",
+	"type_relative_path",
 	"valid_email",
 	"valid_url",
 	"yaml",

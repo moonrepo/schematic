@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_relative_path` feature, that implements schematic types for the `relative-path` crate.
+
 ## 0.11.1
 
 #### ⚙️ Internal
