@@ -54,6 +54,8 @@ yaml = ["dep:serde_yaml"]
 
 type_chrono = ["schematic_types/chrono"]
 type_regex = ["schematic_types/regex"]
+type_relative_path = ["schematic_types/relative-path"]
+type_url = ["schematic_types/url"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -67,9 +69,17 @@ schematic = { path = ".", features = [
 	"typescript",
 	"type_chrono",
 	"type_regex",
+	"type_relative_path",
+	"type_url",
 	"valid_email",
 	"valid_url",
 	"yaml",
 ] }
 serial_test = "2.0.0"
 starbase_sandbox = "0.1.8"
+
+# Types
+chrono = { workspace = true }
+regex = { workspace = true }
+relative-path = { workspace = true, features = ["serde"] }
+url = { workspace = true, features = ["serde"] }

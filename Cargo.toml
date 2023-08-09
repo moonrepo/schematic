@@ -5,5 +5,7 @@ members = ["crates/*"]
 [workspace.dependencies]
 chrono = "0.4.26"
 miette = "5.10.0"
-regex = "1.9.1"
+regex = "1.9.3"
+relative-path = "1.8.0"
 serde = { version = "1.0.180", features = ["derive"] }
+url = "2.4.0"

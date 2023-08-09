@@ -15,13 +15,6 @@ macro_rules! impl_string_format {
     };
 }
 
-#[cfg(feature = "regex")]
-mod regex_feature {
-    use super::*;
-
-    impl_string_format!(regex::Regex, "regex");
-}
-
 #[cfg(feature = "chrono")]
 mod chrono_feature {
     use super::*;
@@ -49,4 +42,27 @@ mod chrono_feature {
     impl_string_format!(chrono::NaiveDate, "date");
     impl_string_format!(chrono::NaiveDateTime, "date-time");
     impl_string_format!(chrono::NaiveTime, "time");
+}
+
+#[cfg(feature = "regex")]
+mod regex_feature {
+    use super::*;
+
+    impl_string_format!(regex::Regex, "regex");
+}
+
+#[cfg(feature = "relative-path")]
+mod relative_path_feature {
+    use super::*;
+
+    impl_string_format!(&relative_path::RelativePath, "path");
+    impl_string_format!(relative_path::RelativePath, "path");
+    impl_string_format!(relative_path::RelativePathBuf, "path");
+}
+
+#[cfg(feature = "url")]
+mod url_feature {
+    use super::*;
+
+    impl_string_format!(url::Url, "uri");
 }

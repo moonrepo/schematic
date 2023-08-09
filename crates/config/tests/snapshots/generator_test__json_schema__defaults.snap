@@ -1,0 +1,138 @@
+---
+source: crates/config/tests/generator_test.rs
+expression: "fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GenConfig",
+  "type": "object",
+  "required": [
+    "boolean",
+    "date",
+    "datetime",
+    "enums",
+    "map",
+    "nested",
+    "number",
+    "path",
+    "relPath",
+    "string",
+    "time",
+    "url",
+    "vector"
+  ],
+  "properties": {
+    "boolean": {
+      "type": "boolean"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "enums": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BasicEnum"
+        }
+      ]
+    },
+    "map": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
+    "nested": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AnotherConfig"
+        }
+      ]
+    },
+    "number": {
+      "type": "number"
+    },
+    "path": {
+      "type": "string",
+      "format": "path"
+    },
+    "relPath": {
+      "type": "string",
+      "format": "path"
+    },
+    "string": {
+      "type": "string"
+    },
+    "time": {
+      "type": "string",
+      "format": "time"
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "vector": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "AnotherConfig": {
+      "title": "AnotherConfig",
+      "type": "object",
+      "required": [
+        "enums",
+        "opt"
+      ],
+      "properties": {
+        "enums": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BasicEnum"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "opt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BasicEnum": {
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    }
+  }
+}
+

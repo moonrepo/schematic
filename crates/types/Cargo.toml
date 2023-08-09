@@ -9,8 +9,12 @@ repository = "https://github.com/moonrepo/schematic"
 [dependencies]
 chrono = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
+relative-path = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
 
 [features]
 default = []
 chrono = ["dep:chrono"]
 regex = ["dep:regex"]
+relative-path = ["dep:relative-path"]
+url = ["dep:url"]

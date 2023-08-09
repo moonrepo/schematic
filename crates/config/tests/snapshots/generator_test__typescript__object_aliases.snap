@@ -15,11 +15,17 @@ export type AnotherConfig = {
 
 export type GenConfig = {
 	boolean: boolean,
+	date: string,
+	datetime: string,
 	enums: BasicEnum,
 	map: Record<string, number>,
 	nested: AnotherConfig,
 	number: number,
+	path: string,
+	relPath: string,
 	string: string,
+	time: string,
+	url: string | null,
 	vector: string[],
 };
 
