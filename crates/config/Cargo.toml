@@ -77,3 +77,9 @@ schematic = { path = ".", features = [
 ] }
 serial_test = "2.0.0"
 starbase_sandbox = "0.1.8"
+
+# Types
+chrono = { workspace = true }
+regex = { workspace = true }
+relative-path = { workspace = true, features = ["serde"] }
+url = { workspace = true, features = ["serde"] }

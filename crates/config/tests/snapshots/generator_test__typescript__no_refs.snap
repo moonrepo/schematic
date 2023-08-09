@@ -15,6 +15,8 @@ export interface AnotherConfig {
 
 export interface GenConfig {
   boolean: boolean;
+  date: string;
+  datetime: string;
   enums: 'foo' | 'bar' | 'baz';
   map: Record<string, number>;
   nested: {
@@ -22,7 +24,11 @@ export interface GenConfig {
     enums: 'foo' | 'bar' | 'baz' | null;
   };
   number: number;
+  path: string;
+  relPath: string;
   string: string;
+  time: string;
+  url: string | null;
   vector: string[];
 }
 

@@ -1146,6 +1146,9 @@ name = "relative-path"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4bf2521270932c3c7bed1a59151222bd7643c79310f2916f01925e1e16255698"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "reqwest"
@@ -1282,9 +1285,12 @@ dependencies = [
 name = "schematic"
 version = "0.11.1"
 dependencies = [
+ "chrono",
  "garde",
  "indexmap 2.0.0",
  "miette",
+ "regex",
+ "relative-path",
  "reqwest",
  "schemars",
  "schematic",
@@ -1300,6 +1306,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "url",
 ]
 
 [[package]]
@@ -1860,6 +1867,7 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

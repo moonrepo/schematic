@@ -5,6 +5,7 @@ use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::path::PathBuf;
 
 derive_enum!(
     #[derive(ConfigEnum, Default)]
@@ -32,12 +33,38 @@ struct GenConfig {
     enums: BasicEnum,
     #[setting(nested)]
     nested: AnotherConfig,
+
+    // Types
+    date: chrono::NaiveDate,
+    datetime: chrono::NaiveDateTime,
+    time: chrono::NaiveTime,
+    path: PathBuf,
+    rel_path: relative_path::RelativePathBuf,
+    url: Option<url::Url>,
 }
 
 fn create_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
     generator
+}
+
+#[cfg(feature = "json_schema")]
+mod json_schema {
+    use super::*;
+    use schematic::schema::json_schema::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_generator()
+            .generate(&file, JsonSchemaRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(feature = "typescript")]

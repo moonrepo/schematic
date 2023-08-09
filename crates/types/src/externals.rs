@@ -64,5 +64,5 @@ mod relative_path_feature {
 mod url_feature {
     use super::*;
 
-    impl_string_format!(url::Url, "url");
+    impl_string_format!(url::Url, "uri");
 }
