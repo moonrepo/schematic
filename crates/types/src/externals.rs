@@ -59,3 +59,10 @@ mod relative_path_feature {
     impl_string_format!(relative_path::RelativePath, "path");
     impl_string_format!(relative_path::RelativePathBuf, "path");
 }
+
+#[cfg(feature = "url")]
+mod url_feature {
+    use super::*;
+
+    impl_string_format!(url::Url, "url");
+}
