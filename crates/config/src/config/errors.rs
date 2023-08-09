@@ -1,5 +1,5 @@
 use crate::config::validator::ValidatorError;
-use miette::{Diagnostic, NamedSource, SourceSpan};
+use miette::{Diagnostic, SourceSpan};
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -76,7 +76,7 @@ pub enum ConfigError {
 
     // Parser
     #[diagnostic(code(config::parse::failed))]
-    #[error("Failed to parse {}", .config.style(Style::File))]
+    #[error("Failed to parse {}.", .config.style(Style::File))]
     Parser {
         config: String,
 
@@ -87,7 +87,7 @@ pub enum ConfigError {
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate {}", .config.style(Style::File))]
+    #[error("Failed to validate {}.", .config.style(Style::File))]
     Validator {
         config: String,
 
@@ -143,7 +143,7 @@ impl ConfigError {
 #[diagnostic(severity(Error))]
 pub struct ParserError {
     #[source_code]
-    pub content: NamedSource,
+    pub content: String, // NamedSource,
 
     pub message: String,
 

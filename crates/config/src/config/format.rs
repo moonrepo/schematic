@@ -1,5 +1,5 @@
 use crate::config::errors::{ConfigError, ParserError};
-use miette::{NamedSource, SourceOffset, SourceSpan};
+use miette::{SourceOffset, SourceSpan};
 use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -66,7 +66,7 @@ impl Format {
     /// Parse the provided content in the defined format into a partial configuration struct.
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
-    pub fn parse<D>(&self, content: String, location: &str) -> Result<D, ParserError>
+    pub fn parse<D>(&self, content: String, _location: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -82,7 +82,8 @@ impl Format {
                 let de = &mut serde_json::Deserializer::from_str(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
+                    // content: NamedSource::new(location, content.to_owned()),
+                    content: content.to_owned(),
                     path: error.path().to_string(),
                     span: Some(create_span(
                         &content,
@@ -98,7 +99,8 @@ impl Format {
                 let de = toml::Deserializer::new(&content);
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
+                    // content: NamedSource::new(location, content.to_owned()),
+                    content: content.to_owned(),
                     path: error.path().to_string(),
                     span: error.inner().span().map(|s| s.into()),
                     message: error.inner().message().to_owned(),
@@ -113,7 +115,8 @@ impl Format {
                 let de = serde_yaml::Deserializer::from_str(&content);
                 let mut result: serde_yaml::Value =
                     serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                        content: NamedSource::new(location, content.to_owned()),
+                        // content: NamedSource::new(location, content.to_owned()),
+                        content: content.to_owned(),
                         path: error.path().to_string(),
                         span: error
                             .inner()
@@ -124,7 +127,8 @@ impl Format {
 
                 // Applies anchors/aliases/references
                 result.apply_merge().map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
+                    // content: NamedSource::new(location, content.to_owned()),
+                    content: content.to_owned(),
                     path: String::new(),
                     span: error.location().map(|s| (s.line(), s.column()).into()),
                     message: error.to_string(),
@@ -134,7 +138,8 @@ impl Format {
                 let de = result.into_deserializer();
 
                 serde_path_to_error::deserialize(de).map_err(|error| ParserError {
-                    content: NamedSource::new(location, content.to_owned()),
+                    // content: NamedSource::new(location, content.to_owned()),
+                    content: content.to_owned(),
                     path: error.path().to_string(),
                     span: error
                         .inner()
