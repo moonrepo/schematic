@@ -687,3 +687,5 @@ The following Cargo features are available:
 
 - `type_chrono` - Implements schematic for the `chrono` crate.
 - `type_regex` - Implements schematic for the `regex` crate.
+- `type_relative_path` - Implements schematic for the `relative-path` crate.
+- `type_url` - Implements schematic for the `url` crate.

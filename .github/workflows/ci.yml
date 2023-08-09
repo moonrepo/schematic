@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: moonrepo/setup-rust@v0
+      - uses: moonrepo/setup-rust@v1
         with:
           components: rustfmt
       - name: Check formatting
@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: moonrepo/setup-rust@v0
+      - uses: moonrepo/setup-rust@v1
         with:
           components: clippy
       - name: Run linter
@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: moonrepo/setup-rust@v0
+      - uses: moonrepo/setup-rust@v1
       - name: Run tests
         run: cargo test --workspace
         if: ${{ runner.os != 'Windows' }}
