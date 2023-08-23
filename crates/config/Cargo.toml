@@ -84,4 +84,5 @@ starbase_sandbox = "0.1.8"
 chrono = { workspace = true }
 regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
+semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }

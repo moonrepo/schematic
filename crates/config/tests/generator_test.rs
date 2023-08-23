@@ -41,6 +41,8 @@ struct GenConfig {
     path: PathBuf,
     rel_path: relative_path::RelativePathBuf,
     url: Option<url::Url>,
+    version: Option<semver::Version>,
+    version_req: semver::VersionReq,
 }
 
 fn create_generator() -> SchemaGenerator {
