@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_semver` feature, that implements schematic types for the `semver` crate.
+
 ## 0.11.2
 
 #### 🚀 Updates

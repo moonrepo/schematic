@@ -2,6 +2,16 @@
 
 use crate::{SchemaType, Schematic, StringType};
 
+macro_rules! impl_string {
+    ($type:ty) => {
+        impl Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::string()
+            }
+        }
+    };
+}
+
 macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
@@ -58,6 +68,14 @@ mod relative_path_feature {
     impl_string_format!(&relative_path::RelativePath, "path");
     impl_string_format!(relative_path::RelativePath, "path");
     impl_string_format!(relative_path::RelativePathBuf, "path");
+}
+
+#[cfg(feature = "semver")]
+mod semver_feature {
+    use super::*;
+
+    impl_string!(semver::Version);
+    impl_string!(semver::VersionReq);
 }
 
 #[cfg(feature = "url")]
