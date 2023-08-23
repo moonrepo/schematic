@@ -10,11 +10,11 @@ export type SomeEnum = 'a' | 'b' | 'c';
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
-export type CustomFormatEnum = 'FOO' | 'bAr' | 'b-a-z';
+export type Test = 'FOO' | 'bAr' | 'b-a-z';
 
 export type OtherEnum = 'foo' | 'bar' | 'baz';
 
-export type AliasedEnum = 'foo' | 'bar' | 'baz';
+export type Aliased = 'foo' | 'bar' | 'baz';
 
 export interface ValueTypes {
 	boolean: boolean;

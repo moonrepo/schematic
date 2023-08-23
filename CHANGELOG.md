@@ -7,6 +7,12 @@
 - Added `type_semver` feature, that implements schematic types for the `semver` crate.
 - Added basic `#[config]` support for `ConfigEnum`.
   - Supports `rename` and `rename_all` (matches serde).
+  - Added `before_parse` which transforms the string value before parsing (`From`, `FromStr`, etc).
+    Supports "lowercase" and "UPPERCASE".
+
+#### 🐞 Fixes
+
+- Fixed serde `rename` not working on `ConfigEnum`.
 
 ## 0.11.2
 

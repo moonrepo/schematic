@@ -50,7 +50,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   },
   "additionalProperties": false,
   "definitions": {
-    "AliasedEnum": {
+    "Aliased": {
       "type": "string",
       "enum": [
         "foo",
@@ -105,14 +105,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       },
       "additionalProperties": false
-    },
-    "CustomFormatEnum": {
-      "type": "string",
-      "enum": [
-        "FOO",
-        "bAr",
-        "b-a-z"
-      ]
     },
     "DefaultValues": {
       "title": "DefaultValues",
@@ -732,6 +724,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "a",
         "b",
         "c"
+      ]
+    },
+    "Test": {
+      "type": "string",
+      "enum": [
+        "FOO",
+        "bAr",
+        "b-a-z"
       ]
     },
     "Validations": {

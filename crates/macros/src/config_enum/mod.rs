@@ -23,7 +23,7 @@ pub struct SerdeArgs {
 #[derive(FromDeriveInput, Default)]
 #[darling(default, attributes(config), supports(enum_unit, enum_tuple))]
 pub struct ConfigEnumArgs {
-    on_parse: Option<String>,
+    before_parse: Option<String>,
 
     // serde
     rename: Option<String>,
@@ -41,11 +41,12 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let enum_name = &input.ident;
-    let meta_name = if let Some(rename) = &args.rename {
-        rename.to_string()
-    } else {
-        enum_name.to_string()
-    };
+    let meta_name = args
+        .rename
+        .as_deref()
+        .or(serde_args.rename.as_deref())
+        .map(|n| n.to_owned())
+        .unwrap_or(enum_name.to_string());
 
     let casing_format = args
         .rename_all
@@ -82,6 +83,24 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         }
     }
 
+    let before_parse = if let Some(parser) = &args.before_parse {
+        if parser == "lowercase" {
+            quote! {
+                let value = value.to_lowercase();
+                let value = value.as_str();
+            }
+        } else if parser == "UPPERCASE" {
+            quote! {
+                let value = value.to_uppercase();
+                let value = value.as_str();
+            }
+        } else {
+            panic!("Unknown `before_parse` value {}", parser);
+        }
+    } else {
+        quote! {}
+    };
+
     let from_fallback = if has_fallback {
         quote! {}
     } else {
@@ -110,8 +129,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::str::FromStr for #enum_name {
             type Err = schematic::ConfigError;
 
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Ok(match s {
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                #before_parse
+                Ok(match value {
                     #(#from_stmts)*
                     #from_fallback
                 })
