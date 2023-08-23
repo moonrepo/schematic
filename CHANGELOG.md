@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Added `type_semver` feature, that implements schematic types for the `semver` crate.
+- Added basic `#[config]` support for `ConfigEnum`.
+  - Supports `rename` and `rename_all` (matches serde).
 
 ## 0.11.2
 
