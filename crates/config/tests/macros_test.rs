@@ -233,6 +233,7 @@ enum BasicEnum {
 
 #[derive(ConfigEnum, Debug, Deserialize, Serialize)]
 #[serde(rename = "Test", rename_all = "UPPERCASE")]
+#[config(before_parse = "UPPERCASE")]
 enum CustomFormatEnum {
     Foo,
     #[serde(rename = "bAr")]
@@ -252,6 +253,7 @@ enum OtherEnum {
 }
 
 #[derive(ConfigEnum, Debug, Serialize)]
+#[config(rename = "Aliased", before_parse = "lowercase")]
 enum AliasedEnum {
     #[serde(alias = "a")]
     Foo,

@@ -15,12 +15,25 @@ use syn::{parse_macro_input, Data, DeriveInput};
     supports(enum_unit, enum_tuple)
 )]
 pub struct SerdeArgs {
+    rename: Option<String>,
+    rename_all: Option<String>,
+}
+
+// #[config()]
+#[derive(FromDeriveInput, Default)]
+#[darling(default, attributes(config), supports(enum_unit, enum_tuple))]
+pub struct ConfigEnumArgs {
+    before_parse: Option<String>,
+
+    // serde
+    rename: Option<String>,
     rename_all: Option<String>,
 }
 
 // #[derive(ConfigEnum)]
 pub fn macro_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
+    let args = ConfigEnumArgs::from_derive_input(&input).expect("Failed to parse arguments.");
     let serde_args = SerdeArgs::from_derive_input(&input).unwrap_or_default();
 
     let Data::Enum(data) = input.data else {
@@ -28,16 +41,24 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     };
 
     let enum_name = &input.ident;
-    let meta_name = enum_name.to_string();
-    let case_format = serde_args
+    let meta_name = args
+        .rename
+        .as_deref()
+        .or(serde_args.rename.as_deref())
+        .map(|n| n.to_owned())
+        .unwrap_or(enum_name.to_string());
+
+    let casing_format = args
         .rename_all
-        .unwrap_or_else(|| "kebab-case".to_owned());
+        .as_deref()
+        .or(serde_args.rename_all.as_deref())
+        .unwrap_or("kebab-case");
 
     // Extract unit variants
     let variants = data
         .variants
         .iter()
-        .map(|v| Variant::from(v, &case_format))
+        .map(|v| Variant::from(v, casing_format))
         .collect::<Vec<_>>();
 
     // Render variants to tokens
@@ -61,6 +82,24 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
             has_fallback = true;
         }
     }
+
+    let before_parse = if let Some(parser) = &args.before_parse {
+        if parser == "lowercase" {
+            quote! {
+                let value = value.to_lowercase();
+                let value = value.as_str();
+            }
+        } else if parser == "UPPERCASE" {
+            quote! {
+                let value = value.to_uppercase();
+                let value = value.as_str();
+            }
+        } else {
+            panic!("Unknown `before_parse` value {}", parser);
+        }
+    } else {
+        quote! {}
+    };
 
     let from_fallback = if has_fallback {
         quote! {}
@@ -90,8 +129,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::str::FromStr for #enum_name {
             type Err = schematic::ConfigError;
 
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Ok(match s {
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                #before_parse
+                Ok(match value {
                     #(#from_stmts)*
                     #from_fallback
                 })

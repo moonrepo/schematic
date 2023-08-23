@@ -19,7 +19,7 @@ export const enum BasicEnum {
 	Baz,
 }
 
-export const enum CustomFormatEnum {
+export const enum Test {
 	Foo,
 	Bar,
 	Baz,
@@ -32,7 +32,7 @@ export const enum OtherEnum {
 	Other,
 }
 
-export const enum AliasedEnum {
+export const enum Aliased {
 	Foo,
 	Bar,
 	Baz,
