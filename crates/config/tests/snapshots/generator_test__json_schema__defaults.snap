@@ -19,7 +19,9 @@ expression: "fs::read_to_string(file).unwrap()"
     "string",
     "time",
     "url",
-    "vector"
+    "vector",
+    "version",
+    "versionReq"
   ],
   "properties": {
     "boolean": {
@@ -90,6 +92,19 @@ expression: "fs::read_to_string(file).unwrap()"
       "items": {
         "type": "string"
       }
+    },
+    "version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "versionReq": {
+      "type": "string"
     }
   },
   "additionalProperties": false,

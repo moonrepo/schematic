@@ -31,5 +31,7 @@ export interface GenConfig {
 	time: string;
 	url: string | null;
 	vector: string[];
+	version: string | null;
+	versionReq: string;
 }
 
