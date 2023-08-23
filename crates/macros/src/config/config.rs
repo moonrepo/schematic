@@ -174,8 +174,6 @@ impl<'l> Config<'l> {
 impl<'l> ToTokens for Config<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
-        let casing_format = self.get_casing_format();
-        let tagged_format = self.get_tagged_format();
         let env_prefix = self.args.env_prefix.as_ref();
 
         // Generate the partial implementation
@@ -277,6 +275,9 @@ impl<'l> ToTokens for Config<'l> {
         #[cfg(feature = "schema")]
         {
             use crate::utils::extract_comment;
+
+            let casing_format = self.get_casing_format();
+            let tagged_format = self.get_tagged_format();
 
             let schema = self.type_of.generate_schema(
                 name,
