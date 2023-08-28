@@ -18,7 +18,7 @@ all-features = true
 [dependencies]
 schematic_macros = { version = "0.11.4", path = "../macros" }
 schematic_types = { version = "0.4.4", path = "../types" }
-garde = { version = "0.14.0", default-features = false, features = ["regex"] }
+garde = { version = "0.14.1", default-features = false, features = ["regex"] }
 indexmap = "2.0.0"
 miette = { workspace = true }
 reqwest = { version = "0.11.20", default-features = false, features = [
@@ -35,7 +35,7 @@ tracing = "0.1.37"
 serde_json = { version = "1.0.105", optional = true }
 
 # json schema
-schemars = { version = "0.8.12", optional = true, default-features = false }
+schemars = { version = "0.8.13", optional = true, default-features = false }
 
 # toml
 toml = { version = "0.7.6", optional = true }
@@ -57,6 +57,7 @@ type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative-path"]
 type_semver = ["schematic_types/semver"]
 type_url = ["schematic_types/url"]
+type_warpgate = ["schematic_types/warpgate"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -73,6 +74,7 @@ schematic = { path = ".", features = [
 	"type_relative_path",
 	"type_semver",
 	"type_url",
+	"type_warpgate",
 	"valid_email",
 	"valid_url",
 	"yaml",
@@ -86,3 +88,4 @@ regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
+warpgate = { workspace = true }

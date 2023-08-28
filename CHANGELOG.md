@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_warpgate` feature, that implements schematic types for the `warpgate` crate.
+
 ## 0.11.4
 
 - Fixes a bad release.

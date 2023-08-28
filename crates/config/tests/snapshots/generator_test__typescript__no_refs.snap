@@ -18,6 +18,8 @@ export interface GenConfig {
   date: string;
   datetime: string;
   enums: 'foo' | 'bar' | 'baz';
+  id: string;
+  locator: string | null;
   map: Record<string, number>;
   nested: {
     opt: string | null;
