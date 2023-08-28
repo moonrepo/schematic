@@ -43,6 +43,8 @@ struct GenConfig {
     url: Option<url::Url>,
     version: Option<semver::Version>,
     version_req: semver::VersionReq,
+    id: warpgate::Id,
+    locator: Option<warpgate::PluginLocator>,
 }
 
 fn create_generator() -> SchemaGenerator {

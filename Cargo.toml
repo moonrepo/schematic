@@ -10,3 +10,4 @@ relative-path = "1.9.0"
 semver = "1.0.18"
 serde = { version = "1.0.185", features = ["derive"] }
 url = "2.4.0"
+warpgate = "0.5.1"

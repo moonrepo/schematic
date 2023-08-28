@@ -12,6 +12,7 @@ regex = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+warpgate = { workspace = true, optional = true }
 
 [dev-dependencies]
 schematic_types = { path = ".", features = [
@@ -20,6 +21,7 @@ schematic_types = { path = ".", features = [
 	"relative-path",
 	"semver",
 	"url",
+	"warpgate",
 ] }
 
 [features]
@@ -29,3 +31,4 @@ regex = ["dep:regex"]
 relative-path = ["dep:relative-path"]
 semver = ["dep:semver"]
 url = ["dep:url"]
+warpgate = ["dep:warpgate"]

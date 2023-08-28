@@ -11,6 +11,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "date",
     "datetime",
     "enums",
+    "id",
+    "locator",
     "map",
     "nested",
     "number",
@@ -39,6 +41,19 @@ expression: "fs::read_to_string(file).unwrap()"
       "allOf": [
         {
           "$ref": "#/definitions/BasicEnum"
+        }
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "locator": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
         }
       ]
     },

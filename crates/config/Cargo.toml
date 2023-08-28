@@ -57,6 +57,7 @@ type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative-path"]
 type_semver = ["schematic_types/semver"]
 type_url = ["schematic_types/url"]
+type_warpgate = ["schematic_types/warpgate"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -73,6 +74,7 @@ schematic = { path = ".", features = [
 	"type_relative_path",
 	"type_semver",
 	"type_url",
+	"type_warpgate",
 	"valid_email",
 	"valid_url",
 	"yaml",
@@ -86,3 +88,4 @@ regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
+warpgate = { workspace = true }

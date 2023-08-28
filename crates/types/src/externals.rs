@@ -84,3 +84,12 @@ mod url_feature {
 
     impl_string_format!(url::Url, "uri");
 }
+
+#[cfg(feature = "warpgate")]
+mod warpgate_feature {
+    use super::*;
+
+    impl_string!(warpgate::Id);
+    impl_string!(warpgate::PluginLocator);
+    impl_string_format!(warpgate::VirtualPath, "path");
+}
