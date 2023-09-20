@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleaed
+## Unreleased
 
 #### ⚙️ Internal
 
