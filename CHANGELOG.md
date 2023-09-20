@@ -5,7 +5,8 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.72.
-- Updated reqwest to use `rustls-tls-native-roots` instead of `rustls-tls`.
+- Updated `garde` (validation) to v0.15.
+- Updated `reqwest` to use `rustls-tls-native-roots` instead of `rustls-tls`.
 - Updated dependencies.
 
 ## 0.11.5
