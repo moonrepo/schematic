@@ -15,9 +15,9 @@ proc-macro = true
 [dependencies]
 convert_case = "0.6.0"
 darling = "0.20.3"
-proc-macro2 = "1.0.66"
+proc-macro2 = "1.0.67"
 quote = "1.0.33"
-syn = { version = "2.0.29", features = ["full"] }
+syn = { version = "2.0.37", features = ["full"] }
 
 [features]
 default = []
