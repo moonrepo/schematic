@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.6
 
 #### ⚙️ Internal
 
