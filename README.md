@@ -671,6 +671,7 @@ The following Cargo features are available:
 
 - `json` (default) - Enables JSON.
 - `toml` - Enables TOML.
+- `url` (default) - Enables loading, extending, and parsing configs from URLs.
 - `yaml` - Enables YAML.
 
 ### Validation

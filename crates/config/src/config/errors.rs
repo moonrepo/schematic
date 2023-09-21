@@ -58,6 +58,7 @@ pub enum ConfigError {
     #[error("Invalid URL used as a source.")]
     InvalidUrl,
 
+    #[cfg(feature = "url")]
     #[diagnostic(code(config::url::read_failed))]
     #[error("Failed to read URL {}.", .url.style(Style::Url))]
     ReadUrlFailed {
@@ -118,6 +119,7 @@ impl ConfigError {
                 push_end();
                 message.push_str(&inner.to_string());
             }
+            #[cfg(feature = "url")]
             ConfigError::ReadUrlFailed { error: inner, .. } => {
                 push_end();
                 message.push_str(&inner.to_string());

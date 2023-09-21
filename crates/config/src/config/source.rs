@@ -128,18 +128,26 @@ impl Source {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                let handle_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-                    url: url.to_owned(),
-                    error,
-                };
+                #[cfg(feature = "url")]
+                {
+                    let handle_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                        url: url.to_owned(),
+                        error,
+                    };
 
-                format.parse(
-                    reqwest::blocking::get(url)
-                        .map_err(handle_error)?
-                        .text()
-                        .map_err(handle_error)?,
-                    location,
-                )
+                    format.parse(
+                        reqwest::blocking::get(url)
+                            .map_err(handle_error)?
+                            .text()
+                            .map_err(handle_error)?,
+                        location,
+                    )
+                }
+
+                #[cfg(not(feature = "url"))]
+                {
+                    panic!("Parsing a URL requires the `url` feature!");
+                }
             }
         };
 

@@ -65,6 +65,7 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     /// Add a URL source to load.
+    #[cfg(feature = "url")]
     pub fn url<S: TryInto<String>>(&mut self, url: S) -> Result<&mut Self, ConfigError> {
         self.sources.push(Source::url(url)?);
 

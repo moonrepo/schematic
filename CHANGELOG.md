@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Moved `reqwest` usage behind a feature named `url`. This is enabled by default.
+
 ## 0.11.6
 
 #### ⚙️ Internal
