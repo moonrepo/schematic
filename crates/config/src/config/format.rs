@@ -14,6 +14,11 @@ fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Format {
+    // This is to simply handle the use case when no features are
+    // enabled. If this doesn't exist, Rust errors with no variants.
+    #[doc(hidden)]
+    None,
+
     #[cfg(feature = "json")]
     Json,
 
@@ -71,6 +76,9 @@ impl Format {
         D: DeserializeOwned,
     {
         let data: D = match self {
+            Format::None => {
+                unreachable!();
+            }
             #[cfg(feature = "json")]
             Format::Json => {
                 let content = if content.is_empty() {

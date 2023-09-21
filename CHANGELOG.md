@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Moved `reqwest` usage behind a feature named `url`. This is enabled by default.
+
+#### 🐞 Fixes
+
+- Fixed an error where Rust would fail to compile if no features are enabled.
+
 ## 0.11.6
 
 #### ⚙️ Internal
@@ -16,6 +26,8 @@
 - Added `type_warpgate` feature, that implements schematic types for the `warpgate` crate.
 
 ## 0.11.4
+
+#### 🐞 Fixes
 
 - Fixes a bad release.
 
