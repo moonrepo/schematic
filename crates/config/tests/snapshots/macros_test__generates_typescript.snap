@@ -39,6 +39,10 @@ export interface DefaultValues {
 	enums: SomeEnum;
 	/** @default 'foo.json' */
 	fileString: string;
+	/** @default 1.32 */
+	float32: number;
+	/** @default 1.64 */
+	float64: number;
 	/** @default 'foo with. many values!' */
 	longString: string;
 	/** @default 123 */
@@ -125,6 +129,10 @@ export interface PartialDefaultValues {
 	enums?: SomeEnum | null;
 	/** @default 'foo.json' */
 	fileString?: string | null;
+	/** @default 1.32 */
+	float32?: number | null;
+	/** @default 1.64 */
+	float64?: number | null;
 	/** @default 'foo with. many values!' */
 	longString?: string | null;
 	/** @default 123 */

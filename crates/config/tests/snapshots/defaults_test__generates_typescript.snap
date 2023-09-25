@@ -9,6 +9,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
 export interface CustomDefaults {
 	/** @default true */
 	boolean: boolean;
+	/** @default 1.32 */
+	float: number;
 	/** @default 123 */
 	number: number;
 	/** @default 'foo' */
@@ -30,6 +32,8 @@ export interface ContextDefaults {
 
 export interface NativeDefaults {
 	boolean: boolean;
+	float32: number;
+	float64: number;
 	number: number;
 	string: string;
 	vector: string[];

@@ -10,6 +10,8 @@ pub struct NativeDefaults {
     string: String,
     number: usize,
     vector: Vec<String>,
+    float32: f32,
+    float64: f64,
 }
 
 #[test]
@@ -20,6 +22,8 @@ fn uses_native_defaults() {
     assert_eq!(result.config.string, "");
     assert_eq!(result.config.number, 0);
     assert_eq!(result.config.vector, Vec::<String>::new());
+    assert_eq!(result.config.float32, 0.0);
+    assert_eq!(result.config.float64, 0.0);
 }
 
 #[derive(Debug, Config)]
@@ -32,6 +36,8 @@ pub struct CustomDefaults {
     number: usize,
     #[setting(default = Vec::from([1, 2, 3, 4]))]
     vector: Vec<usize>,
+    #[setting(default = 1.32)]
+    float: f32,
 }
 
 #[test]
@@ -42,6 +48,7 @@ fn uses_custom_setting_defaults() {
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 123);
     assert_eq!(result.config.vector, vec![1, 2, 3, 4]);
+    assert_eq!(result.config.float, 1.32);
 }
 
 #[derive(Debug, Config)]

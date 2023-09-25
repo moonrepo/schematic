@@ -28,6 +28,8 @@ struct GenConfig {
     boolean: bool,
     string: String,
     number: usize,
+    float32: f32,
+    float64: f64,
     vector: Vec<String>,
     map: HashMap<String, u64>,
     enums: BasicEnum,

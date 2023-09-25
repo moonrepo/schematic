@@ -375,7 +375,7 @@ impl<'l> ConfigType<'l> {
         match self {
             ConfigType::NamedStruct { settings, .. } => {
                 quote! {
-                    #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
                     #(#partial_attrs)*
                     pub struct #partial_name {
                         #(#settings)*
@@ -397,7 +397,7 @@ impl<'l> ConfigType<'l> {
                 };
 
                 quote! {
-                    #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
                     #(#partial_attrs)*
                     pub enum #partial_name {
                         #(#variants)*

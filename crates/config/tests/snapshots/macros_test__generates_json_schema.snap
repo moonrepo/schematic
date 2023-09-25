@@ -115,6 +115,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "booleanFn",
         "enums",
         "fileString",
+        "float32",
+        "float64",
         "longString",
         "number",
         "pathString",
@@ -149,6 +151,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "fileString": {
           "default": "foo.json",
           "type": "string"
+        },
+        "float32": {
+          "default": 1.32,
+          "type": "number"
+        },
+        "float64": {
+          "default": 1.64,
+          "type": "number"
         },
         "longString": {
           "default": "foo with. many values!",
@@ -414,6 +424,28 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "float32": {
+          "default": 1.32,
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "float64": {
+          "default": 1.64,
+          "anyOf": [
+            {
+              "type": "number"
             },
             {
               "type": "null"

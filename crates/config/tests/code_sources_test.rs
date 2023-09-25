@@ -6,6 +6,7 @@ pub struct Config {
     string: String,
     number: usize,
     vector: Vec<String>,
+    float: f32,
 }
 
 // #[test]
@@ -25,6 +26,7 @@ pub struct Config {
 fn handles_one_layer() {
     let a = r"
 string: foo
+float: 1.23
 ";
 
     let result = ConfigLoader::<Config>::new()
@@ -37,6 +39,7 @@ string: foo
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 0);
     assert_eq!(result.config.vector, Vec::<String>::new());
+    assert_eq!(result.config.float, 1.23);
 }
 
 #[test]

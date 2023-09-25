@@ -20,6 +20,8 @@ export interface GenConfig {
 	date: string;
 	datetime: string;
 	enums: BasicEnum;
+	float32: number;
+	float64: number;
 	id: string;
 	locator: string | null;
 	map: Record<string, number>;
