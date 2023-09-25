@@ -61,7 +61,7 @@ mod regex_feature {
     impl_string_format!(regex::Regex, "regex");
 }
 
-#[cfg(feature = "relative-path")]
+#[cfg(feature = "relative_path")]
 mod relative_path_feature {
     use super::*;
 
@@ -83,6 +83,14 @@ mod url_feature {
     use super::*;
 
     impl_string_format!(url::Url, "uri");
+}
+
+#[cfg(feature = "version_spec")]
+mod version_spec_feature {
+    use super::*;
+
+    impl_string!(version_spec::UnresolvedVersionSpec);
+    impl_string!(version_spec::VersionSpec);
 }
 
 #[cfg(feature = "warpgate")]
