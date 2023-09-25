@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added support for `f32` and `f64` types.
+- Added `type_version_spec` feature, that implements schematic types for the `version_spec` crate.
 
 #### ⚙️ Internal
 
