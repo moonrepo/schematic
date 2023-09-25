@@ -45,6 +45,8 @@ struct GenConfig {
     url: Option<url::Url>,
     version: Option<semver::Version>,
     version_req: semver::VersionReq,
+    spec: version_spec::VersionSpec,
+    spec_unresolved: version_spec::UnresolvedVersionSpec,
     id: warpgate::Id,
     locator: Option<warpgate::PluginLocator>,
 }

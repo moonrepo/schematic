@@ -12,15 +12,17 @@ regex = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
+version_spec = { workspace = true, optional = true }
 warpgate = { workspace = true, optional = true }
 
 [dev-dependencies]
 schematic_types = { path = ".", features = [
 	"chrono",
 	"regex",
-	"relative-path",
+	"relative_path",
 	"semver",
 	"url",
+	"version_spec",
 	"warpgate",
 ] }
 
@@ -28,7 +30,8 @@ schematic_types = { path = ".", features = [
 default = []
 chrono = ["dep:chrono"]
 regex = ["dep:regex"]
-relative-path = ["dep:relative-path"]
+relative_path = ["dep:relative-path"]
 semver = ["dep:semver"]
 url = ["dep:url"]
+version_spec = ["dep:version_spec"]
 warpgate = ["dep:warpgate"]

@@ -691,4 +691,5 @@ The following Cargo features are available:
 - `type_relative_path` - Implements schematic for the `relative-path` crate.
 - `type_semver` - Implements schematic for the `semver` crate.
 - `type_url` - Implements schematic for the `url` crate.
+- `type_version_spec` - Implements schematic for the `version_spec` crate.
 - `type_warpgate` - Implements schematic for the `warpgate` crate.
