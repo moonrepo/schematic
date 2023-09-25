@@ -71,6 +71,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "boolean",
+        "float",
         "number",
         "string",
         "vector"
@@ -79,6 +80,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "boolean": {
           "default": true,
           "type": "boolean"
+        },
+        "float": {
+          "default": 1.32,
+          "type": "number"
         },
         "number": {
           "default": 123,
@@ -102,6 +107,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "boolean",
+        "float32",
+        "float64",
         "number",
         "string",
         "vector"
@@ -109,6 +116,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "properties": {
         "boolean": {
           "type": "boolean"
+        },
+        "float32": {
+          "type": "number"
+        },
+        "float64": {
+          "type": "number"
         },
         "number": {
           "type": "number"

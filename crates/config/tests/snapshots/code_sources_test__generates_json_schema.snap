@@ -8,6 +8,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "type": "object",
   "required": [
     "boolean",
+    "float",
     "number",
     "string",
     "vector"
@@ -15,6 +16,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "properties": {
     "boolean": {
       "type": "boolean"
+    },
+    "float": {
+      "type": "number"
     },
     "number": {
       "type": "number"

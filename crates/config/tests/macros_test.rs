@@ -65,6 +65,10 @@ struct DefaultValues {
     path_string: PathBuf,
     #[setting(default = 123)]
     number: usize,
+    #[setting(default = 1.32)]
+    float32: f32,
+    #[setting(default = 1.64)]
+    float64: f64,
     #[setting(default = [1, 2, 3, 4])]
     array: [u8; 4],
     #[setting(default = (1, 2, 3, 4))]

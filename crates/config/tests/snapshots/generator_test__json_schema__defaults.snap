@@ -11,6 +11,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "date",
     "datetime",
     "enums",
+    "float32",
+    "float64",
     "id",
     "locator",
     "map",
@@ -43,6 +45,12 @@ expression: "fs::read_to_string(file).unwrap()"
           "$ref": "#/definitions/BasicEnum"
         }
       ]
+    },
+    "float32": {
+      "type": "number"
+    },
+    "float64": {
+      "type": "number"
     },
     "id": {
       "type": "string"

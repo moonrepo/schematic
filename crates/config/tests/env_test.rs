@@ -16,6 +16,8 @@ pub struct EnvVars {
     boolean: bool,
     #[setting(env = "ENV_PATH")]
     path: PathBuf,
+    #[setting(env = "ENV_FLOAT")]
+    float: f32,
 }
 
 #[derive(Debug, Config)]
@@ -35,6 +37,7 @@ fn reset_vars() {
     env::remove_var("ENV_VEC_NUMBER");
     env::remove_var("ENV_LIST1");
     env::remove_var("ENV_LIST2");
+    env::remove_var("ENV_FLOAT");
 }
 
 #[test]
@@ -45,12 +48,14 @@ fn defaults_to_env_var() {
     env::set_var("ENV_NUMBER", "123");
     env::set_var("ENV_BOOL", "true");
     env::set_var("ENV_PATH", "some/path");
+    env::set_var("ENV_FLOAT", "1.23");
 
     let result = ConfigLoader::<EnvVars>::new().load().unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");
     assert_eq!(result.config.number, 123);
+    assert_eq!(result.config.float, 1.23);
     assert_eq!(result.config.path, PathBuf::from("some/path"));
 }
 

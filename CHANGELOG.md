@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for `f32` and `f64` types.
+
+#### ⚙️ Internal
+
+- Removed `Eq` from partial types so that complex types can be used.
+
 ## 0.11.7
 
 #### 🚀 Updates
