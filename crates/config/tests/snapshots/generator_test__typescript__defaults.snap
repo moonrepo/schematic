@@ -27,6 +27,8 @@ export interface GenConfig {
 	number: number;
 	path: string;
 	relPath: string;
+	spec: string;
+	specUnresolved: string;
 	string: string;
 	time: string;
 	url: string | null;

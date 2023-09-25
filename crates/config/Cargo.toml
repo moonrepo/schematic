@@ -3,7 +3,7 @@ name = "schematic"
 version = "0.11.7"
 edition = "2021"
 license = "MIT"
-description = "A light-weight, macro-based, layered serde configuration and schema library."
+description = "A light-weight, macro-based, and layered serde configuration and schema library."
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
 
@@ -57,6 +57,7 @@ type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_semver = ["schematic_types/semver"]
 type_url = ["schematic_types/url"]
+type_version_spec = ["schematic_types/version_spec"]
 type_warpgate = ["schematic_types/warpgate"]
 
 valid_email = ["garde/email"]
@@ -74,6 +75,7 @@ schematic = { path = ".", features = [
 	"type_relative_path",
 	"type_semver",
 	"type_url",
+	"type_version_spec",
 	"type_warpgate",
 	"url",
 	"valid_email",
@@ -89,4 +91,5 @@ regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
+version_spec = { workspace = true }
 warpgate = { workspace = true }

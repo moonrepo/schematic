@@ -2474,6 +2474,7 @@ dependencies = [
  "toml 0.8.0",
  "tracing",
  "url",
+ "version_spec",
  "warpgate",
 ]
 

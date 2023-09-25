@@ -20,6 +20,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "number",
     "path",
     "relPath",
+    "spec",
+    "specUnresolved",
     "string",
     "time",
     "url",
@@ -91,6 +93,12 @@ expression: "fs::read_to_string(file).unwrap()"
     "relPath": {
       "type": "string",
       "format": "path"
+    },
+    "spec": {
+      "type": "string"
+    },
+    "specUnresolved": {
+      "type": "string"
     },
     "string": {
       "type": "string"
