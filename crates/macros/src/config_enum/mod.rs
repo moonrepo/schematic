@@ -1,23 +1,11 @@
 mod variant;
 
+use crate::common_schema::SerdeArgs;
 use crate::config_enum::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput};
-
-// #[serde()]
-#[derive(FromDeriveInput, Default)]
-#[darling(
-    default,
-    allow_unknown_fields,
-    attributes(serde),
-    supports(enum_unit, enum_tuple)
-)]
-pub struct SerdeArgs {
-    rename: Option<String>,
-    rename_all: Option<String>,
-}
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]

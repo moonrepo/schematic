@@ -5,7 +5,8 @@ pub mod setting;
 pub mod setting_type;
 pub mod variant;
 
-use crate::config::config::{Config, ConfigArgs, SerdeArgs};
+use crate::common_schema::SerdeArgs;
+use crate::config::config::{Config, ConfigArgs};
 use crate::config::config_type::ConfigType;
 use crate::config::setting::Setting;
 use crate::config::variant::Variant;

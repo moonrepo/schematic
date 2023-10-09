@@ -1,33 +1,10 @@
 use super::config_type::ConfigType;
 use super::variant::TaggedFormat;
-use darling::{FromDeriveInput, FromMeta};
+use crate::common_schema::*;
+use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote, ToTokens};
 use syn::{Attribute, ExprPath};
-
-// #[serde()]
-#[derive(FromDeriveInput, Default)]
-#[darling(default, allow_unknown_fields, attributes(serde))]
-pub struct SerdeArgs {
-    // struct
-    rename: Option<String>,
-    rename_all: Option<String>,
-
-    // enum
-    content: Option<String>,
-    expecting: Option<String>,
-    tag: Option<String>,
-    untagged: bool,
-}
-
-#[derive(FromMeta, Default)]
-#[darling(default)]
-pub struct SerdeMeta {
-    content: Option<String>,
-    expecting: Option<String>,
-    tag: Option<String>,
-    untagged: bool,
-}
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]
