@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 schematic = { path = "../config", features = [
+	"json",
 	"schema",
 	"type_chrono",
 	"type_regex",

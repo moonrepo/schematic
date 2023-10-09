@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed `json` as a default feature. You must now enable the file formats you want.
+
 #### 🚀 Updates
 
 - Added a `Schematic` derive macro that only implements the `schematic::Schematic` trait.
+- Added a `config` feature that enables configuration functionality. Can use
+  `default-features = false` to only use schema functionality.
 
 #### ⚙️ Internal
 

@@ -33,7 +33,7 @@ impl Format {
     /// Detects a format from a provided value, either a file path or URL, by
     /// checking for a supported file extension.
     pub fn detect(value: &str) -> Result<Format, ConfigError> {
-        let mut available = vec![];
+        let mut available: Vec<&str> = vec![];
 
         #[cfg(feature = "json")]
         {
