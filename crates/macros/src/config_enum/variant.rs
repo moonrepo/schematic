@@ -1,16 +1,9 @@
+use crate::common::FieldSerdeArgs;
 use crate::utils::{extract_comment, extract_common_attrs, format_case, has_attr};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::{Attribute, Fields, Variant as NativeVariant};
-
-// #[serde()]
-#[derive(FromAttributes, Default)]
-#[darling(default, allow_unknown_fields, attributes(serde))]
-pub struct SerdeArgs {
-    pub alias: Option<String>,
-    pub rename: Option<String>,
-}
 
 // #[variant()]
 #[derive(FromAttributes, Default)]
@@ -22,7 +15,7 @@ pub struct VariantArgs {
 
 pub struct Variant<'l> {
     pub args: VariantArgs,
-    pub serde_args: SerdeArgs,
+    pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub value: String,
@@ -31,7 +24,7 @@ pub struct Variant<'l> {
 impl<'l> Variant<'l> {
     pub fn from<'n>(variant: &'n NativeVariant, format: &str) -> Variant<'n> {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap_or_default();
-        let serde_args = SerdeArgs::from_attributes(&variant.attrs).unwrap_or_default();
+        let serde_args = FieldSerdeArgs::from_attributes(&variant.attrs).unwrap_or_default();
 
         if args.fallback {
             if let Fields::Unnamed(fields) = &variant.fields {

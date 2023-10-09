@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `Schematic` derive macro that only implements the `schematic::Schematic` trait.
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.73.
+
 ## 0.11.8
 
 #### 🚀 Updates
