@@ -1,11 +1,13 @@
 mod container;
 mod field;
 mod field_value;
+mod macros;
 mod variant;
 
 pub use container::*;
 pub use field::*;
 pub use field_value::*;
+pub use macros::*;
 pub use variant::*;
 
 use darling::{FromAttributes, FromDeriveInput, FromMeta};

@@ -6,12 +6,18 @@ mod utils;
 #[cfg(feature = "schema")]
 mod schematic;
 
+use common::Macro;
 use proc_macro::TokenStream;
+use quote::quote;
+use syn::{parse_macro_input, DeriveInput};
 
 // #[derive(Config)]
 #[proc_macro_derive(Config, attributes(config, setting))]
 pub fn config(item: TokenStream) -> TokenStream {
-    config::macro_impl(item)
+    let input: DeriveInput = parse_macro_input!(item);
+    let output = config::ConfigMacro(Macro::from(&input));
+
+    quote! { #output }.into()
 }
 
 // #[derive(ConfigEnum)]
