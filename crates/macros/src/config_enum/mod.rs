@@ -1,6 +1,6 @@
 mod variant;
 
-use crate::common_schema::SerdeArgs;
+use crate::common_schema::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
@@ -22,7 +22,7 @@ pub struct ConfigEnumArgs {
 pub fn macro_impl(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
     let args = ConfigEnumArgs::from_derive_input(&input).expect("Failed to parse arguments.");
-    let serde_args = SerdeArgs::from_derive_input(&input).unwrap_or_default();
+    let serde_args = ContainerSerdeArgs::from_derive_input(&input).unwrap_or_default();
 
     let Data::Enum(data) = input.data else {
         panic!("Only unit enums are supported.");

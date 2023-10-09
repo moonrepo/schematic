@@ -1,9 +1,9 @@
-use darling::{FromDeriveInput, FromMeta};
+use darling::{FromAttributes, FromDeriveInput, FromMeta};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
 #[darling(default, allow_unknown_fields, attributes(serde))]
-pub struct SerdeArgs {
+pub struct ContainerSerdeArgs {
     // struct
     pub rename: Option<String>,
     pub rename_all: Option<String>,
@@ -13,6 +13,15 @@ pub struct SerdeArgs {
     pub expecting: Option<String>,
     pub tag: Option<String>,
     pub untagged: bool,
+}
+
+// #[serde()]
+#[derive(FromAttributes, Default)]
+#[darling(default, allow_unknown_fields, attributes(serde))]
+pub struct FieldSerdeArgs {
+    pub alias: Option<String>,
+    pub rename: Option<String>,
+    pub skip: bool,
 }
 
 #[derive(FromMeta, Default)]

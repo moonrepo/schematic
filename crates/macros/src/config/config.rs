@@ -1,5 +1,5 @@
 use super::config_type::ConfigType;
-use super::variant::TaggedFormat;
+use crate::common::TaggedFormat;
 use crate::common_schema::*;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
@@ -23,7 +23,7 @@ pub struct ConfigArgs {
 
 pub struct Config<'l> {
     pub args: ConfigArgs,
-    pub serde_args: SerdeArgs,
+    pub serde_args: ContainerSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub type_of: ConfigType<'l>,

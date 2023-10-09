@@ -1,4 +1,4 @@
-pub use crate::common::*;
+use crate::common::Variant;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{Expr, Fields, FieldsUnnamed};

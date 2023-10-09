@@ -1,5 +1,4 @@
-use super::setting::Setting;
-use super::variant::{TaggedFormat, Variant};
+use crate::common::{Field, TaggedFormat, Variant};
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::FieldsNamed;
@@ -7,7 +6,7 @@ use syn::FieldsNamed;
 pub enum ConfigType<'l> {
     NamedStruct {
         fields: &'l FieldsNamed,
-        settings: Vec<Setting<'l>>,
+        settings: Vec<Field<'l>>,
     },
     Enum {
         variants: Vec<Variant<'l>>,

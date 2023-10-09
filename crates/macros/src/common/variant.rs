@@ -1,3 +1,4 @@
+use crate::common_schema::FieldSerdeArgs;
 use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -9,15 +10,6 @@ pub enum TaggedFormat {
     External,
     Internal(String),
     Adjacent(String, String),
-}
-
-// #[serde()]
-#[derive(FromAttributes, Default)]
-#[darling(default, allow_unknown_fields, attributes(serde))]
-pub struct VariantSerdeArgs {
-    pub alias: Option<String>,
-    pub rename: Option<String>,
-    pub skip: bool,
 }
 
 // #[setting()], #[variant()]
@@ -39,7 +31,7 @@ pub struct VariantArgs {
 
 pub struct Variant<'l> {
     pub args: VariantArgs,
-    pub serde_args: VariantSerdeArgs,
+    pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
     pub value: &'l NativeVariant,
@@ -49,7 +41,7 @@ impl<'l> Variant<'l> {
     pub fn from(var: &NativeVariant) -> Variant {
         Variant {
             args: VariantArgs::from_attributes(&var.attrs).unwrap_or_default(),
-            serde_args: VariantSerdeArgs::from_attributes(&var.attrs).unwrap_or_default(),
+            serde_args: FieldSerdeArgs::from_attributes(&var.attrs).unwrap_or_default(),
             attrs: extract_common_attrs(&var.attrs),
             name: &var.ident,
             value: var,
