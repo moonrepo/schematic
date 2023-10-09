@@ -21,9 +21,6 @@ schematic_types = { version = "0.4.7", path = "../types" }
 garde = { version = "0.15.0", default-features = false, features = ["regex"] }
 indexmap = "2.0.2"
 miette = { workspace = true }
-reqwest = { version = "0.11.22", default-features = false, features = [
-	"blocking",
-], optional = true }
 serde = { workspace = true }
 serde_path_to_error = "0.1.14"
 starbase_styles = "0.1.16"
@@ -42,8 +39,13 @@ toml = { version = "0.8.2", optional = true }
 # yaml
 serde_yaml = { version = "0.9.25", optional = true }
 
+# url
+reqwest = { version = "0.11.22", default-features = false, features = [
+	"blocking",
+], optional = true }
+
 [features]
-default = ["config", "json", "url"]
+default = ["config", "url"]
 config = ["schematic_macros/config"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "json", "schema"]

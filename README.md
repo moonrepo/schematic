@@ -667,11 +667,13 @@ generator.generate(
 
 The following Cargo features are available:
 
+- `config` (default) - Enables configuration support (all the above stuff).
+- `url` (default) - Enables loading, extending, and parsing configs from URLs.
+
 ### Parsing
 
 - `json` (default) - Enables JSON.
 - `toml` - Enables TOML.
-- `url` (default) - Enables loading, extending, and parsing configs from URLs.
 - `yaml` - Enables YAML.
 
 ### Validation
