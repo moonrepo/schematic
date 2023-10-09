@@ -1,6 +1,6 @@
 mod variant;
 
-use crate::common_schema::ContainerSerdeArgs;
+use crate::common::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;

@@ -1,4 +1,4 @@
-use crate::common_schema::FieldSerdeArgs;
+use crate::common::FieldSerdeArgs;
 use crate::utils::{extract_comment, extract_common_attrs, format_case, has_attr};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};

@@ -5,8 +5,7 @@ pub mod field;
 pub mod field_value;
 pub mod variant;
 
-use crate::common::{Container, Field, Variant};
-use crate::common_schema::ContainerSerdeArgs;
+use crate::common::{Container, ContainerSerdeArgs, Field, Variant};
 use crate::config::config::{Config, ConfigArgs};
 use crate::utils::extract_common_attrs;
 use darling::FromDeriveInput;

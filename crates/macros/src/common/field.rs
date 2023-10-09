@@ -1,5 +1,4 @@
-use crate::common::field_value::FieldValue;
-use crate::common_schema::FieldSerdeArgs;
+use crate::common::{FieldSerdeArgs, FieldValue};
 use crate::utils::{
     extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
 };
