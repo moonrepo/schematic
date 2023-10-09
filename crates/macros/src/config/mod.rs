@@ -1,14 +1,13 @@
 #[allow(clippy::module_inception)]
 pub mod config;
-pub mod config_type;
-pub mod setting;
-pub mod setting_value;
+pub mod container;
+pub mod field;
+pub mod field_value;
 pub mod variant;
 
-use crate::common::{Field, Variant};
+use crate::common::{Container, Field, Variant};
 use crate::common_schema::ContainerSerdeArgs;
 use crate::config::config::{Config, ConfigArgs};
-use crate::config::config_type::ConfigType;
 use crate::utils::extract_common_attrs;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
@@ -23,9 +22,8 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     let config_type = match &input.data {
         Data::Struct(data) => match &data.fields {
-            Fields::Named(fields) => ConfigType::NamedStruct {
-                settings: fields.named.iter().map(Field::from).collect::<Vec<_>>(),
-                fields,
+            Fields::Named(fields) => Container::NamedStruct {
+                fields: fields.named.iter().map(Field::from).collect::<Vec<_>>(),
             },
             Fields::Unnamed(_) => {
                 panic!("Unnamed structs are not supported.");
@@ -34,7 +32,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 panic!("Unit structs are not supported.");
             }
         },
-        Data::Enum(data) => ConfigType::Enum {
+        Data::Enum(data) => Container::Enum {
             variants: data
                 .variants
                 .iter()

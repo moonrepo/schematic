@@ -1,5 +1,4 @@
-use super::config_type::ConfigType;
-use crate::common::TaggedFormat;
+use crate::common::{Container, TaggedFormat};
 use crate::common_schema::*;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
@@ -26,12 +25,12 @@ pub struct Config<'l> {
     pub serde_args: ContainerSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
-    pub type_of: ConfigType<'l>,
+    pub type_of: Container<'l>,
 }
 
 impl<'l> Config<'l> {
     pub fn is_enum(&self) -> bool {
-        matches!(self.type_of, ConfigType::Enum { .. })
+        matches!(self.type_of, Container::Enum { .. })
     }
 
     pub fn get_meta_struct(&self) -> TokenStream {
@@ -89,14 +88,14 @@ impl<'l> Config<'l> {
         let mut meta = vec![];
 
         match &self.type_of {
-            ConfigType::NamedStruct { .. } => {
+            Container::NamedStruct { .. } => {
                 meta.push(quote! { default });
 
                 if !self.args.allow_unknown_fields {
                     meta.push(quote! { deny_unknown_fields });
                 }
             }
-            ConfigType::Enum { .. } => {
+            Container::Enum { .. } => {
                 if let Some(content) = &self.args.serde.content {
                     meta.push(quote! { content = #content });
                 } else if let Some(content) = &self.serde_args.content {

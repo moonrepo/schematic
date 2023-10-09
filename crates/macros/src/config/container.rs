@@ -1,29 +1,13 @@
-use crate::common::{Field, TaggedFormat, Variant};
+use crate::common::Container;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::FieldsNamed;
 
-pub enum ConfigType<'l> {
-    NamedStruct {
-        fields: &'l FieldsNamed,
-        settings: Vec<Field<'l>>,
-    },
-    Enum {
-        variants: Vec<Variant<'l>>,
-    },
-}
-
-impl<'l> ConfigType<'l> {
-    pub fn has_nested(&self) -> bool {
-        match self {
-            ConfigType::NamedStruct { settings, .. } => settings.iter().any(|v| v.is_nested()),
-            ConfigType::Enum { variants } => variants.iter().any(|v| v.is_nested()),
-        }
-    }
-
+impl<'l> Container<'l> {
     pub fn generate_default_values(&self) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let mut setting_names = vec![];
                 let mut default_values = vec![];
 
@@ -38,7 +22,7 @@ impl<'l> ConfigType<'l> {
                     }))
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 let default_variant = variants.iter().find(|v| v.is_default());
 
                 if let Some(variant) = default_variant {
@@ -58,7 +42,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_env_values(&self, prefix: Option<&String>) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let env_stmts = settings
                     .iter()
                     .filter_map(|s| s.generate_env_statement(prefix))
@@ -76,7 +62,7 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::Enum { .. } => {
+            Self::Enum { .. } => {
                 quote! {
                     Ok(None)
                 }
@@ -86,7 +72,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_extends_from(&self) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 // Validate only 1 setting is using it
                 let mut names = vec![];
 
@@ -149,7 +137,7 @@ impl<'l> ConfigType<'l> {
 
                 quote! { None }
             }
-            ConfigType::Enum { .. } => {
+            Self::Enum { .. } => {
                 quote! { None }
             }
         }
@@ -157,7 +145,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_finalize(&self) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let finalize_stmts = settings
                     .iter()
                     .map(|s| s.generate_finalize_statement())
@@ -181,7 +171,7 @@ impl<'l> ConfigType<'l> {
                     Ok(partial)
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 if self.has_nested() {
                     let finalize_stmts = variants
                         .iter()
@@ -205,7 +195,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_merge(&self) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let merge_stmts = settings
                     .iter()
                     .map(|s| s.generate_merge_statement())
@@ -216,7 +208,7 @@ impl<'l> ConfigType<'l> {
                     Ok(())
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 let merge_stmts = variants
                     .iter()
                     .filter_map(|s| s.generate_merge_statement())
@@ -244,7 +236,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_validate(&self) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let validate_stmts = settings
                     .iter()
                     .map(|s| s.generate_validate_statement())
@@ -254,7 +248,7 @@ impl<'l> ConfigType<'l> {
                     #(#validate_stmts)*
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 let validate_stmts = variants
                     .iter()
                     .filter_map(|s| s.generate_validate_statement())
@@ -276,7 +270,9 @@ impl<'l> ConfigType<'l> {
 
     pub fn generate_from_partial(&self, partial_name: &Ident) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 let mut setting_names = vec![];
                 let mut from_partial_values = vec![];
 
@@ -291,7 +287,7 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 let from_partial_values = variants
                     .iter()
                     .map(|s| s.generate_from_partial_value(partial_name))
@@ -306,73 +302,15 @@ impl<'l> ConfigType<'l> {
         }
     }
 
-    pub fn generate_schema(
-        &self,
-        config_name: &Ident,
-        description: Option<String>,
-        casing_format: &str,
-        tagged_format: TaggedFormat,
-    ) -> TokenStream {
-        let config_name = config_name.to_string();
-        let description = if let Some(comment) = description {
-            quote! {
-                schema.description = Some(#comment.into());
-            }
-        } else {
-            quote! {}
-        };
-
-        match self {
-            ConfigType::NamedStruct { settings, .. } => {
-                let schema_types = settings
-                    .iter()
-                    .map(|s| s.generate_schema_type(casing_format))
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    let mut schema = StructType {
-                        name: Some(#config_name.into()),
-                        fields: vec![
-                            #(#schema_types),*
-                        ],
-                        ..Default::default()
-                    };
-
-                    #description
-
-                    SchemaType::Struct(schema)
-                }
-            }
-            ConfigType::Enum { variants } => {
-                let variants_types = variants
-                    .iter()
-                    .map(|s| s.generate_schema_type(casing_format, &tagged_format))
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    let mut schema = UnionType {
-                        name: Some(#config_name.into()),
-                        variants_types: vec![
-                            #(Box::new(#variants_types)),*
-                        ],
-                        ..Default::default()
-                    };
-
-                    #description
-
-                    SchemaType::Union(schema)
-                }
-            }
-        }
-    }
-
     pub fn generate_partial(
         &self,
         partial_name: &Ident,
         partial_attrs: &[TokenStream],
     ) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { settings, .. } => {
+            Self::NamedStruct {
+                fields: settings, ..
+            } => {
                 quote! {
                     #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
                     #(#partial_attrs)*
@@ -381,7 +319,7 @@ impl<'l> ConfigType<'l> {
                     }
                 }
             }
-            ConfigType::Enum { variants } => {
+            Self::Enum { variants } => {
                 let default_variant = variants
                     .iter()
                     .find(|v| v.is_default())
@@ -418,14 +356,14 @@ impl<'l> ConfigType<'l> {
         _partial_name: &Ident,
     ) -> TokenStream {
         match self {
-            ConfigType::NamedStruct { .. } => {
+            Self::NamedStruct { .. } => {
                 quote! {
                     let mut schema = #config_name::generate_schema();
                     schematic::internal::partialize_schema(&mut schema, true);
                     schema
                 }
             }
-            ConfigType::Enum { .. } => {
+            Self::Enum { .. } => {
                 quote! {
                     let mut schema = #config_name::generate_schema();
                     schematic::internal::partialize_schema(&mut schema, true);
