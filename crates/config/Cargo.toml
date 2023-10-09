@@ -43,7 +43,8 @@ toml = { version = "0.8.2", optional = true }
 serde_yaml = { version = "0.9.25", optional = true }
 
 [features]
-default = ["json", "url"]
+default = ["config", "json", "url"]
+config = ["schematic_macros/config"]
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "json", "schema"]
 schema = ["schematic_macros/schema"]
@@ -65,6 +66,7 @@ valid_url = ["garde/url"]
 
 [dev-dependencies]
 schematic = { path = ".", features = [
+	"config",
 	"json_schema",
 	"json",
 	"schema",
