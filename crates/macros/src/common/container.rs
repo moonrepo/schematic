@@ -55,7 +55,7 @@ impl<'l> Container<'l> {
             Self::Enum { variants } => {
                 let variants_types = variants
                     .iter()
-                    .map(|s| s.generate_schema_type(casing_format, &tagged_format))
+                    .map(|v| v.generate_schema_type(casing_format, &tagged_format))
                     .collect::<Vec<_>>();
 
                 quote! {

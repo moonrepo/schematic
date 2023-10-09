@@ -26,9 +26,12 @@ pub fn config_enum(item: TokenStream) -> TokenStream {
     config_enum::macro_impl(item)
 }
 
-// // #[derive(Schematic)]
-// #[cfg(feature = "schema")]
-// #[proc_macro_derive(Schematic, attributes(schematic))]
-// pub fn schematic(item: TokenStream) -> TokenStream {
-//     schematic::macro_impl(item)
-// }
+// #[derive(Schematic)]
+#[cfg(feature = "schema")]
+#[proc_macro_derive(Schematic, attributes(schematic, field, variant))]
+pub fn schematic(item: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(item);
+    let output = schematic::SchematicMacro(Macro::from(&input));
+
+    quote! { #output }.into()
+}
