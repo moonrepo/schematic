@@ -1,4 +1,4 @@
-use crate::common::{FieldSerdeArgs, FieldValue};
+use crate::common::FieldValue;
 use crate::utils::{
     extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
 };
@@ -6,6 +6,15 @@ use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
+
+// #[serde()]
+#[derive(FromAttributes, Default)]
+#[darling(default, allow_unknown_fields, attributes(serde))]
+pub struct FieldSerdeArgs {
+    pub alias: Option<String>,
+    pub rename: Option<String>,
+    pub skip: bool,
+}
 
 // #[field()], #[setting()]
 #[derive(FromAttributes, Default)]

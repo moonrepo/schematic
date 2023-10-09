@@ -1,9 +1,24 @@
-use crate::common::{Container, ContainerSerdeArgs, Field, SerdeMeta, TaggedFormat, Variant};
+use crate::common::{Container, Field, SerdeMeta, TaggedFormat, Variant};
 use crate::utils::extract_common_attrs;
 use darling::FromDeriveInput;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
+
+// #[serde()]
+#[derive(FromDeriveInput, Default)]
+#[darling(default, allow_unknown_fields, attributes(serde))]
+pub struct ContainerSerdeArgs {
+    // struct
+    pub rename: Option<String>,
+    pub rename_all: Option<String>,
+
+    // enum
+    pub content: Option<String>,
+    pub expecting: Option<String>,
+    pub tag: Option<String>,
+    pub untagged: bool,
+}
 
 // #[config()], #[schematic()]
 #[derive(FromDeriveInput, Default)]
