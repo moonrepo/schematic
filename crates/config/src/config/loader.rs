@@ -74,12 +74,6 @@ impl<T: Config> ConfigLoader<T> {
         Ok(self)
     }
 
-    /// Set a cacher instance that'll read and write the cache for URL requests.
-    pub fn with_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
-        self.cacher = Box::new(cacher);
-        self
-    }
-
     /// Load, parse, merge, and validate all sources into a final configuration.
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
@@ -131,6 +125,12 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
+    }
+
+    /// Set a cacher instance that'll read and write the cache for URL requests.
+    pub fn set_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
+        self.cacher = Box::new(cacher);
+        self
     }
 
     /// Set the project root directory, for use within error messages.

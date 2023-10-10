@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_rust_decimal` feature, that implements schematic types for the `rust_decimal` crate.
+- Added a simple caching layer for caching URL requests.
+  - Added `Cacher` trait.
+  - Added `Loader::set_cacher()` method.
+
 ## 0.12.0
 
 #### 💥 Breaking
