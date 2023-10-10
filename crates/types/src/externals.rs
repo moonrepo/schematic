@@ -70,6 +70,13 @@ mod relative_path_feature {
     impl_string_format!(relative_path::RelativePathBuf, "path");
 }
 
+#[cfg(feature = "rust_decimal")]
+mod rust_decimal_feature {
+    use super::*;
+
+    impl_string_format!(rust_decimal::Decimal, "decimal");
+}
+
 #[cfg(feature = "semver")]
 mod semver_feature {
     use super::*;

@@ -10,6 +10,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "boolean",
     "date",
     "datetime",
+    "decimal",
     "enums",
     "float32",
     "float64",
@@ -40,6 +41,10 @@ expression: "fs::read_to_string(file).unwrap()"
     "datetime": {
       "type": "string",
       "format": "date-time"
+    },
+    "decimal": {
+      "type": "string",
+      "format": "decimal"
     },
     "enums": {
       "allOf": [

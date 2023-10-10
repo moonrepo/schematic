@@ -17,6 +17,7 @@ export interface GenConfig {
   boolean: boolean;
   date: string;
   datetime: string;
+  decimal: string;
   enums: 'foo' | 'bar' | 'baz';
   float32: number;
   float64: number;

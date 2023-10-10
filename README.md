@@ -691,6 +691,7 @@ The following Cargo features are available:
 - `type_chrono` - Implements schematic for the `chrono` crate.
 - `type_regex` - Implements schematic for the `regex` crate.
 - `type_relative_path` - Implements schematic for the `relative-path` crate.
+- `type_rust_decimal` - Implements schematic for the `rust_decimal` crate.
 - `type_semver` - Implements schematic for the `semver` crate.
 - `type_url` - Implements schematic for the `url` crate.
 - `type_version_spec` - Implements schematic for the `version_spec` crate.
