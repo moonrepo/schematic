@@ -14,5 +14,6 @@ schematic = { path = "../config", features = [
 chrono = { workspace = true, features = ["serde"] }
 miette = { workspace = true, features = ["fancy"] }
 regex = { workspace = true }
+rust_decimal = { workspace = true }
 serde = { workspace = true }
 serde_json = "1.0.107"

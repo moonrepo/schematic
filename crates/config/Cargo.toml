@@ -58,6 +58,7 @@ yaml = ["dep:serde_yaml"]
 type_chrono = ["schematic_types/chrono"]
 type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative_path"]
+type_rust_decimal = ["schematic_types/rust_decimal"]
 type_semver = ["schematic_types/semver"]
 type_url = ["schematic_types/url"]
 type_version_spec = ["schematic_types/version_spec"]
@@ -77,6 +78,7 @@ schematic = { path = ".", features = [
 	"type_chrono",
 	"type_regex",
 	"type_relative_path",
+	"type_rust_decimal",
 	"type_semver",
 	"type_url",
 	"type_version_spec",
@@ -93,6 +95,7 @@ starbase_sandbox = "0.1.10"
 chrono = { workspace = true }
 regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
+rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
 version_spec = { workspace = true }
