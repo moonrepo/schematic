@@ -98,7 +98,7 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, location: &str, cacher: &BoxedCacher) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, location: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {

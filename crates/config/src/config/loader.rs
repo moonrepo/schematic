@@ -1,4 +1,4 @@
-use crate::config::cacher::{BoxedCacher, Cacher, NoCache};
+use crate::config::cacher::{BoxedCacher, Cacher, MemoryCache};
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
 use crate::config::layer::Layer;
@@ -7,6 +7,7 @@ use crate::config::{Config, ExtendsFrom, PartialConfig};
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use tracing::trace;
 
 /// The result of loading a configuration. Includes the final configuration,
@@ -22,17 +23,18 @@ pub struct ConfigLoadResult<T: Config> {
 
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
-    cacher: BoxedCacher,
+    cacher: Mutex<BoxedCacher>,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
 
 impl<T: Config> ConfigLoader<T> {
     /// Create a new config loader.
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         ConfigLoader {
             _config: PhantomData,
-            cacher: Box::new(NoCache),
+            cacher: Mutex::new(Box::<MemoryCache>::default()),
             sources: vec![],
             root: None,
         }
@@ -129,7 +131,7 @@ impl<T: Config> ConfigLoader<T> {
 
     /// Set a cacher instance that'll read and write the cache for URL requests.
     pub fn set_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
-        self.cacher = Box::new(cacher);
+        self.cacher = Mutex::new(Box::new(cacher));
         self
     }
 
@@ -239,7 +241,11 @@ impl<T: Config> ConfigLoader<T> {
             let location = self.get_location(source);
 
             // Parse the source into a parial
-            let partial: T::Partial = source.parse(location, &self.cacher)?;
+            let partial: T::Partial = {
+                let mut cacher = self.cacher.lock().unwrap();
+
+                source.parse(location, &mut cacher)?
+            };
 
             // Validate before continuing so we ensure the values are correct
             partial
