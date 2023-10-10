@@ -39,6 +39,7 @@ struct GenConfig {
     // Types
     date: chrono::NaiveDate,
     datetime: chrono::NaiveDateTime,
+    decimal: rust_decimal::Decimal,
     time: chrono::NaiveTime,
     path: PathBuf,
     rel_path: relative_path::RelativePathBuf,

@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use miette::Result;
+use rust_decimal::Decimal;
 use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
 
@@ -34,6 +35,7 @@ struct TestConfig {
     #[setting(nested)]
     nested: NestedConfig,
     datetime: NaiveDateTime,
+    decimal: Decimal,
     // regex: Regex,
 }
 
