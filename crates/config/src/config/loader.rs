@@ -1,4 +1,4 @@
-use crate::config::cacher::{BoxedCacher, Cacher};
+use crate::config::cacher::{BoxedCacher, Cacher, NoCache};
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
 use crate::config::layer::Layer;
@@ -20,10 +20,9 @@ pub struct ConfigLoadResult<T: Config> {
     pub layers: Vec<Layer<T>>,
 }
 
-#[derive(Default)]
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
-    cacher: Option<BoxedCacher>,
+    cacher: BoxedCacher,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
@@ -33,7 +32,7 @@ impl<T: Config> ConfigLoader<T> {
     pub fn new() -> Self {
         ConfigLoader {
             _config: PhantomData,
-            cacher: None,
+            cacher: Box::new(NoCache),
             sources: vec![],
             root: None,
         }
@@ -77,7 +76,7 @@ impl<T: Config> ConfigLoader<T> {
 
     /// Set a cacher instance that'll read and write the cache for URL requests.
     pub fn with_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
-        self.cacher = Some(Box::new(cacher));
+        self.cacher = Box::new(cacher);
         self
     }
 
@@ -240,7 +239,7 @@ impl<T: Config> ConfigLoader<T> {
             let location = self.get_location(source);
 
             // Parse the source into a parial
-            let partial: T::Partial = source.parse(location, self.cacher.as_ref())?;
+            let partial: T::Partial = source.parse(location, &self.cacher)?;
 
             // Validate before continuing so we ensure the values are correct
             partial

@@ -98,11 +98,7 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(
-        &self,
-        location: &str,
-        cacher_op: Option<&BoxedCacher>,
-    ) -> Result<D, ConfigError>
+    pub fn parse<D>(&self, location: &str, cacher: &BoxedCacher) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
@@ -142,27 +138,25 @@ impl Source {
 
                 #[cfg(feature = "url")]
                 {
-                    if let Some(cacher) = cacher_op.as_ref() {
-                        if let Some(cache) = cacher.read(url, format)? {
-                            return format.parse(cache, location).map_err(handle_error);
-                        }
-                    }
-
                     let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
                         url: url.to_owned(),
                         error,
                     };
 
-                    let content = reqwest::blocking::get(url)
-                        .map_err(handle_reqwest_error)?
-                        .text()
-                        .map_err(handle_reqwest_error)?;
+                    let content = if let Some(cache) = cacher.read(url, format)? {
+                        cache
+                    } else {
+                        let body = reqwest::blocking::get(url)
+                            .map_err(handle_reqwest_error)?
+                            .text()
+                            .map_err(handle_reqwest_error)?;
 
-                    if let Some(cacher) = cacher_op.as_ref() {
-                        cacher.write(&content)?;
-                    }
+                        cacher.write(url, format, &body)?;
 
-                    return format.parse(content, location).map_err(handle_error);
+                        body
+                    };
+
+                    format.parse(content, location).map_err(handle_error)
                 }
 
                 #[cfg(not(feature = "url"))]
