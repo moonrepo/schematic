@@ -10,6 +10,7 @@ schematic = { path = "../config", features = [
 	"schema",
 	"type_chrono",
 	"type_regex",
+	"type_rust_decimal",
 ] }
 chrono = { workspace = true, features = ["serde"] }
 miette = { workspace = true, features = ["fancy"] }
