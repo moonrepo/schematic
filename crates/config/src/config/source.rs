@@ -143,7 +143,7 @@ impl Source {
                         error,
                     };
 
-                    let content = if let Some(cache) = cacher.read(url, format)? {
+                    let content = if let Some(cache) = cacher.read(url)? {
                         cache
                     } else {
                         let body = reqwest::blocking::get(url)
@@ -151,7 +151,7 @@ impl Source {
                             .text()
                             .map_err(handle_reqwest_error)?;
 
-                        cacher.write(url, format, &body)?;
+                        cacher.write(url, &body)?;
 
                         body
                     };
