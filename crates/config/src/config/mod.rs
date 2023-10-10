@@ -1,3 +1,4 @@
+mod cacher;
 mod configs;
 mod errors;
 mod format;
@@ -7,6 +8,7 @@ mod path;
 mod source;
 mod validator;
 
+pub use cacher::*;
 pub use configs::*;
 pub use errors::*;
 pub use format::*;

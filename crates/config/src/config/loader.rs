@@ -1,3 +1,4 @@
+use crate::config::cacher::{BoxedCacher, Cacher};
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
 use crate::config::layer::Layer;
@@ -22,15 +23,17 @@ pub struct ConfigLoadResult<T: Config> {
 #[derive(Default)]
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
+    cacher: Option<BoxedCacher>,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
 
 impl<T: Config> ConfigLoader<T> {
-    /// Create a new config loader with the provided source format.
+    /// Create a new config loader.
     pub fn new() -> Self {
         ConfigLoader {
             _config: PhantomData,
+            cacher: None,
             sources: vec![],
             root: None,
         }
@@ -70,6 +73,12 @@ impl<T: Config> ConfigLoader<T> {
         self.sources.push(Source::url(url)?);
 
         Ok(self)
+    }
+
+    /// Set a cacher instance that'll read and write the cache for URL requests.
+    pub fn with_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
+        self.cacher = Some(Box::new(cacher));
+        self
     }
 
     /// Load, parse, merge, and validate all sources into a final configuration.
@@ -231,7 +240,7 @@ impl<T: Config> ConfigLoader<T> {
             let location = self.get_location(source);
 
             // Parse the source into a parial
-            let partial: T::Partial = source.parse(location)?;
+            let partial: T::Partial = source.parse(location, self.cacher.as_ref())?;
 
             // Validate before continuing so we ensure the values are correct
             partial

@@ -1,3 +1,4 @@
+use crate::config::cacher::BoxedCacher;
 use crate::config::errors::ConfigError;
 use crate::config::format::Format;
 use serde::Deserialize;
@@ -97,12 +98,23 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, location: &str) -> Result<D, ConfigError>
+    pub fn parse<D>(
+        &self,
+        location: &str,
+        cacher_op: Option<&BoxedCacher>,
+    ) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
-        let result = match self {
-            Source::Code { code, format } => format.parse(code.to_owned(), location),
+        let handle_error = |error: crate::ParserError| ConfigError::Parser {
+            config: location.to_owned(),
+            error,
+        };
+
+        match self {
+            Source::Code { code, format } => format
+                .parse(code.to_owned(), location)
+                .map_err(handle_error),
             Source::File {
                 path,
                 format,
@@ -121,7 +133,7 @@ impl Source {
                     "".into()
                 };
 
-                format.parse(content, location)
+                format.parse(content, location).map_err(handle_error)
             }
             Source::Url { url, format } => {
                 if !is_secure_url(url) {
@@ -130,18 +142,27 @@ impl Source {
 
                 #[cfg(feature = "url")]
                 {
-                    let handle_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    if let Some(cacher) = cacher_op.as_ref() {
+                        if let Some(cache) = cacher.read(url, format)? {
+                            return format.parse(cache, location).map_err(handle_error);
+                        }
+                    }
+
+                    let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
                         url: url.to_owned(),
                         error,
                     };
 
-                    format.parse(
-                        reqwest::blocking::get(url)
-                            .map_err(handle_error)?
-                            .text()
-                            .map_err(handle_error)?,
-                        location,
-                    )
+                    let content = reqwest::blocking::get(url)
+                        .map_err(handle_reqwest_error)?
+                        .text()
+                        .map_err(handle_reqwest_error)?;
+
+                    if let Some(cacher) = cacher_op.as_ref() {
+                        cacher.write(&content)?;
+                    }
+
+                    return format.parse(content, location).map_err(handle_error);
                 }
 
                 #[cfg(not(feature = "url"))]
@@ -149,12 +170,7 @@ impl Source {
                     panic!("Parsing a URL requires the `url` feature!");
                 }
             }
-        };
-
-        result.map_err(|error| ConfigError::Parser {
-            config: location.to_owned(),
-            error,
-        })
+        }
     }
 
     pub fn as_str(&self) -> &str {
