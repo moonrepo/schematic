@@ -35,7 +35,13 @@ impl<'l> Container<'l> {
             Self::NamedStruct { fields, .. } => {
                 let schema_types = fields
                     .iter()
-                    .map(|s| s.generate_schema_type(casing_format))
+                    .filter_map(|f| {
+                        if f.is_excluded() {
+                            None
+                        } else {
+                            Some(f.generate_schema_type(casing_format))
+                        }
+                    })
                     .collect::<Vec<_>>();
 
                 quote! {
@@ -55,7 +61,13 @@ impl<'l> Container<'l> {
             Self::Enum { variants } => {
                 let variants_types = variants
                     .iter()
-                    .map(|v| v.generate_schema_type(casing_format, &tagged_format))
+                    .filter_map(|v| {
+                        if v.is_excluded() {
+                            None
+                        } else {
+                            Some(v.generate_schema_type(casing_format, &tagged_format))
+                        }
+                    })
                     .collect::<Vec<_>>();
 
                 quote! {

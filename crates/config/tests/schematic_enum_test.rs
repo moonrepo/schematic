@@ -9,6 +9,12 @@ pub enum SomeEnum {
     A,
     B,
     C,
+    #[schema(exclude)]
+    D,
+}
+
+pub struct NonSchematic {
+    string: String,
 }
 
 #[derive(Schematic)]
@@ -21,4 +27,7 @@ pub struct ValueTypes {
     map: HashMap<String, u64>,
     enums: SomeEnum,
     s3_value: String,
+
+    #[schema(exclude)]
+    other: NonSchematic,
 }

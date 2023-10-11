@@ -12,10 +12,11 @@ pub enum TaggedFormat {
     Adjacent(String, String),
 }
 
-// #[setting()], #[variant()]
+// #[setting()], #[schema()]
 #[derive(FromAttributes, Default)]
-#[darling(default, attributes(setting, variant))]
+#[darling(default, attributes(setting, schema))]
 pub struct VariantArgs {
+    pub exclude: bool,
     pub null: bool,
 
     // config
@@ -50,6 +51,10 @@ impl<'l> Variant<'l> {
 
     pub fn is_default(&self) -> bool {
         self.args.default
+    }
+
+    pub fn is_excluded(&self) -> bool {
+        self.args.exclude
     }
 
     pub fn is_nested(&self) -> bool {

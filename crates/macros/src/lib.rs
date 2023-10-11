@@ -32,7 +32,7 @@ pub fn config_enum(item: TokenStream) -> TokenStream {
 
 // #[derive(Schematic)]
 #[cfg(feature = "schema")]
-#[proc_macro_derive(Schematic, attributes(schematic, field, variant))]
+#[proc_macro_derive(Schematic, attributes(schematic, schema))]
 pub fn schematic(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
     let output = schematic::SchematicMacro(Macro::from(&input));

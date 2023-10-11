@@ -16,10 +16,12 @@ pub struct FieldSerdeArgs {
     pub skip: bool,
 }
 
-// #[field()], #[setting()]
+// #[schema()], #[setting()]
 #[derive(FromAttributes, Default)]
-#[darling(default, attributes(field, setting))]
+#[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {
+    pub exclude: bool,
+
     // config
     #[darling(with = "preserve_str_literal", map = "Some")]
     pub default: Option<Expr>,
@@ -73,6 +75,10 @@ impl<'l> Field<'l> {
         }
 
         field
+    }
+
+    pub fn is_excluded(&self) -> bool {
+        self.args.exclude
     }
 
     pub fn is_extendable(&self) -> bool {
