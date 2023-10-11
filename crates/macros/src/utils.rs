@@ -3,8 +3,12 @@ use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, P
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
     let case = match format {
-        "lowercase" => Case::Lower,
-        "UPPERCASE" => Case::Upper,
+        "lowercase" => {
+            return value.to_lowercase();
+        }
+        "UPPERCASE" => {
+            return value.to_uppercase();
+        }
         "PascalCase" => Case::Pascal,
         "camelCase" => Case::Camel,
         "snake_case" => Case::Snake,

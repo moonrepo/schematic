@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.5
+
+#### 🐞 Fixes
+
+- Fixed "lowercase" and "UPPERCASE" formats incorrectly applying casing.
+
 ## 0.12.4
 
 #### 🐞 Fixes
