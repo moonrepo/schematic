@@ -157,43 +157,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "AllUnit": {
       "title": "AllUnit",
-      "anyOf": [
-        {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "bar"
-          ],
-          "properties": {
-            "bar": {
-              "const": "bar"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "baz"
-          ],
-          "properties": {
-            "baz": {
-              "const": "baz"
-            }
-          },
-          "additionalProperties": false
-        }
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
       ]
     },
     "AllUnnamed": {
@@ -399,47 +367,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
               ],
               "maxItems": 2,
               "minItems": 2
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
-    "PartialAllUnit": {
-      "title": "PartialAllUnit",
-      "anyOf": [
-        {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "bar"
-          ],
-          "properties": {
-            "bar": {
-              "const": "bar"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "baz"
-          ],
-          "properties": {
-            "baz": {
-              "const": "baz"
             }
           },
           "additionalProperties": false
@@ -713,48 +640,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "PartialWithComments": {
-      "title": "PartialWithComments",
-      "description": "Container",
-      "anyOf": [
-        {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "bar"
-          ],
-          "properties": {
-            "bar": {
-              "const": "bar"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "baz"
-          ],
-          "properties": {
-            "baz": {
-              "const": "baz"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
     "PartialWithSerde": {
       "title": "PartialWithSerde",
       "anyOf": [
@@ -816,43 +701,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "WithComments": {
       "title": "WithComments",
       "description": "Container",
-      "anyOf": [
-        {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "bar"
-          ],
-          "properties": {
-            "bar": {
-              "const": "bar"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "baz"
-          ],
-          "properties": {
-            "baz": {
-              "const": "baz"
-            }
-          },
-          "additionalProperties": false
-        }
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
       ]
     },
     "WithSerde": {

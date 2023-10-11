@@ -177,6 +177,7 @@ expression: "fs::read_to_string(file).unwrap()"
       "additionalProperties": false
     },
     "BasicEnum": {
+      "title": "BasicEnum",
       "type": "string",
       "enum": [
         "foo",
