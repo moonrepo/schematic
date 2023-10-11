@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated enums with all unit variants to use the `Enum` schema type, instead of the `Union` schema
+  type. Enums that mix and match unit with other variants will to continue to use `Union`, and will
+  respect serde tagging.
+
 #### ⚙️ Internal
 
 - Reworked dependencies and features so that some dependencies only enable when a feature is

@@ -183,6 +183,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     }
 
                     SchemaType::Enum(EnumType {
+                        description: None,
                         name: Some(#meta_name.into()),
                         values,
                         variants: Some(variants),

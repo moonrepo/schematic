@@ -137,7 +137,14 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             };
         }
 
+        let metadata = Metadata {
+            title: enu.name.clone(),
+            description: enu.description.clone().map(clean_comment),
+            ..Default::default()
+        };
+
         Ok(Schema::Object(SchemaObject {
+            metadata: Some(Box::new(metadata)),
             instance_type: Some(SingleOrVec::Single(Box::new(instance_type))),
             enum_values: Some(enum_values),
             ..Default::default()

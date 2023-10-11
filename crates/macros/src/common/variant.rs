@@ -10,6 +10,8 @@ pub enum TaggedFormat {
     External,
     Internal(String),
     Adjacent(String, String),
+    // Special case for unit only enums
+    Unit,
 }
 
 // #[setting()], #[schema()]
@@ -155,6 +157,17 @@ impl<'l> Variant<'l> {
         };
 
         let outer = match tagged_format {
+            TaggedFormat::Unit => {
+                // This returns `SchemaField` while other branches
+                // return `SchemaType`. Be aware of this downstream!
+                quote! {
+                    SchemaField {
+                        name: Some(#name.into()),
+                        type_of: #inner,
+                        ..Default::default()
+                    }
+                }
+            }
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
                 quote! {

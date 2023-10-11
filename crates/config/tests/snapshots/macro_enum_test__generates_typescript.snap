@@ -6,13 +6,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
-export type AllUnit = {
-	foo: 'foo';
-} | {
-	bar: 'bar';
-} | {
-	baz: 'baz';
-};
+export type AllUnit = 'foo' | 'bar' | 'baz';
 
 export type AllUnnamed = {
 	foo: string;
@@ -43,13 +37,7 @@ export type NestedConfigs = {
 
 export type WithSerde = string | boolean | number;
 
-export type WithComments = {
-	foo: 'foo';
-} | {
-	bar: 'bar';
-} | {
-	baz: 'baz';
-};
+export type WithComments = 'foo' | 'bar' | 'baz';
 
 export type Untagged = null | boolean | [number, string] | SomeConfig;
 
@@ -77,14 +65,6 @@ export type AdjacentTagged = {
 } | {
 	type: 'qux';
 	content: SomeConfig;
-};
-
-export type PartialAllUnit = {
-	foo: 'foo';
-} | {
-	bar: 'bar';
-} | {
-	baz: 'baz';
 };
 
 export type PartialAllUnnamed = {
@@ -115,14 +95,6 @@ export type PartialNestedConfigs = {
 };
 
 export type PartialWithSerde = string | boolean | number;
-
-export type PartialWithComments = {
-	foo: 'foo';
-} | {
-	bar: 'bar';
-} | {
-	baz: 'baz';
-};
 
 export type PartialUntagged = null | boolean | [number, string] | PartialSomeConfig;
 
