@@ -1,6 +1,7 @@
 use crate::common::{Field, TaggedFormat, Variant};
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
+use syn::Fields;
 
 pub enum Container<'l> {
     NamedStruct { fields: Vec<Field<'l>> },
@@ -59,29 +60,66 @@ impl<'l> Container<'l> {
                 }
             }
             Self::Enum { variants } => {
+                let is_all_unit_enum = variants
+                    .iter()
+                    .all(|v| matches!(v.value.fields, Fields::Unit));
+
                 let variants_types = variants
                     .iter()
                     .filter_map(|v| {
                         if v.is_excluded() {
                             None
                         } else {
-                            Some(v.generate_schema_type(casing_format, &tagged_format))
+                            Some(v.generate_schema_type(
+                                casing_format,
+                                if is_all_unit_enum {
+                                    &TaggedFormat::Unit
+                                } else {
+                                    &tagged_format
+                                },
+                            ))
                         }
                     })
                     .collect::<Vec<_>>();
 
-                quote! {
-                    let mut schema = UnionType {
-                        name: Some(#config_name.into()),
-                        variants_types: vec![
-                            #(Box::new(#variants_types)),*
-                        ],
-                        ..Default::default()
-                    };
+                if is_all_unit_enum {
+                    quote! {
+                        let mut values = vec![];
+                        let variants = vec![
+                            #(#variants_types),*
+                        ];
 
-                    #description
+                        for variant in &variants {
+                            if let SchemaType::Literal(lit) = &variant.type_of {
+                                values.push(lit.to_owned());
+                            }
+                        }
 
-                    SchemaType::Union(schema)
+                        let mut schema = EnumType {
+                            name: Some(#config_name.into()),
+                            values,
+                            variants: Some(variants),
+                            ..Default::default()
+                        };
+
+                        #description
+
+                        SchemaType::Enum(schema)
+                    }
+                } else {
+                    quote! {
+                        let mut schema = UnionType {
+                            name: Some(#config_name.into()),
+                            variants_types: vec![
+                                #(Box::new(#variants_types)),*
+                            ],
+                            ..Default::default()
+                        };
+
+                        #description
+
+                        SchemaType::Union(schema)
+                    }
                 }
             }
         }
