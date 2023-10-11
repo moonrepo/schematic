@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Reworked dependencies and features so that some dependencies only enable when a feature is
+  enabled.
+
 ## 0.12.2
 
 #### 🚀 Updates
