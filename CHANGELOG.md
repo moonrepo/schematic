@@ -4,8 +4,10 @@
 
 #### 🚀 Updates
 
-- Added a `#[schema(exclude)]` attribute for excluding fields from the generated schema. Only
-  available for `Schematic`.
+- Added an `exclude` attribute for `#[setting]` and `#[schema]` that excludes the field from the
+  generated schema.
+  - For `Schematic`, excludes from the schema.
+  - For `Config`, excludes from the schema, but is still required for the partial config.
 
 ## 0.12.1
 

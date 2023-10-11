@@ -37,6 +37,8 @@ pub struct ValueTypes {
     map: HashMap<String, u64>,
     enums: SomeEnum,
     s3_value: String,
+    #[setting(nested, exclude)]
+    other: OptionalValues,
 }
 
 #[derive(Config)]
