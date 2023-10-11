@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a missing module error based on feature changes.
+
 ## 0.12.3
 
 #### 🚀 Updates
