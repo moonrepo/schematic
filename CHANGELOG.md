@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `#[schema(exclude)]` attribute for excluding fields from the generated schema. Only
+  available for `Schematic`.
+
 ## 0.12.1
 
 #### 🚀 Updates
