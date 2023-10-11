@@ -2623,7 +2623,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.12.3"
+version = "0.12.4"
 dependencies = [
  "chrono",
  "garde",
