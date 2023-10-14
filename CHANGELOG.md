@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `rename` on containers not being respected on generated output.
+
 ## 0.12.5
 
 #### 🐞 Fixes

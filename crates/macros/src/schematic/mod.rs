@@ -9,8 +9,9 @@ impl<'l> ToTokens for SchematicMacro<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let cfg = &self.0;
         let name = cfg.name;
+
         let schema = cfg.type_of.generate_schema(
-            name,
+            cfg.get_name(),
             extract_comment(&cfg.attrs),
             cfg.get_casing_format(),
             cfg.get_tagged_format(),

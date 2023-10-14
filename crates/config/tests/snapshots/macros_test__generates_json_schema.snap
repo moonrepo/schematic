@@ -740,8 +740,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       },
       "additionalProperties": false
     },
-    "SerdeNative": {
-      "title": "SerdeNative",
+    "SerdeNativeRenamed": {
+      "title": "SerdeNativeRenamed",
       "type": "object",
       "required": [
         "renamed"

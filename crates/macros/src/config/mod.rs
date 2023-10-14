@@ -119,7 +119,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
             let tagged_format = cfg.get_tagged_format();
 
             let schema = cfg.type_of.generate_schema(
-                name,
+                cfg.get_name(),
                 extract_comment(&cfg.attrs),
                 casing_format,
                 tagged_format,

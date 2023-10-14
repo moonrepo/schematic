@@ -1,5 +1,5 @@
 use crate::common::{Field, TaggedFormat, Variant};
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Fields;
 
@@ -18,12 +18,11 @@ impl<'l> Container<'l> {
 
     pub fn generate_schema(
         &self,
-        config_name: &Ident,
+        config_name: String,
         description: Option<String>,
         casing_format: &str,
         tagged_format: TaggedFormat,
     ) -> TokenStream {
-        let config_name = config_name.to_string();
         let description = if let Some(comment) = description {
             quote! {
                 schema.description = Some(#comment.into());

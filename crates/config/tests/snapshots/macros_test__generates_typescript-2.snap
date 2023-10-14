@@ -82,7 +82,7 @@ export type Serde = {
 	renamed: string,
 };
 
-export type SerdeNative = {
+export type SerdeNativeRenamed = {
 	renamed: string,
 };
 

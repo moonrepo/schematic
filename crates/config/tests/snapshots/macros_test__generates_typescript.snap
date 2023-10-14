@@ -60,7 +60,7 @@ export interface Serde {
 	renamed: string;
 }
 
-export interface SerdeNative {
+export interface SerdeNativeRenamed {
 	renamed: string;
 }
 

@@ -96,6 +96,18 @@ impl<'l> Macro<'l> {
         matches!(self.type_of, Container::Enum { .. })
     }
 
+    pub fn get_casing_format(&self) -> &str {
+        self.args
+            .rename_all
+            .as_deref()
+            .or(self.serde_args.rename_all.as_deref())
+            .unwrap_or(if self.is_enum() {
+                "kebab-case"
+            } else {
+                "camelCase"
+            })
+    }
+
     pub fn get_meta_struct(&self) -> TokenStream {
         let name = if let Some(rename) = &self.args.rename {
             rename.to_string()
@@ -110,16 +122,14 @@ impl<'l> Macro<'l> {
         }
     }
 
-    pub fn get_casing_format(&self) -> &str {
-        self.args
-            .rename_all
-            .as_deref()
-            .or(self.serde_args.rename_all.as_deref())
-            .unwrap_or(if self.is_enum() {
-                "kebab-case"
-            } else {
-                "camelCase"
-            })
+    pub fn get_name(&self) -> String {
+        if let Some(local) = &self.args.rename {
+            local.to_owned()
+        } else if let Some(serde) = &self.serde_args.rename {
+            serde.to_owned()
+        } else {
+            self.name.to_string()
+        }
     }
 
     pub fn get_tagged_format(&self) -> TaggedFormat {
