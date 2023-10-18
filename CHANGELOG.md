@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed comments not rendering for enums/structs when generating TypeScript declarations.
+
 ## 0.12.6
 
 #### 🐞 Fixes
