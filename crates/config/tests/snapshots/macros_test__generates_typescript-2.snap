@@ -124,6 +124,7 @@ export type Validations = {
 	optional: string | null,
 };
 
+/** Container comment. */
 export type Comments = {
 	/** Block */
 	block: boolean,

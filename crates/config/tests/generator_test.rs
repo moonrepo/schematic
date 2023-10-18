@@ -8,6 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 
 derive_enum!(
+    /** Docblock comment. */
     #[derive(ConfigEnum, Default)]
     pub enum BasicEnum {
         #[default]
@@ -17,6 +18,7 @@ derive_enum!(
     }
 );
 
+/// Some comment.
 #[derive(Clone, Config)]
 pub struct AnotherConfig {
     opt: Option<String>,

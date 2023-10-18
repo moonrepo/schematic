@@ -109,27 +109,31 @@ impl TypeScriptRenderer {
     fn export_enum_type(&mut self, name: &str, enu: &EnumType) -> RenderResult {
         let value = self.render_enum(enu)?;
 
-        if self.is_string_union_enum(enu) {
-            return self.export_type_alias(name, value);
-        }
-
-        let out = format!("enum {} {}", name, value);
-
-        Ok(if self.options.const_enum {
-            format!("export const {}", out)
+        let output = if self.is_string_union_enum(enu) {
+            self.export_type_alias(name, value)?
         } else {
-            format!("export {}", out)
-        })
+            let out = format!("enum {} {}", name, value);
+
+            if self.options.const_enum {
+                format!("export const {}", out)
+            } else {
+                format!("export {}", out)
+            }
+        };
+
+        Ok(self.wrap_in_comment(enu.description.as_ref(), None, output))
     }
 
     fn export_object_type(&mut self, name: &str, structure: &StructType) -> RenderResult {
         let value = self.render_struct(structure)?;
 
-        if matches!(self.options.object_format, ObjectFormat::Interface) {
-            return Ok(format!("export interface {} {}", name, value));
-        }
+        let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
+            format!("export interface {} {}", name, value)
+        } else {
+            self.export_type_alias(name, value)?
+        };
 
-        self.export_type_alias(name, value)
+        Ok(self.wrap_in_comment(structure.description.as_ref(), None, output))
     }
 
     fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {

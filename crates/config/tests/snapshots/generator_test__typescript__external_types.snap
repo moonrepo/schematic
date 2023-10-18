@@ -10,6 +10,7 @@ import type { AnotherType, BasicEnum } from './externals';
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
+/** Some comment. */
 export interface AnotherConfig {
 	enums: BasicEnum | null;
 	opt: string | null;

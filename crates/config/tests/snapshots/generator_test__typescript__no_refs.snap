@@ -8,6 +8,7 @@ expression: "generate(TypeScriptOptions {\n        disable_references: true,\n  
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
+/** Some comment. */
 export interface AnotherConfig {
   enums: 'foo' | 'bar' | 'baz' | null;
   opt: string | null;

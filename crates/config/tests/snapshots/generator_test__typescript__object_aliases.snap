@@ -8,6 +8,7 @@ expression: "generate(TypeScriptOptions {\n        object_format: ObjectFormat::
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
+/** Some comment. */
 export type AnotherConfig = {
 	enums: BasicEnum | null,
 	opt: string | null,
