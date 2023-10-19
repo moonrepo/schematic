@@ -1254,9 +1254,9 @@ dependencies = [
 
 [[package]]
 name = "garde"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ae9eba929c46323014c5ec1adf6d2fa94d68ff1947c489c165fcd7f216b34f2"
+checksum = "94320acdd9159591d0f8079eb347fb52c2ffbe206b5214f6f4d482f2866e4d91"
 dependencies = [
  "compact_str",
  "garde_derive",
@@ -1268,9 +1268,9 @@ dependencies = [
 
 [[package]]
 name = "garde_derive"
-version = "0.15.0"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da663fa0f4a2bb40b93ee1b2f77656276b999df3b88574ddafe51d72fc1dfdd9"
+checksum = "c3c617dc2454b80bcf7232a47efccdbd7aee2acb2a92a332b3ea7398dcc7f31d"
 dependencies = [
  "proc-macro2",
  "quote",

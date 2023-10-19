@@ -6,6 +6,11 @@
 
 - Fixed comments not rendering for enums/structs when generating TypeScript declarations.
 
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.16.
+- Updated dependencies.
+
 ## 0.12.6
 
 #### 🐞 Fixes
