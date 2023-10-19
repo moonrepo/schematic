@@ -6,6 +6,7 @@ expression: "generate(TypeScriptOptions {\n        exclude_references: HashSet::
 
 /* eslint-disable */
 
+/** Some comment. */
 export interface AnotherConfig {
 	enums: BasicEnum | null;
 	opt: string | null;

@@ -3,6 +3,7 @@
 use schematic::Schematic;
 use std::collections::HashMap;
 
+/// Some comment.
 #[derive(Default, Schematic)]
 pub enum SomeEnum {
     #[default]
@@ -17,6 +18,7 @@ pub struct NonSchematic {
     string: String,
 }
 
+/** A comment. */
 #[derive(Schematic)]
 #[schematic(rename_all = "snake_case")]
 pub struct ValueTypes {

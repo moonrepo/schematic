@@ -12,6 +12,7 @@ export enum BasicEnum {
 	Baz,
 }
 
+/** Some comment. */
 export interface AnotherConfig {
 	enums: BasicEnum | null;
 	opt: string | null;

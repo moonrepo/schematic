@@ -37,6 +37,7 @@ export type NestedConfigs = {
 
 export type WithSerde = string | boolean | number;
 
+/** Container */
 export type WithComments = 'foo' | 'bar' | 'baz';
 
 export type Untagged = null | boolean | [number, string] | SomeConfig;

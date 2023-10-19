@@ -8,6 +8,7 @@ expression: "generate(TypeScriptOptions::default())"
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
+/** Some comment. */
 export interface AnotherConfig {
 	enums: BasicEnum | null;
 	opt: string | null;
