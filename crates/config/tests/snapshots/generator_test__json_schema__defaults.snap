@@ -66,7 +66,14 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string"
     },
     "jsonValue": {
-      "type": "null"
+      "type": [
+        "boolean",
+        "object",
+        "array",
+        "number",
+        "string",
+        "integer"
+      ]
     },
     "locator": {
       "anyOf": [
@@ -121,7 +128,14 @@ expression: "fs::read_to_string(file).unwrap()"
     "tomlValue": {
       "anyOf": [
         {
-          "type": "null"
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
         },
         {
           "type": "null"
@@ -159,7 +173,14 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string"
     },
     "yamlValue": {
-      "type": "null"
+      "type": [
+        "boolean",
+        "object",
+        "array",
+        "number",
+        "string",
+        "integer"
+      ]
     }
   },
   "additionalProperties": false,

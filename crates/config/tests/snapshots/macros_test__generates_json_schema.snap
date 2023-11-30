@@ -696,7 +696,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "object",
               "additionalProperties": {
-                "type": "null"
+                "type": [
+                  "boolean",
+                  "object",
+                  "array",
+                  "number",
+                  "string",
+                  "integer"
+                ]
               },
               "propertyNames": {
                 "type": "string"
@@ -869,7 +876,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "rest": {
           "type": "object",
           "additionalProperties": {
-            "type": "null"
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
           },
           "propertyNames": {
             "type": "string"

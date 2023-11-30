@@ -355,7 +355,14 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
     fn render_unknown(&mut self) -> RenderResult<Schema> {
         Ok(Schema::Object(SchemaObject {
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Null))),
+            instance_type: Some(SingleOrVec::Vec(vec![
+                InstanceType::Boolean,
+                InstanceType::Object,
+                InstanceType::Array,
+                InstanceType::Number,
+                InstanceType::String,
+                InstanceType::Integer,
+            ])),
             ..Default::default()
         }))
     }
