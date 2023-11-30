@@ -53,6 +53,7 @@ struct GenConfig {
     id: warpgate::Id,
     locator: Option<warpgate::PluginLocator>,
     json_value: serde_json::Value,
+    yaml_value: serde_yaml::Value,
 }
 
 fn create_generator() -> SchemaGenerator {

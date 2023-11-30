@@ -115,6 +115,29 @@ mod serde_json_feature {
     }
 }
 
+#[cfg(feature = "serde_yaml")]
+mod serde_yaml_feature {
+    use super::*;
+
+    impl_unknown!(serde_yaml::Value);
+
+    // This isn't accurate since we can't access the `N` enum
+    impl Schematic for serde_yaml::Number {
+        fn generate_schema() -> SchemaType {
+            SchemaType::integer(IntegerKind::I64)
+        }
+    }
+
+    impl Schematic for serde_yaml::Mapping {
+        fn generate_schema() -> SchemaType {
+            SchemaType::object(
+                serde_yaml::Value::generate_schema(),
+                serde_yaml::Value::generate_schema(),
+            )
+        }
+    }
+}
+
 #[cfg(feature = "url")]
 mod url_feature {
     use super::*;

@@ -38,5 +38,6 @@ export type GenConfig = {
 	vector: string[],
 	version: string | null,
 	versionReq: string,
+	yamlValue: unknown,
 };
 

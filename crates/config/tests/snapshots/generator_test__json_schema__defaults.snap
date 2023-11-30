@@ -29,7 +29,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "url",
     "vector",
     "version",
-    "versionReq"
+    "versionReq",
+    "yamlValue"
   ],
   "properties": {
     "boolean": {
@@ -145,6 +146,9 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "versionReq": {
       "type": "string"
+    },
+    "yamlValue": {
+      "type": "null"
     }
   },
   "additionalProperties": false,

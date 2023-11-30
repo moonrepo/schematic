@@ -41,5 +41,6 @@ export interface GenConfig {
   vector: string[];
   version: string | null;
   versionReq: string;
+  yamlValue: unknown;
 }
 

@@ -2637,6 +2637,7 @@ dependencies = [
  "schematic_types",
  "semver",
  "serde_json",
+ "serde_yaml 0.9.27",
  "url",
  "version_spec",
  "warpgate",
