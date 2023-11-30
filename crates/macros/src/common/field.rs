@@ -12,6 +12,7 @@ use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct FieldSerdeArgs {
     pub alias: Option<String>,
+    pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
 }
@@ -33,6 +34,7 @@ pub struct FieldArgs {
     pub validate: Option<Expr>,
 
     // serde
+    pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
 }
@@ -111,6 +113,10 @@ impl<'l> Field<'l> {
 
     pub fn get_serde_meta(&self) -> Option<TokenStream> {
         let mut meta = vec![];
+
+        if self.args.flatten || self.serde_args.flatten {
+            meta.push(quote! { flatten });
+        }
 
         if let Some(rename) = &self.args.rename {
             meta.push(quote! { rename = #rename });

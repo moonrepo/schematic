@@ -39,6 +39,8 @@ pub struct ValueTypes {
     s3_value: String,
     #[setting(nested, exclude)]
     other: OptionalValues,
+    #[setting(flatten)]
+    rest: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Config)]

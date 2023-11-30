@@ -2,6 +2,10 @@
 
 ## 0.12.9
 
+#### 🚀 Updates
+
+- Added serde `flatten` support.
+
 #### ⚙️ Internal
 
 - Updated dependencies.
