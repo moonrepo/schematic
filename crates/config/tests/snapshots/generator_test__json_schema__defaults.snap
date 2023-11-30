@@ -15,6 +15,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "float32",
     "float64",
     "id",
+    "jsonValue",
     "locator",
     "map",
     "nested",
@@ -61,6 +62,9 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "id": {
       "type": "string"
+    },
+    "jsonValue": {
+      "type": "null"
     },
     "locator": {
       "anyOf": [

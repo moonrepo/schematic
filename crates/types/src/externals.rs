@@ -1,6 +1,16 @@
 #![allow(deprecated, unused_imports, unused_macros)]
 
-use crate::{SchemaType, Schematic, StringType};
+use crate::{IntegerKind, SchemaType, Schematic, StringType};
+
+macro_rules! impl_unknown {
+    ($type:ty) => {
+        impl Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::Unknown
+            }
+        }
+    };
+}
 
 macro_rules! impl_string {
     ($type:ty) => {
@@ -83,6 +93,26 @@ mod semver_feature {
 
     impl_string!(semver::Version);
     impl_string!(semver::VersionReq);
+}
+
+#[cfg(feature = "serde_json")]
+mod serde_json_feature {
+    use super::*;
+
+    impl_unknown!(serde_json::Value);
+
+    // This isn't accurate since we can't access the `N` enum
+    impl Schematic for serde_json::Number {
+        fn generate_schema() -> SchemaType {
+            SchemaType::integer(IntegerKind::I64)
+        }
+    }
+
+    impl<K: Schematic, V: Schematic> Schematic for serde_json::Map<K, V> {
+        fn generate_schema() -> SchemaType {
+            SchemaType::object(K::generate_schema(), V::generate_schema())
+        }
+    }
 }
 
 #[cfg(feature = "url")]

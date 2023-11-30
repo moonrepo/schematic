@@ -52,6 +52,7 @@ struct GenConfig {
     spec_unresolved: version_spec::UnresolvedVersionSpec,
     id: warpgate::Id,
     locator: Option<warpgate::PluginLocator>,
+    json_value: serde_json::Value,
 }
 
 fn create_generator() -> SchemaGenerator {

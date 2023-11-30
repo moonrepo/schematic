@@ -2636,6 +2636,7 @@ dependencies = [
  "rust_decimal",
  "schematic_types",
  "semver",
+ "serde_json",
  "url",
  "version_spec",
  "warpgate",
