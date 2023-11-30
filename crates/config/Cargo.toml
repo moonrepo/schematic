@@ -40,7 +40,7 @@ serde_json = { workspace = true, optional = true }
 schemars = { version = "0.8.16", optional = true, default-features = false }
 
 # toml
-toml = { version = "0.8.8", optional = true }
+toml = { workspace = true, optional = true }
 
 # yaml
 serde_yaml = { workspace = true, optional = true }
@@ -73,6 +73,7 @@ type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal"]
 type_semver = ["schematic_types/semver"]
 type_serde_json = ["schematic_types/serde_json"]
+type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
 type_version_spec = ["schematic_types/version_spec"]
@@ -95,6 +96,7 @@ schematic = { path = ".", features = [
 	"type_rust_decimal",
 	"type_semver",
 	"type_serde_json",
+	"type_serde_toml",
 	"type_serde_yaml",
 	"type_url",
 	"type_version_spec",

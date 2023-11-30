@@ -115,6 +115,19 @@ mod serde_json_feature {
     }
 }
 
+#[cfg(feature = "serde_toml")]
+mod serde_toml_feature {
+    use super::*;
+
+    impl_unknown!(toml::Value);
+
+    impl<K: Schematic, V: Schematic> Schematic for toml::map::Map<K, V> {
+        fn generate_schema() -> SchemaType {
+            SchemaType::object(K::generate_schema(), V::generate_schema())
+        }
+    }
+}
+
 #[cfg(feature = "serde_yaml")]
 mod serde_yaml_feature {
     use super::*;

@@ -2638,6 +2638,7 @@ dependencies = [
  "semver",
  "serde_json",
  "serde_yaml 0.9.27",
+ "toml 0.8.8",
  "url",
  "version_spec",
  "warpgate",

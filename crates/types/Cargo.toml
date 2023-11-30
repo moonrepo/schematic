@@ -15,6 +15,7 @@ url = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
 version_spec = { workspace = true, optional = true }
 warpgate = { workspace = true, optional = true }
 
@@ -26,6 +27,7 @@ schematic_types = { path = ".", features = [
 	"rust_decimal",
 	"semver",
 	"serde_json",
+	"serde_toml",
 	"serde_yaml",
 	"url",
 	"version_spec",
@@ -40,6 +42,7 @@ relative_path = ["dep:relative-path"]
 rust_decimal = ["dep:rust_decimal"]
 semver = ["dep:semver"]
 serde_json = ["dep:serde_json"]
+serde_toml = ["dep:toml"]
 serde_yaml = ["dep:serde_yaml"]
 url = ["dep:url"]
 version_spec = ["dep:version_spec"]

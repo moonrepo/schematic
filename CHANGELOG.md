@@ -5,8 +5,8 @@
 #### 🚀 Updates
 
 - Added serde `flatten` support.
-- Added `type_serde_json` and `type_serde_yaml` features, that implements schematic types for serde
-  values.
+- Added `type_serde_json`, `type_serde_toml`, and `type_serde_yaml` features, that implements
+  schematic types for serde values.
 
 #### ⚙️ Internal
 

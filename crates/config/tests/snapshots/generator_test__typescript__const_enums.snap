@@ -38,6 +38,7 @@ export interface GenConfig {
 	specUnresolved: string;
 	string: string;
 	time: string;
+	tomlValue: unknown | null;
 	url: string | null;
 	vector: string[];
 	version: string | null;

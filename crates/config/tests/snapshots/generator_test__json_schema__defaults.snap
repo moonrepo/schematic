@@ -26,6 +26,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "specUnresolved",
     "string",
     "time",
+    "tomlValue",
     "url",
     "vector",
     "version",
@@ -116,6 +117,16 @@ expression: "fs::read_to_string(file).unwrap()"
     "time": {
       "type": "string",
       "format": "time"
+    },
+    "tomlValue": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "url": {
       "anyOf": [
