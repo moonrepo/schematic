@@ -27,6 +27,7 @@ export interface GenConfig {
 	float32: number;
 	float64: number;
 	id: string;
+	jsonValue: unknown;
 	locator: string | null;
 	map: Record<string, number>;
 	nested: AnotherConfig;
@@ -37,9 +38,11 @@ export interface GenConfig {
 	specUnresolved: string;
 	string: string;
 	time: string;
+	tomlValue: unknown | null;
 	url: string | null;
 	vector: string[];
 	version: string | null;
 	versionReq: string;
+	yamlValue: unknown;
 }
 

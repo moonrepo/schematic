@@ -21,6 +21,7 @@ export interface ValueTypes {
 	enums: SomeEnum;
 	map: Record<string, number>;
 	number: number;
+	rest: Record<string, unknown>;
 	s3_value: string;
 	string: string;
 	vector: string[];
@@ -152,6 +153,7 @@ export interface PartialValueTypes {
 	enums?: SomeEnum | null;
 	map?: Record<string, number> | null;
 	number?: number | null;
+	rest?: Record<string, unknown> | null;
 	s3_value?: string | null;
 	string?: string | null;
 	vector?: string[] | null;

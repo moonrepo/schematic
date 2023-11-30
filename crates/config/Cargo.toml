@@ -23,7 +23,7 @@ thiserror = "1.0.50"
 tracing = "0.1.40"
 
 # config
-garde = { version = "0.16.2", default-features = false, optional = true, features = [
+garde = { version = "0.16.3", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true, optional = true }
@@ -34,16 +34,16 @@ starbase_styles = { version = "0.1.16", optional = true }
 indexmap = { version = "2.1.0", optional = true }
 
 # json
-serde_json = { version = "1.0.108", optional = true }
+serde_json = { workspace = true, optional = true }
 
 # json schema
 schemars = { version = "0.8.16", optional = true, default-features = false }
 
 # toml
-toml = { version = "0.8.8", optional = true }
+toml = { workspace = true, optional = true }
 
 # yaml
-serde_yaml = { version = "0.9.27", optional = true }
+serde_yaml = { workspace = true, optional = true }
 
 # url
 reqwest = { version = "0.11.22", default-features = false, optional = true, features = [
@@ -72,6 +72,9 @@ type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal"]
 type_semver = ["schematic_types/semver"]
+type_serde_json = ["schematic_types/serde_json"]
+type_serde_toml = ["schematic_types/serde_toml"]
+type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
 type_version_spec = ["schematic_types/version_spec"]
 type_warpgate = ["schematic_types/warpgate"]
@@ -92,6 +95,9 @@ schematic = { path = ".", features = [
 	"type_relative_path",
 	"type_rust_decimal",
 	"type_semver",
+	"type_serde_json",
+	"type_serde_toml",
+	"type_serde_yaml",
 	"type_url",
 	"type_version_spec",
 	"type_warpgate",

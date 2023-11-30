@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.12.9
+
+#### 🚀 Updates
+
+- Added serde `flatten` support.
+- Added `type_serde_json`, `type_serde_toml`, and `type_serde_yaml` features, that implements
+  schematic types for serde values.
+
+#### 🐞 Fixes
+
+- Updated json schema unknown/any type to be a union of all types, instead of null.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.12.8
 
 #### ⚙️ Internal

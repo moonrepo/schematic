@@ -15,6 +15,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "float32",
     "float64",
     "id",
+    "jsonValue",
     "locator",
     "map",
     "nested",
@@ -25,10 +26,12 @@ expression: "fs::read_to_string(file).unwrap()"
     "specUnresolved",
     "string",
     "time",
+    "tomlValue",
     "url",
     "vector",
     "version",
-    "versionReq"
+    "versionReq",
+    "yamlValue"
   ],
   "properties": {
     "boolean": {
@@ -61,6 +64,16 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "id": {
       "type": "string"
+    },
+    "jsonValue": {
+      "type": [
+        "boolean",
+        "object",
+        "array",
+        "number",
+        "string",
+        "integer"
+      ]
     },
     "locator": {
       "anyOf": [
@@ -112,6 +125,23 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "time"
     },
+    "tomlValue": {
+      "anyOf": [
+        {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "url": {
       "anyOf": [
         {
@@ -141,6 +171,16 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "versionReq": {
       "type": "string"
+    },
+    "yamlValue": {
+      "type": [
+        "boolean",
+        "object",
+        "array",
+        "number",
+        "string",
+        "integer"
+      ]
     }
   },
   "additionalProperties": false,
