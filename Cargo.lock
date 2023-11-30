@@ -2585,7 +2585,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.12.8"
+version = "0.12.9"
 dependencies = [
  "chrono",
  "garde",
@@ -2617,7 +2617,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.12.6"
+version = "0.12.7"
 dependencies = [
  "convert_case",
  "darling",
@@ -2628,7 +2628,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.4.9"
+version = "0.4.10"
 dependencies = [
  "chrono",
  "regex",
@@ -3169,7 +3169,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test_app"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chrono",
  "miette",
