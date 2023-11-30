@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.9
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.12.8
 
 #### ⚙️ Internal

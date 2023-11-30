@@ -9,7 +9,7 @@ regex = "1.10.2"
 relative-path = "1.9.0"
 rust_decimal = "1.33.1"
 semver = "1.0.20"
-serde = { version = "1.0.192", features = ["derive"] }
-url = "2.4.1"
+serde = { version = "1.0.193", features = ["derive"] }
+url = "2.5.0"
 version_spec = "0.1.5"
 warpgate = "0.5.14"
