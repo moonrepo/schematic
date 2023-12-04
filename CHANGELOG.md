@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added serde `skip_serializing` and `skip_deserializing` support.
+
 ## 0.12.9
 
 #### 🚀 Updates

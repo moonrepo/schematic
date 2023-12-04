@@ -15,6 +15,8 @@ pub struct FieldSerdeArgs {
     pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
+    pub skip_deserializing: bool,
+    pub skip_serializing: bool,
 }
 
 // #[schema()], #[setting()]
@@ -37,6 +39,8 @@ pub struct FieldArgs {
     pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
+    pub skip_deserializing: bool,
+    pub skip_serializing: bool,
 }
 
 pub struct Field<'l> {
@@ -124,10 +128,23 @@ impl<'l> Field<'l> {
             meta.push(quote! { rename = #rename });
         }
 
+        let mut skipped = false;
+
         if self.args.skip || self.serde_args.skip {
             meta.push(quote! { skip });
-        } else {
-            meta.push(quote! { skip_serializing_if = "Option::is_none" });
+            skipped = true;
+        }
+
+        if !skipped {
+            if self.args.skip_serializing || self.serde_args.skip_serializing {
+                meta.push(quote! { skip_serializing });
+            } else {
+                meta.push(quote! { skip_serializing_if = "Option::is_none" });
+            }
+
+            if self.args.skip_deserializing || self.serde_args.skip_deserializing {
+                meta.push(quote! { skip_deserializing });
+            }
         }
 
         if meta.is_empty() {

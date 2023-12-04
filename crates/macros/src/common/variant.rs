@@ -30,6 +30,8 @@ pub struct VariantArgs {
     // serde
     pub rename: Option<String>,
     pub skip: bool,
+    pub skip_deserializing: bool,
+    pub skip_serializing: bool,
 }
 
 pub struct Variant<'l> {
@@ -88,8 +90,21 @@ impl<'l> Variant<'l> {
             meta.push(quote! { rename = #rename });
         }
 
+        let mut skipped = false;
+
         if self.args.skip || self.serde_args.skip {
             meta.push(quote! { skip });
+            skipped = true;
+        }
+
+        if !skipped {
+            if self.args.skip_serializing || self.serde_args.skip_serializing {
+                meta.push(quote! { skip_serializing });
+            }
+
+            if self.args.skip_deserializing || self.serde_args.skip_deserializing {
+                meta.push(quote! { skip_deserializing });
+            }
         }
 
         if meta.is_empty() {
