@@ -24,6 +24,7 @@ pub struct ConfigLoadResult<T: Config> {
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     cacher: Mutex<BoxedCacher>,
+    help: Option<String>,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
@@ -35,6 +36,7 @@ impl<T: Config> ConfigLoader<T> {
         ConfigLoader {
             _config: PhantomData,
             cacher: Mutex::new(Box::<MemoryCache>::default()),
+            help: None,
             sources: vec![],
             root: None,
         }
@@ -104,6 +106,7 @@ impl<T: Config> ConfigLoader<T> {
                     None => T::META.name.to_owned(),
                 },
                 error,
+                help: self.help.clone(),
             })?;
 
         Ok(ConfigLoadResult {
@@ -132,6 +135,12 @@ impl<T: Config> ConfigLoader<T> {
     /// Set a cacher instance that'll read and write the cache for URL requests.
     pub fn set_cacher(&mut self, cacher: impl Cacher + 'static) -> &mut Self {
         self.cacher = Mutex::new(Box::new(cacher));
+        self
+    }
+
+    /// Set a string of help text to include in validation errors.
+    pub fn set_help<H: AsRef<str>>(&mut self, help: H) -> &mut Self {
+        self.help = Some(help.as_ref().to_owned());
         self
     }
 
@@ -253,6 +262,7 @@ impl<T: Config> ConfigLoader<T> {
                 .map_err(|error| ConfigError::Validator {
                     config: location.to_owned(),
                     error,
+                    help: self.help.clone(),
                 })?;
 
             if let Some(extends_from) = partial.extends_from() {
