@@ -253,7 +253,7 @@ impl<T: Config> ConfigLoader<T> {
             let partial: T::Partial = {
                 let mut cacher = self.cacher.lock().unwrap();
 
-                source.parse(location, &mut cacher)?
+                source.parse(location, &mut cacher, self.help.as_deref())?
             };
 
             // Validate before continuing so we ensure the values are correct

@@ -84,6 +84,9 @@ pub enum ConfigError {
         #[diagnostic_source]
         #[source]
         error: ParserError,
+
+        #[help]
+        help: Option<String>,
     },
 
     // Validator

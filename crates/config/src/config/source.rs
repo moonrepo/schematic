@@ -98,13 +98,19 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    pub fn parse<D>(&self, location: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
+    pub fn parse<D>(
+        &self,
+        location: &str,
+        cacher: &mut BoxedCacher,
+        help: Option<&str>,
+    ) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
         let handle_error = |error: crate::config::ParserError| ConfigError::Parser {
             config: location.to_owned(),
             error,
+            help: help.map(|h| h.to_owned()),
         };
 
         match self {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated help text to also apply for parser errors.
+
 ## 0.12.11
 
 #### 🚀 Updates
