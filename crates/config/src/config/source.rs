@@ -102,7 +102,7 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        let handle_error = |error: crate::ParserError| ConfigError::Parser {
+        let handle_error = |error: crate::config::ParserError| ConfigError::Parser {
             config: location.to_owned(),
             error,
         };

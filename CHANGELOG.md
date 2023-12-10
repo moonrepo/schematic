@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `ConfigLoader.set_help` to customize help text for validation errors.
+
 ## 0.12.10
 
 #### 🚀 Updates

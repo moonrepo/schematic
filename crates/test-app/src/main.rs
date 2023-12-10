@@ -44,6 +44,7 @@ fn main() -> Result<()> {
         // .code(r#"{ "string": "abc", "other": 123 }"#, Format::Json)?
         // .code("{\n  \"string\": 123\n}", Format::Json)?
         .code("{\n  \"string\": \"\" \n}", Format::Json)?
+        .set_help("let's go!")
         .load()?;
 
     dbg!(&config.config.string);

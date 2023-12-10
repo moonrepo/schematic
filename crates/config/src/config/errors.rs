@@ -96,6 +96,9 @@ pub enum ConfigError {
         // #[diagnostic_source]
         #[source]
         error: ValidatorError,
+
+        #[help]
+        help: Option<String>,
     },
 }
 

@@ -155,6 +155,8 @@ impl Display for ValidatorError {
             }
         }
 
+        writeln!(f)?;
+
         Ok(())
     }
 }

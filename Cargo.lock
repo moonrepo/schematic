@@ -963,9 +963,9 @@ dependencies = [
 
 [[package]]
 name = "extism"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67e81d3e7d1592412579984e773bd553703a664bbfb1ddded742bf6dfae63847"
+checksum = "1b7809353b2a431222219d4699947200c49a043d978fb28b4e199ced449117ef"
 dependencies = [
  "anyhow",
  "extism-manifest",
@@ -987,9 +987,9 @@ dependencies = [
 
 [[package]]
 name = "extism-runtime"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "126b884cfa74fc386eedff1095bac8ef6c2ae5efdb656e508f12a41434d0bf0c"
+checksum = "6bf6aade8203c23185bcf12871168fc5959b9d62e7a59a4287fe2d5be69a68d5"
 dependencies = [
  "anyhow",
  "cbindgen",
@@ -1954,9 +1954,9 @@ checksum = "dd8b5dd2ae5ed71462c540258bedcb51965123ad7e7ccf4b9a8cafaa4a63576d"
 
 [[package]]
 name = "once_map"
-version = "0.4.11"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "becc4929f041378e06ad8160893582559aee8dd75ef6f284e4473ac3604d8692"
+checksum = "eba3de7c2ff90d756ee0713daaae3a3547fa2424b3b9cca46bce0b4dcd1d7ef2"
 dependencies = [
  "ahash 0.8.3",
  "hashbrown 0.14.2",
@@ -2965,9 +2965,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.3.7"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d948dcd63f1dd11f2b7a9ab15c53e7866faa11ccd31377dca1625c106d40fcee"
+checksum = "9af464d976956393070880234f8d9f3509f04555266174abfd9b11386cdce4bc"
 dependencies = [
  "dirs 5.0.1",
  "json_comments",
@@ -3561,9 +3561,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "version_spec"
-version = "0.1.5"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a874b9ff438ee535ce27c6099a76f23483b475e5942b85fd97d4a6806abaa3f3"
+checksum = "460b94056fcc70bbf79dd743b91f6709e395a20d4b37bb2a929b73bd59fb24b0"
 dependencies = [
  "human-sort",
  "regex",
@@ -3602,9 +3602,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.14"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2662e91ce31608be2b2f653bb7d7f4b35f4862721c9b4439110cd21a22684279"
+checksum = "422ee7bb02157d5b78c8aad4f96d4905e452da4b128fc4aec80d2597cee71d0c"
 dependencies = [
  "extism",
  "miette",
@@ -3625,9 +3625,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a4834d752d83450aab41986e1b9a08d069bbe09a83fe016532de19d0a87e24e"
+checksum = "5fe2fae4f5a428c7c697e057909240e376abdd45577beec6d4bd9798b451f20c"
 dependencies = [
  "serde",
 ]
