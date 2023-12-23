@@ -4,3 +4,8 @@ language = "en"
 multilingual = false
 src = "src"
 title = "Schematic"
+
+[output.html]
+curly-quotes = true
+git-repository-url = "https://github.com/milesj/schematic"
+git-repository-icon = "fa-github"
