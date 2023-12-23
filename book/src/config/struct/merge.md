@@ -13,6 +13,13 @@ struct AppConfig {
 	#[setting(merge = schematic::merge::append_vec)]
 	allowed_hosts: Vec<String>,
 }
+
+#[derive(Config)]
+enum Projects {
+	#[setting(merge = schematic::merge::append_vec)]
+	List(Vec<String>),
+	// ...
+}
 ```
 
 > We provide a handful of built-in merge functions in the

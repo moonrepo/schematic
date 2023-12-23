@@ -1,32 +1,32 @@
-# Structs
+# Structs & enums
 
-The bulk of schematic is powered through the `Config` trait, the associated derive macro, and is
-applied to structs. This macro helps to generate and automate the following:
-
-- Generates a [partial struct](./partial.md), with all field values wrapped in `Option`.
-- Provides [default value](./settings/default.md) and [environment variable](./settings/env.md)
-  handling.
-- Implements [merging](./settings/merge.md) and [validation](./settings/validate.md) logic.
-- And other minor features, like [metadata](./context.md#metadata).
-
-The struct that derives `Config` represents the _final state_, after all
-[partial layers](./partial.md) have been merged, and default and environment variable values have
-been applied. This means that all fields (settings) should _not_ be wrapped in `Option`, unless the
-setting is truly optional (think nullable in the config file).
+The `Config` trait can be derived for structs and enums.
 
 ```rust
 #[derive(Config)]
-pub struct ExampleConfig {
-	pub number: usize,
-	pub string: String,
-	pub boolean: bool,
-	pub array: Vec<String>,
-	pub optional: Option<String>,
+struct AppConfig {
+	base: String,
+	port: usize,
+	secure: bool,
+	allowed_hosts: Vec<String>,
+}
+
+#[derive(Config)]
+enum Host {
+	Local,
+	Remote(HostConfig),
 }
 ```
 
-> This pattern provides the optimal developer experience, as you can reference the settings as-is,
-> without having to unwrap them, or use `match` or `if-let` statements!
+## Enum caveats
+
+`Config` can only be derived for enums with tuple or unit variants, but not struct/named variants.
+Why not struct variants? Because with this pattern, the enum acts like a union type. This also
+allows for `Config` functionality, like partials, merging, and validation, to be applied to the
+contents of each variant.
+
+> If you'd like to support unit-only enums, you can use the [`ConfigEnum` trait](../enum/index.md)
+> instead.
 
 ## Attribute fields
 
@@ -35,11 +35,11 @@ The following fields are supported for the `#[config]` container attribute:
 - `allow_unknown_fields` - Removes the serde `deny_unknown_fields` from the
   [partial struct](./partial.md). Defaults to `false`.
 - `context` - Sets the struct to be used as the [context](./context.md). Defaults to `None`.
-- `env_prefix` - Sets the prefix to use for [environment variable](./settings/env.md) mapping.
-  Defaults to `None`.
+- `env_prefix` - Sets the prefix to use for
+  [environment variable](./struct/env.md#container-prefixes) mapping. Defaults to `None`.
 - `file` - Sets a relative file path to use within error messages. Defaults to `None`.
-- `serde` - A nested attribute that sets tagging fields for the [partial struct](./partial.md).
-  Defaults to `None`.
+- `serde` - A nested attribute that sets tagging fields for the [partial](./partial.md). Defaults to
+  `None`.
 
 ```rust
 #[derive(Config)]

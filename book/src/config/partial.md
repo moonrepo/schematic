@@ -1,11 +1,12 @@
 # Partials
 
-A powerful feature of schematic is what we call partial configurations. These are a mirror of the
-derived [`Config` struct](./index.md), with all settings wrapped in `Option`, the struct name
-prefixed with `Partial`, and have common serde and derive attributes automatically applied.
+A powerful feature of Schematic is what we call partial configurations. These are a mirror of the
+derived [`Config` struct](./struct/index.md) or [`Config` enum](./struct/index.md), with all
+settings wrapped in `Option`, the item name prefixed with `Partial`, and have common serde and
+derive attributes automatically applied.
 
-For example, the `ExampleConfig` from the previous chapter would generate the following partial
-struct:
+For example, the `ExampleConfig` from the [first chapter](../config/index.md) would generate the
+following partial struct:
 
 ```rust
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
@@ -41,8 +42,8 @@ source, instead of everything! A common complaint of serde's strictness.
 
 As stated above, partials also handle the following:
 
-- Defining [default values](./settings/default.md) for settings.
-- Inheriting [environment variable](./settings/env.md) values.
-- Merging partials with [strategy functions](./settings/merge.md).
-- Validating current values with [validate functions](./settings/validate.md).
-- Declaring [extendable sources](./settings/extend.md).
+- Defining [default values](./struct/default.md) for settings.
+- Inheriting [environment variable](./struct/env.md) values.
+- Merging partials with [strategy functions](./struct/merge.md).
+- Validating current values with [validate functions](./struct/validate.md).
+- Declaring [extendable sources](./struct/extend.md).

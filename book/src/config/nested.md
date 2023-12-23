@@ -1,6 +1,6 @@
-# Nested structs
+# Nesting
 
-[`Config` structs](./index.md) can easily be nested within other `Config` structs using the
+[`Config` structs](./index.md) can easily be nested within other `Config`s using the
 `#[setting(nested)]` attribute. Children will be deeply merged and validated alongside the parent.
 
 ```rust
@@ -17,12 +17,18 @@ pub struct ParentConfig {
 	#[setting(nested)]
 	pub optional_nested: Option<ChildConfig>,
 }
+
+#[derive(Config)]
+pub enum ParentEnum {
+	#[config(nested)]
+	Variant(ChildConfig),
+}
 ```
 
-The `#[setting(nested)]` attribute is required, as the macro will substitute the `Config` struct
-with its [partial struct](./partial.md) variant.
+The `#[setting(nested)]` attribute is required, as the macro will substitute `Config` with its
+[partial](./partial.md) implementation.
 
-> Nested structs can also be wrapped in collections, like `Vec` and `HashMap`. However, these are
+> Nested values can also be wrapped in collections, like `Vec` and `HashMap`. However, these are
 > tricky to support and may not work in all situations!
 
 ## Bare structs

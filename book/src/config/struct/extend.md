@@ -1,5 +1,7 @@
 # Extendable sources
 
+> Not supported for enums.
+
 Configs can extend other configs, generating an accurate layer chain, via the `#[setting(extend)]`
 attribute field. Extended configs can either be a file path (relative from the current config) or a
 secure URL.

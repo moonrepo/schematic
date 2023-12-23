@@ -1,5 +1,7 @@
 # Environment variables
 
+> Not supported for enums.
+
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.
 

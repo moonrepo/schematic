@@ -28,6 +28,17 @@ struct AppConfig {
 }
 ```
 
+For enums, the `default` field takes no value, and simply marks which variant to use as the default.
+
+```rust
+#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Remote(HostConfig),
+}
+```
+
 ## Handler function
 
 If you need more control or need to calculate a complex value, you can pass a reference to a

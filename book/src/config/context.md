@@ -1,8 +1,8 @@
 # Context
 
-Context is an important mechanism that allows for different [default values](./settings/default.md),
-[merge strategies](./settings/merge.md), and [validation rules](./settings/validate.md) to be used,
-for the _same_ configuration struct, depending on context!
+Context is an important mechanism that allows for different [default values](./struct/default.md),
+[merge strategies](./struct/merge.md), and [validation rules](./struct/validate.md) to be used, for
+the _same_ configuration struct, depending on context!
 
 To begin, a context is a struct with a default implementation.
 
@@ -39,13 +39,13 @@ let result = ConfigLoader::<ExampleConfig>::new()
 	.load_with_context(&context)?;
 ```
 
-> Refer to the [default values](./settings/default.md), [merge strategies](./settings/merge.md), and
-> [validation rules](./settings/validate.md) sections for more information on how to use context.
+> Refer to the [default values](./struct/default.md), [merge strategies](./struct/merge.md), and
+> [validation rules](./struct/validate.md) sections for more information on how to use context.
 
 ## Metadata
 
-[`Config` structs](./index.md) support basic metadata for use within error messages. Right now we
-support a name, derived from the struct name or the serde `rename` attribute field.
+[`Config`](./index.md) supports basic metadata for use within error messages. Right now we support a
+name, derived from the struct/enum name or the serde `rename` attribute field.
 
 Metadata can be accessed with the `META` constant.
 

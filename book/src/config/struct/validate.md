@@ -23,6 +23,17 @@ struct AppConfig {
 }
 ```
 
+Or on a per-variant basis when using an enum.
+
+```rust
+#[derive(Config)]
+enum Projects {
+	#[setting(validate = schematic::validate::min_length(1))]
+	List(Vec<String>),
+	// ...
+}
+```
+
 > We provide a handful of built-in validation functions in the
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
 > some functions are factories which can be called to produce a validator.
