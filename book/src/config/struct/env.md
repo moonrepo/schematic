@@ -33,7 +33,7 @@ struct AppConfig {
 
 ### Nested prefixes
 
-Since `env_prefix` only applies to direct fields and to support nested structs, you'll need to
+Since `env_prefix` only applies to direct fields and not for nested/children structs, you'll need to
 define `env_prefix` for each struct, and manually set the prefixes. Schematic _does not concatenate_
 the prefixes between parent and child.
 
@@ -89,4 +89,6 @@ pub fn custom_parse(var: String) -> Result<Some<ReturnValue>, ConfigError> {
 }
 ```
 
-If parsing fails, you must return a `ConfigError` with a failure message.
+If parsing fails, you must return a
+[`ConfigError`](https://docs.rs/schematic/latest/schematic/enum.ConfigError.html) with a failure
+message.

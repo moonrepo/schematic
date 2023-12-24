@@ -14,7 +14,9 @@ struct ExampleContext {
 }
 ```
 
-Context must then be associated with a `Config` struct through the `context` attribute field.
+Context must then be associated with a
+[`Config`](https://docs.rs/schematic/latest/schematic/trait.Config.html) derived struct through the
+`context` attribute field.
 
 ```rust
 #[derive(Config)]
@@ -25,7 +27,7 @@ struct ExampleConfig {
 ```
 
 And then passed to the
-[`ConfigLoader.load_with_context`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load_with_context)
+[`ConfigLoader::load_with_context()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load_with_context)
 method.
 
 ```rust

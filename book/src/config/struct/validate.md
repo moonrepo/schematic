@@ -1,8 +1,8 @@
 # Validation rules
 
 What kind of configuration crate would this be without built-in validation? As such, we support it
-as a first-class feature, with built-in validation rules provided by
-[garde](https://crates.io/crates/garde).
+as a first-class feature, with built-in validation rules provided by the
+[garde](https://crates.io/crates/garde) crate.
 
 In Schematic, validation _does not_ happen as part of the serde parsing process, and instead happens
 for each [partial configuration](../partial.md) to be merged. However, with that said, _prefer serde
@@ -61,13 +61,16 @@ fn validate_string(
 }
 ```
 
-If validation fails, you must return a `ValidateError` with a failure message.
+If validation fails, you must return a
+[`ValidateError`](https://docs.rs/schematic/latest/schematic/struct.ValidateError.html) with a
+failure message.
 
 ### Factories
 
 For composition and reusability concerns, we also support factory functions that can be called to
 create a unique validator. This can be seen above with `schematic::validate::regex`. To create your
-own factory, declare a normal function, with any number of arguments, that returns a `Validator`.
+own factory, declare a normal function, with any number of arguments, that returns a
+[`Validator`](https://docs.rs/schematic/latest/schematic/validate/type.Validator.html).
 
 Using the `regex` factory as an example, it would look something like this.
 

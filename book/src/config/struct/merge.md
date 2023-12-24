@@ -45,7 +45,9 @@ fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> Result<Op
 }
 ```
 
-If parsing fails, you must return a `ConfigError` with a failure message.
+If parsing fails, you must return a
+[`ConfigError`](https://docs.rs/schematic/latest/schematic/enum.ConfigError.html) with a failure
+message.
 
 ### Context handling
 

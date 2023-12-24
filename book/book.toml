@@ -9,3 +9,5 @@ title = "Schematic"
 curly-quotes = true
 git-repository-url = "https://github.com/milesj/schematic"
 git-repository-icon = "fa-github"
+
+[output.linkcheck]

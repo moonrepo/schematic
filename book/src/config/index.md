@@ -59,8 +59,10 @@ When all of your structs and enums have been defined, you can then load, parse, 
 a configuration from one or many sources. A source is either a file path, secure URL, or inline code
 string.
 
-Begin by importing the `ConfigLoader` struct and initializing it with the `Config` type you want to
-load.
+Begin by importing the
+[`ConfigLoader`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html) struct and
+initializing it with the [`Config`](https://docs.rs/schematic/latest/schematic/trait.Config.html)
+type you want to load.
 
 ```rust
 use schematic::ConfigLoader;
@@ -69,13 +71,14 @@ let loader = ConfigLoader::<AppConfig>::new();
 ```
 
 From here, you can feed it sources to load. For file paths, use the
-[`file()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file) or
-[`file_optional()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file_optional)
+[`ConfigLoader::file()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file)
+or
+[`ConfigLoader::file_optional()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file_optional)
 methods. For URLs, use the
-[`url()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url) method
-(requires the `url` Cargo feature, which is on by default). For inline code, use the
-[`code()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code) method,
-which requires an explicit format.
+[`ConfigLoader::url()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url)
+method (requires the `url` Cargo feature, which is on by default). For inline code, use the
+[`ConfigLoader::code()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code)
+method, which requires an explicit format.
 
 ```rust
 use schematic::Format;
@@ -88,8 +91,8 @@ loader.url("https://ordomain.com/to/config.yaml")?;
 > The format for files and URLs are derived from the trailing extension.
 
 And lastly call the
-[`load()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load) method
-to generate the final configuration. This methods returns a result, which includes the final
+[`ConfigLoader::load()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load)
+method to generate the final configuration. This methods returns a result, which includes the final
 configuration, as well as all of the [partial layers](./partial.md) that were loaded.
 
 ```rust

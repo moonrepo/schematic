@@ -2,8 +2,9 @@
 
 Configurations typically use enums to support multiple values within a specific
 [setting](../settings.md). To simplify this process, and to provide streamlined interoperability
-with `Config`, we offer a `ConfigEnum` trait and macro that can be derived for enums with unit-only
-variants.
+with [`Config`][config], we offer a
+[`ConfigEnum`](https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html) trait and macro
+that can be derived for enums with unit-only variants.
 
 ```rust
 #[derive(ConfigEnum)]
@@ -15,7 +16,7 @@ enum LogLevel {
 }
 ```
 
-When paired with `Config`, it'll look like:
+When paired with [`Config`][config], it'll look like:
 
 ```rust
 #[derive(Config)]
@@ -26,8 +27,9 @@ struct AppConfig {
 
 This enum will generate the following implementations:
 
-- Provides a static `T::variants()` method, that returns a list of all variants. Perfect for
-  iteration.
+- Provides a static
+  [`T::variants()`](https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html#tymethod.variants)
+  method, that returns a list of all variants. Perfect for iteration.
 - Implements `FromStr` and `TryFrom` for parsing from a string.
 - Implements `Display` for formatting into a string.
 
@@ -67,7 +69,9 @@ And the following for serde compatibility:
 ## Deriving common traits
 
 All enums (not just unit-only enums) typically support the same derived traits, like `Clone`, `Eq`,
-etc. To reduce boilerplate, we offer a `derive_enum!` macro that will apply these traits for you.
+etc. To reduce boilerplate, we offer a
+[`derive_enum!`](https://docs.rs/schematic/latest/schematic/macro.derive_enum.html) macro that will
+apply these traits for you.
 
 ```rust
 derive_enum!(
@@ -87,3 +91,5 @@ This macro will inject the following attributes:
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
 ```
+
+[config]: https://docs.rs/schematic/latest/schematic/trait.Config.html
