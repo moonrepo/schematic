@@ -106,23 +106,6 @@ generator.generate(
 
 ## Features
 
-The following Cargo features are available:
-
-- `config` (default) - Enables configuration support (all the above stuff).
-- `url` (default) - Enables loading, extending, and parsing configs from URLs.
-
-### Parsing
-
-- `json` (default) - Enables JSON.
-- `toml` - Enables TOML.
-- `yaml` - Enables YAML.
-
-### Validation
-
-- `valid_email` - Enables email validation with the `schematic::validate::email` function.
-- `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
-  functions.
-
 ### Schema generation
 
 - `schema` - Generates schemas for schematic types and built-in Rust types.

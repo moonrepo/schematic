@@ -112,3 +112,11 @@ fn using_generics<P, C>(value: &str, partial: &P, context: &C) -> Result<(), Val
 	// ...
 }
 ```
+
+## Cargo features
+
+The following Cargo features can be enabled for more functionality:
+
+- `valid_email` - Enables email validation with the `schematic::validate::email` function.
+- `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
+  functions.
