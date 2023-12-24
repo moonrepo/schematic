@@ -16,7 +16,7 @@ setting is truly optional (think nullable in the config file).
 
 ```rust
 #[derive(Config)]
-pub struct ExampleConfig {
+struct ExampleConfig {
 	pub number: usize,
 	pub string: String,
 	pub boolean: bool,

@@ -5,12 +5,12 @@
 
 ```rust
 #[derive(Config)]
-pub struct ChildConfig {
+struct ChildConfig {
 	// ...
 }
 
 #[derive(Config)]
-pub struct ParentConfig {
+struct ParentConfig {
 	#[setting(nested)]
 	pub nested: ChildConfig,
 
@@ -19,7 +19,7 @@ pub struct ParentConfig {
 }
 
 #[derive(Config)]
-pub enum ParentEnum {
+enum ParentEnum {
 	#[config(nested)]
 	Variant(ChildConfig),
 }
@@ -38,7 +38,7 @@ For structs that _do not_ implement the `Config` trait, you can use them as-is w
 provided by our `Config` trait is not available, like merging and validation.
 
 ```rust
-pub struct BareConfig {
+struct BareConfig {
 	// ...
 }
 

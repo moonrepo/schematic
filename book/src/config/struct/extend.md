@@ -17,7 +17,7 @@ The first pattern is with a single string, which only allows a single file or UR
 #[derive(Config)]
 struct AppConfig {
 	#[setting(extend, validate = schematic::validate::extends_string)]
-	extends: Option<String>,
+	pub extends: Option<String>,
 }
 ```
 
@@ -36,7 +36,7 @@ item in the list is merged from top to bottom (lowest precedence to highest).
 #[derive(Config)]
 struct AppConfig {
 	#[setting(extend, validate = schematic::validate::extends_list)]
-	extends: Option<Vec<String>>,
+	pub extends: Option<Vec<String>>,
 }
 ```
 
@@ -56,6 +56,6 @@ And lastly, supporting both a string or a list, using our built-in enum.
 #[derive(Config)]
 struct AppConfig {
 	#[setting(extend, validate = schematic::validate::extends_from)]
-	extends: Option<schematic::ExtendsFrom>,
+	pub extends: Option<schematic::ExtendsFrom>,
 }
 ```

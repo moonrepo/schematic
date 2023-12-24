@@ -16,10 +16,10 @@ which requires a reference to a function to call.
 #[derive(Config)]
 struct AppConfig {
 	#[setting(validate = schematic::validate::alphanumeric)]
-	secret_key: String,
+	pub secret_key: String,
 
 	#[setting(validate = schematic::validate::regex("^\.env"))]
-	env_file: String,
+	pub env_file: String,
 }
 ```
 

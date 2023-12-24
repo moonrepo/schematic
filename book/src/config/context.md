@@ -9,8 +9,8 @@ To begin, a context is a struct with a default implementation.
 ```rust
 #[derive(Default)]
 struct ExampleContext {
-	some_value: bool,
-	another_value: usize,
+	pub some_value: bool,
+	pub another_value: usize,
 }
 ```
 
@@ -19,7 +19,7 @@ Context must then be associated with a `Config` struct through the `context` att
 ```rust
 #[derive(Config)]
 #[config(context = ExampleContext)]
-pub struct ExampleConfig {
+struct ExampleConfig {
 	// ...
 }
 ```

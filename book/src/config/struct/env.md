@@ -9,7 +9,7 @@ field. When using this, variables take the _highest_ precedence, and are merged 
 #[derive(Config)]
 struct AppConfig {
 	#[setting(default = 3000, env = "PORT")]
-	port: usize,
+	pub port: usize,
 }
 ```
 
@@ -27,7 +27,7 @@ For example, the environment variable below for `port` is now `APP_PORT`.
 #[config(env_prefix = "APP_")]
 struct AppConfig {
 	#[setting(default = 3000)]
-	port: usize,
+	pub port: usize,
 }
 ```
 
@@ -48,7 +48,7 @@ struct AppServerConfig {
 #[config(env_prefix = "APP_")]
 struct AppConfig {
 	#[setting(nested)]
-	server: AppServerConfig,
+	pub server: AppServerConfig,
 }
 ```
 
@@ -64,7 +64,7 @@ handle the parsing, and receives the variable value as a single argument.
 #[derive(Config)]
 struct AppConfig {
 	#[setting(env = "ALLOWED_HOSTS", parse_env = schematic::env::split_comma)]
-	allowed_hosts: Vec<String>,
+	pub allowed_hosts: Vec<String>,
 }
 ```
 

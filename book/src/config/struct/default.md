@@ -15,16 +15,16 @@ array and tuple literals, as well as function (mainly for `from()`) and macros c
 #[derive(Config)]
 struct AppConfig {
 	#[setting(default = "/")]
-	base: String,
+	pub base: String,
 
 	#[setting(default = 3000)]
-	port: usize,
+	pub port: usize,
 
 	#[setting(default = true)]
-	secure: bool,
+	pub secure: bool,
 
 	#[setting(default = vec!["localhost".into()])]
-	allowed_hosts: Vec<String>,
+	pub allowed_hosts: Vec<String>,
 }
 ```
 
@@ -54,7 +54,7 @@ fn find_unused_port(ctx: &Context) -> Option<usize> {
 #[derive(Config)]
 struct AppConfig {
 	#[setting(default = find_unused_port)]
-	port: usize,
+	pub port: usize,
 }
 ```
 

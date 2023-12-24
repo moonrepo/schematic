@@ -11,7 +11,7 @@ function to call.
 #[derive(Config)]
 struct AppConfig {
 	#[setting(merge = schematic::merge::append_vec)]
-	allowed_hosts: Vec<String>,
+	pub allowed_hosts: Vec<String>,
 }
 
 #[derive(Config)]
@@ -38,7 +38,7 @@ Here's an example of the merge function above.
 ```rust
 use schematic::ConfigError;
 
-pub fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> Result<Option<Vec<T>>, ConfigError> {
+fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> Result<Option<Vec<T>>, ConfigError> {
     prev.extend(next);
 
     Ok(Some(prev))

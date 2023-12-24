@@ -5,10 +5,10 @@ The `Config` trait can be derived for structs and enums.
 ```rust
 #[derive(Config)]
 struct AppConfig {
-	base: String,
-	port: usize,
-	secure: bool,
-	allowed_hosts: Vec<String>,
+	pub base: String,
+	pub port: usize,
+	pub secure: bool,
+	pub allowed_hosts: Vec<String>,
 }
 
 #[derive(Config)]
@@ -44,7 +44,7 @@ The following fields are supported for the `#[config]` container attribute:
 ```rust
 #[derive(Config)]
 #[config(allow_unknown_fields, env_prefix = "EXAMPLE_")]
-pub struct ExampleConfig {
+struct ExampleConfig {
 	// ...
 }
 ```
@@ -52,7 +52,7 @@ pub struct ExampleConfig {
 And the following for serde compatibility:
 
 - `rename`
-- `rename_all`
+- `rename_all` - Defaults to `camelCase`.
 
 ## Serde support
 

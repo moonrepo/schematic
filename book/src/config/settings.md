@@ -33,7 +33,7 @@ attribute to the [partial](./partial.md) implementation.
 #[derive(Config)]
 struct Example {
 	#[setting(rename = "type")]
-	type_of: SomeEnum,
+	pub type_of: SomeEnum,
 }
 ```
 
