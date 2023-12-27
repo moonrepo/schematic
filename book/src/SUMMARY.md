@@ -8,7 +8,7 @@
     - [Enums]()
     - [Floats](./schema/float.md)
     - [Integers](./schema/integer.md)
-    - [Literals]()
+    - [Literals](./schema/literal.md)
     - [Nulls](./schema/null.md)
     - [Objects (maps)]()
     - [Strings]()

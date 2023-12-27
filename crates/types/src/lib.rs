@@ -363,6 +363,12 @@ pub trait Schematic {
 
 // CORE
 
+impl Schematic for () {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Null
+    }
+}
+
 impl<T: Schematic> Schematic for &T {
     fn generate_schema() -> SchemaType {
         T::generate_schema()
