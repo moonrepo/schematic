@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added constructor methods for schema types.
+
 ## 0.12.12
 
 #### 🚀 Updates

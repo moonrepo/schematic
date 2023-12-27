@@ -32,12 +32,30 @@ pub struct IntegerType {
     pub enum_values: Option<Vec<isize>>,
     pub format: Option<String>,
     pub kind: IntegerKind,
-    pub max: Option<usize>,
-    pub max_exclusive: Option<usize>,
-    pub min: Option<usize>,
-    pub min_exclusive: Option<usize>,
-    pub multiple_of: Option<usize>,
+    pub max: Option<isize>,
+    pub max_exclusive: Option<isize>,
+    pub min: Option<isize>,
+    pub min_exclusive: Option<isize>,
+    pub multiple_of: Option<isize>,
     pub name: Option<String>,
+}
+
+impl IntegerType {
+    pub fn new(kind: IntegerKind, value: isize) -> Self {
+        IntegerType {
+            default: Some(LiteralValue::Int(value)),
+            kind,
+            ..IntegerType::default()
+        }
+    }
+
+    pub fn new_unsigned(kind: IntegerKind, value: usize) -> Self {
+        IntegerType {
+            default: Some(LiteralValue::UInt(value)),
+            kind,
+            ..IntegerType::default()
+        }
+    }
 }
 
 macro_rules! impl_int {
@@ -83,6 +101,24 @@ pub struct FloatType {
     pub min_exclusive: Option<f64>,
     pub multiple_of: Option<f64>,
     pub name: Option<String>,
+}
+
+impl FloatType {
+    pub fn new_32(value: f32) -> Self {
+        FloatType {
+            default: Some(LiteralValue::F32(value)),
+            kind: FloatKind::F32,
+            ..FloatType::default()
+        }
+    }
+
+    pub fn new_64(value: f64) -> Self {
+        FloatType {
+            default: Some(LiteralValue::F64(value)),
+            kind: FloatKind::F64,
+            ..FloatType::default()
+        }
+    }
 }
 
 macro_rules! impl_float {

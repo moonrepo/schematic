@@ -15,6 +15,8 @@ impl Schematic for T {
 }
 ```
 
+> Automatically implemented for `bool`.
+
 ## Default value
 
 To customize the default value for use within [generators](./generator/index.md), pass the desired

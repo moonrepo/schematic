@@ -13,6 +13,8 @@ impl Schematic for T {
 }
 ```
 
+> Automatically implemented for `()` and `Option<T>`.
+
 ## Marking as nullable
 
 If you have an existing
