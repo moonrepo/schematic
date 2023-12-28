@@ -2,8 +2,8 @@
 
 The [`ArrayType`][array] paired with
 [`SchemaType::Array`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Array)
-can be used to represent a list of values of a given type, as defined by `items_type`. For example,
-a list of strings:
+can be used to represent a variable list of homogeneous values of a given type, as defined by
+`items_type`. For example, a list of strings:
 
 ```rust
 use schematic::{Schematic, SchemaType, schema::ArrayType};

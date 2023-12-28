@@ -109,30 +109,30 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let mut enum_values = vec![];
 
         for value in &enu.values {
-            match value.value.clone().unwrap() {
+            match value {
                 LiteralValue::Bool(v) => {
                     instance_type = InstanceType::Boolean;
-                    enum_values.push(Value::Bool(v));
+                    enum_values.push(Value::Bool(*v));
                 }
                 LiteralValue::F32(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from_f64(v as f64).unwrap()));
+                    enum_values.push(Value::Number(Number::from_f64(*v as f64).unwrap()));
                 }
                 LiteralValue::F64(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from_f64(v).unwrap()));
+                    enum_values.push(Value::Number(Number::from_f64(*v).unwrap()));
                 }
                 LiteralValue::Int(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from(v)));
+                    enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::UInt(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from(v)));
+                    enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::String(v) => {
                     instance_type = InstanceType::String;
-                    enum_values.push(Value::String(v));
+                    enum_values.push(Value::String(v.to_owned()));
                 }
             };
         }

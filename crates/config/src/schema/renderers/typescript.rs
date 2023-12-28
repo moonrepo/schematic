@@ -142,7 +142,7 @@ impl TypeScriptRenderer {
                 variants_types: enu
                     .values
                     .iter()
-                    .map(|v| Box::new(SchemaType::Literal(v.clone())))
+                    .map(|v| Box::new(SchemaType::literal(v.clone())))
                     .collect(),
                 variants: enu.variants.clone(),
                 ..Default::default()
