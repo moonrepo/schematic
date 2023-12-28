@@ -10,7 +10,7 @@
     - [Integers](./schema/integer.md)
     - [Literals](./schema/literal.md)
     - [Nulls](./schema/null.md)
-    - [Objects (maps)]()
+    - [Objects](./schema/object.md)
     - [Strings]()
     - [Structs]()
     - [Tuples](./schema/tuple.md)

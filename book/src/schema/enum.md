@@ -50,7 +50,7 @@ SchemaType::Enum(EnumType {
 		LiteralValue::String("error".into()),
 		LiteralValue::String("warning".into()),
 	],
-	variants: vec![
+	variants: Some(vec![
 		SchemaField {
 			name: "debug".into(),
 			description: Some("Shows debug messages and above".into()),
@@ -69,7 +69,7 @@ SchemaType::Enum(EnumType {
 			type_of: SchemaType::literal(LiteralValue::String("warning".into())),
 			..SchemaField::default()
 		},
-	],
+	]),
 	..EnumType::default()
 })
 ```

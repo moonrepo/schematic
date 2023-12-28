@@ -221,7 +221,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             object: Some(Box::new(ObjectValidation {
                 max_properties: object.max_length.map(|i| i as u32),
                 min_properties: object.min_length.map(|i| i as u32),
-                required: BTreeSet::from_iter(object.required.clone()),
+                required: BTreeSet::from_iter(object.required.clone().unwrap_or_default()),
                 additional_properties: Some(Box::new(self.render_schema(&object.value_type)?)),
                 property_names: Some(Box::new(self.render_schema(&object.key_type)?)),
                 ..Default::default()

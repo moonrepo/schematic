@@ -7,7 +7,7 @@ pub struct ObjectType {
     pub max_length: Option<usize>,
     pub min_length: Option<usize>,
     pub name: Option<String>,
-    pub required: Vec<String>,
+    pub required: Option<Vec<String>>,
     pub value_type: Box<SchemaType>,
 }
 
