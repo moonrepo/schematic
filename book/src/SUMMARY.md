@@ -11,7 +11,7 @@
     - [Literals](./schema/literal.md)
     - [Nulls](./schema/null.md)
     - [Objects](./schema/object.md)
-    - [Strings]()
+    - [Strings](./schema/string.md)
     - [Structs]()
     - [Tuples](./schema/tuple.md)
     - [Unions](./schema/union.md)
