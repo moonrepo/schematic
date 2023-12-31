@@ -16,7 +16,7 @@
     - [Tuples](./schema/tuple.md)
     - [Unions](./schema/union.md)
     - [Unknown](./schema/unknown.md)
-  - [External types]()
+  - [External types](./schema/external.md)
   - [Generation](./schema/generator/index.md)
     - [API documentation]()
     - [File templates]()
