@@ -2,7 +2,7 @@
 
 - [Schemas]()
   - [Usage]()
-  - [Types]()
+  - [Types](./schema/types.md)
     - [Arrays](./schema/array.md)
     - [Booleans](./schema/boolean.md)
     - [Enums](./schema/enum.md)
@@ -12,7 +12,7 @@
     - [Nulls](./schema/null.md)
     - [Objects](./schema/object.md)
     - [Strings](./schema/string.md)
-    - [Structs]()
+    - [Structs](./schema/struct.md)
     - [Tuples](./schema/tuple.md)
     - [Unions](./schema/union.md)
     - [Unknown](./schema/unknown.md)

@@ -33,8 +33,6 @@ SchemaType::enumerable([
 ]);
 ```
 
-[enum]: https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html
-
 ## Detailed variants
 
 If you'd like to provide more detailed information for each variant (value), like descriptions and
@@ -75,3 +73,5 @@ SchemaType::Enum(EnumType {
 ```
 
 > This comes in handy when working with specific generators, like TypeScript.
+
+[enum]: https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html

@@ -260,7 +260,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
     fn render_struct(&mut self, structure: &StructType) -> RenderResult<Schema> {
         let mut properties = BTreeMap::new();
-        let mut required = BTreeSet::from_iter(structure.required.clone());
+        let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
 
         for field in &structure.fields {
             if field.hidden {
