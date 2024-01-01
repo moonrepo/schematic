@@ -21,7 +21,7 @@
     - [API documentation]()
     - [File templates]()
     - [JSON schemas]()
-    - [TypeScript types]()
+    - [TypeScript types](./schema/generator/typescript.md)
 - [Configuration](./config/index.md)
   - [Settings](./config/settings.md)
   - [Partials](./config/partial.md)

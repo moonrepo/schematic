@@ -38,11 +38,11 @@ pub struct TypeScriptOptions {
     pub enum_format: EnumFormat,
 
     /// List of references to exclude from exporting as a type.
-    pub exclude_references: HashSet<String>,
+    pub exclude_references: Vec<String>,
 
     /// Map of relative import file paths to a list of types to import.
     /// Will be rendered as an `import type {} from 'path';` declaration.
-    pub external_types: HashMap<String, HashSet<String>>,
+    pub external_types: HashMap<String, Vec<String>>,
 
     /// Character(s) to use for indentation.
     pub indent_char: String,
@@ -83,12 +83,12 @@ impl TypeScriptRenderer {
     }
 
     fn is_excluded(&self, name: &str) -> bool {
-        self.options.exclude_references.contains(name)
+        self.options.exclude_references.iter().any(|r| r == name)
     }
 
     fn is_external(&self, name: &str) -> bool {
         for externals in self.options.external_types.values() {
-            if externals.contains(name) {
+            if externals.iter().any(|e| e == name) {
                 return true;
             }
         }
@@ -408,7 +408,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut imports = vec![];
 
         for (import, types) in &self.options.external_types {
-            let mut imported_types = types.iter().cloned().collect::<Vec<_>>();
+            let mut imported_types = types.to_vec();
             imported_types.sort();
 
             imports.push(format!(
