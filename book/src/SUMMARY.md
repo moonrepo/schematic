@@ -20,7 +20,7 @@
   - [Generation](./schema/generator/index.md)
     - [API documentation]()
     - [File templates]()
-    - [JSON schemas]()
+    - [JSON schemas](./schema/generator/json-schema.md)
     - [TypeScript types](./schema/generator/typescript.md)
 - [Configuration](./config/index.md)
   - [Settings](./config/settings.md)

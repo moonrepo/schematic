@@ -3,7 +3,8 @@
 With our
 [`TypeScriptRenderer`](https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptRenderer.html),
 you can generate [TypeScript types](https://www.typescriptlang.org/) for all types that implement
-`Schematic`.
+[`Schematic`](https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html). To utilize,
+instantiate a generator, add types to render, and generate the output file.
 
 ```rust
 use schematic::schema::{SchemaGenerator, typescript::*};
