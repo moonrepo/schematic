@@ -17,7 +17,7 @@
     - [Unions](./schema/union.md)
     - [Unknown](./schema/unknown.md)
   - [External types](./schema/external.md)
-  - [Generation](./schema/generator/index.md)
+  - [Code generation](./schema/generator/index.md)
     - [API documentation]()
     - [File templates]()
     - [JSON schemas](./schema/generator/json-schema.md)

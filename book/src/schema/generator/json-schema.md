@@ -12,15 +12,8 @@ To utilize, instantiate a generator, add types to render, and generate the outpu
 ```rust
 use schematic::schema::{SchemaGenerator, json_schema::*};
 
-// Create generator
 let mut generator = SchemaGenerator::default();
-
-// Add types to render
-generator.add::<FirstConfig>();
-generator.add::<SecondConfig>();
-generator.add::<ThirdConfig>();
-
-// Generate output file
+generator.add::<CustomType>();
 generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
 ```
 

@@ -9,15 +9,8 @@ instantiate a generator, add types to render, and generate the output file.
 ```rust
 use schematic::schema::{SchemaGenerator, typescript::*};
 
-// Create generator
 let mut generator = SchemaGenerator::default();
-
-// Add types to render
-generator.add::<FirstConfig>();
-generator.add::<SecondConfig>();
-generator.add::<ThirdConfig>();
-
-// Generate output file
+generator.add::<CustomType>();
 generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
 ```
 
