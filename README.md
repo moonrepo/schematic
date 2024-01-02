@@ -1,9 +1,18 @@
-# schematic
+# Schematic
 
-> derive(Config)
+Schematic is a library that provides:
 
-Schematic is a light-weight, macro-based, layered serde configuration and schema library, with
-built-in support for merge strategies, validation rules, environment variables, and more!
+- A layered serde-driven configuration system with support for merge strategies, validation rules,
+  environment variables, and more!
+- A schema modeling system that can be used to generate TypeScript types, JSON schemas, and more!
+
+Both of these features can be used independently or together.
+
+```
+cargo add schematic
+```
+
+## Configuration
 
 - Supports JSON, TOML, and YAML based configs via serde.
 - Load sources from the file system or secure URLs.
@@ -16,13 +25,7 @@ built-in support for merge strategies, validation rules, environment variables, 
 - Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
 - Generates schemas that can be rendered to TypeScript types, JSON schemas, and more!
 
-> This crate was built specifically for [moon](https://github.com/moonrepo/moon), and many of the
-> design decisions are based around that project and its needs. Because of that, this crate is quite
-> opinionated and won't change heavily.
-
-## Usage
-
-Define a struct and derive the `Config` trait.
+Define a struct or enum and derive the `Config` trait.
 
 ```rust
 use schematic::Config;
@@ -56,4 +59,28 @@ result.config;
 result.layers;
 ```
 
-> The format for files and URLs are derived from the trailing extension.
+## Schemas
+
+Define a struct or enum and derive or implement the `Schematic` trait.
+
+```rust
+use schematic::Schematic;
+
+#[derive(Schematic)]
+struct Task {
+	command: String,
+	args: Vec<String>,
+	env: HashMap<String, String>,
+}
+```
+
+Then generate output in multiple formats, like JSON schemas or TypeScript types, using the schema
+type information.
+
+```rust
+use schematic::schema::{SchemaGenerator, typescript::*};
+
+let mut generator = SchemaGenerator::default();
+generator.add::<Task>();
+generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
+```

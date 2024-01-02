@@ -1,6 +1,19 @@
 # Schematic
 
-## Examples
+Schematic is a library that provides:
+
+- A layered serde-driven [configuration system](./config/index.md) with support for merge
+  strategies, validation rules, environment variables, and more!
+- A [schema modeling system](./schema/index.md) that can be used to generate TypeScript types, JSON
+  schemas, and more!
+
+Both of these features can be used independently or together.
+
+```
+cargo add schematic
+```
+
+## Example references
 
 The following projects are using Schematic and can be used as a reference:
 

@@ -2,15 +2,15 @@
 
 > Requires the `config` Cargo feature, which is enabled by default.
 
-The primary feature of Schematic is a layered configuration solution, and is powered through the
-[`Config`](./struct/index.md) and [`ConfigEnum`](./enum/index.md) traits, and their associated
-derive macro. These macros help to generate and automate the following (when applicable):
+The primary feature of Schematic is a layered serde-driven configuration solution, and is powered
+through the [`Config`](./struct/index.md) and [`ConfigEnum`](./enum/index.md) traits, and their
+associated derive macro. These macros help to generate and automate the following (when applicable):
 
 - Generates a [partial implementation](./partial.md), with all field values wrapped in `Option`.
 - Provides [default value](./struct/default.md) and [environment variable](./struct/env.md)
   handling.
 - Implements [merging](./struct/merge.md) and [validation](./struct/validate.md) logic.
-- Automatically models a [schema](../schema/index.md) (when `schema` Cargo feature enabled).
+- Models a [schema](../schema/index.md) (when `schema` Cargo feature enabled).
 - And other minor features, like [context & metadata](./context.md#metadata).
 
 The struct or enum that derives `Config` represents the _final state_, after all
