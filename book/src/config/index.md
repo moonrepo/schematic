@@ -2,14 +2,15 @@
 
 > Requires the `config` Cargo feature, which is enabled by default.
 
-The bulk of Schematic is powered through the [`Config`](./struct/index.md) and
-[`ConfigEnum`](./enum/index.md) traits, and their associated derive macro. These macros help to
-generate and automate the following (when applicable):
+The primary feature of Schematic is a layered configuration solution, and is powered through the
+[`Config`](./struct/index.md) and [`ConfigEnum`](./enum/index.md) traits, and their associated
+derive macro. These macros help to generate and automate the following (when applicable):
 
 - Generates a [partial implementation](./partial.md), with all field values wrapped in `Option`.
 - Provides [default value](./struct/default.md) and [environment variable](./struct/env.md)
   handling.
 - Implements [merging](./struct/merge.md) and [validation](./struct/validate.md) logic.
+- Automatically models a [schema](../schema/index.md) (when `schema` Cargo feature enabled).
 - And other minor features, like [context & metadata](./context.md#metadata).
 
 The struct or enum that derives `Config` represents the _final state_, after all
@@ -31,7 +32,7 @@ struct ExampleConfig {
 > This pattern provides the optimal developer experience, as you can reference the settings as-is,
 > without having to unwrap them, or use `match` or `if-let` statements!
 
-## Basic usage
+## Usage
 
 Define a struct or enum and derive the [`Config`](./struct/index.md) trait. Fields within the struct
 (known as [settings](./settings.md)) can be annotated with the `#[setting]` attribute to provide
@@ -53,7 +54,7 @@ struct AppConfig {
 }
 ```
 
-## Loading sources
+### Loading sources
 
 When all of your structs and enums have been defined, you can then load, parse, merge, and validate
 a configuration from one or many sources. A source is either a file path, secure URL, or inline code
@@ -102,6 +103,25 @@ result.config; // AppConfig
 result.layers; // Vec<Layer<PartialAppConfig>>
 ```
 
+### Automatic schemas
+
+When the `schema` Cargo feature is enabled, the
+[`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) trait will be
+automatically implemented for all types that implement
+[`Config`](https://docs.rs/schematic/latest/schematic/trait.Config.html) and
+[`ConfigEnum`](https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html). You do _not_ and
+_should not_ derive both of these together.
+
+```rust
+// Correct
+#[derive(Config)]
+struct AppConfig {}
+
+// Incorrect
+#[derive(Config, Schematic)]
+struct AppConfig {}
+```
+
 ## Supported source formats
 
 Schematic is powered entirely by [serde](https://serde.rs), and supports the following formats:
@@ -119,14 +139,3 @@ The following Cargo features are available:
 - `toml` - Enables TOML.
 - `url` (default) - Enables loading, extending, and parsing configs from URLs.
 - `yaml` - Enables YAML.
-
-## Examples
-
-The following projects are using Schematic and can be used as a reference:
-
-- [moon](https://github.com/moonrepo/moon/tree/master/nextgen/config) - A build system for web based
-  monorepos.
-- [proto](https://github.com/moonrepo/proto/blob/master/crates/core/src/proto_config.rs) - A
-  multi-language version manager with WASM plugin support.
-- [ryot](https://github.com/IgnisDa/ryot/blob/main/libs/config/src/lib.rs) - Track various aspects
-  of your life.

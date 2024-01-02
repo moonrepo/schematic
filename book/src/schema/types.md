@@ -18,3 +18,15 @@ of formats.
 - [Tuples](./tuple.md)
 - [Unions](./union.md)
 - [Unknown](./unknown.md)
+
+## Names
+
+Schema types can be named, which is useful for referencing them in other types when generating code.
+By default the [`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) derive
+macro will use the name of the type, but when implementing the trait manually, you can use
+[`SchemaType::set_name()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.set_name).
+
+```rust
+let mut schema = SchemaType::string();
+schema.set_name("CustomName");
+```

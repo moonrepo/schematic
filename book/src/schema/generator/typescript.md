@@ -1,5 +1,7 @@
 # TypeScript types
 
+> Requires the `typescript` Cargo feature.
+
 With our
 [`TypeScriptRenderer`](https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptRenderer.html),
 you can generate [TypeScript types](https://www.typescriptlang.org/) for all types that implement

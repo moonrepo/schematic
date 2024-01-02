@@ -1,5 +1,7 @@
 # JSON schemas
 
+> Requires the `json_schema` Cargo feature.
+
 With our
 [`JsonSchemaRenderer`](https://docs.rs/schematic/latest/schematic/schema/json_schema/struct.JsonSchemaRenderer.html),
 you can generate a [JSON Schema](https://json-schema.org/) document for all types that implement

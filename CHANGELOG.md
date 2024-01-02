@@ -2,9 +2,18 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Refactored schema APIs for better usability.
+  - Updated `TypeScriptOptions.exclude_references` and `external_types` to a `Vec` instead of
+    `HashSet`.
+  - Updated `EnumType.variants` to `Vec<LiteralValue>` instead of `Vec<LiteralType>`.
+  - Updated `ObjectType.required` and `StructType.required` to be wrapped in `Option`.
+
 #### 🚀 Updates
 
 - Added constructor methods for schema types.
+- Added `SchemaType::enumerable` method.
 
 ## 0.12.12
 

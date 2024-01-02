@@ -17,9 +17,7 @@ This is typically done within a one-off `main` function that can be ran from Car
 ```rust
 use schematic::schema::SchemaGenerator;
 
-fn main() {
-	let mut generator = SchemaGenerator::default();
-}
+let mut generator = SchemaGenerator::default();
 ```
 
 From here, for every type that implements
@@ -34,12 +32,10 @@ method instead.
 ```rust
 use schematic::schema::SchemaGenerator;
 
-fn main() {
-	let mut generator = SchemaGenerator::default();
-	generator.add::<FirstConfig>();
-	generator.add::<SecondConfig>();
-	generator.add::<ThirdConfig>();
-}
+let mut generator = SchemaGenerator::default();
+generator.add::<FirstConfig>();
+generator.add::<SecondConfig>();
+generator.add::<ThirdConfig>();
 ```
 
 > We'll recursively add referenced and nested schemas for types that are added. No need to
@@ -53,14 +49,12 @@ method can be called multiple times, each with a different output file or render
 ```rust
 use schematic::schema::SchemaGenerator;
 
-fn main() {
-	let mut generator = SchemaGenerator::default();
-	generator.add::<FirstConfig>();
-	generator.add::<SecondConfig>();
-	generator.add::<ThirdConfig>();
-	generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
-	generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
-}
+let mut generator = SchemaGenerator::default();
+generator.add::<FirstConfig>();
+generator.add::<SecondConfig>();
+generator.add::<ThirdConfig>();
+generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
+generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 ```
 
 ## Renderers
