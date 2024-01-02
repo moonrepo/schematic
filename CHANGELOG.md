@@ -12,6 +12,7 @@
 
 #### 🚀 Updates
 
+- Added official documentation: https://moonrepo.github.io/schematic
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 

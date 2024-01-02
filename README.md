@@ -12,6 +12,8 @@ Both of these features can be used independently or together.
 cargo add schematic
 ```
 
+Get started: https://moonrepo.github.io/schematic
+
 ## Configuration
 
 - Supports JSON, TOML, and YAML based configs via serde.
