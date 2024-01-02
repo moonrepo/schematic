@@ -1,4 +1,5 @@
 use convert_case::{Boundary, Case, Casing};
+use quote::{format_ident, quote, ToTokens};
 use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
@@ -82,8 +83,36 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
     }
 }
 
-pub fn has_attr(attrs: &[&Attribute], name: &str) -> bool {
-    attrs.iter().any(|a| get_meta_path(&a.meta).is_ident(name))
+pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
+    for attr in attrs {
+        match &attr.meta {
+            Meta::NameValue(meta) => {
+                if meta.path.is_ident("deprecated") {
+                    if let Expr::Lit(lit) = &meta.value {
+                        match &lit.lit {
+                            Lit::Bool(value) => {
+                                if value.value() {
+                                    return Some(String::new()); // No message, handle in renderer
+                                }
+                            }
+                            Lit::Str(value) => {
+                                return Some(value.value().trim().to_owned());
+                            }
+                            _ => {}
+                        };
+                    }
+                }
+            }
+            Meta::Path(_) => {
+                if get_meta_path(&attr.meta).is_ident("deprecated") {
+                    return Some(String::new()); // No message, handle in renderer
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
 }
 
 // Thanks to confique for the implementation:
@@ -133,5 +162,34 @@ pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
     match &args.args[0] {
         syn::GenericArgument::Type(t) => Some(t),
         _ => None,
+    }
+}
+
+pub fn map_bool_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
+    if value {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            #id: true,
+
+        })
+    } else {
+        None
+    }
+}
+
+pub fn map_option_quote<T: ToTokens>(
+    name: &str,
+    value: Option<T>,
+) -> Option<proc_macro2::TokenStream> {
+    if let Some(value) = value {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            #id: Some(#value.into()),
+
+        })
+    } else {
+        None
     }
 }

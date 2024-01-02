@@ -121,7 +121,7 @@ impl TypeScriptRenderer {
             }
         };
 
-        Ok(self.wrap_in_comment(enu.description.as_ref(), None, output))
+        Ok(self.wrap_in_comment(enu.description.as_ref(), vec![], output))
     }
 
     fn export_object_type(&mut self, name: &str, structure: &StructType) -> RenderResult {
@@ -133,7 +133,7 @@ impl TypeScriptRenderer {
             self.export_type_alias(name, value)?
         };
 
-        Ok(self.wrap_in_comment(structure.description.as_ref(), None, output))
+        Ok(self.wrap_in_comment(structure.description.as_ref(), vec![], output))
     }
 
     fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {
@@ -160,7 +160,7 @@ impl TypeScriptRenderer {
             }
 
             if let Some(variant_name) = &variant.name {
-                let mut field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
+                let field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
                     format!(
                         "{}{} = {},",
                         indent,
@@ -171,13 +171,13 @@ impl TypeScriptRenderer {
                     format!("{}{},", indent, variant_name)
                 };
 
-                field = self.wrap_in_comment(
-                    variant.description.as_ref(),
-                    variant.type_of.get_default(),
-                    field,
-                );
+                let mut tags = vec![];
 
-                out.push(field);
+                if let Some(default) = variant.type_of.get_default() {
+                    tags.push(format!("@default {}", self.lit_to_string(default)));
+                }
+
+                out.push(self.wrap_in_comment(variant.description.as_ref(), tags, field));
             }
         }
 
@@ -200,7 +200,7 @@ impl TypeScriptRenderer {
     fn wrap_in_comment(
         &self,
         comment: Option<&String>,
-        default: Option<&LiteralValue>,
+        tags: Vec<String>,
         value: String,
     ) -> String {
         let indent = self.indent();
@@ -216,8 +216,12 @@ impl TypeScriptRenderer {
             );
         }
 
-        if let Some(default) = default {
-            lines.push(format!("@default {}", self.lit_to_string(default)));
+        if !tags.is_empty() {
+            if !lines.is_empty() {
+                lines.push("".to_owned());
+            }
+
+            lines.extend(tags);
         }
 
         if lines.is_empty() {
@@ -231,7 +235,11 @@ impl TypeScriptRenderer {
         let mut out = vec![format!("{}/**", indent)];
 
         for line in lines {
-            out.push(format!("{} * {}", indent, line.trim()));
+            if line.is_empty() {
+                out.push(format!("{} *", indent));
+            } else {
+                out.push(format!("{} * {}", indent, line.trim()));
+            }
         }
 
         out.push(format!("{} */", indent));
@@ -358,10 +366,25 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push(',');
             }
 
-            row =
-                self.wrap_in_comment(field.description.as_ref(), field.type_of.get_default(), row);
+            let mut tags = vec![];
 
-            out.push(row);
+            if let Some(default) = field.type_of.get_default() {
+                tags.push(format!("@default {}", self.lit_to_string(default)));
+            }
+
+            if let Some(deprecated) = &field.deprecated {
+                tags.push(if deprecated.is_empty() {
+                    "@deprecated".to_owned()
+                } else {
+                    format!("@deprecated {}", deprecated)
+                });
+            }
+
+            if let Some(env_var) = &field.env_var {
+                tags.push(format!("@envvar {}", env_var));
+            }
+
+            out.push(self.wrap_in_comment(field.description.as_ref(), tags, row));
         }
 
         self.depth -= 1;

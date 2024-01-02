@@ -46,7 +46,7 @@ impl JsonSchemaRenderer {
             let mut metadata = Metadata {
                 // title: field.name.clone(),
                 description: field.description.clone().map(clean_comment),
-                deprecated: field.deprecated,
+                deprecated: field.deprecated.is_some(),
                 read_only: field.read_only,
                 write_only: field.write_only,
                 ..Default::default()

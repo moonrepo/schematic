@@ -1,6 +1,7 @@
 use crate::common::FieldValue;
 use crate::utils::{
-    extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_quote,
+    map_option_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -158,25 +159,15 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
-        let name = self.get_name(Some(casing_format));
+        let name = map_option_quote("name", Some(self.get_name(Some(casing_format))));
+        let hidden = map_bool_quote("hidden", self.is_skipped());
+        let nullable = map_bool_quote("nullable", self.is_optional());
+        let description = map_option_quote("description", extract_comment(&self.attrs));
+        let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
+        let env_var = map_option_quote("env_var", self.args.env.as_ref());
+
         let value = self.value;
-
-        let deprecated = has_attr(&self.attrs, "deprecated");
-        let hidden = self.is_skipped();
-        let nullable = self.is_optional();
-        let partial = self.is_nested();
-
-        let description = if let Some(comment) = extract_comment(&self.attrs) {
-            quote! {
-                Some(#comment.into())
-            }
-        } else {
-            quote! {
-                None
-            }
-        };
-
-        let mut type_of = if partial {
+        let mut type_of = if self.is_nested() {
             quote! { SchemaType::infer_partial::<#value>() }
         } else {
             quote! { SchemaType::infer::<#value>() }
@@ -208,12 +199,13 @@ impl<'l> Field<'l> {
 
         quote! {
             SchemaField {
-                name: Some(#name.into()),
-                description: #description,
                 type_of: #type_of,
-                deprecated: #deprecated,
-                hidden: #hidden,
-                nullable: #nullable,
+                #name
+                #description
+                #deprecated
+                #env_var
+                #hidden
+                #nullable
                 ..Default::default()
             }
         }
