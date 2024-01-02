@@ -1,6 +1,7 @@
 use crate::common::FieldValue;
 use crate::utils::{
-    extract_comment, extract_common_attrs, extract_deprecated, format_case, preserve_str_literal,
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_quote,
+    map_option_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -158,41 +159,14 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
-        let name = self.get_name(Some(casing_format));
+        let name = map_option_quote("name", Some(self.get_name(Some(casing_format))));
+        let hidden = map_bool_quote("hidden", self.is_skipped());
+        let nullable = map_bool_quote("nullable", self.is_optional());
+        let description = map_option_quote("description", extract_comment(&self.attrs));
+        let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
+        let env_var = map_option_quote("env_var", self.args.env.as_ref());
+
         let value = self.value;
-
-        let hidden = if self.is_skipped() {
-            quote! { hidden: true, }
-        } else {
-            quote! {}
-        };
-        let nullable = if self.is_optional() {
-            quote! { nullable: true, }
-        } else {
-            quote! {}
-        };
-        let description = if let Some(comment) = extract_comment(&self.attrs) {
-            quote! {
-                description: Some(#comment.into()),
-            }
-        } else {
-            quote! {}
-        };
-        let deprecated = if let Some(deprecated) = extract_deprecated(&self.attrs) {
-            quote! {
-                deprecated: Some(#deprecated.into()),
-            }
-        } else {
-            quote! {}
-        };
-        let env_var = if let Some(var) = &self.args.env {
-            quote! {
-                env_var: Some(#var.into()),
-            }
-        } else {
-            quote! {}
-        };
-
         let mut type_of = if self.is_nested() {
             quote! { SchemaType::infer_partial::<#value>() }
         } else {
@@ -225,8 +199,8 @@ impl<'l> Field<'l> {
 
         quote! {
             SchemaField {
-                name: Some(#name.into()),
                 type_of: #type_of,
+                #name
                 #description
                 #deprecated
                 #env_var

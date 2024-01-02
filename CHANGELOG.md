@@ -18,6 +18,7 @@
 - Added `SchemaType::enumerable` method.
 - Added `SchemaField.env_var` field.
 - Updated `typescript` comment output to include `@deprecated` and `@envvar`.
+- Reduced the amount of code that macros generate for the `Schematic` implementation.
 
 #### ⚙️ Internal
 

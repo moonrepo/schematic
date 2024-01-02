@@ -218,7 +218,7 @@ impl TypeScriptRenderer {
 
         if !tags.is_empty() {
             if !lines.is_empty() {
-                lines.push("\n".to_owned());
+                lines.push("".to_owned());
             }
 
             lines.extend(tags);
@@ -235,7 +235,11 @@ impl TypeScriptRenderer {
         let mut out = vec![format!("{}/**", indent)];
 
         for line in lines {
-            out.push(format!("{} * {}", indent, line.trim()));
+            if line.is_empty() {
+                out.push(format!("{} *", indent));
+            } else {
+                out.push(format!("{} * {}", indent, line.trim()));
+            }
         }
 
         out.push(format!("{} */", indent));

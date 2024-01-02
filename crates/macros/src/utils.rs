@@ -1,4 +1,5 @@
 use convert_case::{Boundary, Case, Casing};
+use quote::{format_ident, quote, ToTokens};
 use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
@@ -161,5 +162,34 @@ pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
     match &args.args[0] {
         syn::GenericArgument::Type(t) => Some(t),
         _ => None,
+    }
+}
+
+pub fn map_bool_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
+    if value {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            #id: true,
+
+        })
+    } else {
+        None
+    }
+}
+
+pub fn map_option_quote<T: ToTokens>(
+    name: &str,
+    value: Option<T>,
+) -> Option<proc_macro2::TokenStream> {
+    if let Some(value) = value {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            #id: Some(#value.into()),
+
+        })
+    } else {
+        None
     }
 }

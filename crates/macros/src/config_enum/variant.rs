@@ -1,5 +1,7 @@
 use crate::common::FieldSerdeArgs;
-use crate::utils::{extract_comment, extract_common_attrs, extract_deprecated, format_case};
+use crate::utils::{
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_option_quote,
+};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
@@ -100,28 +102,17 @@ impl<'l> Variant<'l> {
     }
 
     pub fn get_schema_type(&self) -> TokenStream {
-        let name = self.name.to_string();
-        let value = &self.value;
+        let name = map_option_quote("name", Some(self.name.to_string()));
+        let description = map_option_quote("description", extract_comment(&self.attrs));
+        let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
 
-        let description = if let Some(comment) = extract_comment(&self.attrs) {
-            quote! {
-                description: Some(#comment.into()),
-            }
-        } else {
-            quote! {}
-        };
-        let deprecated = if let Some(deprecated) = extract_deprecated(&self.attrs) {
-            quote! {
-                deprecated: Some(#deprecated.into()),
-            }
-        } else {
-            quote! {}
-        };
         let type_of = if self.args.fallback {
             quote! {
                 SchemaType::string()
             }
         } else {
+            let value = &self.value;
+
             quote! {
                 SchemaType::literal(LiteralValue::String(#value.into()))
             }
@@ -129,8 +120,8 @@ impl<'l> Variant<'l> {
 
         quote! {
             SchemaField {
-                name: Some(#name.into()),
                 type_of: #type_of,
+                #name
                 #description
                 #deprecated
                 ..Default::default()

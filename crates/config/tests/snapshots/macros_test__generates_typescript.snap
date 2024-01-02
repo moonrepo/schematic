@@ -109,7 +109,7 @@ export interface Validations {
 export interface Comments {
 	/**
 	 * Block
-	 * 
+	 *
 	 * @deprecated Bye
 	 */
 	block: boolean;
@@ -120,7 +120,7 @@ export interface Comments {
 	blockLong: boolean;
 	/**
 	 * Docs
-	 * 
+	 *
 	 * @deprecated
 	 */
 	docs: boolean;

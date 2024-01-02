@@ -110,7 +110,9 @@ export type ExtendsOptional = {
 };
 
 export type EnvVars = {
+	/** @envvar BAR */
 	advanced: string[],
+	/** @envvar FOO */
 	basic: string,
 };
 
@@ -127,14 +129,22 @@ export type Validations = {
 
 /** Container comment. */
 export type Comments = {
-	/** Block */
+	/**
+	 * Block
+	 *
+	 * @deprecated Bye
+	 */
 	block: boolean,
 	/**
 	 * Block with a super long comment that will span multiple lines.
 	 * Block with a super long comment that will span multiple lines.
 	 */
 	blockLong: boolean,
-	/** Docs */
+	/**
+	 * Docs
+	 *
+	 * @deprecated
+	 */
 	docs: boolean,
 	/**
 	 * Docs with a super long comment that will span multiple lines.
