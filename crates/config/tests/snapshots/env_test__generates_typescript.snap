@@ -7,6 +7,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
 /* eslint-disable */
 
 export interface EnvVarsNested {
+	/** @envvar ENV_STRING */
 	string: string;
 }
 

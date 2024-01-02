@@ -17,6 +17,7 @@
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 - Added `SchemaField.env_var` field.
+- Updated `typescript` comment output to include `@deprecated` and `@envvar`.
 
 #### ⚙️ Internal
 
