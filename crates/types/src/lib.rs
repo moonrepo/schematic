@@ -13,7 +13,6 @@ mod unions;
 pub use arrays::*;
 pub use bools::*;
 pub use enums::*;
-pub use externals::*;
 pub use literals::*;
 pub use numbers::*;
 pub use objects::*;

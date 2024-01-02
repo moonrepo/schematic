@@ -16,6 +16,11 @@
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 
+#### ⚙️ Internal
+
+- Updated to Rust v1.75.
+- Updated dependencies.
+
 ## 0.12.12
 
 #### 🚀 Updates
