@@ -33,7 +33,7 @@ struct User {
 ```
 
 Once a type has a schema associated with it, it can be fed into the
-[generator](./generator/index.md)
+[generator](./generator/index.md).
 
 ### Custom implementation
 
@@ -65,7 +65,7 @@ impl Schematic for User {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new("age", SchemaType::integer(IntegerKind::u16)),
+			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
 			SchemaField::new("status", SchemaType::infer::<UserStatus>()),
 		])
 	}

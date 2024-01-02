@@ -20,6 +20,8 @@ use schematic::schema::SchemaGenerator;
 let mut generator = SchemaGenerator::default();
 ```
 
+### Adding types
+
 From here, for every type that implements
 [`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) and you want to
 include in the generated output, call
@@ -40,6 +42,8 @@ generator.add::<ThirdConfig>();
 
 > We'll recursively add referenced and nested schemas for types that are added. No need to
 > explicitly add all required types!
+
+### Generating output
 
 From here, call
 [`SchemaGenerator::generate()`](https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.generate)
