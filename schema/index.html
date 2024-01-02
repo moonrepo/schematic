@@ -209,7 +209,7 @@ struct User {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Once a type has a schema associated with it, it can be fed into the
-<a href="./generator/index.html">generator</a></p>
+<a href="./generator/index.html">generator</a>.</p>
 <h3 id="custom-implementation"><a class="header" href="#custom-implementation">Custom implementation</a></h3>
 <p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>
 and <a href="./types.html">associated types</a>. If you want these types to use custom settings, you can
@@ -239,7 +239,7 @@ impl Schematic for User {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::u16)),
+			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::Usize)),
 			SchemaField::new(&quot;status&quot;, SchemaType::infer::&lt;UserStatus&gt;()),
 		])
 	}

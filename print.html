@@ -1109,7 +1109,7 @@ struct User {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Once a type has a schema associated with it, it can be fed into the
-<a href="schema/./generator/index.html">generator</a></p>
+<a href="schema/./generator/index.html">generator</a>.</p>
 <h3 id="custom-implementation"><a class="header" href="#custom-implementation">Custom implementation</a></h3>
 <p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>
 and <a href="schema/./types.html">associated types</a>. If you want these types to use custom settings, you can
@@ -1139,7 +1139,7 @@ impl Schematic for User {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::u16)),
+			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::Usize)),
 			SchemaField::new(&quot;status&quot;, SchemaType::infer::&lt;UserStatus&gt;()),
 		])
 	}
@@ -1967,6 +1967,7 @@ This is typically done within a one-off <code>main</code> function that can be r
 
 let mut generator = SchemaGenerator::default();
 <span class="boring">}</span></code></pre></pre>
+<h3 id="adding-types"><a class="header" href="#adding-types">Adding types</a></h3>
 <p>From here, for every type that implements
 <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> and you want to
 include in the generated output, call
@@ -1988,6 +1989,7 @@ generator.add::&lt;ThirdConfig&gt;();
 <p>We’ll recursively add referenced and nested schemas for types that are added. No need to
 explicitly add all required types!</p>
 </blockquote>
+<h3 id="generating-output"><a class="header" href="#generating-output">Generating output</a></h3>
 <p>From here, call
 <a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.generate"><code>SchemaGenerator::generate()</code></a>
 to render the schemes with a chosen <a href="schema/generator/index.html#renderers">renderer</a> to an output file of your choice. This

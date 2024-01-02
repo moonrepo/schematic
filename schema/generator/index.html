@@ -193,6 +193,7 @@ This is typically done within a one-off <code>main</code> function that can be r
 
 let mut generator = SchemaGenerator::default();
 <span class="boring">}</span></code></pre></pre>
+<h3 id="adding-types"><a class="header" href="#adding-types">Adding types</a></h3>
 <p>From here, for every type that implements
 <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> and you want to
 include in the generated output, call
@@ -214,6 +215,7 @@ generator.add::&lt;ThirdConfig&gt;();
 <p>We’ll recursively add referenced and nested schemas for types that are added. No need to
 explicitly add all required types!</p>
 </blockquote>
+<h3 id="generating-output"><a class="header" href="#generating-output">Generating output</a></h3>
 <p>From here, call
 <a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.generate"><code>SchemaGenerator::generate()</code></a>
 to render the schemes with a chosen <a href="#renderers">renderer</a> to an output file of your choice. This
