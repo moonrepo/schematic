@@ -1,6 +1,6 @@
 use crate::common::FieldValue;
 use crate::utils::{
-    extract_comment, extract_common_attrs, format_case, has_attr, preserve_str_literal,
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -161,22 +161,39 @@ impl<'l> Field<'l> {
         let name = self.get_name(Some(casing_format));
         let value = self.value;
 
-        let deprecated = has_attr(&self.attrs, "deprecated");
-        let hidden = self.is_skipped();
-        let nullable = self.is_optional();
-        let partial = self.is_nested();
-
+        let hidden = if self.is_skipped() {
+            quote! { hidden: true, }
+        } else {
+            quote! {}
+        };
+        let nullable = if self.is_optional() {
+            quote! { nullable: true, }
+        } else {
+            quote! {}
+        };
         let description = if let Some(comment) = extract_comment(&self.attrs) {
             quote! {
-                Some(#comment.into())
+                description: Some(#comment.into()),
             }
         } else {
+            quote! {}
+        };
+        let deprecated = if let Some(deprecated) = extract_deprecated(&self.attrs) {
             quote! {
-                None
+                deprecated: Some(#deprecated.into()),
             }
+        } else {
+            quote! {}
+        };
+        let env_var = if let Some(var) = &self.args.env {
+            quote! {
+                env_var: Some(#var.into()),
+            }
+        } else {
+            quote! {}
         };
 
-        let mut type_of = if partial {
+        let mut type_of = if self.is_nested() {
             quote! { SchemaType::infer_partial::<#value>() }
         } else {
             quote! { SchemaType::infer::<#value>() }
@@ -209,11 +226,12 @@ impl<'l> Field<'l> {
         quote! {
             SchemaField {
                 name: Some(#name.into()),
-                description: #description,
                 type_of: #type_of,
-                deprecated: #deprecated,
-                hidden: #hidden,
-                nullable: #nullable,
+                #description
+                #deprecated
+                #env_var
+                #hidden
+                #nullable
                 ..Default::default()
             }
         }

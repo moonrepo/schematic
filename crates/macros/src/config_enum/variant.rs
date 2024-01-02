@@ -1,5 +1,5 @@
 use crate::common::FieldSerdeArgs;
-use crate::utils::{extract_comment, extract_common_attrs, format_case, has_attr};
+use crate::utils::{extract_comment, extract_common_attrs, extract_deprecated, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
@@ -102,18 +102,21 @@ impl<'l> Variant<'l> {
     pub fn get_schema_type(&self) -> TokenStream {
         let name = self.name.to_string();
         let value = &self.value;
-        let deprecated = has_attr(&self.attrs, "deprecated");
 
         let description = if let Some(comment) = extract_comment(&self.attrs) {
             quote! {
-                Some(#comment.into())
+                description: Some(#comment.into()),
             }
         } else {
-            quote! {
-                None
-            }
+            quote! {}
         };
-
+        let deprecated = if let Some(deprecated) = extract_deprecated(&self.attrs) {
+            quote! {
+                deprecated: Some(#deprecated.into()),
+            }
+        } else {
+            quote! {}
+        };
         let type_of = if self.args.fallback {
             quote! {
                 SchemaType::string()
@@ -127,9 +130,9 @@ impl<'l> Variant<'l> {
         quote! {
             SchemaField {
                 name: Some(#name.into()),
-                description: #description,
                 type_of: #type_of,
-                deprecated: #deprecated,
+                #description
+                #deprecated
                 ..Default::default()
             }
         }

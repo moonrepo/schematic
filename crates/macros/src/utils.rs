@@ -82,8 +82,36 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
     }
 }
 
-pub fn has_attr(attrs: &[&Attribute], name: &str) -> bool {
-    attrs.iter().any(|a| get_meta_path(&a.meta).is_ident(name))
+pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
+    for attr in attrs {
+        match &attr.meta {
+            Meta::NameValue(meta) => {
+                if meta.path.is_ident("deprecated") {
+                    if let Expr::Lit(lit) = &meta.value {
+                        match &lit.lit {
+                            Lit::Bool(value) => {
+                                if value.value() {
+                                    return Some(String::new()); // No message, handle in renderer
+                                }
+                            }
+                            Lit::Str(value) => {
+                                return Some(value.value().trim().to_owned());
+                            }
+                            _ => {}
+                        };
+                    }
+                }
+            }
+            Meta::Path(_) => {
+                if get_meta_path(&attr.meta).is_ident("deprecated") {
+                    return Some(String::new()); // No message, handle in renderer
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
 }
 
 // Thanks to confique for the implementation:
