@@ -109,30 +109,30 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let mut enum_values = vec![];
 
         for value in &enu.values {
-            match value.value.clone().unwrap() {
+            match value {
                 LiteralValue::Bool(v) => {
                     instance_type = InstanceType::Boolean;
-                    enum_values.push(Value::Bool(v));
+                    enum_values.push(Value::Bool(*v));
                 }
                 LiteralValue::F32(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from_f64(v as f64).unwrap()));
+                    enum_values.push(Value::Number(Number::from_f64(*v as f64).unwrap()));
                 }
                 LiteralValue::F64(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from_f64(v).unwrap()));
+                    enum_values.push(Value::Number(Number::from_f64(*v).unwrap()));
                 }
                 LiteralValue::Int(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from(v)));
+                    enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::UInt(v) => {
                     instance_type = InstanceType::Number;
-                    enum_values.push(Value::Number(Number::from(v)));
+                    enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::String(v) => {
                     instance_type = InstanceType::String;
-                    enum_values.push(Value::String(v));
+                    enum_values.push(Value::String(v.to_owned()));
                 }
             };
         }
@@ -221,7 +221,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             object: Some(Box::new(ObjectValidation {
                 max_properties: object.max_length.map(|i| i as u32),
                 min_properties: object.min_length.map(|i| i as u32),
-                required: BTreeSet::from_iter(object.required.clone()),
+                required: BTreeSet::from_iter(object.required.clone().unwrap_or_default()),
                 additional_properties: Some(Box::new(self.render_schema(&object.value_type)?)),
                 property_names: Some(Box::new(self.render_schema(&object.key_type)?)),
                 ..Default::default()
@@ -260,7 +260,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
     fn render_struct(&mut self, structure: &StructType) -> RenderResult<Schema> {
         let mut properties = BTreeMap::new();
-        let mut required = BTreeSet::from_iter(structure.required.clone());
+        let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
 
         for field in &structure.fields {
             if field.hidden {

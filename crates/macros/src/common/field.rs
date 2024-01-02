@@ -23,6 +23,7 @@ pub struct FieldSerdeArgs {
 #[derive(FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {
+    // schema
     pub exclude: bool,
 
     // config

@@ -90,7 +90,7 @@ impl<'l> Container<'l> {
 
                         for variant in &variants {
                             if let SchemaType::Literal(lit) = &variant.type_of {
-                                values.push(lit.to_owned());
+                                values.push(lit.value.clone().unwrap());
                             }
                         }
 

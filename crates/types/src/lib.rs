@@ -76,6 +76,17 @@ impl SchemaType {
         SchemaType::Boolean(BooleanType::default())
     }
 
+    /// Create an enumerable type with the provided literal values.
+    pub fn enumerable<I>(values: I) -> SchemaType
+    where
+        I: IntoIterator<Item = LiteralValue>,
+    {
+        SchemaType::Enum(EnumType {
+            values: values.into_iter().collect(),
+            ..EnumType::default()
+        })
+    }
+
     /// Create a float schema with the provided kind.
     pub fn float(kind: FloatKind) -> SchemaType {
         SchemaType::Float(FloatType {
@@ -362,6 +373,12 @@ pub trait Schematic {
 }
 
 // CORE
+
+impl Schematic for () {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Null
+    }
+}
 
 impl<T: Schematic> Schematic for &T {
     fn generate_schema() -> SchemaType {

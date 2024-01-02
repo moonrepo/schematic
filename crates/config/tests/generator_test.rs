@@ -3,7 +3,7 @@
 use schematic::schema::SchemaGenerator;
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -138,7 +138,7 @@ mod typescript {
     #[test]
     fn exclude_refs() {
         assert_snapshot!(generate(TypeScriptOptions {
-            exclude_references: HashSet::from_iter(["BasicEnum".into(), "AnotherType".into()]),
+            exclude_references: vec!["BasicEnum".into(), "AnotherType".into()],
             ..TypeScriptOptions::default()
         }));
     }
@@ -148,7 +148,7 @@ mod typescript {
         assert_snapshot!(generate(TypeScriptOptions {
             external_types: HashMap::from_iter([(
                 "./externals".into(),
-                HashSet::from_iter(["BasicEnum".into(), "AnotherType".into()])
+                vec!["BasicEnum".into(), "AnotherType".into()]
             )]),
             ..TypeScriptOptions::default()
         }));

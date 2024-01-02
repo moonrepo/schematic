@@ -14,6 +14,15 @@ pub struct StringType {
     pub pattern: Option<String>,
 }
 
+impl StringType {
+    pub fn new(value: impl AsRef<str>) -> Self {
+        Self {
+            default: Some(LiteralValue::String(value.as_ref().to_owned())),
+            ..Default::default()
+        }
+    }
+}
+
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
