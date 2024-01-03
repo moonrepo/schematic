@@ -46,6 +46,23 @@ fn lit_to_string(lit: &LiteralValue) -> String {
     }
 }
 
+fn is_nested_type(schema: &SchemaType) -> bool {
+    match schema {
+        SchemaType::Struct(_) => true,
+        SchemaType::Union(uni) => {
+            if uni.is_nullable() && uni.variants_types.len() == 2 {
+                uni.variants_types
+                    .iter()
+                    .find(|v| !v.is_null())
+                    .is_some_and(|v| is_nested_type(v))
+            } else {
+                false
+            }
+        }
+        _ => false,
+    }
+}
+
 /// Renders template files from a schema.
 pub struct TemplateRenderer {
     depth: usize,
@@ -249,7 +266,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
                     // Nested structs have weird syntax, so render them
                     // at the bottom after other fields
-                    if matches!(field.type_of, SchemaType::Struct(_)) {
+                    if is_nested_type(&field.type_of) {
                         structs.push(field);
                         continue;
                     }
@@ -294,7 +311,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         continue;
                     }
 
-                    let is_nested = matches!(field.type_of, SchemaType::Struct(_));
+                    let is_nested = is_nested_type(&field.type_of);
 
                     if is_nested {
                         self.depth += 1;
@@ -341,9 +358,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
         }
 
         // We have a nullable type, so render the non-null value
-        if uni.variants_types.len() == 2
-            && uni.variants_types.iter().find(|v| v.is_null()).is_some()
-        {
+        if uni.is_nullable() {
             if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
                 return self.render_schema(variant);
             }

@@ -17,3 +17,9 @@ pub struct UnionType {
     pub variants: Option<Vec<SchemaField>>,
     pub variants_types: Vec<Box<SchemaType>>,
 }
+
+impl UnionType {
+    pub fn is_nullable(&self) -> bool {
+        self.variants_types.iter().find(|v| v.is_null()).is_some()
+    }
+}

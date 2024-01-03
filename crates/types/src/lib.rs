@@ -254,9 +254,18 @@ impl SchemaType {
         }
     }
 
-    /// Return true if the schema is null.
+    /// Return true if the schema is an explicit null.
     pub fn is_null(&self) -> bool {
         matches!(self, SchemaType::Null)
+    }
+
+    /// Return true if the schema is nullable (a union with a null).
+    pub fn is_nullable(&self) -> bool {
+        if let SchemaType::Union(uni) = self {
+            return uni.is_nullable();
+        }
+
+        false
     }
 
     /// Set the `default` of the inner schema type.
