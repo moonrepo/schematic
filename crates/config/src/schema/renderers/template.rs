@@ -148,6 +148,31 @@ impl TemplateRenderer {
         out.push('\n');
         out
     }
+
+    fn get_field_value(&mut self, schema: &SchemaType) -> miette::Result<String> {
+        let key = self.get_stack_key();
+
+        if let Some(default) = self.options.default_values.remove(&key) {
+            return self.render_schema(&default);
+        }
+
+        self.render_schema(schema)
+    }
+
+    fn get_stack_key(&self) -> String {
+        let mut key = String::new();
+        let last_index = self.stack.len() - 1;
+
+        for (index, item) in self.stack.iter().enumerate() {
+            key.push_str(item);
+
+            if index != last_index {
+                key.push('.');
+            }
+        }
+
+        key
+    }
 }
 
 impl SchemaRenderer<String> for TemplateRenderer {
@@ -172,10 +197,6 @@ impl SchemaRenderer<String> for TemplateRenderer {
             if let Some(value) = enu.values.get(*index) {
                 return Ok(lit_to_string(value));
             }
-        }
-
-        if let Some(value) = enu.values.first() {
-            return Ok(lit_to_string(value));
         }
 
         self.render_null()
@@ -238,13 +259,17 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         continue;
                     }
 
+                    self.stack.push_back(field.name.clone());
+
                     out.push(format!(
                         "{}{}\"{}\": {},",
                         self.create_comment(field),
                         self.indent(),
                         field.name,
-                        self.render_schema(&field.type_of)?
+                        self.get_field_value(&field.type_of)?,
                     ));
+
+                    self.stack.pop_back();
                 }
 
                 self.depth -= 1;
@@ -271,12 +296,16 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         continue;
                     }
 
+                    self.stack.push_back(field.name.clone());
+
                     out.push(format!(
                         "{}{} = {}",
                         self.create_comment(field),
                         field.name,
-                        self.render_schema(&field.type_of)?
+                        self.get_field_value(&field.type_of)?,
                     ));
+
+                    self.stack.pop_back();
                 }
 
                 for field in structs {
@@ -291,7 +320,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         },
                         self.create_comment(field),
                         self.stack.iter().cloned().collect::<Vec<_>>().join("."),
-                        self.render_schema(&field.type_of)?
+                        self.get_field_value(&field.type_of)?,
                     ));
 
                     self.stack.pop_back();
@@ -311,13 +340,15 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         continue;
                     }
 
+                    self.stack.push_back(field.name.clone());
+
                     let is_nested = is_nested_type(&field.type_of);
 
                     if is_nested {
                         self.depth += 1;
                     }
 
-                    let value = self.render_schema(&field.type_of)?;
+                    let value = self.get_field_value(&field.type_of)?;
 
                     if is_nested {
                         self.depth -= 1;
@@ -331,6 +362,8 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         if is_nested { "\n" } else { " " },
                         value
                     ));
+
+                    self.stack.pop_back();
                 }
 
                 return Ok(out.join(self.gap()));
