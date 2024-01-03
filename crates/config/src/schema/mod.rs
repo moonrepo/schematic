@@ -11,6 +11,10 @@ pub use schematic_types::*;
 #[cfg(feature = "json_schema")]
 pub use renderers::json_schema;
 
+/// Renders file templates.
+#[cfg(feature = "template")]
+pub use renderers::template;
+
 /// Renders TypeScript types.
 #[cfg(feature = "typescript")]
 pub use renderers::typescript;

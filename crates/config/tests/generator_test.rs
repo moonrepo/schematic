@@ -81,6 +81,60 @@ mod json_schema {
     }
 }
 
+#[cfg(all(feature = "template", feature = "json"))]
+mod template_json {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_generator()
+            .generate(&file, TemplateRenderer::with_format(Format::Json))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "template", feature = "toml"))]
+mod template_toml {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.toml");
+
+        create_generator()
+            .generate(&file, TemplateRenderer::with_format(Format::Toml))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "template", feature = "yaml"))]
+mod template_yaml {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.yaml");
+
+        create_generator()
+            .generate(&file, TemplateRenderer::with_format(Format::Yaml))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
 #[cfg(feature = "typescript")]
 mod typescript {
     use super::*;
