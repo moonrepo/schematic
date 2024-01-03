@@ -284,7 +284,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
                     out.push(format!(
                         "{}{}[{}]\n{}",
-                        if self.options.newline_between_fields {
+                        if self.options.newline_between_fields && self.stack.len() == 1 {
                             ""
                         } else {
                             "\n"

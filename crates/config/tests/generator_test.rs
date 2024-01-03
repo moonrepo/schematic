@@ -59,6 +59,21 @@ struct GenConfig {
     yaml_value: serde_yaml::Value,
 }
 
+/// Some comment.
+#[derive(Clone, Config)]
+pub struct TwoDepthConfig {
+    /// An optional string.
+    opt: Option<String>,
+}
+
+/// Some comment.
+#[derive(Clone, Config)]
+pub struct OneDepthConfig {
+    /// This is another nested field.
+    #[setting(nested)]
+    two: TwoDepthConfig,
+}
+
 #[derive(Clone, Config)]
 struct TemplateConfig {
     /// This is a boolean with a medium length description.
@@ -86,6 +101,9 @@ struct TemplateConfig {
     /// This is a nested struct with its own fields.
     #[setting(nested)]
     nested: AnotherConfig,
+    /// This is a nested struct with its own fields.
+    #[setting(nested)]
+    one: OneDepthConfig,
 }
 
 fn create_generator() -> SchemaGenerator {
