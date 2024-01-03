@@ -177,7 +177,7 @@ impl<'l> Variant<'l> {
                 // return `SchemaType`. Be aware of this downstream!
                 quote! {
                     SchemaField {
-                        name: Some(#name.into()),
+                        name: #name.into(),
                         type_of: #inner,
                         ..Default::default()
                     }

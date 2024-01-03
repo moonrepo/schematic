@@ -62,6 +62,7 @@ config = [
 json = ["dep:serde_json"]
 json_schema = ["dep:schemars", "json", "schema"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
+template = []
 toml = ["dep:toml"]
 typescript = ["schema"]
 url = ["dep:reqwest"]
@@ -88,6 +89,7 @@ schematic = { path = ".", features = [
 	"json_schema",
 	"json",
 	"schema",
+	"template",
 	"toml",
 	"typescript",
 	"type_chrono",

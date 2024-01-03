@@ -102,7 +102,7 @@ impl<'l> Variant<'l> {
     }
 
     pub fn get_schema_type(&self) -> TokenStream {
-        let name = map_option_quote("name", Some(self.name.to_string()));
+        let name = self.name.to_string();
         let description = map_option_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
 
@@ -120,8 +120,8 @@ impl<'l> Variant<'l> {
 
         quote! {
             SchemaField {
+                name: #name.into(),
                 type_of: #type_of,
-                #name
                 #description
                 #deprecated
                 ..Default::default()

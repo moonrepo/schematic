@@ -267,13 +267,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 continue;
             }
 
-            let name = field.name.clone().unwrap();
-
             if !field.optional {
-                required.insert(name.clone());
+                required.insert(field.name.clone());
             }
 
-            properties.insert(name, self.create_schema_from_field(field)?);
+            properties.insert(field.name.clone(), self.create_schema_from_field(field)?);
         }
 
         let data = SchemaObject {

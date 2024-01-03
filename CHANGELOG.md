@@ -9,7 +9,8 @@
     `HashSet`.
   - Updated `EnumType.variants` to `Vec<LiteralValue>` instead of `Vec<LiteralType>`.
   - Updated `ObjectType.required` and `StructType.required` to be wrapped in `Option`.
-  - Updated `SchemaField.deprecated` to `Option<String>` from `bool`.
+  - Updated `SchemaField.deprecated` to `Option<String>` instead of `bool`.
+  - Updated `SchemaField.name` to `String` instead of `Option<String>`.
 
 #### 🚀 Updates
 

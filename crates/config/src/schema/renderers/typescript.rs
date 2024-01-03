@@ -159,26 +159,24 @@ impl TypeScriptRenderer {
                 continue;
             }
 
-            if let Some(variant_name) = &variant.name {
-                let field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
-                    format!(
-                        "{}{} = {},",
-                        indent,
-                        variant_name,
-                        self.render_schema(&variant.type_of)?
-                    )
-                } else {
-                    format!("{}{},", indent, variant_name)
-                };
+            let field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
+                format!(
+                    "{}{} = {},",
+                    indent,
+                    variant.name,
+                    self.render_schema(&variant.type_of)?
+                )
+            } else {
+                format!("{}{},", indent, variant.name)
+            };
 
-                let mut tags = vec![];
+            let mut tags = vec![];
 
-                if let Some(default) = variant.type_of.get_default() {
-                    tags.push(format!("@default {}", self.lit_to_string(default)));
-                }
-
-                out.push(self.wrap_in_comment(variant.description.as_ref(), tags, field));
+            if let Some(default) = variant.type_of.get_default() {
+                tags.push(format!("@default {}", self.lit_to_string(default)));
             }
+
+            out.push(self.wrap_in_comment(variant.description.as_ref(), tags, field));
         }
 
         self.depth -= 1;
@@ -350,7 +348,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 continue;
             }
 
-            let mut row = format!("{}{}", indent, field.name.as_ref().unwrap());
+            let mut row = format!("{}{}", indent, field.name);
 
             if field.optional {
                 row.push_str("?: ");

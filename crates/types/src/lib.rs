@@ -340,7 +340,7 @@ impl SchemaType {
 /// Represents a field within a schema struct, or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default)]
 pub struct SchemaField {
-    pub name: Option<String>,
+    pub name: String,
     pub description: Option<String>,
     pub type_of: SchemaType,
     pub deprecated: Option<String>,
@@ -356,7 +356,7 @@ impl SchemaField {
     /// Create a new field with the provided name and type.
     pub fn new(name: &str, type_of: SchemaType) -> SchemaField {
         SchemaField {
-            name: Some(name.to_owned()),
+            name: name.to_owned(),
             type_of,
             ..SchemaField::default()
         }
