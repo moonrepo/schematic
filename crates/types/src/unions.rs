@@ -20,6 +20,6 @@ pub struct UnionType {
 
 impl UnionType {
     pub fn is_nullable(&self) -> bool {
-        self.variants_types.iter().find(|v| v.is_null()).is_some()
+        self.variants_types.iter().any(|v| v.is_null())
     }
 }

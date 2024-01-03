@@ -56,9 +56,8 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut schema_types = vec![];
     let mut has_fallback = false;
     let mut default_index = None;
-    let mut index: usize = 0;
 
-    for variant in variants {
+    for (index, variant) in variants.into_iter().enumerate() {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
@@ -75,8 +74,6 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
             has_fallback = true;
         }
-
-        index += 1;
     }
 
     let before_parse = if let Some(parser) = &args.before_parse {

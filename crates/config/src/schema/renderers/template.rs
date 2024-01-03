@@ -145,7 +145,7 @@ impl TemplateRenderer {
         }
 
         let mut out = lines.join("\n");
-        out.push_str("\n");
+        out.push('\n');
         out
     }
 }
@@ -389,7 +389,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
         let mut output = self.render_struct(schema)?;
 
         if self.options.format.is_toml() || self.options.format.is_yaml() {
-            output.push_str("\n");
+            output.push('\n');
         }
 
         Ok(output)
