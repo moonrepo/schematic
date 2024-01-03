@@ -33,8 +33,8 @@ TypeScriptRenderer::new(TypeScriptOptions {
 
 ### Indentation
 
-The indentation of the generated TypeScript code can be customized using the `indent_char` field. By
-default this is a tab (`\t`).
+The indentation of the generated TypeScript code can be customized using the `indent_char` option.
+By default this is a tab (`\t`).
 
 ```rust
 TypeScriptOptions {
@@ -45,7 +45,7 @@ TypeScriptOptions {
 
 ### Enum types
 
-[Enum types](../enum.md) can be rendered in a format of your choice using the `enum_format` field
+[Enum types](../enum.md) can be rendered in a format of your choice using the `enum_format` option
 and the
 [`EnumFormat`](https://docs.rs/schematic/latest/schematic/schema/typescript/enum.EnumFormat.html)
 enum. By default enums are rendered as TypeScript string unions, but can be rendered as TypeScript
@@ -70,7 +70,7 @@ export enum LogLevel {
 }
 ```
 
-Furthermore, the `const_enum` field can be enabled to render `const enum` types instead of `enum`
+Furthermore, the `const_enum` option can be enabled to render `const enum` types instead of `enum`
 types. This does not apply when `EnumFormat::Union` is used.
 
 ```rust
@@ -91,7 +91,7 @@ export enum LogLevel {}
 ### Object types
 
 [Struct types](../struct.md) can be rendered as either TypeScript interfaces or type aliases using
-the `object_format` field and the
+the `object_format` option and the
 [`ObjectFormat`](https://docs.rs/schematic/latest/schematic/schema/typescript/enum.ObjectFormat.html)
 enum. By default structs are rendered as TypeScript interfaces.
 
@@ -129,8 +129,8 @@ export interface User {
 ```
 
 Depending on your use case, this may not be desirable. If so, you can enable the
-`disable_references` field, which disables references entirely, and inlines all type information. So
-the example above would become:
+`disable_references` option, which disables references entirely, and inlines all type information.
+So the example above would become:
 
 ```rust
 TypeScriptOptions {
@@ -147,7 +147,7 @@ export interface User {
 }
 ```
 
-Additionally, the `exclude_references` field can be used to exclude a type reference by name
+Additionally, the `exclude_references` option can be used to exclude a type reference by name
 entirely from the output, as demonstrated below.
 
 ```rust
@@ -166,7 +166,7 @@ export interface User {
 ### Importing external types
 
 For better interoperability, you can import external types from other TypeScript modules using the
-`external_types` field, which is a map of file paths (relative from the output location) to a list
+`external_types` option, which is a map of file paths (relative from the output location) to a list
 of types to import from that file. This is useful if:
 
 - You have existing types that aren't generated and want to reference.

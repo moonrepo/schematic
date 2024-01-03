@@ -10,11 +10,17 @@ pub struct TemplateOptions {
     /// Include field comments in output.
     pub comments: bool,
 
+    /// List of field names to render but comment out. Supports dot notation.
+    pub comment_fields: Vec<String>,
+
     /// Default values for each field within the root struct.
     pub default_values: HashMap<String, SchemaType>,
 
-    /// File format to render.
-    pub format: Format,
+    /// Content to append to the bottom of the output.
+    pub footer: String,
+
+    /// Content to prepend to the top of the output.
+    pub header: String,
 
     /// List of field names to not render. Supports dot notation.
     pub hide_fields: Vec<String>,
@@ -30,8 +36,10 @@ impl Default for TemplateOptions {
     fn default() -> Self {
         Self {
             comments: true,
+            comment_fields: vec![],
             default_values: HashMap::new(),
-            format: Format::None,
+            footer: String::new(),
+            header: String::new(),
             hide_fields: vec![],
             indent_char: "  ".into(),
             newline_between_fields: true,
@@ -70,21 +78,20 @@ fn is_nested_type(schema: &SchemaType) -> bool {
 /// Renders template files from a schema.
 pub struct TemplateRenderer {
     depth: usize,
+    format: Format,
     options: TemplateOptions,
     stack: VecDeque<String>,
 }
 
 impl TemplateRenderer {
-    pub fn with_format(format: Format) -> Self {
-        Self::new(TemplateOptions {
-            format,
-            ..TemplateOptions::default()
-        })
+    pub fn new_format(format: Format) -> Self {
+        Self::new(format, TemplateOptions::default())
     }
 
-    pub fn new(options: TemplateOptions) -> Self {
+    pub fn new(format: Format, options: TemplateOptions) -> Self {
         Self {
             depth: 0,
+            format,
             options,
             stack: VecDeque::new(),
         }
@@ -119,11 +126,7 @@ impl TemplateRenderer {
 
         let mut lines = vec![];
         let indent = self.indent();
-        let prefix = if self.options.format.is_json() {
-            "// "
-        } else {
-            "# "
-        };
+        let prefix = self.get_comment_prefix();
 
         let mut push = |line: String| {
             lines.push(format!("{indent}{prefix}{}", line));
@@ -151,6 +154,30 @@ impl TemplateRenderer {
         let mut out = lines.join("\n");
         out.push('\n');
         out
+    }
+
+    fn create_field(&self, field: &SchemaField, property: String) -> String {
+        let key = self.get_stack_key();
+
+        format!(
+            "{}{}{}{}",
+            self.create_comment(field),
+            self.indent(),
+            if self.options.comment_fields.contains(&key) {
+                self.get_comment_prefix()
+            } else {
+                ""
+            },
+            property
+        )
+    }
+
+    fn get_comment_prefix(&self) -> &str {
+        if self.format.is_json() {
+            "// "
+        } else {
+            "# "
+        }
     }
 
     fn get_field_value(&mut self, schema: &SchemaType) -> miette::Result<String> {
@@ -259,7 +286,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
     fn render_struct(&mut self, structure: &StructType) -> RenderResult {
         #[cfg(feature = "json")]
         {
-            if self.options.format.is_json() {
+            if self.format.is_json() {
                 let mut out = vec![];
 
                 self.depth += 1;
@@ -268,13 +295,13 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     self.stack.push_back(field.name.clone());
 
                     if !self.is_hidden(field) {
-                        out.push(format!(
-                            "{}{}\"{}\": {},",
-                            self.create_comment(field),
-                            self.indent(),
+                        let prop = format!(
+                            "\"{}\": {},",
                             field.name,
                             self.get_field_value(&field.type_of)?,
-                        ));
+                        );
+
+                        out.push(self.create_field(field, prop));
                     }
 
                     self.stack.pop_back();
@@ -288,7 +315,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
         #[cfg(feature = "toml")]
         {
-            if self.options.format.is_toml() {
+            if self.format.is_toml() {
                 let mut out = vec![];
                 let mut structs = vec![];
 
@@ -303,12 +330,10 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     self.stack.push_back(field.name.clone());
 
                     if !self.is_hidden(field) {
-                        out.push(format!(
-                            "{}{} = {}",
-                            self.create_comment(field),
-                            field.name,
-                            self.get_field_value(&field.type_of)?,
-                        ));
+                        let prop =
+                            format!("{} = {}", field.name, self.get_field_value(&field.type_of)?,);
+
+                        out.push(self.create_field(field, prop));
                     }
 
                     self.stack.pop_back();
@@ -340,7 +365,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
         #[cfg(feature = "yaml")]
         {
-            if self.options.format.is_yaml() {
+            if self.format.is_yaml() {
                 let mut out = vec![];
 
                 for field in &structure.fields {
@@ -363,14 +388,14 @@ impl SchemaRenderer<String> for TemplateRenderer {
                         self.depth -= 1;
                     }
 
-                    out.push(format!(
-                        "{}{}{}:{}{}",
-                        self.create_comment(field),
-                        self.indent(),
+                    let prop = format!(
+                        "{}:{}{}",
                         field.name,
                         if is_nested { "\n" } else { " " },
                         value
-                    ));
+                    );
+
+                    out.push(self.create_field(field, prop));
 
                     self.stack.pop_back();
                 }
@@ -428,9 +453,11 @@ impl SchemaRenderer<String> for TemplateRenderer {
             return Err(miette!("The last registered schema must be a struct type."));
         };
 
-        let mut output = self.render_struct(schema)?;
+        let template = self.render_struct(schema)?;
 
-        if self.options.format.is_toml() || self.options.format.is_yaml() {
+        let mut output = format!("{}{}{}", self.options.header, template, self.options.footer);
+
+        if self.format.is_toml() || self.format.is_yaml() {
             output.push('\n');
         }
 

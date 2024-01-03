@@ -15,6 +15,7 @@
 #### 🚀 Updates
 
 - Added official documentation: https://moonrepo.github.io/schematic
+- Added a new file template generator.
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 - Added `SchemaField.env_var` field.

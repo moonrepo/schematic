@@ -26,7 +26,7 @@ generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default()
 
 Unlike other renderers, a JSON schema represents a single document, with referenced types being
 organized into definitions. In Schematic, the _last type to be added to `SchemaGenerator`_ will be
-the document root, while all other types will become definitions. For example:
+the root document, while all other types will become definitions. For example:
 
 ```rust
 // These are definitions

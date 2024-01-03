@@ -123,9 +123,9 @@ fn create_template_generator() -> SchemaGenerator {
     generator
 }
 
-fn create_template_options(format: Format) -> TemplateOptions {
+fn create_template_options() -> TemplateOptions {
     TemplateOptions {
-        format,
+        comment_fields: vec!["float32".into(), "map".into()],
         hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
         ..TemplateOptions::default()
     }
@@ -162,7 +162,7 @@ mod template_json {
         create_template_generator()
             .generate(
                 &file,
-                TemplateRenderer::new(create_template_options(Format::Json)),
+                TemplateRenderer::new(Format::Json, create_template_options()),
             )
             .unwrap();
 
@@ -183,7 +183,7 @@ mod template_toml {
         create_template_generator()
             .generate(
                 &file,
-                TemplateRenderer::new(create_template_options(Format::Toml)),
+                TemplateRenderer::new(Format::Toml, create_template_options()),
             )
             .unwrap();
 
@@ -204,7 +204,7 @@ mod template_yaml {
         create_template_generator()
             .generate(
                 &file,
-                TemplateRenderer::new(create_template_options(Format::Yaml)),
+                TemplateRenderer::new(Format::Yaml, create_template_options()),
             )
             .unwrap();
 
