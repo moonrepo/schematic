@@ -1,6 +1,7 @@
 use crate::common::FieldSerdeArgs;
 use crate::utils::{
-    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_option_quote,
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, get_meta_path,
+    map_option_quote,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -17,6 +18,7 @@ pub struct VariantArgs {
 
 pub struct Variant<'l> {
     pub args: VariantArgs,
+    pub default: bool,
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
@@ -54,8 +56,13 @@ impl<'l> Variant<'l> {
             format_case(format, variant.ident.to_string().as_str(), true)
         };
 
+        let attrs = extract_common_attrs(&variant.attrs);
+
         Variant {
-            attrs: extract_common_attrs(&variant.attrs),
+            default: attrs
+                .iter()
+                .any(|v| get_meta_path(&v.meta).is_ident("default")),
+            attrs,
             name: &variant.ident,
             value,
             args,

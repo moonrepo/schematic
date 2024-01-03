@@ -21,7 +21,9 @@ derive_enum!(
 /// Some comment.
 #[derive(Clone, Config)]
 pub struct AnotherConfig {
+    /// An optional string.
     opt: Option<String>,
+    /// An optional enum.
     enums: Option<BasicEnum>,
 }
 
@@ -57,9 +59,44 @@ struct GenConfig {
     yaml_value: serde_yaml::Value,
 }
 
+#[derive(Clone, Config)]
+struct TemplateConfig {
+    /// This is a boolean with a medium length description.
+    #[setting(env = "TEMPLATE_BOOLEAN")]
+    boolean: bool,
+    /// This is a string.
+    #[setting(default = "abc")]
+    string: String,
+    /// This is a number with a long description.
+    /// This is a number with a long description.
+    number: usize,
+    /// This is a float thats deprecated.
+    #[deprecated]
+    float32: f32,
+    /// This is a float.
+    #[setting(default = 1.23)]
+    float64: f64,
+    /// This is a list of strings.
+    vector: Vec<String>,
+    /// This is a map of numbers.
+    map: HashMap<String, u64>,
+    /// This is an enum with a medium length description and deprecated.
+    #[deprecated = "Dont use enums!"]
+    enums: BasicEnum,
+    /// This is a nested struct with its own fields.
+    #[setting(nested)]
+    nested: AnotherConfig,
+}
+
 fn create_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
+    generator
+}
+
+fn create_template_generator() -> SchemaGenerator {
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateConfig>();
     generator
 }
 
@@ -91,7 +128,7 @@ mod template_json {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("schema.json");
 
-        create_generator()
+        create_template_generator()
             .generate(&file, TemplateRenderer::with_format(Format::Json))
             .unwrap();
 
@@ -109,7 +146,7 @@ mod template_toml {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("schema.toml");
 
-        create_generator()
+        create_template_generator()
             .generate(&file, TemplateRenderer::with_format(Format::Toml))
             .unwrap();
 
@@ -127,7 +164,7 @@ mod template_yaml {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("schema.yaml");
 
-        create_generator()
+        create_template_generator()
             .generate(&file, TemplateRenderer::with_format(Format::Yaml))
             .unwrap();
 

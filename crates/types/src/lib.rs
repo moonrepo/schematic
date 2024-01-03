@@ -196,10 +196,33 @@ impl SchemaType {
     pub fn get_default(&self) -> Option<&LiteralValue> {
         match self {
             SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
+            SchemaType::Enum(EnumType {
+                default_index,
+                values,
+                ..
+            }) => {
+                if let Some(index) = default_index {
+                    if let Some(value) = values.get(*index) {
+                        return Some(value);
+                    }
+                }
+
+                None
+            }
             SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
             SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
             SchemaType::String(StringType { default, .. }) => default.as_ref(),
-            SchemaType::Union(UnionType { variants_types, .. }) => {
+            SchemaType::Union(UnionType {
+                default_index,
+                variants_types,
+                ..
+            }) => {
+                if let Some(index) = default_index {
+                    if let Some(value) = variants_types.get(*index) {
+                        return value.get_default();
+                    }
+                }
+
                 for variant in variants_types {
                     if let Some(value) = variant.get_default() {
                         return Some(value);
@@ -229,6 +252,11 @@ impl SchemaType {
             SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
             SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
         }
+    }
+
+    /// Return true if the schema is null.
+    pub fn is_null(&self) -> bool {
+        matches!(self, SchemaType::Null)
     }
 
     /// Set the `default` of the inner schema type.

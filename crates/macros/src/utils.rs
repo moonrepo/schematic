@@ -45,7 +45,7 @@ pub fn get_meta_path(meta: &Meta) -> &Path {
 }
 
 pub fn extract_common_attrs(attrs: &[Attribute]) -> Vec<&Attribute> {
-    let preserve = ["allow", "deprecated", "doc", "warn"];
+    let preserve = ["allow", "default", "deprecated", "doc", "warn"];
 
     attrs
         .iter()

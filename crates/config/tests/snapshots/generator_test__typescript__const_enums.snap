@@ -14,7 +14,13 @@ export const enum BasicEnum {
 
 /** Some comment. */
 export interface AnotherConfig {
+	/**
+	 * An optional enum.
+	 *
+	 * @default 'foo'
+	 */
 	enums: BasicEnum | null;
+	/** An optional string. */
 	opt: string | null;
 }
 
@@ -23,6 +29,7 @@ export interface GenConfig {
 	date: string;
 	datetime: string;
 	decimal: string;
+	/** @default 'foo' */
 	enums: BasicEnum;
 	float32: number;
 	float64: number;

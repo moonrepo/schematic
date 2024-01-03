@@ -9,6 +9,7 @@ pub enum UnionOperator {
 
 #[derive(Clone, Debug, Default)]
 pub struct UnionType {
+    pub default_index: Option<usize>,
     pub description: Option<String>,
     pub name: Option<String>,
     pub partial: bool,

@@ -18,6 +18,7 @@
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 - Added `SchemaField.env_var` field.
+- Added `EnumType.default_index` and `UnionType.default_index` fields.
 - Updated `typescript` comment output to include `@deprecated` and `@envvar`.
 - Reduced the amount of code that macros generate for the `Schematic` implementation.
 

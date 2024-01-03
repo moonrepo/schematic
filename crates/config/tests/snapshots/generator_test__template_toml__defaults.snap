@@ -2,33 +2,39 @@
 source: crates/config/tests/generator_test.rs
 expression: "fs::read_to_string(file).unwrap()"
 ---
+# This is a boolean with a medium length description.
+# @envvar TEMPLATE_BOOLEAN
 boolean = false
-date = ""
-datetime = ""
-decimal = ""
-enums = "foo"
-float32 = 0.0
-float64 = 0.0
-id = ""
-jsonValue = null
-locator = null
-map = {}
-number = 0
-path = ""
-relPath = ""
-spec = ""
-specUnresolved = ""
-string = ""
-time = ""
-tomlValue = null
-url = null
-vector = []
-version = null
-versionReq = ""
-yamlValue = null
 
-[nested]
-opt = null
-enums = null
+# This is an enum with a medium length description and deprecated.
+# @deprecated Dont use enums!
+enums = "foo"
+
+# This is a float thats deprecated.
+# @deprecated
+float32 = 0.0
+
+# This is a float.
+float64 = 1.23
+
+# This is a map of numbers.
+map = {}
+
+# This is a nested struct with its own fields.
+nested = # An optional string.
+opt = ""
+
+# An optional enum.
+enums = "foo"
+
+# This is a number with a long description.
+# This is a number with a long description.
+number = 0
+
+# This is a string.
+string = "abc"
+
+# This is a list of strings.
+vector = []
 
 

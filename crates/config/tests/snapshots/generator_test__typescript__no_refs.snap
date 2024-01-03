@@ -10,7 +10,13 @@ export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 /** Some comment. */
 export interface AnotherConfig {
+  /**
+   * An optional enum.
+   *
+   * @default 'foo'
+   */
   enums: 'foo' | 'bar' | 'baz' | null;
+  /** An optional string. */
   opt: string | null;
 }
 
@@ -19,6 +25,7 @@ export interface GenConfig {
   date: string;
   datetime: string;
   decimal: string;
+  /** @default 'foo' */
   enums: 'foo' | 'bar' | 'baz';
   float32: number;
   float64: number;
@@ -27,7 +34,13 @@ export interface GenConfig {
   locator: string | null;
   map: Record<string, number>;
   nested: {
+    /** An optional string. */
     opt: string | null;
+    /**
+     * An optional enum.
+     *
+     * @default 'foo'
+     */
     enums: 'foo' | 'bar' | 'baz' | null;
   };
   number: number;

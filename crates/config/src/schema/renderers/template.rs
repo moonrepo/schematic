@@ -3,16 +3,36 @@ use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Options to control the rendered template.
-#[derive(Default)]
 pub struct TemplateOptions {
+    /// Include field comments in output.
+    pub comments: bool,
+
+    /// Default values for each field within the root struct.
+    pub default_values: HashMap<String, SchemaType>,
+
     /// File format to render.
     pub format: Format,
 
     /// Character(s) to use for indentation.
     pub indent_char: String,
+
+    /// Insert an extra newline between fields.
+    pub newline_between_fields: bool,
+}
+
+impl Default for TemplateOptions {
+    fn default() -> Self {
+        Self {
+            comments: true,
+            default_values: HashMap::new(),
+            format: Format::None,
+            indent_char: "  ".into(),
+            newline_between_fields: true,
+        }
+    }
 }
 
 fn lit_to_string(lit: &LiteralValue) -> String {
@@ -50,17 +70,66 @@ impl TemplateRenderer {
     }
 
     fn indent(&self) -> String {
-        let chars = if self.options.indent_char.is_empty() {
-            "  "
-        } else {
-            &self.options.indent_char
-        };
-
         if self.depth == 0 {
             String::new()
         } else {
-            chars.repeat(self.depth)
+            self.options.indent_char.repeat(self.depth)
         }
+    }
+
+    fn gap(&self) -> &str {
+        if self.options.newline_between_fields {
+            "\n\n"
+        } else {
+            "\n"
+        }
+    }
+
+    fn create_comment(&self, field: &SchemaField) -> String {
+        if !self.options.comments
+            || field.description.is_none()
+            || field
+                .description
+                .as_ref()
+                .is_some_and(|desc| desc.is_empty())
+        {
+            return String::new();
+        }
+
+        let mut lines = vec![];
+        let indent = self.indent();
+        let prefix = if self.options.format.is_json() {
+            "// "
+        } else {
+            "# "
+        };
+
+        let mut push = |line: String| {
+            lines.push(format!("{indent}{prefix}{}", line));
+        };
+
+        if let Some(comment) = &field.description {
+            comment
+                .trim()
+                .split('\n')
+                .for_each(|c| push(c.trim().to_owned()));
+        }
+
+        if let Some(deprecated) = &field.deprecated {
+            push(if deprecated.is_empty() {
+                "@deprecated".into()
+            } else {
+                format!("@deprecated {}", deprecated)
+            });
+        }
+
+        if let Some(env_var) = &field.env_var {
+            push(format!("@envvar {}", env_var));
+        }
+
+        let mut out = lines.join("\n");
+        out.push_str("\n");
+        out
     }
 }
 
@@ -82,6 +151,12 @@ impl SchemaRenderer<String> for TemplateRenderer {
     }
 
     fn render_enum(&mut self, enu: &EnumType) -> RenderResult {
+        if let Some(index) = &enu.default_index {
+            if let Some(value) = enu.values.get(*index) {
+                return Ok(lit_to_string(value));
+            }
+        }
+
         if let Some(value) = enu.values.first() {
             return Ok(lit_to_string(value));
         }
@@ -147,7 +222,8 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     }
 
                     out.push(format!(
-                        "{}\"{}\": {},",
+                        "{}{}\"{}\": {},",
+                        self.create_comment(field),
                         self.indent(),
                         field.name,
                         self.render_schema(&field.type_of)?
@@ -156,7 +232,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
                 self.depth -= 1;
 
-                return Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()));
+                return Ok(format!("{{\n{}\n{}}}", out.join(self.gap()), self.indent()));
             }
         }
 
@@ -179,7 +255,8 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     }
 
                     out.push(format!(
-                        "{} = {}",
+                        "{}{} = {}",
+                        self.create_comment(field),
                         field.name,
                         self.render_schema(&field.type_of)?
                     ));
@@ -189,7 +266,13 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     self.stack.push_back(field.name.clone());
 
                     out.push(format!(
-                        "\n[{}]\n{}",
+                        "{}{}[{}]\n{}",
+                        if self.options.newline_between_fields {
+                            ""
+                        } else {
+                            "\n"
+                        },
+                        self.create_comment(field),
                         self.stack.iter().cloned().collect::<Vec<_>>().join("."),
                         self.render_schema(&field.type_of)?
                     ));
@@ -197,7 +280,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     self.stack.pop_back();
                 }
 
-                return Ok(out.join("\n"));
+                return Ok(out.join(self.gap()));
             }
         }
 
@@ -224,7 +307,8 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     }
 
                     out.push(format!(
-                        "{}{}:{}{}",
+                        "{}{}{}:{}{}",
+                        self.create_comment(field),
                         self.indent(),
                         field.name,
                         if is_nested { "\n" } else { " " },
@@ -232,7 +316,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
                     ));
                 }
 
-                return Ok(out.join("\n"));
+                return Ok(out.join(self.gap()));
             }
         }
 
@@ -249,7 +333,22 @@ impl SchemaRenderer<String> for TemplateRenderer {
         Ok(format!("[{}]", items.join(", ")))
     }
 
-    fn render_union(&mut self, _uni: &UnionType) -> RenderResult {
+    fn render_union(&mut self, uni: &UnionType) -> RenderResult {
+        if let Some(index) = &uni.default_index {
+            if let Some(variant) = uni.variants_types.get(*index) {
+                return self.render_schema(variant);
+            }
+        }
+
+        // We have a nullable type, so render the non-null value
+        if uni.variants_types.len() == 2
+            && uni.variants_types.iter().find(|v| v.is_null()).is_some()
+        {
+            if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
+                return self.render_schema(variant);
+            }
+        }
+
         self.render_null()
     }
 

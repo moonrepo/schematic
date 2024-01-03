@@ -50,6 +50,7 @@ expression: "fs::read_to_string(file).unwrap()"
       "format": "decimal"
     },
     "enums": {
+      "default": "foo",
       "allOf": [
         {
           "$ref": "#/definitions/BasicEnum"
@@ -195,6 +196,8 @@ expression: "fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "enums": {
+          "description": "An optional enum.",
+          "default": "foo",
           "anyOf": [
             {
               "$ref": "#/definitions/BasicEnum"
@@ -205,6 +208,7 @@ expression: "fs::read_to_string(file).unwrap()"
           ]
         },
         "opt": {
+          "description": "An optional string.",
           "anyOf": [
             {
               "type": "string"
