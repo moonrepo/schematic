@@ -16,6 +16,9 @@ pub struct TemplateOptions {
     /// File format to render.
     pub format: Format,
 
+    /// List of field names to not render. Supports dot notation.
+    pub hide_fields: Vec<String>,
+
     /// Character(s) to use for indentation.
     pub indent_char: String,
 
@@ -29,6 +32,7 @@ impl Default for TemplateOptions {
             comments: true,
             default_values: HashMap::new(),
             format: Format::None,
+            hide_fields: vec![],
             indent_char: "  ".into(),
             newline_between_fields: true,
         }
@@ -173,6 +177,12 @@ impl TemplateRenderer {
 
         key
     }
+
+    fn is_hidden(&self, field: &SchemaField) -> bool {
+        let key = self.get_stack_key();
+
+        field.hidden || self.options.hide_fields.contains(&key)
+    }
 }
 
 impl SchemaRenderer<String> for TemplateRenderer {
@@ -255,19 +265,17 @@ impl SchemaRenderer<String> for TemplateRenderer {
                 self.depth += 1;
 
                 for field in &structure.fields {
-                    if field.hidden {
-                        continue;
-                    }
-
                     self.stack.push_back(field.name.clone());
 
-                    out.push(format!(
-                        "{}{}\"{}\": {},",
-                        self.create_comment(field),
-                        self.indent(),
-                        field.name,
-                        self.get_field_value(&field.type_of)?,
-                    ));
+                    if !self.is_hidden(field) {
+                        out.push(format!(
+                            "{}{}\"{}\": {},",
+                            self.create_comment(field),
+                            self.indent(),
+                            field.name,
+                            self.get_field_value(&field.type_of)?,
+                        ));
+                    }
 
                     self.stack.pop_back();
                 }
@@ -285,10 +293,6 @@ impl SchemaRenderer<String> for TemplateRenderer {
                 let mut structs = vec![];
 
                 for field in &structure.fields {
-                    if field.hidden {
-                        continue;
-                    }
-
                     // Nested structs have weird syntax, so render them
                     // at the bottom after other fields
                     if is_nested_type(&field.type_of) {
@@ -298,12 +302,14 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
                     self.stack.push_back(field.name.clone());
 
-                    out.push(format!(
-                        "{}{} = {}",
-                        self.create_comment(field),
-                        field.name,
-                        self.get_field_value(&field.type_of)?,
-                    ));
+                    if !self.is_hidden(field) {
+                        out.push(format!(
+                            "{}{} = {}",
+                            self.create_comment(field),
+                            field.name,
+                            self.get_field_value(&field.type_of)?,
+                        ));
+                    }
 
                     self.stack.pop_back();
                 }
@@ -311,17 +317,19 @@ impl SchemaRenderer<String> for TemplateRenderer {
                 for field in structs {
                     self.stack.push_back(field.name.clone());
 
-                    out.push(format!(
-                        "{}{}[{}]\n{}",
-                        if self.options.newline_between_fields && self.stack.len() == 1 {
-                            ""
-                        } else {
-                            "\n"
-                        },
-                        self.create_comment(field),
-                        self.stack.iter().cloned().collect::<Vec<_>>().join("."),
-                        self.get_field_value(&field.type_of)?,
-                    ));
+                    if !self.is_hidden(field) {
+                        out.push(format!(
+                            "{}{}[{}]\n{}",
+                            if self.options.newline_between_fields && self.stack.len() == 1 {
+                                ""
+                            } else {
+                                "\n"
+                            },
+                            self.create_comment(field),
+                            self.stack.iter().cloned().collect::<Vec<_>>().join("."),
+                            self.get_field_value(&field.type_of)?,
+                        ));
+                    }
 
                     self.stack.pop_back();
                 }
@@ -336,11 +344,12 @@ impl SchemaRenderer<String> for TemplateRenderer {
                 let mut out = vec![];
 
                 for field in &structure.fields {
-                    if field.hidden {
+                    self.stack.push_back(field.name.clone());
+
+                    if self.is_hidden(field) {
+                        self.stack.pop_back();
                         continue;
                     }
-
-                    self.stack.push_back(field.name.clone());
 
                     let is_nested = is_nested_type(&field.type_of);
 

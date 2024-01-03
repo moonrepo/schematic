@@ -1,5 +1,6 @@
 #![allow(dead_code, deprecated)]
 
+use schematic::schema::template::TemplateOptions;
 use schematic::schema::SchemaGenerator;
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -64,6 +65,7 @@ struct GenConfig {
 pub struct TwoDepthConfig {
     /// An optional string.
     opt: Option<String>,
+    skipped: String,
 }
 
 /// Some comment.
@@ -72,6 +74,8 @@ pub struct OneDepthConfig {
     /// This is another nested field.
     #[setting(nested)]
     two: TwoDepthConfig,
+    #[setting(skip)]
+    skipped: String,
 }
 
 #[derive(Clone, Config)]
@@ -104,6 +108,7 @@ struct TemplateConfig {
     /// This is a nested struct with its own fields.
     #[setting(nested)]
     one: OneDepthConfig,
+    skipped: String,
 }
 
 fn create_generator() -> SchemaGenerator {
@@ -116,6 +121,14 @@ fn create_template_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<PartialTemplateConfig>();
     generator
+}
+
+fn create_template_options(format: Format) -> TemplateOptions {
+    TemplateOptions {
+        format,
+        hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
+        ..TemplateOptions::default()
+    }
 }
 
 #[cfg(feature = "json_schema")]
@@ -147,7 +160,10 @@ mod template_json {
         let file = sandbox.path().join("schema.json");
 
         create_template_generator()
-            .generate(&file, TemplateRenderer::with_format(Format::Json))
+            .generate(
+                &file,
+                TemplateRenderer::new(create_template_options(Format::Json)),
+            )
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -165,7 +181,10 @@ mod template_toml {
         let file = sandbox.path().join("schema.toml");
 
         create_template_generator()
-            .generate(&file, TemplateRenderer::with_format(Format::Toml))
+            .generate(
+                &file,
+                TemplateRenderer::new(create_template_options(Format::Toml)),
+            )
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -183,7 +202,10 @@ mod template_yaml {
         let file = sandbox.path().join("schema.yaml");
 
         create_template_generator()
-            .generate(&file, TemplateRenderer::with_format(Format::Yaml))
+            .generate(
+                &file,
+                TemplateRenderer::new(create_template_options(Format::Yaml)),
+            )
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
