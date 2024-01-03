@@ -2,5 +2,33 @@
 source: crates/config/tests/generator_test.rs
 expression: "fs::read_to_string(file).unwrap()"
 ---
+boolean = false
+date = ""
+datetime = ""
+decimal = ""
+enums = "foo"
+float32 = 0.0
+float64 = 0.0
+id = ""
+jsonValue = null
+locator = null
+map = {}
+number = 0
+path = ""
+relPath = ""
+spec = ""
+specUnresolved = ""
+string = ""
+time = ""
+tomlValue = null
+url = null
+vector = []
+version = null
+versionReq = ""
+yamlValue = null
+
+[nested]
+opt = null
+enums = null
 
 

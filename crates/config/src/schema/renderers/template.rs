@@ -3,7 +3,7 @@ use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 /// Options to control the rendered template.
 #[derive(Default)]
@@ -30,6 +30,7 @@ fn lit_to_string(lit: &LiteralValue) -> String {
 pub struct TemplateRenderer {
     depth: usize,
     options: TemplateOptions,
+    stack: VecDeque<String>,
 }
 
 impl TemplateRenderer {
@@ -41,7 +42,11 @@ impl TemplateRenderer {
     }
 
     pub fn new(options: TemplateOptions) -> Self {
-        Self { depth: 0, options }
+        Self {
+            depth: 0,
+            options,
+            stack: VecDeque::new(),
+        }
     }
 
     fn indent(&self) -> String {
@@ -158,7 +163,41 @@ impl SchemaRenderer<String> for TemplateRenderer {
         #[cfg(feature = "toml")]
         {
             if self.options.format.is_toml() {
-                return Ok("".into());
+                let mut out = vec![];
+                let mut structs = vec![];
+
+                for field in &structure.fields {
+                    if field.hidden {
+                        continue;
+                    }
+
+                    // Nested structs have weird syntax, so render them
+                    // at the bottom after other fields
+                    if matches!(field.type_of, SchemaType::Struct(_)) {
+                        structs.push(field);
+                        continue;
+                    }
+
+                    out.push(format!(
+                        "{} = {}",
+                        field.name,
+                        self.render_schema(&field.type_of)?
+                    ));
+                }
+
+                for field in structs {
+                    self.stack.push_back(field.name.clone());
+
+                    out.push(format!(
+                        "\n[{}]\n{}",
+                        self.stack.iter().cloned().collect::<Vec<_>>().join("."),
+                        self.render_schema(&field.type_of)?
+                    ));
+
+                    self.stack.pop_back();
+                }
+
+                return Ok(out.join("\n"));
             }
         }
 
@@ -233,7 +272,11 @@ impl SchemaRenderer<String> for TemplateRenderer {
             return Err(miette!("The last registered schema must be a struct type."));
         };
 
-        let output = self.render_struct(schema)?;
+        let mut output = self.render_struct(schema)?;
+
+        if self.options.format.is_toml() || self.options.format.is_yaml() {
+            output.push_str("\n");
+        }
 
         Ok(output)
     }
