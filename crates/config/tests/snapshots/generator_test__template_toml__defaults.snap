@@ -2,5 +2,5 @@
 source: crates/config/tests/generator_test.rs
 expression: "fs::read_to_string(file).unwrap()"
 ---
-{}
+
 

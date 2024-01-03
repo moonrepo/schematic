@@ -1,7 +1,7 @@
 use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
-use miette::{miette, IntoDiagnostic};
+use miette::miette;
 use schematic_types::*;
 use std::collections::HashSet;
 
@@ -15,77 +15,15 @@ pub struct TemplateOptions {
     pub indent_char: String,
 }
 
-#[cfg(feature = "json")]
-fn lit_to_json_string(lit: &LiteralValue) -> miette::Result<String> {
-    use serde_json::{to_string_pretty, Number, Value};
-
-    let value = match lit {
-        LiteralValue::Bool(inner) => Value::Bool(*inner),
-        LiteralValue::F32(inner) => Value::Number(Number::from_f64(*inner as f64).unwrap()),
-        LiteralValue::F64(inner) => Value::Number(Number::from_f64(*inner).unwrap()),
-        LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::String(inner) => Value::String(inner.to_owned()),
-    };
-
-    to_string_pretty(&value).into_diagnostic()
-}
-
-#[cfg(feature = "toml")]
-fn lit_to_toml_string(lit: &LiteralValue) -> miette::Result<String> {
-    use toml::{to_string_pretty, Value};
-
-    let value = match lit {
-        LiteralValue::Bool(inner) => Value::Boolean(*inner),
-        LiteralValue::F32(inner) => Value::Float(*inner as f64),
-        LiteralValue::F64(inner) => Value::Float(*inner),
-        LiteralValue::Int(inner) => Value::Integer(*inner as i64),
-        LiteralValue::UInt(inner) => Value::Integer(*inner as i64),
-        LiteralValue::String(inner) => Value::String(inner.to_owned()),
-    };
-
-    to_string_pretty(&value).into_diagnostic()
-}
-
-#[cfg(feature = "yaml")]
-fn lit_to_yaml_string(lit: &LiteralValue) -> miette::Result<String> {
-    use serde_yaml::{to_string, Number, Value};
-
-    let value = match lit {
-        LiteralValue::Bool(inner) => Value::Bool(*inner),
-        LiteralValue::F32(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::F64(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
-        LiteralValue::String(inner) => Value::String(inner.to_owned()),
-    };
-
-    to_string(&value).into_diagnostic()
-}
-
-macro_rules! literal_value {
-    ($value:expr, $format:expr) => {
-        #[cfg(feature = "json")]
-        {
-            if $format.is_json() {
-                return lit_to_json_string($value);
-            }
-        }
-
-        #[cfg(feature = "toml")]
-        {
-            if $format.is_toml() {
-                return lit_to_toml_string($value);
-            }
-        }
-
-        #[cfg(feature = "yaml")]
-        {
-            if $format.is_yaml() {
-                return lit_to_yaml_string($value);
-            }
-        }
-    };
+fn lit_to_string(lit: &LiteralValue) -> String {
+    match lit {
+        LiteralValue::Bool(inner) => inner.to_string(),
+        LiteralValue::F32(inner) => inner.to_string(),
+        LiteralValue::F64(inner) => inner.to_string(),
+        LiteralValue::Int(inner) => inner.to_string(),
+        LiteralValue::UInt(inner) => inner.to_string(),
+        LiteralValue::String(inner) => format!("\"{}\"", inner),
+    }
 }
 
 /// Renders template files from a schema.
@@ -103,15 +41,7 @@ impl TemplateRenderer {
     }
 
     pub fn new(options: TemplateOptions) -> Self {
-        let mut depth = 0;
-
-        // In a JSON document, all fields are indented by
-        // default because of the outer object block
-        if options.format.is_json() {
-            depth = 1;
-        }
-
-        Self { depth, options }
+        Self { depth: 0, options }
     }
 
     fn indent(&self) -> String {
@@ -130,7 +60,7 @@ impl TemplateRenderer {
 }
 
 impl SchemaRenderer<String> for TemplateRenderer {
-    fn is_reference(&self, name: &str) -> bool {
+    fn is_reference(&self, _name: &str) -> bool {
         false
     }
 
@@ -140,7 +70,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult {
         if let Some(default) = &boolean.default {
-            literal_value!(default, &self.options.format);
+            return Ok(lit_to_string(default));
         }
 
         Ok("false".into())
@@ -148,7 +78,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_enum(&mut self, enu: &EnumType) -> RenderResult {
         if let Some(value) = enu.values.first() {
-            literal_value!(value, &self.options.format);
+            return Ok(lit_to_string(value));
         }
 
         self.render_null()
@@ -156,7 +86,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_float(&mut self, float: &FloatType) -> RenderResult {
         if let Some(default) = &float.default {
-            literal_value!(default, &self.options.format);
+            return Ok(lit_to_string(default));
         }
 
         Ok("0.0".into())
@@ -164,7 +94,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_integer(&mut self, integer: &IntegerType) -> RenderResult {
         if let Some(default) = &integer.default {
-            literal_value!(default, &self.options.format);
+            return Ok(lit_to_string(default));
         }
 
         Ok("0".into())
@@ -172,7 +102,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_literal(&mut self, literal: &LiteralType) -> RenderResult {
         if let Some(value) = &literal.value {
-            literal_value!(value, &self.options.format);
+            return Ok(lit_to_string(value));
         }
 
         self.render_null()
@@ -182,7 +112,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
         Ok("null".into())
     }
 
-    fn render_object(&mut self, object: &ObjectType) -> RenderResult {
+    fn render_object(&mut self, _object: &ObjectType) -> RenderResult {
         Ok("{}".into())
     }
 
@@ -192,92 +122,82 @@ impl SchemaRenderer<String> for TemplateRenderer {
 
     fn render_string(&mut self, string: &StringType) -> RenderResult {
         if let Some(default) = &string.default {
-            literal_value!(default, &self.options.format);
+            return Ok(lit_to_string(default));
         }
 
         Ok("\"\"".into())
     }
 
     fn render_struct(&mut self, structure: &StructType) -> RenderResult {
-        Ok("{}".into())
-        // self.depth += 1;
+        #[cfg(feature = "json")]
+        {
+            if self.options.format.is_json() {
+                let mut out = vec![];
 
-        // let mut out = vec![];
-        // let indent = self.indent();
+                self.depth += 1;
 
-        // for field in &structure.fields {
-        //     if field.hidden {
-        //         continue;
-        //     }
+                for field in &structure.fields {
+                    if field.hidden {
+                        continue;
+                    }
 
-        //     let name = &field.name;
+                    out.push(format!(
+                        "{}\"{}\": {},",
+                        self.indent(),
+                        field.name,
+                        self.render_schema(&field.type_of)?
+                    ));
+                }
 
-        //     let mut prefix = "";
-        //     let mut key = "".to_owned();
-        //     let mut joiner = ": ";
-        //     let mut value = "";
-        //     let mut suffix = "";
+                self.depth -= 1;
 
-        //     match &self.options.format {
-        //         #[cfg(feature = "json")]
-        //         Format::Json => {
-        //             key = format!("\"{}\"", name);
-        //         }
+                return Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()));
+            }
+        }
 
-        //         #[cfg(feature = "toml")]
-        //         Format::Toml => {
-        //             key = format!("[{}]", name);
-        //             joiner = "\n";
-        //         }
+        #[cfg(feature = "toml")]
+        {
+            if self.options.format.is_toml() {
+                return Ok("".into());
+            }
+        }
 
-        //         #[cfg(feature = "yaml")]
-        //         Format::Yaml => {
-        //             key = format!("{}", name);
-        //         }
+        #[cfg(feature = "yaml")]
+        {
+            if self.options.format.is_yaml() {
+                let mut out = vec![];
 
-        //         _ => continue,
-        //     };
+                for field in &structure.fields {
+                    if field.hidden {
+                        continue;
+                    }
 
-        //     // let mut row = format!("{}{}", indent, field.name.as_ref().unwrap());
+                    let is_nested = matches!(field.type_of, SchemaType::Struct(_));
 
-        //     // if field.optional {
-        //     //     row.push_str("?: ");
-        //     // } else {
-        //     //     row.push_str(": ");
-        //     // }
+                    if is_nested {
+                        self.depth += 1;
+                    }
 
-        //     // row.push_str(&self.render_schema(&field.type_of)?);
+                    let value = self.render_schema(&field.type_of)?;
 
-        //     // if matches!(self.options.object_format, ObjectFormat::Interface) {
-        //     //     row.push(';');
-        //     // } else {
-        //     //     row.push(',');
-        //     // }
+                    if is_nested {
+                        self.depth -= 1;
+                    }
 
-        //     // let mut tags = vec![];
+                    out.push(format!(
+                        "{}{}:{}{}",
+                        self.indent(),
+                        field.name,
+                        if is_nested { "\n" } else { " " },
+                        value
+                    ));
+                }
 
-        //     // if let Some(default) = field.type_of.get_default() {
-        //     //     tags.push(format!("@default {}", self.lit_to_string(default)));
-        //     // }
+                return Ok(out.join("\n"));
+            }
+        }
 
-        //     // if let Some(deprecated) = &field.deprecated {
-        //     //     tags.push(if deprecated.is_empty() {
-        //     //         "@deprecated".to_owned()
-        //     //     } else {
-        //     //         format!("@deprecated {}", deprecated)
-        //     //     });
-        //     // }
-
-        //     // if let Some(env_var) = &field.env_var {
-        //     //     tags.push(format!("@envvar {}", env_var));
-        //     // }
-
-        //     // out.push(self.wrap_in_comment(field.description.as_ref(), tags, row));
-        // }
-
-        // self.depth -= 1;
-
-        // Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
+        Ok("".into())
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult {
@@ -313,11 +233,7 @@ impl SchemaRenderer<String> for TemplateRenderer {
             return Err(miette!("The last registered schema must be a struct type."));
         };
 
-        let mut output = self.render_struct(schema)?;
-
-        if self.options.format.is_json() {
-            output = format!("{{\n{}\n}}", output);
-        }
+        let output = self.render_struct(schema)?;
 
         Ok(output)
     }
