@@ -3,7 +3,8 @@ name = "schematic"
 version = "0.12.12"
 edition = "2021"
 license = "MIT"
-description = "A light-weight, macro-based, and layered serde configuration and schema library."
+description = "A layered serde configuration and schema library."
+homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
 
@@ -27,7 +28,7 @@ garde = { version = "0.16.3", default-features = false, optional = true, feature
 	"regex",
 ] }
 serde = { workspace = true, optional = true }
-serde_path_to_error = { version = "0.1.14", optional = true }
+serde_path_to_error = { version = "0.1.15", optional = true }
 starbase_styles = { version = "0.1.16", optional = true }
 
 # schema

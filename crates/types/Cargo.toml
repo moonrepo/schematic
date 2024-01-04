@@ -4,6 +4,7 @@ version = "0.4.10"
 edition = "2021"
 license = "MIT"
 description = "Shapes and types for defining schemas for Rust types."
+homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]

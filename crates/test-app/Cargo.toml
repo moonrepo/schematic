@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-schematic = { path = "../config", features = [
+schematic = { path = "../schematic", features = [
 	"json",
 	"schema",
 	"type_chrono",
