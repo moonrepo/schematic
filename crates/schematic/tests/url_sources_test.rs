@@ -9,7 +9,7 @@ pub struct Config {
 }
 
 fn get_url(path: &str) -> String {
-    format!("https://raw.githubusercontent.com/moonrepo/schematic/master/crates/config/tests/__fixtures__/{}", path)
+    format!("https://raw.githubusercontent.com/moonrepo/schematic/master/crates/schematic/tests/__fixtures__/{}", path)
 }
 
 #[test]
