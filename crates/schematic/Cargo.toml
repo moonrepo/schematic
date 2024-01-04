@@ -27,7 +27,7 @@ tracing = "0.1.40"
 garde = { version = "0.16.3", default-features = false, optional = true, features = [
 	"regex",
 ] }
-serde = { workspace = true, optional = true }
+serde = { workspace = true }
 serde_path_to_error = { version = "0.1.15", optional = true }
 starbase_styles = { version = "0.1.16", optional = true }
 
@@ -55,7 +55,6 @@ reqwest = { version = "0.11.23", default-features = false, optional = true, feat
 default = ["config", "url"]
 config = [
 	"dep:garde",
-	"dep:serde",
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
 	"schematic_macros/config",

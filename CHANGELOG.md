@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a build failure when all features are disabled.
+
 ## 0.13.1
 
 #### 🐞 Fixes
