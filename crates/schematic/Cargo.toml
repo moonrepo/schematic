@@ -1,6 +1,6 @@
 [package]
 name = "schematic"
-version = "0.13.1"
+version = "0.13.2"
 edition = "2021"
 license = "MIT"
 description = "A layered serde configuration and schema library."
