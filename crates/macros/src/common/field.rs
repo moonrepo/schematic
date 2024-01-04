@@ -159,7 +159,7 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
-        let name = map_option_quote("name", Some(self.get_name(Some(casing_format))));
+        let name = self.get_name(Some(casing_format));
         let hidden = map_bool_quote("hidden", self.is_skipped());
         let nullable = map_bool_quote("nullable", self.is_optional());
         let description = map_option_quote("description", extract_comment(&self.attrs));
@@ -199,8 +199,8 @@ impl<'l> Field<'l> {
 
         quote! {
             SchemaField {
+                name: #name.into(),
                 type_of: #type_of,
-                #name
                 #description
                 #deprecated
                 #env_var

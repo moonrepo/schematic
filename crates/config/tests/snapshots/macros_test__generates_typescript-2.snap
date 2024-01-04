@@ -40,6 +40,7 @@ export const enum Aliased {
 
 export type ValueTypes = {
 	boolean: boolean,
+	/** @default 'a' */
 	enums: SomeEnum,
 	map: Record<string, number>,
 	number: number,
@@ -59,6 +60,7 @@ export type DefaultValues = {
 	/** @default true */
 	boolean: boolean,
 	booleanFn: boolean,
+	/** @default 'a' */
 	enums: SomeEnum,
 	/** @default 'foo.json' */
 	fileString: string,
@@ -160,6 +162,7 @@ export type PartialDefaultValues = {
 	/** @default true */
 	boolean?: boolean | null,
 	booleanFn?: boolean | null,
+	/** @default 'a' */
 	enums?: SomeEnum | null,
 	/** @default 'foo.json' */
 	fileString?: string | null,
@@ -182,6 +185,7 @@ export type PartialDefaultValues = {
 
 export type PartialValueTypes = {
 	boolean?: boolean | null,
+	/** @default 'a' */
 	enums?: SomeEnum | null,
 	map?: Record<string, number> | null,
 	number?: number | null,

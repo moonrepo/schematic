@@ -18,6 +18,7 @@ export type Aliased = 'foo' | 'bar' | 'baz';
 
 export interface ValueTypes {
 	boolean: boolean;
+	/** @default 'a' */
 	enums: SomeEnum;
 	map: Record<string, number>;
 	number: number;
@@ -37,6 +38,7 @@ export interface DefaultValues {
 	/** @default true */
 	boolean: boolean;
 	booleanFn: boolean;
+	/** @default 'a' */
 	enums: SomeEnum;
 	/** @default 'foo.json' */
 	fileString: string;
@@ -138,6 +140,7 @@ export interface PartialDefaultValues {
 	/** @default true */
 	boolean?: boolean | null;
 	booleanFn?: boolean | null;
+	/** @default 'a' */
 	enums?: SomeEnum | null;
 	/** @default 'foo.json' */
 	fileString?: string | null;
@@ -160,6 +163,7 @@ export interface PartialDefaultValues {
 
 export interface PartialValueTypes {
 	boolean?: boolean | null;
+	/** @default 'a' */
 	enums?: SomeEnum | null;
 	map?: Record<string, number> | null;
 	number?: number | null;

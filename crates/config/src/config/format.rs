@@ -1,32 +1,14 @@
 use crate::config::errors::{ConfigError, ParserError};
 use miette::{SourceOffset, SourceSpan};
-use serde::Deserialize;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::de::DeserializeOwned;
+
+pub use crate::format::Format;
 
 fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
     let offset = SourceOffset::from_location(content, line, column).offset();
     let length = 0;
 
     (offset, length).into()
-}
-
-/// Supported source configuration formats.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Format {
-    // This is to simply handle the use case when no features are
-    // enabled. If this doesn't exist, Rust errors with no variants.
-    #[doc(hidden)]
-    None,
-
-    #[cfg(feature = "json")]
-    Json,
-
-    #[cfg(feature = "toml")]
-    Toml,
-
-    #[cfg(feature = "yaml")]
-    Yaml,
 }
 
 impl Format {

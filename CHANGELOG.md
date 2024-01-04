@@ -9,14 +9,17 @@
     `HashSet`.
   - Updated `EnumType.variants` to `Vec<LiteralValue>` instead of `Vec<LiteralType>`.
   - Updated `ObjectType.required` and `StructType.required` to be wrapped in `Option`.
-  - Updated `SchemaField.deprecated` to `Option<String>` from `bool`.
+  - Updated `SchemaField.deprecated` to `Option<String>` instead of `bool`.
+  - Updated `SchemaField.name` to `String` instead of `Option<String>`.
 
 #### 🚀 Updates
 
 - Added official documentation: https://moonrepo.github.io/schematic
+- Added a new file template generator.
 - Added constructor methods for schema types.
 - Added `SchemaType::enumerable` method.
 - Added `SchemaField.env_var` field.
+- Added `EnumType.default_index` and `UnionType.default_index` fields.
 - Updated `typescript` comment output to include `@deprecated` and `@envvar`.
 - Reduced the amount of code that macros generate for the `Schematic` implementation.
 

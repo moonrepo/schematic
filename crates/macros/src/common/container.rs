@@ -1,4 +1,5 @@
 use crate::common::{Field, TaggedFormat, Variant};
+use crate::utils::map_option_quote;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Fields;
@@ -62,10 +63,16 @@ impl<'l> Container<'l> {
                 let is_all_unit_enum = variants
                     .iter()
                     .all(|v| matches!(v.value.fields, Fields::Unit));
+                let mut default_index = None;
 
                 let variants_types = variants
                     .iter()
-                    .filter_map(|v| {
+                    .enumerate()
+                    .filter_map(|(i, v)| {
+                        if v.is_default() {
+                            default_index = Some(i);
+                        }
+
                         if v.is_excluded() {
                             None
                         } else {
@@ -80,6 +87,8 @@ impl<'l> Container<'l> {
                         }
                     })
                     .collect::<Vec<_>>();
+
+                let default_index = map_option_quote("default_index", default_index);
 
                 if is_all_unit_enum {
                     quote! {
@@ -98,6 +107,7 @@ impl<'l> Container<'l> {
                             name: Some(#config_name.into()),
                             values,
                             variants: Some(variants),
+                            #default_index
                             ..Default::default()
                         };
 
@@ -112,6 +122,7 @@ impl<'l> Container<'l> {
                             variants_types: vec![
                                 #(Box::new(#variants_types)),*
                             ],
+                            #default_index
                             ..Default::default()
                         };
 

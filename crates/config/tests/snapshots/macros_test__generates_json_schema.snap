@@ -144,6 +144,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         "enums": {
+          "default": "a",
           "allOf": [
             {
               "$ref": "#/definitions/SomeEnum"
@@ -413,6 +414,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
+          "default": "a",
           "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
@@ -656,6 +658,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "enums": {
+          "default": "a",
           "anyOf": [
             {
               "$ref": "#/definitions/SomeEnum"
@@ -855,6 +858,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         "enums": {
+          "default": "a",
           "allOf": [
             {
               "$ref": "#/definitions/SomeEnum"

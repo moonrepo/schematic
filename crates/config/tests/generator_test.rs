@@ -1,5 +1,6 @@
 #![allow(dead_code, deprecated)]
 
+use schematic::schema::template::TemplateOptions;
 use schematic::schema::SchemaGenerator;
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -21,7 +22,9 @@ derive_enum!(
 /// Some comment.
 #[derive(Clone, Config)]
 pub struct AnotherConfig {
+    /// An optional string.
     opt: Option<String>,
+    /// An optional enum.
     enums: Option<BasicEnum>,
 }
 
@@ -57,10 +60,75 @@ struct GenConfig {
     yaml_value: serde_yaml::Value,
 }
 
+/// Some comment.
+#[derive(Clone, Config)]
+pub struct TwoDepthConfig {
+    /// An optional string.
+    opt: Option<String>,
+    skipped: String,
+}
+
+/// Some comment.
+#[derive(Clone, Config)]
+pub struct OneDepthConfig {
+    /// This is another nested field.
+    #[setting(nested)]
+    two: TwoDepthConfig,
+    #[setting(skip)]
+    skipped: String,
+}
+
+#[derive(Clone, Config)]
+struct TemplateConfig {
+    /// This is a boolean with a medium length description.
+    #[setting(env = "TEMPLATE_BOOLEAN")]
+    boolean: bool,
+    /// This is a string.
+    #[setting(default = "abc")]
+    string: String,
+    /// This is a number with a long description.
+    /// This is a number with a long description.
+    number: usize,
+    /// This is a float thats deprecated.
+    #[deprecated]
+    float32: f32,
+    /// This is a float.
+    #[setting(default = 1.23)]
+    float64: f64,
+    /// This is a list of strings.
+    vector: Vec<String>,
+    /// This is a map of numbers.
+    map: HashMap<String, u64>,
+    /// This is an enum with a medium length description and deprecated.
+    #[deprecated = "Dont use enums!"]
+    enums: BasicEnum,
+    /// This is a nested struct with its own fields.
+    #[setting(nested)]
+    nested: AnotherConfig,
+    /// This is a nested struct with its own fields.
+    #[setting(nested)]
+    one: OneDepthConfig,
+    skipped: String,
+}
+
 fn create_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
     generator
+}
+
+fn create_template_generator() -> SchemaGenerator {
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateConfig>();
+    generator
+}
+
+fn create_template_options() -> TemplateOptions {
+    TemplateOptions {
+        comment_fields: vec!["float32".into(), "map".into()],
+        hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
+        ..TemplateOptions::default()
+    }
 }
 
 #[cfg(feature = "json_schema")]
@@ -75,6 +143,69 @@ mod json_schema {
 
         create_generator()
             .generate(&file, JsonSchemaRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "template", feature = "json"))]
+mod template_json {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_template_generator()
+            .generate(
+                &file,
+                TemplateRenderer::new(Format::Json, create_template_options()),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "template", feature = "toml"))]
+mod template_toml {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.toml");
+
+        create_template_generator()
+            .generate(
+                &file,
+                TemplateRenderer::new(Format::Toml, create_template_options()),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "template", feature = "yaml"))]
+mod template_yaml {
+    use super::*;
+    use schematic::schema::template::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.yaml");
+
+        create_template_generator()
+            .generate(
+                &file,
+                TemplateRenderer::new(Format::Yaml, create_template_options()),
+            )
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());

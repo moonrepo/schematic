@@ -11,7 +11,6 @@ mod validator;
 pub use cacher::*;
 pub use configs::*;
 pub use errors::*;
-pub use format::*;
 pub use layer::*;
 pub use loader::*;
 pub use path::*;

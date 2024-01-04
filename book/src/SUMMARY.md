@@ -33,6 +33,6 @@
   - [External types](./schema/external.md)
   - [Code generation](./schema/generator/index.md)
     - [API documentation]()
-    - [File templates]()
+    - [File templates](./schema/generator/template.md)
     - [JSON schemas](./schema/generator/json-schema.md)
     - [TypeScript types](./schema/generator/typescript.md)

@@ -55,12 +55,17 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut from_stmts = vec![];
     let mut schema_types = vec![];
     let mut has_fallback = false;
+    let mut default_index = None;
 
-    for variant in variants {
+    for (index, variant) in variants.into_iter().enumerate() {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
         schema_types.push(variant.get_schema_type());
+
+        if variant.default {
+            default_index = Some(index);
+        }
 
         if variant.args.fallback {
             if has_fallback {
@@ -165,6 +170,10 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     #[cfg(feature = "schema")]
     {
+        use crate::utils::map_option_quote;
+
+        let default_index = map_option_quote("default_index", default_index);
+
         impls.push(quote! {
             #[automatically_derived]
             impl schematic::Schematic for #enum_name {
@@ -183,10 +192,11 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     }
 
                     SchemaType::Enum(EnumType {
-                        description: None,
                         name: Some(#meta_name.into()),
                         values,
                         variants: Some(variants),
+                        #default_index
+                        ..EnumType::default()
                     })
                 }
             }

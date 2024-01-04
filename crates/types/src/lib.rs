@@ -196,10 +196,33 @@ impl SchemaType {
     pub fn get_default(&self) -> Option<&LiteralValue> {
         match self {
             SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
+            SchemaType::Enum(EnumType {
+                default_index,
+                values,
+                ..
+            }) => {
+                if let Some(index) = default_index {
+                    if let Some(value) = values.get(*index) {
+                        return Some(value);
+                    }
+                }
+
+                None
+            }
             SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
             SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
             SchemaType::String(StringType { default, .. }) => default.as_ref(),
-            SchemaType::Union(UnionType { variants_types, .. }) => {
+            SchemaType::Union(UnionType {
+                default_index,
+                variants_types,
+                ..
+            }) => {
+                if let Some(index) = default_index {
+                    if let Some(value) = variants_types.get(*index) {
+                        return value.get_default();
+                    }
+                }
+
                 for variant in variants_types {
                     if let Some(value) = variant.get_default() {
                         return Some(value);
@@ -229,6 +252,20 @@ impl SchemaType {
             SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
             SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
         }
+    }
+
+    /// Return true if the schema is an explicit null.
+    pub fn is_null(&self) -> bool {
+        matches!(self, SchemaType::Null)
+    }
+
+    /// Return true if the schema is nullable (a union with a null).
+    pub fn is_nullable(&self) -> bool {
+        if let SchemaType::Union(uni) = self {
+            return uni.is_nullable();
+        }
+
+        false
     }
 
     /// Set the `default` of the inner schema type.
@@ -340,7 +377,7 @@ impl SchemaType {
 /// Represents a field within a schema struct, or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default)]
 pub struct SchemaField {
-    pub name: Option<String>,
+    pub name: String,
     pub description: Option<String>,
     pub type_of: SchemaType,
     pub deprecated: Option<String>,
@@ -356,7 +393,7 @@ impl SchemaField {
     /// Create a new field with the provided name and type.
     pub fn new(name: &str, type_of: SchemaType) -> SchemaField {
         SchemaField {
-            name: Some(name.to_owned()),
+            name: name.to_owned(),
             type_of,
             ..SchemaField::default()
         }
