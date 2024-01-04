@@ -13,7 +13,6 @@ impl<'l> ToTokens for ConfigMacro<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let cfg = &self.0;
         let name = cfg.name;
-        let env_prefix = cfg.args.env_prefix.as_ref();
 
         // Generate the partial implementation
         let partial_name = format_ident!("Partial{}", cfg.name);
@@ -27,7 +26,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
         // Generate implementations
         let meta = cfg.get_meta_struct();
         let default_values = cfg.type_of.generate_default_values();
-        let env_values = cfg.type_of.generate_env_values(env_prefix);
+        let env_values = cfg.type_of.generate_env_values();
         let extends_from = cfg.type_of.generate_extends_from();
         let finalize = cfg.type_of.generate_finalize();
         let merge = cfg.type_of.generate_merge();

@@ -56,7 +56,15 @@ impl<'l> Macro<'l> {
         let config_type = match &input.data {
             Data::Struct(data) => match &data.fields {
                 Fields::Named(fields) => Container::NamedStruct {
-                    fields: fields.named.iter().map(Field::from).collect::<Vec<_>>(),
+                    fields: fields
+                        .named
+                        .iter()
+                        .map(|f| {
+                            let mut field = Field::from(f);
+                            field.env_prefix = args.env_prefix.clone();
+                            field
+                        })
+                        .collect::<Vec<_>>(),
                 },
                 Fields::Unnamed(_) => {
                     panic!("Unnamed structs are not supported.");

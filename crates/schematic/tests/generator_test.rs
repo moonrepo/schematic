@@ -62,6 +62,7 @@ struct GenConfig {
 
 /// Some comment.
 #[derive(Clone, Config)]
+#[config(env_prefix = "ENV_PREFIX_")]
 pub struct TwoDepthConfig {
     /// An optional string.
     opt: Option<String>,

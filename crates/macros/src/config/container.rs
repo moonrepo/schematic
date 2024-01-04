@@ -40,14 +40,14 @@ impl<'l> Container<'l> {
         }
     }
 
-    pub fn generate_env_values(&self, prefix: Option<&String>) -> TokenStream {
+    pub fn generate_env_values(&self) -> TokenStream {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
             } => {
                 let env_stmts = settings
                     .iter()
-                    .filter_map(|s| s.generate_env_statement(prefix))
+                    .filter_map(|s| s.generate_env_statement())
                     .collect::<Vec<_>>();
 
                 if env_stmts.is_empty() {

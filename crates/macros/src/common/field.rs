@@ -52,6 +52,7 @@ pub struct Field<'l> {
     pub name: &'l Ident,
     pub value: &'l Type,
     pub value_type: FieldValue<'l>,
+    pub env_prefix: Option<String>,
 }
 
 impl<'l> Field<'l> {
@@ -70,6 +71,7 @@ impl<'l> Field<'l> {
             },
             args,
             serde_args,
+            env_prefix: None,
         };
 
         if field.args.default.is_some() {
@@ -114,6 +116,16 @@ impl<'l> Field<'l> {
             format_case(format, &self.name.to_string(), false)
         } else {
             self.name.to_string()
+        }
+    }
+
+    pub fn get_env_var(&self) -> Option<String> {
+        if let Some(env_name) = &self.args.env {
+            Some(env_name.to_owned())
+        } else {
+            self.env_prefix
+                .as_ref()
+                .map(|env_prefix| format!("{}{}", env_prefix, self.get_name(None)).to_uppercase())
         }
     }
 
@@ -164,7 +176,7 @@ impl<'l> Field<'l> {
         let nullable = map_bool_quote("nullable", self.is_optional());
         let description = map_option_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
-        let env_var = map_option_quote("env_var", self.args.env.as_ref());
+        let env_var = map_option_quote("env_var", self.get_env_var());
 
         let value = self.value;
         let mut type_of = if self.is_nested() {

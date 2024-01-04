@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/generator_test.rs
+source: crates/schematic/tests/generator_test.rs
 expression: "fs::read_to_string(file).unwrap()"
 ---
 # This is a boolean with a medium length description.
@@ -37,6 +37,7 @@ one:
   # This is another nested field.
   two:
     # An optional string.
+    # @envvar ENV_PREFIX_OPT
     opt: ""
 
 # This is a string.

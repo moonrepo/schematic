@@ -13,18 +13,15 @@ impl<'l> Field<'l> {
         }
     }
 
-    pub fn generate_env_statement(&self, prefix: Option<&String>) -> Option<TokenStream> {
+    pub fn generate_env_statement(&self) -> Option<TokenStream> {
         if self.is_nested() {
             return None;
         }
 
         let name = self.name;
+        let env = self.get_env_var();
 
-        let env = if let Some(env_name) = &self.args.env {
-            env_name.to_owned()
-        } else if let Some(env_prefix) = prefix {
-            format!("{}{}", env_prefix, self.get_name(None)).to_uppercase()
-        } else {
+        if env.is_none() {
             if self.args.parse_env.is_some() {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
             }

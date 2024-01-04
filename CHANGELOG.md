@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where environment variables for `SchemaField` weren't being populated from
+  `env_prefix`.
+
 ## 0.13.0
 
 #### 💥 Breaking
