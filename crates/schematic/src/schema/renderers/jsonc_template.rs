@@ -75,7 +75,30 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
-        render_object(object)
+        let key = self.ctx.get_stack_key();
+
+        if !self.ctx.is_expanded(&key) {
+            return render_object(object);
+        }
+
+        self.ctx.depth += 1;
+
+        let item_indent = self.ctx.indent();
+        let value = self.render_schema(&object.value_type)?;
+
+        self.ctx.depth -= 1;
+
+        let mut key = self.render_schema(&object.key_type)?;
+
+        if key == EMPTY_STRING {
+            key = "\"example\"".into();
+        }
+
+        Ok(format!(
+            "{{\n{}{key}: {value}\n{}}}",
+            item_indent,
+            self.ctx.indent()
+        ))
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {

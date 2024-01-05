@@ -124,7 +124,27 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     }
 
     fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
-        render_object(object)
+        let key = self.ctx.get_stack_key();
+
+        if !self.ctx.is_expanded(&key) || object.value_type.is_struct() {
+            return render_object(object);
+        }
+
+        let comments = self.ctx.options.comments;
+
+        // Objects are inline, so we can't show comments
+        self.ctx.options.comments = false;
+
+        let value = self.render_schema(&object.value_type)?;
+        let mut key = self.render_schema(&object.key_type)?;
+
+        if key == EMPTY_STRING {
+            key = "example".into();
+        }
+
+        self.ctx.options.comments = comments;
+
+        Ok(format!("{{ {} = {} }}", key, value))
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
@@ -141,51 +161,14 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         for field in &structure.fields {
             self.ctx.push_stack(&field.name);
 
-            // Structs and arrays (of structs) should be rendered at the
-            // bottom of the document, since TOML has weird syntax
             if !self.ctx.is_hidden(field) {
-                match &field.type_of {
-                    // SchemaType::Array(array) if array.items_type.is_struct() => {
-                    //     if let SchemaType::Struct(table) = &*array.items_type {
-                    //         self.last_arrays
-                    //             .push((self.get_stack_key(), table.to_owned()));
-                    //     }
-                    // }
-                    // SchemaType::Struct(table) => {
-                    //     self.last_tables
-                    //         .push((self.get_stack_key(), table.to_owned()));
-                    // }
-                    _ => {
-                        let prop =
-                            format!("{} = {}", field.name, self.render_schema(&field.type_of)?,);
+                let prop = format!("{} = {}", field.name, self.render_schema(&field.type_of)?,);
 
-                        out.push(self.ctx.create_field(field, prop));
-                    }
-                };
+                out.push(self.ctx.create_field(field, prop));
             }
 
             self.ctx.pop_stack();
         }
-
-        // for field in structs {
-        //     self.stack.push_back(field.name.clone());
-
-        //     if !self.is_hidden(field) {
-        //         out.push(format!(
-        //             "{}{}[{}]\n{}",
-        //             if self.options.newline_between_fields && self.stack.len() == 1 {
-        //                 ""
-        //             } else {
-        //                 "\n"
-        //             },
-        //             self.create_comment(field),
-        //             self.stack.iter().cloned().collect::<Vec<_>>().join("."),
-        //             self.get_field_value(&field.type_of)?,
-        //         ));
-        //     }
-
-        //     self.stack.pop_back();
-        // }
 
         if out.is_empty() {
             return Ok("{}".into());

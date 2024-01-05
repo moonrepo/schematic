@@ -89,6 +89,7 @@ impl TemplateRenderer {
         Self::new(format, TemplateOptions::default())
     }
 
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(format: Format, options: TemplateOptions) -> Box<dyn SchemaRenderer<String>> {
         match format {
             Format::None => unreachable!(),
@@ -296,12 +297,14 @@ pub fn render_reference(reference: &str) -> RenderResult {
     Ok(reference.into())
 }
 
+pub const EMPTY_STRING: &str = "\"\"";
+
 pub fn render_string(string: &StringType) -> RenderResult {
     if let Some(default) = &string.default {
         return Ok(lit_to_string(default));
     }
 
-    Ok("\"\"".into())
+    Ok(EMPTY_STRING.into())
 }
 
 pub fn render_struct(_structure: &StructType) -> RenderResult {

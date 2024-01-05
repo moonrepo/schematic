@@ -12,6 +12,11 @@ enums = "foo"
 
 expandArrayPrimitive = [0]
 
+# This field is testing object expansion.
+expandObject = {}
+
+expandObjectPrimitive = { example = 0 }
+
 # This is a float thats deprecated.
 # @deprecated
 # float32 = 0.0

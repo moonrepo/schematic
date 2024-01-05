@@ -20,6 +20,17 @@ expandArray:
 
 expandArrayPrimitive: [0]
 
+# This field is testing object expansion.
+expandObject:
+  example:
+    # An optional string.
+    opt: ""
+
+    # An optional enum.
+    enums: "foo"
+
+expandObjectPrimitive: {}
+
 # This is a float thats deprecated.
 # @deprecated
 # float32: 0.0

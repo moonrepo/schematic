@@ -14,6 +14,15 @@ expression: "fs::read_to_string(file).unwrap()"
   "expandArrayPrimitive": [
     0
   ],
+  "expandObject": {
+    "example": {
+      "opt": "",
+      "enums": "foo"
+    }
+  },
+  "expandObjectPrimitive": {
+    "example": 0
+  },
   "float64": 1.23,
   "nested": {
     "opt": "",

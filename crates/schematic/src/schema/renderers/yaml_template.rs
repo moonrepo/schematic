@@ -75,7 +75,29 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
-        render_object(object)
+        let key = self.ctx.get_stack_key();
+
+        if !self.ctx.is_expanded(&key) || !object.value_type.is_struct() {
+            return render_object(object);
+        }
+
+        self.ctx.depth += 2;
+
+        let value = self.render_schema(&object.value_type)?;
+
+        self.ctx.depth -= 1;
+
+        let item_indent = self.ctx.indent();
+
+        self.ctx.depth -= 1;
+
+        let mut key = self.render_schema(&object.key_type)?;
+
+        if key == EMPTY_STRING {
+            key = "example".into();
+        }
+
+        Ok(format!("{}{key}:\n{value}", item_indent))
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
@@ -107,7 +129,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
             let prop = format!(
                 "{}:{}{}",
                 field.name,
-                if value.contains("\n") { "\n" } else { " " },
+                if value.contains('\n') { "\n" } else { " " },
                 value
             );
 
