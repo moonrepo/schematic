@@ -21,7 +21,7 @@ pub use renderers::jsonc_template::*;
 
 /// Helpers for file templates.
 #[cfg(feature = "template")]
-pub use renderers::template::{self, *};
+pub use renderers::template::{self, TemplateOptions, TemplateRenderer};
 
 /// Renders TOML file templates.
 #[cfg(all(feature = "template", feature = "toml"))]

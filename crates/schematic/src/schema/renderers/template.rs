@@ -3,15 +3,14 @@ use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::mem;
+use std::collections::{HashMap, VecDeque};
 
 /// Options to control the rendered template.
 pub struct TemplateOptions {
     /// Include field comments in output.
     pub comments: bool,
 
-    /// List of field names to render but comment out. Supports dot notation.
+    /// List of field names to render but comment out.
     pub comment_fields: Vec<String>,
 
     /// Default values for each field within the root struct.
@@ -26,7 +25,7 @@ pub struct TemplateOptions {
     /// Content to prepend to the top of the output.
     pub header: String,
 
-    /// List of field names to not render. Supports dot notation.
+    /// List of field names to not render.
     pub hide_fields: Vec<String>,
 
     /// Character(s) to use for indentation.
@@ -81,34 +80,49 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
 }
 
 /// Renders template files from a schema.
-pub struct TemplateRenderer {
-    depth: usize,
-    format: Format,
-    options: TemplateOptions,
-    stack: VecDeque<String>,
-
-    // TOML
-    last_arrays: Vec<(String, StructType)>,
-    last_tables: Vec<(String, StructType)>,
-}
+#[deprecated = "Use the format specific renderers instead!"]
+pub struct TemplateRenderer;
 
 impl TemplateRenderer {
-    pub fn new_format(format: Format) -> Self {
+    pub fn new_format(format: Format) -> Box<dyn SchemaRenderer<String>> {
         Self::new(format, TemplateOptions::default())
     }
 
+    pub fn new(format: Format, options: TemplateOptions) -> Box<dyn SchemaRenderer<String>> {
+        match format {
+            Format::None => unreachable!(),
+
+            #[cfg(feature = "json")]
+            Format::Json => Box::new(super::jsonc_template::JsoncTemplateRenderer::new(options)),
+
+            #[cfg(feature = "toml")]
+            Format::Toml => Box::new(super::toml_template::TomlTemplateRenderer::new(options)),
+
+            #[cfg(feature = "yaml")]
+            Format::Yaml => Box::new(super::yaml_template::YamlTemplateRenderer::new(options)),
+        }
+    }
+}
+
+pub struct TemplateContext {
+    pub depth: usize,
+    pub options: TemplateOptions,
+
+    format: Format,
+    stack: VecDeque<String>,
+}
+
+impl TemplateContext {
     pub fn new(format: Format, options: TemplateOptions) -> Self {
         Self {
             depth: 0,
             format,
             options,
             stack: VecDeque::new(),
-            last_arrays: vec![],
-            last_tables: vec![],
         }
     }
 
-    fn indent(&self) -> String {
+    pub fn indent(&self) -> String {
         if self.depth == 0 {
             String::new()
         } else {
@@ -116,7 +130,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn gap(&self) -> &str {
+    pub fn gap(&self) -> &str {
         if self.options.newline_between_fields {
             "\n\n"
         } else {
@@ -124,7 +138,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn create_comment(&self, field: &SchemaField) -> String {
+    pub fn create_comment(&self, field: &SchemaField) -> String {
         if !self.options.comments {
             return String::new();
         }
@@ -165,7 +179,7 @@ impl TemplateRenderer {
         out
     }
 
-    fn create_field(&self, field: &SchemaField, property: String) -> String {
+    pub fn create_field(&self, field: &SchemaField, property: String) -> String {
         let key = self.get_stack_key();
 
         format!(
@@ -181,7 +195,7 @@ impl TemplateRenderer {
         )
     }
 
-    fn get_comment_prefix(&self) -> &str {
+    pub fn get_comment_prefix(&self) -> &str {
         if self.format.is_json() {
             "// "
         } else {
@@ -189,17 +203,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn get_field_value(&mut self, schema: &SchemaType) -> miette::Result<String> {
-        let key = self.get_stack_key();
-
-        if let Some(default) = self.options.default_values.remove(&key) {
-            return self.render_schema(&default);
-        }
-
-        self.render_schema(schema)
-    }
-
-    fn get_stack_key(&self) -> String {
+    pub fn get_stack_key(&self) -> String {
         let mut key = String::new();
         let last_index = self.stack.len() - 1;
 
@@ -214,339 +218,142 @@ impl TemplateRenderer {
         key
     }
 
-    fn is_hidden(&self, field: &SchemaField) -> bool {
+    pub fn is_expanded(&self, key: &String) -> bool {
+        self.options.expand_fields.contains(key)
+    }
+
+    pub fn is_hidden(&self, field: &SchemaField) -> bool {
         let key = self.get_stack_key();
 
         field.hidden || self.options.hide_fields.contains(&key)
     }
+
+    pub fn push_stack(&mut self, name: &str) {
+        self.stack.push_back(name.to_owned());
+    }
+
+    pub fn pop_stack(&mut self) {
+        self.stack.pop_back();
+    }
 }
 
-impl SchemaRenderer<String> for TemplateRenderer {
-    fn is_reference(&self, _name: &str) -> bool {
-        false
+pub fn render_array(_array: &ArrayType) -> RenderResult {
+    Ok("[]".into())
+}
+
+pub fn render_boolean(boolean: &BooleanType) -> RenderResult {
+    if let Some(default) = &boolean.default {
+        return Ok(lit_to_string(default));
     }
 
-    fn render_array(&mut self, array: &ArrayType) -> RenderResult {
-        let key = self.get_stack_key();
+    Ok("false".into())
+}
 
-        if !self.options.expand_fields.contains(&key) {
-            return Ok("[]".into());
-        }
-
-        let indent_count = if self.format.is_yaml() { 2 } else { 1 };
-
-        self.depth += indent_count;
-
-        let item_indent = self.indent();
-        let mut item = self.render_schema(&array.items_type)?;
-
-        self.depth -= indent_count;
-
-        #[cfg(feature = "json")]
-        {
-            if self.format.is_json() {
-                return Ok(format!("[\n{}{}\n{}]", item_indent, item, self.indent()));
-            }
-        }
-
-        #[cfg(feature = "toml")]
-        {
-            if self.format.is_toml() {
-                // This is a weird case, so wrap with {} to make it an object
-                if matches!(*array.items_type, SchemaType::Struct(_)) {
-                    return Ok(format!(
-                        "[{{\n{}{}\n{}}}]",
-                        self.indent(),
-                        item,
-                        self.indent()
-                    ));
-                } else {
-                    return Ok(format!("[\n{}{}\n{}]", self.indent(), item, self.indent()));
-                }
-            }
-        }
-
-        #[cfg(feature = "yaml")]
-        {
-            if self.format.is_yaml() {
-                item.replace_range(2..3, "-");
-
-                return Ok(format!("\n{}", item));
-            }
-        }
-
-        Ok("[]".into())
-    }
-
-    fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult {
-        if let Some(default) = &boolean.default {
-            return Ok(lit_to_string(default));
-        }
-
-        Ok("false".into())
-    }
-
-    fn render_enum(&mut self, enu: &EnumType) -> RenderResult {
-        if let Some(index) = &enu.default_index {
-            if let Some(value) = enu.values.get(*index) {
-                return Ok(lit_to_string(value));
-            }
-        }
-
-        self.render_null()
-    }
-
-    fn render_float(&mut self, float: &FloatType) -> RenderResult {
-        if let Some(default) = &float.default {
-            return Ok(lit_to_string(default));
-        }
-
-        Ok("0.0".into())
-    }
-
-    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult {
-        if let Some(default) = &integer.default {
-            return Ok(lit_to_string(default));
-        }
-
-        Ok("0".into())
-    }
-
-    fn render_literal(&mut self, literal: &LiteralType) -> RenderResult {
-        if let Some(value) = &literal.value {
+pub fn render_enum(enu: &EnumType) -> RenderResult {
+    if let Some(index) = &enu.default_index {
+        if let Some(value) = enu.values.get(*index) {
             return Ok(lit_to_string(value));
         }
-
-        self.render_null()
     }
 
-    fn render_null(&mut self) -> RenderResult {
-        Ok("null".into())
+    render_null()
+}
+
+pub fn render_float(float: &FloatType) -> RenderResult {
+    if let Some(default) = &float.default {
+        return Ok(lit_to_string(default));
     }
 
-    fn render_object(&mut self, _object: &ObjectType) -> RenderResult {
-        Ok("{}".into())
+    Ok("0.0".into())
+}
+
+pub fn render_integer(integer: &IntegerType) -> RenderResult {
+    if let Some(default) = &integer.default {
+        return Ok(lit_to_string(default));
     }
 
-    fn render_reference(&mut self, reference: &str) -> RenderResult {
-        Ok(reference.into())
+    Ok("0".into())
+}
+
+pub fn render_literal(literal: &LiteralType) -> RenderResult {
+    if let Some(value) = &literal.value {
+        return Ok(lit_to_string(value));
     }
 
-    fn render_string(&mut self, string: &StringType) -> RenderResult {
-        if let Some(default) = &string.default {
-            return Ok(lit_to_string(default));
+    render_null()
+}
+
+pub fn render_null() -> RenderResult {
+    Ok("null".into())
+}
+
+pub fn render_object(_object: &ObjectType) -> RenderResult {
+    Ok("{}".into())
+}
+
+pub fn render_reference(reference: &str) -> RenderResult {
+    Ok(reference.into())
+}
+
+pub fn render_string(string: &StringType) -> RenderResult {
+    if let Some(default) = &string.default {
+        return Ok(lit_to_string(default));
+    }
+
+    Ok("\"\"".into())
+}
+
+pub fn render_struct(_structure: &StructType) -> RenderResult {
+    Ok("{}".into())
+}
+
+pub fn render_tuple(
+    tuple: &TupleType,
+    mut render: impl FnMut(&SchemaType) -> RenderResult,
+) -> RenderResult {
+    let mut items = vec![];
+
+    for item in &tuple.items_types {
+        items.push(render(item)?);
+    }
+
+    Ok(format!("[{}]", items.join(", ")))
+}
+
+pub fn render_union(
+    uni: &UnionType,
+    mut render: impl FnMut(&SchemaType) -> RenderResult,
+) -> RenderResult {
+    if let Some(index) = &uni.default_index {
+        if let Some(variant) = uni.variants_types.get(*index) {
+            return render(variant);
         }
-
-        Ok("\"\"".into())
     }
 
-    fn render_struct(&mut self, structure: &StructType) -> RenderResult {
-        #[cfg(feature = "json")]
-        {
-            if self.format.is_json() {
-                let mut out = vec![];
-
-                self.depth += 1;
-
-                for field in &structure.fields {
-                    self.stack.push_back(field.name.clone());
-
-                    if !self.is_hidden(field) {
-                        let prop = format!(
-                            "\"{}\": {},",
-                            field.name,
-                            self.get_field_value(&field.type_of)?,
-                        );
-
-                        out.push(self.create_field(field, prop));
-                    }
-
-                    self.stack.pop_back();
-                }
-
-                self.depth -= 1;
-
-                return Ok(format!("{{\n{}\n{}}}", out.join(self.gap()), self.indent()));
-            }
+    // We have a nullable type, so render the non-null value
+    if uni.is_nullable() {
+        if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
+            return render(variant);
         }
-
-        #[cfg(feature = "toml")]
-        {
-            if self.format.is_toml() {
-                let mut out = vec![];
-
-                for field in &structure.fields {
-                    self.stack.push_back(field.name.clone());
-
-                    // Structs and arrays (of structs) should be rendered at the
-                    // bottom of the document, since TOML has weird syntax
-                    if !self.is_hidden(field) {
-                        match &field.type_of {
-                            SchemaType::Array(array) if array.items_type.is_struct() => {
-                                if let SchemaType::Struct(table) = &*array.items_type {
-                                    self.last_arrays
-                                        .push((self.get_stack_key(), table.to_owned()));
-                                }
-                            }
-                            SchemaType::Struct(table) => {
-                                self.last_tables
-                                    .push((self.get_stack_key(), table.to_owned()));
-                            }
-                            _ => {
-                                let prop = format!(
-                                    "{} = {}",
-                                    field.name,
-                                    self.get_field_value(&field.type_of)?,
-                                );
-
-                                out.push(self.create_field(field, prop));
-                            }
-                        };
-                    }
-
-                    self.stack.pop_back();
-                }
-
-                // for field in structs {
-                //     self.stack.push_back(field.name.clone());
-
-                //     if !self.is_hidden(field) {
-                //         out.push(format!(
-                //             "{}{}[{}]\n{}",
-                //             if self.options.newline_between_fields && self.stack.len() == 1 {
-                //                 ""
-                //             } else {
-                //                 "\n"
-                //             },
-                //             self.create_comment(field),
-                //             self.stack.iter().cloned().collect::<Vec<_>>().join("."),
-                //             self.get_field_value(&field.type_of)?,
-                //         ));
-                //     }
-
-                //     self.stack.pop_back();
-                // }
-
-                return Ok(out.join(self.gap()));
-            }
-        }
-
-        #[cfg(feature = "yaml")]
-        {
-            if self.format.is_yaml() {
-                let mut out = vec![];
-
-                for field in &structure.fields {
-                    self.stack.push_back(field.name.clone());
-
-                    if self.is_hidden(field) {
-                        self.stack.pop_back();
-                        continue;
-                    }
-
-                    let is_nested = is_nested_type(&field.type_of);
-
-                    if is_nested {
-                        self.depth += 1;
-                    }
-
-                    let value = self.get_field_value(&field.type_of)?;
-
-                    if is_nested {
-                        self.depth -= 1;
-                    }
-
-                    let prop = format!(
-                        "{}:{}{}",
-                        field.name,
-                        if is_nested { "\n" } else { " " },
-                        value
-                    );
-
-                    out.push(self.create_field(field, prop));
-
-                    self.stack.pop_back();
-                }
-
-                return Ok(out.join(self.gap()));
-            }
-        }
-
-        Ok("".into())
     }
 
-    fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult {
-        let mut items = vec![];
+    render_null()
+}
 
-        for item in &tuple.items_types {
-            items.push(self.render_schema(item)?);
-        }
+pub fn render_unknown() -> RenderResult {
+    render_null()
+}
 
-        Ok(format!("[{}]", items.join(", ")))
+pub fn validat_schemas(schemas: &IndexMap<String, SchemaType>) -> RenderResult {
+    let Some(schema) = schemas.values().last() else {
+        return Err(miette!(
+            "At least 1 schema is required to generate a template."
+        ));
+    };
+
+    if !schema.is_struct() {
+        return Err(miette!("The last registered schema must be a struct type."));
     }
 
-    fn render_union(&mut self, uni: &UnionType) -> RenderResult {
-        if let Some(index) = &uni.default_index {
-            if let Some(variant) = uni.variants_types.get(*index) {
-                return self.render_schema(variant);
-            }
-        }
-
-        // We have a nullable type, so render the non-null value
-        if uni.is_nullable() {
-            if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
-                return self.render_schema(variant);
-            }
-        }
-
-        self.render_null()
-    }
-
-    fn render_unknown(&mut self) -> RenderResult {
-        self.render_null()
-    }
-
-    fn render(
-        &mut self,
-        schemas: &IndexMap<String, SchemaType>,
-        _references: &HashSet<String>,
-    ) -> RenderResult {
-        let Some(schema) = schemas.values().last() else {
-            return Err(miette!(
-                "At least 1 schema is required to generate a template."
-            ));
-        };
-
-        let SchemaType::Struct(schema) = schema else {
-            return Err(miette!("The last registered schema must be a struct type."));
-        };
-
-        let mut template = self.render_struct(schema)?;
-
-        // If TOML, render arrays and tables at the bottom
-        #[cfg(feature = "toml")]
-        {
-            if self.format.is_toml() {
-                for (key, value) in mem::take(&mut self.last_arrays) {
-                    let array = format!("\n\n[[{}]]\n{}", key, self.render_struct(&value)?);
-                    template.push_str(&array);
-                }
-
-                for (key, value) in mem::take(&mut self.last_tables) {
-                    let table = format!("\n\n[{}]\n{}", key, self.render_struct(&value)?);
-                    template.push_str(&table);
-                }
-            }
-        }
-
-        // Inject the header and footer
-        let mut output = format!("{}{}{}", self.options.header, template, self.options.footer);
-
-        // And always add a trailing newline
-        if self.format.is_toml() || self.format.is_yaml() {
-            output.push('\n');
-        }
-
-        Ok(output)
-    }
+    Ok(String::new())
 }
