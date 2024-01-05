@@ -166,6 +166,18 @@ mod template_json {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    #[test]
+    fn without_comments() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_template_generator()
+            .generate(&file, JsonTemplateRenderer::new(create_template_options()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(all(feature = "template", feature = "toml"))]
