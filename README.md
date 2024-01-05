@@ -80,7 +80,7 @@ Then generate output in multiple formats, like JSON schemas or TypeScript types,
 type information.
 
 ```rust
-use schematic::schema::{SchemaGenerator, typescript::*};
+use schematic::schema::{SchemaGenerator, TypeScriptRenderer};
 
 let mut generator = SchemaGenerator::default();
 generator.add::<Task>();

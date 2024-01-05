@@ -110,6 +110,16 @@ struct TemplateConfig {
     #[setting(nested)]
     one: OneDepthConfig,
     skipped: String,
+
+    /// This field is testing array expansion.
+    #[setting(nested)]
+    expand_array: Vec<AnotherConfig>,
+    expand_array_primitive: Vec<usize>,
+
+    /// This field is testing object expansion.
+    #[setting(nested)]
+    expand_object: HashMap<String, AnotherConfig>,
+    expand_object_primitive: HashMap<String, usize>,
 }
 
 fn create_generator() -> SchemaGenerator {
@@ -120,13 +130,19 @@ fn create_generator() -> SchemaGenerator {
 
 fn create_template_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateConfig>();
+    generator.add::<TemplateConfig>();
     generator
 }
 
 fn create_template_options() -> TemplateOptions {
     TemplateOptions {
         comment_fields: vec!["float32".into(), "map".into()],
+        expand_fields: vec![
+            "expandArray".into(),
+            "expandArrayPrimitive".into(),
+            "expandObject".into(),
+            "expandObjectPrimitive".into(),
+        ],
         hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
         ..TemplateOptions::default()
     }
@@ -153,7 +169,7 @@ mod json_schema {
 #[cfg(all(feature = "template", feature = "json"))]
 mod template_json {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -161,10 +177,19 @@ mod template_json {
         let file = sandbox.path().join("schema.json");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Json, create_template_options()),
-            )
+            .generate(&file, JsoncTemplateRenderer::new(create_template_options()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
+    #[test]
+    fn without_comments() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_template_generator()
+            .generate(&file, JsonTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -174,7 +199,7 @@ mod template_json {
 #[cfg(all(feature = "template", feature = "toml"))]
 mod template_toml {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -182,10 +207,7 @@ mod template_toml {
         let file = sandbox.path().join("schema.toml");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Toml, create_template_options()),
-            )
+            .generate(&file, TomlTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -195,7 +217,7 @@ mod template_toml {
 #[cfg(all(feature = "template", feature = "yaml"))]
 mod template_yaml {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -203,10 +225,7 @@ mod template_yaml {
         let file = sandbox.path().join("schema.yaml");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Yaml, create_template_options()),
-            )
+            .generate(&file, YamlTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());

@@ -10,6 +10,27 @@ boolean: false
 # @deprecated Dont use enums!
 enums: "foo"
 
+# This field is testing array expansion.
+expandArray:
+  - # An optional string.
+    opt: ""
+
+    # An optional enum.
+    enums: "foo"
+
+expandArrayPrimitive: [0]
+
+# This field is testing object expansion.
+expandObject:
+  example:
+    # An optional string.
+    opt: ""
+
+    # An optional enum.
+    enums: "foo"
+
+expandObjectPrimitive: {}
+
 # This is a float thats deprecated.
 # @deprecated
 # float32: 0.0

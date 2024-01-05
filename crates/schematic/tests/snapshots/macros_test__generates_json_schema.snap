@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/macros_test.rs
+source: crates/schematic/tests/macros_test.rs
 expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {
@@ -96,7 +96,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         "docsLong": {
-          "description": "Docs with a super long comment that will span multiple lines. Docs with a super long comment that will span multiple lines.",
+          "description": "Docs with a super long comment that will span multiple lines. It also **contains** some _markdown_ [stuff](.).",
           "type": "boolean"
         },
         "inlineBlock": {

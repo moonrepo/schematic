@@ -12,7 +12,7 @@ document.
 To utilize, instantiate a generator, add types to render, and generate the output file.
 
 ```rust
-use schematic::schema::{SchemaGenerator, json_schema::*};
+use schematic::schema::{SchemaGenerator, JsonSchemaRenderer};
 
 let mut generator = SchemaGenerator::default();
 generator.add::<CustomType>();
@@ -61,6 +61,8 @@ Custom options can be passed to the renderer using
 [`JsonSchemaOptions`](https://docs.rs/schematic/latest/schematic/schema/json_schema/type.JsonSchemaOptions.html).
 
 ```rust
+use schematic::schema::JsonSchemaOptions;
+
 JsonSchemaRenderer::new(JsonSchemaOptions {
 	// ...
 	..JsonSchemaOptions::default()

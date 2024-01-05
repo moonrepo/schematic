@@ -3,21 +3,73 @@
 > Requires the `template` and desired [format](../../config/index.md#supported-source-formats) Cargo
 > feature.
 
-With our
-[`TemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateRenderer.html),
-you can generate a file template in a specific format (JSON, TOML, YAML). This template will include
-all fields, default values, comments, metadata, and is useful for situations like configuration
-templates and scaffolding defaults.
+With our [template renderers](#support-formats), you can generate a file template in a specific
+format. This template will include all fields, default values, comments, metadata, and is useful for
+situations like configuration templates and scaffolding defaults.
 
 To utilize, instantiate a generator, add types to render, and generate the output file.
 
 ```rust
-use schematic::Format;
-use schematic::schema::{SchemaGenerator, template::*};
+use schematic::schema::SchemaGenerator;
 
 let mut generator = SchemaGenerator::default();
 generator.add::<CustomType>();
-generator.generate(output_dir.join("config.json"), TemplateRenderer::new_format(Format::Json))?;
+generator.generate(output_dir.join("config.json"), renderer)?;
+```
+
+## Support formats
+
+### JSON
+
+The
+[`JsonTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/json_template/struct.JsonTemplateRenderer.html)
+will render JSON templates _without_ comments. Any commented related options will be force disabled.
+
+```rust
+use schematic::schema::{JsonTemplateRenderer, TemplateOptions};
+
+JsonTemplateRenderer::default();
+JsonTemplateRenderer::new(TemplateOptions::default());
+```
+
+### JSONC
+
+The
+[`JsoncTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/jsonc_template/struct.JsoncTemplateRenderer.html)
+will render JSON templates _with_ comments. We suggest using the `.jsonc` file extension, but not
+required.
+
+```rust
+use schematic::schema::{JsoncTemplateRenderer, TemplateOptions};
+
+JsoncTemplateRenderer::default();
+JsoncTemplateRenderer::new(TemplateOptions::default());
+```
+
+### TOML
+
+The
+[`TomlTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/toml_template/struct.TomlTemplateRenderer.html)
+will render TOML templates.
+
+```rust
+use schematic::schema::{TomlTemplateRenderer, TemplateOptions};
+
+TomlTemplateRenderer::default();
+TomlTemplateRenderer::new(TemplateOptions::default());
+```
+
+### YAML
+
+The
+[`YamlTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/yaml_template/struct.YamlTemplateRenderer.html)
+will render YAML templates.
+
+```rust
+use schematic::schema::{YamlTemplateRenderer, TemplateOptions};
+
+YamlTemplateRenderer::default();
+YamlTemplateRenderer::new(TemplateOptions::default());
 ```
 
 ## Root document
@@ -34,13 +86,14 @@ generator.add::<ThirdConfig>();
 
 // This is the root document
 generator.add::<LastType>();
-generator.generate(output_dir.join("config.json"), TemplateRenderer::new_format(Format::Json))?;
+generator.generate(output_dir.join("config.json"), renderer)?;
 ```
 
 ## Caveats
 
-At this time, [arrays](../array.md) and [objects](../object.md) do not support default values, and
-will render `[]` and `{}` respectively.
+By default [arrays](../array.md) and [objects](../object.md) do not support default values, and will
+render `[]` and `{}` respectively. This can be customized with the
+[`expand_fields` option](#field-expansion).
 
 Furthermore, [enums](../enum.md) and [unions](../union.md) only support default values when
 explicitly marked as such. For example, with `#[default]`.
@@ -124,7 +177,8 @@ port: 8080
 </tr>
 </table>
 
-> Applying the desired casing for field names should be done with `rename_all` on the container.
+> Applying the desired casing for field names should be done with serde `rename_all` on the
+> container.
 
 ## Options
 
@@ -132,7 +186,9 @@ Custom options can be passed to the renderer using
 [`TemplateOptions`](https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateOptions.html).
 
 ```rust
-TemplateRenderer::new(Format::Json, TemplateOptions {
+use schematic::schema::TemplateOptions;
+
+JsoncTemplateRenderer::new(TemplateOptions {
 	// ...
 	..TemplateOptions::default()
 });
@@ -209,3 +265,53 @@ TemplateOptions {
 	comment_fields: vec!["key".into(), "nested.key".into()],
 }
 ```
+
+> Field names use the serde cased name, not the Rust struct field name.
+
+### Field expansion
+
+For [arrays](../array.md) and [objects](../object.md), we render an empty value (`[]` or `{}`) by
+default because there's no actual data associated with the schema. However, if you'd like to render
+a single example item for a field, you can use the `expand_fields` option.
+
+```rust
+TemplateOptions {
+	// ...
+	expand_fields: vec!["key".into(), "nested.key".into()],
+}
+```
+
+Here's an example of how this works:
+
+<table>
+<tr>
+<td>Not expanded</td>
+<td>Expanded</td>
+</tr>
+<tr>
+<td>
+
+```json
+{
+	"proxies": []
+}
+```
+
+</td>
+<td>
+
+```json
+{
+	"proxies": [
+		// An example proxy configuration.
+		{
+			"host": "",
+			"port": 8080
+		}
+	]
+}
+```
+
+</td>
+</tr>
+</table>

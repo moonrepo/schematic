@@ -215,7 +215,7 @@ struct Comments {
     #[deprecated]
     docs: bool,
     /// Docs with a super long comment that will span multiple lines.
-    /// Docs with a super long comment that will span multiple lines.
+    /// It also **contains** some _markdown_ [stuff](.).
     docs_long: bool,
     /* Inline block */
     inline_block: bool,

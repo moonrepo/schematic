@@ -68,8 +68,16 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
                     ..
                 }) = &meta.value
                 {
-                    for line in value.value().split('\n') {
-                        lines.push(line.trim().replace("* ", "").replace(" * ", ""));
+                    for mut line in value.value().split('\n') {
+                        line = line.trim();
+
+                        if line.starts_with("* ") {
+                            line = &line[2..];
+                        } else if line.starts_with(" * ") {
+                            line = &line[3..];
+                        }
+
+                        lines.push(line.to_owned());
                     }
                 }
             }
