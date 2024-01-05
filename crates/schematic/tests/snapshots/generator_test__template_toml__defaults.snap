@@ -30,6 +30,7 @@ string = "abc"
 # This is a list of strings.
 vector = []
 
+# This is a nested struct with its own fields.
 [nested]
 # An optional string.
 opt = ""
@@ -37,7 +38,10 @@ opt = ""
 # An optional enum.
 enums = "foo"
 
-[one]
-
+# This is another nested field.
+[one.two]
+# An optional string.
+# @envvar ENV_PREFIX_OPT
+opt = ""
 
 

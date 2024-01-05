@@ -3,11 +3,20 @@ use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
+use std::mem;
+
+struct Section {
+    comment: String,
+    table: StructType,
+}
 
 /// Renders TOML file templates.
 pub struct TomlTemplateRenderer {
     ctx: TemplateContext,
+
+    arrays: BTreeMap<String, Section>,
+    tables: BTreeMap<String, Section>,
 }
 
 impl TomlTemplateRenderer {
@@ -19,6 +28,58 @@ impl TomlTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         TomlTemplateRenderer {
             ctx: TemplateContext::new(Format::Toml, options),
+            arrays: BTreeMap::new(),
+            tables: BTreeMap::new(),
+        }
+    }
+
+    fn extract_sections(&mut self, doc: &mut StructType) {
+        for field in &mut doc.fields {
+            self.ctx.push_stack(&field.name);
+
+            let comment = self.ctx.create_comment(field);
+
+            match &mut field.type_of {
+                SchemaType::Array(array) if array.items_type.is_struct() => {
+                    if let SchemaType::Struct(table) = &mut *array.items_type {
+                        let key = self.ctx.get_stack_key();
+
+                        field.hidden = true;
+
+                        self.extract_sections(table);
+
+                        if !table.is_hidden() {
+                            self.arrays.insert(
+                                key,
+                                Section {
+                                    comment,
+                                    table: table.to_owned(),
+                                },
+                            );
+                        }
+                    }
+                }
+                SchemaType::Struct(table) => {
+                    let key = self.ctx.get_stack_key();
+
+                    field.hidden = true;
+
+                    self.extract_sections(table);
+
+                    if !table.is_hidden() {
+                        self.tables.insert(
+                            key,
+                            Section {
+                                comment,
+                                table: table.to_owned(),
+                            },
+                        );
+                    }
+                }
+                _ => {}
+            };
+
+            self.ctx.pop_stack();
         }
     }
 }
@@ -155,7 +216,37 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     ) -> RenderResult {
         validat_schemas(schemas)?;
 
-        let mut template = self.render_schema(schemas.values().last().unwrap())?;
+        // Recursively extract all sections (arrays, objects)
+        let SchemaType::Struct(root) = schemas.values().last().unwrap() else {
+            unreachable!();
+        };
+
+        let mut root = root.to_owned();
+
+        self.extract_sections(&mut root);
+
+        // Then render each section accordingly
+        let mut sections = vec![self.render_struct(&root)?];
+
+        for (key, value) in mem::take(&mut self.arrays) {
+            sections.push(format!(
+                "{}[[{}]]\n{}",
+                value.comment,
+                key,
+                self.render_struct(&value.table)?
+            ));
+        }
+
+        for (key, value) in mem::take(&mut self.tables) {
+            sections.push(format!(
+                "{}[{}]\n{}",
+                value.comment,
+                key,
+                self.render_struct(&value.table)?
+            ));
+        }
+
+        let mut template = sections.join("\n\n");
 
         // Inject the header and footer
         template = format!(

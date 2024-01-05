@@ -83,6 +83,7 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
 #[deprecated = "Use the format specific renderers instead!"]
 pub struct TemplateRenderer;
 
+#[allow(deprecated)]
 impl TemplateRenderer {
     pub fn new_format(format: Format) -> Box<dyn SchemaRenderer<String>> {
         Self::new(format, TemplateOptions::default())

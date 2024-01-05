@@ -4,27 +4,19 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "boolean": false,
-
   "enums": "foo",
-
   "float64": 1.23,
-
   "nested": {
     "opt": "",
-
     "enums": "foo",
   },
-
   "number": 0,
-
   "one": {
     "two": {
       "opt": "",
     },
   },
-
   "string": "abc",
-
   "vector": [],
 }
 

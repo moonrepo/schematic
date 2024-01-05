@@ -18,6 +18,7 @@ impl JsonTemplateRenderer {
         options
             .hide_fields
             .extend(mem::take(&mut options.comment_fields));
+        options.newline_between_fields = false;
 
         JsoncTemplateRenderer::new(options)
     }
