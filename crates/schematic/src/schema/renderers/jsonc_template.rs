@@ -162,9 +162,8 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         schemas: &IndexMap<String, SchemaType>,
         _references: &HashSet<String>,
     ) -> RenderResult {
-        validat_schemas(schemas)?;
-
-        let mut template = self.render_schema(schemas.values().last().unwrap())?;
+        let root = validate_root(schemas)?;
+        let mut template = self.render_struct(&root)?;
 
         // Inject the header and footer
         if self.ctx.options.comments {

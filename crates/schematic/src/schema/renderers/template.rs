@@ -348,16 +348,16 @@ pub fn render_unknown() -> RenderResult {
     render_null()
 }
 
-pub fn validat_schemas(schemas: &IndexMap<String, SchemaType>) -> RenderResult {
+pub fn validate_root(schemas: &IndexMap<String, SchemaType>) -> miette::Result<StructType> {
     let Some(schema) = schemas.values().last() else {
         return Err(miette!(
             "At least 1 schema is required to generate a template."
         ));
     };
 
-    if !schema.is_struct() {
+    let SchemaType::Struct(root) = schema else {
         return Err(miette!("The last registered schema must be a struct type."));
-    }
+    };
 
-    Ok(String::new())
+    Ok(root.to_owned())
 }

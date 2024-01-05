@@ -194,15 +194,9 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         schemas: &IndexMap<String, SchemaType>,
         _references: &HashSet<String>,
     ) -> RenderResult {
-        validat_schemas(schemas)?;
+        let mut root = validate_root(schemas)?;
 
         // Recursively extract all sections (arrays, objects)
-        let SchemaType::Struct(root) = schemas.values().last().unwrap() else {
-            unreachable!();
-        };
-
-        let mut root = root.to_owned();
-
         self.extract_sections(&mut root);
 
         // Then render each section accordingly
