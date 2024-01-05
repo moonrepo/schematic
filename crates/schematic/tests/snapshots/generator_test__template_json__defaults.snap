@@ -11,6 +11,21 @@ expression: "fs::read_to_string(file).unwrap()"
   // @deprecated Dont use enums!
   "enums": "foo",
 
+  // This field is testing array expansion.
+  "expandArray": [
+    {
+      // An optional string.
+      "opt": "",
+
+      // An optional enum.
+      "enums": "foo"
+    }
+  ],
+
+  "expandArrayPrimitive": [
+    0
+  ],
+
   // This is a float thats deprecated.
   // @deprecated
   // "float32": 0.0,
@@ -27,7 +42,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "opt": "",
 
     // An optional enum.
-    "enums": "foo",
+    "enums": "foo"
   },
 
   // This is a number with a long description.
@@ -48,6 +63,6 @@ expression: "fs::read_to_string(file).unwrap()"
   "string": "abc",
 
   // This is a list of strings.
-  "vector": [],
+  "vector": []
 }
 

@@ -5,10 +5,19 @@ expression: "fs::read_to_string(file).unwrap()"
 {
   "boolean": false,
   "enums": "foo",
+  "expandArray": [
+    {
+      "opt": "",
+      "enums": "foo"
+    }
+  ],
+  "expandArrayPrimitive": [
+    0
+  ],
   "float64": 1.23,
   "nested": {
     "opt": "",
-    "enums": "foo",
+    "enums": "foo"
   },
   "number": 0,
   "one": {
@@ -17,6 +26,6 @@ expression: "fs::read_to_string(file).unwrap()"
     },
   },
   "string": "abc",
-  "vector": [],
+  "vector": []
 }
 

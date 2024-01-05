@@ -9,7 +9,9 @@
 
 #### 🐞 Fixes
 
-- Fixed an issue where comments with bold markdown syntax was being rendered incorrectly.
+- Templates
+  - Fixed an issue where comments with bold markdown syntax was being rendered incorrectly.
+  - Fixed trailing commas for JSON format.
 
 ## 0.13.2
 

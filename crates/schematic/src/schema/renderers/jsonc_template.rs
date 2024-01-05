@@ -88,17 +88,19 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
     fn render_struct(&mut self, structure: &StructType) -> RenderResult<String> {
         let mut out = vec![];
+        let last_index = structure.fields.len() - 1;
 
         self.ctx.depth += 1;
 
-        for field in &structure.fields {
+        for (index, field) in structure.fields.iter().enumerate() {
             self.ctx.push_stack(&field.name);
 
             if !self.ctx.is_hidden(field) {
                 let prop = format!(
-                    "\"{}\": {},",
+                    "\"{}\": {}{}",
                     field.name,
                     self.render_schema(&field.type_of)?,
+                    if index == last_index { "" } else { "," }
                 );
 
                 out.push(self.ctx.create_field(field, prop));

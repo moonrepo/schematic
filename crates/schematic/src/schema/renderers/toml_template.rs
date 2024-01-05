@@ -96,10 +96,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             return render_array(array);
         }
 
-        let indent = self.ctx.indent();
-        let item = self.render_schema(&array.items_type)?;
-
-        Ok(format!("[\n{}{}\n{}]", indent, item, indent))
+        Ok(format!("[{}]", self.render_schema(&array.items_type)?))
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {

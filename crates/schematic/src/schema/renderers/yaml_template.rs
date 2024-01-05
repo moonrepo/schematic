@@ -35,6 +35,10 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
             return render_array(array);
         }
 
+        if !array.items_type.is_struct() {
+            return Ok(format!("[{}]", self.render_schema(&array.items_type)?));
+        }
+
         self.ctx.depth += 2;
 
         let mut item = self.render_schema(&array.items_type)?;
@@ -43,7 +47,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         item.replace_range(2..3, "-");
 
-        Ok(format!("\n{}", item))
+        Ok(item)
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {
