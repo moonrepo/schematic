@@ -153,7 +153,7 @@ mod json_schema {
 #[cfg(all(feature = "template", feature = "json"))]
 mod template_json {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -161,10 +161,7 @@ mod template_json {
         let file = sandbox.path().join("schema.json");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Json, create_template_options()),
-            )
+            .generate(&file, JsoncTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -174,7 +171,7 @@ mod template_json {
 #[cfg(all(feature = "template", feature = "toml"))]
 mod template_toml {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -182,10 +179,7 @@ mod template_toml {
         let file = sandbox.path().join("schema.toml");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Toml, create_template_options()),
-            )
+            .generate(&file, TomlTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
@@ -195,7 +189,7 @@ mod template_toml {
 #[cfg(all(feature = "template", feature = "yaml"))]
 mod template_yaml {
     use super::*;
-    use schematic::schema::template::*;
+    use schematic::schema::*;
 
     #[test]
     fn defaults() {
@@ -203,10 +197,7 @@ mod template_yaml {
         let file = sandbox.path().join("schema.yaml");
 
         create_template_generator()
-            .generate(
-                &file,
-                TemplateRenderer::new(Format::Yaml, create_template_options()),
-            )
+            .generate(&file, YamlTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());

@@ -9,7 +9,7 @@ you can generate [TypeScript types](https://www.typescriptlang.org/) for all typ
 instantiate a generator, add types to render, and generate the output file.
 
 ```rust
-use schematic::schema::{SchemaGenerator, typescript::*};
+use schematic::schema::{SchemaGenerator, TypeScriptRenderer};
 
 let mut generator = SchemaGenerator::default();
 generator.add::<CustomType>();
@@ -25,6 +25,8 @@ Custom options can be passed to the renderer using
 [`TypeScriptOptions`](https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptOptions.html).
 
 ```rust
+use schematic::schema::TypeScriptOptions;
+
 TypeScriptRenderer::new(TypeScriptOptions {
 	// ...
 	..TypeScriptOptions::default()

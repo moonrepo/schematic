@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `JsonTemplateRenderer`, `JsoncTemplateRenderer`, `TomlTemplateRenderer`, and
+  `YamlTemplateRenderer` for distinctness.
+
 ## 0.13.2
 
 #### 🐞 Fixes
