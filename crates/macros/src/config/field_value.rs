@@ -103,7 +103,7 @@ impl<'l> FieldValue<'l> {
     }
 
     pub fn get_validate_statement(&self, name: &Ident) -> Option<TokenStream> {
-        let name_quoted = format!("{}", name);
+        let name_quoted = format!("{name}");
 
         match self {
             Self::NestedList { .. } => Some(quote! {

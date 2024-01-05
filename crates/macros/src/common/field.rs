@@ -127,7 +127,7 @@ impl<'l> Field<'l> {
         } else {
             self.env_prefix
                 .as_ref()
-                .map(|env_prefix| format!("{}{}", env_prefix, self.get_name(None)).to_uppercase())
+                .map(|env_prefix| format!("{env_prefix}{}", self.get_name(None)).to_uppercase())
         }
     }
 

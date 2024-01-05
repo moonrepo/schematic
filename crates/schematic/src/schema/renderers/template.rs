@@ -58,7 +58,7 @@ pub fn lit_to_string(lit: &LiteralValue) -> String {
         LiteralValue::F64(inner) => inner.to_string(),
         LiteralValue::Int(inner) => inner.to_string(),
         LiteralValue::UInt(inner) => inner.to_string(),
-        LiteralValue::String(inner) => format!("\"{}\"", inner),
+        LiteralValue::String(inner) => format!("\"{inner}\""),
     }
 }
 
@@ -150,7 +150,7 @@ impl TemplateContext {
         let prefix = self.get_comment_prefix();
 
         let mut push = |line: String| {
-            lines.push(format!("{indent}{prefix}{}", line));
+            lines.push(format!("{indent}{prefix}{line}"));
         };
 
         if let Some(comment) = &field.description {
@@ -164,12 +164,12 @@ impl TemplateContext {
             push(if deprecated.is_empty() {
                 "@deprecated".into()
             } else {
-                format!("@deprecated {}", deprecated)
+                format!("@deprecated {deprecated}")
             });
         }
 
         if let Some(env_var) = &field.env_var {
-            push(format!("@envvar {}", env_var));
+            push(format!("@envvar {env_var}"));
         }
 
         if lines.is_empty() {
@@ -185,7 +185,7 @@ impl TemplateContext {
         let key = self.get_stack_key();
 
         format!(
-            "{}{}{}{}",
+            "{}{}{}{property}",
             self.create_comment(field),
             self.indent(),
             if self.options.comment_fields.contains(&key) {
@@ -193,7 +193,6 @@ impl TemplateContext {
             } else {
                 ""
             },
-            property
         )
     }
 

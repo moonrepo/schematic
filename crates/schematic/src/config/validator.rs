@@ -131,7 +131,7 @@ impl ValidatorError {
 
         for error_type in &self.errors {
             for error in error_type.to_error_list() {
-                message.push_str(format!("\n  {}", error).as_str());
+                message.push_str(format!("\n  {error}").as_str());
             }
         }
 
