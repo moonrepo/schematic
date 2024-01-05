@@ -268,6 +268,11 @@ impl SchemaType {
         false
     }
 
+    /// Return true if the schema is a struct.
+    pub fn is_struct(&self) -> bool {
+        matches!(self, SchemaType::Struct(_))
+    }
+
     /// Set the `default` of the inner schema type.
     pub fn set_default(&mut self, default: LiteralValue) {
         match self {

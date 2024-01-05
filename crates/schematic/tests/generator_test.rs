@@ -110,6 +110,9 @@ struct TemplateConfig {
     #[setting(nested)]
     one: OneDepthConfig,
     skipped: String,
+    // /// This field is testing array expansion.
+    // #[setting(nested)]
+    // expand_array: Vec<AnotherConfig>,
 }
 
 fn create_generator() -> SchemaGenerator {
@@ -120,13 +123,14 @@ fn create_generator() -> SchemaGenerator {
 
 fn create_template_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
-    generator.add::<PartialTemplateConfig>();
+    generator.add::<TemplateConfig>();
     generator
 }
 
 fn create_template_options() -> TemplateOptions {
     TemplateOptions {
         comment_fields: vec!["float32".into(), "map".into()],
+        expand_fields: vec!["expandArray".into()],
         hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
         ..TemplateOptions::default()
     }

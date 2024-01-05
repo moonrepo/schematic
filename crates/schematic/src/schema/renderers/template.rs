@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::mem;
 
 /// Options to control the rendered template.
 pub struct TemplateOptions {
@@ -15,6 +16,9 @@ pub struct TemplateOptions {
 
     /// Default values for each field within the root struct.
     pub default_values: HashMap<String, SchemaType>,
+
+    /// List of array and object field names to expand and render a fake item.
+    pub expand_fields: Vec<String>,
 
     /// Content to append to the bottom of the output.
     pub footer: String,
@@ -38,6 +42,7 @@ impl Default for TemplateOptions {
             comments: true,
             comment_fields: vec![],
             default_values: HashMap::new(),
+            expand_fields: vec![],
             footer: String::new(),
             header: String::new(),
             hide_fields: vec![],
@@ -47,7 +52,7 @@ impl Default for TemplateOptions {
     }
 }
 
-fn lit_to_string(lit: &LiteralValue) -> String {
+pub fn lit_to_string(lit: &LiteralValue) -> String {
     match lit {
         LiteralValue::Bool(inner) => inner.to_string(),
         LiteralValue::F32(inner) => inner.to_string(),
@@ -58,7 +63,7 @@ fn lit_to_string(lit: &LiteralValue) -> String {
     }
 }
 
-fn is_nested_type(schema: &SchemaType) -> bool {
+pub fn is_nested_type(schema: &SchemaType) -> bool {
     match schema {
         SchemaType::Struct(_) => true,
         SchemaType::Union(uni) => {
@@ -81,6 +86,10 @@ pub struct TemplateRenderer {
     format: Format,
     options: TemplateOptions,
     stack: VecDeque<String>,
+
+    // TOML
+    last_arrays: Vec<(String, StructType)>,
+    last_tables: Vec<(String, StructType)>,
 }
 
 impl TemplateRenderer {
@@ -94,6 +103,8 @@ impl TemplateRenderer {
             format,
             options,
             stack: VecDeque::new(),
+            last_arrays: vec![],
+            last_tables: vec![],
         }
     }
 
@@ -114,13 +125,7 @@ impl TemplateRenderer {
     }
 
     fn create_comment(&self, field: &SchemaField) -> String {
-        if !self.options.comments
-            || field.description.is_none()
-            || field
-                .description
-                .as_ref()
-                .is_some_and(|desc| desc.is_empty())
-        {
+        if !self.options.comments {
             return String::new();
         }
 
@@ -149,6 +154,10 @@ impl TemplateRenderer {
 
         if let Some(env_var) = &field.env_var {
             push(format!("@envvar {}", env_var));
+        }
+
+        if lines.is_empty() {
+            return String::new();
         }
 
         let mut out = lines.join("\n");
@@ -217,7 +226,55 @@ impl SchemaRenderer<String> for TemplateRenderer {
         false
     }
 
-    fn render_array(&mut self, _array: &ArrayType) -> RenderResult {
+    fn render_array(&mut self, array: &ArrayType) -> RenderResult {
+        let key = self.get_stack_key();
+
+        if !self.options.expand_fields.contains(&key) {
+            return Ok("[]".into());
+        }
+
+        let indent_count = if self.format.is_yaml() { 2 } else { 1 };
+
+        self.depth += indent_count;
+
+        let item_indent = self.indent();
+        let mut item = self.render_schema(&array.items_type)?;
+
+        self.depth -= indent_count;
+
+        #[cfg(feature = "json")]
+        {
+            if self.format.is_json() {
+                return Ok(format!("[\n{}{}\n{}]", item_indent, item, self.indent()));
+            }
+        }
+
+        #[cfg(feature = "toml")]
+        {
+            if self.format.is_toml() {
+                // This is a weird case, so wrap with {} to make it an object
+                if matches!(*array.items_type, SchemaType::Struct(_)) {
+                    return Ok(format!(
+                        "[{{\n{}{}\n{}}}]",
+                        self.indent(),
+                        item,
+                        self.indent()
+                    ));
+                } else {
+                    return Ok(format!("[\n{}{}\n{}]", self.indent(), item, self.indent()));
+                }
+            }
+        }
+
+        #[cfg(feature = "yaml")]
+        {
+            if self.format.is_yaml() {
+                item.replace_range(2..3, "-");
+
+                return Ok(format!("\n{}", item));
+            }
+        }
+
         Ok("[]".into())
     }
 
@@ -317,47 +374,58 @@ impl SchemaRenderer<String> for TemplateRenderer {
         {
             if self.format.is_toml() {
                 let mut out = vec![];
-                let mut structs = vec![];
 
                 for field in &structure.fields {
-                    // Nested structs have weird syntax, so render them
-                    // at the bottom after other fields
-                    if is_nested_type(&field.type_of) {
-                        structs.push(field);
-                        continue;
-                    }
-
                     self.stack.push_back(field.name.clone());
 
+                    // Structs and arrays (of structs) should be rendered at the
+                    // bottom of the document, since TOML has weird syntax
                     if !self.is_hidden(field) {
-                        let prop =
-                            format!("{} = {}", field.name, self.get_field_value(&field.type_of)?,);
+                        match &field.type_of {
+                            SchemaType::Array(array) if array.items_type.is_struct() => {
+                                if let SchemaType::Struct(table) = &*array.items_type {
+                                    self.last_arrays
+                                        .push((self.get_stack_key(), table.to_owned()));
+                                }
+                            }
+                            SchemaType::Struct(table) => {
+                                self.last_tables
+                                    .push((self.get_stack_key(), table.to_owned()));
+                            }
+                            _ => {
+                                let prop = format!(
+                                    "{} = {}",
+                                    field.name,
+                                    self.get_field_value(&field.type_of)?,
+                                );
 
-                        out.push(self.create_field(field, prop));
+                                out.push(self.create_field(field, prop));
+                            }
+                        };
                     }
 
                     self.stack.pop_back();
                 }
 
-                for field in structs {
-                    self.stack.push_back(field.name.clone());
+                // for field in structs {
+                //     self.stack.push_back(field.name.clone());
 
-                    if !self.is_hidden(field) {
-                        out.push(format!(
-                            "{}{}[{}]\n{}",
-                            if self.options.newline_between_fields && self.stack.len() == 1 {
-                                ""
-                            } else {
-                                "\n"
-                            },
-                            self.create_comment(field),
-                            self.stack.iter().cloned().collect::<Vec<_>>().join("."),
-                            self.get_field_value(&field.type_of)?,
-                        ));
-                    }
+                //     if !self.is_hidden(field) {
+                //         out.push(format!(
+                //             "{}{}[{}]\n{}",
+                //             if self.options.newline_between_fields && self.stack.len() == 1 {
+                //                 ""
+                //             } else {
+                //                 "\n"
+                //             },
+                //             self.create_comment(field),
+                //             self.stack.iter().cloned().collect::<Vec<_>>().join("."),
+                //             self.get_field_value(&field.type_of)?,
+                //         ));
+                //     }
 
-                    self.stack.pop_back();
-                }
+                //     self.stack.pop_back();
+                // }
 
                 return Ok(out.join(self.gap()));
             }
@@ -453,10 +521,28 @@ impl SchemaRenderer<String> for TemplateRenderer {
             return Err(miette!("The last registered schema must be a struct type."));
         };
 
-        let template = self.render_struct(schema)?;
+        let mut template = self.render_struct(schema)?;
 
+        // If TOML, render arrays and tables at the bottom
+        #[cfg(feature = "toml")]
+        {
+            if self.format.is_toml() {
+                for (key, value) in mem::take(&mut self.last_arrays) {
+                    let array = format!("\n\n[[{}]]\n{}", key, self.render_struct(&value)?);
+                    template.push_str(&array);
+                }
+
+                for (key, value) in mem::take(&mut self.last_tables) {
+                    let table = format!("\n\n[{}]\n{}", key, self.render_struct(&value)?);
+                    template.push_str(&table);
+                }
+            }
+        }
+
+        // Inject the header and footer
         let mut output = format!("{}{}{}", self.options.header, template, self.options.footer);
 
+        // And always add a trailing newline
         if self.format.is_toml() || self.format.is_yaml() {
             output.push('\n');
         }

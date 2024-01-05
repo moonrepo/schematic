@@ -263,3 +263,5 @@ TemplateOptions {
 	comment_fields: vec!["key".into(), "nested.key".into()],
 }
 ```
+
+> Field names use the serde cased name, not the Rust struct field name.
