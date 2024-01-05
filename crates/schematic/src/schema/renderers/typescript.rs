@@ -103,7 +103,7 @@ impl TypeScriptRenderer {
     }
 
     fn export_type_alias(&mut self, name: &str, value: String) -> RenderResult {
-        Ok(format!("export type {} = {};", name, value))
+        Ok(format!("export type {name} = {value};"))
     }
 
     fn export_enum_type(&mut self, name: &str, enu: &EnumType) -> RenderResult {
@@ -112,12 +112,12 @@ impl TypeScriptRenderer {
         let output = if self.is_string_union_enum(enu) {
             self.export_type_alias(name, value)?
         } else {
-            let out = format!("enum {} {}", name, value);
+            let out = format!("enum {name} {value}");
 
             if self.options.const_enum {
-                format!("export const {}", out)
+                format!("export const {out}")
             } else {
-                format!("export {}", out)
+                format!("export {out}")
             }
         };
 
@@ -128,7 +128,7 @@ impl TypeScriptRenderer {
         let value = self.render_struct(structure)?;
 
         let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
-            format!("export interface {} {}", name, value)
+            format!("export interface {name} {value}")
         } else {
             self.export_type_alias(name, value)?
         };
@@ -263,9 +263,9 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let out = self.render_schema(&array.items_type)?;
 
         Ok(if out.contains('|') {
-            format!("({})[]", out)
+            format!("({out})[]")
         } else {
-            format!("{}[]", out)
+            format!("{out}[]")
         })
     }
 
@@ -329,7 +329,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         if let Some(values) = &string.enum_values {
             return Ok(values
                 .iter()
-                .map(|v| format!("'{}'", v))
+                .map(|v| format!("'{v}'"))
                 .collect::<Vec<_>>()
                 .join(" | "));
         }
@@ -374,12 +374,12 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 tags.push(if deprecated.is_empty() {
                     "@deprecated".to_owned()
                 } else {
-                    format!("@deprecated {}", deprecated)
+                    format!("@deprecated {deprecated}")
                 });
             }
 
             if let Some(env_var) = &field.env_var {
-                tags.push(format!("@envvar {}", env_var));
+                tags.push(format!("@envvar {env_var}"));
             }
 
             out.push(self.wrap_in_comment(field.description.as_ref(), tags, row));
@@ -433,9 +433,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             imported_types.sort();
 
             imports.push(format!(
-                "import type {{ {} }} from '{}';",
+                "import type {{ {} }} from '{import}';",
                 imported_types.join(", "),
-                import
             ));
         }
 

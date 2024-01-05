@@ -171,8 +171,8 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         // Inject the header and footer
         template = format!(
-            "{}{}{}",
-            self.ctx.options.header, template, self.ctx.options.footer
+            "{}{template}{}",
+            self.ctx.options.header, self.ctx.options.footer
         );
 
         // And always add a trailing newline

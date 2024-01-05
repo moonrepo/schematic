@@ -80,7 +80,7 @@ pub fn partialize_schema(schema: &mut SchemaType, force_partial: bool) {
         SchemaType::Struct(inner) => {
             if inner.partial || force_partial {
                 if let Some(name) = &inner.name {
-                    inner.name = Some(format!("Partial{}", name));
+                    inner.name = Some(format!("Partial{name}"));
                 }
 
                 for field in inner.fields.iter_mut() {
@@ -109,7 +109,7 @@ pub fn partialize_schema(schema: &mut SchemaType, force_partial: bool) {
 
             if inner.partial || force_partial {
                 if let Some(name) = &inner.name {
-                    inner.name = Some(format!("Partial{}", name));
+                    inner.name = Some(format!("Partial{name}"));
                 }
             }
 

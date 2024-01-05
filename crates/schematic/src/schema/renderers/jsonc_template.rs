@@ -42,12 +42,7 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
         self.ctx.depth -= 1;
 
-        Ok(format!(
-            "[\n{}{}\n{}]",
-            item_indent,
-            item,
-            self.ctx.indent()
-        ))
+        Ok(format!("[\n{}{item}\n{}]", item_indent, self.ctx.indent()))
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {
@@ -168,8 +163,8 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         // Inject the header and footer
         if self.ctx.options.comments {
             template = format!(
-                "{}{}{}",
-                self.ctx.options.header, template, self.ctx.options.footer
+                "{}{template}{}",
+                self.ctx.options.header, self.ctx.options.footer
             );
         }
 

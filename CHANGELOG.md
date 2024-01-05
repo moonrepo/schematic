@@ -10,9 +10,9 @@
 
 #### 🐞 Fixes
 
-- Templates
-  - Fixed an issue where comments with bold markdown syntax was being rendered incorrectly.
-  - Fixed trailing commas for JSON format.
+- Fixed nested configs receiving an environment variable when `env_prefix` is set.
+- Fixed an issue where comments with bold markdown syntax was being rendered incorrectly.
+- Fixed trailing commas for JSON template format.
 
 ## 0.13.2
 

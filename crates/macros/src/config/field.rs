@@ -103,7 +103,7 @@ impl<'l> Field<'l> {
         let mut stmts = vec![];
 
         if let Some(expr) = self.args.validate.as_ref() {
-            let name_quoted = format!("{}", name);
+            let name_quoted = format!("{name}");
 
             let func = match expr {
                 // func(arg)()

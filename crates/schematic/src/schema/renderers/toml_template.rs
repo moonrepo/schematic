@@ -144,7 +144,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
         self.ctx.options.comments = comments;
 
-        Ok(format!("{{ {} = {} }}", key, value))
+        Ok(format!("{{ {key} = {value} }}"))
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
@@ -204,18 +204,16 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
         for (key, value) in mem::take(&mut self.arrays) {
             sections.push(format!(
-                "{}[[{}]]\n{}",
+                "{}[[{key}]]\n{}",
                 value.comment,
-                key,
                 self.render_struct(&value.table)?
             ));
         }
 
         for (key, value) in mem::take(&mut self.tables) {
             sections.push(format!(
-                "{}[{}]\n{}",
+                "{}[{key}]\n{}",
                 value.comment,
-                key,
                 self.render_struct(&value.table)?
             ));
         }
@@ -224,8 +222,8 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
         // Inject the header and footer
         template = format!(
-            "{}{}{}",
-            self.ctx.options.header, template, self.ctx.options.footer
+            "{}{template}{}",
+            self.ctx.options.header, self.ctx.options.footer
         );
 
         // And always add a trailing newline

@@ -120,12 +120,14 @@ impl<'l> Field<'l> {
     }
 
     pub fn get_env_var(&self) -> Option<String> {
-        if let Some(env_name) = &self.args.env {
+        if self.is_nested() {
+            None
+        } else if let Some(env_name) = &self.args.env {
             Some(env_name.to_owned())
         } else {
             self.env_prefix
                 .as_ref()
-                .map(|env_prefix| format!("{}{}", env_prefix, self.get_name(None)).to_uppercase())
+                .map(|env_prefix| format!("{env_prefix}{}", self.get_name(None)).to_uppercase())
         }
     }
 
