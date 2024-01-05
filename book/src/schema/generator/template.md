@@ -10,8 +10,7 @@ situations like configuration templates and scaffolding defaults.
 To utilize, instantiate a generator, add types to render, and generate the output file.
 
 ```rust
-use schematic::Format;
-use schematic::schema::{SchemaGenerator, template::*};
+use schematic::schema::SchemaGenerator;
 
 let mut generator = SchemaGenerator::default();
 generator.add::<CustomType>();
@@ -37,7 +36,8 @@ JsonTemplateRenderer::new(TemplateOptions::default());
 
 The
 [`JsoncTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/jsonc_template/struct.JsoncTemplateRenderer.html)
-will render JSON templates _with_ comments. We suggest using the `.jsonc` file extension.
+will render JSON templates _with_ comments. We suggest using the `.jsonc` file extension, but not
+required.
 
 ```rust
 use schematic::schema::{JsoncTemplateRenderer, TemplateOptions};
@@ -91,8 +91,9 @@ generator.generate(output_dir.join("config.json"), renderer)?;
 
 ## Caveats
 
-At this time, [arrays](../array.md) and [objects](../object.md) do not support default values, and
-will render `[]` and `{}` respectively.
+By default [arrays](../array.md) and [objects](../object.md) do not support default values, and will
+render `[]` and `{}` respectively. This can be customized with the
+[`expand_fields` option](#field-expansion).
 
 Furthermore, [enums](../enum.md) and [unions](../union.md) only support default values when
 explicitly marked as such. For example, with `#[default]`.
@@ -176,7 +177,8 @@ port: 8080
 </tr>
 </table>
 
-> Applying the desired casing for field names should be done with `rename_all` on the container.
+> Applying the desired casing for field names should be done with serde `rename_all` on the
+> container.
 
 ## Options
 
@@ -265,3 +267,51 @@ TemplateOptions {
 ```
 
 > Field names use the serde cased name, not the Rust struct field name.
+
+### Field expansion
+
+For [arrays](../array.md) and [objects](../object.md), we render an empty value (`[]` or `{}`) by
+default because there's no actual data associated with the schema. However, if you'd like to render
+a single example item for a field, you can use the `expand_fields` option.
+
+```rust
+TemplateOptions {
+	// ...
+	expand_fields: vec!["key".into(), "nested.key".into()],
+}
+```
+
+Here's an example of how this works:
+
+<table>
+<tr>
+<td>Not expanded</td>
+<td>Expanded</td>
+</tr>
+<tr>
+<td>
+
+```json
+{
+	"proxies": []
+}
+```
+
+</td>
+<td>
+
+```json
+{
+	"proxies": [
+		// An example proxy configuration.
+		{
+			"host": "",
+			"port": 8080
+		}
+	]
+}
+```
+
+</td>
+</tr>
+</table>

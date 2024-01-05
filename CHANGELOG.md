@@ -6,6 +6,7 @@
 
 - Added `JsonTemplateRenderer`, `JsoncTemplateRenderer`, `TomlTemplateRenderer`, and
   `YamlTemplateRenderer` for distinctness.
+- Added `TemplateOptions.expand_fields` for expanding arrays and objects with an example item.
 
 #### 🐞 Fixes
 
