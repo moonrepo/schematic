@@ -181,20 +181,63 @@
 <p>Requires the <code>template</code> and desired <a href="../../config/index.html#supported-source-formats">format</a> Cargo
 feature.</p>
 </blockquote>
-<p>With our
-<a href="https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateRenderer.html"><code>TemplateRenderer</code></a>,
-you can generate a file template in a specific format (JSON, TOML, YAML). This template will include
-all fields, default values, comments, metadata, and is useful for situations like configuration
-templates and scaffolding defaults.</p>
+<p>With our <a href="#support-formats">template renderers</a>, you can generate a file template in a specific
+format. This template will include all fields, default values, comments, metadata, and is useful for
+situations like configuration templates and scaffolding defaults.</p>
 <p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::Format;
-use schematic::schema::{SchemaGenerator, template::*};
+</span>use schematic::schema::SchemaGenerator;
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), TemplateRenderer::new_format(Format::Json))?;
+generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="support-formats"><a class="header" href="#support-formats">Support formats</a></h2>
+<h3 id="json"><a class="header" href="#json">JSON</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/json_template/struct.JsonTemplateRenderer.html"><code>JsonTemplateRenderer</code></a>
+will render JSON templates <em>without</em> comments. Any commented related options will be force disabled.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{JsonTemplateRenderer, TemplateOptions};
+
+JsonTemplateRenderer::default();
+JsonTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre></pre>
+<h3 id="jsonc"><a class="header" href="#jsonc">JSONC</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/jsonc_template/struct.JsoncTemplateRenderer.html"><code>JsoncTemplateRenderer</code></a>
+will render JSON templates <em>with</em> comments. We suggest using the <code>.jsonc</code> file extension, but not
+required.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{JsoncTemplateRenderer, TemplateOptions};
+
+JsoncTemplateRenderer::default();
+JsoncTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre></pre>
+<h3 id="toml"><a class="header" href="#toml">TOML</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/toml_template/struct.TomlTemplateRenderer.html"><code>TomlTemplateRenderer</code></a>
+will render TOML templates.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{TomlTemplateRenderer, TemplateOptions};
+
+TomlTemplateRenderer::default();
+TomlTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre></pre>
+<h3 id="yaml"><a class="header" href="#yaml">YAML</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/yaml_template/struct.YamlTemplateRenderer.html"><code>YamlTemplateRenderer</code></a>
+will render YAML templates.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{YamlTemplateRenderer, TemplateOptions};
+
+YamlTemplateRenderer::default();
+YamlTemplateRenderer::new(TemplateOptions::default());
 <span class="boring">}</span></code></pre></pre>
 <h2 id="root-document"><a class="header" href="#root-document">Root document</a></h2>
 <p>A template represents a single document, typically for a struct. In Schematic, the <em>last type to be
@@ -209,11 +252,12 @@ generator.add::&lt;ThirdConfig&gt;();
 
 // This is the root document
 generator.add::&lt;LastType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), TemplateRenderer::new_format(Format::Json))?;
+generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="caveats"><a class="header" href="#caveats">Caveats</a></h2>
-<p>At this time, <a href="../array.html">arrays</a> and <a href="../object.html">objects</a> do not support default values, and
-will render <code>[]</code> and <code>{}</code> respectively.</p>
+<p>By default <a href="../array.html">arrays</a> and <a href="../object.html">objects</a> do not support default values, and will
+render <code>[]</code> and <code>{}</code> respectively. This can be customized with the
+<a href="#field-expansion"><code>expand_fields</code> option</a>.</p>
 <p>Furthermore, <a href="../enum.html">enums</a> and <a href="../union.html">unions</a> only support default values when
 explicitly marked as such. For example, with <code>#[default]</code>.</p>
 <p>And lastly, when we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid
@@ -280,14 +324,17 @@ port: 8080
 </tr>
 </table>
 <blockquote>
-<p>Applying the desired casing for field names should be done with <code>rename_all</code> on the container.</p>
+<p>Applying the desired casing for field names should be done with serde <code>rename_all</code> on the
+container.</p>
 </blockquote>
 <h2 id="options"><a class="header" href="#options">Options</a></h2>
 <p>Custom options can be passed to the renderer using
 <a href="https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateOptions.html"><code>TemplateOptions</code></a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>TemplateRenderer::new(Format::Json, TemplateOptions {
+</span>use schematic::schema::TemplateOptions;
+
+JsoncTemplateRenderer::new(TemplateOptions {
 	// ...
 	..TemplateOptions::default()
 });
@@ -355,6 +402,47 @@ option accepts a list of field names and also supports dot-notation for nested f
 	comment_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
 }
 <span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p>Field names use the serde cased name, not the Rust struct field name.</p>
+</blockquote>
+<h3 id="field-expansion"><a class="header" href="#field-expansion">Field expansion</a></h3>
+<p>For <a href="../array.html">arrays</a> and <a href="../object.html">objects</a>, we render an empty value (<code>[]</code> or <code>{}</code>) by
+default because there’s no actual data associated with the schema. However, if you’d like to render
+a single example item for a field, you can use the <code>expand_fields</code> option.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	expand_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Here’s an example of how this works:</p>
+<table>
+<tr>
+<td>Not expanded</td>
+<td>Expanded</td>
+</tr>
+<tr>
+<td>
+<pre><code class="language-json">{
+	&quot;proxies&quot;: []
+}
+</code></pre>
+</td>
+<td>
+<pre><code class="language-json">{
+	&quot;proxies&quot;: [
+		// An example proxy configuration.
+		{
+			&quot;host&quot;: &quot;&quot;,
+			&quot;port&quot;: 8080
+		}
+	]
+}
+</code></pre>
+</td>
+</tr>
+</table>
 
                     </main>
 

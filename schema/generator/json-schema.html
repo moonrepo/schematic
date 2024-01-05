@@ -189,7 +189,7 @@ document.</p>
 <p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::schema::{SchemaGenerator, json_schema::*};
+</span>use schematic::schema::{SchemaGenerator, JsonSchemaRenderer};
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
@@ -232,7 +232,9 @@ generator.generate(output_dir.join(&quot;schema.json&quot;), JsonSchemaRenderer:
 <a href="https://docs.rs/schematic/latest/schematic/schema/json_schema/type.JsonSchemaOptions.html"><code>JsonSchemaOptions</code></a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>JsonSchemaRenderer::new(JsonSchemaOptions {
+</span>use schematic::schema::JsonSchemaOptions;
+
+JsonSchemaRenderer::new(JsonSchemaOptions {
 	// ...
 	..JsonSchemaOptions::default()
 });

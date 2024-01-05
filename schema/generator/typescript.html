@@ -187,7 +187,7 @@ you can generate <a href="https://www.typescriptlang.org/">TypeScript types</a> 
 instantiate a generator, add types to render, and generate the output file.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::schema::{SchemaGenerator, typescript::*};
+</span>use schematic::schema::{SchemaGenerator, TypeScriptRenderer};
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
@@ -202,7 +202,9 @@ generator.generate(output_dir.join(&quot;types.ts&quot;), TypeScriptRenderer::de
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptOptions.html"><code>TypeScriptOptions</code></a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>TypeScriptRenderer::new(TypeScriptOptions {
+</span>use schematic::schema::TypeScriptOptions;
+
+TypeScriptRenderer::new(TypeScriptOptions {
 	// ...
 	..TypeScriptOptions::default()
 });
