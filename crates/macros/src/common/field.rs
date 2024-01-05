@@ -120,7 +120,9 @@ impl<'l> Field<'l> {
     }
 
     pub fn get_env_var(&self) -> Option<String> {
-        if let Some(env_name) = &self.args.env {
+        if self.is_nested() {
+            None
+        } else if let Some(env_name) = &self.args.env {
             Some(env_name.to_owned())
         } else {
             self.env_prefix
