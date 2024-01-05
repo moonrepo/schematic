@@ -7,6 +7,10 @@
 - Added `JsonTemplateRenderer`, `JsoncTemplateRenderer`, `TomlTemplateRenderer`, and
   `YamlTemplateRenderer` for distinctness.
 
+#### 🐞 Fixes
+
+- Fixed an issue where comments with bold markdown syntax was being rendered incorrectly.
+
 ## 0.13.2
 
 #### 🐞 Fixes
