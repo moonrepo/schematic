@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::HashSet;
 
-/// Renders YAML file templates.
+/// Renders YAML config templates.
 pub struct YamlTemplateRenderer {
     ctx: TemplateContext,
 }

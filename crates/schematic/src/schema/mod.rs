@@ -11,20 +11,20 @@ pub use schematic_types::*;
 #[cfg(feature = "json_schema")]
 pub use renderers::json_schema::{self, *};
 
-/// Renders JSON file templates.
+/// Renders JSON config templates.
 #[cfg(all(feature = "template", feature = "json"))]
 pub use renderers::json_template::*;
 
-/// Renders JSONC file templates.
+/// Renders JSONC config templates.
 #[cfg(all(feature = "template", feature = "json"))]
 pub use renderers::jsonc_template::*;
 
-/// Helpers for file templates.
+/// Helpers for config templates.
 #[cfg(feature = "template")]
 #[allow(deprecated)]
 pub use renderers::template::{self, TemplateOptions, TemplateRenderer};
 
-/// Renders TOML file templates.
+/// Renders TOML config templates.
 #[cfg(all(feature = "template", feature = "toml"))]
 pub use renderers::toml_template::*;
 
@@ -32,6 +32,6 @@ pub use renderers::toml_template::*;
 #[cfg(feature = "typescript")]
 pub use renderers::typescript::{self, *};
 
-/// Renders YAML file templates.
+/// Renders YAML config templates.
 #[cfg(all(feature = "template", feature = "yaml"))]
 pub use renderers::yaml_template::*;

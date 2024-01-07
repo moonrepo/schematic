@@ -11,7 +11,7 @@ struct Section {
     table: StructType,
 }
 
-/// Renders TOML file templates.
+/// Renders TOML config templates.
 pub struct TomlTemplateRenderer {
     ctx: TemplateContext,
 

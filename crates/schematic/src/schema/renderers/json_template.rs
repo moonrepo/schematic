@@ -5,7 +5,7 @@ use super::jsonc_template::JsoncTemplateRenderer;
 use super::template::TemplateOptions;
 use std::mem;
 
-/// Renders JSON file templates without comments.
+/// Renders JSON config templates without comments.
 pub struct JsonTemplateRenderer;
 
 impl JsonTemplateRenderer {

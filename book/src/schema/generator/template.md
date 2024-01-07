@@ -1,11 +1,11 @@
-# File templates (experimental)
+# Config templates (experimental)
 
 > Requires the `template` and desired [format](../../config/index.md#supported-source-formats) Cargo
 > feature.
 
-With our [template renderers](#support-formats), you can generate a file template in a specific
+With our [format renderers](#support-formats), you can generate a config template in a specific
 format. This template will include all fields, default values, comments, metadata, and is useful for
-situations like configuration templates and scaffolding defaults.
+situations like scaffolding files during installation.
 
 To utilize, instantiate a generator, add types to render, and generate the output file.
 

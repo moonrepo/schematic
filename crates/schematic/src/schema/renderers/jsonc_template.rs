@@ -5,7 +5,7 @@ use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::HashSet;
 
-/// Renders JSON file templates with comments.
+/// Renders JSON config templates with comments.
 pub struct JsoncTemplateRenderer {
     ctx: TemplateContext,
 }
