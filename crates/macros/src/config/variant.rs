@@ -178,10 +178,12 @@ impl<'l> Variant<'l> {
             }
 
             if self.is_required() {
+                let name = self.get_name(Some(&self.casing_format));
+
                 stmts.push(quote! {
                     if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
                         errors.push(schematic::ValidateErrorType::setting_required(
-                            path.clone(),
+                            path.join_key(#name),
                         ));
                     }
                 });

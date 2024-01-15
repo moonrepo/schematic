@@ -10,12 +10,9 @@ impl<'l> ToTokens for SchematicMacro<'l> {
         let cfg = &self.0;
         let name = cfg.name;
 
-        let schema = cfg.type_of.generate_schema(
-            cfg.get_name(),
-            extract_comment(&cfg.attrs),
-            cfg.get_casing_format(),
-            cfg.get_tagged_format(),
-        );
+        let schema = cfg
+            .type_of
+            .generate_schema(cfg.get_name(), extract_comment(&cfg.attrs));
 
         tokens.extend(quote! {
             #[automatically_derived]

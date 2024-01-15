@@ -115,15 +115,9 @@ impl<'l> ToTokens for ConfigMacro<'l> {
         {
             use crate::utils::extract_comment;
 
-            let casing_format = cfg.get_casing_format();
-            let tagged_format = cfg.get_tagged_format();
-
-            let schema = cfg.type_of.generate_schema(
-                cfg.get_name(),
-                extract_comment(&cfg.attrs),
-                casing_format,
-                tagged_format,
-            );
+            let schema = cfg
+                .type_of
+                .generate_schema(cfg.get_name(), extract_comment(&cfg.attrs));
             let partial_schema = cfg.type_of.generate_partial_schema(name, &partial_name);
 
             tokens.extend(quote! {

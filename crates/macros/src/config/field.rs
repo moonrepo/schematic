@@ -128,24 +128,31 @@ impl<'l> Field<'l> {
             stmts.push(validator);
         }
 
-        if stmts.is_empty() {
+        let first = if stmts.is_empty() {
             quote! {}
-        } else if self.is_required() {
-            quote! {
-                if let Some(setting) = self.#name.as_ref() {
-                    #(#stmts)*
-                } else if finalize {
-                    errors.push(schematic::ValidateErrorType::setting_required(
-                        path.join_key(#name_quoted),
-                    ));
-                }
-            }
         } else {
             quote! {
                 if let Some(setting) = self.#name.as_ref() {
                     #(#stmts)*
                 }
             }
+        };
+
+        let second = if self.is_required() {
+            quote! {
+                if finalize && self.#name.is_none() {
+                    errors.push(schematic::ValidateErrorType::setting_required(
+                        path.join_key(#name_quoted),
+                    ));
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        quote! {
+            #first
+            #second
         }
     }
 }
