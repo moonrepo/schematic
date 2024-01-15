@@ -35,6 +35,7 @@ pub struct FieldArgs {
     pub merge: Option<ExprPath>,
     pub nested: bool,
     pub parse_env: Option<ExprPath>,
+    pub required: bool,
     pub validate: Option<Expr>,
 
     // serde
