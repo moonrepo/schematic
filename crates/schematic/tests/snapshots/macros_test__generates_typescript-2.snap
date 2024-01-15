@@ -127,6 +127,7 @@ export type Validations = {
 	nested: NestedValidations,
 	nested2: NestedValidations | null,
 	optional: string | null,
+	required: string | null,
 };
 
 /** Container comment. */
@@ -212,5 +213,6 @@ export type PartialValidations = {
 	nested?: PartialNestedValidations | null,
 	nested2?: PartialNestedValidations | null,
 	optional?: string | null,
+	required?: string | null,
 };
 

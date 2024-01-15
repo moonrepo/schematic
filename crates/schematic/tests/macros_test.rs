@@ -199,6 +199,8 @@ struct Validations {
     basic: String,
     #[setting(validate = validate_test)]
     optional: Option<String>,
+    #[setting(required, validate = validate_test)]
+    required: Option<String>,
     #[setting(nested, validate = validate_nested)]
     nested: NestedValidations,
     #[setting(nested, validate = validate_nested)]

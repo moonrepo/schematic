@@ -25,6 +25,14 @@ impl ValidateError {
         }
     }
 
+    /// Create a new validation error for a required setting.
+    pub fn required() -> Self {
+        ValidateError {
+            message: "this setting is required".into(),
+            path: Path::default(),
+        }
+    }
+
     /// Create a new validation error with the provided message and [`Path`].
     pub fn with_path<T: AsRef<str>>(message: T, path: Path) -> Self {
         ValidateError {
@@ -61,6 +69,13 @@ pub enum ValidateErrorType {
 impl ValidateErrorType {
     pub fn setting(path: Path, error: ValidateError) -> Self {
         ValidateErrorType::Setting { path, error }
+    }
+
+    pub fn setting_required(path: Path) -> Self {
+        ValidateErrorType::Setting {
+            path,
+            error: ValidateError::required(),
+        }
     }
 
     pub fn nested(error: ValidatorError) -> Self {
