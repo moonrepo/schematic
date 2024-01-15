@@ -25,6 +25,7 @@ pub struct VariantArgs {
     pub default: bool,
     pub merge: Option<ExprPath>,
     pub nested: bool,
+    pub required: bool,
     pub validate: Option<Expr>,
 
     // serde
@@ -63,6 +64,10 @@ impl<'l> Variant<'l> {
 
     pub fn is_nested(&self) -> bool {
         self.args.nested
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
     }
 
     pub fn get_name(&self, casing_format: Option<&str>) -> String {

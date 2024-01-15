@@ -68,6 +68,22 @@ enum NestedConfigs {
     Objects(SomeConfig, SomeConfig),
 }
 
+#[allow(unused_parens)]
+fn validate_string<T, C>(_: (&Option<String>), _: &T, _: &C) -> Result<(), ValidateError> {
+    Ok(())
+}
+
+#[derive(Config)]
+enum ValidateConfigs {
+    Normal(String),
+    #[setting(validate = validate_string)]
+    Optional(Option<String>),
+    #[setting(validate = validate_string, required)]
+    Required(Option<String>),
+    #[setting(required)]
+    RequiredMany(Option<String>, Option<String>),
+}
+
 #[derive(Config, Serialize)]
 #[serde(untagged, expecting = "something")]
 enum WithSerde {

@@ -177,6 +177,16 @@ impl<'l> Variant<'l> {
                 });
             }
 
+            if self.is_required() {
+                stmts.push(quote! {
+                    if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
+                        errors.push(schematic::ValidateErrorType::setting_required(
+                            path.clone(),
+                        ));
+                    }
+                });
+            }
+
             if self.is_nested() {
                 stmts.extend(outer_names
                     .iter()
