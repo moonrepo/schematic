@@ -99,7 +99,7 @@ impl<T: Config> ConfigLoader<T> {
 
         // Validate the final result before moving on
         partial
-            .validate(context)
+            .validate(context, true)
             .map_err(|error| ConfigError::Validator {
                 config: match layers.last() {
                     Some(last) => self.get_location(&last.source).to_owned(),
@@ -258,7 +258,7 @@ impl<T: Config> ConfigLoader<T> {
 
             // Validate before continuing so we ensure the values are correct
             partial
-                .validate(context)
+                .validate(context, false)
                 .map_err(|error| ConfigError::Validator {
                     config: location.to_owned(),
                     error,

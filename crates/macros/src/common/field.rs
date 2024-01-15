@@ -85,6 +85,10 @@ impl<'l> Field<'l> {
             }
         }
 
+        if field.is_required() && !field.is_optional() {
+            panic!("Cannot use required with non-optional settings.");
+        }
+
         field
     }
 
@@ -102,6 +106,10 @@ impl<'l> Field<'l> {
 
     pub fn is_optional(&self) -> bool {
         self.value_type.is_optional()
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
     }
 
     pub fn is_skipped(&self) -> bool {

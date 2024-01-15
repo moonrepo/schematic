@@ -183,7 +183,7 @@ impl<'l> Variant<'l> {
                     .enumerate()
                     .map(|(index, o)| {
                         quote! {
-                            if let Err(nested_error) = #o.validate_with_path(context, path.join_index(#index)) {
+                            if let Err(nested_error) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
                                 errors.push(schematic::ValidateErrorType::nested(nested_error));
                             }
                         }

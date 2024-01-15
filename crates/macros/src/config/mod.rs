@@ -70,6 +70,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                 fn validate_with_path(
                     &self,
                     context: &Self::Context,
+                    finalize: bool,
                     path: schematic::Path
                 ) -> Result<(), schematic::ValidatorError> {
                     let mut errors: Vec<schematic::ValidateErrorType> = vec![];
