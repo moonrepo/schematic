@@ -5,6 +5,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{Attribute, Expr, ExprPath, Fields, Variant as NativeVariant};
 
+#[derive(Clone)]
 pub enum TaggedFormat {
     Untagged,
     External,
@@ -25,6 +26,7 @@ pub struct VariantArgs {
     pub default: bool,
     pub merge: Option<ExprPath>,
     pub nested: bool,
+    pub required: bool,
     pub validate: Option<Expr>,
 
     // serde
@@ -36,6 +38,8 @@ pub struct VariantArgs {
 
 pub struct Variant<'l> {
     pub args: VariantArgs,
+    pub casing_format: String,
+    pub tagged_format: TaggedFormat,
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub name: &'l Ident,
@@ -48,6 +52,8 @@ impl<'l> Variant<'l> {
             args: VariantArgs::from_attributes(&var.attrs).unwrap_or_default(),
             serde_args: FieldSerdeArgs::from_attributes(&var.attrs).unwrap_or_default(),
             attrs: extract_common_attrs(&var.attrs),
+            casing_format: String::new(),
+            tagged_format: TaggedFormat::Unit,
             name: &var.ident,
             value: var,
         }
@@ -63,6 +69,10 @@ impl<'l> Variant<'l> {
 
     pub fn is_nested(&self) -> bool {
         self.args.nested
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
     }
 
     pub fn get_name(&self, casing_format: Option<&str>) -> String {
@@ -116,12 +126,14 @@ impl<'l> Variant<'l> {
         })
     }
 
-    pub fn generate_schema_type(
-        &self,
-        casing_format: &str,
-        tagged_format: &TaggedFormat,
-    ) -> TokenStream {
-        let name = self.get_name(Some(casing_format));
+    pub fn generate_schema_type(&self, all_unit: bool) -> TokenStream {
+        let name = self.get_name(Some(&self.casing_format));
+        let tagged_format = if all_unit {
+            &TaggedFormat::Unit
+        } else {
+            &self.tagged_format
+        };
+
         let untagged = matches!(tagged_format, TaggedFormat::Untagged);
         let partial = self.is_nested();
 

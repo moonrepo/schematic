@@ -35,6 +35,7 @@ pub struct FieldArgs {
     pub merge: Option<ExprPath>,
     pub nested: bool,
     pub parse_env: Option<ExprPath>,
+    pub required: bool,
     pub validate: Option<Expr>,
 
     // serde
@@ -49,6 +50,7 @@ pub struct Field<'l> {
     pub args: FieldArgs,
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
+    pub casing_format: String,
     pub name: &'l Ident,
     pub value: &'l Type,
     pub value_type: FieldValue<'l>,
@@ -63,6 +65,7 @@ impl<'l> Field<'l> {
         let field = Field {
             name: field.ident.as_ref().unwrap(),
             attrs: extract_common_attrs(&field.attrs),
+            casing_format: String::new(),
             value: &field.ty,
             value_type: if args.nested {
                 FieldValue::nested(&field.ty)
@@ -84,6 +87,10 @@ impl<'l> Field<'l> {
             }
         }
 
+        if field.is_required() && !field.is_optional() {
+            panic!("Cannot use required with non-optional settings.");
+        }
+
         field
     }
 
@@ -101,6 +108,10 @@ impl<'l> Field<'l> {
 
     pub fn is_optional(&self) -> bool {
         self.value_type.is_optional()
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
     }
 
     pub fn is_skipped(&self) -> bool {
@@ -172,8 +183,8 @@ impl<'l> Field<'l> {
         })
     }
 
-    pub fn generate_schema_type(&self, casing_format: &str) -> TokenStream {
-        let name = self.get_name(Some(casing_format));
+    pub fn generate_schema_type(&self) -> TokenStream {
+        let name = self.get_name(Some(&self.casing_format));
         let hidden = map_bool_quote("hidden", self.is_skipped());
         let nullable = map_bool_quote("nullable", self.is_optional());
         let description = map_option_quote("description", extract_comment(&self.attrs));

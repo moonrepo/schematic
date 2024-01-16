@@ -44,6 +44,7 @@ pub struct Macro<'l> {
     pub args: MacroArgs,
     pub serde_args: ContainerSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
+    pub casing_format: String,
     pub name: &'l Ident,
     pub type_of: Container<'l>,
 }
@@ -53,19 +54,32 @@ impl<'l> Macro<'l> {
         let args = MacroArgs::from_derive_input(input).expect("Failed to parse arguments.");
         let serde_args = ContainerSerdeArgs::from_derive_input(input).unwrap_or_default();
 
+        let base_casing_format = args
+            .rename_all
+            .as_deref()
+            .or(serde_args.rename_all.as_deref());
+
+        #[allow(unused_assignments)]
+        let mut casing_format = String::new();
+
         let config_type = match &input.data {
             Data::Struct(data) => match &data.fields {
-                Fields::Named(fields) => Container::NamedStruct {
-                    fields: fields
-                        .named
-                        .iter()
-                        .map(|f| {
-                            let mut field = Field::from(f);
-                            field.env_prefix = args.env_prefix.clone();
-                            field
-                        })
-                        .collect::<Vec<_>>(),
-                },
+                Fields::Named(fields) => {
+                    casing_format = base_casing_format.unwrap_or("camelCase").to_owned();
+
+                    Container::NamedStruct {
+                        fields: fields
+                            .named
+                            .iter()
+                            .map(|f| {
+                                let mut field = Field::from(f);
+                                field.casing_format = casing_format.clone();
+                                field.env_prefix = args.env_prefix.clone();
+                                field
+                            })
+                            .collect::<Vec<_>>(),
+                    }
+                }
                 Fields::Unnamed(_) => {
                     panic!("Unnamed structs are not supported.");
                 }
@@ -73,19 +87,43 @@ impl<'l> Macro<'l> {
                     panic!("Unit structs are not supported.");
                 }
             },
-            Data::Enum(data) => Container::Enum {
-                variants: data
-                    .variants
-                    .iter()
-                    .map(|variant| {
-                        if matches!(variant.fields, Fields::Named(_)) {
-                            panic!("Named enum variants are not supported.");
-                        }
+            Data::Enum(data) => {
+                casing_format = base_casing_format.unwrap_or("kebab-case").to_owned();
 
-                        Variant::from(variant)
-                    })
-                    .collect(),
-            },
+                let tagged_format = {
+                    if args.serde.untagged || serde_args.untagged {
+                        TaggedFormat::Untagged
+                    } else {
+                        match (
+                            args.serde.tag.as_ref().or(serde_args.tag.as_ref()),
+                            args.serde.content.as_ref().or(serde_args.content.as_ref()),
+                        ) {
+                            (Some(tag), Some(content)) => {
+                                TaggedFormat::Adjacent(tag.to_owned(), content.to_owned())
+                            }
+                            (Some(tag), None) => TaggedFormat::Internal(tag.to_owned()),
+                            _ => TaggedFormat::External,
+                        }
+                    }
+                };
+
+                Container::Enum {
+                    variants: data
+                        .variants
+                        .iter()
+                        .map(|variant| {
+                            if matches!(variant.fields, Fields::Named(_)) {
+                                panic!("Named enum variants are not supported.");
+                            }
+
+                            let mut field = Variant::from(variant);
+                            field.casing_format = casing_format.clone();
+                            field.tagged_format = tagged_format.clone();
+                            field
+                        })
+                        .collect(),
+                }
+            }
             Data::Union(_) => {
                 panic!("Unions are not supported.");
             }
@@ -97,23 +135,8 @@ impl<'l> Macro<'l> {
             attrs: extract_common_attrs(&input.attrs),
             name: &input.ident,
             type_of: config_type,
+            casing_format,
         }
-    }
-
-    pub fn is_enum(&self) -> bool {
-        matches!(self.type_of, Container::Enum { .. })
-    }
-
-    pub fn get_casing_format(&self) -> &str {
-        self.args
-            .rename_all
-            .as_deref()
-            .or(self.serde_args.rename_all.as_deref())
-            .unwrap_or(if self.is_enum() {
-                "kebab-case"
-            } else {
-                "camelCase"
-            })
     }
 
     pub fn get_meta_struct(&self) -> TokenStream {
@@ -137,31 +160,6 @@ impl<'l> Macro<'l> {
             serde.to_owned()
         } else {
             self.name.to_string()
-        }
-    }
-
-    pub fn get_tagged_format(&self) -> TaggedFormat {
-        if self.args.serde.untagged || self.serde_args.untagged {
-            return TaggedFormat::Untagged;
-        }
-
-        match (
-            self.args
-                .serde
-                .tag
-                .as_ref()
-                .or(self.serde_args.tag.as_ref()),
-            self.args
-                .serde
-                .content
-                .as_ref()
-                .or(self.serde_args.content.as_ref()),
-        ) {
-            (Some(tag), Some(content)) => {
-                TaggedFormat::Adjacent(tag.to_owned(), content.to_owned())
-            }
-            (Some(tag), None) => TaggedFormat::Internal(tag.to_owned()),
-            _ => TaggedFormat::External,
         }
     }
 
@@ -207,7 +205,7 @@ impl<'l> Macro<'l> {
             meta.push(quote! { rename = #rename });
         }
 
-        let rename_all = self.get_casing_format();
+        let rename_all = &self.casing_format;
 
         meta.push(quote! { rename_all = #rename_all });
 

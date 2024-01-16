@@ -46,6 +46,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "null"
         }
       ]
+    },
+    "required": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": false,
@@ -804,7 +814,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "basic",
         "nested",
         "nested2",
-        "optional"
+        "optional",
+        "required"
       ],
       "properties": {
         "basic": {
@@ -828,6 +839,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "optional": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
           "anyOf": [
             {
               "type": "string"

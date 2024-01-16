@@ -174,3 +174,67 @@ fn errors_for_nested_field_collections() {
         "Failed to validate ValidateCollections. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
     )
 }
+
+#[derive(Config)]
+pub struct ValidateRequired {
+    #[setting(required)]
+    string: Option<String>,
+}
+
+#[derive(Config)]
+pub enum ValidateEnumRequired {
+    Optional(Option<String>),
+    #[setting(required)]
+    Required(Option<String>),
+}
+
+#[test]
+fn doesnt_error_if_required_and_notempty() {
+    let result = ConfigLoader::<ValidateRequired>::new()
+        .code(r#"{ "string": "abc" }"#, Format::Json)
+        .unwrap()
+        .load();
+
+    assert!(result.is_ok());
+
+    let result = ConfigLoader::<ValidateEnumRequired>::new()
+        .code(r#"{ "required": "abc" }"#, Format::Json)
+        .unwrap()
+        .load();
+
+    assert!(result.is_ok());
+
+    let result = ConfigLoader::<ValidateEnumRequired>::new()
+        .code(r#"{ "optional": null }"#, Format::Json)
+        .unwrap()
+        .load();
+
+    assert!(result.is_ok());
+}
+
+#[test]
+fn errors_if_required_and_empty() {
+    let error = ConfigLoader::<ValidateRequired>::new()
+        .code(r#"{}"#, Format::Json)
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert_eq!(
+        error.to_full_string(),
+        "Failed to validate ValidateRequired. \n  string: this setting is required"
+    );
+
+    let error = ConfigLoader::<ValidateEnumRequired>::new()
+        .code(r#"{ "required": null }"#, Format::Json)
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert_eq!(
+        error.to_full_string(),
+        "Failed to validate ValidateEnumRequired. \n  required: this setting is required"
+    );
+}

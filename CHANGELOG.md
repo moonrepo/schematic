@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `#[setting(required)]` support for `Option`al settings.
+
 ## 0.13.3
 
 #### 🚀 Updates

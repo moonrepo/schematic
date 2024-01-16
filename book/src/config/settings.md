@@ -14,6 +14,8 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 - `nested` - Marks the field as using a [nested `Config`](./nested.md).
 - `parse_env` _(struct only)_ - Parses the [environment variable](./struct/env.md) value using a
   function.
+- `required` - Marks the field as required. This is useful for `Option` types that do not support
+  `Default`, but require a value.
 - `validate` - Defines a function to use for [validating values](./struct/validate.md).
 
 And the following for serde compatibility:

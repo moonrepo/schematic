@@ -355,21 +355,10 @@ impl<'l> Container<'l> {
         config_name: &Ident,
         _partial_name: &Ident,
     ) -> TokenStream {
-        match self {
-            Self::NamedStruct { .. } => {
-                quote! {
-                    let mut schema = #config_name::generate_schema();
-                    schematic::internal::partialize_schema(&mut schema, true);
-                    schema
-                }
-            }
-            Self::Enum { .. } => {
-                quote! {
-                    let mut schema = #config_name::generate_schema();
-                    schematic::internal::partialize_schema(&mut schema, true);
-                    schema
-                }
-            }
+        quote! {
+            let mut schema = #config_name::generate_schema();
+            schematic::internal::partialize_schema(&mut schema, true);
+            schema
         }
     }
 }

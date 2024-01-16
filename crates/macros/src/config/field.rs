@@ -100,11 +100,10 @@ impl<'l> Field<'l> {
 
     pub fn generate_validate_statement(&self) -> TokenStream {
         let name = self.name;
+        let name_quoted = format!("{name}");
         let mut stmts = vec![];
 
         if let Some(expr) = self.args.validate.as_ref() {
-            let name_quoted = format!("{name}");
-
             let func = match expr {
                 // func(arg)()
                 Expr::Call(func) => quote! { #func },
@@ -129,7 +128,7 @@ impl<'l> Field<'l> {
             stmts.push(validator);
         }
 
-        if stmts.is_empty() {
+        let first = if stmts.is_empty() {
             quote! {}
         } else {
             quote! {
@@ -137,6 +136,23 @@ impl<'l> Field<'l> {
                     #(#stmts)*
                 }
             }
+        };
+
+        let second = if self.is_required() {
+            quote! {
+                if finalize && self.#name.is_none() {
+                    errors.push(schematic::ValidateErrorType::setting_required(
+                        path.join_key(#name_quoted),
+                    ));
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        quote! {
+            #first
+            #second
         }
     }
 }

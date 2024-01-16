@@ -1,4 +1,4 @@
-use crate::common::{Field, TaggedFormat, Variant};
+use crate::common::{Field, Variant};
 use crate::utils::map_option_quote;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -17,13 +17,7 @@ impl<'l> Container<'l> {
         }
     }
 
-    pub fn generate_schema(
-        &self,
-        config_name: String,
-        description: Option<String>,
-        casing_format: &str,
-        tagged_format: TaggedFormat,
-    ) -> TokenStream {
+    pub fn generate_schema(&self, config_name: String, description: Option<String>) -> TokenStream {
         let description = if let Some(comment) = description {
             quote! {
                 schema.description = Some(#comment.into());
@@ -40,7 +34,7 @@ impl<'l> Container<'l> {
                         if f.is_excluded() {
                             None
                         } else {
-                            Some(f.generate_schema_type(casing_format))
+                            Some(f.generate_schema_type())
                         }
                     })
                     .collect::<Vec<_>>();
@@ -76,14 +70,7 @@ impl<'l> Container<'l> {
                         if v.is_excluded() {
                             None
                         } else {
-                            Some(v.generate_schema_type(
-                                casing_format,
-                                if is_all_unit_enum {
-                                    &TaggedFormat::Unit
-                                } else {
-                                    &tagged_format
-                                },
-                            ))
+                            Some(v.generate_schema_type(is_all_unit_enum))
                         }
                     })
                     .collect::<Vec<_>>();

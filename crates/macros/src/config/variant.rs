@@ -177,13 +177,25 @@ impl<'l> Variant<'l> {
                 });
             }
 
+            if self.is_required() {
+                let name = self.get_name(Some(&self.casing_format));
+
+                stmts.push(quote! {
+                    if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
+                        errors.push(schematic::ValidateErrorType::setting_required(
+                            path.join_key(#name),
+                        ));
+                    }
+                });
+            }
+
             if self.is_nested() {
                 stmts.extend(outer_names
                     .iter()
                     .enumerate()
                     .map(|(index, o)| {
                         quote! {
-                            if let Err(nested_error) = #o.validate_with_path(context, path.join_index(#index)) {
+                            if let Err(nested_error) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
                                 errors.push(schematic::ValidateErrorType::nested(nested_error));
                             }
                         }
