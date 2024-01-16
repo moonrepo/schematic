@@ -343,6 +343,8 @@ struct AppConfig {}
 <li><code>nested</code> - Marks the field as using a <a href="config/./nested.html">nested <code>Config</code></a>.</li>
 <li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="config/./struct/env.html">environment variable</a> value using a
 function.</li>
+<li><code>required</code> - Marks the field as required. This is useful for <code>Option</code> types that do not support
+<code>Default</code>, but require a value.</li>
 <li><code>validate</code> - Defines a function to use for <a href="config/./struct/validate.html">validating values</a>.</li>
 </ul>
 <p>And the following for serde compatibility:</p>
