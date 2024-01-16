@@ -6,6 +6,12 @@
 
 - Added `#[setting(required)]` support for `Option`al settings.
 
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.17.
+- Updated `version_spec` to v0.2.
+- Updated `warpgate` to v0.9.
+
 ## 0.13.3
 
 #### 🚀 Updates
