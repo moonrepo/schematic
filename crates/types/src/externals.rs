@@ -12,6 +12,26 @@ macro_rules! impl_unknown {
     };
 }
 
+macro_rules! impl_set {
+    ($type:ty) => {
+        impl<T: Schematic, S> Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::array(T::generate_schema())
+            }
+        }
+    };
+}
+
+macro_rules! impl_map {
+    ($type:ty) => {
+        impl<K: Schematic, V: Schematic, S> Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::object(K::generate_schema(), V::generate_schema())
+            }
+        }
+    };
+}
+
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
@@ -62,6 +82,14 @@ mod chrono_feature {
     impl_string_format!(chrono::NaiveDate, "date");
     impl_string_format!(chrono::NaiveDateTime, "date-time");
     impl_string_format!(chrono::NaiveTime, "time");
+}
+
+#[cfg(feature = "indexmap")]
+mod indexmap_feature {
+    use super::*;
+
+    impl_map!(indexmap::IndexMap<K, V, S>);
+    impl_set!(indexmap::IndexSet<T, S>);
 }
 
 #[cfg(feature = "regex")]

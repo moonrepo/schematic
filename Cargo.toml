@@ -4,6 +4,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 chrono = "0.4.31"
+indexmap = "2.1.0"
 miette = "5.10.0"
 regex = "1.10.2"
 relative-path = "1.9.2"

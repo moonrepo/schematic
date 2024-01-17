@@ -11,6 +11,13 @@ Implements schemas for `Date`, `DateTime`, `Duration`, `Days`, `Months`, `IsoWee
 `NaiveDate`, `NaiveDateTime`, and `NaiveTime` from the [chrono](https://crates.io/crates/chrono)
 crate.
 
+## indexmap
+
+> Requires the `type_indexmap` Cargo feature.
+
+Implements a schema for `IndexMap` and `IndexSet` from the
+[indexmap](https://crates.io/crates/indexmap) crate.
+
 ## regex
 
 > Requires the `type_regex` Cargo feature.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_indexmap` feature, that implements schematic types for `indexmap` values.
+
 ## 0.13.4
 
 #### 🚀 Updates
