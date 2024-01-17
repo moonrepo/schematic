@@ -2456,6 +2456,9 @@ name = "schematic_types"
 version = "0.5.3"
 dependencies = [
  "chrono",
+ "dashmap",
+ "indexmap 2.1.0",
+ "once_map",
  "regex",
  "relative-path",
  "rust_decimal",

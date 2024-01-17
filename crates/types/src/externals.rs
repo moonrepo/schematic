@@ -12,6 +12,26 @@ macro_rules! impl_unknown {
     };
 }
 
+macro_rules! impl_set {
+    ($type:ty) => {
+        impl<T: Schematic, S> Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::array(T::generate_schema())
+            }
+        }
+    };
+}
+
+macro_rules! impl_map {
+    ($type:ty) => {
+        impl<K: Schematic, V: Schematic, S> Schematic for $type {
+            fn generate_schema() -> SchemaType {
+                SchemaType::object(K::generate_schema(), V::generate_schema())
+            }
+        }
+    };
+}
+
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
@@ -62,6 +82,32 @@ mod chrono_feature {
     impl_string_format!(chrono::NaiveDate, "date");
     impl_string_format!(chrono::NaiveDateTime, "date-time");
     impl_string_format!(chrono::NaiveTime, "time");
+}
+
+#[cfg(feature = "dashmap")]
+mod dashmap_feature {
+    use super::*;
+
+    impl_map!(dashmap::DashMap<K, V, S>);
+    impl_set!(dashmap::DashSet<T, S>);
+}
+
+#[cfg(feature = "indexmap")]
+mod indexmap_feature {
+    use super::*;
+
+    impl_map!(indexmap::IndexMap<K, V, S>);
+    impl_set!(indexmap::IndexSet<T, S>);
+}
+
+#[cfg(feature = "oncemap")]
+mod oncemap_feature {
+    use super::*;
+
+    impl_map!(once_map::sync::OnceMap<K, V, S>);
+    impl_map!(once_map::sync::LazyMap<K, V, S>);
+    impl_map!(once_map::unsync::OnceMap<K, V, S>);
+    impl_map!(once_map::unsync::LazyMap<K, V, S>);
 }
 
 #[cfg(feature = "regex")]
