@@ -90,6 +90,7 @@ Learn more about [renderers](./generator/index.md).
 Learn more about [external types](./external.md).
 
 - `type_chrono` - Implements schematic for the `chrono` crate.
+- `type_indexmap` - Implements schematic for the `indexmap` crate.
 - `type_regex` - Implements schematic for the `regex` crate.
 - `type_relative_path` - Implements schematic for the `relative-path` crate.
 - `type_rust_decimal` - Implements schematic for the `rust_decimal` crate.
