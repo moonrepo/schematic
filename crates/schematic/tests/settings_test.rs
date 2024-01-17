@@ -1,6 +1,7 @@
+use indexmap::IndexMap;
 use schematic::*;
 use serial_test::serial;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 
 fn test_string<T>(_: &String, _: &T, context: &Context) -> Result<(), ValidateError> {
@@ -267,6 +268,9 @@ pub struct NestedMapSettings {
     nested_req: HashMap<String, StandardSettings>,
     #[setting(nested)]
     nested_opt: Option<HashMap<String, StandardSettings>>,
+    // Other types
+    btree: BTreeMap<String, String>,
+    index: IndexMap<String, String>,
 }
 
 mod nested_map {

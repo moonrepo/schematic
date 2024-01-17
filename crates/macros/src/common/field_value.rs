@@ -77,22 +77,28 @@ impl<'l> FieldValue<'l> {
                 config: container,
                 optional,
             },
-            PathArguments::AngleBracketed(args) => match container.to_string().as_str() {
-                "Vec" | "HashSet" | "FxHashSet" | "BTreeSet" => Self::NestedList {
-                    collection: container,
-                    item: args.args.first().unwrap(),
-                    optional,
-                    path,
-                },
-                "HashMap" | "FxHashMap" | "BTreeMap" => Self::NestedMap {
-                    collection: container,
-                    key: args.args.first().unwrap(),
-                    optional,
-                    path,
-                    value: args.args.last().unwrap(),
-                },
-                _ => panic!("Unsupported collection used with nested config."),
-            },
+            PathArguments::AngleBracketed(args) => {
+                let name = container.to_string();
+
+                if name.ends_with("Vec") || name.ends_with("Set") {
+                    Self::NestedList {
+                        collection: container,
+                        item: args.args.first().unwrap(),
+                        optional,
+                        path,
+                    }
+                } else if name.ends_with("Map") {
+                    Self::NestedMap {
+                        collection: container,
+                        key: args.args.first().unwrap(),
+                        optional,
+                        path,
+                        value: args.args.last().unwrap(),
+                    }
+                } else {
+                    panic!("Unsupported collection used with nested config.");
+                }
+            }
             _ => panic!("Parens are not supported for nested config."),
         }
     }
