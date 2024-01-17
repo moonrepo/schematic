@@ -84,30 +84,12 @@ mod chrono_feature {
     impl_string_format!(chrono::NaiveTime, "time");
 }
 
-#[cfg(feature = "dashmap")]
-mod dashmap_feature {
-    use super::*;
-
-    impl_map!(dashmap::DashMap<K, V, S>);
-    impl_set!(dashmap::DashSet<T, S>);
-}
-
 #[cfg(feature = "indexmap")]
 mod indexmap_feature {
     use super::*;
 
     impl_map!(indexmap::IndexMap<K, V, S>);
     impl_set!(indexmap::IndexSet<T, S>);
-}
-
-#[cfg(feature = "oncemap")]
-mod oncemap_feature {
-    use super::*;
-
-    impl_map!(once_map::sync::OnceMap<K, V, S>);
-    impl_map!(once_map::sync::LazyMap<K, V, S>);
-    impl_map!(once_map::unsync::OnceMap<K, V, S>);
-    impl_map!(once_map::unsync::LazyMap<K, V, S>);
 }
 
 #[cfg(feature = "regex")]

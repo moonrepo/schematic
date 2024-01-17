@@ -69,6 +69,7 @@ url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
 
 type_chrono = ["schematic_types/chrono"]
+type_indexmap = ["schematic_types/indexmap"]
 type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal"]
@@ -93,6 +94,7 @@ schematic = { path = ".", features = [
 	"toml",
 	"typescript",
 	"type_chrono",
+	"type_indexmap",
 	"type_regex",
 	"type_relative_path",
 	"type_rust_decimal",
@@ -108,11 +110,12 @@ schematic = { path = ".", features = [
 	"valid_url",
 	"yaml",
 ] }
-serial_test = "2.0.0"
+serial_test = "3.0.0"
 starbase_sandbox = "0.1.12"
 
 # Types
 chrono = { workspace = true }
+indexmap = { workspace = true }
 regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }

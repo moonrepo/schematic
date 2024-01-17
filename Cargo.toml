@@ -4,10 +4,8 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 chrono = "0.4.31"
-dashmap = "5.5.3"
 indexmap = "2.1.0"
 miette = "5.10.0"
-once_map = "0.4.14"
 regex = "1.10.2"
 relative-path = "1.9.2"
 rust_decimal = "1.33.1"

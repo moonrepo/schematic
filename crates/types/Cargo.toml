@@ -9,9 +9,7 @@ repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
 chrono = { workspace = true, optional = true }
-dashmap = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true }
-once_map = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
@@ -26,9 +24,7 @@ warpgate = { workspace = true, optional = true }
 [dev-dependencies]
 schematic_types = { path = ".", features = [
 	"chrono",
-	"dashmap",
 	"indexmap",
-	"oncemap",
 	"regex",
 	"relative_path",
 	"rust_decimal",
@@ -44,9 +40,7 @@ schematic_types = { path = ".", features = [
 [features]
 default = []
 chrono = ["dep:chrono"]
-dashmap = ["dep:dashmap"]
 indexmap = ["dep:indexmap"]
-oncemap = ["dep:once_map"]
 regex = ["dep:regex"]
 relative_path = ["dep:relative-path"]
 rust_decimal = ["dep:rust_decimal"]

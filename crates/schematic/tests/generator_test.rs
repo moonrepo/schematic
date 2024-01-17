@@ -1,5 +1,6 @@
 #![allow(dead_code, deprecated)]
 
+use indexmap::{IndexMap, IndexSet};
 use schematic::schema::template::TemplateOptions;
 use schematic::schema::SchemaGenerator;
 use schematic::*;
@@ -58,6 +59,8 @@ struct GenConfig {
     json_value: serde_json::Value,
     toml_value: Option<toml::Value>,
     yaml_value: serde_yaml::Value,
+    indexmap: IndexMap<String, String>,
+    indexset: Option<IndexSet<String>>,
 }
 
 /// Some comment.
