@@ -29,7 +29,7 @@ garde = { version = "0.17.0", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.15", optional = true }
-starbase_styles = { version = "0.1.17", optional = true }
+starbase_styles = { version = "0.2.0", optional = true }
 
 # schema
 indexmap = { workspace = true, optional = true }
@@ -47,7 +47,7 @@ toml = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 
 # url
-reqwest = { version = "0.11.23", default-features = false, optional = true, features = [
+reqwest = { version = "0.11.24", default-features = false, optional = true, features = [
 	"blocking",
 ] }
 
@@ -111,7 +111,7 @@ schematic = { path = ".", features = [
 	"yaml",
 ] }
 serial_test = "3.0.0"
-starbase_sandbox = "0.1.12"
+starbase_sandbox = "0.3.0"
 
 # Types
 chrono = { workspace = true }
