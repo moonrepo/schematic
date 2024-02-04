@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `#[setting(alias)]` support (which maps to serde).
+
 ## 0.13.6
 
 #### ⚙️ Internal

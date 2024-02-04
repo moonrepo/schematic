@@ -145,6 +145,10 @@ impl<'l> Field<'l> {
     pub fn get_serde_meta(&self) -> Option<TokenStream> {
         let mut meta = vec![];
 
+        if let Some(alias) = &self.serde_args.alias {
+            meta.push(quote! { alias = #alias });
+        }
+
         if self.args.flatten || self.serde_args.flatten {
             meta.push(quote! { flatten });
         }

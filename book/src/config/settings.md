@@ -20,6 +20,7 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 
 And the following for serde compatibility:
 
+- `alias`
 - `flatten`
 - `rename`
 - `skip`
