@@ -2,7 +2,11 @@ use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::HashSet;
 
+#[cfg(feature = "miette")]
 pub type RenderResult<T = String> = miette::Result<T>;
+
+#[cfg(not(feature = "miette"))]
+pub type RenderResult<T = String> = Result<T, Box<dyn std::error::Error>>;
 
 /// Renders [`SchemaType`]s to a distinct format (derived from generic `O`)
 /// for use within a [`SchemaGenerator`].

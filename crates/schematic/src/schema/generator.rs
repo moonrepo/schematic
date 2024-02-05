@@ -1,6 +1,5 @@
-use super::SchemaRenderer;
+use super::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
-use miette::IntoDiagnostic;
 use schematic_types::*;
 use std::collections::HashSet;
 use std::fs;
@@ -91,17 +90,31 @@ impl SchemaGenerator {
         &self,
         output_file: P,
         mut renderer: R,
-    ) -> miette::Result<()> {
+    ) -> RenderResult<()> {
         let output_file = output_file.as_ref();
 
         let mut output = renderer.render(&self.schemas, &self.references)?;
         output.push('\n');
 
-        if let Some(parent) = output_file.parent() {
-            fs::create_dir_all(parent).into_diagnostic()?;
+        #[cfg(feature = "miette")]
+        {
+            use miette::IntoDiagnostic;
+
+            if let Some(parent) = output_file.parent() {
+                fs::create_dir_all(parent).into_diagnostic()?;
+            }
+
+            fs::write(output_file, output).into_diagnostic()?;
         }
 
-        fs::write(output_file, output).into_diagnostic()?;
+        #[cfg(not(feature = "miette"))]
+        {
+            if let Some(parent) = output_file.parent() {
+                fs::create_dir_all(parent)?;
+            }
+
+            fs::write(output_file, output)?;
+        }
 
         Ok(())
     }

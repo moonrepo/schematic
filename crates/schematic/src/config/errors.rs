@@ -1,52 +1,55 @@
 use crate::config::validator::ValidatorError;
-use miette::{Diagnostic, SourceSpan};
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
 /// All configuration based errors.
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Error, Debug)]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub enum ConfigError {
     #[error("{0}")]
     Message(String),
 
-    #[diagnostic(code(config::enums::invalid_fallback))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::enums::invalid_fallback)))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
     EnumInvalidFallback(String),
 
-    #[diagnostic(code(config::enums::unknown_variant))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::enums::unknown_variant)))]
     #[error("Unknown enum variant {}.", .0.style(Style::Id))]
     EnumUnknownVariant(String),
 
-    #[diagnostic(code(config::code::extends))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::code::extends)))]
     #[error("Unable to extend, expected a file path or URL.")]
     ExtendsFromNoCode,
 
-    #[diagnostic(code(config::file::extends))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::file::extends)))]
     #[error("Extending from a file is only allowed if the parent source is also a file.")]
     ExtendsFromParentFileOnly,
 
-    #[diagnostic(code(config::code::invalid))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::code::invalid)))]
     #[error("Invalid raw code used as a source.")]
     InvalidCode,
 
-    #[diagnostic(code(config::default::invalid))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::default::invalid)))]
     #[error("Invalid default value. {0}")]
     InvalidDefault(String),
 
-    #[diagnostic(code(config::env::invalid))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::env::invalid)))]
     #[error("Invalid environment variable {}. {1}", .0.style(Style::Symbol))]
     InvalidEnvVar(String, String),
 
-    #[diagnostic(code(config::file::invalid))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::file::invalid)))]
     #[error("Invalid file path used as a source.")]
     InvalidFile,
 
-    #[diagnostic(code(config::file::missing), help("Is the path absolute?"))]
+    #[cfg_attr(
+        feature = "miette",
+        diagnostic(code(config::file::missing), help("Is the path absolute?"))
+    )]
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
-    #[diagnostic(code(config::file::read_failed))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::file::read_failed)))]
     #[error("Failed to read file {}.", .path.style(Style::Path))]
     ReadFileFailed {
         path: PathBuf,
@@ -54,12 +57,12 @@ pub enum ConfigError {
         error: std::io::Error,
     },
 
-    #[diagnostic(code(config::url::invalid))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::url::invalid)))]
     #[error("Invalid URL used as a source.")]
     InvalidUrl,
 
     #[cfg(feature = "url")]
-    #[diagnostic(code(config::url::read_failed))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::url::read_failed)))]
     #[error("Failed to read URL {}.", .url.style(Style::Url))]
     ReadUrlFailed {
         url: String,
@@ -67,40 +70,40 @@ pub enum ConfigError {
         error: reqwest::Error,
     },
 
-    #[diagnostic(code(config::url::https_only))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::url::https_only)))]
     #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
     HttpsOnly(String),
 
-    #[diagnostic(code(config::format::unsupported))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::format::unsupported)))]
     #[error("Unsupported format for {0}, expected {1}.")]
     UnsupportedFormat(String, String),
 
     // Parser
-    #[diagnostic(code(config::parse::failed))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::parse::failed)))]
     #[error("Failed to parse {}.", .config.style(Style::File))]
     Parser {
         config: String,
 
-        #[diagnostic_source]
+        #[cfg_attr(feature = "miette", diagnostic_source)]
         #[source]
         error: ParserError,
 
-        #[help]
+        #[cfg_attr(feature = "miette", help)]
         help: Option<String>,
     },
 
     // Validator
-    #[diagnostic(code(config::validate::failed))]
+    #[cfg_attr(feature = "miette", diagnostic(code(config::validate::failed)))]
     #[error("Failed to validate {}.", .config.style(Style::File))]
     Validator {
         config: String,
 
         // This includes the vertical red line which we don't want!
-        // #[diagnostic_source]
+        // #[cfg_attr(feature = "miette", diagnostic_source]
         #[source]
         error: ValidatorError,
 
-        #[help]
+        #[cfg_attr(feature = "miette", help)]
         help: Option<String>,
     },
 }
@@ -146,17 +149,19 @@ impl ConfigError {
 }
 
 /// Error related to serde parsing.
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Error, Debug)]
 #[error("{}{} {message}", .path.style(Style::Id), ":".style(Style::MutedLight))]
-#[diagnostic(severity(Error))]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
+#[cfg_attr(feature = "miette", diagnostic(severity(Error)))]
 pub struct ParserError {
-    #[source_code]
+    #[cfg_attr(feature = "miette", source_code)]
     pub content: String, // NamedSource,
 
     pub message: String,
 
     pub path: String,
 
+    #[cfg(feature = "miette")]
     #[label("Fix this")]
-    pub span: Option<SourceSpan>,
+    pub span: Option<miette::SourceSpan>,
 }

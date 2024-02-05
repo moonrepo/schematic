@@ -19,7 +19,7 @@ all-features = true
 [dependencies]
 schematic_macros = { version = "0.13.6", path = "../macros" }
 schematic_types = { version = "0.5.5", path = "../types" }
-miette = { workspace = true }
+miette = { workspace = true, optional = true }
 thiserror = "1.0.56"
 tracing = "0.1.40"
 
@@ -60,14 +60,15 @@ config = [
 	"schematic_macros/config",
 ]
 json = ["dep:serde_json"]
+miette = ["dep:miette"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
 toml = ["dep:toml"]
 url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
 
-renderer_json_schema = ["dep:schemars", "json", "schema"]
-renderer_template = []
-renderer_typescript = ["schema"]
+renderer_json_schema = ["dep:schemars", "json", "miette", "schema"]
+renderer_template = ["miette"]
+renderer_typescript = ["miette", "schema"]
 
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]

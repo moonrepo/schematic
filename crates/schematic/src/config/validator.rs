@@ -1,12 +1,12 @@
 use crate::config::path::{Path, PathSegment};
-use miette::Diagnostic;
 use starbase_styles::color;
 use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};
 use thiserror::Error;
 
 /// Error for a single validation failure.
-#[derive(Clone, Debug, Diagnostic, Error)]
+#[derive(Clone, Debug, Error)]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 #[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]
 pub struct ValidateError {
     /// Failure message.
@@ -120,7 +120,8 @@ impl ValidateErrorType {
 }
 
 /// Error that contains multiple validation errors, for each setting that failed.
-#[derive(Clone, Debug, Diagnostic, Error)]
+#[derive(Clone, Debug, Error)]
+#[cfg_attr(feature = "miette", derive(miette::Diagnostic))]
 pub struct ValidatorError {
     /// When nested, the path to the setting that contains the nested error.
     pub path: Path,
