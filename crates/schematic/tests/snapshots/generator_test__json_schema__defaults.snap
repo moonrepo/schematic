@@ -14,18 +14,14 @@ expression: "fs::read_to_string(file).unwrap()"
     "enums",
     "float32",
     "float64",
-    "id",
     "indexmap",
     "indexset",
     "jsonValue",
-    "locator",
     "map",
     "nested",
     "number",
     "path",
     "relPath",
-    "spec",
-    "specUnresolved",
     "string",
     "time",
     "tomlValue",
@@ -65,9 +61,6 @@ expression: "fs::read_to_string(file).unwrap()"
     "float64": {
       "type": "number"
     },
-    "id": {
-      "type": "string"
-    },
     "indexmap": {
       "type": "object",
       "additionalProperties": {
@@ -100,16 +93,6 @@ expression: "fs::read_to_string(file).unwrap()"
         "integer"
       ]
     },
-    "locator": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "map": {
       "type": "object",
       "additionalProperties": {
@@ -136,12 +119,6 @@ expression: "fs::read_to_string(file).unwrap()"
     "relPath": {
       "type": "string",
       "format": "path"
-    },
-    "spec": {
-      "type": "string"
-    },
-    "specUnresolved": {
-      "type": "string"
     },
     "string": {
       "type": "string"

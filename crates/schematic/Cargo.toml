@@ -24,7 +24,7 @@ thiserror = "1.0.56"
 tracing = "0.1.40"
 
 # config
-garde = { version = "0.17.0", default-features = false, optional = true, features = [
+garde = { version = "0.18.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true }
@@ -32,7 +32,7 @@ serde_path_to_error = { version = "0.1.15", optional = true }
 starbase_styles = { version = "0.3.0", optional = true }
 
 # schema
-indexmap = { workspace = true, optional = true }
+indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
 serde_json = { workspace = true, optional = true }

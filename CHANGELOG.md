@@ -11,6 +11,10 @@
   - `template` -> `renderer_template`
   - `typescript` -> `renderer_typescript`
 
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.18.
+
 ## 0.13.7
 
 #### 🚀 Updates
