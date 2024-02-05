@@ -11,6 +11,12 @@
   - `template` -> `renderer_template`
   - `typescript` -> `renderer_typescript`
 
+#### 🚀 Updates
+
+- Added 4 new validator functions:
+  - `min_bytes` and `max_bytes`
+  - `min_chars` and `max_chars`
+
 #### ⚙️ Internal
 
 - Updated `garde` (validation) to v0.18.
