@@ -18,7 +18,6 @@ semver = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
-version_spec = { workspace = true, optional = true }
 
 [dev-dependencies]
 schematic_types = { path = ".", features = [
@@ -32,7 +31,6 @@ schematic_types = { path = ".", features = [
 	"serde_toml",
 	"serde_yaml",
 	"url",
-	"version_spec",
 ] }
 
 [features]
@@ -47,4 +45,3 @@ serde_json = ["dep:serde_json"]
 serde_toml = ["dep:toml"]
 serde_yaml = ["dep:serde_yaml"]
 url = ["dep:url"]
-version_spec = ["dep:version_spec"]

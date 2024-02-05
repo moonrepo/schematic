@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Removed `type_warpgate` feature (use the `schematic` feature on the crate instead).
+#### 💥 Breaking
+
+- Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on the crate
+  instead).
 
 ## 0.13.7
 

@@ -78,7 +78,6 @@ type_serde_json = ["schematic_types/serde_json"]
 type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
-type_version_spec = ["schematic_types/version_spec"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -102,7 +101,6 @@ schematic = { path = ".", features = [
 	"type_serde_toml",
 	"type_serde_yaml",
 	"type_url",
-	"type_version_spec",
 	"url",
 	"valid_email",
 	"valid_url",
@@ -119,4 +117,3 @@ relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
-version_spec = { workspace = true }

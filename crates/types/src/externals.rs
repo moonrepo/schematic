@@ -185,11 +185,3 @@ mod url_feature {
 
     impl_string_format!(url::Url, "uri");
 }
-
-#[cfg(feature = "version_spec")]
-mod version_spec_feature {
-    use super::*;
-
-    impl_string!(version_spec::UnresolvedVersionSpec);
-    impl_string!(version_spec::VersionSpec);
-}
