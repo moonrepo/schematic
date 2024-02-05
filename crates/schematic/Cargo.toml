@@ -60,13 +60,14 @@ config = [
 	"schematic_macros/config",
 ]
 json = ["dep:serde_json"]
-json_schema = ["dep:schemars", "json", "schema"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
-template = []
 toml = ["dep:toml"]
-typescript = ["schema"]
 url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
+
+renderer_json_schema = ["dep:schemars", "json", "schema"]
+renderer_template = []
+renderer_typescript = ["schema"]
 
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]
@@ -85,12 +86,12 @@ valid_url = ["garde/url"]
 [dev-dependencies]
 schematic = { path = ".", features = [
 	"config",
-	"json_schema",
 	"json",
 	"schema",
-	"template",
 	"toml",
-	"typescript",
+	"renderer_json_schema",
+	"renderer_template",
+	"renderer_typescript",
 	"type_chrono",
 	"type_indexmap",
 	"type_regex",

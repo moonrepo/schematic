@@ -273,7 +273,7 @@ enum AliasedEnum {
     Baz,
 }
 
-#[cfg(feature = "json_schema")]
+#[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -313,7 +313,7 @@ fn generates_json_schema() {
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
 
-#[cfg(feature = "typescript")]
+#[cfg(feature = "renderer_typescript")]
 #[test]
 fn generates_typescript() {
     use schema::typescript::*;

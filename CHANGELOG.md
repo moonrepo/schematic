@@ -6,6 +6,10 @@
 
 - Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on the crate
   instead).
+- Renamed renderer related features:
+  - `json_schema` -> `renderer_json_schema`
+  - `template` -> `renderer_template`
+  - `typescript` -> `renderer_typescript`
 
 ## 0.13.7
 
