@@ -168,7 +168,7 @@ impl<'l> Variant<'l> {
                 };
 
                 stmts.push(quote! {
-                    if let Err(error) = #func(#value, self, context) {
+                    if let Err(error) = #func(#value, self, context, finalize) {
                         errors.push(schematic::ValidateErrorType::setting(
                             path.clone(),
                             error,

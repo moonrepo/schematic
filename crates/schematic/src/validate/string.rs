@@ -5,12 +5,22 @@ pub use garde::rules::{
 };
 
 /// Validate a string is only composed of alpha-numeric characters.
-pub fn alphanumeric<T: Alphanumeric, D, C>(value: &T, _: &D, _: &C) -> Result<(), ValidateError> {
+pub fn alphanumeric<T: Alphanumeric, D, C>(
+    value: &T,
+    _data: &D,
+    _context: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     garde::rules::alphanumeric::apply(value, ()).map_err(map_err)
 }
 
 /// Validate a string is only composed of ASCII characters.
-pub fn ascii<T: Ascii, D, C>(value: &T, _: &D, _: &C) -> Result<(), ValidateError> {
+pub fn ascii<T: Ascii, D, C>(
+    value: &T,
+    _data: &D,
+    _context: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     garde::rules::ascii::apply(value, ()).map_err(map_err)
 }
 
@@ -18,18 +28,27 @@ pub fn ascii<T: Ascii, D, C>(value: &T, _: &D, _: &C) -> Result<(), ValidateErro
 pub fn contains<T: Contains, D, C>(pattern: &str) -> Validator<T, D, C> {
     let pattern = pattern.to_owned();
 
-    Box::new(move |value, _, _| garde::rules::contains::apply(value, (&pattern,)).map_err(map_err))
+    Box::new(move |value, _, _, _| {
+        garde::rules::contains::apply(value, (&pattern,)).map_err(map_err)
+    })
 }
 
 /// Validate a string matches the provided regex pattern.
 pub fn regex<T: Pattern, D, C>(pattern: &str) -> Validator<T, D, C> {
     let pattern = garde::rules::pattern::regex::Regex::new(pattern).unwrap();
 
-    Box::new(move |value, _, _| garde::rules::pattern::apply(value, (&pattern,)).map_err(map_err))
+    Box::new(move |value, _, _, _| {
+        garde::rules::pattern::apply(value, (&pattern,)).map_err(map_err)
+    })
 }
 
 /// Validate the value is not empty.
-pub fn not_empty<T: HasSimpleLength, D, C>(value: &T, _: &D, _: &C) -> Result<(), ValidateError> {
+pub fn not_empty<T: HasSimpleLength, D, C>(
+    value: &T,
+    _data: &D,
+    _context: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     if value.length() == 0 {
         return Err(ValidateError::new("must not be empty"));
     }

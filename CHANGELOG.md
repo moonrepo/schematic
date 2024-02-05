@@ -10,6 +10,9 @@
   - `json_schema` -> `renderer_json_schema`
   - `template` -> `renderer_template`
   - `typescript` -> `renderer_typescript`
+- Added a 4th boolean argument to validator functions, which denotes whether its validating the
+  final config, or a partial config. This arg can be used to differentiate between the 2, change
+  logic, or avoid validating.
 
 #### 🚀 Updates
 

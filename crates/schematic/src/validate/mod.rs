@@ -23,7 +23,7 @@ pub use url::*;
 /// configuration the setting belongs to, the current context, and can return
 /// a [`ValidateError`] on failure.
 pub type Validator<Val, Data, Ctx> =
-    Box<dyn FnOnce(&Val, &Data, &Ctx) -> Result<(), ValidateError>>;
+    Box<dyn FnOnce(&Val, &Data, &Ctx, bool) -> Result<(), ValidateError>>;
 
 pub(crate) fn map_err(error: garde::Error) -> ValidateError {
     ValidateError::new(error.to_string())

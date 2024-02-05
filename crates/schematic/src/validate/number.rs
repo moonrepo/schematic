@@ -7,7 +7,7 @@ pub fn in_range<T: Bounds + Display + 'static, D, C>(
     min: T::Size,
     max: T::Size,
 ) -> Validator<T, D, C> {
-    Box::new(move |value, _, _| {
+    Box::new(move |value, _, _, _| {
         garde::rules::range::apply(value, (Some(min), Some(max))).map_err(map_err)
     })
 }

@@ -4,6 +4,10 @@ use std::{
     hash::Hash,
 };
 
+/// A merger function that receives the previous and next values, the current
+/// context, and can return a [`ConfigError`] on failure.
+pub type Merger<Val, Ctx> = Box<dyn FnOnce(Val, Val, &Ctx) -> Result<(), ConfigError>>;
+
 /// Discard both previous and next values and return [`None`].
 pub fn discard<T, C>(_: T, _: T, _: &C) -> Result<Option<T>, ConfigError> {
     Ok(None)

@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
 
-fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
+fn validate_string<D, C>(_: &str, _: &D, _: &C, _: bool) -> Result<(), ValidateError> {
     use schematic::PathSegment;
     Err(ValidateError::with_segments(
         "This string is ugly!",
@@ -13,7 +13,7 @@ fn validate_string<D, C>(_: &str, _: &D, _: &C) -> Result<(), ValidateError> {
     // Ok(())
 }
 
-fn validate_number<D, C>(_: &usize, _: &D, _: &C) -> Result<(), ValidateError> {
+fn validate_number<D, C>(_: &usize, _: &D, _: &C, _: bool) -> Result<(), ValidateError> {
     Err(ValidateError::new("Nah, we don't accept numbers."))
     // Ok(())
 }

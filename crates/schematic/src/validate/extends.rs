@@ -4,7 +4,12 @@ use crate::config::{
 };
 
 /// Validate an `extend` value is either a file path or secure URL.
-pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), ValidateError> {
+pub fn extends_string<D, C>(
+    value: &str,
+    _data: &D,
+    _context: &C,
+    _finalize: bool,
+) -> Result<(), ValidateError> {
     let is_file = is_file_like(value);
     let is_url = is_url_like(value);
 
@@ -28,9 +33,14 @@ pub fn extends_string<D, C>(value: &str, _data: &D, _context: &C) -> Result<(), 
 }
 
 /// Validate a list of `extend` values are either a file path or secure URL.
-pub fn extends_list<D, C>(values: &[String], data: &D, context: &C) -> Result<(), ValidateError> {
+pub fn extends_list<D, C>(
+    values: &[String],
+    data: &D,
+    context: &C,
+    finalize: bool,
+) -> Result<(), ValidateError> {
     for (i, value) in values.iter().enumerate() {
-        if let Err(mut error) = extends_string(value, data, context) {
+        if let Err(mut error) = extends_string(value, data, context, finalize) {
             error.path = Path::new(vec![PathSegment::Index(i)]);
 
             return Err(error);
@@ -41,10 +51,15 @@ pub fn extends_list<D, C>(values: &[String], data: &D, context: &C) -> Result<()
 }
 
 /// Validate an `extend` value is either a file path or secure URL.
-pub fn extends_from<D, C>(value: &ExtendsFrom, data: &D, context: &C) -> Result<(), ValidateError> {
+pub fn extends_from<D, C>(
+    value: &ExtendsFrom,
+    data: &D,
+    context: &C,
+    finalize: bool,
+) -> Result<(), ValidateError> {
     match value {
-        ExtendsFrom::String(string) => extends_string(string, data, context)?,
-        ExtendsFrom::List(list) => extends_list(list, data, context)?,
+        ExtendsFrom::String(string) => extends_string(string, data, context, finalize)?,
+        ExtendsFrom::List(list) => extends_list(list, data, context, finalize)?,
     };
 
     Ok(())
