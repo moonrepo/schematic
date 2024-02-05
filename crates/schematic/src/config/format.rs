@@ -1,11 +1,11 @@
 use crate::config::errors::{ConfigError, ParserError};
+use miette::{SourceOffset, SourceSpan};
 use serde::de::DeserializeOwned;
 
 pub use crate::format::Format;
 
-#[cfg(feature = "miette")]
-fn create_span(content: &str, line: usize, column: usize) -> miette::SourceSpan {
-    let offset = miette::SourceOffset::from_location(content, line, column).offset();
+fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
+    let offset = SourceOffset::from_location(content, line, column).offset();
     let length = 0;
 
     (offset, length).into()
@@ -75,7 +75,6 @@ impl Format {
                     // content: NamedSource::new(location, content.to_owned()),
                     content: content.to_owned(),
                     path: error.path().to_string(),
-                    #[cfg(feature = "miette")]
                     span: Some(create_span(
                         &content,
                         error.inner().line(),
@@ -93,7 +92,6 @@ impl Format {
                     // content: NamedSource::new(location, content.to_owned()),
                     content: content.to_owned(),
                     path: error.path().to_string(),
-                    #[cfg(feature = "miette")]
                     span: error.inner().span().map(|s| s.into()),
                     message: error.inner().message().to_owned(),
                 })?
@@ -110,7 +108,6 @@ impl Format {
                         // content: NamedSource::new(location, content.to_owned()),
                         content: content.to_owned(),
                         path: error.path().to_string(),
-                        #[cfg(feature = "miette")]
                         span: error
                             .inner()
                             .location()
@@ -123,7 +120,6 @@ impl Format {
                     // content: NamedSource::new(location, content.to_owned()),
                     content: content.to_owned(),
                     path: String::new(),
-                    #[cfg(feature = "miette")]
                     span: error.location().map(|s| (s.line(), s.column()).into()),
                     message: error.to_string(),
                 })?;
@@ -135,7 +131,6 @@ impl Format {
                     // content: NamedSource::new(location, content.to_owned()),
                     content: content.to_owned(),
                     path: error.path().to_string(),
-                    #[cfg(feature = "miette")]
                     span: error
                         .inner()
                         .location()

@@ -4,8 +4,6 @@
 
 #### 💥 Breaking
 
-- Moved the `miette` diagnostics and functionality behind a `miette` feature flag.
-  - Miette will also be enabled when using a renderer.
 - Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on the crate
   instead).
 - Renamed renderer related features:
@@ -25,7 +23,6 @@
 #### ⚙️ Internal
 
 - Updated `garde` (validation) to v0.18.
-- Updated `miette` to v7.
 
 ## 0.13.7
 
