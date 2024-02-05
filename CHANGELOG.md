@@ -4,8 +4,8 @@
 
 #### 💥 Breaking
 
-- Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on the crate
-  instead).
+- Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on those
+  crates instead).
 - Renamed renderer related features:
   - `json_schema` -> `renderer_json_schema`
   - `template` -> `renderer_template`
@@ -23,6 +23,7 @@
 #### ⚙️ Internal
 
 - Updated `garde` (validation) to v0.18.
+- Updated `miette` to v7.
 
 ## 0.13.7
 
