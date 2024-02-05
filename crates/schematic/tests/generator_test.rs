@@ -54,8 +54,6 @@ struct GenConfig {
     version_req: semver::VersionReq,
     spec: version_spec::VersionSpec,
     spec_unresolved: version_spec::UnresolvedVersionSpec,
-    id: warpgate::Id,
-    locator: Option<warpgate::PluginLocator>,
     json_value: serde_json::Value,
     toml_value: Option<toml::Value>,
     yaml_value: serde_yaml::Value,

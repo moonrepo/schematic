@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Removed `type_warpgate` feature (use the `schematic` feature on the crate instead).
+
 ## 0.13.7
 
 #### 🚀 Updates

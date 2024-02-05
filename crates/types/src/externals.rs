@@ -193,12 +193,3 @@ mod version_spec_feature {
     impl_string!(version_spec::UnresolvedVersionSpec);
     impl_string!(version_spec::VersionSpec);
 }
-
-#[cfg(feature = "warpgate")]
-mod warpgate_feature {
-    use super::*;
-
-    impl_string!(warpgate::Id);
-    impl_string!(warpgate::PluginLocator);
-    impl_string_format!(warpgate::VirtualPath, "path");
-}
