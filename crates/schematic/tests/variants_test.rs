@@ -3,7 +3,7 @@ use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
 
-fn test_list<T>(_: &[String], _: &T, context: &Context) -> Result<(), ValidateError> {
+fn test_list<T>(_: &[String], _: &T, context: &Context, _: bool) -> Result<(), ValidateError> {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }
@@ -11,7 +11,12 @@ fn test_list<T>(_: &[String], _: &T, context: &Context) -> Result<(), ValidateEr
     Ok(())
 }
 
-fn test_map<T>(_: &HashMap<String, String>, _: &T, context: &Context) -> Result<(), ValidateError> {
+fn test_map<T>(
+    _: &HashMap<String, String>,
+    _: &T,
+    context: &Context,
+    _: bool,
+) -> Result<(), ValidateError> {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }
@@ -19,7 +24,12 @@ fn test_map<T>(_: &HashMap<String, String>, _: &T, context: &Context) -> Result<
     Ok(())
 }
 
-fn test_cfg<T>(_: &PartialProjectsConfig, _: &T, context: &Context) -> Result<(), ValidateError> {
+fn test_cfg<T>(
+    _: &PartialProjectsConfig,
+    _: &T,
+    context: &Context,
+    _: bool,
+) -> Result<(), ValidateError> {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }
@@ -319,7 +329,7 @@ mod validating {
     }
 }
 
-#[cfg(feature = "json_schema")]
+#[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -337,7 +347,7 @@ fn generates_json_schema() {
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
 
-#[cfg(feature = "typescript")]
+#[cfg(feature = "renderer_typescript")]
 #[test]
 fn generates_typescript() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};

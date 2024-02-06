@@ -179,11 +179,16 @@ struct EnvVars {
     // invalid: Vec<String>,
 }
 
-fn validate_test<T, C>(_: &str, _: &T, _: &C) -> Result<(), ValidateError> {
+fn validate_test<T, C>(_: &str, _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
     Ok(())
 }
 
-fn validate_nested<T, C>(_: &PartialNestedValidations, _: &T, _: &C) -> Result<(), ValidateError> {
+fn validate_nested<T, C>(
+    _: &PartialNestedValidations,
+    _: &T,
+    _: &C,
+    _: bool,
+) -> Result<(), ValidateError> {
     Ok(())
 }
 
@@ -273,7 +278,7 @@ enum AliasedEnum {
     Baz,
 }
 
-#[cfg(feature = "json_schema")]
+#[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -313,7 +318,7 @@ fn generates_json_schema() {
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
 
-#[cfg(feature = "typescript")]
+#[cfg(feature = "renderer_typescript")]
 #[test]
 fn generates_typescript() {
     use schema::typescript::*;

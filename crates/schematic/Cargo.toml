@@ -24,15 +24,15 @@ thiserror = "1.0.56"
 tracing = "0.1.40"
 
 # config
-garde = { version = "0.17.0", default-features = false, optional = true, features = [
+garde = { version = "0.18.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.15", optional = true }
-starbase_styles = { version = "0.2.0", optional = true }
+starbase_styles = { version = "0.3.0", optional = true }
 
 # schema
-indexmap = { workspace = true, optional = true }
+indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
 serde_json = { workspace = true, optional = true }
@@ -60,13 +60,14 @@ config = [
 	"schematic_macros/config",
 ]
 json = ["dep:serde_json"]
-json_schema = ["dep:schemars", "json", "schema"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
-template = []
 toml = ["dep:toml"]
-typescript = ["schema"]
 url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
+
+renderer_json_schema = ["dep:schemars", "json", "schema"]
+renderer_template = []
+renderer_typescript = ["schema"]
 
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]
@@ -78,8 +79,6 @@ type_serde_json = ["schematic_types/serde_json"]
 type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
-type_version_spec = ["schematic_types/version_spec"]
-type_warpgate = ["schematic_types/warpgate"]
 
 valid_email = ["garde/email"]
 valid_url = ["garde/url"]
@@ -87,12 +86,12 @@ valid_url = ["garde/url"]
 [dev-dependencies]
 schematic = { path = ".", features = [
 	"config",
-	"json_schema",
 	"json",
 	"schema",
-	"template",
 	"toml",
-	"typescript",
+	"renderer_json_schema",
+	"renderer_template",
+	"renderer_typescript",
 	"type_chrono",
 	"type_indexmap",
 	"type_regex",
@@ -103,15 +102,17 @@ schematic = { path = ".", features = [
 	"type_serde_toml",
 	"type_serde_yaml",
 	"type_url",
-	"type_version_spec",
-	"type_warpgate",
 	"url",
 	"valid_email",
 	"valid_url",
 	"yaml",
 ] }
+reqwest = { version = "0.11.24", default-features = false, features = [
+	"blocking",
+	"rustls-tls-native-roots",
+] }
 serial_test = "3.0.0"
-starbase_sandbox = "0.3.0"
+starbase_sandbox = "0.4.0"
 
 # Types
 chrono = { workspace = true }
@@ -121,5 +122,3 @@ relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
-version_spec = { workspace = true }
-warpgate = { workspace = true }

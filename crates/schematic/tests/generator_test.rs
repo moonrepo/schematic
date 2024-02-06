@@ -52,10 +52,6 @@ struct GenConfig {
     url: Option<url::Url>,
     version: Option<semver::Version>,
     version_req: semver::VersionReq,
-    spec: version_spec::VersionSpec,
-    spec_unresolved: version_spec::UnresolvedVersionSpec,
-    id: warpgate::Id,
-    locator: Option<warpgate::PluginLocator>,
     json_value: serde_json::Value,
     toml_value: Option<toml::Value>,
     yaml_value: serde_yaml::Value,
@@ -151,7 +147,7 @@ fn create_template_options() -> TemplateOptions {
     }
 }
 
-#[cfg(feature = "json_schema")]
+#[cfg(feature = "renderer_json_schema")]
 mod json_schema {
     use super::*;
     use schematic::schema::json_schema::*;
@@ -235,7 +231,7 @@ mod template_yaml {
     }
 }
 
-#[cfg(feature = "typescript")]
+#[cfg(feature = "renderer_typescript")]
 mod typescript {
     use super::*;
     use schematic::schema::typescript::*;

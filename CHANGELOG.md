@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Removed `type_version_spec` and `type_warpgate` features (use the `schematic` feature on those
+  crates instead).
+- Renamed renderer related features:
+  - `json_schema` -> `renderer_json_schema`
+  - `template` -> `renderer_template`
+  - `typescript` -> `renderer_typescript`
+- Added a 4th boolean argument to validator functions, which denotes whether its validating the
+  final config, or a partial config. This arg can be used to differentiate between the 2, change
+  logic, or avoid validating.
+
+#### 🚀 Updates
+
+- Added 4 new validator functions:
+  - `min_bytes` and `max_bytes`
+  - `min_chars` and `max_chars`
+
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.18.
+- Updated `miette` to v7.
+
 ## 0.13.7
 
 #### 🚀 Updates

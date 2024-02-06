@@ -115,7 +115,7 @@ impl<'l> Field<'l> {
             };
 
             stmts.push(quote! {
-                if let Err(error) = #func(setting, self, context) {
+                if let Err(error) = #func(setting, self, context, finalize) {
                     errors.push(schematic::ValidateErrorType::setting(
                         path.join_key(#name_quoted),
                         error,

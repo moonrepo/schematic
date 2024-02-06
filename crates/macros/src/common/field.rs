@@ -39,6 +39,7 @@ pub struct FieldArgs {
     pub validate: Option<Expr>,
 
     // serde
+    pub alias: Option<String>,
     pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
@@ -145,7 +146,9 @@ impl<'l> Field<'l> {
     pub fn get_serde_meta(&self) -> Option<TokenStream> {
         let mut meta = vec![];
 
-        if let Some(alias) = &self.serde_args.alias {
+        if let Some(alias) = &self.args.alias {
+            meta.push(quote! { alias = #alias });
+        } else if let Some(alias) = &self.serde_args.alias {
             meta.push(quote! { alias = #alias });
         }
 

@@ -41,11 +41,16 @@ fn merge_tuple<C>(
     Ok(Some((format!("{}-{}", prev.0, next.0), (prev.1 + next.1))))
 }
 
-fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C) -> Result<(), ValidateError> {
+fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
     Ok(())
 }
 
-fn validate_nested<T, C>(_: &PartialSomeConfig, _: &T, _: &C) -> Result<(), ValidateError> {
+fn validate_nested<T, C>(
+    _: &PartialSomeConfig,
+    _: &T,
+    _: &C,
+    _: bool,
+) -> Result<(), ValidateError> {
     Ok(())
 }
 
@@ -69,7 +74,7 @@ enum NestedConfigs {
 }
 
 #[allow(unused_parens)]
-fn validate_string<T, C>(_: (&Option<String>), _: &T, _: &C) -> Result<(), ValidateError> {
+fn validate_string<T, C>(_: (&Option<String>), _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
     Ok(())
 }
 
@@ -174,7 +179,7 @@ fn create_gen() -> schema::SchemaGenerator {
     generator
 }
 
-#[cfg(feature = "json_schema")]
+#[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -191,7 +196,7 @@ fn generates_json_schema() {
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
 
-#[cfg(feature = "typescript")]
+#[cfg(feature = "renderer_typescript")]
 #[test]
 fn generates_typescript() {
     use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
