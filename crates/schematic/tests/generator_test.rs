@@ -181,9 +181,27 @@ mod json_schema {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    #[test]
+    fn with_titles() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_generator()
+            .generate(
+                &file,
+                JsonSchemaRenderer::new(JsonSchemaOptions {
+                    set_field_name_as_title: true,
+                    ..JsonSchemaOptions::default()
+                }),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
-#[cfg(all(feature = "template", feature = "json"))]
+#[cfg(all(feature = "renderer_template", feature = "json"))]
 mod template_json {
     use super::*;
     use schematic::schema::*;
@@ -213,7 +231,7 @@ mod template_json {
     }
 }
 
-#[cfg(all(feature = "template", feature = "toml"))]
+#[cfg(all(feature = "renderer_template", feature = "toml"))]
 mod template_toml {
     use super::*;
     use schematic::schema::*;
@@ -231,7 +249,7 @@ mod template_toml {
     }
 }
 
-#[cfg(all(feature = "template", feature = "yaml"))]
+#[cfg(all(feature = "renderer_template", feature = "yaml"))]
 mod template_yaml {
     use super::*;
     use schematic::schema::*;

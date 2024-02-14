@@ -8,8 +8,13 @@ use serde_json::{Number, Value};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 pub struct JsonSchemaOptions {
-    /// Mark all non-option struct fields as required.
+    /// Allows newlines in descriptions, otherwise strips them.
+    pub allow_newlines_in_description: bool,
+    /// Marks all non-option struct fields as required.
     pub mark_struct_fields_required: bool,
+    /// Sets the field's name as the `title` of each schema entry.
+    /// This overrides any `title` manually defined by a type.
+    pub set_field_name_as_title: bool,
 
     // Inherited from schemars.
     pub option_nullable: bool,
@@ -25,7 +30,9 @@ impl Default for JsonSchemaOptions {
         let settings = SchemaSettings::draft07();
 
         Self {
+            allow_newlines_in_description: false,
             mark_struct_fields_required: true,
+            set_field_name_as_title: false,
             option_nullable: settings.option_nullable,
             option_add_null_type: settings.option_add_null_type,
             definitions_path: settings.definitions_path,
@@ -43,8 +50,14 @@ pub struct JsonSchemaRenderer {
     references: HashSet<String>,
 }
 
-fn clean_comment(comment: String) -> String {
-    comment.trim().replace('\n', " ")
+fn clean_comment(comment: String, allow_newlines: bool) -> String {
+    let comment = comment.trim();
+
+    if allow_newlines {
+        comment.to_owned()
+    } else {
+        comment.replace('\n', " ")
+    }
 }
 
 fn lit_to_value(lit: &LiteralValue) -> Value {
@@ -71,8 +84,15 @@ impl JsonSchemaRenderer {
 
         if let Schema::Object(ref mut inner) = schema {
             let mut metadata = Metadata {
-                // title: field.name.clone(),
-                description: field.description.clone().map(clean_comment),
+                title: if self.options.set_field_name_as_title {
+                    Some(field.name.clone())
+                } else {
+                    None
+                },
+                description: field
+                    .description
+                    .clone()
+                    .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
                 deprecated: field.deprecated.is_some(),
                 read_only: field.read_only,
                 write_only: field.write_only,
@@ -166,7 +186,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let metadata = Metadata {
             title: enu.name.clone(),
-            description: enu.description.clone().map(clean_comment),
+            description: enu
+                .description
+                .clone()
+                .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
             ..Default::default()
         };
 
@@ -305,7 +328,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             metadata: Some(Box::new(Metadata {
                 title: structure.name.clone(),
-                description: structure.description.clone().map(clean_comment),
+                description: structure
+                    .description
+                    .clone()
+                    .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
                 ..Default::default()
             })),
             object: Some(Box::new(ObjectValidation {
@@ -346,7 +372,10 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
 
         let mut metadata = Metadata {
             title: uni.name.clone(),
-            description: uni.description.clone().map(clean_comment),
+            description: uni
+                .description
+                .clone()
+                .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
             ..Default::default()
         };
 
