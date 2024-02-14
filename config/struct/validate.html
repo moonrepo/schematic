@@ -193,7 +193,7 @@ struct AppConfig {
 	#[setting(validate = schematic::validate::alphanumeric)]
 	pub secret_key: String,
 
-	#[setting(validate = schematic::validate::regex(&quot;^\.env&quot;))]
+	#[setting(validate = schematic::validate::regex("^\.env"))]
 	pub env_file: String,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -226,7 +226,7 @@ fn validate_string(
 	context: &amp;Context
 ) -&gt; Result&lt;(), ValidateError&gt; {
 	if !do_check(value) {
-		return Err(ValidateError::new(&quot;Some failure message&quot;));
+		return Err(ValidateError::new("Some failure message"));
 	}
 
 	Ok(())
@@ -250,7 +250,7 @@ fn regex&lt;T, P, C&gt;(pattern: &amp;str) -&gt; Validator&lt;T, P, C&gt; {
 
 	Box::new(move |value, _, _| {
 		if !pattern.is_match(value) {
-			return Err(ValidateError::new(&quot;Some failure message&quot;));
+			return Err(ValidateError::new("Some failure message"));
 		}
 
 		Ok(())
@@ -265,7 +265,7 @@ is extremely useful when building error messages.</p>
 </span>use schematic::PathSegment;
 
 ValidateError::with_segments(
-	&quot;Some failure message&quot;,
+	"Some failure message",
 	// [i].key
 	[PathSegment::Index(i), PathSegment::Key(key.to_string())]
 )

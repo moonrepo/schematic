@@ -191,7 +191,7 @@ instantiate a generator, add types to render, and generate the output file.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;types.ts&quot;), TypeScriptRenderer::default())?;
+generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>For a reference implementation, check out
@@ -216,7 +216,7 @@ By default this is a tab (<code>\t</code>).</p>
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {
 	// ...
-	indent_char: &quot;  &quot;.into(),
+	indent_char: "  ".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="enum-types"><a class="header" href="#enum-types">Enum types</a></h3>
@@ -233,7 +233,7 @@ enums instead.</p>
 }
 <span class="boring">}</span></code></pre></pre>
 <pre><code class="language-ts">// Default
-export type LogLevel = &quot;debug&quot; | &quot;info&quot; | &quot;error&quot;;
+export type LogLevel = "debug" | "info" | "error";
 
 // As enum
 export enum LogLevel {
@@ -283,7 +283,7 @@ export type User = {
 <p>In the context of this renderer, a type reference is simply a reference to another type by its name,
 and is used by other types of another name. For example, the fields of a struct type may reference
 another type by name.</p>
-<pre><code class="language-ts">export type UserStatus = &quot;active&quot; | &quot;inactive&quot;;
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
 
 export interface User {
 	status: UserStatus;
@@ -299,10 +299,10 @@ So the example above would become:</p>
 	disable_references: true,
 }
 <span class="boring">}</span></code></pre></pre>
-<pre><code class="language-ts">export type UserStatus = &quot;active&quot; | &quot;inactive&quot;;
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
 
 export interface User {
-	status: &quot;active&quot; | &quot;inactive&quot;;
+	status: "active" | "inactive";
 }
 </code></pre>
 <p>Additionally, the <code>exclude_references</code> option can be used to exclude a type reference by name
@@ -311,11 +311,11 @@ entirely from the output, as demonstrated below.</p>
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {
 	// ...
-	exclude_references: vec![&quot;UserStatus&quot;.into()],
+	exclude_references: vec!["UserStatus".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <pre><code class="language-ts">export interface User {
-	status: &quot;active&quot; | &quot;inactive&quot;;
+	status: "active" | "inactive";
 }
 </code></pre>
 <h3 id="importing-external-types"><a class="header" href="#importing-external-types">Importing external types</a></h3>
@@ -331,11 +331,11 @@ of types to import from that file. This is useful if:</p>
 </span>TypeScriptOptions {
 	// ...
 	external_types: HashMap::from_iter([
-		(&quot;./states&quot;.into(), vec![&quot;UserStatus&quot;.into()]),
+		("./states".into(), vec!["UserStatus".into()]),
 	]),
 }
 <span class="boring">}</span></code></pre></pre>
-<pre><code class="language-ts">import type { UserStatus } from &quot;./states&quot;;
+<pre><code class="language-ts">import type { UserStatus } from "./states";
 
 export interface User {
 	status: UserStatus;

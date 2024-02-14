@@ -218,7 +218,7 @@ Defaults to <code>None</code>.</li>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(allow_unknown_fields, env_prefix = &quot;EXAMPLE_&quot;)]
+#[config(allow_unknown_fields, env_prefix = "EXAMPLE_")]
 struct ExampleConfig {
 	// ...
 }
@@ -234,14 +234,14 @@ struct ExampleConfig {
 layer merging.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[serde(default, deny_unknown_fields, rename_all = &quot;camelCase&quot;)]
+</span>#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 <span class="boring">}</span></code></pre></pre>
 <p>However, the <code>deny_unknown_fields</code> and <code>rename_all</code> fields can be customized, and we also support
 the <code>rename</code> field, both via the top-level <code>#[config]</code> attribute.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(allow_unknown_fields, rename = &quot;ExampleConfig&quot;, rename_all = &quot;snake_case&quot;)]
+#[config(allow_unknown_fields, rename = "ExampleConfig", rename_all = "snake_case")]
 struct Example {
 	// ...
 }

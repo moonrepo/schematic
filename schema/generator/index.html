@@ -228,8 +228,8 @@ let mut generator = SchemaGenerator::default();
 generator.add::&lt;FirstConfig&gt;();
 generator.add::&lt;SecondConfig&gt;();
 generator.add::&lt;ThirdConfig&gt;();
-generator.generate(PathBuf::from(&quot;output/file&quot;), CustomRenderer::default())?;
-generator.generate(PathBuf::from(&quot;output/another/file&quot;), AnotherRenderer::default())?;
+generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
+generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="renderers"><a class="header" href="#renderers">Renderers</a></h2>
 <p>The following built-in renderers are available, but custom renderers can be created as well by

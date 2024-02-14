@@ -186,21 +186,21 @@ following partial struct:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(default, deny_unknown_fields, rename_all = &quot;camelCase&quot;)]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct PartialExampleConfig {
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub number: Option&lt;usize&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub string: Option&lt;String&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub boolean: Option&lt;bool&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub array: Option&lt;Vec&lt;String&gt;&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub optional: Option&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>

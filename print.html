@@ -242,13 +242,13 @@ additional functionality.</p>
 
 #[derive(Config)]
 struct AppConfig {
-	#[setting(default = 3000, env = &quot;PORT&quot;)]
+	#[setting(default = 3000, env = "PORT")]
 	pub port: usize,
 
 	#[setting(default = true)]
 	pub secure: bool,
 
-	#[setting(default = vec![&quot;localhost&quot;.into()])]
+	#[setting(default = vec!["localhost".into()])]
 	pub allowed_hosts: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -279,9 +279,9 @@ method, which requires an explicit format.</p>
 </span><span class="boring">fn main() {
 </span>use schematic::Format;
 
-loader.code(&quot;secure: false&quot;, Format::Yaml)?;
-loader.file(&quot;path/to/config.yml&quot;)?;
-loader.url(&quot;https://ordomain.com/to/config.yaml&quot;)?;
+loader.code("secure: false", Format::Yaml)?;
+loader.file("path/to/config.yml")?;
+loader.url("https://ordomain.com/to/config.yaml")?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>The format for files and URLs are derived from the trailing extension.</p>
@@ -363,7 +363,7 @@ attribute to the <a href="config/./partial.html">partial</a> implementation.</p>
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct Example {
-	#[setting(rename = &quot;type&quot;)]
+	#[setting(rename = "type")]
 	pub type_of: SomeEnum,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -381,21 +381,21 @@ following partial struct:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(default, deny_unknown_fields, rename_all = &quot;camelCase&quot;)]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct PartialExampleConfig {
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub number: Option&lt;usize&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub string: Option&lt;String&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub boolean: Option&lt;bool&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub array: Option&lt;Vec&lt;String&gt;&gt;,
 
-	#[serde(skip_serializing_if = &quot;Option::is_none&quot;)]
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub optional: Option&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -554,7 +554,7 @@ Defaults to <code>None</code>.</li>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(allow_unknown_fields, env_prefix = &quot;EXAMPLE_&quot;)]
+#[config(allow_unknown_fields, env_prefix = "EXAMPLE_")]
 struct ExampleConfig {
 	// ...
 }
@@ -570,14 +570,14 @@ struct ExampleConfig {
 layer merging.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[serde(default, deny_unknown_fields, rename_all = &quot;camelCase&quot;)]
+</span>#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 <span class="boring">}</span></code></pre></pre>
 <p>However, the <code>deny_unknown_fields</code> and <code>rename_all</code> fields can be customized, and we also support
 the <code>rename</code> field, both via the top-level <code>#[config]</code> attribute.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(allow_unknown_fields, rename = &quot;ExampleConfig&quot;, rename_all = &quot;snake_case&quot;)]
+#[config(allow_unknown_fields, rename = "ExampleConfig", rename_all = "snake_case")]
 struct Example {
 	// ...
 }
@@ -601,7 +601,7 @@ array and tuple literals, as well as function (mainly for <code>from()</code>) a
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct AppConfig {
-	#[setting(default = &quot;/&quot;)]
+	#[setting(default = "/")]
 	pub base: String,
 
 	#[setting(default = 3000)]
@@ -610,7 +610,7 @@ struct AppConfig {
 	#[setting(default = true)]
 	pub secure: bool,
 
-	#[setting(default = vec![&quot;localhost&quot;.into()])]
+	#[setting(default = vec!["localhost".into()])]
 	pub allowed_hosts: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -664,7 +664,7 @@ field. When using this, variables take the <em>highest</em> precedence, and are 
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct AppConfig {
-	#[setting(default = 3000, env = &quot;PORT&quot;)]
+	#[setting(default = 3000, env = "PORT")]
 	pub port: usize,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -677,7 +677,7 @@ name” in UPPER_SNAKE_CASE.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(env_prefix = &quot;APP_&quot;)]
+#[config(env_prefix = "APP_")]
 struct AppConfig {
 	#[setting(default = 3000)]
 	pub port: usize,
@@ -690,13 +690,13 @@ the prefixes between parent and child.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
-#[config(env_prefix = &quot;APP_SERVER_&quot;)]
+#[config(env_prefix = "APP_SERVER_")]
 struct AppServerConfig {
 	// ...
 }
 
 #[derive(Config)]
-#[config(env_prefix = &quot;APP_&quot;)]
+#[config(env_prefix = "APP_")]
 struct AppConfig {
 	#[setting(nested)]
 	pub server: AppServerConfig,
@@ -711,7 +711,7 @@ handle the parsing, and receives the variable value as a single argument.</p>
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct AppConfig {
-	#[setting(env = &quot;ALLOWED_HOSTS&quot;, parse_env = schematic::env::split_comma)]
+	#[setting(env = "ALLOWED_HOSTS", parse_env = schematic::env::split_comma)]
 	pub allowed_hosts: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -757,7 +757,7 @@ struct AppConfig {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Example:</p>
-<pre><code class="language-yaml">extends: &quot;./another/file.yml&quot;
+<pre><code class="language-yaml">extends: "./another/file.yml"
 </code></pre>
 <h2 id="multiple-sources"><a class="header" href="#multiple-sources">Multiple sources</a></h2>
 <p>The second pattern is with a list of strings, allowing multiple files or URLs to be extended. Each
@@ -772,8 +772,8 @@ struct AppConfig {
 <span class="boring">}</span></code></pre></pre>
 <p>Example:</p>
 <pre><code class="language-yaml">extends:
-  - &quot;./another/file.yml&quot;
-  - &quot;https://domain.com/some/other/file.yml&quot;
+  - "./another/file.yml"
+  - "https://domain.com/some/other/file.yml"
 </code></pre>
 <h2 id="either-pattern"><a class="header" href="#either-pattern">Either pattern</a></h2>
 <p>And lastly, supporting both a string or a list, using our built-in enum.</p>
@@ -859,7 +859,7 @@ struct AppConfig {
 	#[setting(validate = schematic::validate::alphanumeric)]
 	pub secret_key: String,
 
-	#[setting(validate = schematic::validate::regex(&quot;^\.env&quot;))]
+	#[setting(validate = schematic::validate::regex("^\.env"))]
 	pub env_file: String,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -892,7 +892,7 @@ fn validate_string(
 	context: &amp;Context
 ) -&gt; Result&lt;(), ValidateError&gt; {
 	if !do_check(value) {
-		return Err(ValidateError::new(&quot;Some failure message&quot;));
+		return Err(ValidateError::new("Some failure message"));
 	}
 
 	Ok(())
@@ -916,7 +916,7 @@ fn regex&lt;T, P, C&gt;(pattern: &amp;str) -&gt; Validator&lt;T, P, C&gt; {
 
 	Box::new(move |value, _, _| {
 		if !pattern.is_match(value) {
-			return Err(ValidateError::new(&quot;Some failure message&quot;));
+			return Err(ValidateError::new("Some failure message"));
 		}
 
 		Ok(())
@@ -931,7 +931,7 @@ is extremely useful when building error messages.</p>
 </span>use schematic::PathSegment;
 
 ValidateError::with_segments(
-	&quot;Some failure message&quot;,
+	"Some failure message",
 	// [i].key
 	[PathSegment::Index(i), PathSegment::Key(key.to_string())]
 )
@@ -993,7 +993,7 @@ method, that returns a list of all variants. Perfect for iteration.</li>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(ConfigEnum)]
-#[config(before_parse = &quot;UPPERCASE&quot;)]
+#[config(before_parse = "UPPERCASE")]
 enum ExampleEnum {
 	// ...
 }
@@ -1036,7 +1036,7 @@ apply these traits for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = &quot;kebab-case&quot;)]
+#[serde(rename_all = "kebab-case")]
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="default-variant"><a class="header" href="#default-variant">Default variant</a></h1>
 <p>To define a default variant, use the <code>Default</code> trait and the optional <code>#[default]</code> variant
@@ -1077,7 +1077,7 @@ enum Value {
 </ul>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let qux = Value::from_str(&quot;qux&quot;)?; // Value::Other(&quot;qux&quot;)
+</span>let qux = Value::from_str("qux")?; // Value::Other("qux")
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="schemas"><a class="header" href="#schemas">Schemas</a></h1>
 <blockquote>
@@ -1138,12 +1138,12 @@ struct User {
 impl Schematic for User {
 	fn generate_schema() -&gt; SchemaType {
 		SchemaType::structure([
-			SchemaField::new(&quot;name&quot;, SchemaType::String(StringType {
+			SchemaField::new("name", SchemaType::String(StringType {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::Usize)),
-			SchemaField::new(&quot;status&quot;, SchemaType::infer::&lt;UserStatus&gt;()),
+			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
+			SchemaField::new("status", SchemaType::infer::&lt;UserStatus&gt;()),
 		])
 	}
 }
@@ -1201,7 +1201,7 @@ macro will use the name of the type, but when implementing the trait manually, y
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let mut schema = SchemaType::string();
-schema.set_name(&quot;CustomName&quot;);
+schema.set_name("CustomName");
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="arrays"><a class="header" href="#arrays">Arrays</a></h1>
 <p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> paired with
@@ -1302,9 +1302,9 @@ impl Schematic for T {
 	fn generate_schema() -&gt; SchemaType {
 		SchemaType::Enum(EnumType {
 			values: vec![
-				LiteralValue::String(&quot;debug&quot;.into()),
-				LiteralValue::String(&quot;error&quot;.into()),
-				LiteralValue::String(&quot;warning&quot;.into()),
+				LiteralValue::String("debug".into()),
+				LiteralValue::String("error".into()),
+				LiteralValue::String("warning".into()),
 			],
 			..EnumType::default()
 		})
@@ -1317,9 +1317,9 @@ method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>SchemaType::enumerable([
-	LiteralValue::String(&quot;debug&quot;.into()),
-	LiteralValue::String(&quot;error&quot;.into()),
-	LiteralValue::String(&quot;warning&quot;.into()),
+	LiteralValue::String("debug".into()),
+	LiteralValue::String("error".into()),
+	LiteralValue::String("warning".into()),
 ]);
 <span class="boring">}</span></code></pre></pre>
 <h2 id="detailed-variants"><a class="header" href="#detailed-variants">Detailed variants</a></h2>
@@ -1332,27 +1332,27 @@ visibility, you can define the <code>variants</code> field and pass a list of
 
 SchemaType::Enum(EnumType {
 	values: vec![
-		LiteralValue::String(&quot;debug&quot;.into()),
-		LiteralValue::String(&quot;error&quot;.into()),
-		LiteralValue::String(&quot;warning&quot;.into()),
+		LiteralValue::String("debug".into()),
+		LiteralValue::String("error".into()),
+		LiteralValue::String("warning".into()),
 	],
 	variants: Some(vec![
 		SchemaField {
-			name: &quot;debug&quot;.into(),
-			description: Some(&quot;Shows debug messages and above&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;debug&quot;.into())),
+			name: "debug".into(),
+			description: Some("Shows debug messages and above".into()),
+			type_of: SchemaType::literal(LiteralValue::String("debug".into())),
 			..SchemaField::default()
 		},
 		SchemaField {
-			name: &quot;error&quot;.into(),
-			description: Some(&quot;Shows only error messages&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;error&quot;.into())),
+			name: "error".into(),
+			description: Some("Shows only error messages".into()),
+			type_of: SchemaType::literal(LiteralValue::String("error".into())),
 			..SchemaField::default()
 		},
 		SchemaField {
-			name: &quot;warning&quot;.into(),
-			description: Some(&quot;Shows warning and error messages&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;warning&quot;.into())),
+			name: "warning".into(),
+			description: Some("Shows warning and error messages".into()),
+			type_of: SchemaType::literal(LiteralValue::String("warning".into())),
 			..SchemaField::default()
 		},
 	]),
@@ -1418,7 +1418,7 @@ used and displayed.</p>
 </span><span class="boring">fn main() {
 </span>FloatType {
 	// ...
-	format: Some(&quot;currency&quot;.into()),
+	format: Some("currency".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -1510,7 +1510,7 @@ will be used and displayed.</p>
 </span><span class="boring">fn main() {
 </span>IntegerType {
 	// ...
-	format: Some(&quot;age&quot;.into()),
+	format: Some("age".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -1557,7 +1557,7 @@ can be used to represent a literal primitive value, such as a string or number.<
 
 impl Schematic for T {
 	fn generate_schema() -&gt; SchemaType {
-		SchemaType::literal(LiteralValue::String(&quot;enabled&quot;.into()))
+		SchemaType::literal(LiteralValue::String("enabled".into()))
 		// Or, etc
 		SchemaType::literal(LiteralValue::Uint(100))
 	}
@@ -1646,7 +1646,7 @@ must exist when the object is validated.</p>
 </span><span class="boring">fn main() {
 </span>ObjectType {
 	// ...
-	required: Some(vec![&quot;foo&quot;.into(), &quot;bar&quot;.into()]),
+	required: Some(vec!["foo".into(), "bar".into()]),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -1675,7 +1675,7 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::String(StringType::new(&quot;abc&quot;));
+</span>SchemaType::String(StringType::new("abc"));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings-5"><a class="header" href="#settings-5">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a>, which are then fed into the
@@ -1687,7 +1687,7 @@ field.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	enum_values: Some(vec![&quot;a&quot;.into(), &quot;b&quot;.into(), &quot;c&quot;.into()]),
+	enum_values: Some(vec!["a".into(), "b".into(), "c".into()]),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="formats-2"><a class="header" href="#formats-2">Formats</a></h3>
@@ -1697,7 +1697,7 @@ be used and displayed.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	format: Some(&quot;url&quot;.into()),
+	format: Some("url".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -1720,8 +1720,8 @@ fields accept a non-zero number, and can be used together or individually.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	format: Some(&quot;version&quot;.into()),
-	pattern: Some(&quot;\d+\.\d+\.\d+&quot;.into()),
+	format: Some("version".into()),
+	pattern: Some("\d+\.\d+\.\d+".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -1743,20 +1743,20 @@ impl Schematic for T {
 		SchemaType::Struct(StructType {
 			fields: vec![
 				SchemaField {
-					name: &quot;name&quot;.into(),
-					description: Some(&quot;Name of the user&quot;.into()),
+					name: "name".into(),
+					description: Some("Name of the user".into()),
 					type_of: SchemaType::string(),
 					..SchemaField::default()
 				},
 				SchemaField {
-					name: &quot;age&quot;.into(),
-					description: Some(&quot;Age of the user&quot;.into()),
+					name: "age".into(),
+					description: Some("Age of the user".into()),
 					type_of: SchemaType::integer(IntegerKind::U16),
 					..SchemaField::default()
 				},
 				SchemaField {
-					name: &quot;active&quot;.into(),
-					description: Some(&quot;Is the user active&quot;.into()),
+					name: "active".into(),
+					description: Some("Is the user active".into()),
 					type_of: SchemaType::boolean(),
 					..SchemaField::default()
 				},
@@ -1784,7 +1784,7 @@ method.</p>
 </span><span class="boring">fn main() {
 </span>StructType {
 	// ...
-	required: Some(vec![&quot;name&quot;.into()]),
+	required: Some(vec!["name".into()]),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -2012,8 +2012,8 @@ let mut generator = SchemaGenerator::default();
 generator.add::&lt;FirstConfig&gt;();
 generator.add::&lt;SecondConfig&gt;();
 generator.add::&lt;ThirdConfig&gt;();
-generator.generate(PathBuf::from(&quot;output/file&quot;), CustomRenderer::default())?;
-generator.generate(PathBuf::from(&quot;output/another/file&quot;), AnotherRenderer::default())?;
+generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
+generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="renderers-1"><a class="header" href="#renderers-1">Renderers</a></h2>
 <p>The following built-in renderers are available, but custom renderers can be created as well by
@@ -2040,7 +2040,7 @@ situations like scaffolding files during installation.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
+generator.generate(output_dir.join("config.json"), renderer)?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="support-formats"><a class="header" href="#support-formats">Support formats</a></h2>
 <h3 id="json"><a class="header" href="#json">JSON</a></h3>
@@ -2101,7 +2101,7 @@ generator.add::&lt;ThirdConfig&gt;();
 
 // This is the root document
 generator.add::&lt;LastType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
+generator.generate(output_dir.join("config.json"), renderer)?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="caveats"><a class="header" href="#caveats">Caveats</a></h2>
 <p>By default <a href="schema/generator/../array.html">arrays</a> and <a href="schema/generator/../object.html">objects</a> do not support default values, and will
@@ -2118,11 +2118,11 @@ value for TOML, and may not be what you expect.</p>
 </span>#[derive(Config)]
 struct ServerConfig {
 	/// The base URL to serve from.
-	#[setting(default = &quot;/&quot;)]
+	#[setting(default = "/")]
 	pub base_url: String,
 
 	/// The default port to listen on.
-	#[setting(default = 8080, env = &quot;PORT&quot;)]
+	#[setting(default = 8080, env = "PORT")]
 	pub port: usize,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -2136,17 +2136,17 @@ struct ServerConfig {
 <td>
 <pre><code class="language-json">{
 	// The base URL to serve from.
-	&quot;base_url&quot;: &quot;/&quot;,
+	"base_url": "/",
 
 	// The default port to listen on.
 	// @envvar PORT
-	&quot;port&quot;: 8080
+	"port": 8080
 }
 </code></pre>
 </td>
 <td>
 <pre><code class="language-toml"># The base URL to serve from.
-base_url = &quot;/&quot;
+base_url = "/"
 
 # The default port to listen on.
 # @envvar PORT
@@ -2163,7 +2163,7 @@ port = 8080
 <tr>
 <td>
 <pre><code class="language-yaml"># The base URL to serve from.
-base_url: &quot;/&quot;
+base_url: "/"
 
 # The default port to listen on.
 # @envvar PORT
@@ -2198,7 +2198,7 @@ default this is 2 spaces (<code> </code>).</p>
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	indent_char: &quot;\t&quot;.into(),
+	indent_char: "\t".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The spacing between fields can also be toggled with the <code>newline_between_fields</code> option. By default
@@ -2227,8 +2227,8 @@ of the rendered template respectively.</p>
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	header: &quot;$schema: \&quot;https://example.com/schema.json\&quot;\n\n&quot;.into(),
-	footer: &quot;\n\n# Learn more: https://example.com&quot;.into(),
+	header: "$schema: \"https://example.com/schema.json\"\n\n".into(),
+	footer: "\n\n# Learn more: https://example.com".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="field-display"><a class="header" href="#field-display">Field display</a></h3>
@@ -2239,7 +2239,7 @@ option accepts a list of field names and also supports dot-notation for nested f
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	hide_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	hide_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Additionally, if you’d like to render a field but have it commented out by default, use the
@@ -2248,7 +2248,7 @@ option accepts a list of field names and also supports dot-notation for nested f
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	comment_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	comment_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -2262,7 +2262,7 @@ a single example item for a field, you can use the <code>expand_fields</code> op
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	expand_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	expand_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Here’s an example of how this works:</p>
@@ -2274,17 +2274,17 @@ a single example item for a field, you can use the <code>expand_fields</code> op
 <tr>
 <td>
 <pre><code class="language-json">{
-	&quot;proxies&quot;: []
+	"proxies": []
 }
 </code></pre>
 </td>
 <td>
 <pre><code class="language-json">{
-	&quot;proxies&quot;: [
+	"proxies": [
 		// An example proxy configuration.
 		{
-			&quot;host&quot;: &quot;&quot;,
-			&quot;port&quot;: 8080
+			"host": "",
+			"port": 8080
 		}
 	]
 }
@@ -2309,7 +2309,7 @@ document.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;schema.json&quot;), JsonSchemaRenderer::default())?;
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>For a reference implementation, check out
@@ -2328,17 +2328,17 @@ generator.add::&lt;ThirdConfig&gt;();
 
 // This is the root document
 generator.add::&lt;LastType&gt;();
-generator.generate(output_dir.join(&quot;schema.json&quot;), JsonSchemaRenderer::default())?;
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <p>When rendered, will look something like the following:</p>
 <pre><code class="language-json">{
-	&quot;$schema&quot;: &quot;http://json-schema.org/draft-07/schema#&quot;,
-	&quot;title&quot;: &quot;LastType&quot;,
-	&quot;type&quot;: &quot;object&quot;,
-	&quot;properties&quot;: {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "LastType",
+	"type": "object",
+	"properties": {
 		// Fields in LastType...
 	},
-	&quot;definitions&quot;: {
+	"definitions": {
 		// Other types...
 	}
 }
@@ -2375,7 +2375,7 @@ instantiate a generator, add types to render, and generate the output file.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;types.ts&quot;), TypeScriptRenderer::default())?;
+generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>For a reference implementation, check out
@@ -2400,7 +2400,7 @@ By default this is a tab (<code>\t</code>).</p>
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {
 	// ...
-	indent_char: &quot;  &quot;.into(),
+	indent_char: "  ".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="enum-types"><a class="header" href="#enum-types">Enum types</a></h3>
@@ -2417,7 +2417,7 @@ enums instead.</p>
 }
 <span class="boring">}</span></code></pre></pre>
 <pre><code class="language-ts">// Default
-export type LogLevel = &quot;debug&quot; | &quot;info&quot; | &quot;error&quot;;
+export type LogLevel = "debug" | "info" | "error";
 
 // As enum
 export enum LogLevel {
@@ -2467,7 +2467,7 @@ export type User = {
 <p>In the context of this renderer, a type reference is simply a reference to another type by its name,
 and is used by other types of another name. For example, the fields of a struct type may reference
 another type by name.</p>
-<pre><code class="language-ts">export type UserStatus = &quot;active&quot; | &quot;inactive&quot;;
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
 
 export interface User {
 	status: UserStatus;
@@ -2483,10 +2483,10 @@ So the example above would become:</p>
 	disable_references: true,
 }
 <span class="boring">}</span></code></pre></pre>
-<pre><code class="language-ts">export type UserStatus = &quot;active&quot; | &quot;inactive&quot;;
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
 
 export interface User {
-	status: &quot;active&quot; | &quot;inactive&quot;;
+	status: "active" | "inactive";
 }
 </code></pre>
 <p>Additionally, the <code>exclude_references</code> option can be used to exclude a type reference by name
@@ -2495,11 +2495,11 @@ entirely from the output, as demonstrated below.</p>
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {
 	// ...
-	exclude_references: vec![&quot;UserStatus&quot;.into()],
+	exclude_references: vec!["UserStatus".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <pre><code class="language-ts">export interface User {
-	status: &quot;active&quot; | &quot;inactive&quot;;
+	status: "active" | "inactive";
 }
 </code></pre>
 <h3 id="importing-external-types"><a class="header" href="#importing-external-types">Importing external types</a></h3>
@@ -2515,11 +2515,11 @@ of types to import from that file. This is useful if:</p>
 </span>TypeScriptOptions {
 	// ...
 	external_types: HashMap::from_iter([
-		(&quot;./states&quot;.into(), vec![&quot;UserStatus&quot;.into()]),
+		("./states".into(), vec!["UserStatus".into()]),
 	]),
 }
 <span class="boring">}</span></code></pre></pre>
-<pre><code class="language-ts">import type { UserStatus } from &quot;./states&quot;;
+<pre><code class="language-ts">import type { UserStatus } from "./states";
 
 export interface User {
 	status: UserStatus;

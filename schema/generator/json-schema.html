@@ -193,7 +193,7 @@ document.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;schema.json&quot;), JsonSchemaRenderer::default())?;
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>For a reference implementation, check out
@@ -212,17 +212,17 @@ generator.add::&lt;ThirdConfig&gt;();
 
 // This is the root document
 generator.add::&lt;LastType&gt;();
-generator.generate(output_dir.join(&quot;schema.json&quot;), JsonSchemaRenderer::default())?;
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
 <span class="boring">}</span></code></pre></pre>
 <p>When rendered, will look something like the following:</p>
 <pre><code class="language-json">{
-	&quot;$schema&quot;: &quot;http://json-schema.org/draft-07/schema#&quot;,
-	&quot;title&quot;: &quot;LastType&quot;,
-	&quot;type&quot;: &quot;object&quot;,
-	&quot;properties&quot;: {
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "LastType",
+	"type": "object",
+	"properties": {
 		// Fields in LastType...
 	},
-	&quot;definitions&quot;: {
+	"definitions": {
 		// Other types...
 	}
 }

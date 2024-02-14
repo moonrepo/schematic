@@ -191,7 +191,7 @@ array and tuple literals, as well as function (mainly for <code>from()</code>) a
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct AppConfig {
-	#[setting(default = &quot;/&quot;)]
+	#[setting(default = "/")]
 	pub base: String,
 
 	#[setting(default = 3000)]
@@ -200,7 +200,7 @@ struct AppConfig {
 	#[setting(default = true)]
 	pub secure: bool,
 
-	#[setting(default = vec![&quot;localhost&quot;.into()])]
+	#[setting(default = vec!["localhost".into()])]
 	pub allowed_hosts: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>

@@ -191,7 +191,7 @@ situations like scaffolding files during installation.</p>
 
 let mut generator = SchemaGenerator::default();
 generator.add::&lt;CustomType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
+generator.generate(output_dir.join("config.json"), renderer)?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="support-formats"><a class="header" href="#support-formats">Support formats</a></h2>
 <h3 id="json"><a class="header" href="#json">JSON</a></h3>
@@ -252,7 +252,7 @@ generator.add::&lt;ThirdConfig&gt;();
 
 // This is the root document
 generator.add::&lt;LastType&gt;();
-generator.generate(output_dir.join(&quot;config.json&quot;), renderer)?;
+generator.generate(output_dir.join("config.json"), renderer)?;
 <span class="boring">}</span></code></pre></pre>
 <h2 id="caveats"><a class="header" href="#caveats">Caveats</a></h2>
 <p>By default <a href="../array.html">arrays</a> and <a href="../object.html">objects</a> do not support default values, and will
@@ -269,11 +269,11 @@ value for TOML, and may not be what you expect.</p>
 </span>#[derive(Config)]
 struct ServerConfig {
 	/// The base URL to serve from.
-	#[setting(default = &quot;/&quot;)]
+	#[setting(default = "/")]
 	pub base_url: String,
 
 	/// The default port to listen on.
-	#[setting(default = 8080, env = &quot;PORT&quot;)]
+	#[setting(default = 8080, env = "PORT")]
 	pub port: usize,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -287,17 +287,17 @@ struct ServerConfig {
 <td>
 <pre><code class="language-json">{
 	// The base URL to serve from.
-	&quot;base_url&quot;: &quot;/&quot;,
+	"base_url": "/",
 
 	// The default port to listen on.
 	// @envvar PORT
-	&quot;port&quot;: 8080
+	"port": 8080
 }
 </code></pre>
 </td>
 <td>
 <pre><code class="language-toml"># The base URL to serve from.
-base_url = &quot;/&quot;
+base_url = "/"
 
 # The default port to listen on.
 # @envvar PORT
@@ -314,7 +314,7 @@ port = 8080
 <tr>
 <td>
 <pre><code class="language-yaml"># The base URL to serve from.
-base_url: &quot;/&quot;
+base_url: "/"
 
 # The default port to listen on.
 # @envvar PORT
@@ -349,7 +349,7 @@ default this is 2 spaces (<code> </code>).</p>
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	indent_char: &quot;\t&quot;.into(),
+	indent_char: "\t".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The spacing between fields can also be toggled with the <code>newline_between_fields</code> option. By default
@@ -378,8 +378,8 @@ of the rendered template respectively.</p>
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	header: &quot;$schema: \&quot;https://example.com/schema.json\&quot;\n\n&quot;.into(),
-	footer: &quot;\n\n# Learn more: https://example.com&quot;.into(),
+	header: "$schema: \"https://example.com/schema.json\"\n\n".into(),
+	footer: "\n\n# Learn more: https://example.com".into(),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="field-display"><a class="header" href="#field-display">Field display</a></h3>
@@ -390,7 +390,7 @@ option accepts a list of field names and also supports dot-notation for nested f
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	hide_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	hide_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Additionally, if you’d like to render a field but have it commented out by default, use the
@@ -399,7 +399,7 @@ option accepts a list of field names and also supports dot-notation for nested f
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	comment_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	comment_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -413,7 +413,7 @@ a single example item for a field, you can use the <code>expand_fields</code> op
 </span><span class="boring">fn main() {
 </span>TemplateOptions {
 	// ...
-	expand_fields: vec![&quot;key&quot;.into(), &quot;nested.key&quot;.into()],
+	expand_fields: vec!["key".into(), "nested.key".into()],
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Here’s an example of how this works:</p>
@@ -425,17 +425,17 @@ a single example item for a field, you can use the <code>expand_fields</code> op
 <tr>
 <td>
 <pre><code class="language-json">{
-	&quot;proxies&quot;: []
+	"proxies": []
 }
 </code></pre>
 </td>
 <td>
 <pre><code class="language-json">{
-	&quot;proxies&quot;: [
+	"proxies": [
 		// An example proxy configuration.
 		{
-			&quot;host&quot;: &quot;&quot;,
-			&quot;port&quot;: 8080
+			"host": "",
+			"port": 8080
 		}
 	]
 }

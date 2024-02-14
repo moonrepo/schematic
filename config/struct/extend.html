@@ -196,7 +196,7 @@ struct AppConfig {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Example:</p>
-<pre><code class="language-yaml">extends: &quot;./another/file.yml&quot;
+<pre><code class="language-yaml">extends: "./another/file.yml"
 </code></pre>
 <h2 id="multiple-sources"><a class="header" href="#multiple-sources">Multiple sources</a></h2>
 <p>The second pattern is with a list of strings, allowing multiple files or URLs to be extended. Each
@@ -211,8 +211,8 @@ struct AppConfig {
 <span class="boring">}</span></code></pre></pre>
 <p>Example:</p>
 <pre><code class="language-yaml">extends:
-  - &quot;./another/file.yml&quot;
-  - &quot;https://domain.com/some/other/file.yml&quot;
+  - "./another/file.yml"
+  - "https://domain.com/some/other/file.yml"
 </code></pre>
 <h2 id="either-pattern"><a class="header" href="#either-pattern">Either pattern</a></h2>
 <p>And lastly, supporting both a string or a list, using our built-in enum.</p>

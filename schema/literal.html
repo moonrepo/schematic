@@ -187,7 +187,7 @@ can be used to represent a literal primitive value, such as a string or number.<
 
 impl Schematic for T {
 	fn generate_schema() -&gt; SchemaType {
-		SchemaType::literal(LiteralValue::String(&quot;enabled&quot;.into()))
+		SchemaType::literal(LiteralValue::String("enabled".into()))
 		// Or, etc
 		SchemaType::literal(LiteralValue::Uint(100))
 	}

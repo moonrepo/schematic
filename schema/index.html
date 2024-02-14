@@ -235,12 +235,12 @@ struct User {
 impl Schematic for User {
 	fn generate_schema() -&gt; SchemaType {
 		SchemaType::structure([
-			SchemaField::new(&quot;name&quot;, SchemaType::String(StringType {
+			SchemaField::new("name", SchemaType::String(StringType {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new(&quot;age&quot;, SchemaType::integer(IntegerKind::Usize)),
-			SchemaField::new(&quot;status&quot;, SchemaType::infer::&lt;UserStatus&gt;()),
+			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
+			SchemaField::new("status", SchemaType::infer::&lt;UserStatus&gt;()),
 		])
 	}
 }

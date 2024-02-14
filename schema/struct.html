@@ -192,20 +192,20 @@ impl Schematic for T {
 		SchemaType::Struct(StructType {
 			fields: vec![
 				SchemaField {
-					name: &quot;name&quot;.into(),
-					description: Some(&quot;Name of the user&quot;.into()),
+					name: "name".into(),
+					description: Some("Name of the user".into()),
 					type_of: SchemaType::string(),
 					..SchemaField::default()
 				},
 				SchemaField {
-					name: &quot;age&quot;.into(),
-					description: Some(&quot;Age of the user&quot;.into()),
+					name: "age".into(),
+					description: Some("Age of the user".into()),
 					type_of: SchemaType::integer(IntegerKind::U16),
 					..SchemaField::default()
 				},
 				SchemaField {
-					name: &quot;active&quot;.into(),
-					description: Some(&quot;Is the user active&quot;.into()),
+					name: "active".into(),
+					description: Some("Is the user active".into()),
 					type_of: SchemaType::boolean(),
 					..SchemaField::default()
 				},
@@ -233,7 +233,7 @@ method.</p>
 </span><span class="boring">fn main() {
 </span>StructType {
 	// ...
-	required: Some(vec![&quot;name&quot;.into()]),
+	required: Some(vec!["name".into()]),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>

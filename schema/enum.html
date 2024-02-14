@@ -188,9 +188,9 @@ impl Schematic for T {
 	fn generate_schema() -&gt; SchemaType {
 		SchemaType::Enum(EnumType {
 			values: vec![
-				LiteralValue::String(&quot;debug&quot;.into()),
-				LiteralValue::String(&quot;error&quot;.into()),
-				LiteralValue::String(&quot;warning&quot;.into()),
+				LiteralValue::String("debug".into()),
+				LiteralValue::String("error".into()),
+				LiteralValue::String("warning".into()),
 			],
 			..EnumType::default()
 		})
@@ -203,9 +203,9 @@ method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>SchemaType::enumerable([
-	LiteralValue::String(&quot;debug&quot;.into()),
-	LiteralValue::String(&quot;error&quot;.into()),
-	LiteralValue::String(&quot;warning&quot;.into()),
+	LiteralValue::String("debug".into()),
+	LiteralValue::String("error".into()),
+	LiteralValue::String("warning".into()),
 ]);
 <span class="boring">}</span></code></pre></pre>
 <h2 id="detailed-variants"><a class="header" href="#detailed-variants">Detailed variants</a></h2>
@@ -218,27 +218,27 @@ visibility, you can define the <code>variants</code> field and pass a list of
 
 SchemaType::Enum(EnumType {
 	values: vec![
-		LiteralValue::String(&quot;debug&quot;.into()),
-		LiteralValue::String(&quot;error&quot;.into()),
-		LiteralValue::String(&quot;warning&quot;.into()),
+		LiteralValue::String("debug".into()),
+		LiteralValue::String("error".into()),
+		LiteralValue::String("warning".into()),
 	],
 	variants: Some(vec![
 		SchemaField {
-			name: &quot;debug&quot;.into(),
-			description: Some(&quot;Shows debug messages and above&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;debug&quot;.into())),
+			name: "debug".into(),
+			description: Some("Shows debug messages and above".into()),
+			type_of: SchemaType::literal(LiteralValue::String("debug".into())),
 			..SchemaField::default()
 		},
 		SchemaField {
-			name: &quot;error&quot;.into(),
-			description: Some(&quot;Shows only error messages&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;error&quot;.into())),
+			name: "error".into(),
+			description: Some("Shows only error messages".into()),
+			type_of: SchemaType::literal(LiteralValue::String("error".into())),
 			..SchemaField::default()
 		},
 		SchemaField {
-			name: &quot;warning&quot;.into(),
-			description: Some(&quot;Shows warning and error messages&quot;.into()),
-			type_of: SchemaType::literal(LiteralValue::String(&quot;warning&quot;.into())),
+			name: "warning".into(),
+			description: Some("Shows warning and error messages".into()),
+			type_of: SchemaType::literal(LiteralValue::String("warning".into())),
 			..SchemaField::default()
 		},
 	]),

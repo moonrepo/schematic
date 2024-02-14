@@ -220,13 +220,13 @@ additional functionality.</p>
 
 #[derive(Config)]
 struct AppConfig {
-	#[setting(default = 3000, env = &quot;PORT&quot;)]
+	#[setting(default = 3000, env = "PORT")]
 	pub port: usize,
 
 	#[setting(default = true)]
 	pub secure: bool,
 
-	#[setting(default = vec![&quot;localhost&quot;.into()])]
+	#[setting(default = vec!["localhost".into()])]
 	pub allowed_hosts: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -257,9 +257,9 @@ method, which requires an explicit format.</p>
 </span><span class="boring">fn main() {
 </span>use schematic::Format;
 
-loader.code(&quot;secure: false&quot;, Format::Yaml)?;
-loader.file(&quot;path/to/config.yml&quot;)?;
-loader.url(&quot;https://ordomain.com/to/config.yaml&quot;)?;
+loader.code("secure: false", Format::Yaml)?;
+loader.file("path/to/config.yml")?;
+loader.url("https://ordomain.com/to/config.yaml")?;
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>The format for files and URLs are derived from the trailing extension.</p>

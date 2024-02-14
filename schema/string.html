@@ -199,7 +199,7 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::String(StringType::new(&quot;abc&quot;));
+</span>SchemaType::String(StringType::new("abc"));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a>, which are then fed into the
@@ -211,7 +211,7 @@ field.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	enum_values: Some(vec![&quot;a&quot;.into(), &quot;b&quot;.into(), &quot;c&quot;.into()]),
+	enum_values: Some(vec!["a".into(), "b".into(), "c".into()]),
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="formats"><a class="header" href="#formats">Formats</a></h3>
@@ -221,7 +221,7 @@ be used and displayed.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	format: Some(&quot;url&quot;.into()),
+	format: Some("url".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
@@ -244,8 +244,8 @@ fields accept a non-zero number, and can be used together or individually.</p>
 </span><span class="boring">fn main() {
 </span>StringType {
 	// ...
-	format: Some(&quot;version&quot;.into()),
-	pattern: Some(&quot;\d+\.\d+\.\d+&quot;.into()),
+	format: Some("version".into()),
+	pattern: Some("\d+\.\d+\.\d+".into()),
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>

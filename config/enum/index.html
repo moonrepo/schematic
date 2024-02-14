@@ -217,7 +217,7 @@ method, that returns a list of all variants. Perfect for iteration.</li>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(ConfigEnum)]
-#[config(before_parse = &quot;UPPERCASE&quot;)]
+#[config(before_parse = "UPPERCASE")]
 enum ExampleEnum {
 	// ...
 }
@@ -260,7 +260,7 @@ apply these traits for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = &quot;kebab-case&quot;)]
+#[serde(rename_all = "kebab-case")]
 <span class="boring">}</span></code></pre></pre>
 
                     </main>
