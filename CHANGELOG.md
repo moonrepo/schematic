@@ -12,6 +12,11 @@
   - `set_field_name_as_title` - Sets the field's name as the `title` of each schema entry. Defaults
     to `false`.
 
+#### ⚙️ Internal
+
+- Updated to Rust v1.76.
+- Updated dependencies.
+
 ## 0.14.0
 
 #### 💥 Breaking
