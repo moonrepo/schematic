@@ -1,13 +1,40 @@
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
-use schemars::gen::SchemaSettings;
+use schemars::gen::{GenVisitor, SchemaSettings};
 use schemars::schema::*;
 use schematic_types::*;
 use serde_json::{Number, Value};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-pub type JsonSchemaOptions = SchemaSettings;
+pub struct JsonSchemaOptions {
+    /// Mark all non-option struct fields as required.
+    pub mark_struct_fields_required: bool,
+
+    // Inherited from schemars.
+    pub option_nullable: bool,
+    pub option_add_null_type: bool,
+    pub definitions_path: String,
+    pub meta_schema: Option<String>,
+    pub visitors: Vec<Box<dyn GenVisitor>>,
+    pub inline_subschemas: bool,
+}
+
+impl Default for JsonSchemaOptions {
+    fn default() -> Self {
+        let settings = SchemaSettings::draft07();
+
+        Self {
+            mark_struct_fields_required: true,
+            option_nullable: settings.option_nullable,
+            option_add_null_type: settings.option_add_null_type,
+            definitions_path: settings.definitions_path,
+            meta_schema: settings.meta_schema,
+            visitors: settings.visitors,
+            inline_subschemas: settings.inline_subschemas,
+        }
+    }
+}
 
 /// Renders JSON schema documents from a schema.
 #[derive(Default)]
@@ -267,7 +294,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 continue;
             }
 
-            if !field.optional {
+            if !field.optional && self.options.mark_struct_fields_required {
                 required.insert(field.name.clone());
             }
 

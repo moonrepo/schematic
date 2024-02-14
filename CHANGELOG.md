@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added new JSONSchema renderer options:
+  - `mark_struct_fields_required` - Mark all non-option struct fields as required. Defaults to
+    `true` for backwards compatibility.
+
 ## 0.14.0
 
 #### 💥 Breaking

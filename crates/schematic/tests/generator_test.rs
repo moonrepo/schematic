@@ -163,6 +163,24 @@ mod json_schema {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    #[test]
+    fn not_required() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_generator()
+            .generate(
+                &file,
+                JsonSchemaRenderer::new(JsonSchemaOptions {
+                    mark_struct_fields_required: false,
+                    ..JsonSchemaOptions::default()
+                }),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(all(feature = "template", feature = "json"))]
