@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added new JSONSchema renderer options:
+  - `allow_newlines_in_description` - Allows newlines in descriptions, otherwise strips them.
+    Defaults to `false`.
+  - `mark_struct_fields_required` - Mark all non-option struct fields as required. Defaults to
+    `true` for backwards compatibility.
+  - `set_field_name_as_title` - Sets the field's name as the `title` of each schema entry. Defaults
+    to `false`.
+
+#### ⚙️ Internal
+
+- Updated to Rust v1.76.
+- Updated dependencies.
+
 ## 0.14.0
 
 #### 💥 Breaking
