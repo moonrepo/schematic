@@ -4,7 +4,6 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GenConfig",
   "type": "object",
   "required": [
     "boolean",
@@ -211,7 +210,6 @@ expression: "fs::read_to_string(file).unwrap()"
   "additionalProperties": false,
   "definitions": {
     "AnotherConfig": {
-      "title": "AnotherConfig",
       "description": "Some comment.",
       "type": "object",
       "required": [
@@ -248,7 +246,6 @@ expression: "fs::read_to_string(file).unwrap()"
       "additionalProperties": false
     },
     "BasicEnum": {
-      "title": "BasicEnum",
       "type": "string",
       "enum": [
         "foo",
