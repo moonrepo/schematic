@@ -185,7 +185,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         }
 
         let metadata = Metadata {
-            title: enu.name.clone(),
+            title: if self.options.set_field_name_as_title {
+                None
+            } else {
+                enu.name.clone()
+            },
             description: enu
                 .description
                 .clone()
@@ -327,7 +331,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let data = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             metadata: Some(Box::new(Metadata {
-                title: structure.name.clone(),
+                title: if self.options.set_field_name_as_title {
+                    None
+                } else {
+                    structure.name.clone()
+                },
                 description: structure
                     .description
                     .clone()
@@ -371,7 +379,11 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let mut items = vec![];
 
         let mut metadata = Metadata {
-            title: uni.name.clone(),
+            title: if self.options.set_field_name_as_title {
+                None
+            } else {
+                uni.name.clone()
+            },
             description: uni
                 .description
                 .clone()
