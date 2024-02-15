@@ -1,10 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed some issues around JSON Schema `title` generation.
+
 ## 0.14.1
 
 #### 🚀 Updates
 
-- Added new JSONSchema renderer options:
+- Added new JSON Schema renderer options:
   - `allow_newlines_in_description` - Allows newlines in descriptions, otherwise strips them.
     Defaults to `false`.
   - `mark_struct_fields_required` - Mark all non-option struct fields as required. Defaults to
