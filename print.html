@@ -2356,10 +2356,52 @@ JsonSchemaRenderer::new(JsonSchemaOptions {
 });
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p>This type is just a re-export of the
+<p>This type also contains all fields from the upstream
 <a href="https://docs.rs/schemars/latest/schemars/gen/struct.SchemaSettings.html"><code>SchemaSettings</code></a> type
-from <code>schemars</code>. Refer to their documentation for more information.</p>
+from the <code>schemars</code> crate. Refer to their documentation for more information.</p>
 </blockquote>
+<h3 id="markdown-descriptions"><a class="header" href="#markdown-descriptions">Markdown descriptions</a></h3>
+<p>By default, the <code>description</code> field in the JSON schema specification is supposed to be a plain text
+string, but some tools support markdown through another field called <code>markdownDescription</code>.</p>
+<p>To support this pattern, enable the <code>markdown_description</code> option, which will inject the
+<code>markdownDescription</code> field if markdown was detected in the <code>description</code> field.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	markdown_description: true,
+}
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p>This is a non-standard extension to the JSON schema specification.</p>
+</blockquote>
+<h3 id="required-fields-1"><a class="header" href="#required-fields-1">Required fields</a></h3>
+<p>When a struct is rendered, automatically mark all non-<code>Option</code> struct fields as required, and
+include them in the JSON schema
+<a href="https://json-schema.org/understanding-json-schema/reference/object#required"><code>required</code> field</a>.
+This is enabled by default.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="field-titles"><a class="header" href="#field-titles">Field titles</a></h3>
+<p>The JSON schema specification supports a
+<a href="https://json-schema.org/understanding-json-schema/reference/annotations"><code>title</code> annotation</a> for
+each field, which is a human-readable string. By default this is the name of the Rust struct, enum,
+or type field.</p>
+<p>But depending on the tool that consumes the schema, this may not be the best representation. As an
+alternative, the <code>set_field_name_as_title</code> option can be enabled to use the field name itself as the
+<code>title</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	set_field_name_as_title: true,
+}
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="typescript-types"><a class="header" href="#typescript-types">TypeScript types</a></h1>
 <blockquote>
 <p>Requires the <code>typescript</code> Cargo feature.</p>
