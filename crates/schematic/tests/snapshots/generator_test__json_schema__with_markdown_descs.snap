@@ -48,7 +48,7 @@ expression: "fs::read_to_string(file).unwrap()"
       "format": "decimal"
     },
     "enums": {
-      "description": "This is a list of `enumerable` values.",
+      "description": "This is a list of enumerable values.",
       "default": "foo",
       "allOf": [
         {
@@ -105,7 +105,7 @@ expression: "fs::read_to_string(file).unwrap()"
       }
     },
     "nested": {
-      "description": "**Nested** field.",
+      "description": "Nested field.",
       "allOf": [
         {
           "$ref": "#/definitions/AnotherConfig"

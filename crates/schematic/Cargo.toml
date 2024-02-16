@@ -40,6 +40,7 @@ serde_json = { workspace = true, optional = true, features = [
 ] }
 
 # json schema
+markdown = { version = "1.0.0-alpha.16", optional = true }
 schemars = { version = "0.8.16", optional = true, default-features = false }
 
 # toml
@@ -67,7 +68,7 @@ toml = ["dep:toml"]
 url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
 
-renderer_json_schema = ["dep:schemars", "json", "schema"]
+renderer_json_schema = ["dep:markdown", "dep:schemars", "json", "schema"]
 renderer_template = []
 renderer_typescript = ["schema"]
 

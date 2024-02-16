@@ -6,6 +6,7 @@ use schemars::schema::*;
 use schematic_types::*;
 use serde_json::{Number, Value};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::mem;
 
 pub struct JsonSchemaOptions {
     /// Allows newlines in descriptions, otherwise strips them.
@@ -63,6 +64,60 @@ fn clean_comment(comment: String, allow_newlines: bool) -> String {
     }
 }
 
+fn strip_markdown(description: &str) -> String {
+    use markdown::{to_mdast, ParseOptions};
+
+    to_mdast(description, &ParseOptions::gfm())
+        .unwrap()
+        .to_string()
+}
+
+fn inject_markdown_descriptions(json: &mut Value) -> RenderResult<()> {
+    match json {
+        Value::Array(array) => {
+            for item in array.iter_mut() {
+                inject_markdown_descriptions(item)?;
+            }
+        }
+        Value::Object(object) => {
+            let mut markdown = None;
+
+            for (key, value) in object.iter_mut() {
+                if key != "description" {
+                    inject_markdown_descriptions(value)?;
+                    continue;
+                }
+
+                // Only add field if we actually detect markdown
+                if let Value::String(inner) = value {
+                    if inner.contains('`')
+                        || inner.contains('*')
+                        || inner.contains('_')
+                        || inner.contains('-')
+                        || (inner.contains('[') && inner.contains('('))
+                    {
+                        markdown = Some(mem::take(inner));
+                    }
+                }
+            }
+
+            if let Some(markdown) = markdown {
+                object.insert(
+                    "description".into(),
+                    Value::String(strip_markdown(&markdown)),
+                );
+
+                object.insert("markdownDescription".into(), Value::String(markdown));
+            }
+        }
+        _ => {
+            // Do nothing
+        }
+    };
+
+    Ok(())
+}
+
 fn lit_to_value(lit: &LiteralValue) -> Value {
     match lit {
         LiteralValue::Bool(inner) => Value::Bool(*inner),
@@ -110,47 +165,6 @@ impl JsonSchemaRenderer {
         }
 
         Ok(schema)
-    }
-
-    fn inject_markdown_descriptions(&self, json: &mut Value) -> RenderResult<()> {
-        match json {
-            Value::Array(array) => {
-                for item in array.iter_mut() {
-                    self.inject_markdown_descriptions(item)?;
-                }
-            }
-            Value::Object(object) => {
-                let mut markdown = None;
-
-                for (key, value) in object.iter_mut() {
-                    if key != "description" {
-                        self.inject_markdown_descriptions(value)?;
-                        continue;
-                    }
-
-                    // Only add field if we actually detect markdown
-                    if let Value::String(inner) = value {
-                        if inner.contains('`')
-                            || inner.contains('*')
-                            || inner.contains('_')
-                            || inner.contains('-')
-                            || (inner.contains('[') && inner.contains('('))
-                        {
-                            markdown = Some(inner.to_owned());
-                        }
-                    }
-                }
-
-                if let Some(markdown) = markdown {
-                    object.insert("markdownDescription".into(), Value::String(markdown));
-                }
-            }
-            _ => {
-                // Do nothing
-            }
-        };
-
-        Ok(())
     }
 }
 
@@ -510,7 +524,7 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
         let mut json = serde_json::to_value(&root_schema).into_diagnostic()?;
 
         if self.options.markdown_description {
-            self.inject_markdown_descriptions(&mut json)?;
+            inject_markdown_descriptions(&mut json)?;
         }
 
         serde_json::to_string_pretty(&json).into_diagnostic()
