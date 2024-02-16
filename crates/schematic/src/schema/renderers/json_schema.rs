@@ -133,6 +133,7 @@ impl JsonSchemaRenderer {
                         if inner.contains('`')
                             || inner.contains('*')
                             || inner.contains('_')
+                            || inner.contains('-')
                             || (inner.contains('[') && inner.contains('('))
                         {
                             markdown = Some(inner.to_owned());

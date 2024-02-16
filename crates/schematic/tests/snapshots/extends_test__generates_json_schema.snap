@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/extends_test.rs
+source: crates/schematic/tests/extends_test.rs
 expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {

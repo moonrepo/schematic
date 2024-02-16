@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `markdown_descriptions` option to the JSON Schema renderer. This will include a
+  `markdownDescription` field in the schema output, which can be used by VSCode and other tools.
+  This is a non-standard feature.
+
 ## 0.14.2
 
 #### 🐞 Fixes

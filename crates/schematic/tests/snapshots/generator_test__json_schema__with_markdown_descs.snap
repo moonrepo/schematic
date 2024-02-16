@@ -6,6 +6,31 @@ expression: "fs::read_to_string(file).unwrap()"
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "GenConfig",
   "type": "object",
+  "required": [
+    "boolean",
+    "date",
+    "datetime",
+    "decimal",
+    "enums",
+    "float32",
+    "float64",
+    "indexmap",
+    "indexset",
+    "jsonValue",
+    "map",
+    "nested",
+    "number",
+    "path",
+    "relPath",
+    "string",
+    "time",
+    "tomlValue",
+    "url",
+    "vector",
+    "version",
+    "versionReq",
+    "yamlValue"
+  ],
   "properties": {
     "boolean": {
       "type": "boolean"
@@ -29,7 +54,8 @@ expression: "fs::read_to_string(file).unwrap()"
         {
           "$ref": "#/definitions/BasicEnum"
         }
-      ]
+      ],
+      "markdownDescription": "This is a list of `enumerable` values."
     },
     "float32": {
       "type": "number"
@@ -84,7 +110,8 @@ expression: "fs::read_to_string(file).unwrap()"
         {
           "$ref": "#/definitions/AnotherConfig"
         }
-      ]
+      ],
+      "markdownDescription": "**Nested** field."
     },
     "number": {
       "type": "number"
@@ -169,6 +196,10 @@ expression: "fs::read_to_string(file).unwrap()"
       "title": "AnotherConfig",
       "description": "Some comment.",
       "type": "object",
+      "required": [
+        "enums",
+        "opt"
+      ],
       "properties": {
         "enums": {
           "description": "An optional enum.",

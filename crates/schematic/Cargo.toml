@@ -35,7 +35,9 @@ starbase_styles = { version = "0.3.0", optional = true }
 indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
-serde_json = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true, features = [
+	"preserve_order",
+] }
 
 # json schema
 schemars = { version = "0.8.16", optional = true, default-features = false }

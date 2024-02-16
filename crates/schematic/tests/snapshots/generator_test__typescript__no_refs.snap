@@ -25,7 +25,11 @@ export interface GenConfig {
   date: string;
   datetime: string;
   decimal: string;
-  /** @default 'foo' */
+  /**
+   * This is a list of `enumerable` values.
+   *
+   * @default 'foo'
+   */
   enums: 'foo' | 'bar' | 'baz';
   float32: number;
   float64: number;
@@ -33,6 +37,7 @@ export interface GenConfig {
   indexset: string[] | null;
   jsonValue: unknown;
   map: Record<string, number>;
+  /** **Nested** field. */
   nested: {
     /** An optional string. */
     opt: string | null;
@@ -50,6 +55,7 @@ export interface GenConfig {
   time: string;
   tomlValue: unknown | null;
   url: string | null;
+  /** This is a list of strings. */
   vector: string[];
   version: string | null;
   versionReq: string;
