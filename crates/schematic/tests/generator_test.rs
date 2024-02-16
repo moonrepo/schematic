@@ -36,9 +36,12 @@ struct GenConfig {
     number: usize,
     float32: f32,
     float64: f64,
+    /// This is a list of strings.
     vector: Vec<String>,
     map: HashMap<String, u64>,
+    /// This is a list of `enumerable` values.
     enums: BasicEnum,
+    /// **Nested** field.
     #[setting(nested)]
     nested: AnotherConfig,
 
@@ -192,6 +195,24 @@ mod json_schema {
                 &file,
                 JsonSchemaRenderer::new(JsonSchemaOptions {
                     set_field_name_as_title: true,
+                    ..JsonSchemaOptions::default()
+                }),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
+    #[test]
+    fn with_markdown_descs() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_generator()
+            .generate(
+                &file,
+                JsonSchemaRenderer::new(JsonSchemaOptions {
+                    markdown_description: true,
                     ..JsonSchemaOptions::default()
                 }),
             )

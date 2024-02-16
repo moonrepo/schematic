@@ -69,6 +69,55 @@ JsonSchemaRenderer::new(JsonSchemaOptions {
 });
 ```
 
-> This type is just a re-export of the
+> This type also contains all fields from the upstream
 > [`SchemaSettings`](https://docs.rs/schemars/latest/schemars/gen/struct.SchemaSettings.html) type
-> from `schemars`. Refer to their documentation for more information.
+> from the `schemars` crate. Refer to their documentation for more information.
+
+### Markdown descriptions
+
+By default, the `description` field in the JSON schema specification is supposed to be a plain text
+string, but some tools support markdown through another field called `markdownDescription`.
+
+To support this pattern, enable the `markdown_description` option, which will inject the
+`markdownDescription` field if markdown was detected in the `description` field.
+
+```rust
+JsonSchemaOptions {
+	// ...
+	markdown_description: true,
+}
+```
+
+> This is a non-standard extension to the JSON schema specification.
+
+### Required fields
+
+When a struct is rendered, automatically mark all non-`Option` struct fields as required, and
+include them in the JSON schema
+[`required` field](https://json-schema.org/understanding-json-schema/reference/object#required).
+This is enabled by default.
+
+```rust
+JsonSchemaOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
+```
+
+### Field titles
+
+The JSON schema specification supports a
+[`title` annotation](https://json-schema.org/understanding-json-schema/reference/annotations) for
+each field, which is a human-readable string. By default this is the name of the Rust struct, enum,
+or type field.
+
+But depending on the tool that consumes the schema, this may not be the best representation. As an
+alternative, the `set_field_name_as_title` option can be enabled to use the field name itself as the
+`title`.
+
+```rust
+JsonSchemaOptions {
+	// ...
+	set_field_name_as_title: true,
+}
+```

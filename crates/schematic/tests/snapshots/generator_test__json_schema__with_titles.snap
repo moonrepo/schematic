@@ -52,6 +52,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "enums": {
       "title": "enums",
+      "description": "This is a list of `enumerable` values.",
       "default": "foo",
       "allOf": [
         {
@@ -114,6 +115,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "nested": {
       "title": "nested",
+      "description": "**Nested** field.",
       "allOf": [
         {
           "$ref": "#/definitions/AnotherConfig"
@@ -175,6 +177,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "vector": {
       "title": "vector",
+      "description": "This is a list of strings.",
       "type": "array",
       "items": {
         "type": "string"
