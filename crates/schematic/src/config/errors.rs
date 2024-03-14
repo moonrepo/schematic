@@ -1,5 +1,6 @@
+use crate::config::parser::ParserError;
 use crate::config::validator::ValidatorError;
-use miette::{Diagnostic, SourceSpan};
+use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -143,20 +144,4 @@ impl ConfigError {
 
         message.trim().to_string()
     }
-}
-
-/// Error related to serde parsing.
-#[derive(Error, Debug, Diagnostic)]
-#[error("{}{} {message}", .path.style(Style::Id), ":".style(Style::MutedLight))]
-#[diagnostic(severity(Error))]
-pub struct ParserError {
-    #[source_code]
-    pub content: String, // NamedSource,
-
-    pub message: String,
-
-    pub path: String,
-
-    #[label("Fix this")]
-    pub span: Option<SourceSpan>,
 }

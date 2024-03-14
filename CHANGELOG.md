@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a basic `ParseError` that can be used when implementing custom parsing via `TryFrom`,
+  `FromStr`, serde, etc.
+
 ## 0.14.4
 
 #### ⚙️ Internal
