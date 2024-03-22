@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+- Updated Rust to v1.77 (for development).
+
 ## 0.14.5
 
 #### 🚀 Updates

@@ -152,16 +152,14 @@ pub fn unwrap_path_type<'l>(
 }
 
 pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
-    let Some(args) = unwrap_path_type(
+    let args = unwrap_path_type(
         ty,
         &[
             &["Option"],
             &["std", "option", "Option"],
             &["core", "option", "Option"],
         ],
-    ) else {
-        return None;
-    };
+    )?;
 
     if args.args.len() != 1 {
         return None;
