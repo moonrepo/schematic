@@ -20,7 +20,7 @@ all-features = true
 schematic_macros = { version = "0.14.2", path = "../macros" }
 schematic_types = { version = "0.6.0", path = "../types" }
 miette = { workspace = true }
-thiserror = "1.0.57"
+thiserror = "1.0.58"
 tracing = "0.1.40"
 
 # config
@@ -28,7 +28,7 @@ garde = { version = "0.18.0", default-features = false, optional = true, feature
 	"regex",
 ] }
 serde = { workspace = true }
-serde_path_to_error = { version = "0.1.15", optional = true }
+serde_path_to_error = { version = "0.1.16", optional = true }
 starbase_styles = { version = "0.3.1", optional = true }
 
 # schema
@@ -50,7 +50,7 @@ toml = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 
 # url
-reqwest = { version = "0.11.24", default-features = false, optional = true, features = [
+reqwest = { version = "0.11.27", default-features = false, optional = true, features = [
 	"blocking",
 ] }
 
@@ -110,7 +110,7 @@ schematic = { path = ".", features = [
 	"valid_url",
 	"yaml",
 ] }
-reqwest = { version = "0.11.24", default-features = false, features = [
+reqwest = { version = "0.11.27", default-features = false, features = [
 	"blocking",
 	"rustls-tls-native-roots",
 ] }
