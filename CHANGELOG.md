@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed unit-only enums with a fallback variant generating the wrong JSON schema and TypeScript
+  types.
+
 #### ⚙️ Internal
 
 - Updated dependencies.
