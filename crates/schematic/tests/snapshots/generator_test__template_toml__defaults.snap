@@ -17,6 +17,8 @@ expandObject = {}
 
 expandObjectPrimitive = { example = 0 }
 
+fallbackEnum = "foo"
+
 # This is a float thats deprecated.
 # @deprecated
 # float32 = 0.0
@@ -58,5 +60,3 @@ enums = "foo"
 # An optional string.
 # @envvar ENV_PREFIX_OPT
 opt = ""
-
-

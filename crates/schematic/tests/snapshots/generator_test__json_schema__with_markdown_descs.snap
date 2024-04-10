@@ -12,6 +12,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "datetime",
     "decimal",
     "enums",
+    "fallbackEnum",
     "float32",
     "float64",
     "indexmap",
@@ -56,6 +57,14 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ],
       "markdownDescription": "This is a list of `enumerable` values."
+    },
+    "fallbackEnum": {
+      "default": "foo",
+      "allOf": [
+        {
+          "$ref": "#/definitions/FallbackEnum"
+        }
+      ]
     },
     "float32": {
       "type": "number"
@@ -235,7 +244,23 @@ expression: "fs::read_to_string(file).unwrap()"
         "bar",
         "baz"
       ]
+    },
+    "FallbackEnum": {
+      "title": "FallbackEnum",
+      "oneOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "const": "bar"
+        },
+        {
+          "const": "baz"
+        },
+        {
+          "type": "string"
+        }
+      ]
     }
   }
 }
-

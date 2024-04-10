@@ -31,6 +31,8 @@ expandObject:
 
 expandObjectPrimitive: {}
 
+fallbackEnum: "foo"
+
 # This is a float thats deprecated.
 # @deprecated
 # float32: 0.0
@@ -66,5 +68,3 @@ string: "abc"
 
 # This is a list of strings.
 vector: []
-
-

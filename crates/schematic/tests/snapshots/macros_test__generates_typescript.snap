@@ -12,7 +12,7 @@ export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 export type Test = 'FOO' | 'bAr' | 'b-a-z';
 
-export type OtherEnum = 'foo' | 'bar' | 'baz';
+export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
 
 export type Aliased = 'foo' | 'bar' | 'baz';
 
@@ -193,4 +193,3 @@ export interface PartialValidations {
 	optional?: string | null;
 	required?: string | null;
 }
-

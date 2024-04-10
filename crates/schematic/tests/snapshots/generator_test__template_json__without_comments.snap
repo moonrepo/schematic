@@ -23,6 +23,7 @@ expression: "fs::read_to_string(file).unwrap()"
   "expandObjectPrimitive": {
     "example": 0
   },
+  "fallbackEnum": "foo",
   "float64": 1.23,
   "nested": {
     "opt": "",
@@ -37,4 +38,3 @@ expression: "fs::read_to_string(file).unwrap()"
   "string": "abc",
   "vector": []
 }
-

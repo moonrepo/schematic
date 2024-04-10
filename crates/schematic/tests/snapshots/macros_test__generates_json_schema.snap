@@ -376,11 +376,20 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "OtherEnum": {
       "title": "OtherEnum",
-      "type": "string",
-      "enum": [
-        "foo",
-        "bar",
-        "baz"
+      "oneOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "deprecated": true,
+          "const": "bar"
+        },
+        {
+          "const": "baz"
+        },
+        {
+          "type": "string"
+        }
       ]
     },
     "PartialDefaultValues": {
@@ -931,4 +940,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-

@@ -210,6 +210,44 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
     }
 
     fn render_enum(&mut self, enu: &EnumType) -> RenderResult<Schema> {
+        let metadata = Metadata {
+            title: if self.options.set_field_name_as_title {
+                None
+            } else {
+                enu.name.clone()
+            },
+            description: enu
+                .description
+                .clone()
+                .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
+            ..Default::default()
+        };
+
+        // Unit enum with a fallback variant
+        if enu
+            .variants
+            .as_ref()
+            .is_some_and(|v| v.len() != enu.values.len())
+        {
+            let mut one_of = vec![];
+
+            for field in enu.variants.as_ref().unwrap() {
+                if !field.hidden {
+                    one_of.push(self.create_schema_from_field(field)?);
+                }
+            }
+
+            return Ok(Schema::Object(SchemaObject {
+                metadata: Some(Box::new(metadata)),
+                subschemas: Some(Box::new(SubschemaValidation {
+                    one_of: Some(one_of),
+                    ..Default::default()
+                })),
+                ..Default::default()
+            }));
+        }
+
+        // Unit enum with no fallback variant
         let mut instance_type = InstanceType::String;
         let mut enum_values = vec![];
 
@@ -241,19 +279,6 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
                 }
             };
         }
-
-        let metadata = Metadata {
-            title: if self.options.set_field_name_as_title {
-                None
-            } else {
-                enu.name.clone()
-            },
-            description: enu
-                .description
-                .clone()
-                .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
-            ..Default::default()
-        };
 
         Ok(Schema::Object(SchemaObject {
             metadata: Some(Box::new(metadata)),

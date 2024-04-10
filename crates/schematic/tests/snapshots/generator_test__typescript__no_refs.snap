@@ -8,6 +8,8 @@ expression: "generate(TypeScriptOptions {\n        disable_references: true,\n  
 
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
+export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
+
 /** Some comment. */
 export interface AnotherConfig {
   /**
@@ -31,6 +33,8 @@ export interface GenConfig {
    * @default 'foo'
    */
   enums: 'foo' | 'bar' | 'baz';
+  /** @default 'foo' */
+  fallbackEnum: 'foo' | 'bar' | 'baz' | string;
   float32: number;
   float64: number;
   indexmap: Record<string, string>;
@@ -61,4 +65,3 @@ export interface GenConfig {
   versionReq: string;
   yamlValue: unknown;
 }
-

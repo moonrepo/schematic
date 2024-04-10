@@ -11,6 +11,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "datetime",
     "decimal",
     "enums",
+    "fallbackEnum",
     "float32",
     "float64",
     "indexmap",
@@ -57,6 +58,15 @@ expression: "fs::read_to_string(file).unwrap()"
       "allOf": [
         {
           "$ref": "#/definitions/BasicEnum"
+        }
+      ]
+    },
+    "fallbackEnum": {
+      "title": "fallbackEnum",
+      "default": "foo",
+      "allOf": [
+        {
+          "$ref": "#/definitions/FallbackEnum"
         }
       ]
     },
@@ -255,7 +265,26 @@ expression: "fs::read_to_string(file).unwrap()"
         "bar",
         "baz"
       ]
+    },
+    "FallbackEnum": {
+      "oneOf": [
+        {
+          "title": "Foo",
+          "const": "foo"
+        },
+        {
+          "title": "Bar",
+          "const": "bar"
+        },
+        {
+          "title": "Baz",
+          "const": "baz"
+        },
+        {
+          "title": "Other",
+          "type": "string"
+        }
+      ]
     }
   }
 }
-

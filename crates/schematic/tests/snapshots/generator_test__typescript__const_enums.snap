@@ -12,6 +12,8 @@ export const enum BasicEnum {
 	Baz,
 }
 
+export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
+
 /** Some comment. */
 export interface AnotherConfig {
 	/**
@@ -35,6 +37,8 @@ export interface GenConfig {
 	 * @default 'foo'
 	 */
 	enums: BasicEnum;
+	/** @default 'foo' */
+	fallbackEnum: FallbackEnum;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
@@ -56,4 +60,3 @@ export interface GenConfig {
 	versionReq: string;
 	yamlValue: unknown;
 }
-
