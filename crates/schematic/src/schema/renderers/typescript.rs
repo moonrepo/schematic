@@ -98,7 +98,10 @@ impl TypeScriptRenderer {
 
     fn is_string_union_enum(&self, enu: &EnumType) -> bool {
         matches!(self.options.enum_format, EnumFormat::Union)
+            // No variants
             || enu.variants.is_none()
+            // Unit enum with a fallback variant
+            || enu.variants.as_ref().is_some_and(|v| v.len() != enu.values.len())
             || self.options.disable_references
     }
 
@@ -138,12 +141,28 @@ impl TypeScriptRenderer {
 
     fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {
         if self.is_string_union_enum(enu) {
-            return self.render_union(&UnionType {
-                variants_types: enu
-                    .values
+            // Map using variants instead of values (when available),
+            // so that the fallback variant is included
+            let variants_types = if let Some(variants) = &enu.variants {
+                variants
+                    .iter()
+                    .filter_map(|v| {
+                        if v.hidden {
+                            None
+                        } else {
+                            Some(Box::new(v.type_of.clone()))
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                enu.values
                     .iter()
                     .map(|v| Box::new(SchemaType::literal(v.clone())))
-                    .collect(),
+                    .collect::<Vec<_>>()
+            };
+
+            return self.render_union(&UnionType {
+                variants_types,
                 variants: enu.variants.clone(),
                 ..Default::default()
             });

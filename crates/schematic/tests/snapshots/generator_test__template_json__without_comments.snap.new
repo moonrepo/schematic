@@ -1,0 +1,41 @@
+---
+source: crates/schematic/tests/generator_test.rs
+assertion_line: 265
+expression: "fs::read_to_string(file).unwrap()"
+---
+{
+  "boolean": false,
+  "enums": "foo",
+  "expandArray": [
+    {
+      "opt": "",
+      "enums": "foo"
+    }
+  ],
+  "expandArrayPrimitive": [
+    0
+  ],
+  "expandObject": {
+    "example": {
+      "opt": "",
+      "enums": "foo"
+    }
+  },
+  "expandObjectPrimitive": {
+    "example": 0
+  },
+  "fallbackEnum": "foo",
+  "float64": 1.23,
+  "nested": {
+    "opt": "",
+    "enums": "foo"
+  },
+  "number": 0,
+  "one": {
+    "two": {
+      "opt": "",
+    },
+  },
+  "string": "abc",
+  "vector": []
+}

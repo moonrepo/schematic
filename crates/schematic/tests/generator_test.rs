@@ -20,6 +20,18 @@ derive_enum!(
     }
 );
 
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
+    pub enum FallbackEnum {
+        #[default]
+        Foo,
+        Bar,
+        Baz,
+        #[variant(fallback)]
+        Other(String),
+    }
+);
+
 /// Some comment.
 #[derive(Clone, Config)]
 pub struct AnotherConfig {
@@ -41,6 +53,7 @@ struct GenConfig {
     map: HashMap<String, u64>,
     /// This is a list of `enumerable` values.
     enums: BasicEnum,
+    fallback_enum: FallbackEnum,
     /// **Nested** field.
     #[setting(nested)]
     nested: AnotherConfig,
@@ -105,6 +118,7 @@ struct TemplateConfig {
     /// This is an enum with a medium length description and deprecated.
     #[deprecated = "Dont use enums!"]
     enums: BasicEnum,
+    fallback_enum: FallbackEnum,
     /// This is a nested struct with its own fields.
     #[setting(nested)]
     nested: AnotherConfig,
