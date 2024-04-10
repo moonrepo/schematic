@@ -25,12 +25,7 @@ export const enum Test {
 	Baz,
 }
 
-export const enum OtherEnum {
-	Foo,
-	Bar,
-	Baz,
-	Other,
-}
+export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
 
 export const enum Aliased {
 	Foo,
@@ -215,4 +210,3 @@ export type PartialValidations = {
 	optional?: string | null,
 	required?: string | null,
 };
-

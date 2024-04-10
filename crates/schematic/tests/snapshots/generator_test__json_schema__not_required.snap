@@ -31,6 +31,14 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "fallbackEnum": {
+      "default": "foo",
+      "allOf": [
+        {
+          "$ref": "#/definitions/FallbackEnum"
+        }
+      ]
+    },
     "float32": {
       "type": "number"
     },
@@ -204,7 +212,23 @@ expression: "fs::read_to_string(file).unwrap()"
         "bar",
         "baz"
       ]
+    },
+    "FallbackEnum": {
+      "title": "FallbackEnum",
+      "oneOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "const": "bar"
+        },
+        {
+          "const": "baz"
+        },
+        {
+          "type": "string"
+        }
+      ]
     }
   }
 }
-

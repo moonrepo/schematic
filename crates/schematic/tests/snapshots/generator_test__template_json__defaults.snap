@@ -41,6 +41,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "example": 0
   },
 
+  "fallbackEnum": "foo",
+
   // This is a float thats deprecated.
   // @deprecated
   // "float32": 0.0,
@@ -80,4 +82,3 @@ expression: "fs::read_to_string(file).unwrap()"
   // This is a list of strings.
   "vector": []
 }
-

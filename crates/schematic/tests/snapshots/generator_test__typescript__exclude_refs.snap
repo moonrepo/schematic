@@ -6,6 +6,8 @@ expression: "generate(TypeScriptOptions {\n        exclude_references: vec![\"Ba
 
 /* eslint-disable */
 
+export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
+
 /** Some comment. */
 export interface AnotherConfig {
 	/**
@@ -29,6 +31,8 @@ export interface GenConfig {
 	 * @default 'foo'
 	 */
 	enums: BasicEnum;
+	/** @default 'foo' */
+	fallbackEnum: FallbackEnum;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
@@ -50,4 +54,3 @@ export interface GenConfig {
 	versionReq: string;
 	yamlValue: unknown;
 }
-
