@@ -5,7 +5,9 @@
 #### ⚙️ Internal
 
 - Updated dependencies.
-- Updated Rust to v1.77 (for development).
+  - reqwest v0.11 -> v0.12
+  - rustls v0.21 -> v0.22
+- Updated Rust to v1.77.2 (for development).
 
 ## 0.14.5
 
