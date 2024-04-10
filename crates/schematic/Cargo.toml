@@ -29,7 +29,7 @@ garde = { version = "0.18.0", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.16", optional = true }
-starbase_styles = { version = "0.3.1", optional = true }
+starbase_styles = { version = "0.3.2", optional = true }
 
 # schema
 indexmap = { workspace = true, optional = true, features = ["serde"] }
@@ -50,9 +50,7 @@ toml = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 
 # url
-reqwest = { version = "0.11.27", default-features = false, optional = true, features = [
-	"blocking",
-] }
+reqwest = { workspace = true, optional = true, features = ["blocking"] }
 
 [features]
 default = ["config", "url"]
@@ -110,7 +108,7 @@ schematic = { path = ".", features = [
 	"valid_url",
 	"yaml",
 ] }
-reqwest = { version = "0.11.27", default-features = false, features = [
+reqwest = { workspace = true, features = [
 	"blocking",
 	"rustls-tls-native-roots",
 ] }
