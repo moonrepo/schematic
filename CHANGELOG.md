@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Switched unit-only enums with a fallback to use "any of" instead of "one of", as the latter causes
+  validation issues.
+
 ## 0.15.0
 
 #### 🐞 Fixes

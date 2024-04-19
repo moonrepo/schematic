@@ -229,18 +229,18 @@ impl SchemaRenderer<Schema> for JsonSchemaRenderer {
             .as_ref()
             .is_some_and(|v| v.len() != enu.values.len())
         {
-            let mut one_of = vec![];
+            let mut any_of = vec![];
 
             for field in enu.variants.as_ref().unwrap() {
                 if !field.hidden {
-                    one_of.push(self.create_schema_from_field(field)?);
+                    any_of.push(self.create_schema_from_field(field)?);
                 }
             }
 
             return Ok(Schema::Object(SchemaObject {
                 metadata: Some(Box::new(metadata)),
                 subschemas: Some(Box::new(SubschemaValidation {
-                    one_of: Some(one_of),
+                    any_of: Some(any_of),
                     ..Default::default()
                 })),
                 ..Default::default()

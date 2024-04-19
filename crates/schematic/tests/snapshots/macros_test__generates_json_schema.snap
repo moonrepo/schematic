@@ -376,7 +376,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "OtherEnum": {
       "title": "OtherEnum",
-      "oneOf": [
+      "anyOf": [
         {
           "const": "foo"
         },

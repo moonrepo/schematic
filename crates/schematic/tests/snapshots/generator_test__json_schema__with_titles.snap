@@ -267,7 +267,7 @@ expression: "fs::read_to_string(file).unwrap()"
       ]
     },
     "FallbackEnum": {
-      "oneOf": [
+      "anyOf": [
         {
           "title": "Foo",
           "const": "foo"

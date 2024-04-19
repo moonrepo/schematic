@@ -215,7 +215,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "FallbackEnum": {
       "title": "FallbackEnum",
-      "oneOf": [
+      "anyOf": [
         {
           "const": "foo"
         },
