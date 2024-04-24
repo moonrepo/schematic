@@ -6,6 +6,7 @@ mod literals;
 mod numbers;
 mod objects;
 mod schema;
+mod schema_builder;
 mod schema_type;
 mod strings;
 mod structs;
@@ -19,6 +20,7 @@ pub use literals::*;
 pub use numbers::*;
 pub use objects::*;
 pub use schema::*;
+pub use schema_builder::*;
 pub use schema_type::*;
 pub use strings::*;
 pub use structs::*;
@@ -36,32 +38,32 @@ pub trait Schematic {
 
 // CORE
 
-impl Schematic for () {
-    fn generate_schema() -> SchemaType {
-        SchemaType::Null
-    }
-}
+// impl Schematic for () {
+//     fn generate_schema() -> SchemaType {
+//         SchemaType::Null
+//     }
+// }
 
-impl<T: Schematic> Schematic for &T {
-    fn generate_schema() -> SchemaType {
-        T::generate_schema()
-    }
-}
+// impl<T: Schematic> Schematic for &T {
+//     fn generate_schema() -> SchemaType {
+//         T::generate_schema()
+//     }
+// }
 
-impl<T: Schematic> Schematic for &mut T {
-    fn generate_schema() -> SchemaType {
-        T::generate_schema()
-    }
-}
+// impl<T: Schematic> Schematic for &mut T {
+//     fn generate_schema() -> SchemaType {
+//         T::generate_schema()
+//     }
+// }
 
-impl<T: Schematic> Schematic for Box<T> {
-    fn generate_schema() -> SchemaType {
-        T::generate_schema()
-    }
-}
+// impl<T: Schematic> Schematic for Box<T> {
+//     fn generate_schema() -> SchemaType {
+//         T::generate_schema()
+//     }
+// }
 
-impl<T: Schematic> Schematic for Option<T> {
-    fn generate_schema() -> SchemaType {
-        SchemaType::nullable(T::generate_schema())
-    }
-}
+// impl<T: Schematic> Schematic for Option<T> {
+//     fn generate_schema() -> SchemaType {
+//         SchemaType::nullable(T::generate_schema())
+//     }
+// }

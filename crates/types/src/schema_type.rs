@@ -52,198 +52,39 @@ impl SchemaType {
         schema
     }
 
-    /// Create an array schema with the provided item types.
-    pub fn array(items_type: SchemaType) -> SchemaType {
-        SchemaType::Array(Box::new(ArrayType {
-            items_type: Box::new(items_type),
-            ..ArrayType::default()
-        }))
-    }
-
-    /// Create a boolean type.
-    pub fn boolean() -> SchemaType {
-        SchemaType::Boolean(Box::new(BooleanType::default()))
-    }
-
-    /// Create an enumerable type with the provided literal values.
-    pub fn enumerable<I>(values: I) -> SchemaType
-    where
-        I: IntoIterator<Item = LiteralValue>,
-    {
-        SchemaType::Enum(Box::new(EnumType {
-            values: values.into_iter().collect(),
-            ..EnumType::default()
-        }))
-    }
-
-    /// Create a float schema with the provided kind.
-    pub fn float(kind: FloatKind) -> SchemaType {
-        SchemaType::Float(Box::new(FloatType {
-            kind,
-            ..FloatType::default()
-        }))
-    }
-
-    /// Create an integer schema with the provided kind.
-    pub fn integer(kind: IntegerKind) -> SchemaType {
-        SchemaType::Integer(Box::new(IntegerType {
-            kind,
-            ..IntegerType::default()
-        }))
-    }
-
-    /// Create a literal schema with the provided value.
-    pub fn literal(value: LiteralValue) -> SchemaType {
-        SchemaType::Literal(Box::new(LiteralType {
-            value: Some(value),
-            ..LiteralType::default()
-        }))
-    }
-
-    /// Convert the provided schema to a nullable type. If already nullable,
-    /// do nothing and return, otherwise convert to a union.
-    pub fn nullable(mut schema: SchemaType) -> SchemaType {
-        if let SchemaType::Union(_inner) = &mut schema {
-            // If the union has an explicit name, then we can assume it's a distinct
-            // type, so we shouldn't add null to it and alter the intended type.
-            // if inner.name.is_none() {
-            //     if !inner
-            //         .variants_types
-            //         .iter()
-            //         .any(|t| matches!(**t, SchemaType::Null))
-            //     {
-            //         inner.variants_types.push(Box::new(SchemaType::Null));
-            //     }
-
-            //     return schema;
-            // }
-        }
-
-        // Convert to a nullable union
-        SchemaType::union([schema, SchemaType::Null])
-    }
-
-    /// Create an indexed/mapable object schema with the provided key and value types.
-    pub fn object(key_type: SchemaType, value_type: SchemaType) -> SchemaType {
-        SchemaType::Object(Box::new(ObjectType {
-            key_type: Box::new(key_type),
-            value_type: Box::new(value_type),
-            ..ObjectType::default()
-        }))
-    }
-
-    /// Create a string schema.
-    pub fn string() -> SchemaType {
-        SchemaType::String(Box::new(StringType::default()))
-    }
-
-    /// Create a struct/shape schema with the provided fields.
-    pub fn structure<I>(fields: I) -> SchemaType
-    where
-        I: IntoIterator<Item = SchemaField>,
-    {
-        SchemaType::Struct(Box::new(StructType {
-            fields: fields.into_iter().collect(),
-            ..StructType::default()
-        }))
-    }
-
-    /// Create a tuple schema with the provided item types.
-    pub fn tuple<I>(items_types: I) -> SchemaType
-    where
-        I: IntoIterator<Item = SchemaType>,
-    {
-        SchemaType::Tuple(Box::new(TupleType {
-            items_types: items_types.into_iter().map(Box::new).collect(),
-            ..TupleType::default()
-        }))
-    }
-
-    /// Create an "any of" union.
-    pub fn union<I>(variants_types: I) -> SchemaType
-    where
-        I: IntoIterator<Item = SchemaType>,
-    {
-        SchemaType::Union(Box::new(UnionType {
-            variants_types: variants_types.into_iter().map(Box::new).collect(),
-            ..UnionType::default()
-        }))
-    }
-
-    /// Create a "one of" union.
-    pub fn union_one<I>(variants_types: I) -> SchemaType
-    where
-        I: IntoIterator<Item = SchemaType>,
-    {
-        SchemaType::Union(Box::new(UnionType {
-            operator: UnionOperator::OneOf,
-            variants_types: variants_types.into_iter().map(Box::new).collect(),
-            ..UnionType::default()
-        }))
-    }
-
     /// Return a `default` value from the inner schema type.
     pub fn get_default(&self) -> Option<&LiteralValue> {
-        // match self {
-        //     SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
-        //     SchemaType::Enum(EnumType {
-        //         default_index,
-        //         values,
-        //         ..
-        //     }) => {
-        //         if let Some(index) = default_index {
-        //             if let Some(value) = values.get(*index) {
-        //                 return Some(value);
-        //             }
-        //         }
+        match self {
+            SchemaType::Boolean(inner) => inner.default.as_ref(),
+            SchemaType::Enum(inner) => {
+                if let Some(index) = &inner.default_index {
+                    if let Some(value) = inner.values.get(*index) {
+                        return Some(value);
+                    }
+                }
 
-        //         None
-        //     }
-        //     SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
-        //     SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
-        //     SchemaType::String(StringType { default, .. }) => default.as_ref(),
-        //     SchemaType::Union(UnionType {
-        //         default_index,
-        //         variants_types,
-        //         ..
-        //     }) => {
-        //         if let Some(index) = default_index {
-        //             if let Some(value) = variants_types.get(*index) {
-        //                 return value.get_default();
-        //             }
-        //         }
+                None
+            }
+            SchemaType::Float(inner) => inner.default.as_ref(),
+            SchemaType::Integer(inner) => inner.default.as_ref(),
+            SchemaType::String(inner) => inner.default.as_ref(),
+            SchemaType::Union(inner) => {
+                if let Some(index) = &inner.default_index {
+                    if let Some(value) = inner.variants_types.get(*index) {
+                        return value.get_default();
+                    }
+                }
 
-        //         for variant in variants_types {
-        //             if let Some(value) = variant.get_default() {
-        //                 return Some(value);
-        //             }
-        //         }
+                for variant in &inner.variants_types {
+                    if let Some(value) = variant.get_default() {
+                        return Some(value);
+                    }
+                }
 
-        //         None
-        //     }
-        //     _ => None,
-        // }
-        None
-    }
-
-    /// Return a `name` from the inner schema type.
-    pub fn get_name(&self) -> Option<&String> {
-        // match self {
-        //     SchemaType::Null => None,
-        //     SchemaType::Unknown => None,
-        //     SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
-        //     SchemaType::Boolean(BooleanType { name, .. }) => name.as_ref(),
-        //     SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
-        //     SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
-        //     SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
-        //     SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
-        //     SchemaType::Object(ObjectType { name, .. }) => name.as_ref(),
-        //     SchemaType::Struct(StructType { name, .. }) => name.as_ref(),
-        //     SchemaType::String(StringType { name, .. }) => name.as_ref(),
-        //     SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
-        //     SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
-        // }
-        None
+                None
+            }
+            _ => None,
+        }
     }
 
     /// Return true if the schema is an explicit null.
@@ -254,7 +95,7 @@ impl SchemaType {
     /// Return true if the schema is nullable (a union with a null).
     pub fn is_nullable(&self) -> bool {
         if let SchemaType::Union(uni) = self {
-            return uni.is_nullable();
+            return uni.has_null();
         }
 
         false
@@ -282,46 +123,6 @@ impl SchemaType {
             }
             _ => {}
         };
-    }
-
-    /// Set the `name` of the inner schema type. If the inner type does not support
-    /// names, this is a no-op.
-    pub fn set_name<S: AsRef<str>>(&mut self, _name: S) {
-        // let name = Some(name.as_ref().to_owned());
-
-        // match self {
-        //     SchemaType::Array(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Enum(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Float(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Integer(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Literal(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Object(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Struct(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::String(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Tuple(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     SchemaType::Union(ref mut inner) => {
-        //         inner.name = name;
-        //     }
-        //     _ => {}
-        // };
     }
 
     /// Mark the inner schema type as partial. Only structs and unions can be marked partial,

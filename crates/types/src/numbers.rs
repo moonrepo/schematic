@@ -42,7 +42,10 @@ pub struct IntegerType {
 }
 
 impl IntegerType {
+    /// Create a signed integer schema with the provided default value.
     pub fn new(kind: IntegerKind, value: isize) -> Self {
+        assert!(!kind.is_unsigned(), "must be signed");
+
         IntegerType {
             default: Some(LiteralValue::Int(value)),
             kind,
@@ -50,38 +53,49 @@ impl IntegerType {
         }
     }
 
+    /// Create an unsigned integer schema with the provided default value.
     pub fn new_unsigned(kind: IntegerKind, value: usize) -> Self {
+        assert!(kind.is_unsigned(), "must be unsigned");
+
         IntegerType {
             default: Some(LiteralValue::UInt(value)),
             kind,
             ..IntegerType::default()
         }
     }
+
+    /// Create an integer schema with the provided kind.
+    pub fn new_kind(kind: IntegerKind) -> SchemaType {
+        SchemaType::Integer(Box::new(IntegerType {
+            kind,
+            ..IntegerType::default()
+        }))
+    }
 }
 
-macro_rules! impl_int {
-    ($type:ty, $kind:expr) => {
-        impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::integer($kind)
-            }
-        }
-    };
-}
+// macro_rules! impl_int {
+//     ($type:ty, $kind:expr) => {
+//         impl Schematic for $type {
+//             fn generate_schema() -> SchemaType {
+//                 SchemaType::integer($kind)
+//             }
+//         }
+//     };
+// }
 
-impl_int!(usize, IntegerKind::Usize);
-impl_int!(u8, IntegerKind::U8);
-impl_int!(u16, IntegerKind::U16);
-impl_int!(u32, IntegerKind::U32);
-impl_int!(u64, IntegerKind::U64);
-impl_int!(u128, IntegerKind::U128);
+// impl_int!(usize, IntegerKind::Usize);
+// impl_int!(u8, IntegerKind::U8);
+// impl_int!(u16, IntegerKind::U16);
+// impl_int!(u32, IntegerKind::U32);
+// impl_int!(u64, IntegerKind::U64);
+// impl_int!(u128, IntegerKind::U128);
 
-impl_int!(isize, IntegerKind::Isize);
-impl_int!(i8, IntegerKind::I8);
-impl_int!(i16, IntegerKind::I16);
-impl_int!(i32, IntegerKind::I32);
-impl_int!(i64, IntegerKind::I64);
-impl_int!(i128, IntegerKind::I128);
+// impl_int!(isize, IntegerKind::Isize);
+// impl_int!(i8, IntegerKind::I8);
+// impl_int!(i16, IntegerKind::I16);
+// impl_int!(i32, IntegerKind::I32);
+// impl_int!(i64, IntegerKind::I64);
+// impl_int!(i128, IntegerKind::I128);
 
 #[derive(Clone, Debug, Default)]
 pub enum FloatKind {
@@ -105,6 +119,7 @@ pub struct FloatType {
 }
 
 impl FloatType {
+    /// Create a 32-bit float schema with the provided default value.
     pub fn new_32(value: f32) -> Self {
         FloatType {
             default: Some(LiteralValue::F32(value)),
@@ -113,6 +128,7 @@ impl FloatType {
         }
     }
 
+    /// Create a 64-bit float schema with the provided default value.
     pub fn new_64(value: f64) -> Self {
         FloatType {
             default: Some(LiteralValue::F64(value)),
@@ -120,17 +136,25 @@ impl FloatType {
             ..FloatType::default()
         }
     }
-}
 
-macro_rules! impl_float {
-    ($type:ty, $kind:expr) => {
-        impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::float($kind)
-            }
+    /// Create a float schema with the provided kind.
+    pub fn new_kind(kind: FloatKind) -> Self {
+        FloatType {
+            kind,
+            ..FloatType::default()
         }
-    };
+    }
 }
 
-impl_float!(f32, FloatKind::F32);
-impl_float!(f64, FloatKind::F64);
+// macro_rules! impl_float {
+//     ($type:ty, $kind:expr) => {
+//         impl Schematic for $type {
+//             fn generate_schema() -> SchemaType {
+//                 SchemaType::float($kind)
+//             }
+//         }
+//     };
+// }
+
+// impl_float!(f32, FloatKind::F32);
+// impl_float!(f64, FloatKind::F64);

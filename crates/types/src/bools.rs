@@ -8,15 +8,16 @@ pub struct BooleanType {
 }
 
 impl BooleanType {
+    /// Create a boolean schema with the provided default value.
     pub fn new(value: bool) -> Self {
-        Self {
+        BooleanType {
             default: Some(LiteralValue::Bool(value)),
         }
     }
 }
 
-impl Schematic for bool {
-    fn generate_schema() -> SchemaType {
-        SchemaType::boolean()
-    }
-}
+// impl Schematic for bool {
+//     fn generate_schema() -> SchemaType {
+//         SchemaType::boolean()
+//     }
+// }

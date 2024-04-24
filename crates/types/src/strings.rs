@@ -16,57 +16,58 @@ pub struct StringType {
 }
 
 impl StringType {
+    /// Create a string schema with the provided default value.
     pub fn new(value: impl AsRef<str>) -> Self {
-        Self {
+        StringType {
             default: Some(LiteralValue::String(value.as_ref().to_owned())),
-            ..Default::default()
-        }
-    }
-}
-
-macro_rules! impl_string {
-    ($type:ty) => {
-        impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::string()
-            }
-        }
-    };
-}
-
-macro_rules! impl_string_format {
-    ($type:ty, $format:expr) => {
-        impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::String(Box::new(StringType {
-                    format: Some($format.into()),
-                    ..StringType::default()
-                }))
-            }
-        }
-    };
-}
-
-impl Schematic for char {
-    fn generate_schema() -> SchemaType {
-        SchemaType::String(Box::new(StringType {
-            max_length: Some(1),
-            min_length: Some(1),
             ..StringType::default()
-        }))
+        }
     }
 }
 
-impl_string!(str);
-impl_string!(&str);
-impl_string!(String);
+// macro_rules! impl_string {
+//     ($type:ty) => {
+//         impl Schematic for $type {
+//             fn generate_schema() -> SchemaType {
+//                 SchemaType::string()
+//             }
+//         }
+//     };
+// }
 
-impl_string_format!(Path, "path");
-impl_string_format!(&Path, "path");
-impl_string_format!(PathBuf, "path");
+// macro_rules! impl_string_format {
+//     ($type:ty, $format:expr) => {
+//         impl Schematic for $type {
+//             fn generate_schema() -> SchemaType {
+//                 SchemaType::String(Box::new(StringType {
+//                     format: Some($format.into()),
+//                     ..StringType::default()
+//                 }))
+//             }
+//         }
+//     };
+// }
 
-impl_string_format!(Ipv4Addr, "ipv4");
-impl_string_format!(Ipv6Addr, "ipv6");
+// impl Schematic for char {
+//     fn generate_schema() -> SchemaType {
+//         SchemaType::String(Box::new(StringType {
+//             max_length: Some(1),
+//             min_length: Some(1),
+//             ..StringType::default()
+//         }))
+//     }
+// }
 
-impl_string_format!(SystemTime, "time");
-impl_string_format!(Duration, "duration");
+// impl_string!(str);
+// impl_string!(&str);
+// impl_string!(String);
+
+// impl_string_format!(Path, "path");
+// impl_string_format!(&Path, "path");
+// impl_string_format!(PathBuf, "path");
+
+// impl_string_format!(Ipv4Addr, "ipv4");
+// impl_string_format!(Ipv6Addr, "ipv6");
+
+// impl_string_format!(SystemTime, "time");
+// impl_string_format!(Duration, "duration");
