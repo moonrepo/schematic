@@ -1,4 +1,5 @@
-use crate::{SchemaType, Schematic};
+use crate::schema_type::SchemaType;
+use crate::Schematic;
 
 #[derive(Clone, Debug, Default)]
 pub struct TupleType {

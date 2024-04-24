@@ -1,4 +1,6 @@
-use crate::{LiteralValue, SchemaType, Schematic};
+use crate::literals::LiteralValue;
+use crate::schema_type::SchemaType;
+use crate::Schematic;
 
 #[derive(Clone, Debug, Default)]
 pub enum IntegerKind {

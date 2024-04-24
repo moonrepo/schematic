@@ -1,4 +1,5 @@
-use crate::{SchemaType, Schematic};
+use crate::schema_type::SchemaType;
+use crate::Schematic;
 use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default)]

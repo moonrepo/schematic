@@ -1,4 +1,6 @@
-use crate::{LiteralValue, SchemaType, Schematic};
+use crate::literals::LiteralValue;
+use crate::schema_type::SchemaType;
+use crate::Schematic;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};

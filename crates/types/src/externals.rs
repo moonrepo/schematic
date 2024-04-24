@@ -1,6 +1,9 @@
 #![allow(deprecated, unused_imports, unused_macros)]
 
-use crate::{IntegerKind, SchemaType, Schematic, StringType};
+use crate::numbers::IntegerKind;
+use crate::schema_type::*;
+use crate::strings::StringType;
+use crate::Schematic;
 
 macro_rules! impl_unknown {
     ($type:ty) => {

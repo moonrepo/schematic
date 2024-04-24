@@ -1,5 +1,5 @@
 use crate::schema::SchemaField;
-use crate::SchemaType;
+use crate::schema_type::SchemaType;
 
 #[derive(Clone, Debug, Default)]
 pub enum UnionOperator {
