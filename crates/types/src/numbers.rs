@@ -37,7 +37,6 @@ pub struct IntegerType {
     pub min: Option<isize>,
     pub min_exclusive: Option<isize>,
     pub multiple_of: Option<isize>,
-    pub name: Option<String>,
 }
 
 impl IntegerType {

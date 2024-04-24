@@ -11,6 +11,5 @@ pub enum LiteralValue {
 #[derive(Clone, Debug, Default)]
 pub struct LiteralType {
     pub format: Option<String>,
-    pub name: Option<String>,
     pub value: Option<LiteralValue>,
 }

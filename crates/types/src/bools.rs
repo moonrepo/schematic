@@ -4,14 +4,12 @@ use crate::{SchemaType, Schematic};
 #[derive(Clone, Debug, Default)]
 pub struct BooleanType {
     pub default: Option<LiteralValue>,
-    pub name: Option<String>,
 }
 
 impl BooleanType {
     pub fn new(value: bool) -> Self {
         Self {
             default: Some(LiteralValue::Bool(value)),
-            name: None,
         }
     }
 }

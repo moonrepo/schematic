@@ -9,7 +9,6 @@ pub struct ArrayType {
     pub max_length: Option<usize>,
     pub min_contains: Option<usize>,
     pub min_length: Option<usize>,
-    pub name: Option<String>,
     pub unique: Option<bool>,
 }
 

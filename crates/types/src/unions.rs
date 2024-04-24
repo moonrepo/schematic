@@ -1,4 +1,5 @@
-use crate::{SchemaField, SchemaType};
+use crate::schema::SchemaField;
+use crate::SchemaType;
 
 #[derive(Clone, Debug, Default)]
 pub enum UnionOperator {
@@ -10,8 +11,6 @@ pub enum UnionOperator {
 #[derive(Clone, Debug, Default)]
 pub struct UnionType {
     pub default_index: Option<usize>,
-    pub description: Option<String>,
-    pub name: Option<String>,
     pub partial: bool,
     pub operator: UnionOperator,
     pub variants: Option<Vec<SchemaField>>,

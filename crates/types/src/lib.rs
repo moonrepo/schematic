@@ -5,6 +5,7 @@ mod externals;
 mod literals;
 mod numbers;
 mod objects;
+mod schema;
 mod strings;
 mod structs;
 mod tuples;
@@ -16,6 +17,7 @@ pub use enums::*;
 pub use literals::*;
 pub use numbers::*;
 pub use objects::*;
+pub use schema::*;
 pub use strings::*;
 pub use structs::*;
 pub use tuples::*;
@@ -116,17 +118,17 @@ impl SchemaType {
         if let SchemaType::Union(inner) = &mut schema {
             // If the union has an explicit name, then we can assume it's a distinct
             // type, so we shouldn't add null to it and alter the intended type.
-            if inner.name.is_none() {
-                if !inner
-                    .variants_types
-                    .iter()
-                    .any(|t| matches!(**t, SchemaType::Null))
-                {
-                    inner.variants_types.push(Box::new(SchemaType::Null));
-                }
+            // if inner.name.is_none() {
+            //     if !inner
+            //         .variants_types
+            //         .iter()
+            //         .any(|t| matches!(**t, SchemaType::Null))
+            //     {
+            //         inner.variants_types.push(Box::new(SchemaType::Null));
+            //     }
 
-                return schema;
-            }
+            //     return schema;
+            // }
         }
 
         // Convert to a nullable union
@@ -237,21 +239,22 @@ impl SchemaType {
 
     /// Return a `name` from the inner schema type.
     pub fn get_name(&self) -> Option<&String> {
-        match self {
-            SchemaType::Null => None,
-            SchemaType::Unknown => None,
-            SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
-            SchemaType::Boolean(BooleanType { name, .. }) => name.as_ref(),
-            SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
-            SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
-            SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
-            SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
-            SchemaType::Object(ObjectType { name, .. }) => name.as_ref(),
-            SchemaType::Struct(StructType { name, .. }) => name.as_ref(),
-            SchemaType::String(StringType { name, .. }) => name.as_ref(),
-            SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
-            SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
-        }
+        // match self {
+        //     SchemaType::Null => None,
+        //     SchemaType::Unknown => None,
+        //     SchemaType::Array(ArrayType { name, .. }) => name.as_ref(),
+        //     SchemaType::Boolean(BooleanType { name, .. }) => name.as_ref(),
+        //     SchemaType::Enum(EnumType { name, .. }) => name.as_ref(),
+        //     SchemaType::Float(FloatType { name, .. }) => name.as_ref(),
+        //     SchemaType::Integer(IntegerType { name, .. }) => name.as_ref(),
+        //     SchemaType::Literal(LiteralType { name, .. }) => name.as_ref(),
+        //     SchemaType::Object(ObjectType { name, .. }) => name.as_ref(),
+        //     SchemaType::Struct(StructType { name, .. }) => name.as_ref(),
+        //     SchemaType::String(StringType { name, .. }) => name.as_ref(),
+        //     SchemaType::Tuple(TupleType { name, .. }) => name.as_ref(),
+        //     SchemaType::Union(UnionType { name, .. }) => name.as_ref(),
+        // }
+        None
     }
 
     /// Return true if the schema is an explicit null.
@@ -294,42 +297,42 @@ impl SchemaType {
 
     /// Set the `name` of the inner schema type. If the inner type does not support
     /// names, this is a no-op.
-    pub fn set_name<S: AsRef<str>>(&mut self, name: S) {
-        let name = Some(name.as_ref().to_owned());
+    pub fn set_name<S: AsRef<str>>(&mut self, _name: S) {
+        // let name = Some(name.as_ref().to_owned());
 
-        match self {
-            SchemaType::Array(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Enum(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Float(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Integer(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Literal(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Object(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Struct(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::String(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Tuple(ref mut inner) => {
-                inner.name = name;
-            }
-            SchemaType::Union(ref mut inner) => {
-                inner.name = name;
-            }
-            _ => {}
-        };
+        // match self {
+        //     SchemaType::Array(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Enum(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Float(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Integer(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Literal(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Object(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Struct(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::String(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Tuple(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     SchemaType::Union(ref mut inner) => {
+        //         inner.name = name;
+        //     }
+        //     _ => {}
+        // };
     }
 
     /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
@@ -376,32 +379,6 @@ impl SchemaType {
             }
             _ => {}
         };
-    }
-}
-
-/// Represents a field within a schema struct, or a variant within a schema enum/union.
-#[derive(Clone, Debug, Default)]
-pub struct SchemaField {
-    pub name: String,
-    pub description: Option<String>,
-    pub type_of: SchemaType,
-    pub deprecated: Option<String>,
-    pub env_var: Option<String>,
-    pub hidden: bool,
-    pub nullable: bool,
-    pub optional: bool,
-    pub read_only: bool,
-    pub write_only: bool,
-}
-
-impl SchemaField {
-    /// Create a new field with the provided name and type.
-    pub fn new(name: &str, type_of: SchemaType) -> SchemaField {
-        SchemaField {
-            name: name.to_owned(),
-            type_of,
-            ..SchemaField::default()
-        }
     }
 }
 

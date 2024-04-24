@@ -3,7 +3,6 @@ use crate::{SchemaType, Schematic};
 #[derive(Clone, Debug, Default)]
 pub struct TupleType {
     pub items_types: Vec<Box<SchemaType>>,
-    pub name: Option<String>,
 }
 
 macro_rules! impl_tuple {
