@@ -34,12 +34,12 @@ impl<T: Schematic> Schematic for &[T] {
 
 impl<T: Schematic, const N: usize> Schematic for [T; N] {
     fn generate_schema() -> SchemaType {
-        SchemaType::Array(ArrayType {
+        SchemaType::Array(Box::new(ArrayType {
             items_type: Box::new(T::generate_schema()),
             max_length: Some(N),
             min_length: Some(N),
             ..ArrayType::default()
-        })
+        }))
     }
 }
 

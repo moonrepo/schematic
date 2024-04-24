@@ -12,7 +12,7 @@ pub struct Schema {
 pub struct SchemaField {
     pub name: String,
     pub description: Option<String>,
-    pub type_of: SchemaType,
+    pub type_of: Box<SchemaType>,
     pub deprecated: Option<String>,
     pub env_var: Option<String>,
     pub hidden: bool,
@@ -27,7 +27,7 @@ impl SchemaField {
     pub fn new(name: &str, type_of: SchemaType) -> SchemaField {
         SchemaField {
             name: name.to_owned(),
-            type_of,
+            type_of: Box::new(type_of),
             ..SchemaField::default()
         }
     }

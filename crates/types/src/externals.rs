@@ -49,10 +49,10 @@ macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
             fn generate_schema() -> SchemaType {
-                SchemaType::String(StringType {
+                SchemaType::String(Box::new(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
-                })
+                }))
             }
         }
     };
@@ -66,10 +66,10 @@ mod chrono_feature {
         ($type:path, $format:expr) => {
             impl<Tz: chrono::TimeZone> Schematic for $type {
                 fn generate_schema() -> SchemaType {
-                    SchemaType::String(StringType {
+                    SchemaType::String(Box::new(StringType {
                         format: Some($format.into()),
                         ..StringType::default()
-                    })
+                    }))
                 }
             }
         };

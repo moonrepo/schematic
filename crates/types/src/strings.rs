@@ -38,10 +38,10 @@ macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
             fn generate_schema() -> SchemaType {
-                SchemaType::String(StringType {
+                SchemaType::String(Box::new(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
-                })
+                }))
             }
         }
     };
@@ -49,11 +49,11 @@ macro_rules! impl_string_format {
 
 impl Schematic for char {
     fn generate_schema() -> SchemaType {
-        SchemaType::String(StringType {
+        SchemaType::String(Box::new(StringType {
             max_length: Some(1),
             min_length: Some(1),
             ..StringType::default()
-        })
+        }))
     }
 }
 

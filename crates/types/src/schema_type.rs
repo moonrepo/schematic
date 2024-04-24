@@ -17,17 +17,17 @@ pub enum SchemaType {
     Null,
     #[default]
     Unknown,
-    Array(ArrayType),
-    Boolean(BooleanType),
-    Enum(EnumType),
-    Float(FloatType),
-    Integer(IntegerType),
-    Literal(LiteralType),
-    Object(ObjectType),
-    Struct(StructType),
-    String(StringType),
-    Tuple(TupleType),
-    Union(UnionType),
+    Array(Box<ArrayType>),
+    Boolean(Box<BooleanType>),
+    Enum(Box<EnumType>),
+    Float(Box<FloatType>),
+    Integer(Box<IntegerType>),
+    Literal(Box<LiteralType>),
+    Object(Box<ObjectType>),
+    Struct(Box<StructType>),
+    String(Box<StringType>),
+    Tuple(Box<TupleType>),
+    Union(Box<UnionType>),
 }
 
 impl SchemaType {
@@ -54,15 +54,15 @@ impl SchemaType {
 
     /// Create an array schema with the provided item types.
     pub fn array(items_type: SchemaType) -> SchemaType {
-        SchemaType::Array(ArrayType {
+        SchemaType::Array(Box::new(ArrayType {
             items_type: Box::new(items_type),
             ..ArrayType::default()
-        })
+        }))
     }
 
     /// Create a boolean type.
     pub fn boolean() -> SchemaType {
-        SchemaType::Boolean(BooleanType::default())
+        SchemaType::Boolean(Box::new(BooleanType::default()))
     }
 
     /// Create an enumerable type with the provided literal values.
@@ -70,34 +70,34 @@ impl SchemaType {
     where
         I: IntoIterator<Item = LiteralValue>,
     {
-        SchemaType::Enum(EnumType {
+        SchemaType::Enum(Box::new(EnumType {
             values: values.into_iter().collect(),
             ..EnumType::default()
-        })
+        }))
     }
 
     /// Create a float schema with the provided kind.
     pub fn float(kind: FloatKind) -> SchemaType {
-        SchemaType::Float(FloatType {
+        SchemaType::Float(Box::new(FloatType {
             kind,
             ..FloatType::default()
-        })
+        }))
     }
 
     /// Create an integer schema with the provided kind.
     pub fn integer(kind: IntegerKind) -> SchemaType {
-        SchemaType::Integer(IntegerType {
+        SchemaType::Integer(Box::new(IntegerType {
             kind,
             ..IntegerType::default()
-        })
+        }))
     }
 
     /// Create a literal schema with the provided value.
     pub fn literal(value: LiteralValue) -> SchemaType {
-        SchemaType::Literal(LiteralType {
+        SchemaType::Literal(Box::new(LiteralType {
             value: Some(value),
             ..LiteralType::default()
-        })
+        }))
     }
 
     /// Convert the provided schema to a nullable type. If already nullable,
@@ -125,16 +125,16 @@ impl SchemaType {
 
     /// Create an indexed/mapable object schema with the provided key and value types.
     pub fn object(key_type: SchemaType, value_type: SchemaType) -> SchemaType {
-        SchemaType::Object(ObjectType {
+        SchemaType::Object(Box::new(ObjectType {
             key_type: Box::new(key_type),
             value_type: Box::new(value_type),
             ..ObjectType::default()
-        })
+        }))
     }
 
     /// Create a string schema.
     pub fn string() -> SchemaType {
-        SchemaType::String(StringType::default())
+        SchemaType::String(Box::new(StringType::default()))
     }
 
     /// Create a struct/shape schema with the provided fields.
@@ -142,10 +142,10 @@ impl SchemaType {
     where
         I: IntoIterator<Item = SchemaField>,
     {
-        SchemaType::Struct(StructType {
+        SchemaType::Struct(Box::new(StructType {
             fields: fields.into_iter().collect(),
             ..StructType::default()
-        })
+        }))
     }
 
     /// Create a tuple schema with the provided item types.
@@ -153,10 +153,10 @@ impl SchemaType {
     where
         I: IntoIterator<Item = SchemaType>,
     {
-        SchemaType::Tuple(TupleType {
+        SchemaType::Tuple(Box::new(TupleType {
             items_types: items_types.into_iter().map(Box::new).collect(),
             ..TupleType::default()
-        })
+        }))
     }
 
     /// Create an "any of" union.
@@ -164,10 +164,10 @@ impl SchemaType {
     where
         I: IntoIterator<Item = SchemaType>,
     {
-        SchemaType::Union(UnionType {
+        SchemaType::Union(Box::new(UnionType {
             variants_types: variants_types.into_iter().map(Box::new).collect(),
             ..UnionType::default()
-        })
+        }))
     }
 
     /// Create a "one of" union.
@@ -175,54 +175,55 @@ impl SchemaType {
     where
         I: IntoIterator<Item = SchemaType>,
     {
-        SchemaType::Union(UnionType {
+        SchemaType::Union(Box::new(UnionType {
             operator: UnionOperator::OneOf,
             variants_types: variants_types.into_iter().map(Box::new).collect(),
             ..UnionType::default()
-        })
+        }))
     }
 
     /// Return a `default` value from the inner schema type.
     pub fn get_default(&self) -> Option<&LiteralValue> {
-        match self {
-            SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
-            SchemaType::Enum(EnumType {
-                default_index,
-                values,
-                ..
-            }) => {
-                if let Some(index) = default_index {
-                    if let Some(value) = values.get(*index) {
-                        return Some(value);
-                    }
-                }
+        // match self {
+        //     SchemaType::Boolean(BooleanType { default, .. }) => default.as_ref(),
+        //     SchemaType::Enum(EnumType {
+        //         default_index,
+        //         values,
+        //         ..
+        //     }) => {
+        //         if let Some(index) = default_index {
+        //             if let Some(value) = values.get(*index) {
+        //                 return Some(value);
+        //             }
+        //         }
 
-                None
-            }
-            SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
-            SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
-            SchemaType::String(StringType { default, .. }) => default.as_ref(),
-            SchemaType::Union(UnionType {
-                default_index,
-                variants_types,
-                ..
-            }) => {
-                if let Some(index) = default_index {
-                    if let Some(value) = variants_types.get(*index) {
-                        return value.get_default();
-                    }
-                }
+        //         None
+        //     }
+        //     SchemaType::Float(FloatType { default, .. }) => default.as_ref(),
+        //     SchemaType::Integer(IntegerType { default, .. }) => default.as_ref(),
+        //     SchemaType::String(StringType { default, .. }) => default.as_ref(),
+        //     SchemaType::Union(UnionType {
+        //         default_index,
+        //         variants_types,
+        //         ..
+        //     }) => {
+        //         if let Some(index) = default_index {
+        //             if let Some(value) = variants_types.get(*index) {
+        //                 return value.get_default();
+        //             }
+        //         }
 
-                for variant in variants_types {
-                    if let Some(value) = variant.get_default() {
-                        return Some(value);
-                    }
-                }
+        //         for variant in variants_types {
+        //             if let Some(value) = variant.get_default() {
+        //                 return Some(value);
+        //             }
+        //         }
 
-                None
-            }
-            _ => None,
-        }
+        //         None
+        //     }
+        //     _ => None,
+        // }
+        None
     }
 
     /// Return a `name` from the inner schema type.
