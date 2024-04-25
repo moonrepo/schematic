@@ -1,5 +1,5 @@
 use crate::schema_type::SchemaType;
-use crate::Schematic;
+use crate::{Schema, SchemaBuilder, Schematic};
 use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default)]
@@ -23,38 +23,42 @@ impl ArrayType {
     }
 }
 
-// macro_rules! impl_list {
-//     ($type:ident) => {
-//         impl<T: Schematic> Schematic for $type<T> {
-//             fn generate_schema() -> SchemaType {
-//                 SchemaType::array(T::generate_schema())
-//             }
-//         }
-//     };
-// }
+macro_rules! impl_list {
+    ($type:ident) => {
+        impl<T: Schematic> Schematic for $type<T> {
+            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.array(ArrayType::new(schema.infer::<T>()));
+                schema.build()
+            }
+        }
+    };
+}
 
-// impl_list!(Vec);
-// impl_list!(BTreeSet);
+impl_list!(Vec);
+impl_list!(BTreeSet);
 
-// impl<T: Schematic> Schematic for &[T] {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::array(T::generate_schema())
-//     }
-// }
+impl<T: Schematic> Schematic for &[T] {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()));
+        schema.build()
+    }
+}
 
-// impl<T: Schematic, const N: usize> Schematic for [T; N] {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::Array(Box::new(ArrayType {
-//             items_type: Box::new(T::generate_schema()),
-//             max_length: Some(N),
-//             min_length: Some(N),
-//             ..ArrayType::default()
-//         }))
-//     }
-// }
+impl<T: Schematic, const N: usize> Schematic for [T; N] {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType {
+            items_type: Box::new(schema.infer::<T>()),
+            max_length: Some(N),
+            min_length: Some(N),
+            ..ArrayType::default()
+        });
+        schema.build()
+    }
+}
 
-// impl<T: Schematic, S> Schematic for HashSet<T, S> {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::array(T::generate_schema())
-//     }
-// }
+impl<T: Schematic, S> Schematic for HashSet<T, S> {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()));
+        schema.build()
+    }
+}

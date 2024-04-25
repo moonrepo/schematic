@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["crates/*"]
+exclude = ["crates/schematic", "crates/test-app"]
 
 [workspace.dependencies]
 chrono = "0.4.38"

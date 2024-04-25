@@ -1,8 +1,10 @@
 use crate::*;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug, Default)]
 pub struct SchemaBuilder {
     pub description: Option<String>,
+    pub id: Option<String>,
     pub name: Option<String>,
     pub type_of: SchemaType,
 }
@@ -18,27 +20,25 @@ impl SchemaBuilder {
     }
 
     /// Add a description for this schema.
-    pub fn description(&mut self, value: impl AsRef<str>) -> &mut Self {
+    pub fn set_description(&mut self, value: impl AsRef<str>) -> &mut Self {
         self.description = Some(value.as_ref().to_owned());
         self
     }
 
     /// Add a name for this schema.
-    pub fn name(&mut self, value: impl AsRef<str>) -> &mut Self {
+    pub fn set_name(&mut self, value: impl AsRef<str>) -> &mut Self {
         self.name = Some(value.as_ref().to_owned());
         self
     }
 
     /// Build an array type.
     pub fn array(&mut self, value: ArrayType) -> &mut Self {
-        self.type_of = SchemaType::Array(Box::new(value));
-        self
+        self.custom(SchemaType::Array(Box::new(value)))
     }
 
     /// Build a boolean type.
     pub fn boolean(&mut self, value: BooleanType) -> &mut Self {
-        self.type_of = SchemaType::Boolean(Box::new(value));
-        self
+        self.custom(SchemaType::Boolean(Box::new(value)))
     }
 
     /// Build with a custom type.
@@ -49,56 +49,47 @@ impl SchemaBuilder {
 
     /// Build an enum type.
     pub fn enumerable(&mut self, value: EnumType) -> &mut Self {
-        self.type_of = SchemaType::Enum(Box::new(value));
-        self
+        self.custom(SchemaType::Enum(Box::new(value)))
     }
 
     /// Build a float type.
     pub fn float(&mut self, value: FloatType) -> &mut Self {
-        self.type_of = SchemaType::Float(Box::new(value));
-        self
+        self.custom(SchemaType::Float(Box::new(value)))
     }
 
     /// Build an integer type.
     pub fn integer(&mut self, value: IntegerType) -> &mut Self {
-        self.type_of = SchemaType::Integer(Box::new(value));
-        self
+        self.custom(SchemaType::Integer(Box::new(value)))
     }
 
     /// Build a literal type.
     pub fn literal(&mut self, value: LiteralType) -> &mut Self {
-        self.type_of = SchemaType::Literal(Box::new(value));
-        self
+        self.custom(SchemaType::Literal(Box::new(value)))
     }
 
     /// Build an object type.
     pub fn object(&mut self, value: ObjectType) -> &mut Self {
-        self.type_of = SchemaType::Object(Box::new(value));
-        self
+        self.custom(SchemaType::Object(Box::new(value)))
     }
 
     /// Build a string type.
     pub fn string(&mut self, value: StringType) -> &mut Self {
-        self.type_of = SchemaType::String(Box::new(value));
-        self
+        self.custom(SchemaType::String(Box::new(value)))
     }
 
     /// Build a struct type.
     pub fn structure(&mut self, value: StructType) -> &mut Self {
-        self.type_of = SchemaType::Struct(Box::new(value));
-        self
+        self.custom(SchemaType::Struct(Box::new(value)))
     }
 
     /// Build a tuple type.
     pub fn tuple(&mut self, value: TupleType) -> &mut Self {
-        self.type_of = SchemaType::Tuple(Box::new(value));
-        self
+        self.custom(SchemaType::Tuple(Box::new(value)))
     }
 
     /// Build a union type.
     pub fn union(&mut self, value: UnionType) -> &mut Self {
-        self.type_of = SchemaType::Union(Box::new(value));
-        self
+        self.custom(SchemaType::Union(Box::new(value)))
     }
 
     /// Convert the current schema to a nullable type. If already nullable,
@@ -124,13 +115,13 @@ impl SchemaBuilder {
 
     /// Infer a schema from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>(&self) -> SchemaType {
-        T::generate_schema(SchemaBuilder::default()).type_of
+        self.internal_infer::<T>().type_of
     }
 
     /// Infer a schema from a type that implements [`Schematic`],
     /// and mark the schema is partial (is marked as `nested`).
     pub fn infer_as_partial<T: Schematic>(&self) -> SchemaType {
-        let mut schema = Self::infer::<T>(self);
+        let mut schema = self.infer::<T>();
         schema.set_partial(true);
         schema
     }
@@ -138,8 +129,39 @@ impl SchemaBuilder {
     /// Infer a schema from a type that implements [`Schematic`],
     /// and also provide a default literal value.
     pub fn infer_with_default<T: Schematic>(&self, default: LiteralValue) -> SchemaType {
-        let mut schema = Self::infer::<T>(self);
+        let mut schema = self.infer::<T>();
         schema.set_default(default);
         schema
+    }
+
+    fn internal_infer<T: Schematic>(&self) -> Schema {
+        let id = T::schema_id();
+        let mut builder = SchemaBuilder::default();
+
+        if id == self.id {
+            assert!(
+                self.name.is_some(),
+                "Self-referencing types require a schema name."
+            );
+
+            builder.custom(SchemaType::Reference(self.name.clone().unwrap()));
+            builder.build()
+        } else {
+            T::generate_schema(builder)
+        }
+    }
+}
+
+impl Deref for SchemaBuilder {
+    type Target = SchemaType;
+
+    fn deref(&self) -> &Self::Target {
+        &self.type_of
+    }
+}
+
+impl DerefMut for SchemaBuilder {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.type_of
     }
 }

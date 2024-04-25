@@ -1,6 +1,5 @@
 use crate::literals::LiteralValue;
-use crate::schema_type::SchemaType;
-use crate::Schematic;
+use crate::{Schema, SchemaBuilder, Schematic};
 
 #[derive(Clone, Debug, Default)]
 pub enum IntegerKind {
@@ -65,37 +64,38 @@ impl IntegerType {
     }
 
     /// Create an integer schema with the provided kind.
-    pub fn new_kind(kind: IntegerKind) -> SchemaType {
-        SchemaType::Integer(Box::new(IntegerType {
+    pub fn new_kind(kind: IntegerKind) -> Self {
+        IntegerType {
             kind,
             ..IntegerType::default()
-        }))
+        }
     }
 }
 
-// macro_rules! impl_int {
-//     ($type:ty, $kind:expr) => {
-//         impl Schematic for $type {
-//             fn generate_schema() -> SchemaType {
-//                 SchemaType::integer($kind)
-//             }
-//         }
-//     };
-// }
+macro_rules! impl_int {
+    ($type:ty, $kind:expr) => {
+        impl Schematic for $type {
+            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.integer(IntegerType::new_kind($kind));
+                schema.build()
+            }
+        }
+    };
+}
 
-// impl_int!(usize, IntegerKind::Usize);
-// impl_int!(u8, IntegerKind::U8);
-// impl_int!(u16, IntegerKind::U16);
-// impl_int!(u32, IntegerKind::U32);
-// impl_int!(u64, IntegerKind::U64);
-// impl_int!(u128, IntegerKind::U128);
+impl_int!(usize, IntegerKind::Usize);
+impl_int!(u8, IntegerKind::U8);
+impl_int!(u16, IntegerKind::U16);
+impl_int!(u32, IntegerKind::U32);
+impl_int!(u64, IntegerKind::U64);
+impl_int!(u128, IntegerKind::U128);
 
-// impl_int!(isize, IntegerKind::Isize);
-// impl_int!(i8, IntegerKind::I8);
-// impl_int!(i16, IntegerKind::I16);
-// impl_int!(i32, IntegerKind::I32);
-// impl_int!(i64, IntegerKind::I64);
-// impl_int!(i128, IntegerKind::I128);
+impl_int!(isize, IntegerKind::Isize);
+impl_int!(i8, IntegerKind::I8);
+impl_int!(i16, IntegerKind::I16);
+impl_int!(i32, IntegerKind::I32);
+impl_int!(i64, IntegerKind::I64);
+impl_int!(i128, IntegerKind::I128);
 
 #[derive(Clone, Debug, Default)]
 pub enum FloatKind {
@@ -146,15 +146,16 @@ impl FloatType {
     }
 }
 
-// macro_rules! impl_float {
-//     ($type:ty, $kind:expr) => {
-//         impl Schematic for $type {
-//             fn generate_schema() -> SchemaType {
-//                 SchemaType::float($kind)
-//             }
-//         }
-//     };
-// }
+macro_rules! impl_float {
+    ($type:ty, $kind:expr) => {
+        impl Schematic for $type {
+            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.float(FloatType::new_kind($kind));
+                schema.build()
+            }
+        }
+    };
+}
 
-// impl_float!(f32, FloatKind::F32);
-// impl_float!(f64, FloatKind::F64);
+impl_float!(f32, FloatKind::F32);
+impl_float!(f64, FloatKind::F64);

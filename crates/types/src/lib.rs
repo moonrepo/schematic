@@ -29,6 +29,10 @@ pub use unions::*;
 
 /// Defines a schema that represents the shape of the implementing type.
 pub trait Schematic {
+    fn schema_id() -> Option<String> {
+        None
+    }
+
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
     fn generate_schema(schema: SchemaBuilder) -> Schema {
