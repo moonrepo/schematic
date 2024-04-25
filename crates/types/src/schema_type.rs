@@ -31,27 +31,6 @@ pub enum SchemaType {
 }
 
 impl SchemaType {
-    /// Infer a schema from a type that implements [`Schematic`].
-    pub fn infer<T: Schematic>() -> SchemaType {
-        T::generate_schema()
-    }
-
-    /// Infer a schema from a type that implements [`Schematic`],
-    /// and also provide a default literal value.
-    pub fn infer_with_default<T: Schematic>(default: LiteralValue) -> SchemaType {
-        let mut schema = T::generate_schema();
-        schema.set_default(default);
-        schema
-    }
-
-    /// Infer a schema from a type that implements [`Schematic`],
-    /// and mark the schema is partial (is marked as `nested`).
-    pub fn infer_partial<T: Schematic>() -> SchemaType {
-        let mut schema = T::generate_schema();
-        schema.set_partial(true);
-        schema
-    }
-
     /// Return a `default` value from the inner schema type.
     pub fn get_default(&self) -> Option<&LiteralValue> {
         match self {

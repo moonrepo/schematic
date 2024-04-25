@@ -1,5 +1,6 @@
 use crate::literals::LiteralValue;
-use crate::schema_type::SchemaType;
+use crate::schema::Schema;
+use crate::schema_builder::SchemaBuilder;
 use crate::Schematic;
 
 #[derive(Clone, Debug, Default)]
@@ -16,8 +17,9 @@ impl BooleanType {
     }
 }
 
-// impl Schematic for bool {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::boolean()
-//     }
-// }
+impl Schematic for bool {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.boolean(BooleanType::default());
+        schema.build()
+    }
+}

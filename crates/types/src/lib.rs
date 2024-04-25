@@ -31,18 +31,19 @@ pub use unions::*;
 pub trait Schematic {
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
-    fn generate_schema() -> SchemaType {
-        SchemaType::Unknown
+    fn generate_schema(schema: SchemaBuilder) -> Schema {
+        schema.build()
     }
 }
 
 // CORE
 
-// impl Schematic for () {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::Null
-//     }
-// }
+impl Schematic for () {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.custom(SchemaType::Null);
+        schema.build()
+    }
+}
 
 // impl<T: Schematic> Schematic for &T {
 //     fn generate_schema() -> SchemaType {

@@ -8,6 +8,15 @@ pub struct SchemaBuilder {
 }
 
 impl SchemaBuilder {
+    /// Build the schema from the configured values.
+    pub fn build(self) -> Schema {
+        Schema {
+            description: self.description,
+            name: self.name,
+            type_of: self.type_of,
+        }
+    }
+
     /// Add a description for this schema.
     pub fn description(&mut self, value: impl AsRef<str>) -> &mut Self {
         self.description = Some(value.as_ref().to_owned());
@@ -29,6 +38,12 @@ impl SchemaBuilder {
     /// Build a boolean type.
     pub fn boolean(&mut self, value: BooleanType) -> &mut Self {
         self.type_of = SchemaType::Boolean(Box::new(value));
+        self
+    }
+
+    /// Build with a custom type.
+    pub fn custom(&mut self, value: SchemaType) -> &mut Self {
+        self.type_of = value;
         self
     }
 
@@ -105,5 +120,26 @@ impl SchemaBuilder {
         let current_type = std::mem::replace(&mut self.type_of, SchemaType::Unknown);
 
         self.union(UnionType::new_any([current_type, SchemaType::Null]))
+    }
+
+    /// Infer a schema from a type that implements [`Schematic`].
+    pub fn infer<T: Schematic>(&self) -> SchemaType {
+        T::generate_schema(SchemaBuilder::default()).type_of
+    }
+
+    /// Infer a schema from a type that implements [`Schematic`],
+    /// and mark the schema is partial (is marked as `nested`).
+    pub fn infer_as_partial<T: Schematic>(&self) -> SchemaType {
+        let mut schema = Self::infer::<T>(self);
+        schema.set_partial(true);
+        schema
+    }
+
+    /// Infer a schema from a type that implements [`Schematic`],
+    /// and also provide a default literal value.
+    pub fn infer_with_default<T: Schematic>(&self, default: LiteralValue) -> SchemaType {
+        let mut schema = Self::infer::<T>(self);
+        schema.set_default(default);
+        schema
     }
 }
