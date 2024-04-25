@@ -1,5 +1,8 @@
 use schematic_types::*;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::net::Ipv4Addr;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 fn test_builder<T: Schematic>() -> Schema {
     SchemaBuilder::generate::<T>()
@@ -124,6 +127,92 @@ fn floats() {
     assert_eq!(
         test_builder::<f64>().type_of,
         SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F64)))
+    );
+}
+
+#[test]
+fn objects() {
+    assert_eq!(
+        test_builder::<HashMap<String, Named>>().type_of,
+        SchemaType::Object(Box::new(ObjectType::new(
+            SchemaType::String(Box::new(StringType::default())),
+            test_builder::<Named>().type_of,
+        )))
+    );
+
+    assert_eq!(
+        test_builder::<BTreeMap<u128, Named>>().type_of,
+        SchemaType::Object(Box::new(ObjectType::new(
+            SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U128))),
+            test_builder::<Named>().type_of,
+        )))
+    );
+}
+
+#[test]
+fn strings() {
+    assert_eq!(
+        test_builder::<char>().type_of,
+        SchemaType::String(Box::new(StringType {
+            max_length: Some(1),
+            min_length: Some(1),
+            ..StringType::default()
+        }))
+    );
+
+    assert_eq!(
+        test_builder::<&str>().type_of,
+        SchemaType::String(Box::new(StringType::default()))
+    );
+
+    assert_eq!(
+        test_builder::<String>().type_of,
+        SchemaType::String(Box::new(StringType::default()))
+    );
+
+    assert_eq!(
+        test_builder::<&Path>().type_of,
+        SchemaType::String(Box::new(StringType {
+            format: Some("path".into()),
+            ..StringType::default()
+        }))
+    );
+
+    assert_eq!(
+        test_builder::<PathBuf>().type_of,
+        SchemaType::String(Box::new(StringType {
+            format: Some("path".into()),
+            ..StringType::default()
+        }))
+    );
+
+    assert_eq!(
+        test_builder::<Ipv4Addr>().type_of,
+        SchemaType::String(Box::new(StringType {
+            format: Some("ipv4".into()),
+            ..StringType::default()
+        }))
+    );
+
+    assert_eq!(
+        test_builder::<Duration>().type_of,
+        SchemaType::String(Box::new(StringType {
+            format: Some("duration".into()),
+            ..StringType::default()
+        }))
+    );
+}
+
+#[test]
+fn tuples() {
+    assert_eq!(
+        test_builder::<(bool, i16, f32, String)>().type_of,
+        SchemaType::Tuple(Box::new(TupleType::new(vec![
+            SchemaType::Boolean(Box::new(BooleanType::default())),
+            SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I16))),
+            SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32))),
+            SchemaType::String(Box::new(StringType::default()))
+        ])))
     );
 }
 
