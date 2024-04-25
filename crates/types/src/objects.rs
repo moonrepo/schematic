@@ -2,7 +2,7 @@ use crate::schema_type::SchemaType;
 use crate::{Schema, SchemaBuilder, Schematic};
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct ObjectType {
     pub key_type: Box<SchemaType>,
     pub max_length: Option<usize>,
@@ -24,14 +24,20 @@ impl ObjectType {
 
 impl<K: Schematic, V: Schematic> Schematic for BTreeMap<K, V> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
+        schema.object(ObjectType::new(
+            schema.infer_type::<K>(),
+            schema.infer_type::<V>(),
+        ));
         schema.build()
     }
 }
 
 impl<K: Schematic, V: Schematic, S> Schematic for HashMap<K, V, S> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
+        schema.object(ObjectType::new(
+            schema.infer_type::<K>(),
+            schema.infer_type::<V>(),
+        ));
         schema.build()
     }
 }

@@ -3,7 +3,7 @@ use crate::schema::Schema;
 use crate::schema_builder::SchemaBuilder;
 use crate::Schematic;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BooleanType {
     pub default: Option<LiteralValue>,
 }

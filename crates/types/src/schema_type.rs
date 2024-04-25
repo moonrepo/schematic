@@ -11,7 +11,7 @@ use crate::tuples::*;
 use crate::unions::*;
 
 /// All possible types within a schema.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum SchemaType {
     Null,
     #[default]

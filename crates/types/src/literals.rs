@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LiteralValue {
     Bool(bool),
     F32(f32),
@@ -8,7 +8,7 @@ pub enum LiteralValue {
     String(String),
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiteralType {
     pub format: Option<String>,
     pub value: Option<LiteralValue>,

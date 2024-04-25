@@ -4,7 +4,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct StringType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<String>>,

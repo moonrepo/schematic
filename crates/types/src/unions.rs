@@ -1,14 +1,14 @@
 use crate::schema::SchemaField;
 use crate::schema_type::SchemaType;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum UnionOperator {
     #[default]
     AnyOf,
     OneOf,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct UnionType {
     pub default_index: Option<usize>,
     pub partial: bool,

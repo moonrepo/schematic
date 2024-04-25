@@ -29,7 +29,9 @@ pub use unions::*;
 
 /// Defines a schema that represents the shape of the implementing type.
 pub trait Schematic {
-    fn schema_id() -> Option<String> {
+    /// Define a name for this schema type. Names are required for non-primitive values
+    /// as a means to link references, and avoid cycles.
+    fn schema_name() -> Option<String> {
         None
     }
 
@@ -49,26 +51,28 @@ impl Schematic for () {
     }
 }
 
-// impl<T: Schematic> Schematic for &T {
-//     fn generate_schema() -> SchemaType {
-//         T::generate_schema()
-//     }
-// }
+impl<T: Schematic> Schematic for &T {
+    fn generate_schema(schema: SchemaBuilder) -> Schema {
+        T::generate_schema(schema)
+    }
+}
 
-// impl<T: Schematic> Schematic for &mut T {
-//     fn generate_schema() -> SchemaType {
-//         T::generate_schema()
-//     }
-// }
+impl<T: Schematic> Schematic for &mut T {
+    fn generate_schema(schema: SchemaBuilder) -> Schema {
+        T::generate_schema(schema)
+    }
+}
 
-// impl<T: Schematic> Schematic for Box<T> {
-//     fn generate_schema() -> SchemaType {
-//         T::generate_schema()
-//     }
-// }
+impl<T: Schematic> Schematic for Box<T> {
+    fn generate_schema(schema: SchemaBuilder) -> Schema {
+        T::generate_schema(schema)
+    }
+}
 
-// impl<T: Schematic> Schematic for Option<T> {
-//     fn generate_schema() -> SchemaType {
-//         SchemaType::nullable(T::generate_schema())
-//     }
-// }
+impl<T: Schematic> Schematic for Option<T> {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.custom(schema.infer_type::<T>());
+        schema.nullable();
+        schema.build()
+    }
+}

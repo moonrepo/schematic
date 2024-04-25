@@ -1,6 +1,6 @@
 use crate::schema::SchemaField;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct StructType {
     pub fields: Vec<SchemaField>,
     pub partial: bool,

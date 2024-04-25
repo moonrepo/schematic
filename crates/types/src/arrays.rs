@@ -2,7 +2,7 @@ use crate::schema_type::SchemaType;
 use crate::{Schema, SchemaBuilder, Schematic};
 use std::collections::{BTreeSet, HashSet};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct ArrayType {
     pub contains: Option<bool>,
     pub items_type: Box<SchemaType>,
@@ -23,23 +23,16 @@ impl ArrayType {
     }
 }
 
-macro_rules! impl_list {
-    ($type:ident) => {
-        impl<T: Schematic> Schematic for $type<T> {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.array(ArrayType::new(schema.infer::<T>()));
-                schema.build()
-            }
-        }
-    };
+impl<T: Schematic> Schematic for Vec<T> {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer_type::<T>()));
+        schema.build()
+    }
 }
-
-impl_list!(Vec);
-impl_list!(BTreeSet);
 
 impl<T: Schematic> Schematic for &[T] {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer::<T>()));
+        schema.array(ArrayType::new(schema.infer_type::<T>()));
         schema.build()
     }
 }
@@ -47,7 +40,7 @@ impl<T: Schematic> Schematic for &[T] {
 impl<T: Schematic, const N: usize> Schematic for [T; N] {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
-            items_type: Box::new(schema.infer::<T>()),
+            items_type: Box::new(schema.infer_type::<T>()),
             max_length: Some(N),
             min_length: Some(N),
             ..ArrayType::default()
@@ -58,7 +51,22 @@ impl<T: Schematic, const N: usize> Schematic for [T; N] {
 
 impl<T: Schematic, S> Schematic for HashSet<T, S> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer::<T>()));
+        schema.array(ArrayType {
+            items_type: Box::new(schema.infer_type::<T>()),
+            unique: Some(true),
+            ..ArrayType::default()
+        });
+        schema.build()
+    }
+}
+
+impl<T: Schematic> Schematic for BTreeSet<T> {
+    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType {
+            items_type: Box::new(schema.infer_type::<T>()),
+            unique: Some(true),
+            ..ArrayType::default()
+        });
         schema.build()
     }
 }

@@ -1,7 +1,7 @@
 use crate::literals::LiteralValue;
 use crate::schema::SchemaField;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,

@@ -1,7 +1,7 @@
 use crate::schema_type::SchemaType;
 use crate::{Schema, SchemaBuilder, Schematic};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TupleType {
     pub items_types: Vec<Box<SchemaType>>,
 }
@@ -24,7 +24,7 @@ macro_rules! impl_tuple {
         impl<$($arg: Schematic),*> Schematic for ($($arg,)*) {
             fn generate_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.tuple(TupleType::new([
-                    $(schema.infer::<$arg>(),)*
+                    $(schema.infer_type::<$arg>(),)*
                 ]));
                 schema.build()
             }

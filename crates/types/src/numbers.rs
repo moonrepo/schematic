@@ -1,7 +1,7 @@
 use crate::literals::LiteralValue;
 use crate::{Schema, SchemaBuilder, Schematic};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum IntegerKind {
     Isize,
     I8,
@@ -27,7 +27,7 @@ impl IntegerKind {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct IntegerType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<isize>>,
@@ -97,14 +97,14 @@ impl_int!(i32, IntegerKind::I32);
 impl_int!(i64, IntegerKind::I64);
 impl_int!(i128, IntegerKind::I128);
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum FloatKind {
     #[default]
     F32,
     F64,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct FloatType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<f64>>,
