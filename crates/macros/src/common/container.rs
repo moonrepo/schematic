@@ -41,12 +41,9 @@ impl<'l> Container<'l> {
 
                 quote! {
                     #description
-                    schema.structure(StructType {
-                        fields: vec![
-                            #(#schema_types),*
-                        ],
-                        ..Default::default()
-                    });
+                    schema.structure(StructType::new([
+                        #(#schema_types),*
+                    ]));
                 }
             }
             Self::Enum { variants } => {
@@ -71,39 +68,27 @@ impl<'l> Container<'l> {
                     })
                     .collect::<Vec<_>>();
 
-                let default_index = map_option_quote("default_index", default_index);
+                // let default_index = map_option_quote("default_index", default_index);
 
                 if is_all_unit_enum {
                     quote! {
-                        let mut values = vec![];
-                        let variants = vec![
-                            #(#variants_types),*
-                        ];
-
-                        for variant in &variants {
-                            if let SchemaType::Literal(lit) = &*variant.type_of {
-                                values.push(lit.value.clone().unwrap());
-                            }
-                        }
-
                         #description
-                        schema.enumerable(EnumType {
-                            values,
-                            variants: Some(variants),
-                            #default_index
-                            ..Default::default()
-                        });
+                        schema.enumerable(EnumType::from_macro(
+                            [
+                                #(#variants_types),*
+                            ],
+                            #default_index,
+                        ));
                     }
                 } else {
                     quote! {
                         #description
-                        schema.union(UnionType {
-                            variants_types: vec![
-                                #(Box::new(#variants_types)),*
+                        schema.union(UnionType::from_macro(
+                            [
+                                #(#variants_types),*
                             ],
-                            #default_index
-                            ..Default::default()
-                        });
+                            #default_index,
+                        ));
                     }
                 }
             }

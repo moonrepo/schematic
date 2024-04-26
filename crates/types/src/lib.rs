@@ -71,7 +71,7 @@ impl<T: Schematic> Schematic for Box<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.custom(schema.infer_type::<T>());
+        schema.custom(schema.infer::<T>().type_of);
         schema.nullable();
         schema.build()
     }

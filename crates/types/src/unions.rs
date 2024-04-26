@@ -53,4 +53,20 @@ impl UnionType {
             .iter()
             .any(|schema| schema.type_of.is_null())
     }
+
+    #[doc(hidden)]
+    pub fn from_macro<I, V>(variants_types: I, default_index: Option<usize>) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: Into<Schema>,
+    {
+        UnionType {
+            default_index,
+            variants_types: variants_types
+                .into_iter()
+                .map(|inner| Box::new(inner.into()))
+                .collect(),
+            ..UnionType::default()
+        }
+    }
 }

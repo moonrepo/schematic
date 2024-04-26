@@ -110,8 +110,8 @@ impl Schematic for ExtendsFrom {
         use schematic_types::*;
 
         schema.union(UnionType::new_any([
-            schema.infer_type::<String>(),
-            schema.infer_type::<Vec<String>>(),
+            schema.infer::<String>(),
+            schema.infer::<Vec<String>>(),
         ]));
         schema.build()
     }

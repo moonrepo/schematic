@@ -172,7 +172,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     {
         use crate::utils::map_option_quote;
 
-        let default_index = map_option_quote("default_index", default_index);
+        // let default_index = map_option_quote("default_index", default_index);
 
         impls.push(quote! {
             #[automatically_derived]
@@ -184,24 +184,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 
-                    let variants = vec![
+                    schema.enumerable(EnumType::from_macro([
                         #(#schema_types),*
-                    ];
-
-                    let mut values = vec![];
-
-                    for variant in &variants {
-                        if let SchemaType::Literal(lit) = &variant.type_of {
-                            values.push(lit.value.clone().unwrap());
-                        }
-                    }
-
-                    schema.enumerable(EnumType {
-                        values,
-                        variants: Some(variants),
-                        #default_index
-                        ..EnumType::default()
-                    });
+                    ], #default_index));
                     schema.build()
                 }
             }

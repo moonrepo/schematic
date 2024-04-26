@@ -199,10 +199,10 @@ impl<'l> Field<'l> {
         let env_var = map_option_quote("env_var", self.get_env_var());
 
         let value = self.value;
-        let mut type_of = if self.is_nested() {
-            quote! { schema.infer_type_as_partial::<#value>() }
+        let mut inner_schema = if self.is_nested() {
+            quote! { schema.infer_as_partial::<#value>() }
         } else {
-            quote! { schema.infer_type::<#value>() }
+            quote! { schema.infer::<#value>() }
         };
 
         if let Some(Expr::Lit(lit)) = &self.args.default {
@@ -226,13 +226,13 @@ impl<'l> Field<'l> {
                 _ => unimplemented!(),
             };
 
-            type_of = quote! { schema.infer_type_with_default::<#value>(#lit_value) };
+            inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
         quote! {
             SchemaField {
                 name: #name.into(),
-                type_of: Box::new(#type_of),
+                schema: Box::new(#inner_schema),
                 #description
                 #deprecated
                 #env_var

@@ -20,7 +20,7 @@ impl<'l> ToTokens for SchematicMacro<'l> {
                     Some(#schema_name.into())
                 }
 
-                fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+                fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 
                     #schema_impl
