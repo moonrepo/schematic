@@ -99,6 +99,12 @@ impl DerefMut for Schema {
     }
 }
 
+impl Into<SchemaType> for Schema {
+    fn into(self) -> SchemaType {
+        self.type_of
+    }
+}
+
 /// Represents a field within a schema struct, or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SchemaField {

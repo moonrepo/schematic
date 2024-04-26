@@ -12,10 +12,10 @@ pub struct ObjectType {
 
 impl ObjectType {
     /// Create an indexed/mapable object schema with the provided key and value types.
-    pub fn new(key_type: SchemaType, value_type: SchemaType) -> Self {
+    pub fn new(key_type: impl Into<Schema>, value_type: impl Into<Schema>) -> Self {
         ObjectType {
-            key_type: Box::new(Schema::new(key_type)),
-            value_type: Box::new(Schema::new(value_type)),
+            key_type: Box::new(key_type.into()),
+            value_type: Box::new(value_type.into()),
             ..ObjectType::default()
         }
     }
@@ -23,20 +23,14 @@ impl ObjectType {
 
 impl<K: Schematic, V: Schematic> Schematic for BTreeMap<K, V> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.object(ObjectType::new(
-            schema.infer_type::<K>(),
-            schema.infer_type::<V>(),
-        ));
+        schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
         schema.build()
     }
 }
 
 impl<K: Schematic, V: Schematic, S> Schematic for HashMap<K, V, S> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.object(ObjectType::new(
-            schema.infer_type::<K>(),
-            schema.infer_type::<V>(),
-        ));
+        schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
         schema.build()
     }
 }

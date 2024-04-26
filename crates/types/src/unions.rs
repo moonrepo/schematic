@@ -18,29 +18,31 @@ pub struct UnionType {
 
 impl UnionType {
     /// Create an "any of" union schema.
-    pub fn new_any<I>(variants_types: I) -> Self
+    pub fn new_any<I, V>(variants_types: I) -> Self
     where
-        I: IntoIterator<Item = SchemaType>,
+        I: IntoIterator<Item = V>,
+        V: Into<Schema>,
     {
         UnionType {
             variants_types: variants_types
                 .into_iter()
-                .map(|inner| Box::new(Schema::new(inner)))
+                .map(|inner| Box::new(inner.into()))
                 .collect(),
             ..UnionType::default()
         }
     }
 
     /// Create a "one of" union schema.
-    pub fn new_one<I>(variants_types: I) -> Self
+    pub fn new_one<I, V>(variants_types: I) -> Self
     where
-        I: IntoIterator<Item = SchemaType>,
+        I: IntoIterator<Item = V>,
+        V: Into<Schema>,
     {
         UnionType {
             operator: UnionOperator::OneOf,
             variants_types: variants_types
                 .into_iter()
-                .map(|inner| Box::new(Schema::new(inner)))
+                .map(|inner| Box::new(inner.into()))
                 .collect(),
             ..UnionType::default()
         }

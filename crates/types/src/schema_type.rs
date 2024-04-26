@@ -31,11 +31,6 @@ pub enum SchemaType {
 }
 
 impl SchemaType {
-    // TODO
-    // pub fn literal(value: LiteralValue) -> Self {
-    //     Self::Literal(Box::new(LiteralType::new(value)))
-    // }
-
     /// Return a `default` value from the inner schema type.
     pub fn get_default(&self) -> Option<&LiteralValue> {
         match self {
@@ -150,5 +145,11 @@ impl SchemaType {
             }
             _ => {}
         };
+    }
+}
+
+impl Into<Schema> for SchemaType {
+    fn into(self) -> Schema {
+        Schema::new(self)
     }
 }

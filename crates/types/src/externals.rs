@@ -12,7 +12,7 @@ macro_rules! impl_set {
     ($type:ty) => {
         impl<T: Schematic, S> Schematic for $type {
             fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.array(ArrayType::new(schema.infer_type::<T>()));
+                schema.array(ArrayType::new(schema.infer::<T>()));
                 schema.build()
             }
         }
@@ -23,10 +23,7 @@ macro_rules! impl_map {
     ($type:ty) => {
         impl<K: Schematic, V: Schematic, S> Schematic for $type {
             fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.object(ObjectType::new(
-                    schema.infer_type::<K>(),
-                    schema.infer_type::<V>(),
-                ));
+                schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
                 schema.build()
             }
         }
@@ -143,10 +140,7 @@ mod serde_json_feature {
 
     impl<K: Schematic, V: Schematic> Schematic for serde_json::Map<K, V> {
         fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.object(ObjectType::new(
-                schema.infer_type::<K>(),
-                schema.infer_type::<V>(),
-            ));
+            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
             schema.build()
         }
     }
@@ -160,10 +154,7 @@ mod serde_toml_feature {
 
     impl<K: Schematic, V: Schematic> Schematic for toml::map::Map<K, V> {
         fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.object(ObjectType::new(
-                schema.infer_type::<K>(),
-                schema.infer_type::<V>(),
-            ));
+            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
             schema.build()
         }
     }
@@ -186,8 +177,8 @@ mod serde_yaml_feature {
     impl Schematic for serde_yaml::Mapping {
         fn generate_schema(mut schema: SchemaBuilder) -> Schema {
             schema.object(ObjectType::new(
-                schema.infer_type::<serde_yaml::Value>(),
-                schema.infer_type::<serde_yaml::Value>(),
+                schema.infer::<serde_yaml::Value>(),
+                schema.infer::<serde_yaml::Value>(),
             ));
             schema.build()
         }

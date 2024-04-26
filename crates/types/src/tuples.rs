@@ -7,14 +7,15 @@ pub struct TupleType {
 
 impl TupleType {
     /// Create a tuple schema with the provided item types.
-    pub fn new<I>(items_types: I) -> Self
+    pub fn new<I, V>(items_types: I) -> Self
     where
-        I: IntoIterator<Item = SchemaType>,
+        I: IntoIterator<Item = V>,
+        V: Into<Schema>,
     {
         TupleType {
             items_types: items_types
                 .into_iter()
-                .map(|inner| Box::new(Schema::new(inner)))
+                .map(|inner| Box::new(inner.into()))
                 .collect(),
             ..TupleType::default()
         }
@@ -26,7 +27,7 @@ macro_rules! impl_tuple {
         impl<$($arg: Schematic),*> Schematic for ($($arg,)*) {
             fn generate_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.tuple(TupleType::new([
-                    $(schema.infer_type::<$arg>(),)*
+                    $(schema.infer::<$arg>(),)*
                 ]));
                 schema.build()
             }

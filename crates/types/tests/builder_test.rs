@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 fn test_builder<T: Schematic>() -> Schema {
-    SchemaBuilder::generate::<T>()
+    SchemaBuilder::build_root::<T>()
 }
 
 pub struct Named {
@@ -78,7 +78,7 @@ fn arrays() {
     assert_eq!(
         test_builder::<[String; 3]>().type_of,
         SchemaType::Array(Box::new(ArrayType {
-            items_type: Box::new(SchemaType::String(Box::new(StringType::default()))),
+            items_type: Box::new(Schema::string(StringType::default())),
             max_length: Some(3),
             min_length: Some(3),
             ..ArrayType::default()
@@ -88,7 +88,7 @@ fn arrays() {
     assert_eq!(
         test_builder::<HashSet<String>>().type_of,
         SchemaType::Array(Box::new(ArrayType {
-            items_type: Box::new(SchemaType::String(Box::new(StringType::default()))),
+            items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
             ..ArrayType::default()
         }))
@@ -97,7 +97,7 @@ fn arrays() {
     assert_eq!(
         test_builder::<BTreeSet<String>>().type_of,
         SchemaType::Array(Box::new(ArrayType {
-            items_type: Box::new(SchemaType::String(Box::new(StringType::default()))),
+            items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
             ..ArrayType::default()
         }))
@@ -135,7 +135,7 @@ fn objects() {
     assert_eq!(
         test_builder::<HashMap<String, Named>>().type_of,
         SchemaType::Object(Box::new(ObjectType::new(
-            SchemaType::String(Box::new(StringType::default())),
+            Schema::string(StringType::default()),
             test_builder::<Named>().type_of,
         )))
     );
@@ -242,7 +242,7 @@ fn supports_cycles() {
             fields: vec![SchemaField::from_type(
                 "values",
                 SchemaType::Object(Box::new(ObjectType::new(
-                    SchemaType::String(Box::new(StringType::default())),
+                    Schema::string(StringType::default()),
                     SchemaType::Reference("Cycle".into()),
                 ))),
             )],

@@ -14,9 +14,9 @@ pub struct ArrayType {
 
 impl ArrayType {
     /// Create an array schema with the provided item types.
-    pub fn new(items_type: SchemaType) -> Self {
+    pub fn new(items_type: impl Into<Schema>) -> Self {
         ArrayType {
-            items_type: Box::new(Schema::new(items_type)),
+            items_type: Box::new(items_type.into()),
             ..ArrayType::default()
         }
     }
@@ -24,14 +24,14 @@ impl ArrayType {
 
 impl<T: Schematic> Schematic for Vec<T> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer_type::<T>()));
+        schema.array(ArrayType::new(schema.infer::<T>()));
         schema.build()
     }
 }
 
 impl<T: Schematic> Schematic for &[T] {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer_type::<T>()));
+        schema.array(ArrayType::new(schema.infer::<T>()));
         schema.build()
     }
 }

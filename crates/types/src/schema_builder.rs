@@ -15,7 +15,7 @@ pub struct SchemaBuilder {
 
 impl SchemaBuilder {
     /// Generate a schema from the provided type.
-    pub fn generate<T: Schematic>() -> Schema {
+    pub fn build_root<T: Schematic>() -> Schema {
         let mut builder = SchemaBuilder::default();
 
         if let Some(name) = T::schema_name() {
@@ -125,7 +125,10 @@ impl SchemaBuilder {
         // Convert to a nullable union
         let current_type = std::mem::replace(&mut self.type_of, SchemaType::Unknown);
 
-        self.union(UnionType::new_any([current_type, SchemaType::Null]));
+        self.union(UnionType::new_any([
+            Schema::new(current_type),
+            Schema::null(),
+        ]));
     }
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
