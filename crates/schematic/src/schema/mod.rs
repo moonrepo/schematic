@@ -1,10 +1,10 @@
-// mod generator;
-// mod renderer;
+mod generator;
+mod renderer;
 // mod renderers;
 
-// pub use generator::*;
-// pub use indexmap::*;
-// pub use renderer::*;
+pub use generator::*;
+pub use indexmap::*;
+pub use renderer::*;
 pub use schematic_types::*;
 
 // /// Renders JSON schemas.

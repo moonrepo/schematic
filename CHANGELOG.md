@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Rewrote the `Schematic` trait (and indirectly the `Config` and `ConfigEnum` traits) from the
+  ground up. The new API uses a builder pattern to construct the schema. This allows for all types
+  to support names, descriptions, references, and more. It also helps to avoid circular references.
+
+  ```rust
+  // Old
+  impl Schematic for T {
+    fn generate_schema() -> schematic::SchemaType {
+      // Create the schema type
+    }
+  }
+
+  // New
+  impl Schematic for T {
+    fn schema_name() -> Option<String> {
+      None // Required for non-primitives
+    }
+
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+      // Build the schema
+      schema.build()
+    }
+  }
+  ```
+
 ## 0.15.2
 
 #### ⚙️ Internal

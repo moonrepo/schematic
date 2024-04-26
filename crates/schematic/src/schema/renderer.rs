@@ -52,7 +52,7 @@ pub trait SchemaRenderer<O = String> {
     /// Render an unknown type to a string.
     fn render_unknown(&mut self) -> RenderResult<O>;
 
-    /// Render all possible variants of the provided [`SchemaType`] to a string.
+    /// Render all possible variants of the provided [`Schema`] to a string.
     /// If a variant has an explicit name, and that name is a reference, return
     /// the name instead of rendering the type.
     fn render_schema(&mut self, schema: &Schema) -> RenderResult<O> {
@@ -70,7 +70,7 @@ pub trait SchemaRenderer<O = String> {
         self.render_schema_type(&schema.type_of)
     }
 
-    /// Like [`render_schema`] but does not check for references.
+    /// Render all possible variants of the provided [`SchemaType`] to a string.
     fn render_schema_type(&mut self, schema: &SchemaType) -> RenderResult<O> {
         match schema {
             SchemaType::Null => self.render_null(),
@@ -90,11 +90,11 @@ pub trait SchemaRenderer<O = String> {
         }
     }
 
-    /// Render the list of [`SchemaType`]s to a string, in the order they are listed.
+    /// Render the list of [`Schema`]s to a string, in the order they are listed.
     /// References between types can be resolved using the provided `references` set.
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
+        schemas: &IndexMap<String, Schema>,
         references: &HashSet<String>,
     ) -> RenderResult;
 }
