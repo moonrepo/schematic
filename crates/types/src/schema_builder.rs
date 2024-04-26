@@ -190,3 +190,9 @@ impl DerefMut for SchemaBuilder {
         &mut self.type_of
     }
 }
+
+impl Into<Schema> for SchemaBuilder {
+    fn into(self) -> Schema {
+        self.build()
+    }
+}

@@ -49,6 +49,11 @@ impl Schema {
         Self::new(SchemaType::Literal(Box::new(value)))
     }
 
+    /// Create a literal schema with the provided value.
+    pub fn literal_value(value: LiteralValue) -> Self {
+        Self::new(SchemaType::Literal(Box::new(LiteralType::new(value))))
+    }
+
     /// Create an object schema.
     pub fn object(value: ObjectType) -> Self {
         Self::new(SchemaType::Object(Box::new(value)))
@@ -110,8 +115,7 @@ impl Into<SchemaType> for Schema {
 pub struct SchemaField {
     pub name: String,
     pub description: Option<String>,
-    pub type_of: Box<SchemaType>,
-    pub type_name: Option<String>,
+    pub schema: Box<Schema>,
     pub deprecated: Option<String>,
     pub env_var: Option<String>,
     pub hidden: bool,
@@ -126,7 +130,7 @@ impl SchemaField {
     pub fn from_type(name: &str, type_of: SchemaType) -> SchemaField {
         SchemaField {
             name: name.to_owned(),
-            type_of: Box::new(type_of),
+            schema: Box::new(type_of.into()),
             ..SchemaField::default()
         }
     }
@@ -135,9 +139,8 @@ impl SchemaField {
     pub fn from_schema(name: &str, schema: Schema) -> SchemaField {
         SchemaField {
             name: name.to_owned(),
-            description: schema.description,
-            type_of: Box::new(schema.type_of),
-            type_name: schema.name,
+            description: schema.description.clone(),
+            schema: Box::new(schema),
             ..SchemaField::default()
         }
     }

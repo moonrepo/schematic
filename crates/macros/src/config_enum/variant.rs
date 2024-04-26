@@ -113,22 +113,22 @@ impl<'l> Variant<'l> {
         let description = map_option_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
 
-        let type_of = if self.args.fallback {
+        let inner_schema = if self.args.fallback {
             quote! {
-                SchemaType::string()
+                Schema::string(StringType::default())
             }
         } else {
             let value = &self.value;
 
             quote! {
-                SchemaType::literal(LiteralValue::String(#value.into()))
+                Schema::literal_value(LiteralValue::String(#value.into()))
             }
         };
 
         quote! {
             SchemaField {
                 name: #name.into(),
-                type_of: #type_of,
+                schema: #inner_schema,
                 #description
                 #deprecated
                 ..Default::default()
