@@ -36,12 +36,12 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
         }
 
         if !array.items_type.is_struct() {
-            return Ok(format!("[{}]", self.render_schema_type(&array.items_type)?));
+            return Ok(format!("[{}]", self.render_schema(&array.items_type)?));
         }
 
         self.ctx.depth += 2;
 
-        let mut item = self.render_schema_type(&array.items_type)?;
+        let mut item = self.render_schema(&array.items_type)?;
 
         self.ctx.depth -= 2;
 
@@ -83,7 +83,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         self.ctx.depth += 2;
 
-        let value = self.render_schema_type(&object.value_type)?;
+        let value = self.render_schema(&object.value_type)?;
 
         self.ctx.depth -= 1;
 
@@ -91,7 +91,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         self.ctx.depth -= 1;
 
-        let mut key = self.render_schema_type(&object.key_type)?;
+        let mut key = self.render_schema(&object.key_type)?;
 
         if key == EMPTY_STRING {
             key = "example".into();
@@ -119,13 +119,13 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
                 continue;
             }
 
-            let is_nested = is_nested_type(&field.type_of);
+            let is_nested = is_nested_type(&field.schema);
 
             if is_nested {
                 self.ctx.depth += 1;
             }
 
-            let value = self.render_schema_type(&field.type_of)?;
+            let value = self.render_schema(&field.schema)?;
             let prop = format!(
                 "{}:{}{}",
                 field.name,
@@ -150,11 +150,11 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<String> {
-        render_tuple(tuple, |schema| self.render_schema_type(schema))
+        render_tuple(tuple, |schema| self.render_schema(schema))
     }
 
     fn render_union(&mut self, uni: &UnionType) -> RenderResult<String> {
-        render_union(uni, |schema| self.render_schema_type(schema))
+        render_union(uni, |schema| self.render_schema(schema))
     }
 
     fn render_unknown(&mut self) -> RenderResult<String> {
@@ -163,11 +163,11 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
+        schemas: &IndexMap<String, Schema>,
         _references: &HashSet<String>,
     ) -> RenderResult {
         let root = validate_root(schemas)?;
-        let mut template = self.render_struct(&root)?;
+        let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer
         template = format!(

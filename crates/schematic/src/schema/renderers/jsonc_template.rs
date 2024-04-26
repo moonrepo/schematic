@@ -38,7 +38,7 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         self.ctx.depth += 1;
 
         let item_indent = self.ctx.indent();
-        let item = self.render_schema_type(&array.items_type)?;
+        let item = self.render_schema(&array.items_type)?;
 
         self.ctx.depth -= 1;
 
@@ -79,11 +79,11 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         self.ctx.depth += 1;
 
         let item_indent = self.ctx.indent();
-        let value = self.render_schema_type(&object.value_type)?;
+        let value = self.render_schema(&object.value_type)?;
 
         self.ctx.depth -= 1;
 
-        let mut key = self.render_schema_type(&object.key_type)?;
+        let mut key = self.render_schema(&object.key_type)?;
 
         if key == EMPTY_STRING {
             key = "\"example\"".into();
@@ -117,7 +117,7 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
                 let prop = format!(
                     "\"{}\": {}{}",
                     field.name,
-                    self.render_schema_type(&field.type_of)?,
+                    self.render_schema(&field.schema)?,
                     if index == last_index { "" } else { "," }
                 );
 
@@ -141,11 +141,11 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<String> {
-        render_tuple(tuple, |schema| self.render_schema_type(schema))
+        render_tuple(tuple, |schema| self.render_schema(schema))
     }
 
     fn render_union(&mut self, uni: &UnionType) -> RenderResult<String> {
-        render_union(uni, |schema| self.render_schema_type(schema))
+        render_union(uni, |schema| self.render_schema(schema))
     }
 
     fn render_unknown(&mut self) -> RenderResult<String> {
@@ -154,11 +154,11 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
+        schemas: &IndexMap<String, Schema>,
         _references: &HashSet<String>,
     ) -> RenderResult {
         let root = validate_root(schemas)?;
-        let mut template = self.render_struct(&root)?;
+        let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer
         if self.ctx.options.comments {

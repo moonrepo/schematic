@@ -67,12 +67,7 @@ pub trait SchemaRenderer<O = String> {
 
     /// Like [`render_schema`] but does not check for references.
     fn render_schema_without_reference(&mut self, schema: &Schema) -> RenderResult<O> {
-        self.render_schema_type(&schema.type_of)
-    }
-
-    /// Render all possible variants of the provided [`SchemaType`] to a string.
-    fn render_schema_type(&mut self, schema: &SchemaType) -> RenderResult<O> {
-        match schema {
+        match &schema.type_of {
             SchemaType::Null => self.render_null(),
             SchemaType::Unknown => self.render_unknown(),
             SchemaType::Array(array) => self.render_array(array),

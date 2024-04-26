@@ -312,7 +312,7 @@ pub fn render_struct(_structure: &StructType) -> RenderResult {
 
 pub fn render_tuple(
     tuple: &TupleType,
-    mut render: impl FnMut(&SchemaType) -> RenderResult,
+    mut render: impl FnMut(&Schema) -> RenderResult,
 ) -> RenderResult {
     let mut items = vec![];
 
@@ -325,7 +325,7 @@ pub fn render_tuple(
 
 pub fn render_union(
     uni: &UnionType,
-    mut render: impl FnMut(&SchemaType) -> RenderResult,
+    mut render: impl FnMut(&Schema) -> RenderResult,
 ) -> RenderResult {
     if let Some(index) = &uni.default_index {
         if let Some(variant) = uni.variants_types.get(*index) {
@@ -347,16 +347,16 @@ pub fn render_unknown() -> RenderResult {
     render_null()
 }
 
-pub fn validate_root(schemas: &IndexMap<String, SchemaType>) -> miette::Result<StructType> {
+pub fn validate_root(schemas: &IndexMap<String, Schema>) -> miette::Result<Schema> {
     let Some(schema) = schemas.values().last() else {
         return Err(miette!(
             "At least 1 schema is required to generate a template."
         ));
     };
 
-    let SchemaType::Struct(root) = schema else {
+    if !schema.is_struct() {
         return Err(miette!("The last registered schema must be a struct type."));
     };
 
-    Ok((**root).to_owned())
+    Ok(schema.to_owned())
 }
