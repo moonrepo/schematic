@@ -23,21 +23,21 @@ impl ArrayType {
 }
 
 impl<T: Schematic> Schematic for Vec<T> {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType::new(schema.infer::<T>()));
         schema.build()
     }
 }
 
 impl<T: Schematic> Schematic for &[T] {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType::new(schema.infer::<T>()));
         schema.build()
     }
 }
 
 impl<T: Schematic, const N: usize> Schematic for [T; N] {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
             items_type: Box::new(schema.infer::<T>()),
             max_length: Some(N),
@@ -49,7 +49,7 @@ impl<T: Schematic, const N: usize> Schematic for [T; N] {
 }
 
 impl<T: Schematic, S> Schematic for HashSet<T, S> {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
             items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),
@@ -60,7 +60,7 @@ impl<T: Schematic, S> Schematic for HashSet<T, S> {
 }
 
 impl<T: Schematic> Schematic for BTreeSet<T> {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
             items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),

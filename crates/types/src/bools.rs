@@ -15,7 +15,7 @@ impl BooleanType {
 }
 
 impl Schematic for bool {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.boolean(BooleanType::default());
         schema.build()
     }

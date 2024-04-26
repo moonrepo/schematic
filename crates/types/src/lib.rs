@@ -37,7 +37,7 @@ pub trait Schematic {
 
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
-    fn generate_schema(schema: SchemaBuilder) -> Schema {
+    fn build_schema(schema: SchemaBuilder) -> Schema {
         schema.build()
     }
 }
@@ -45,32 +45,32 @@ pub trait Schematic {
 // CORE
 
 impl Schematic for () {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.custom(SchemaType::Null);
         schema.build()
     }
 }
 
 impl<T: Schematic> Schematic for &T {
-    fn generate_schema(schema: SchemaBuilder) -> Schema {
-        T::generate_schema(schema)
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
     }
 }
 
 impl<T: Schematic> Schematic for &mut T {
-    fn generate_schema(schema: SchemaBuilder) -> Schema {
-        T::generate_schema(schema)
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
     }
 }
 
 impl<T: Schematic> Schematic for Box<T> {
-    fn generate_schema(schema: SchemaBuilder) -> Schema {
-        T::generate_schema(schema)
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
     }
 }
 
 impl<T: Schematic> Schematic for Option<T> {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.custom(schema.infer_type::<T>());
         schema.nullable();
         schema.build()

@@ -25,7 +25,7 @@ impl TupleType {
 macro_rules! impl_tuple {
     ($($arg: ident),*) => {
         impl<$($arg: Schematic),*> Schematic for ($($arg,)*) {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.tuple(TupleType::new([
                     $(schema.infer::<$arg>(),)*
                 ]));

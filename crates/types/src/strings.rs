@@ -26,7 +26,7 @@ impl StringType {
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.string(StringType::default());
                 schema.build()
             }
@@ -37,7 +37,7 @@ macro_rules! impl_string {
 macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.string(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
@@ -49,7 +49,7 @@ macro_rules! impl_string_format {
 }
 
 impl Schematic for char {
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.string(StringType {
             max_length: Some(1),
             min_length: Some(1),

@@ -17,7 +17,7 @@ impl Schematic for Named {
         Some("Named".into())
     }
 
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.structure(StructType::new([SchemaField::from_type(
             "field",
             schema.infer_type::<bool>(),
@@ -136,7 +136,7 @@ fn objects() {
         test_builder::<HashMap<String, Named>>().type_of,
         SchemaType::Object(Box::new(ObjectType::new(
             Schema::string(StringType::default()),
-            test_builder::<Named>().type_of,
+            test_builder::<Named>(),
         )))
     );
 
@@ -144,7 +144,7 @@ fn objects() {
         test_builder::<BTreeMap<u128, Named>>().type_of,
         SchemaType::Object(Box::new(ObjectType::new(
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U128))),
-            test_builder::<Named>().type_of,
+            test_builder::<Named>(),
         )))
     );
 }
@@ -225,7 +225,7 @@ impl Schematic for Cycle {
         Some("Cycle".into())
     }
 
-    fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.structure(StructType::new([SchemaField::from_type(
             "values",
             schema.infer_type::<HashMap<String, Cycle>>(),

@@ -106,7 +106,7 @@ impl Schematic for ExtendsFrom {
         Some("ExtendsFrom".into())
     }
 
-    fn generate_schema(mut schema: schematic_types::SchemaBuilder) -> schematic_types::Schema {
+    fn build_schema(mut schema: schematic_types::SchemaBuilder) -> schematic_types::Schema {
         use schematic_types::*;
 
         schema.union(UnionType::new_any([

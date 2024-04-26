@@ -11,7 +11,7 @@ macro_rules! impl_unknown {
 macro_rules! impl_set {
     ($type:ty) => {
         impl<T: Schematic, S> Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.array(ArrayType::new(schema.infer::<T>()));
                 schema.build()
             }
@@ -22,7 +22,7 @@ macro_rules! impl_set {
 macro_rules! impl_map {
     ($type:ty) => {
         impl<K: Schematic, V: Schematic, S> Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
                 schema.build()
             }
@@ -33,7 +33,7 @@ macro_rules! impl_map {
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.string(StringType::default());
                 schema.build()
             }
@@ -44,7 +44,7 @@ macro_rules! impl_string {
 macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.string(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
@@ -62,7 +62,7 @@ mod chrono_feature {
     macro_rules! impl_with_tz {
         ($type:path, $format:expr) => {
             impl<Tz: chrono::TimeZone> Schematic for $type {
-                fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+                fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     schema.string(StringType {
                         format: Some($format.into()),
                         ..StringType::default()
@@ -132,14 +132,14 @@ mod serde_json_feature {
 
     // This isn't accurate since we can't access the `N` enum
     impl Schematic for serde_json::Number {
-        fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
             schema.integer(IntegerType::new_kind(IntegerKind::I64));
             schema.build()
         }
     }
 
     impl<K: Schematic, V: Schematic> Schematic for serde_json::Map<K, V> {
-        fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
             schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
             schema.build()
         }
@@ -153,7 +153,7 @@ mod serde_toml_feature {
     impl_unknown!(toml::Value);
 
     impl<K: Schematic, V: Schematic> Schematic for toml::map::Map<K, V> {
-        fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
             schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
             schema.build()
         }
@@ -168,14 +168,14 @@ mod serde_yaml_feature {
 
     // This isn't accurate since we can't access the `N` enum
     impl Schematic for serde_yaml::Number {
-        fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
             schema.integer(IntegerType::new_kind(IntegerKind::I64));
             schema.build()
         }
     }
 
     impl Schematic for serde_yaml::Mapping {
-        fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
             schema.object(ObjectType::new(
                 schema.infer::<serde_yaml::Value>(),
                 schema.infer::<serde_yaml::Value>(),

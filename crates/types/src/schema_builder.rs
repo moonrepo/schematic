@@ -22,7 +22,7 @@ impl SchemaBuilder {
             builder.set_name(name);
         }
 
-        T::generate_schema(builder)
+        T::build_schema(builder)
     }
 
     /// Build the schema from the configured values.
@@ -138,7 +138,7 @@ impl SchemaBuilder {
 
         // No name, so return the schema immediately
         let Some(name) = T::schema_name() else {
-            return T::generate_schema(builder);
+            return T::build_schema(builder);
         };
 
         // If this name has already been used, create a reference
@@ -152,7 +152,7 @@ impl SchemaBuilder {
         // Otherwise generate a new schema and persist our name cache
         builder.set_name(&name);
 
-        T::generate_schema(builder)
+        T::build_schema(builder)
     }
 
     /// Infer a [`SchemaType`] from a type that implements [`Schematic`].

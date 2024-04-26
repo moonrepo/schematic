@@ -74,7 +74,7 @@ impl IntegerType {
 macro_rules! impl_int {
     ($type:ty, $kind:expr) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.integer(IntegerType::new_kind($kind));
                 schema.build()
             }
@@ -148,7 +148,7 @@ impl FloatType {
 macro_rules! impl_float {
     ($type:ty, $kind:expr) => {
         impl Schematic for $type {
-            fn generate_schema(mut schema: SchemaBuilder) -> Schema {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.float(FloatType::new_kind($kind));
                 schema.build()
             }
