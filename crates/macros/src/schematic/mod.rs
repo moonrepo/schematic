@@ -10,16 +10,21 @@ impl<'l> ToTokens for SchematicMacro<'l> {
         let cfg = &self.0;
         let name = cfg.name;
 
-        let schema = cfg
-            .type_of
-            .generate_schema(cfg.get_name(), extract_comment(&cfg.attrs));
+        let schema_name = cfg.get_name();
+        let schema_impl = cfg.type_of.generate_schema(extract_comment(&cfg.attrs));
 
         tokens.extend(quote! {
             #[automatically_derived]
             impl schematic::Schematic for #name {
-                fn generate_schema() -> schematic::SchemaType {
+                fn schema_name() -> Option<String> {
+                    Some(#schema_name.into())
+                }
+
+                fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
-                    #schema
+
+                    #schema_impl
+                    schema.build()
                 }
             }
         });

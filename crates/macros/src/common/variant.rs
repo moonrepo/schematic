@@ -151,9 +151,9 @@ impl<'l> Variant<'l> {
                         let ty = &field.ty;
 
                         if partial {
-                            quote! { SchemaType::infer_partial::<#ty>() }
+                            quote! { schema.infer_type_as_partial::<#ty>() }
                         } else {
-                            quote! { SchemaType::infer::<#ty>() }
+                            quote! { schema.infer_type::<#ty>() }
                         }
                     })
                     .collect::<Vec<_>>();
@@ -190,7 +190,7 @@ impl<'l> Variant<'l> {
                 quote! {
                     SchemaField {
                         name: #name.into(),
-                        type_of: #inner,
+                        type_of: Box::new(#inner),
                         ..Default::default()
                     }
                 }

@@ -1,6 +1,6 @@
 use crate::config::{ConfigError, PartialConfig};
 use crate::merge::merge_partial;
-use schematic_types::SchemaType;
+use schematic_types::{Schema, SchemaType};
 use std::{env, str::FromStr};
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {
@@ -62,70 +62,70 @@ pub fn merge_partial_setting<T: PartialConfig>(
     }
 }
 
-pub fn partialize_schema(schema: &mut SchemaType, force_partial: bool) {
+pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
     use schematic_types::*;
 
-    match schema {
-        SchemaType::Array(ArrayType { items_type, .. }) => {
-            partialize_schema(items_type, false);
-        }
-        SchemaType::Object(ObjectType {
-            key_type,
-            value_type,
-            ..
-        }) => {
-            partialize_schema(key_type, false);
-            partialize_schema(value_type, false);
-        }
-        SchemaType::Struct(inner) => {
-            if inner.partial || force_partial {
-                if let Some(name) = &inner.name {
-                    inner.name = Some(format!("Partial{name}"));
-                }
+    // match schema {
+    //     SchemaType::Array(ArrayType { items_type, .. }) => {
+    //         partialize_schema(items_type, false);
+    //     }
+    //     SchemaType::Object(ObjectType {
+    //         key_type,
+    //         value_type,
+    //         ..
+    //     }) => {
+    //         partialize_schema(key_type, false);
+    //         partialize_schema(value_type, false);
+    //     }
+    //     SchemaType::Struct(inner) => {
+    //         if inner.partial || force_partial {
+    //             if let Some(name) = &inner.name {
+    //                 inner.name = Some(format!("Partial{name}"));
+    //             }
 
-                for field in inner.fields.iter_mut() {
-                    field.optional = true;
-                    field.nullable = true;
+    //             for field in inner.fields.iter_mut() {
+    //                 field.optional = true;
+    //                 field.nullable = true;
 
-                    partialize_schema(&mut field.type_of, true);
+    //                 partialize_schema(&mut field.type_of, true);
 
-                    field.type_of = SchemaType::nullable(field.type_of.clone());
-                }
-            } else {
-                for field in inner.fields.iter_mut() {
-                    partialize_schema(&mut field.type_of, false);
-                }
-            }
-        }
-        SchemaType::Tuple(TupleType { items_types, .. }) => {
-            for item in items_types {
-                partialize_schema(item, false);
-            }
-        }
-        SchemaType::Union(inner) => {
-            for variant in inner.variants_types.iter_mut() {
-                partialize_schema(variant, false);
-            }
+    //                 field.type_of = SchemaType::nullable(field.type_of.clone());
+    //             }
+    //         } else {
+    //             for field in inner.fields.iter_mut() {
+    //                 partialize_schema(&mut field.type_of, false);
+    //             }
+    //         }
+    //     }
+    //     SchemaType::Tuple(TupleType { items_types, .. }) => {
+    //         for item in items_types {
+    //             partialize_schema(item, false);
+    //         }
+    //     }
+    //     SchemaType::Union(inner) => {
+    //         for variant in inner.variants_types.iter_mut() {
+    //             partialize_schema(variant, false);
+    //         }
 
-            if inner.partial || force_partial {
-                if let Some(name) = &inner.name {
-                    inner.name = Some(format!("Partial{name}"));
-                }
-            }
+    //         if inner.partial || force_partial {
+    //             if let Some(name) = &inner.name {
+    //                 inner.name = Some(format!("Partial{name}"));
+    //             }
+    //         }
 
-            if let Some(fields) = &mut inner.variants {
-                for field in fields.iter_mut() {
-                    if inner.partial || force_partial {
-                        field.optional = true;
-                        field.nullable = true;
+    //         if let Some(fields) = &mut inner.variants {
+    //             for field in fields.iter_mut() {
+    //                 if inner.partial || force_partial {
+    //                     field.optional = true;
+    //                     field.nullable = true;
 
-                        partialize_schema(&mut field.type_of, true);
-                    } else {
-                        partialize_schema(&mut field.type_of, false);
-                    }
-                }
-            }
-        }
-        _ => {}
-    };
+    //                     partialize_schema(&mut field.type_of, true);
+    //                 } else {
+    //                     partialize_schema(&mut field.type_of, false);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     _ => {}
+    // };
 }

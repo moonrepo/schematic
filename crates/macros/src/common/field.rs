@@ -200,9 +200,9 @@ impl<'l> Field<'l> {
 
         let value = self.value;
         let mut type_of = if self.is_nested() {
-            quote! { SchemaType::infer_partial::<#value>() }
+            quote! { schema.infer_type_as_partial::<#value>() }
         } else {
-            quote! { SchemaType::infer::<#value>() }
+            quote! { schema.infer_type::<#value>() }
         };
 
         if let Some(Expr::Lit(lit)) = &self.args.default {
@@ -226,13 +226,13 @@ impl<'l> Field<'l> {
                 _ => unimplemented!(),
             };
 
-            type_of = quote! { SchemaType::infer_with_default::<#value>(#lit_value) };
+            type_of = quote! { schema.infer_type_with_default::<#value>(#lit_value) };
         }
 
         quote! {
             SchemaField {
                 name: #name.into(),
-                type_of: #type_of,
+                type_of: Box::new(#type_of),
                 #description
                 #deprecated
                 #env_var

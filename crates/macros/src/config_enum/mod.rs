@@ -177,12 +177,17 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impls.push(quote! {
             #[automatically_derived]
             impl schematic::Schematic for #enum_name {
-                fn generate_schema() -> schematic::SchemaType {
+                fn schema_name() -> Option<String> {
+                    Some(#enum_name.into())
+                }
+
+                fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 
                     let mut values = vec![];
                     let variants = vec![
-                        #(#schema_types),*
+                        // TODO
+                    //     #(#schema_types),*
                     ];
 
                     for variant in &variants {
@@ -191,13 +196,14 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                         }
                     }
 
-                    SchemaType::Enum(EnumType {
+                    schema.enumerable(EnumType {
                         name: Some(#meta_name.into()),
                         values,
                         variants: Some(variants),
                         #default_index
                         ..EnumType::default()
-                    })
+                    });
+                    schema.build()
                 }
             }
         });

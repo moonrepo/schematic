@@ -11,7 +11,7 @@ pub enum LiteralValue {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LiteralType {
     pub format: Option<String>,
-    pub value: Option<LiteralValue>,
+    pub value: Option<LiteralValue>, // TODO non optional
 }
 
 impl LiteralType {

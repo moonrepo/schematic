@@ -159,7 +159,7 @@ impl SchemaBuilder {
 
     /// Infer a [`SchemaType`] from a type that implements [`Schematic`],
     /// and mark the schema is partial (is marked as `nested`).
-    pub fn infer_as_partial<T: Schematic>(&self) -> SchemaType {
+    pub fn infer_type_as_partial<T: Schematic>(&self) -> SchemaType {
         let mut schema = self.infer_type::<T>();
         schema.set_partial(true);
         schema
@@ -167,7 +167,7 @@ impl SchemaBuilder {
 
     /// Infer a [`SchemaType`] from a type that implements [`Schematic`],
     /// and also provide a default literal value.
-    pub fn infer_with_default<T: Schematic>(&self, default: LiteralValue) -> SchemaType {
+    pub fn infer_type_with_default<T: Schematic>(&self, default: LiteralValue) -> SchemaType {
         let mut schema = self.infer_type::<T>();
         schema.set_default(default);
         schema

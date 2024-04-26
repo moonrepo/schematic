@@ -356,9 +356,8 @@ impl<'l> Container<'l> {
         _partial_name: &Ident,
     ) -> TokenStream {
         quote! {
-            let mut schema = #config_name::generate_schema();
+            let mut schema = #config_name::generate_schema(schema);
             schematic::internal::partialize_schema(&mut schema, true);
-            schema
         }
     }
 }

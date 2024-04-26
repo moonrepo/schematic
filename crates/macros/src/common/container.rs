@@ -17,10 +17,10 @@ impl<'l> Container<'l> {
         }
     }
 
-    pub fn generate_schema(&self, config_name: String, description: Option<String>) -> TokenStream {
+    pub fn generate_schema(&self, description: Option<String>) -> TokenStream {
         let description = if let Some(comment) = description {
             quote! {
-                schema.description = Some(#comment.into());
+                schema.set_description(#comment);
             }
         } else {
             quote! {}
@@ -40,17 +40,13 @@ impl<'l> Container<'l> {
                     .collect::<Vec<_>>();
 
                 quote! {
-                    let mut schema = StructType {
-                        name: Some(#config_name.into()),
+                    #description
+                    schema.structure(StructType {
                         fields: vec![
                             #(#schema_types),*
                         ],
                         ..Default::default()
-                    };
-
-                    #description
-
-                    SchemaType::Struct(schema)
+                    });
                 }
             }
             Self::Enum { variants } => {
@@ -85,37 +81,29 @@ impl<'l> Container<'l> {
                         ];
 
                         for variant in &variants {
-                            if let SchemaType::Literal(lit) = &variant.type_of {
+                            if let SchemaType::Literal(lit) = &*variant.type_of {
                                 values.push(lit.value.clone().unwrap());
                             }
                         }
 
-                        let mut schema = EnumType {
-                            name: Some(#config_name.into()),
+                        #description
+                        schema.enumerable(EnumType {
                             values,
                             variants: Some(variants),
                             #default_index
                             ..Default::default()
-                        };
-
-                        #description
-
-                        SchemaType::Enum(schema)
+                        });
                     }
                 } else {
                     quote! {
-                        let mut schema = UnionType {
-                            name: Some(#config_name.into()),
+                        #description
+                        schema.union(UnionType {
                             variants_types: vec![
                                 #(Box::new(#variants_types)),*
                             ],
                             #default_index
                             ..Default::default()
-                        };
-
-                        #description
-
-                        SchemaType::Union(schema)
+                        });
                     }
                 }
             }

@@ -115,25 +115,36 @@ impl<'l> ToTokens for ConfigMacro<'l> {
         {
             use crate::utils::extract_comment;
 
-            let schema = cfg
-                .type_of
-                .generate_schema(cfg.get_name(), extract_comment(&cfg.attrs));
-            let partial_schema = cfg.type_of.generate_partial_schema(name, &partial_name);
+            let schema_name = cfg.get_name();
+            let schema_impl = cfg.type_of.generate_schema(extract_comment(&cfg.attrs));
+
+            let partial_schema_name = partial_name.to_string();
+            let partial_schema_impl = cfg.type_of.generate_partial_schema(name, &partial_name);
 
             tokens.extend(quote! {
                 #[automatically_derived]
                 impl schematic::Schematic for #name {
-                    fn generate_schema() -> schematic::SchemaType {
+                    fn schema_name() -> Option<String> {
+                        Some(#schema_name.into())
+                    }
+
+                    fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                         use schematic::schema::*;
-                        #schema
+
+                        #schema_impl
+                        schema.build()
                     }
                 }
 
                 #[automatically_derived]
                 impl schematic::Schematic for #partial_name {
-                    fn generate_schema() -> schematic::SchemaType {
-                        use schematic::schema::*;
-                        #partial_schema
+                    fn schema_name() -> Option<String> {
+                        Some(#partial_schema_name.into())
+                    }
+
+                    fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+                        #partial_schema_impl
+                        schema
                     }
                 }
             });

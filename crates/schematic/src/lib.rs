@@ -33,4 +33,4 @@ pub use config::*;
 
 pub use format::*;
 pub use schematic_macros::*;
-pub use schematic_types::{SchemaField, SchemaType, Schematic};
+pub use schematic_types::{Schema, SchemaBuilder, SchemaField, SchemaType, Schematic};
