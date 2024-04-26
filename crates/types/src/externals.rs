@@ -1,11 +1,6 @@
 #![allow(deprecated, unused_imports, unused_macros)]
 
-use crate::arrays::ArrayType;
-use crate::numbers::*;
-use crate::objects::ObjectType;
-use crate::schema_type::*;
-use crate::strings::StringType;
-use crate::{Schema, SchemaBuilder, Schematic};
+use crate::*;
 
 macro_rules! impl_unknown {
     ($type:ty) => {

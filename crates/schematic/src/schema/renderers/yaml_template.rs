@@ -36,12 +36,12 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
         }
 
         if !array.items_type.is_struct() {
-            return Ok(format!("[{}]", self.render_schema(&array.items_type)?));
+            return Ok(format!("[{}]", self.render_schema_type(&array.items_type)?));
         }
 
         self.ctx.depth += 2;
 
-        let mut item = self.render_schema(&array.items_type)?;
+        let mut item = self.render_schema_type(&array.items_type)?;
 
         self.ctx.depth -= 2;
 
@@ -83,7 +83,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         self.ctx.depth += 2;
 
-        let value = self.render_schema(&object.value_type)?;
+        let value = self.render_schema_type(&object.value_type)?;
 
         self.ctx.depth -= 1;
 
@@ -91,7 +91,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         self.ctx.depth -= 1;
 
-        let mut key = self.render_schema(&object.key_type)?;
+        let mut key = self.render_schema_type(&object.key_type)?;
 
         if key == EMPTY_STRING {
             key = "example".into();
@@ -125,7 +125,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
                 self.ctx.depth += 1;
             }
 
-            let value = self.render_schema(&field.type_of)?;
+            let value = self.render_schema_type(&field.type_of)?;
             let prop = format!(
                 "{}:{}{}",
                 field.name,
@@ -150,11 +150,11 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<String> {
-        render_tuple(tuple, |schema| self.render_schema(schema))
+        render_tuple(tuple, |schema| self.render_schema_type(schema))
     }
 
     fn render_union(&mut self, uni: &UnionType) -> RenderResult<String> {
-        render_union(uni, |schema| self.render_schema(schema))
+        render_union(uni, |schema| self.render_schema_type(schema))
     }
 
     fn render_unknown(&mut self) -> RenderResult<String> {

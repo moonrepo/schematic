@@ -31,9 +31,10 @@ pub enum SchemaType {
 }
 
 impl SchemaType {
-    pub fn literal(value: LiteralValue) -> Self {
-        Self::Literal(Box::new(LiteralType::new(value)))
-    }
+    // TODO
+    // pub fn literal(value: LiteralValue) -> Self {
+    //     Self::Literal(Box::new(LiteralType::new(value)))
+    // }
 
     /// Return a `default` value from the inner schema type.
     pub fn get_default(&self) -> Option<&LiteralValue> {
@@ -122,10 +123,7 @@ impl SchemaType {
 
                 // This is to handle things wrapped in `Option`, is it correct?
                 // Not sure of a better way to do this at the moment...
-                let is_nullable = inner
-                    .variants_types
-                    .iter()
-                    .any(|t| matches!(**t, SchemaType::Null));
+                let is_nullable = inner.variants_types.iter().any(|t| t.type_of.is_nullable());
 
                 if is_nullable {
                     for item in inner.variants_types.iter_mut() {

@@ -39,7 +39,7 @@ impl TomlTemplateRenderer {
 
             let comment = self.ctx.create_comment(field);
 
-            match &mut field.type_of {
+            match &mut *field.type_of {
                 SchemaType::Array(array) if array.items_type.is_struct() => {
                     if let SchemaType::Struct(table) = &mut *array.items_type {
                         let key = self.ctx.get_stack_key();
@@ -53,7 +53,7 @@ impl TomlTemplateRenderer {
                                 key,
                                 Section {
                                     comment,
-                                    table: table.to_owned(),
+                                    table: (**table).to_owned(),
                                 },
                             );
                         }
@@ -71,7 +71,7 @@ impl TomlTemplateRenderer {
                             key,
                             Section {
                                 comment,
-                                table: table.to_owned(),
+                                table: (**table).to_owned(),
                             },
                         );
                     }
@@ -96,7 +96,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             return render_array(array);
         }
 
-        Ok(format!("[{}]", self.render_schema(&array.items_type)?))
+        Ok(format!("[{}]", self.render_schema_type(&array.items_type)?))
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {
@@ -135,8 +135,8 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         // Objects are inline, so we can't show comments
         self.ctx.options.comments = false;
 
-        let value = self.render_schema(&object.value_type)?;
-        let mut key = self.render_schema(&object.key_type)?;
+        let value = self.render_schema_type(&object.value_type)?;
+        let mut key = self.render_schema_type(&object.key_type)?;
 
         if key == EMPTY_STRING {
             key = "example".into();
@@ -162,7 +162,11 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             self.ctx.push_stack(&field.name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!("{} = {}", field.name, self.render_schema(&field.type_of)?,);
+                let prop = format!(
+                    "{} = {}",
+                    field.name,
+                    self.render_schema_type(&field.type_of)?,
+                );
 
                 out.push(self.ctx.create_field(field, prop));
             }
@@ -178,11 +182,11 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     }
 
     fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<String> {
-        render_tuple(tuple, |schema| self.render_schema(schema))
+        render_tuple(tuple, |schema| self.render_schema_type(schema))
     }
 
     fn render_union(&mut self, uni: &UnionType) -> RenderResult<String> {
-        render_union(uni, |schema| self.render_schema(schema))
+        render_union(uni, |schema| self.render_schema_type(schema))
     }
 
     fn render_unknown(&mut self) -> RenderResult<String> {

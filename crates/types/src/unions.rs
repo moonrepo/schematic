@@ -1,5 +1,4 @@
-use crate::schema::SchemaField;
-use crate::schema_type::SchemaType;
+use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum UnionOperator {
@@ -14,7 +13,7 @@ pub struct UnionType {
     pub partial: bool,
     pub operator: UnionOperator,
     pub variants: Option<Vec<SchemaField>>,
-    pub variants_types: Vec<Box<SchemaType>>,
+    pub variants_types: Vec<Box<Schema>>,
 }
 
 impl UnionType {
@@ -24,7 +23,10 @@ impl UnionType {
         I: IntoIterator<Item = SchemaType>,
     {
         UnionType {
-            variants_types: variants_types.into_iter().map(Box::new).collect(),
+            variants_types: variants_types
+                .into_iter()
+                .map(|inner| Box::new(Schema::new(inner)))
+                .collect(),
             ..UnionType::default()
         }
     }
@@ -36,12 +38,17 @@ impl UnionType {
     {
         UnionType {
             operator: UnionOperator::OneOf,
-            variants_types: variants_types.into_iter().map(Box::new).collect(),
+            variants_types: variants_types
+                .into_iter()
+                .map(|inner| Box::new(Schema::new(inner)))
+                .collect(),
             ..UnionType::default()
         }
     }
 
     pub fn has_null(&self) -> bool {
-        self.variants_types.iter().any(|v| v.is_null())
+        self.variants_types
+            .iter()
+            .any(|schema| schema.type_of.is_null())
     }
 }

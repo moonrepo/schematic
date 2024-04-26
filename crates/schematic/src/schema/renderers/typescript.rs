@@ -124,7 +124,8 @@ impl TypeScriptRenderer {
             }
         };
 
-        Ok(self.wrap_in_comment(enu.description.as_ref(), vec![], output))
+        // Ok(self.wrap_in_comment(enu.description.as_ref(), vec![], output))
+        Ok(output)
     }
 
     fn export_object_type(&mut self, name: &str, structure: &StructType) -> RenderResult {
@@ -136,7 +137,8 @@ impl TypeScriptRenderer {
             self.export_type_alias(name, value)?
         };
 
-        Ok(self.wrap_in_comment(structure.description.as_ref(), vec![], output))
+        // Ok(self.wrap_in_comment(structure.description.as_ref(), vec![], output))
+        Ok(output)
     }
 
     fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {
@@ -150,7 +152,7 @@ impl TypeScriptRenderer {
                         if v.hidden {
                             None
                         } else {
-                            Some(Box::new(v.type_of.clone()))
+                            Some(v.type_of.clone())
                         }
                     })
                     .collect::<Vec<_>>()
@@ -183,7 +185,7 @@ impl TypeScriptRenderer {
                     "{}{} = {},",
                     indent,
                     variant.name,
-                    self.render_schema(&variant.type_of)?
+                    self.render_schema_type(&variant.type_of)?
                 )
             } else {
                 format!("{}{},", indent, variant.name)
@@ -279,7 +281,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType) -> RenderResult {
-        let out = self.render_schema(&array.items_type)?;
+        let out = self.render_schema_type(&array.items_type)?;
 
         Ok(if out.contains('|') {
             format!("({out})[]")
@@ -335,8 +337,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     fn render_object(&mut self, object: &ObjectType) -> RenderResult {
         Ok(format!(
             "Record<{}, {}>",
-            self.render_schema(&object.key_type)?,
-            self.render_schema(&object.value_type)?
+            self.render_schema_type(&object.key_type)?,
+            self.render_schema_type(&object.value_type)?
         ))
     }
 
@@ -375,7 +377,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push_str(": ");
             }
 
-            row.push_str(&self.render_schema(&field.type_of)?);
+            row.push_str(&self.render_schema_type(&field.type_of)?);
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
                 row.push(';');
@@ -413,7 +415,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut items = vec![];
 
         for item in &tuple.items_types {
-            items.push(self.render_schema(item)?);
+            items.push(self.render_schema_type(item)?);
         }
 
         Ok(format!("[{}]", items.join(", ")))
@@ -423,7 +425,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut items = vec![];
 
         for item in &uni.variants_types {
-            items.push(self.render_schema(item)?);
+            items.push(self.render_schema_type(item)?);
         }
 
         Ok(items.join(" | "))
@@ -470,7 +472,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
                 SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
                 _ => {
-                    let out = self.render_schema_without_reference(schema)?;
+                    let out = self.render_schema_type(schema)?;
                     self.export_type_alias(name, out)?
                 }
             });

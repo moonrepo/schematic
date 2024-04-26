@@ -66,7 +66,7 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
     match schema {
         SchemaType::Struct(_) => true,
         SchemaType::Union(uni) => {
-            if uni.is_nullable() && uni.variants_types.len() == 2 {
+            if uni.has_null() && uni.variants_types.len() == 2 {
                 uni.variants_types
                     .iter()
                     .find(|v| !v.is_null())
@@ -334,7 +334,7 @@ pub fn render_union(
     }
 
     // We have a nullable type, so render the non-null value
-    if uni.is_nullable() {
+    if uni.has_null() {
         if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
             return render(variant);
         }
@@ -358,5 +358,5 @@ pub fn validate_root(schemas: &IndexMap<String, SchemaType>) -> miette::Result<S
         return Err(miette!("The last registered schema must be a struct type."));
     };
 
-    Ok(root.to_owned())
+    Ok((**root).to_owned())
 }

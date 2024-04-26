@@ -1,9 +1,8 @@
-use crate::schema_type::SchemaType;
-use crate::{Schema, SchemaBuilder, Schematic};
+use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct TupleType {
-    pub items_types: Vec<Box<SchemaType>>,
+    pub items_types: Vec<Box<Schema>>,
 }
 
 impl TupleType {
@@ -13,7 +12,10 @@ impl TupleType {
         I: IntoIterator<Item = SchemaType>,
     {
         TupleType {
-            items_types: items_types.into_iter().map(Box::new).collect(),
+            items_types: items_types
+                .into_iter()
+                .map(|inner| Box::new(Schema::new(inner)))
+                .collect(),
             ..TupleType::default()
         }
     }

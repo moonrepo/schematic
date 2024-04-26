@@ -55,8 +55,8 @@ pub trait SchemaRenderer<O = String> {
     /// Render all possible variants of the provided [`SchemaType`] to a string.
     /// If a variant has an explicit name, and that name is a reference, return
     /// the name instead of rendering the type.
-    fn render_schema(&mut self, schema: &SchemaType) -> RenderResult<O> {
-        if let Some(name) = schema.get_name() {
+    fn render_schema(&mut self, schema: &Schema) -> RenderResult<O> {
+        if let Some(name) = &schema.name {
             if self.is_reference(name) {
                 return self.render_reference(name);
             }
@@ -66,7 +66,12 @@ pub trait SchemaRenderer<O = String> {
     }
 
     /// Like [`render_schema`] but does not check for references.
-    fn render_schema_without_reference(&mut self, schema: &SchemaType) -> RenderResult<O> {
+    fn render_schema_without_reference(&mut self, schema: &Schema) -> RenderResult<O> {
+        self.render_schema_type(&schema.type_of)
+    }
+
+    /// Like [`render_schema`] but does not check for references.
+    fn render_schema_type(&mut self, schema: &SchemaType) -> RenderResult<O> {
         match schema {
             SchemaType::Null => self.render_null(),
             SchemaType::Unknown => self.render_unknown(),
@@ -81,6 +86,7 @@ pub trait SchemaRenderer<O = String> {
             SchemaType::String(string) => self.render_string(string),
             SchemaType::Tuple(tuple) => self.render_tuple(tuple),
             SchemaType::Union(uni) => self.render_union(uni),
+            SchemaType::Reference(name) => self.render_reference(name),
         }
     }
 

@@ -1,11 +1,10 @@
-use crate::schema_type::SchemaType;
-use crate::{Schema, SchemaBuilder, Schematic};
+use crate::*;
 use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ArrayType {
     pub contains: Option<bool>,
-    pub items_type: Box<SchemaType>,
+    pub items_type: Box<Schema>,
     pub max_contains: Option<usize>,
     pub max_length: Option<usize>,
     pub min_contains: Option<usize>,
@@ -17,7 +16,7 @@ impl ArrayType {
     /// Create an array schema with the provided item types.
     pub fn new(items_type: SchemaType) -> Self {
         ArrayType {
-            items_type: Box::new(items_type),
+            items_type: Box::new(Schema::new(items_type)),
             ..ArrayType::default()
         }
     }
@@ -40,7 +39,7 @@ impl<T: Schematic> Schematic for &[T] {
 impl<T: Schematic, const N: usize> Schematic for [T; N] {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
-            items_type: Box::new(schema.infer_type::<T>()),
+            items_type: Box::new(schema.infer::<T>()),
             max_length: Some(N),
             min_length: Some(N),
             ..ArrayType::default()
@@ -52,7 +51,7 @@ impl<T: Schematic, const N: usize> Schematic for [T; N] {
 impl<T: Schematic, S> Schematic for HashSet<T, S> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
-            items_type: Box::new(schema.infer_type::<T>()),
+            items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),
             ..ArrayType::default()
         });
@@ -63,7 +62,7 @@ impl<T: Schematic, S> Schematic for HashSet<T, S> {
 impl<T: Schematic> Schematic for BTreeSet<T> {
     fn generate_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType {
-            items_type: Box::new(schema.infer_type::<T>()),
+            items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),
             ..ArrayType::default()
         });

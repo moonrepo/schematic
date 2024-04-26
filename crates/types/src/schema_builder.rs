@@ -115,7 +115,7 @@ impl SchemaBuilder {
             // type, so we shouldn't add null to it and alter the intended type.
             if self.name.is_none() {
                 if !inner.has_null() {
-                    inner.variants_types.push(Box::new(SchemaType::Null));
+                    inner.variants_types.push(Box::new(Schema::null()));
                 }
 
                 return;
