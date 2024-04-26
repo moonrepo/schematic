@@ -1,7 +1,7 @@
 use crate::common::FieldValue;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_quote,
-    map_option_quote, preserve_str_literal,
+    map_option_field_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -194,9 +194,9 @@ impl<'l> Field<'l> {
         let name = self.get_name(Some(&self.casing_format));
         let hidden = map_bool_quote("hidden", self.is_skipped());
         let nullable = map_bool_quote("nullable", self.is_optional());
-        let description = map_option_quote("description", extract_comment(&self.attrs));
-        let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
-        let env_var = map_option_quote("env_var", self.get_env_var());
+        let description = map_option_field_quote("description", extract_comment(&self.attrs));
+        let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
+        let env_var = map_option_field_quote("env_var", self.get_env_var());
 
         let value = self.value;
         let mut inner_schema = if self.is_nested() {

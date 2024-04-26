@@ -17,7 +17,7 @@ pub struct SchemaGenerator {
 impl SchemaGenerator {
     /// Add a [`SchemaType`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
-        let schema = T::generate_schema();
+        let schema = T::build_schema();
         self.add_schema(&schema);
     }
 

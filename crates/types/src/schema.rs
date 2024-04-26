@@ -126,17 +126,10 @@ pub struct SchemaField {
 }
 
 impl SchemaField {
-    /// Create a new field from a [`SchemaType`].
-    pub fn from_type(name: &str, type_of: SchemaType) -> SchemaField {
-        SchemaField {
-            name: name.to_owned(),
-            schema: Box::new(type_of.into()),
-            ..SchemaField::default()
-        }
-    }
-
     /// Create a new field from a [`Schema`].
-    pub fn from_schema(name: &str, schema: Schema) -> SchemaField {
+    pub fn new(name: &str, schema: impl Into<Schema>) -> SchemaField {
+        let schema = schema.into();
+
         SchemaField {
             name: name.to_owned(),
             description: schema.description.clone(),

@@ -151,9 +151,9 @@ impl<'l> Variant<'l> {
                         let ty = &field.ty;
 
                         if partial {
-                            quote! { schema.infer_type_as_partial::<#ty>() }
+                            quote! { schema.infer_as_partial::<#ty>() }
                         } else {
-                            quote! { schema.infer_type::<#ty>() }
+                            quote! { schema.infer::<#ty>() }
                         }
                     })
                     .collect::<Vec<_>>();
@@ -164,20 +164,20 @@ impl<'l> Variant<'l> {
                     quote! { #inner }
                 } else {
                     quote! {
-                        SchemaType::tuple([
+                        Schema::tuple(TupleType::new([
                             #(#fields),*
-                        ])
+                        ]))
                     }
                 }
             }
             Fields::Unit => {
                 if self.args.null || untagged {
                     quote! {
-                        SchemaType::Null
+                        Schema::null()
                     }
                 } else {
                     quote! {
-                        SchemaType::literal(LiteralValue::String(#name.into()))
+                        Schema::literal_value(LiteralValue::String(#name.into()))
                     }
                 }
             }
@@ -186,11 +186,11 @@ impl<'l> Variant<'l> {
         let outer = match tagged_format {
             TaggedFormat::Unit => {
                 // This returns `SchemaField` while other branches
-                // return `SchemaType`. Be aware of this downstream!
+                // return `Schema`. Be aware of this downstream!
                 quote! {
                     SchemaField {
                         name: #name.into(),
-                        type_of: Box::new(#inner),
+                        schema: Box::new(#inner),
                         ..Default::default()
                     }
                 }
@@ -198,27 +198,30 @@ impl<'l> Variant<'l> {
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
                 quote! {
-                    SchemaType::structure([
+                    Schema::structure(StructType::new([
                         SchemaField::new(#name, #inner),
-                    ])
+                    ]))
                 }
             }
             TaggedFormat::Internal(tag) => {
                 return quote! {
                     {
-                        let mut schema = #inner;
-                        schema.add_field(SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))));
-                        schema.set_partial(#partial);
-                        schema
+                        let mut item = #inner;
+                        item.add_field(SchemaField::new(
+                            #tag,
+                            Schema::literal_value(LiteralValue::String(#name.into())),
+                        ));
+                        item.set_partial(#partial);
+                        item
                     }
                 };
             }
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
-                    SchemaType::structure([
-                        SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))),
+                    Schema::structure(StructType::new([
+                        SchemaField::new(#tag, Schema::literal_value(LiteralValue::String(#name.into()))),
                         SchemaField::new(#content, #inner),
-                    ])
+                    ]))
                 }
             }
         };
@@ -226,9 +229,9 @@ impl<'l> Variant<'l> {
         if partial {
             quote! {
                 {
-                    let mut schema = #outer;
-                    schema.set_partial(#partial);
-                    schema
+                    let mut item = #outer;
+                    item.set_partial(#partial);
+                    item
                 }
             }
         } else {

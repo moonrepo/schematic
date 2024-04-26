@@ -1,5 +1,5 @@
 use crate::common::{Field, Variant};
-use crate::utils::map_option_quote;
+use crate::utils::map_option_argument_quote;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Fields;
@@ -68,7 +68,7 @@ impl<'l> Container<'l> {
                     })
                     .collect::<Vec<_>>();
 
-                // let default_index = map_option_quote("default_index", default_index);
+                let default_index = map_option_argument_quote(default_index);
 
                 if is_all_unit_enum {
                     quote! {

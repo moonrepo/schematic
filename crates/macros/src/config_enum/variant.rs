@@ -1,7 +1,7 @@
 use crate::common::FieldSerdeArgs;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, get_meta_path,
-    map_option_quote,
+    map_option_field_quote,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
@@ -110,8 +110,8 @@ impl<'l> Variant<'l> {
 
     pub fn get_schema_type(&self) -> TokenStream {
         let name = self.name.to_string();
-        let description = map_option_quote("description", extract_comment(&self.attrs));
-        let deprecated = map_option_quote("deprecated", extract_deprecated(&self.attrs));
+        let description = map_option_field_quote("description", extract_comment(&self.attrs));
+        let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
 
         let inner_schema = if self.args.fallback {
             quote! {
@@ -128,7 +128,7 @@ impl<'l> Variant<'l> {
         quote! {
             SchemaField {
                 name: #name.into(),
-                schema: #inner_schema,
+                schema: Box::new(#inner_schema),
                 #description
                 #deprecated
                 ..Default::default()

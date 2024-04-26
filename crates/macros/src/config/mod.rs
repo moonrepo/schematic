@@ -128,7 +128,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                         Some(#schema_name.into())
                     }
 
-                    fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+                    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                         use schematic::schema::*;
 
                         #schema_impl
@@ -142,7 +142,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                         Some(#partial_schema_name.into())
                     }
 
-                    fn generate_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+                    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                         #partial_schema_impl
                         schema
                     }
