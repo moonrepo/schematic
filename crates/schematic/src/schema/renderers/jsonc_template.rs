@@ -6,11 +6,12 @@ use schematic_types::*;
 use std::collections::HashSet;
 
 /// Renders JSON config templates with comments.
-pub struct JsoncTemplateRenderer {
+pub struct JsoncTemplateRenderer<'gen> {
     ctx: TemplateContext,
+    schemas: Option<&'gen IndexMap<String, Schema>>,
 }
 
-impl JsoncTemplateRenderer {
+impl<'gen> JsoncTemplateRenderer<'gen> {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         JsoncTemplateRenderer::new(TemplateOptions::default())
@@ -19,11 +20,12 @@ impl JsoncTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         JsoncTemplateRenderer {
             ctx: TemplateContext::new(Format::Json, options),
+            schemas: None,
         }
     }
 }
 
-impl SchemaRenderer<String> for JsoncTemplateRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for JsoncTemplateRenderer<'gen> {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
@@ -97,6 +99,12 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
+        if let Some(schemas) = &self.schemas {
+            if let Some(schema) = schemas.get(reference) {
+                return self.render_schema_without_reference(schema);
+            }
+        }
+
         render_reference(reference)
     }
 
@@ -154,9 +162,11 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, Schema>,
-        _references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        _references: &'gen HashSet<String>,
     ) -> RenderResult {
+        self.schemas = Some(schemas);
+
         let root = validate_root(schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
 

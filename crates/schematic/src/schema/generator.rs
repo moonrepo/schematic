@@ -9,12 +9,14 @@ use std::path::Path;
 /// A generator collects [`Schema`]s and renders them to a specific file,
 /// using a renderer that implements [`SchemaRenderer`].
 #[derive(Debug, Default)]
-pub struct SchemaGenerator {
+pub struct SchemaGenerator<'gen> {
     references: HashSet<String>,
     schemas: IndexMap<String, Schema>,
+
+    _marker: std::marker::PhantomData<&'gen ()>,
 }
 
-impl SchemaGenerator {
+impl<'gen> SchemaGenerator<'gen> {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
         let schema = SchemaBuilder::build_root::<T>();
@@ -79,8 +81,8 @@ impl SchemaGenerator {
 
     /// Generate an output by rendering all collected [`Schema`]s using the provided
     /// [`SchemaRenderer`], and finally write to the provided file path.
-    pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<O>>(
-        &self,
+    pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<'gen, O>>(
+        &'gen self,
         output_file: P,
         mut renderer: R,
     ) -> miette::Result<()> {

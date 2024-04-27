@@ -6,11 +6,12 @@ use schematic_types::*;
 use std::collections::HashSet;
 
 /// Renders YAML config templates.
-pub struct YamlTemplateRenderer {
+pub struct YamlTemplateRenderer<'gen> {
     ctx: TemplateContext,
+    schemas: Option<&'gen IndexMap<String, Schema>>,
 }
 
-impl YamlTemplateRenderer {
+impl<'gen> YamlTemplateRenderer<'gen> {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         YamlTemplateRenderer::new(TemplateOptions::default())
@@ -19,11 +20,12 @@ impl YamlTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         YamlTemplateRenderer {
             ctx: TemplateContext::new(Format::Yaml, options),
+            schemas: None,
         }
     }
 }
 
-impl SchemaRenderer<String> for YamlTemplateRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
@@ -35,13 +37,15 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
             return render_array(array);
         }
 
-        if !array.items_type.is_struct() {
-            return Ok(format!("[{}]", self.render_schema(&array.items_type)?));
+        let items_type = self.ctx.resolve_schema(&array.items_type, &self.schemas);
+
+        if !items_type.is_struct() {
+            return Ok(format!("[{}]", self.render_schema(items_type)?));
         }
 
         self.ctx.depth += 2;
 
-        let mut item = self.render_schema(&array.items_type)?;
+        let mut item = self.render_schema(items_type)?;
 
         self.ctx.depth -= 2;
 
@@ -76,14 +80,15 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
     fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
         let key = self.ctx.get_stack_key();
+        let value_type = self.ctx.resolve_schema(&object.value_type, &self.schemas);
 
-        if !self.ctx.is_expanded(&key) || !object.value_type.is_struct() {
+        if !self.ctx.is_expanded(&key) || !value_type.is_struct() {
             return render_object(object);
         }
 
         self.ctx.depth += 2;
 
-        let value = self.render_schema(&object.value_type)?;
+        let value = self.render_schema(value_type)?;
 
         self.ctx.depth -= 1;
 
@@ -101,6 +106,12 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
+        if let Some(schemas) = &self.schemas {
+            if let Some(schema) = schemas.get(reference) {
+                return self.render_schema_without_reference(schema);
+            }
+        }
+
         render_reference(reference)
     }
 
@@ -163,9 +174,11 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, Schema>,
-        _references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        _references: &'gen HashSet<String>,
     ) -> RenderResult {
+        self.schemas = Some(schemas);
+
         let root = validate_root(schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
 

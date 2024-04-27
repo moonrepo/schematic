@@ -1,5 +1,5 @@
 use crate::format::Format;
-use crate::schema::{RenderResult, SchemaRenderer};
+use crate::schema::RenderResult;
 use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
@@ -76,33 +76,6 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
             }
         }
         _ => false,
-    }
-}
-
-/// Renders template files from a schema.
-#[deprecated = "Use the format specific renderers instead!"]
-pub struct TemplateRenderer;
-
-#[allow(deprecated)]
-impl TemplateRenderer {
-    pub fn new_format(format: Format) -> Box<dyn SchemaRenderer<String>> {
-        Self::new(format, TemplateOptions::default())
-    }
-
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(format: Format, options: TemplateOptions) -> Box<dyn SchemaRenderer<String>> {
-        match format {
-            Format::None => unreachable!(),
-
-            #[cfg(feature = "json")]
-            Format::Json => Box::new(super::jsonc_template::JsoncTemplateRenderer::new(options)),
-
-            #[cfg(feature = "toml")]
-            Format::Toml => Box::new(super::toml_template::TomlTemplateRenderer::new(options)),
-
-            #[cfg(feature = "yaml")]
-            Format::Yaml => Box::new(super::yaml_template::YamlTemplateRenderer::new(options)),
-        }
     }
 }
 
@@ -235,6 +208,22 @@ impl TemplateContext {
 
     pub fn pop_stack(&mut self) {
         self.stack.pop_back();
+    }
+
+    pub fn resolve_schema<'gen>(
+        &self,
+        initial: &'gen Schema,
+        schemas: &Option<&'gen IndexMap<String, Schema>>,
+    ) -> &'gen Schema {
+        if let SchemaType::Reference(name) = &initial.type_of {
+            if let Some(schemas) = schemas {
+                if let Some(schema) = schemas.get(name) {
+                    return schema;
+                }
+            }
+        }
+
+        initial
     }
 }
 

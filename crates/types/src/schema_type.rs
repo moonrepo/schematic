@@ -80,6 +80,11 @@ impl SchemaType {
         false
     }
 
+    /// Return true if the schema is a reference.
+    pub fn is_reference(&self) -> bool {
+        matches!(self, SchemaType::Reference(_))
+    }
+
     /// Return true if the schema is a struct.
     pub fn is_struct(&self) -> bool {
         matches!(self, SchemaType::Struct(_))

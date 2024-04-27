@@ -90,9 +90,9 @@ schematic = { path = ".", features = [
 	"json",
 	"schema",
 	"toml",
-	"renderer_json_schema",
+	# "renderer_json_schema",
 	"renderer_template",
-	"renderer_typescript",
+	# "renderer_typescript",
 	"type_chrono",
 	"type_indexmap",
 	"type_regex",
@@ -116,7 +116,7 @@ serial_test = "3.1.1"
 starbase_sandbox = "0.6.0"
 
 # Types
-chrono = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 indexmap = { workspace = true }
 regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }

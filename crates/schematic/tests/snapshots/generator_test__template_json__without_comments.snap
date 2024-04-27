@@ -7,8 +7,8 @@ expression: "fs::read_to_string(file).unwrap()"
   "enums": "foo",
   "expandArray": [
     {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   ],
   "expandArrayPrimitive": [
@@ -16,8 +16,8 @@ expression: "fs::read_to_string(file).unwrap()"
   ],
   "expandObject": {
     "example": {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   },
   "expandObjectPrimitive": {

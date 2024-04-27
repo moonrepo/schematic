@@ -9,14 +9,14 @@
   to support names, descriptions, references, and more. It also helps to avoid circular references.
 
   ```rust
-  // Old
+  // Before
   impl Schematic for T {
     fn generate_schema() -> schematic::SchemaType {
       // Create the schema type
     }
   }
 
-  // New
+  // After
   impl Schematic for T {
     fn schema_name() -> Option<String> {
       None // Required for non-primitives
@@ -25,6 +25,33 @@
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
       // Build the schema
       schema.build()
+    }
+  }
+  ```
+
+- Updated renderers with lifetimes, so that data from the generator can be borrowed correctly. If
+  you're using the built-in renderers, everything should continue to work correctly.
+
+  ```rust
+  // Before
+  impl SchemaRenderer<O> for T {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, Schema>,
+        references: &HashSet<String>,
+    ) -> RenderResult {
+      //
+    }
+  }
+
+  // After
+  impl<'gen> SchemaRenderer<'gen, O> for T<'gen> {
+    fn render(
+        &mut self,
+        schemas: &'gen IndexMap<String, Schema>,
+        references: &'gen HashSet<String>,
+    ) -> RenderResult {
+      //
     }
   }
   ```

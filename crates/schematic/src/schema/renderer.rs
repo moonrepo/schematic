@@ -6,7 +6,7 @@ pub type RenderResult<T = String> = miette::Result<T>;
 
 /// Renders [`SchemaType`]s to a distinct format (derived from generic `O`)
 /// for use within a [`SchemaGenerator`].
-pub trait SchemaRenderer<O = String> {
+pub trait SchemaRenderer<'gen, O = String> {
     /// Return true of the provided name is a referenced type.
     fn is_reference(&self, name: &str) -> bool;
 
@@ -89,7 +89,7 @@ pub trait SchemaRenderer<O = String> {
     /// References between types can be resolved using the provided `references` set.
     fn render(
         &mut self,
-        schemas: &IndexMap<String, Schema>,
-        references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        references: &'gen HashSet<String>,
     ) -> RenderResult;
 }

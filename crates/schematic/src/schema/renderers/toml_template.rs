@@ -12,14 +12,15 @@ struct Section {
 }
 
 /// Renders TOML config templates.
-pub struct TomlTemplateRenderer {
+pub struct TomlTemplateRenderer<'gen> {
     ctx: TemplateContext,
+    schemas: Option<&'gen IndexMap<String, Schema>>,
 
     arrays: BTreeMap<String, Section>,
     tables: BTreeMap<String, Section>,
 }
 
-impl TomlTemplateRenderer {
+impl<'gen> TomlTemplateRenderer<'gen> {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         TomlTemplateRenderer::new(TemplateOptions::default())
@@ -28,6 +29,7 @@ impl TomlTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         TomlTemplateRenderer {
             ctx: TemplateContext::new(Format::Toml, options),
+            schemas: None,
             arrays: BTreeMap::new(),
             tables: BTreeMap::new(),
         }
@@ -40,20 +42,25 @@ impl TomlTemplateRenderer {
             let comment = self.ctx.create_comment(field);
 
             match &mut (*field.schema).type_of {
-                SchemaType::Array(array) if array.items_type.is_struct() => {
-                    if let SchemaType::Struct(table) = &mut (*array.items_type).type_of {
+                SchemaType::Array(array) => {
+                    let items_type = self
+                        .ctx
+                        .resolve_schema(&array.items_type, &self.schemas)
+                        .to_owned();
+
+                    if let SchemaType::Struct(mut table) = items_type.type_of {
                         let key = self.ctx.get_stack_key();
 
                         field.hidden = true;
 
-                        self.extract_sections(table);
+                        self.extract_sections(&mut table);
 
                         if !table.is_hidden() {
                             self.arrays.insert(
                                 key,
                                 Section {
                                     comment,
-                                    table: (**table).to_owned(),
+                                    table: *table,
                                 },
                             );
                         }
@@ -84,7 +91,7 @@ impl TomlTemplateRenderer {
     }
 }
 
-impl SchemaRenderer<String> for TomlTemplateRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
@@ -96,7 +103,9 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             return render_array(array);
         }
 
-        Ok(format!("[{}]", self.render_schema(&array.items_type)?))
+        let items_type = self.ctx.resolve_schema(&array.items_type, &self.schemas);
+
+        Ok(format!("[{}]", self.render_schema(items_type)?))
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {
@@ -125,8 +134,9 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
     fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
         let key = self.ctx.get_stack_key();
+        let value_type = self.ctx.resolve_schema(&object.value_type, &self.schemas);
 
-        if !self.ctx.is_expanded(&key) || object.value_type.is_struct() {
+        if !self.ctx.is_expanded(&key) || value_type.is_struct() {
             return render_object(object);
         }
 
@@ -135,7 +145,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         // Objects are inline, so we can't show comments
         self.ctx.options.comments = false;
 
-        let value = self.render_schema(&object.value_type)?;
+        let value = self.render_schema(value_type)?;
         let mut key = self.render_schema(&object.key_type)?;
 
         if key == EMPTY_STRING {
@@ -148,6 +158,12 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     }
 
     fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
+        if let Some(schemas) = &self.schemas {
+            if let Some(schema) = schemas.get(reference) {
+                return self.render_schema_without_reference(schema);
+            }
+        }
+
         render_reference(reference)
     }
 
@@ -191,9 +207,11 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, Schema>,
-        _references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        _references: &'gen HashSet<String>,
     ) -> RenderResult {
+        self.schemas = Some(schemas);
+
         let mut root = validate_root(schemas)?;
 
         // Recursively extract all sections (arrays, objects)
