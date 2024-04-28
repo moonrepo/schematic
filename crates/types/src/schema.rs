@@ -1,11 +1,11 @@
-use std::ops::{Deref, DerefMut};
-
 use crate::*;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Schema {
     pub description: Option<String>,
     pub name: Option<String>,
+    pub nullable: bool,
     pub type_of: SchemaType,
 }
 
@@ -15,6 +15,7 @@ impl Schema {
         Self {
             description: None,
             name: None,
+            nullable: false,
             type_of,
         }
     }
@@ -88,6 +89,28 @@ impl Schema {
     pub fn unknown() -> Self {
         Self::new(SchemaType::Unknown)
     }
+
+    // pub fn make_nullable(&mut self) {
+    //     if let SchemaType::Union(inner) = &mut self.type_of {
+    //         // If the union has an explicit name, then we can assume it's a distinct
+    //         // type, so we shouldn't add null to it and alter the intended type.
+    //         if self.name.is_none() {
+    //             if !inner.has_null() {
+    //                 inner.variants_types.push(Box::new(Schema::null()));
+    //             }
+
+    //             return;
+    //         }
+    //     }
+
+    //     // Convert to a nullable union
+    //     let current_type = std::mem::replace(&mut self.type_of, SchemaType::Unknown);
+
+    //     self.type_of = SchemaType::Union(Box::new(UnionType::new_any([
+    //         Schema::new(current_type),
+    //         Schema::null(),
+    //     ])));
+    // }
 }
 
 impl Deref for Schema {

@@ -76,7 +76,9 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
         SchemaType::Struct(inner) => {
             if inner.partial || force_partial {
                 if let Some(name) = &schema.name {
-                    schema.name = Some(format!("Partial{name}"));
+                    if !name.starts_with("Partial") {
+                        schema.name = Some(format!("Partial{name}"));
+                    }
                 }
 
                 for field in inner.fields.iter_mut() {
@@ -85,8 +87,7 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
 
                     partialize_schema(&mut field.schema, true);
 
-                    // TODO
-                    // field.type_of = SchemaType::nullable(field.type_of.clone());
+                    field.schema.nullable = true;
                 }
             } else {
                 for field in inner.fields.iter_mut() {
@@ -106,7 +107,9 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
 
             if inner.partial || force_partial {
                 if let Some(name) = &schema.name {
-                    schema.name = Some(format!("Partial{name}"));
+                    if !name.starts_with("Partial") {
+                        schema.name = Some(format!("Partial{name}"));
+                    }
                 }
             }
 

@@ -53,18 +53,18 @@ pub struct TypeScriptOptions {
 
 /// Renders TypeScript types from a schema.
 #[derive(Default)]
-pub struct TypeScriptRenderer {
+pub struct TypeScriptRenderer<'gen> {
     depth: usize,
     options: TypeScriptOptions,
-    references: HashSet<String>,
+    references: Option<&'gen HashSet<String>>,
 }
 
-impl TypeScriptRenderer {
+impl<'gen> TypeScriptRenderer<'gen> {
     pub fn new(options: TypeScriptOptions) -> Self {
         Self {
             depth: 0,
             options,
-            references: HashSet::new(),
+            references: None,
         }
     }
 
@@ -152,14 +152,14 @@ impl TypeScriptRenderer {
                         if v.hidden {
                             None
                         } else {
-                            Some(v.type_of.clone())
+                            Some(v.schema.clone())
                         }
                     })
                     .collect::<Vec<_>>()
             } else {
                 enu.values
                     .iter()
-                    .map(|v| Box::new(SchemaType::literal(v.clone())))
+                    .map(|v| Box::new(Schema::literal_value(v.clone())))
                     .collect::<Vec<_>>()
             };
 
@@ -185,7 +185,7 @@ impl TypeScriptRenderer {
                     "{}{} = {},",
                     indent,
                     variant.name,
-                    self.render_schema_type(&variant.type_of)?
+                    self.render_schema(&variant.schema)?
                 )
             } else {
                 format!("{}{},", indent, variant.name)
@@ -193,7 +193,7 @@ impl TypeScriptRenderer {
 
             let mut tags = vec![];
 
-            if let Some(default) = variant.type_of.get_default() {
+            if let Some(default) = variant.schema.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
@@ -267,13 +267,13 @@ impl TypeScriptRenderer {
     }
 }
 
-impl SchemaRenderer<String> for TypeScriptRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
     fn is_reference(&self, name: &str) -> bool {
         if self.options.disable_references {
             return false;
         }
 
-        if self.references.contains(name) {
+        if self.references.is_some_and(|refs| refs.contains(name)) {
             return true;
         }
 
@@ -281,7 +281,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType) -> RenderResult {
-        let out = self.render_schema_type(&array.items_type)?;
+        let out = self.render_schema(&array.items_type)?;
 
         Ok(if out.contains('|') {
             format!("({out})[]")
@@ -337,8 +337,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     fn render_object(&mut self, object: &ObjectType) -> RenderResult {
         Ok(format!(
             "Record<{}, {}>",
-            self.render_schema_type(&object.key_type)?,
-            self.render_schema_type(&object.value_type)?
+            self.render_schema(&object.key_type)?,
+            self.render_schema(&object.value_type)?
         ))
     }
 
@@ -377,7 +377,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push_str(": ");
             }
 
-            row.push_str(&self.render_schema_type(&field.type_of)?);
+            row.push_str(&self.render_schema(&field.schema)?);
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
                 row.push(';');
@@ -387,7 +387,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
             let mut tags = vec![];
 
-            if let Some(default) = field.type_of.get_default() {
+            if let Some(default) = field.schema.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
@@ -415,7 +415,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut items = vec![];
 
         for item in &tuple.items_types {
-            items.push(self.render_schema_type(item)?);
+            items.push(self.render_schema(item)?);
         }
 
         Ok(format!("[{}]", items.join(", ")))
@@ -425,7 +425,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut items = vec![];
 
         for item in &uni.variants_types {
-            items.push(self.render_schema_type(item)?);
+            items.push(self.render_schema(item)?);
         }
 
         Ok(items.join(" | "))
@@ -437,10 +437,10 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
-        references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        references: &'gen HashSet<String>,
     ) -> RenderResult {
-        self.references.extend(references.to_owned());
+        self.references = Some(references);
 
         let mut outputs = vec![
             "// Automatically generated by schematic. DO NOT MODIFY!".to_string(),
@@ -468,11 +468,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 continue;
             }
 
-            outputs.push(match schema {
+            outputs.push(match &schema.type_of {
                 SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
                 SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
                 _ => {
-                    let out = self.render_schema_type(schema)?;
+                    let out = self.render_schema(schema)?;
                     self.export_type_alias(name, out)?
                 }
             });

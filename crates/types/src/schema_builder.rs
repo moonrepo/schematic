@@ -6,10 +6,10 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
 pub struct SchemaBuilder {
-    pub description: Option<String>,
-    pub name: Option<String>,
-    pub type_of: SchemaType,
-
+    description: Option<String>,
+    name: Option<String>,
+    type_of: SchemaType,
+    nullable: bool,
     existing_names: Rc<RefCell<HashSet<String>>>,
 }
 
@@ -30,6 +30,7 @@ impl SchemaBuilder {
         Schema {
             description: self.description,
             name: self.name,
+            nullable: self.nullable,
             type_of: self.type_of,
         }
     }
@@ -110,16 +111,16 @@ impl SchemaBuilder {
     /// Convert the current schema to a nullable type. If already nullable,
     /// do nothing and return, otherwise convert to a union.
     pub fn nullable(&mut self) {
+        self.nullable = true;
+
         if let SchemaType::Union(inner) = &mut self.type_of {
             // If the union has an explicit name, then we can assume it's a distinct
             // type, so we shouldn't add null to it and alter the intended type.
-            if self.name.is_none() {
-                if !inner.has_null() {
-                    inner.variants_types.push(Box::new(Schema::null()));
-                }
-
-                return;
+            if self.name.is_none() && !inner.has_null() {
+                inner.variants_types.push(Box::new(Schema::null()));
             }
+
+            return;
         }
 
         // Convert to a nullable union

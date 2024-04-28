@@ -7,9 +7,9 @@ pub use indexmap::*;
 pub use renderer::*;
 pub use schematic_types::*;
 
-// /// Renders JSON schemas.
-// #[cfg(feature = "renderer_json_schema")]
-// pub use renderers::json_schema::{self, *};
+/// Renders JSON schemas.
+#[cfg(feature = "renderer_json_schema")]
+pub use renderers::json_schema::{self, *};
 
 /// Renders JSON config templates.
 #[cfg(all(feature = "renderer_template", feature = "json"))]
@@ -28,9 +28,9 @@ pub use renderers::template::{self, TemplateOptions};
 #[cfg(all(feature = "renderer_template", feature = "toml"))]
 pub use renderers::toml_template::*;
 
-// /// Renders TypeScript types.
-// #[cfg(feature = "renderer_typescript")]
-// pub use renderers::typescript::{self, *};
+/// Renders TypeScript types.
+#[cfg(feature = "renderer_typescript")]
+pub use renderers::typescript::{self, *};
 
 /// Renders YAML config templates.
 #[cfg(all(feature = "renderer_template", feature = "yaml"))]

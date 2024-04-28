@@ -6,7 +6,8 @@
 
 - Rewrote the `Schematic` trait (and indirectly the `Config` and `ConfigEnum` traits) from the
   ground up. The new API uses a builder pattern to construct the schema. This allows for all types
-  to support names, descriptions, references, and more. It also helps to avoid circular references.
+  to support names, descriptions, references, and more metadata. It also helps to avoid circular
+  references.
 
   ```rust
   // Before
@@ -39,7 +40,7 @@
         &mut self,
         schemas: &IndexMap<String, Schema>,
         references: &HashSet<String>,
-    ) -> RenderResult {
+    ) -> RenderResult<O> {
       //
     }
   }
@@ -50,7 +51,26 @@
         &mut self,
         schemas: &'gen IndexMap<String, Schema>,
         references: &'gen HashSet<String>,
-    ) -> RenderResult {
+    ) -> RenderResult<O> {
+      //
+    }
+  }
+  ```
+
+- Updated renderer methods to receive the schema as an immutable referenced argument. The schemas
+  contains the name, description, and more.
+
+  ```rust
+  // Before
+  impl SchemaRenderer<O> for T {
+    fn render(&mut self, array: &ArrayType) -> RenderResult<O> {
+      //
+    }
+  }
+
+  // After
+  impl<'gen> SchemaRenderer<'gen, O> for T<'gen> {
+    fn render(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<O> {
       //
     }
   }

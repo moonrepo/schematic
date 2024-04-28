@@ -90,7 +90,7 @@ schematic = { path = ".", features = [
 	"json",
 	"schema",
 	"toml",
-	# "renderer_json_schema",
+	"renderer_json_schema",
 	"renderer_template",
 	# "renderer_typescript",
 	"type_chrono",
