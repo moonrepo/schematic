@@ -151,7 +151,7 @@ impl<'l> Variant<'l> {
                         let ty = &field.ty;
 
                         if partial {
-                            quote! { schema.infer_as_partial::<#ty>() }
+                            quote! { schema.infer_as_nested::<#ty>() }
                         } else {
                             quote! { schema.infer::<#ty>() }
                         }
@@ -205,12 +205,13 @@ impl<'l> Variant<'l> {
                 return quote! {
                     {
                         let mut item = #inner;
-                        // TODO
-                        // item.add_field(Schema::new_field(
-                        //     #tag,
-                        //     Schema::literal_value(LiteralValue::String(#name.into())),
-                        // ));
-                        item.set_partial(#partial);
+                        item.add_field(
+                            #tag,
+                            Schema::literal_value(LiteralValue::String(#name.into())),
+                        );
+                        if #partial {
+                            item.partialize();
+                        }
                         item
                     }
                 };
@@ -229,7 +230,6 @@ impl<'l> Variant<'l> {
             quote! {
                 {
                     let mut item = #outer;
-                    item.set_partial(#partial);
                     item
                 }
             }

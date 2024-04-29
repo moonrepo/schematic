@@ -109,30 +109,11 @@ impl SchemaType {
         };
     }
 
-    /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
-    /// but arrays and objects will also be recursively set to update the inner type.
-    pub fn set_partial(&mut self, state: bool) {
-        match self {
-            SchemaType::Array(ref mut inner) => inner.items_type.set_partial(state),
-            SchemaType::Object(ref mut inner) => inner.value_type.set_partial(state),
-            SchemaType::Struct(ref mut inner) => {
-                inner.partial = state;
-            }
-            SchemaType::Union(ref mut inner) => {
-                inner.partial = state;
-
-                // This is to handle things wrapped in `Option`, is it correct?
-                // Not sure of a better way to do this at the moment...
-                let is_nullable = inner.variants_types.iter().any(|t| t.ty.is_nullable());
-
-                if is_nullable {
-                    for item in inner.variants_types.iter_mut() {
-                        item.set_partial(state);
-                    }
-                }
-            }
-            _ => {}
-        };
+    /// Add a field to the type if it's a struct.
+    pub fn add_field(&mut self, key: &str, value: impl Into<Schema>) {
+        if let SchemaType::Struct(map) = self {
+            map.fields.insert(key.to_owned(), Box::new(value.into()));
+        }
     }
 }
 

@@ -200,7 +200,7 @@ impl<'l> Field<'l> {
 
         let value = self.value;
         let mut inner_schema = if self.is_nested() {
-            quote! { schema.infer_as_partial::<#value>() }
+            quote! { schema.infer_as_nested::<#value>() }
         } else {
             quote! { schema.infer::<#value>() }
         };

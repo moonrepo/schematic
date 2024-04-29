@@ -89,7 +89,7 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
 
                 for field in inner.fields.values_mut() {
                     field.optional = true;
-                    field.nullable = true;
+                    field.nullify();
 
                     partialize_schema(field, true);
                 }

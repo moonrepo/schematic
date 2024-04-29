@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/macro_enum_test.rs
+source: crates/schematic/tests/macro_enum_test.rs
 expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {
@@ -58,12 +58,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "content": {
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/PartialSomeConfig"
-            },
-            {
-              "type": "null"
             }
           ]
         },
@@ -373,6 +370,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "PartialAllUnit": {
+      "title": "PartialAllUnit",
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
     "PartialAllUnnamed": {
       "title": "PartialAllUnnamed",
       "anyOf": [
@@ -457,12 +463,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "object",
           "properties": {
             "qux": {
-              "anyOf": [
+              "allOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
-                },
-                {
-                  "type": "null"
                 }
               ]
             }
@@ -507,12 +510,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "object",
           "properties": {
             "object": {
-              "anyOf": [
+              "allOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
-                },
-                {
-                  "type": "null"
                 }
               ]
             }
@@ -588,30 +588,37 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "PartialSomeConfig": {
       "title": "PartialSomeConfig",
-      "type": "object",
-      "properties": {
-        "bar": {
-          "anyOf": [
-            {
-              "type": "number"
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "bar": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
-            {
-              "type": "null"
+            "foo": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
-          ]
+          },
+          "additionalProperties": false
         },
-        "foo": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+        {
+          "type": "null"
         }
-      },
-      "additionalProperties": false
+      ]
     },
     "PartialUntagged": {
       "title": "PartialUntagged",
@@ -638,6 +645,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "$ref": "#/definitions/PartialSomeConfig"
         }
+      ]
+    },
+    "PartialWithComments": {
+      "title": "PartialWithComments",
+      "description": "Container",
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
       ]
     },
     "PartialWithSerde": {
@@ -724,4 +741,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-

@@ -98,27 +98,62 @@ impl Schema {
         Self::new(SchemaType::Unknown)
     }
 
-    // pub fn make_nullable(&mut self) {
-    //     if let SchemaType::Union(inner) = &mut self.ty {
-    //         // If the union has an explicit name, then we can assume it's a distinct
-    //         // type, so we shouldn't add null to it and alter the intended type.
-    //         if self.name.is_none() {
-    //             if !inner.has_null() {
-    //                 inner.variants_types.push(Box::new(Schema::null()));
-    //             }
+    /// Convert the current schema to a nullable type. If already nullable,
+    /// do nothing, otherwise convert to a union.
+    pub fn nullify(&mut self) {
+        if self.nullable {
+            // May already be a null union through inferrence
+            return;
+        }
 
-    //             return;
-    //         }
-    //     }
+        self.nullable = true;
 
-    //     // Convert to a nullable union
-    //     let current_type = std::mem::replace(&mut self.ty, SchemaType::Unknown);
+        if let SchemaType::Union(inner) = &mut self.ty {
+            // If the union has an explicit name, then we can assume it's a distinct
+            // type, so we shouldn't add null to it and alter the intended type.
+            if self.name.is_none() {
+                if !inner.variants_types.iter().any(|t| t.is_null()) {
+                    inner.variants_types.push(Box::new(Schema::null()));
+                }
 
-    //     self.ty = SchemaType::Union(Box::new(UnionType::new_any([
-    //         Schema::new(current_type),
-    //         Schema::null(),
-    //     ])));
-    // }
+                return;
+            }
+        }
+
+        // Convert to a nullable union
+        let mut new_schema = Schema::new(std::mem::replace(&mut self.ty, SchemaType::Unknown));
+        new_schema.name = self.name.take();
+
+        self.ty = SchemaType::Union(Box::new(UnionType::new_any([new_schema, Schema::null()])));
+    }
+
+    /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
+    /// but arrays and objects will also be recursively set to update the inner type.
+    pub fn partialize(&mut self) {
+        match &mut self.ty {
+            SchemaType::Array(ref mut inner) => inner.items_type.partialize(),
+            SchemaType::Object(ref mut inner) => inner.value_type.partialize(),
+            SchemaType::Struct(ref mut inner) => {
+                inner.partial = true;
+            }
+            SchemaType::Union(ref mut inner) => {
+                inner.partial = true;
+
+                // This is to handle things wrapped in `Option`, is it correct?
+                // Not sure of a better way to do this at the moment...
+                let is_nullable = inner.variants_types.iter().any(|t| t.ty.is_null());
+
+                if is_nullable {
+                    for item in inner.variants_types.iter_mut() {
+                        if !item.is_null() {
+                            item.partialize();
+                        }
+                    }
+                }
+            }
+            _ => {}
+        };
+    }
 }
 
 impl Deref for Schema {

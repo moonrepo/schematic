@@ -112,7 +112,7 @@ struct Serde {
     rename: String,
     #[setting(skip)]
     skipped: String,
-    #[setting(skip, rename = "renamed")]
+    #[setting(skip)]
     all: bool,
 }
 
@@ -123,7 +123,7 @@ struct SerdeNative {
     rename: String,
     #[serde(skip)]
     skipped: String,
-    #[serde(skip, rename = "renamed")]
+    #[serde(skip, rename = "everything")]
     all: bool,
 }
 

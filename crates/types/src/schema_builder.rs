@@ -138,9 +138,9 @@ impl SchemaBuilder {
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`],
     /// and mark the schema is partial (is marked as `nested`).
-    pub fn infer_as_partial<T: Schematic>(&self) -> Schema {
+    pub fn infer_as_nested<T: Schematic>(&self) -> Schema {
         let mut schema = self.infer::<T>();
-        schema.set_partial(true);
+        schema.partialize();
         schema
     }
 
