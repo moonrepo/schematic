@@ -1,6 +1,5 @@
 use crate::*;
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
@@ -8,9 +7,9 @@ use std::rc::Rc;
 pub struct SchemaBuilder {
     description: Option<String>,
     name: Option<String>,
+    name_stack: Rc<RefCell<Vec<String>>>,
     ty: SchemaType,
     nullable: bool,
-    existing_names: Rc<RefCell<HashSet<String>>>,
 }
 
 impl SchemaBuilder {
@@ -46,7 +45,7 @@ impl SchemaBuilder {
         let name = value.as_ref();
 
         self.name = Some(name.to_owned());
-        self.existing_names.borrow_mut().insert(name.to_owned());
+        self.name_stack.borrow_mut().push(name.to_owned());
     }
 
     /// Build an array type.
@@ -109,34 +108,10 @@ impl SchemaBuilder {
         self.custom(SchemaType::Union(Box::new(value)));
     }
 
-    /// Convert the current schema to a nullable type. If already nullable,
-    /// do nothing and return, otherwise convert to a union.
-    // pub fn nullable(&mut self) {
-    //     self.nullable = true;
-
-    //     if let SchemaType::Union(inner) = &mut self.ty {
-    //         // If the union has an explicit name, then we can assume it's a distinct
-    //         // type, so we shouldn't add null to it and alter the intended type.
-    //         if self.name.is_none() && !inner.has_null() {
-    //             inner.variants_types.push(Box::new(Schema::null()));
-    //         }
-
-    //         return;
-    //     }
-
-    //     // Convert to a nullable union
-    //     let current_type = std::mem::replace(&mut self.ty, SchemaType::Unknown);
-
-    //     self.union(UnionType::new_any([
-    //         Schema::new(current_type),
-    //         Schema::null(),
-    //     ]));
-    // }
-
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>(&self) -> Schema {
         let mut builder = SchemaBuilder::default();
-        builder.existing_names = Rc::clone(&self.existing_names);
+        builder.name_stack = Rc::clone(&self.name_stack);
 
         // No name, so return the schema immediately
         let Some(name) = T::schema_name() else {
@@ -145,7 +120,7 @@ impl SchemaBuilder {
 
         // If this name has already been used, create a reference
         // so that we avoid recursion!
-        if self.existing_names.borrow().contains(&name) {
+        if self.name_stack.borrow().contains(&name) {
             builder.custom(SchemaType::Reference(name));
 
             return builder.build();
@@ -154,7 +129,11 @@ impl SchemaBuilder {
         // Otherwise generate a new schema and persist our name cache
         builder.set_name(&name);
 
-        T::build_schema(builder)
+        let schema = T::build_schema(builder);
+
+        self.name_stack.borrow_mut().pop();
+
+        schema
     }
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`],

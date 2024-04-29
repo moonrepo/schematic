@@ -36,8 +36,8 @@ impl<'gen> TomlTemplateRenderer<'gen> {
     }
 
     fn extract_sections(&mut self, doc: &mut StructType) {
-        for field in &mut doc.fields {
-            self.ctx.push_stack(field.name.as_ref().unwrap());
+        for (name, field) in &mut doc.fields {
+            self.ctx.push_stack(name);
 
             let comment = self.ctx.create_comment(field);
 
@@ -174,15 +174,11 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
         let mut out = vec![];
 
-        for field in &structure.fields {
-            self.ctx.push_stack(field.name.as_ref().unwrap());
+        for (name, field) in &structure.fields {
+            self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!(
-                    "{} = {}",
-                    field.name.as_ref().unwrap(),
-                    self.render_schema(&field)?,
-                );
+                let prop = format!("{} = {}", name, self.render_schema(&field)?,);
 
                 out.push(self.ctx.create_field(field, prop));
             }

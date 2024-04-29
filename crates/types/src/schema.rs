@@ -21,17 +21,8 @@ pub struct Schema {
 
 impl Schema {
     /// Create a schema with the provided type.
-    pub fn new(ty: SchemaType) -> Self {
+    pub fn new(ty: impl Into<SchemaType>) -> Self {
         Self {
-            ty,
-            ..Default::default()
-        }
-    }
-
-    /// Create a schema field with the provided type.
-    pub fn new_field(name: impl AsRef<str>, ty: impl Into<SchemaType>) -> Self {
-        Self {
-            name: Some(name.as_ref().to_owned()),
             ty: ty.into(),
             ..Default::default()
         }

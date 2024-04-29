@@ -81,14 +81,14 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                     }
                 }
 
-                for field in inner.fields.iter_mut() {
+                for field in inner.fields.values_mut() {
                     field.optional = true;
                     field.nullable = true;
 
                     partialize_schema(field, true);
                 }
             } else {
-                for field in inner.fields.iter_mut() {
+                for field in inner.fields.values_mut() {
                     partialize_schema(field, false);
                 }
             }
@@ -111,18 +111,18 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                 }
             }
 
-            if let Some(fields) = &mut inner.variants {
-                for field in fields.iter_mut() {
-                    if inner.partial || force_partial {
-                        field.optional = true;
-                        field.nullable = true;
+            // if let Some(fields) = &mut inner.variants {
+            //     for field in fields.iter_mut() {
+            //         if inner.partial || force_partial {
+            //             field.optional = true;
+            //             field.nullable = true;
 
-                        partialize_schema(field, true);
-                    } else {
-                        partialize_schema(field, false);
-                    }
-                }
-            }
+            //             partialize_schema(field, true);
+            //         } else {
+            //             partialize_schema(field, false);
+            //         }
+            //     }
+            // }
         }
         _ => {}
     };

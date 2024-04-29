@@ -122,8 +122,8 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
         let mut out = vec![];
 
-        for field in &structure.fields {
-            self.ctx.push_stack(field.name.as_ref().unwrap());
+        for (name, field) in &structure.fields {
+            self.ctx.push_stack(name);
 
             if self.ctx.is_hidden(field) {
                 self.ctx.pop_stack();
@@ -139,7 +139,7 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
             let value = self.render_schema(&field)?;
             let prop = format!(
                 "{}:{}{}",
-                field.name.as_ref().unwrap(),
+                name,
                 if value.contains('\n') { "\n" } else { " " },
                 value
             );

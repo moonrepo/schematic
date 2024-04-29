@@ -18,10 +18,7 @@ impl Schematic for Named {
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.structure(StructType::new([Schema::new_field(
-            "field",
-            schema.infer::<bool>(),
-        )]));
+        schema.structure(StructType::new([("field".into(), schema.infer::<bool>())]));
         schema.build()
     }
 }
@@ -226,8 +223,8 @@ impl Schematic for Cycle {
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.structure(StructType::new([Schema::new_field(
-            "values",
+        schema.structure(StructType::new([(
+            "values".into(),
             schema.infer::<HashMap<String, Cycle>>(),
         )]));
         schema.build()
@@ -239,13 +236,13 @@ fn supports_cycles() {
     assert_eq!(
         test_builder::<Cycle>().ty,
         SchemaType::Struct(Box::new(StructType {
-            fields: vec![Box::new(Schema::new_field(
-                "values",
-                SchemaType::Object(Box::new(ObjectType::new(
+            fields: BTreeMap::from_iter([(
+                "values".into(),
+                Box::new(Schema::object(ObjectType::new(
                     Schema::string(StringType::default()),
                     SchemaType::Reference("Cycle".into()),
-                ))),
-            ))],
+                )))
+            ),]),
             partial: false,
             required: None
         }))

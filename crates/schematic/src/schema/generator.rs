@@ -20,55 +20,50 @@ impl<'gen> SchemaGenerator<'gen> {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
         let schema = SchemaBuilder::build_root::<T>();
-        self.add_schema(&schema);
+        self.add_schema(&schema, false);
     }
 
     /// Add an explicit [`Schema`] to be rendered, and recursively add any nested schemas.
     /// Schemas with a name will be considered a reference.
-    pub fn add_schema(&mut self, schema: &Schema) {
+    pub fn add_schema(&mut self, schema: &Schema, is_field: bool) {
         let mut schema = schema.to_owned();
 
         // Recursively add any nested schema types
         match &mut schema.ty {
             SchemaType::Array(inner) => {
-                self.add_schema(&inner.items_type);
-            }
-            SchemaType::Enum(inner) => {
-                if let Some(variants) = &inner.variants {
-                    for field in variants {
-                        self.add_schema(&field);
-                    }
-                }
+                self.add_schema(&inner.items_type, false);
             }
             SchemaType::Object(inner) => {
-                self.add_schema(&inner.key_type);
-                self.add_schema(&inner.value_type);
+                self.add_schema(&inner.key_type, false);
+                self.add_schema(&inner.value_type, false);
             }
             SchemaType::Struct(inner) => {
-                inner.fields.sort_by(|a, d| a.name.cmp(&d.name));
-
-                for field in &inner.fields {
-                    self.add_schema(&field);
+                for field in inner.fields.values() {
+                    self.add_schema(field, true);
                 }
             }
             SchemaType::Tuple(inner) => {
                 for item in &inner.items_types {
-                    self.add_schema(item);
+                    self.add_schema(item, false);
                 }
             }
             SchemaType::Union(inner) => {
                 for variant in &inner.variants_types {
-                    self.add_schema(variant);
+                    self.add_schema(variant, false);
                 }
 
-                if let Some(variants) = &inner.variants {
-                    for field in variants {
-                        self.add_schema(&field);
-                    }
-                }
+                // if let Some(variants) = &inner.variants {
+                //     for field in variants {
+                //         self.add_schema(&field, false);
+                //     }
+                // }
             }
             _ => {}
         };
+
+        if is_field {
+            return;
+        }
 
         // Store the name so that we can use it as a reference for other types
         if let Some(name) = &schema.name {
@@ -87,6 +82,8 @@ impl<'gen> SchemaGenerator<'gen> {
         mut renderer: R,
     ) -> miette::Result<()> {
         let output_file = output_file.as_ref();
+
+        // dbg!(&self.schemas, &self.references);
 
         let mut output = renderer.render(&self.schemas, &self.references)?;
         output.push('\n');

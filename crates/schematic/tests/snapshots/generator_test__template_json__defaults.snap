@@ -55,11 +55,11 @@ expression: "fs::read_to_string(file).unwrap()"
 
   // This is a nested struct with its own fields.
   "nested": {
-    // An optional string.
-    "opt": "",
-
     // An optional enum.
-    "enums": "foo"
+    "enums": "foo",
+
+    // An optional string.
+    "opt": ""
   },
 
   // This is a number with a long description.
@@ -73,7 +73,7 @@ expression: "fs::read_to_string(file).unwrap()"
       // An optional string.
       // @envvar ENV_PREFIX_OPT
       "opt": "",
-    },
+    }
   },
 
   // This is a string.

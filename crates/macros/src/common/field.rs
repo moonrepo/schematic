@@ -1,6 +1,6 @@
 use crate::common::FieldValue;
 use crate::utils::{
-    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_quote,
+    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
     map_option_field_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
@@ -192,8 +192,8 @@ impl<'l> Field<'l> {
 
     pub fn generate_schema_type(&self) -> TokenStream {
         let name = self.get_name(Some(&self.casing_format));
-        let hidden = map_bool_quote("hidden", self.is_skipped());
-        let nullable = map_bool_quote("nullable", self.is_optional());
+        let hidden = map_bool_field_quote("hidden", self.is_skipped());
+        let nullable = map_bool_field_quote("nullable", self.is_optional());
         let description = map_option_field_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
         let env_var = map_option_field_quote("env_var", self.get_env_var());
@@ -229,17 +229,27 @@ impl<'l> Field<'l> {
             inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
+        if description.is_none()
+            && deprecated.is_none()
+            && env_var.is_none()
+            && hidden.is_none()
+            && nullable.is_none()
+        {
+            return quote! {
+                (#name.into(), #inner_schema)
+            };
+        }
+
         quote! {
-            Schema {
-                name: Some(#name.into()),
-                ty: #inner_schema.ty,
+            (#name.into(), {
+                let mut field = #inner_schema;
                 #description
                 #deprecated
                 #env_var
                 #hidden
                 #nullable
-                ..Default::default()
-            }
+                field
+            })
         }
     }
 }

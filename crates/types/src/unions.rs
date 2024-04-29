@@ -12,7 +12,6 @@ pub struct UnionType {
     pub default_index: Option<usize>,
     pub partial: bool,
     pub operator: UnionOperator,
-    pub variants: Option<Vec<Box<Schema>>>,
     pub variants_types: Vec<Box<Schema>>,
 }
 

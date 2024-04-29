@@ -134,23 +134,6 @@ impl SchemaType {
             _ => {}
         };
     }
-
-    /// Add the field to the inner schema type. This is only applicable to enums, structs,
-    /// and unions, otherwise this is a no-op.
-    pub fn add_field(&mut self, field: Schema) {
-        match self {
-            SchemaType::Enum(ref mut inner) => {
-                inner.variants.get_or_insert(vec![]).push(Box::new(field));
-            }
-            SchemaType::Struct(ref mut inner) => {
-                inner.fields.push(Box::new(field));
-            }
-            SchemaType::Union(ref mut inner) => {
-                inner.variants.get_or_insert(vec![]).push(Box::new(field));
-            }
-            _ => {}
-        };
-    }
 }
 
 impl Into<Schema> for SchemaType {

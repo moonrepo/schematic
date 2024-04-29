@@ -197,7 +197,7 @@ impl<'l> Variant<'l> {
             TaggedFormat::External => {
                 quote! {
                     Schema::structure(StructType::new([
-                        Schema::new_field(#name, #inner),
+                        (#name.into(), #inner),
                     ]))
                 }
             }
@@ -205,10 +205,11 @@ impl<'l> Variant<'l> {
                 return quote! {
                     {
                         let mut item = #inner;
-                        item.add_field(Schema::new_field(
-                            #tag,
-                            Schema::literal_value(LiteralValue::String(#name.into())),
-                        ));
+                        // TODO
+                        // item.add_field(Schema::new_field(
+                        //     #tag,
+                        //     Schema::literal_value(LiteralValue::String(#name.into())),
+                        // ));
                         item.set_partial(#partial);
                         item
                     }
@@ -217,8 +218,8 @@ impl<'l> Variant<'l> {
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
                     Schema::structure(StructType::new([
-                        Schema::new_field(#tag, Schema::literal_value(LiteralValue::String(#name.into()))),
-                        Schema::new_field(#content, #inner),
+                        (#tag.into(), Schema::literal_value(LiteralValue::String(#name.into()))),
+                        (#content.into(), #inner),
                     ]))
                 }
             }
