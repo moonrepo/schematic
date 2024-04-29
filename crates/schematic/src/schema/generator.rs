@@ -51,18 +51,14 @@ impl<'gen> SchemaGenerator<'gen> {
                 for variant in &inner.variants_types {
                     self.add_schema(variant, false);
                 }
-
-                // if let Some(variants) = &inner.variants {
-                //     for field in variants {
-                //         self.add_schema(&field, false);
-                //     }
-                // }
             }
             _ => {}
         };
 
+        // When a struct field, the field description overrides the
+        // declaration description, so avoid inheriting it!
         if is_field {
-            return;
+            schema.description = None;
         }
 
         // Store the name so that we can use it as a reference for other types
@@ -70,7 +66,9 @@ impl<'gen> SchemaGenerator<'gen> {
             self.references.insert(name.to_owned());
 
             // Types without a name cannot be rendered at the root
-            self.schemas.insert(name.to_owned(), schema);
+            if !self.schemas.contains_key(name) {
+                self.schemas.insert(name.to_owned(), schema);
+            }
         }
     }
 

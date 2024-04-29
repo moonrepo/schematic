@@ -65,6 +65,16 @@ pub fn merge_partial_setting<T: PartialConfig>(
 pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
     use schematic_types::*;
 
+    let mut update_name = |update: bool| {
+        if update {
+            if let Some(name) = &schema.name {
+                if !name.starts_with("Partial") {
+                    schema.name = Some(format!("Partial{name}"));
+                }
+            }
+        }
+    };
+
     match &mut schema.ty {
         SchemaType::Array(inner) => {
             partialize_schema(&mut inner.items_type, false);
@@ -75,11 +85,7 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
         }
         SchemaType::Struct(inner) => {
             if inner.partial || force_partial {
-                if let Some(name) = &schema.name {
-                    if !name.starts_with("Partial") {
-                        schema.name = Some(format!("Partial{name}"));
-                    }
-                }
+                update_name(true);
 
                 for field in inner.fields.values_mut() {
                     field.optional = true;
@@ -99,30 +105,11 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
             }
         }
         SchemaType::Union(inner) => {
+            update_name(inner.partial || force_partial);
+
             for variant in inner.variants_types.iter_mut() {
                 partialize_schema(variant, false);
             }
-
-            if inner.partial || force_partial {
-                if let Some(name) = &schema.name {
-                    if !name.starts_with("Partial") {
-                        schema.name = Some(format!("Partial{name}"));
-                    }
-                }
-            }
-
-            // if let Some(fields) = &mut inner.variants {
-            //     for field in fields.iter_mut() {
-            //         if inner.partial || force_partial {
-            //             field.optional = true;
-            //             field.nullable = true;
-
-            //             partialize_schema(field, true);
-            //         } else {
-            //             partialize_schema(field, false);
-            //         }
-            //     }
-            // }
         }
         _ => {}
     };

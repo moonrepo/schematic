@@ -155,13 +155,13 @@ impl<'gen> JsonSchemaRenderer<'gen> {
         }
     }
 
-    fn create_schema_from_field(&mut self, field: &Schema) -> RenderResult<JsonSchema> {
+    fn create_field_from_schema(&mut self, name: &str, field: &Schema) -> RenderResult<JsonSchema> {
         let mut schema = self.render_schema(&field)?;
 
         if let JsonSchema::Object(ref mut inner) = schema {
             let mut metadata = Metadata {
-                title: if self.options.set_field_name_as_title {
-                    field.name.clone()
+                title: if self.options.set_field_name_as_title && !name.is_empty() {
+                    Some(name.to_owned())
                 } else {
                     None
                 },
@@ -246,7 +246,9 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
 
             for field in enu.variants.as_ref().unwrap() {
                 if !field.hidden {
-                    any_of.push(self.create_schema_from_field(field)?);
+                    any_of.push(
+                        self.create_field_from_schema(field.name.as_deref().unwrap_or(""), field)?,
+                    );
                 }
             }
 
@@ -358,15 +360,11 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
         literal: &LiteralType,
         schema: &Schema,
     ) -> RenderResult<JsonSchema> {
-        if let Some(value) = &literal.value {
-            return Ok(JsonSchema::Object(SchemaObject {
-                metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-                const_value: Some(lit_to_value(value)),
-                ..Default::default()
-            }));
-        }
-
-        self.render_unknown(schema)
+        Ok(JsonSchema::Object(SchemaObject {
+            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
+            const_value: Some(lit_to_value(&literal.value)),
+            ..Default::default()
+        }))
     }
 
     fn render_null(&mut self, schema: &Schema) -> RenderResult<JsonSchema> {
@@ -395,9 +393,9 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
         Ok(JsonSchema::Object(data))
     }
 
-    fn render_reference(&mut self, reference: &str, schema: &Schema) -> RenderResult<JsonSchema> {
+    fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<JsonSchema> {
         Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
+            // Note: Don't add metadata as it causes nested schema references!
             reference: Some(format!("{}{}", self.options.definitions_path, reference)),
             ..Default::default()
         }))
@@ -431,20 +429,16 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
 
-        for field in &structure.fields {
+        for (name, field) in &structure.fields {
             if field.hidden {
                 continue;
             }
 
-            let Some(name) = field.name.clone() else {
-                continue;
-            };
-
             if !field.optional && self.options.mark_struct_fields_required {
-                required.insert(name.clone());
+                required.insert(name.to_owned());
             }
 
-            properties.insert(name, self.create_schema_from_field(field)?);
+            properties.insert(name.to_owned(), self.create_field_from_schema(name, field)?);
         }
 
         let data = SchemaObject {
