@@ -468,7 +468,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
                 continue;
             }
 
-            outputs.push(match &schema.type_of {
+            outputs.push(match &schema.ty {
                 SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
                 SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
                 _ => {

@@ -27,6 +27,9 @@ pub use structs::*;
 pub use tuples::*;
 pub use unions::*;
 
+use std::rc::Rc;
+use std::sync::Arc;
+
 /// Defines a schema that represents the shape of the implementing type.
 pub trait Schematic {
     /// Define a name for this schema type. Names are required for non-primitive values
@@ -69,10 +72,21 @@ impl<T: Schematic> Schematic for Box<T> {
     }
 }
 
+impl<T: Schematic> Schematic for Rc<T> {
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
+    }
+}
+
+impl<T: Schematic> Schematic for Arc<T> {
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
+    }
+}
+
 impl<T: Schematic> Schematic for Option<T> {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.custom(schema.infer::<T>().type_of);
-        schema.nullable();
+        schema.union(UnionType::new_any([schema.infer::<T>(), Schema::null()]));
         schema.build()
     }
 }

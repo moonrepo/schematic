@@ -29,14 +29,14 @@ impl<'gen> SchemaGenerator<'gen> {
         let mut schema = schema.to_owned();
 
         // Recursively add any nested schema types
-        match &mut schema.type_of {
+        match &mut schema.ty {
             SchemaType::Array(inner) => {
                 self.add_schema(&inner.items_type);
             }
             SchemaType::Enum(inner) => {
                 if let Some(variants) = &inner.variants {
                     for field in variants {
-                        self.add_schema(&field.schema);
+                        self.add_schema(&field);
                     }
                 }
             }
@@ -48,7 +48,7 @@ impl<'gen> SchemaGenerator<'gen> {
                 inner.fields.sort_by(|a, d| a.name.cmp(&d.name));
 
                 for field in &inner.fields {
-                    self.add_schema(&field.schema);
+                    self.add_schema(&field);
                 }
             }
             SchemaType::Tuple(inner) => {
@@ -63,7 +63,7 @@ impl<'gen> SchemaGenerator<'gen> {
 
                 if let Some(variants) = &inner.variants {
                     for field in variants {
-                        self.add_schema(&field.schema);
+                        self.add_schema(&field);
                     }
                 }
             }

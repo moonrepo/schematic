@@ -4,7 +4,7 @@ use crate::*;
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,
-    pub variants: Option<Vec<SchemaField>>,
+    pub variants: Option<Vec<Box<Schema>>>,
 }
 
 impl EnumType {
@@ -22,13 +22,13 @@ impl EnumType {
     #[doc(hidden)]
     pub fn from_macro<I>(variants: I, default_index: Option<usize>) -> Self
     where
-        I: IntoIterator<Item = SchemaField>,
+        I: IntoIterator<Item = Schema>,
     {
-        let variants: Vec<SchemaField> = variants.into_iter().collect();
+        let variants: Vec<Box<Schema>> = variants.into_iter().map(Box::new).collect();
         let mut values = vec![];
 
         for variant in &variants {
-            if let SchemaType::Literal(lit) = &(*variant.schema).type_of {
+            if let SchemaType::Literal(lit) = &(*variant).ty {
                 values.push(lit.value.clone().unwrap());
             }
         }

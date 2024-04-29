@@ -65,7 +65,7 @@ pub fn merge_partial_setting<T: PartialConfig>(
 pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
     use schematic_types::*;
 
-    match &mut schema.type_of {
+    match &mut schema.ty {
         SchemaType::Array(inner) => {
             partialize_schema(&mut inner.items_type, false);
         }
@@ -85,13 +85,11 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                     field.optional = true;
                     field.nullable = true;
 
-                    partialize_schema(&mut field.schema, true);
-
-                    field.schema.nullable = true;
+                    partialize_schema(field, true);
                 }
             } else {
                 for field in inner.fields.iter_mut() {
-                    partialize_schema(&mut field.schema, false);
+                    partialize_schema(field, false);
                 }
             }
         }
@@ -119,9 +117,9 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                         field.optional = true;
                         field.nullable = true;
 
-                        partialize_schema(&mut field.schema, true);
+                        partialize_schema(field, true);
                     } else {
-                        partialize_schema(&mut field.schema, false);
+                        partialize_schema(field, false);
                     }
                 }
             }

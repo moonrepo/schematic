@@ -12,7 +12,7 @@ pub struct UnionType {
     pub default_index: Option<usize>,
     pub partial: bool,
     pub operator: UnionOperator,
-    pub variants: Option<Vec<SchemaField>>,
+    pub variants: Option<Vec<Box<Schema>>>,
     pub variants_types: Vec<Box<Schema>>,
 }
 
@@ -49,9 +49,7 @@ impl UnionType {
     }
 
     pub fn has_null(&self) -> bool {
-        self.variants_types
-            .iter()
-            .any(|schema| schema.type_of.is_null())
+        self.variants_types.iter().any(|schema| schema.ty.is_null())
     }
 
     #[doc(hidden)]

@@ -1,22 +1,39 @@
 use crate::*;
 use std::ops::{Deref, DerefMut};
 
+/// Represents an individual type, a container, field within a schema struct,
+/// or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Schema {
     pub description: Option<String>,
     pub name: Option<String>,
+    pub ty: SchemaType,
+
+    // States
+    pub deprecated: Option<String>,
+    pub env_var: Option<String>,
+    pub hidden: bool,
     pub nullable: bool,
-    pub type_of: SchemaType,
+    pub optional: bool,
+    pub read_only: bool,
+    pub write_only: bool,
 }
 
 impl Schema {
     /// Create a schema with the provided type.
-    pub fn new(type_of: SchemaType) -> Self {
+    pub fn new(ty: SchemaType) -> Self {
         Self {
-            description: None,
-            name: None,
-            nullable: false,
-            type_of,
+            ty,
+            ..Default::default()
+        }
+    }
+
+    /// Create a schema field with the provided type.
+    pub fn new_field(name: impl AsRef<str>, ty: impl Into<SchemaType>) -> Self {
+        Self {
+            name: Some(name.as_ref().to_owned()),
+            ty: ty.into(),
+            ..Default::default()
         }
     }
 
@@ -91,7 +108,7 @@ impl Schema {
     }
 
     // pub fn make_nullable(&mut self) {
-    //     if let SchemaType::Union(inner) = &mut self.type_of {
+    //     if let SchemaType::Union(inner) = &mut self.ty {
     //         // If the union has an explicit name, then we can assume it's a distinct
     //         // type, so we shouldn't add null to it and alter the intended type.
     //         if self.name.is_none() {
@@ -104,9 +121,9 @@ impl Schema {
     //     }
 
     //     // Convert to a nullable union
-    //     let current_type = std::mem::replace(&mut self.type_of, SchemaType::Unknown);
+    //     let current_type = std::mem::replace(&mut self.ty, SchemaType::Unknown);
 
-    //     self.type_of = SchemaType::Union(Box::new(UnionType::new_any([
+    //     self.ty = SchemaType::Union(Box::new(UnionType::new_any([
     //         Schema::new(current_type),
     //         Schema::null(),
     //     ])));
@@ -117,47 +134,18 @@ impl Deref for Schema {
     type Target = SchemaType;
 
     fn deref(&self) -> &Self::Target {
-        &self.type_of
+        &self.ty
     }
 }
 
 impl DerefMut for Schema {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.type_of
+        &mut self.ty
     }
 }
 
 impl Into<SchemaType> for Schema {
     fn into(self) -> SchemaType {
-        self.type_of
-    }
-}
-
-/// Represents a field within a schema struct, or a variant within a schema enum/union.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SchemaField {
-    pub name: String,
-    pub description: Option<String>,
-    pub schema: Box<Schema>,
-    pub deprecated: Option<String>,
-    pub env_var: Option<String>,
-    pub hidden: bool,
-    pub nullable: bool,
-    pub optional: bool,
-    pub read_only: bool,
-    pub write_only: bool,
-}
-
-impl SchemaField {
-    /// Create a new field from a [`Schema`].
-    pub fn new(name: &str, schema: impl Into<Schema>) -> SchemaField {
-        let schema = schema.into();
-
-        SchemaField {
-            name: name.to_owned(),
-            description: schema.description.clone(),
-            schema: Box::new(schema),
-            ..SchemaField::default()
-        }
+        self.ty
     }
 }

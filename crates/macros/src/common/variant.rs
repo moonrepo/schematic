@@ -185,12 +185,10 @@ impl<'l> Variant<'l> {
 
         let outer = match tagged_format {
             TaggedFormat::Unit => {
-                // This returns `SchemaField` while other branches
-                // return `Schema`. Be aware of this downstream!
                 quote! {
-                    SchemaField {
-                        name: #name.into(),
-                        schema: Box::new(#inner),
+                    Schema {
+                        name: Some(#name.into()),
+                        ty: #inner.ty,
                         ..Default::default()
                     }
                 }
@@ -199,7 +197,7 @@ impl<'l> Variant<'l> {
             TaggedFormat::External => {
                 quote! {
                     Schema::structure(StructType::new([
-                        SchemaField::new(#name, #inner),
+                        Schema::new_field(#name, #inner),
                     ]))
                 }
             }
@@ -207,7 +205,7 @@ impl<'l> Variant<'l> {
                 return quote! {
                     {
                         let mut item = #inner;
-                        item.add_field(SchemaField::new(
+                        item.add_field(Schema::new_field(
                             #tag,
                             Schema::literal_value(LiteralValue::String(#name.into())),
                         ));
@@ -219,8 +217,8 @@ impl<'l> Variant<'l> {
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
                     Schema::structure(StructType::new([
-                        SchemaField::new(#tag, Schema::literal_value(LiteralValue::String(#name.into()))),
-                        SchemaField::new(#content, #inner),
+                        Schema::new_field(#tag, Schema::literal_value(LiteralValue::String(#name.into()))),
+                        Schema::new_field(#content, #inner),
                     ]))
                 }
             }

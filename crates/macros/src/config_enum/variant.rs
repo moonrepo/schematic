@@ -126,9 +126,9 @@ impl<'l> Variant<'l> {
         };
 
         quote! {
-            SchemaField {
-                name: #name.into(),
-                schema: Box::new(#inner_schema),
+            Schema {
+                name: Some(#name.into()),
+                ty: #inner_schema.ty,
                 #description
                 #deprecated
                 ..Default::default()

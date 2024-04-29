@@ -8,7 +8,7 @@ use std::rc::Rc;
 pub struct SchemaBuilder {
     description: Option<String>,
     name: Option<String>,
-    type_of: SchemaType,
+    ty: SchemaType,
     nullable: bool,
     existing_names: Rc<RefCell<HashSet<String>>>,
 }
@@ -31,7 +31,8 @@ impl SchemaBuilder {
             description: self.description,
             name: self.name,
             nullable: self.nullable,
-            type_of: self.type_of,
+            ty: self.ty,
+            ..Default::default()
         }
     }
 
@@ -60,7 +61,7 @@ impl SchemaBuilder {
 
     /// Build with a custom type.
     pub fn custom(&mut self, value: SchemaType) {
-        self.type_of = value;
+        self.ty = value;
     }
 
     /// Build an enum type.
@@ -110,27 +111,27 @@ impl SchemaBuilder {
 
     /// Convert the current schema to a nullable type. If already nullable,
     /// do nothing and return, otherwise convert to a union.
-    pub fn nullable(&mut self) {
-        self.nullable = true;
+    // pub fn nullable(&mut self) {
+    //     self.nullable = true;
 
-        if let SchemaType::Union(inner) = &mut self.type_of {
-            // If the union has an explicit name, then we can assume it's a distinct
-            // type, so we shouldn't add null to it and alter the intended type.
-            if self.name.is_none() && !inner.has_null() {
-                inner.variants_types.push(Box::new(Schema::null()));
-            }
+    //     if let SchemaType::Union(inner) = &mut self.ty {
+    //         // If the union has an explicit name, then we can assume it's a distinct
+    //         // type, so we shouldn't add null to it and alter the intended type.
+    //         if self.name.is_none() && !inner.has_null() {
+    //             inner.variants_types.push(Box::new(Schema::null()));
+    //         }
 
-            return;
-        }
+    //         return;
+    //     }
 
-        // Convert to a nullable union
-        let current_type = std::mem::replace(&mut self.type_of, SchemaType::Unknown);
+    //     // Convert to a nullable union
+    //     let current_type = std::mem::replace(&mut self.ty, SchemaType::Unknown);
 
-        self.union(UnionType::new_any([
-            Schema::new(current_type),
-            Schema::null(),
-        ]));
-    }
+    //     self.union(UnionType::new_any([
+    //         Schema::new(current_type),
+    //         Schema::null(),
+    //     ]));
+    // }
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>(&self) -> Schema {
@@ -177,13 +178,13 @@ impl Deref for SchemaBuilder {
     type Target = SchemaType;
 
     fn deref(&self) -> &Self::Target {
-        &self.type_of
+        &self.ty
     }
 }
 
 impl DerefMut for SchemaBuilder {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.type_of
+        &mut self.ty
     }
 }
 

@@ -119,13 +119,13 @@ impl<'gen> SchemaRenderer<'gen, String> for JsoncTemplateRenderer<'gen> {
         self.ctx.depth += 1;
 
         for (index, field) in structure.fields.iter().enumerate() {
-            self.ctx.push_stack(&field.name);
+            self.ctx.push_stack(field.name.as_ref().unwrap());
 
             if !self.ctx.is_hidden(field) {
                 let prop = format!(
                     "\"{}\": {}{}",
-                    field.name,
-                    self.render_schema(&field.schema)?,
+                    field.name.as_ref().unwrap(),
+                    self.render_schema(&field)?,
                     if index == last_index { "" } else { "," }
                 );
 

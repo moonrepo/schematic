@@ -113,7 +113,7 @@ impl TemplateContext {
         }
     }
 
-    pub fn create_comment(&self, field: &SchemaField) -> String {
+    pub fn create_comment(&self, field: &Schema) -> String {
         if !self.options.comments {
             return String::new();
         }
@@ -154,7 +154,7 @@ impl TemplateContext {
         out
     }
 
-    pub fn create_field(&self, field: &SchemaField, property: String) -> String {
+    pub fn create_field(&self, field: &Schema, property: String) -> String {
         let key = self.get_stack_key();
 
         format!(
@@ -196,7 +196,7 @@ impl TemplateContext {
         self.options.expand_fields.contains(key)
     }
 
-    pub fn is_hidden(&self, field: &SchemaField) -> bool {
+    pub fn is_hidden(&self, field: &Schema) -> bool {
         let key = self.get_stack_key();
 
         field.hidden || self.options.hide_fields.contains(&key)
@@ -215,7 +215,7 @@ impl TemplateContext {
         initial: &'gen Schema,
         schemas: &Option<&'gen IndexMap<String, Schema>>,
     ) -> &'gen Schema {
-        if let SchemaType::Reference(name) = &initial.type_of {
+        if let SchemaType::Reference(name) = &initial.ty {
             if let Some(schemas) = schemas {
                 if let Some(schema) = schemas.get(name) {
                     return schema;

@@ -18,7 +18,7 @@ impl Schematic for Named {
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.structure(StructType::new([SchemaField::new(
+        schema.structure(StructType::new([Schema::new_field(
             "field",
             schema.infer::<bool>(),
         )]));
@@ -28,56 +28,55 @@ impl Schematic for Named {
 
 #[test]
 fn primitives() {
-    assert_eq!(test_builder::<()>().type_of, SchemaType::Null);
+    assert_eq!(test_builder::<()>().ty, SchemaType::Null);
 
     assert_eq!(
-        test_builder::<bool>().type_of,
+        test_builder::<bool>().ty,
         SchemaType::Boolean(Box::new(BooleanType::default()))
     );
 
     assert_eq!(
-        test_builder::<&bool>().type_of,
+        test_builder::<&bool>().ty,
         SchemaType::Boolean(Box::new(BooleanType::default()))
     );
 
     assert_eq!(
-        test_builder::<&mut bool>().type_of,
+        test_builder::<&mut bool>().ty,
         SchemaType::Boolean(Box::new(BooleanType::default()))
     );
 
     assert_eq!(
-        test_builder::<Box<bool>>().type_of,
+        test_builder::<Box<bool>>().ty,
         SchemaType::Boolean(Box::new(BooleanType::default()))
     );
 
-    // TODO
-    // assert_eq!(
-    //     test_builder::<Option<bool>>().type_of,
-    //     SchemaType::Union(Box::new(UnionType::new_any(vec![
-    //         SchemaType::Boolean(Box::new(BooleanType::default())),
-    //         SchemaType::Null
-    //     ])))
-    // );
+    assert_eq!(
+        test_builder::<Option<bool>>().ty,
+        SchemaType::Union(Box::new(UnionType::new_any(vec![
+            SchemaType::Boolean(Box::new(BooleanType::default())),
+            SchemaType::Null
+        ])))
+    );
 }
 
 #[test]
 fn arrays() {
     assert_eq!(
-        test_builder::<Vec<String>>().type_of,
+        test_builder::<Vec<String>>().ty,
         SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::new(
             StringType::default()
         )))))
     );
 
     assert_eq!(
-        test_builder::<&[String]>().type_of,
+        test_builder::<&[String]>().ty,
         SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::new(
             StringType::default()
         )))))
     );
 
     assert_eq!(
-        test_builder::<[String; 3]>().type_of,
+        test_builder::<[String; 3]>().ty,
         SchemaType::Array(Box::new(ArrayType {
             items_type: Box::new(Schema::string(StringType::default())),
             max_length: Some(3),
@@ -87,7 +86,7 @@ fn arrays() {
     );
 
     assert_eq!(
-        test_builder::<HashSet<String>>().type_of,
+        test_builder::<HashSet<String>>().ty,
         SchemaType::Array(Box::new(ArrayType {
             items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
@@ -96,7 +95,7 @@ fn arrays() {
     );
 
     assert_eq!(
-        test_builder::<BTreeSet<String>>().type_of,
+        test_builder::<BTreeSet<String>>().ty,
         SchemaType::Array(Box::new(ArrayType {
             items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
@@ -108,12 +107,12 @@ fn arrays() {
 #[test]
 fn integers() {
     assert_eq!(
-        test_builder::<u8>().type_of,
+        test_builder::<u8>().ty,
         SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U8)))
     );
 
     assert_eq!(
-        test_builder::<i32>().type_of,
+        test_builder::<i32>().ty,
         SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I32)))
     );
 }
@@ -121,12 +120,12 @@ fn integers() {
 #[test]
 fn floats() {
     assert_eq!(
-        test_builder::<f32>().type_of,
+        test_builder::<f32>().ty,
         SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32)))
     );
 
     assert_eq!(
-        test_builder::<f64>().type_of,
+        test_builder::<f64>().ty,
         SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F64)))
     );
 }
@@ -134,7 +133,7 @@ fn floats() {
 #[test]
 fn objects() {
     assert_eq!(
-        test_builder::<HashMap<String, Named>>().type_of,
+        test_builder::<HashMap<String, Named>>().ty,
         SchemaType::Object(Box::new(ObjectType::new(
             Schema::string(StringType::default()),
             test_builder::<Named>(),
@@ -142,7 +141,7 @@ fn objects() {
     );
 
     assert_eq!(
-        test_builder::<BTreeMap<u128, Named>>().type_of,
+        test_builder::<BTreeMap<u128, Named>>().ty,
         SchemaType::Object(Box::new(ObjectType::new(
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U128))),
             test_builder::<Named>(),
@@ -153,7 +152,7 @@ fn objects() {
 #[test]
 fn strings() {
     assert_eq!(
-        test_builder::<char>().type_of,
+        test_builder::<char>().ty,
         SchemaType::String(Box::new(StringType {
             max_length: Some(1),
             min_length: Some(1),
@@ -162,17 +161,17 @@ fn strings() {
     );
 
     assert_eq!(
-        test_builder::<&str>().type_of,
+        test_builder::<&str>().ty,
         SchemaType::String(Box::new(StringType::default()))
     );
 
     assert_eq!(
-        test_builder::<String>().type_of,
+        test_builder::<String>().ty,
         SchemaType::String(Box::new(StringType::default()))
     );
 
     assert_eq!(
-        test_builder::<&Path>().type_of,
+        test_builder::<&Path>().ty,
         SchemaType::String(Box::new(StringType {
             format: Some("path".into()),
             ..StringType::default()
@@ -180,7 +179,7 @@ fn strings() {
     );
 
     assert_eq!(
-        test_builder::<PathBuf>().type_of,
+        test_builder::<PathBuf>().ty,
         SchemaType::String(Box::new(StringType {
             format: Some("path".into()),
             ..StringType::default()
@@ -188,7 +187,7 @@ fn strings() {
     );
 
     assert_eq!(
-        test_builder::<Ipv4Addr>().type_of,
+        test_builder::<Ipv4Addr>().ty,
         SchemaType::String(Box::new(StringType {
             format: Some("ipv4".into()),
             ..StringType::default()
@@ -196,7 +195,7 @@ fn strings() {
     );
 
     assert_eq!(
-        test_builder::<Duration>().type_of,
+        test_builder::<Duration>().ty,
         SchemaType::String(Box::new(StringType {
             format: Some("duration".into()),
             ..StringType::default()
@@ -207,7 +206,7 @@ fn strings() {
 #[test]
 fn tuples() {
     assert_eq!(
-        test_builder::<(bool, i16, f32, String)>().type_of,
+        test_builder::<(bool, i16, f32, String)>().ty,
         SchemaType::Tuple(Box::new(TupleType::new(vec![
             SchemaType::Boolean(Box::new(BooleanType::default())),
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I16))),
@@ -227,7 +226,7 @@ impl Schematic for Cycle {
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.structure(StructType::new([SchemaField::new(
+        schema.structure(StructType::new([Schema::new_field(
             "values",
             schema.infer::<HashMap<String, Cycle>>(),
         )]));
@@ -238,15 +237,15 @@ impl Schematic for Cycle {
 #[test]
 fn supports_cycles() {
     assert_eq!(
-        test_builder::<Cycle>().type_of,
+        test_builder::<Cycle>().ty,
         SchemaType::Struct(Box::new(StructType {
-            fields: vec![SchemaField::new(
+            fields: vec![Box::new(Schema::new_field(
                 "values",
                 SchemaType::Object(Box::new(ObjectType::new(
                     Schema::string(StringType::default()),
                     SchemaType::Reference("Cycle".into()),
                 ))),
-            )],
+            ))],
             partial: false,
             required: None
         }))

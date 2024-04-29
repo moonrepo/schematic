@@ -155,13 +155,13 @@ impl<'gen> JsonSchemaRenderer<'gen> {
         }
     }
 
-    fn create_schema_from_field(&mut self, field: &SchemaField) -> RenderResult<JsonSchema> {
-        let mut schema = self.render_schema(&field.schema)?;
+    fn create_schema_from_field(&mut self, field: &Schema) -> RenderResult<JsonSchema> {
+        let mut schema = self.render_schema(&field)?;
 
         if let JsonSchema::Object(ref mut inner) = schema {
             let mut metadata = Metadata {
                 title: if self.options.set_field_name_as_title {
-                    Some(field.name.clone())
+                    field.name.clone()
                 } else {
                     None
                 },
@@ -175,7 +175,7 @@ impl<'gen> JsonSchemaRenderer<'gen> {
                 ..Default::default()
             };
 
-            if let Some(default) = field.schema.get_default() {
+            if let Some(default) = field.get_default() {
                 metadata.default = Some(lit_to_value(default));
             }
 
@@ -436,11 +436,15 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
                 continue;
             }
 
+            let Some(name) = field.name.clone() else {
+                continue;
+            };
+
             if !field.optional && self.options.mark_struct_fields_required {
-                required.insert(field.name.clone());
+                required.insert(name.clone());
             }
 
-            properties.insert(field.name.clone(), self.create_schema_from_field(field)?);
+            properties.insert(name, self.create_schema_from_field(field)?);
         }
 
         let data = SchemaObject {

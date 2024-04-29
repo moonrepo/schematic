@@ -76,6 +76,11 @@
   }
   ```
 
+#### 🚀 Updates
+
+- Updated the macro generated code to use `Box` in many places to reduce the size of enums and
+  structs.
+
 ## 0.15.2
 
 #### ⚙️ Internal

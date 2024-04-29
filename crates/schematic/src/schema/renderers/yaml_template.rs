@@ -123,23 +123,23 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
         let mut out = vec![];
 
         for field in &structure.fields {
-            self.ctx.push_stack(&field.name);
+            self.ctx.push_stack(field.name.as_ref().unwrap());
 
             if self.ctx.is_hidden(field) {
                 self.ctx.pop_stack();
                 continue;
             }
 
-            let is_nested = is_nested_type(&field.schema);
+            let is_nested = is_nested_type(&field);
 
             if is_nested {
                 self.ctx.depth += 1;
             }
 
-            let value = self.render_schema(&field.schema)?;
+            let value = self.render_schema(&field)?;
             let prop = format!(
                 "{}:{}{}",
-                field.name,
+                field.name.as_ref().unwrap(),
                 if value.contains('\n') { "\n" } else { " " },
                 value
             );

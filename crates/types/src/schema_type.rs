@@ -123,7 +123,7 @@ impl SchemaType {
 
                 // This is to handle things wrapped in `Option`, is it correct?
                 // Not sure of a better way to do this at the moment...
-                let is_nullable = inner.variants_types.iter().any(|t| t.type_of.is_nullable());
+                let is_nullable = inner.variants_types.iter().any(|t| t.ty.is_nullable());
 
                 if is_nullable {
                     for item in inner.variants_types.iter_mut() {
@@ -137,16 +137,16 @@ impl SchemaType {
 
     /// Add the field to the inner schema type. This is only applicable to enums, structs,
     /// and unions, otherwise this is a no-op.
-    pub fn add_field(&mut self, field: SchemaField) {
+    pub fn add_field(&mut self, field: Schema) {
         match self {
             SchemaType::Enum(ref mut inner) => {
-                inner.variants.get_or_insert(vec![]).push(field);
+                inner.variants.get_or_insert(vec![]).push(Box::new(field));
             }
             SchemaType::Struct(ref mut inner) => {
-                inner.fields.push(field);
+                inner.fields.push(Box::new(field));
             }
             SchemaType::Union(ref mut inner) => {
-                inner.variants.get_or_insert(vec![]).push(field);
+                inner.variants.get_or_insert(vec![]).push(Box::new(field));
             }
             _ => {}
         };

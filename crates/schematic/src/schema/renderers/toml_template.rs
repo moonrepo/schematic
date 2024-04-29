@@ -37,18 +37,18 @@ impl<'gen> TomlTemplateRenderer<'gen> {
 
     fn extract_sections(&mut self, doc: &mut StructType) {
         for field in &mut doc.fields {
-            self.ctx.push_stack(&field.name);
+            self.ctx.push_stack(field.name.as_ref().unwrap());
 
             let comment = self.ctx.create_comment(field);
 
-            match &mut (*field.schema).type_of {
+            match &mut (*field).ty {
                 SchemaType::Array(array) => {
                     let items_type = self
                         .ctx
                         .resolve_schema(&array.items_type, &self.schemas)
                         .to_owned();
 
-                    if let SchemaType::Struct(mut table) = items_type.type_of {
+                    if let SchemaType::Struct(mut table) = items_type.ty {
                         let key = self.ctx.get_stack_key();
 
                         field.hidden = true;
@@ -175,10 +175,14 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
         let mut out = vec![];
 
         for field in &structure.fields {
-            self.ctx.push_stack(&field.name);
+            self.ctx.push_stack(field.name.as_ref().unwrap());
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!("{} = {}", field.name, self.render_schema(&field.schema)?,);
+                let prop = format!(
+                    "{} = {}",
+                    field.name.as_ref().unwrap(),
+                    self.render_schema(&field)?,
+                );
 
                 out.push(self.ctx.create_field(field, prop));
             }
@@ -216,7 +220,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
         let fake_schema = Schema::default();
 
         // Recursively extract all sections (arrays, objects)
-        if let SchemaType::Struct(doc) = &mut root.type_of {
+        if let SchemaType::Struct(doc) = &mut root.ty {
             self.extract_sections(doc);
         }
 
