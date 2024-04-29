@@ -8,18 +8,18 @@ pub enum LiteralValue {
     String(String),
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LiteralType {
     pub format: Option<String>,
-    pub value: Option<LiteralValue>, // TODO non optional
+    pub value: LiteralValue,
 }
 
 impl LiteralType {
     /// Create a literal schema with the provided value.
     pub fn new(value: LiteralValue) -> Self {
         LiteralType {
-            value: Some(value),
-            ..LiteralType::default()
+            format: None,
+            value,
         }
     }
 }

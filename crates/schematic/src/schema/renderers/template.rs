@@ -266,11 +266,7 @@ pub fn render_integer(integer: &IntegerType) -> RenderResult {
 }
 
 pub fn render_literal(literal: &LiteralType) -> RenderResult {
-    if let Some(value) = &literal.value {
-        return Ok(lit_to_string(value));
-    }
-
-    render_null()
+    Ok(lit_to_string(&literal.value))
 }
 
 pub fn render_null() -> RenderResult {

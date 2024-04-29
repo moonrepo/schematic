@@ -29,7 +29,7 @@ impl EnumType {
 
         for variant in &variants {
             if let SchemaType::Literal(lit) = &(*variant).ty {
-                values.push(lit.value.clone().unwrap());
+                values.push(lit.value.clone());
             }
         }
 
