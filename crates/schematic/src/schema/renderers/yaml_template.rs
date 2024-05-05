@@ -130,13 +130,13 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
                 continue;
             }
 
-            let is_nested = is_nested_type(&field);
+            let is_nested = is_nested_type(field);
 
             if is_nested {
                 self.ctx.depth += 1;
             }
 
-            let value = self.render_schema(&field)?;
+            let value = self.render_schema(field)?;
             let prop = format!(
                 "{}:{}{}",
                 name,

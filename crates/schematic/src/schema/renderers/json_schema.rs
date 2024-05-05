@@ -156,7 +156,7 @@ impl<'gen> JsonSchemaRenderer<'gen> {
     }
 
     fn create_field_from_schema(&mut self, name: &str, field: &Schema) -> RenderResult<JsonSchema> {
-        let mut schema = self.render_schema(&field)?;
+        let mut schema = self.render_schema(field)?;
 
         if let JsonSchema::Object(ref mut inner) = schema {
             let mut metadata = Metadata {

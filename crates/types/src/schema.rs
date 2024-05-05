@@ -170,8 +170,8 @@ impl DerefMut for Schema {
     }
 }
 
-impl Into<SchemaType> for Schema {
-    fn into(self) -> SchemaType {
-        self.ty
+impl From<Schema> for SchemaType {
+    fn from(val: Schema) -> Self {
+        val.ty
     }
 }

@@ -125,7 +125,7 @@ impl<'gen> SchemaRenderer<'gen, String> for JsoncTemplateRenderer<'gen> {
                 let prop = format!(
                     "\"{}\": {}{}",
                     name,
-                    self.render_schema(&field)?,
+                    self.render_schema(field)?,
                     if index == last_index { "" } else { "," }
                 );
 

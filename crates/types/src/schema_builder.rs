@@ -110,8 +110,10 @@ impl SchemaBuilder {
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>(&self) -> Schema {
-        let mut builder = SchemaBuilder::default();
-        builder.name_stack = Rc::clone(&self.name_stack);
+        let mut builder = SchemaBuilder {
+            name_stack: Rc::clone(&self.name_stack),
+            ..SchemaBuilder::default()
+        };
 
         // No name, so return the schema immediately
         let Some(name) = T::schema_name() else {
@@ -167,8 +169,8 @@ impl DerefMut for SchemaBuilder {
     }
 }
 
-impl Into<Schema> for SchemaBuilder {
-    fn into(self) -> Schema {
-        self.build()
+impl From<SchemaBuilder> for Schema {
+    fn from(val: SchemaBuilder) -> Self {
+        val.build()
     }
 }

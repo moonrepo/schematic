@@ -41,7 +41,7 @@ impl<'gen> TomlTemplateRenderer<'gen> {
 
             let comment = self.ctx.create_comment(field);
 
-            match &mut (*field).ty {
+            match &mut field.ty {
                 SchemaType::Array(array) => {
                     let items_type = self
                         .ctx
@@ -178,7 +178,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
             self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!("{} = {}", name, self.render_schema(&field)?,);
+                let prop = format!("{} = {}", name, self.render_schema(field)?,);
 
                 out.push(self.ctx.create_field(field, prop));
             }

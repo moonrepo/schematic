@@ -117,8 +117,8 @@ impl SchemaType {
     }
 }
 
-impl Into<Schema> for SchemaType {
-    fn into(self) -> Schema {
-        Schema::new(self)
+impl From<SchemaType> for Schema {
+    fn from(val: SchemaType) -> Self {
+        Schema::new(val)
     }
 }

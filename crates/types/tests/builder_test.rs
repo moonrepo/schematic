@@ -29,28 +29,28 @@ fn primitives() {
 
     assert_eq!(
         test_builder::<bool>().ty,
-        SchemaType::Boolean(Box::new(BooleanType::default()))
+        SchemaType::Boolean(Box::default())
     );
 
     assert_eq!(
         test_builder::<&bool>().ty,
-        SchemaType::Boolean(Box::new(BooleanType::default()))
+        SchemaType::Boolean(Box::default())
     );
 
     assert_eq!(
         test_builder::<&mut bool>().ty,
-        SchemaType::Boolean(Box::new(BooleanType::default()))
+        SchemaType::Boolean(Box::default())
     );
 
     assert_eq!(
         test_builder::<Box<bool>>().ty,
-        SchemaType::Boolean(Box::new(BooleanType::default()))
+        SchemaType::Boolean(Box::default())
     );
 
     assert_eq!(
         test_builder::<Option<bool>>().ty,
         SchemaType::Union(Box::new(UnionType::new_any(vec![
-            SchemaType::Boolean(Box::new(BooleanType::default())),
+            SchemaType::Boolean(Box::default()),
             SchemaType::Null
         ])))
     );
@@ -60,16 +60,12 @@ fn primitives() {
 fn arrays() {
     assert_eq!(
         test_builder::<Vec<String>>().ty,
-        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::new(
-            StringType::default()
-        )))))
+        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default()))))
     );
 
     assert_eq!(
         test_builder::<&[String]>().ty,
-        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::new(
-            StringType::default()
-        )))))
+        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default()))))
     );
 
     assert_eq!(
@@ -159,12 +155,12 @@ fn strings() {
 
     assert_eq!(
         test_builder::<&str>().ty,
-        SchemaType::String(Box::new(StringType::default()))
+        SchemaType::String(Box::default())
     );
 
     assert_eq!(
         test_builder::<String>().ty,
-        SchemaType::String(Box::new(StringType::default()))
+        SchemaType::String(Box::default())
     );
 
     assert_eq!(
@@ -205,10 +201,10 @@ fn tuples() {
     assert_eq!(
         test_builder::<(bool, i16, f32, String)>().ty,
         SchemaType::Tuple(Box::new(TupleType::new(vec![
-            SchemaType::Boolean(Box::new(BooleanType::default())),
+            SchemaType::Boolean(Box::default()),
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I16))),
             SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32))),
-            SchemaType::String(Box::new(StringType::default()))
+            SchemaType::String(Box::default())
         ])))
     );
 }

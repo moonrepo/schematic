@@ -28,7 +28,7 @@ impl EnumType {
         let mut values = vec![];
 
         for variant in &variants {
-            if let SchemaType::Literal(lit) = &(*variant).ty {
+            if let SchemaType::Literal(lit) = &variant.ty {
                 values.push(lit.value.clone());
             }
         }

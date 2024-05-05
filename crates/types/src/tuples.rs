@@ -17,7 +17,6 @@ impl TupleType {
                 .into_iter()
                 .map(|inner| Box::new(inner.into()))
                 .collect(),
-            ..TupleType::default()
         }
     }
 }
