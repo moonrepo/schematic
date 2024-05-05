@@ -65,7 +65,9 @@ impl<'l> Macro<'l> {
         let config_type = match &input.data {
             Data::Struct(data) => match &data.fields {
                 Fields::Named(fields) => {
-                    casing_format = base_casing_format.unwrap_or("camelCase").to_owned();
+                    base_casing_format
+                        .unwrap_or("camelCase")
+                        .clone_into(&mut casing_format);
 
                     Container::NamedStruct {
                         fields: fields
@@ -73,8 +75,8 @@ impl<'l> Macro<'l> {
                             .iter()
                             .map(|f| {
                                 let mut field = Field::from(f);
-                                field.casing_format = casing_format.clone();
-                                field.env_prefix = args.env_prefix.clone();
+                                field.casing_format.clone_from(&casing_format);
+                                field.env_prefix.clone_from(&args.env_prefix);
                                 field
                             })
                             .collect::<Vec<_>>(),
@@ -88,7 +90,9 @@ impl<'l> Macro<'l> {
                 }
             },
             Data::Enum(data) => {
-                casing_format = base_casing_format.unwrap_or("kebab-case").to_owned();
+                base_casing_format
+                    .unwrap_or("kebab-case")
+                    .clone_into(&mut casing_format);
 
                 let tagged_format = {
                     if args.serde.untagged || serde_args.untagged {
@@ -117,8 +121,8 @@ impl<'l> Macro<'l> {
                             }
 
                             let mut field = Variant::from(variant);
-                            field.casing_format = casing_format.clone();
-                            field.tagged_format = tagged_format.clone();
+                            field.casing_format.clone_from(&casing_format);
+                            field.tagged_format.clone_from(&tagged_format);
                             field
                         })
                         .collect(),
