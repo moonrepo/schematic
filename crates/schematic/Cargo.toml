@@ -113,6 +113,7 @@ reqwest = { workspace = true, features = [
 	"rustls-tls-native-roots",
 ] }
 serial_test = "3.1.1"
+similar = "2.5.0"
 starbase_sandbox = "0.6.0"
 
 # Types

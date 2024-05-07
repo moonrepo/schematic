@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct StructType {
     pub fields: BTreeMap<String, Box<Schema>>,
+    // The type is a partial nested config, like `PartialConfig`.
+    // This doesn't mean it's been partialized.
     pub partial: bool,
     pub required: Option<Vec<String>>,
 }
