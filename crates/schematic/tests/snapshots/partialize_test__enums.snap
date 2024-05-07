@@ -461,30 +461,61 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    ty: Struct(
 ⬛️                                                        StructType {
 🟥                                                            fields: {},
-🟥                                                            partial: true,
 🟩                                                            fields: {
 🟩                                                                "a": Schema {
 🟩                                                                    description: None,
-🟩                                                                    name: Some(
-🟩                                                                        "PartialEmpty",
-🟩                                                                    ),
-🟩                                                                    ty: Struct(
-🟩                                                                        StructType {
-🟩                                                                            fields: {},
-🟩                                                                            partial: true,
-🟩                                                                            required: None,
+🟩                                                                    name: None,
+🟩                                                                    ty: Union(
+🟩                                                                        UnionType {
+🟩                                                                            default_index: None,
+🟩                                                                            partial: false,
+🟩                                                                            operator: AnyOf,
+🟩                                                                            variants_types: [
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: Some(
+🟩                                                                                        "PartialEmpty",
+🟩                                                                                    ),
+🟩                                                                                    ty: Struct(
+🟩                                                                                        StructType {
+🟩                                                                                            fields: {},
+🟩                                                                                            partial: true,
+🟩                                                                                            required: None,
+🟩                                                                                        },
+🟩                                                                                    ),
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: None,
+🟩                                                                                    ty: Null,
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                            ],
 🟩                                                                        },
 🟩                                                                    ),
 🟩                                                                    deprecated: None,
 🟩                                                                    env_var: None,
 🟩                                                                    hidden: false,
-🟩                                                                    nullable: false,
-🟩                                                                    optional: false,
+🟩                                                                    nullable: true,
+🟩                                                                    optional: true,
 🟩                                                                    read_only: false,
 🟩                                                                    write_only: false,
 🟩                                                                },
 🟩                                                            },
-🟩                                                            partial: false,
+⬛️                                                            partial: true,
 ⬛️                                                            required: None,
 ⬛️                                                        },
 ⬛️                                                    ),
@@ -497,7 +528,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    write_only: false,
 ⬛️                                                },
 🟥                                            },
-🟥                                            partial: false,
+🟥                                            partial: true,
 🟥                                            required: None,
 🟥                                        },
 🟥                                    ),
@@ -525,30 +556,61 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    ty: Struct(
 ⬛️                                                        StructType {
 🟥                                                            fields: {},
-🟥                                                            partial: true,
 🟩                                                            fields: {
 🟩                                                                "b": Schema {
 🟩                                                                    description: None,
-🟩                                                                    name: Some(
-🟩                                                                        "PartialEmpty",
-🟩                                                                    ),
-🟩                                                                    ty: Struct(
-🟩                                                                        StructType {
-🟩                                                                            fields: {},
-🟩                                                                            partial: true,
-🟩                                                                            required: None,
+🟩                                                                    name: None,
+🟩                                                                    ty: Union(
+🟩                                                                        UnionType {
+🟩                                                                            default_index: None,
+🟩                                                                            partial: false,
+🟩                                                                            operator: AnyOf,
+🟩                                                                            variants_types: [
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: Some(
+🟩                                                                                        "PartialEmpty",
+🟩                                                                                    ),
+🟩                                                                                    ty: Struct(
+🟩                                                                                        StructType {
+🟩                                                                                            fields: {},
+🟩                                                                                            partial: true,
+🟩                                                                                            required: None,
+🟩                                                                                        },
+🟩                                                                                    ),
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: None,
+🟩                                                                                    ty: Null,
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                            ],
 🟩                                                                        },
 🟩                                                                    ),
 🟩                                                                    deprecated: None,
 🟩                                                                    env_var: None,
 🟩                                                                    hidden: false,
-🟩                                                                    nullable: false,
-🟩                                                                    optional: false,
+🟩                                                                    nullable: true,
+🟩                                                                    optional: true,
 🟩                                                                    read_only: false,
 🟩                                                                    write_only: false,
 🟩                                                                },
 🟩                                                            },
-🟩                                                            partial: false,
+⬛️                                                            partial: true,
 ⬛️                                                            required: None,
 ⬛️                                                        },
 ⬛️                                                    ),
@@ -561,7 +623,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    write_only: false,
 ⬛️                                                },
 🟥                                            },
-🟥                                            partial: false,
+🟥                                            partial: true,
 🟥                                            required: None,
 🟩                                            ],
 ⬛️                                        },
@@ -628,27 +690,68 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            fields: {
 ⬛️                                                                "a": Schema {
 ⬛️                                                                    description: None,
-⬛️                                                                    name: Some(
+🟥                                                                    name: Some(
 🟥                                                                        "Empty",
-🟩                                                                        "PartialEmpty",
-⬛️                                                                    ),
-⬛️                                                                    ty: Struct(
-⬛️                                                                        StructType {
-⬛️                                                                            fields: {},
-⬛️                                                                            partial: true,
-⬛️                                                                            required: None,
+🟥                                                                    ),
+🟥                                                                    ty: Struct(
+🟥                                                                        StructType {
+🟥                                                                            fields: {},
+🟥                                                                            partial: true,
+🟥                                                                            required: None,
+🟩                                                                    name: None,
+🟩                                                                    ty: Union(
+🟩                                                                        UnionType {
+🟩                                                                            default_index: None,
+🟩                                                                            partial: false,
+🟩                                                                            operator: AnyOf,
+🟩                                                                            variants_types: [
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: Some(
+🟩                                                                                        "PartialEmpty",
+🟩                                                                                    ),
+🟩                                                                                    ty: Struct(
+🟩                                                                                        StructType {
+🟩                                                                                            fields: {},
+🟩                                                                                            partial: true,
+🟩                                                                                            required: None,
+🟩                                                                                        },
+🟩                                                                                    ),
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: None,
+🟩                                                                                    ty: Null,
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                            ],
 ⬛️                                                                        },
 ⬛️                                                                    ),
 ⬛️                                                                    deprecated: None,
 ⬛️                                                                    env_var: None,
 ⬛️                                                                    hidden: false,
-⬛️                                                                    nullable: false,
-⬛️                                                                    optional: false,
+🟥                                                                    nullable: false,
+🟥                                                                    optional: false,
+🟩                                                                    nullable: true,
+🟩                                                                    optional: true,
 ⬛️                                                                    read_only: false,
 ⬛️                                                                    write_only: false,
 ⬛️                                                                },
 ⬛️                                                            },
-⬛️                                                            partial: false,
+⬛️                                                            partial: true,
 ⬛️                                                            required: None,
 ⬛️                                                        },
 ⬛️                                                    ),
@@ -668,27 +771,68 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            fields: {
 ⬛️                                                                "b": Schema {
 ⬛️                                                                    description: None,
-⬛️                                                                    name: Some(
+🟥                                                                    name: Some(
 🟥                                                                        "Empty",
-🟩                                                                        "PartialEmpty",
-⬛️                                                                    ),
-⬛️                                                                    ty: Struct(
-⬛️                                                                        StructType {
-⬛️                                                                            fields: {},
-⬛️                                                                            partial: true,
-⬛️                                                                            required: None,
+🟥                                                                    ),
+🟥                                                                    ty: Struct(
+🟥                                                                        StructType {
+🟥                                                                            fields: {},
+🟥                                                                            partial: true,
+🟥                                                                            required: None,
+🟩                                                                    name: None,
+🟩                                                                    ty: Union(
+🟩                                                                        UnionType {
+🟩                                                                            default_index: None,
+🟩                                                                            partial: false,
+🟩                                                                            operator: AnyOf,
+🟩                                                                            variants_types: [
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: Some(
+🟩                                                                                        "PartialEmpty",
+🟩                                                                                    ),
+🟩                                                                                    ty: Struct(
+🟩                                                                                        StructType {
+🟩                                                                                            fields: {},
+🟩                                                                                            partial: true,
+🟩                                                                                            required: None,
+🟩                                                                                        },
+🟩                                                                                    ),
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                                Schema {
+🟩                                                                                    description: None,
+🟩                                                                                    name: None,
+🟩                                                                                    ty: Null,
+🟩                                                                                    deprecated: None,
+🟩                                                                                    env_var: None,
+🟩                                                                                    hidden: false,
+🟩                                                                                    nullable: false,
+🟩                                                                                    optional: false,
+🟩                                                                                    read_only: false,
+🟩                                                                                    write_only: false,
+🟩                                                                                },
+🟩                                                                            ],
 ⬛️                                                                        },
 ⬛️                                                                    ),
 ⬛️                                                                    deprecated: None,
 ⬛️                                                                    env_var: None,
 ⬛️                                                                    hidden: false,
-⬛️                                                                    nullable: false,
-⬛️                                                                    optional: false,
+🟥                                                                    nullable: false,
+🟥                                                                    optional: false,
+🟩                                                                    nullable: true,
+🟩                                                                    optional: true,
 ⬛️                                                                    read_only: false,
 ⬛️                                                                    write_only: false,
 ⬛️                                                                },
 ⬛️                                                            },
-⬛️                                                            partial: false,
+⬛️                                                            partial: true,
 ⬛️                                                            required: None,
 ⬛️                                                        },
 ⬛️                                                    ),

@@ -196,9 +196,15 @@ impl<'l> Variant<'l> {
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
                 quote! {
-                    Schema::structure(StructType::new([
-                        (#name.into(), #inner),
-                    ]))
+                    {
+                        let mut item = Schema::structure(StructType::new([
+                            (#name.into(), #inner),
+                        ]));
+                        if #partial {
+                            item.partialize();
+                        }
+                        item
+                    }
                 }
             }
             TaggedFormat::Internal(tag) => {
@@ -226,16 +232,7 @@ impl<'l> Variant<'l> {
             }
         };
 
-        if partial {
-            quote! {
-                {
-                    let mut item = #outer;
-                    item
-                }
-            }
-        } else {
-            outer
-        }
+        outer
     }
 }
 

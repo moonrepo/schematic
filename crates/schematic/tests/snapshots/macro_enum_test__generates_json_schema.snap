@@ -56,6 +56,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     {
       "type": "object",
+      "required": [
+        "content",
+        "type"
+      ],
       "properties": {
         "content": {
           "allOf": [
@@ -65,14 +69,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "qux"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "const": "qux"
         }
       },
       "additionalProperties": false
@@ -463,9 +460,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "object",
           "properties": {
             "qux": {
-              "allOf": [
+              "anyOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
+                },
+                {
+                  "type": "null"
                 }
               ]
             }
@@ -510,9 +510,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "object",
           "properties": {
             "object": {
-              "allOf": [
+              "anyOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
+                },
+                {
+                  "type": "null"
                 }
               ]
             }
@@ -588,37 +591,30 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     "PartialSomeConfig": {
       "title": "PartialSomeConfig",
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "bar": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+      "type": "object",
+      "properties": {
+        "bar": {
+          "anyOf": [
+            {
+              "type": "number"
             },
-            "foo": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            {
+              "type": "null"
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        {
-          "type": "null"
+        "foo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      ]
+      },
+      "additionalProperties": false
     },
     "PartialUntagged": {
       "title": "PartialUntagged",

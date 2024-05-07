@@ -38,6 +38,11 @@ fn create_diff<T: Schematic>() -> String {
 struct Empty {}
 
 #[derive(Config)]
+struct Basic {
+    field: String,
+}
+
+#[derive(Config)]
 struct Primitives {
     string: String,
     number: usize,
@@ -112,4 +117,102 @@ struct Enums {
 #[test]
 fn enums() {
     assert_snapshot!(create_diff::<Enums>());
+}
+
+#[derive(Config)]
+struct Nested {
+    #[setting(nested)]
+    field: Basic,
+    #[setting(nested)]
+    field_opt: Option<Basic>,
+}
+
+#[test]
+fn nested() {
+    assert_snapshot!(create_diff::<Nested>());
+}
+
+#[derive(Config)]
+struct NestedList {
+    #[setting(nested)]
+    field: Vec<Basic>,
+    #[setting(nested)]
+    field_opt: Option<Vec<Basic>>,
+}
+
+#[test]
+fn nested_list() {
+    assert_snapshot!(create_diff::<NestedList>());
+}
+
+#[derive(Config)]
+struct NestedMap {
+    #[setting(nested)]
+    field: HashMap<String, Basic>,
+    #[setting(nested)]
+    field_opt: Option<HashMap<usize, Basic>>,
+}
+
+#[test]
+fn nested_map() {
+    assert_snapshot!(create_diff::<NestedMap>());
+}
+
+#[derive(Config)]
+#[config(serde(untagged))]
+enum Untagged {
+    Foo,
+    Bar(bool),
+    Baz(usize, String),
+    #[setting(nested)]
+    Qux(Basic),
+}
+
+#[test]
+fn enum_untagged() {
+    assert_snapshot!(create_diff::<Untagged>());
+}
+
+#[derive(Config)]
+enum ExternalTagged {
+    Foo,
+    Bar(bool),
+    Baz(usize),
+    #[setting(nested)]
+    Qux(Basic),
+}
+
+#[test]
+fn enum_external() {
+    assert_snapshot!(create_diff::<ExternalTagged>());
+}
+
+#[derive(Config)]
+#[config(serde(tag = "type"))]
+enum InternalTagged {
+    Foo,
+    Bar(bool),
+    Baz(usize),
+    #[setting(nested)]
+    Qux(Basic),
+}
+
+#[test]
+fn enum_internal() {
+    assert_snapshot!(create_diff::<InternalTagged>());
+}
+
+#[derive(Config)]
+#[config(serde(tag = "type", content = "content"))]
+enum AdjacentTagged {
+    Foo,
+    Bar(bool),
+    Baz(usize),
+    #[setting(nested)]
+    Qux(Basic),
+}
+
+#[test]
+fn enum_adjacent() {
+    assert_snapshot!(create_diff::<AdjacentTagged>());
 }

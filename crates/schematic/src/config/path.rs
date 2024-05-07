@@ -42,8 +42,8 @@ impl Path {
 
     /// Create a new instance and append an `Key` [`PathSegment`]
     /// to the end of the current path.
-    pub fn join_key(&self, key: &str) -> Self {
-        self.join(PathSegment::Key(key.to_owned()))
+    pub fn join_key(&self, key: impl Display) -> Self {
+        self.join(PathSegment::Key(format!("{key}")))
     }
 
     /// Create a new instance and append another [`Path`]
