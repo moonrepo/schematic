@@ -52,7 +52,7 @@ pub enum ConfigError {
     ReadFileFailed {
         path: PathBuf,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 
     #[diagnostic(code(config::url::invalid))]
@@ -65,7 +65,7 @@ pub enum ConfigError {
     ReadUrlFailed {
         url: String,
         #[source]
-        error: reqwest::Error,
+        error: Box<reqwest::Error>,
     },
 
     #[diagnostic(code(config::url::https_only))]
@@ -82,6 +82,8 @@ pub enum ConfigError {
     Parser {
         config: String,
 
+        // Required to display the code snippet!
+        // Because of this, we can't wrap in `Box`.
         #[diagnostic_source]
         #[source]
         error: ParserError,
@@ -96,10 +98,10 @@ pub enum ConfigError {
     Validator {
         config: String,
 
-        // This includes the vertical red line which we don't want!
+        // This includes a vertical red line which we don't want!
         // #[diagnostic_source]
         #[source]
-        error: ValidatorError,
+        error: Box<ValidatorError>,
 
         #[help]
         help: Option<String>,

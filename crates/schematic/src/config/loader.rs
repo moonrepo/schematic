@@ -106,7 +106,7 @@ impl<T: Config> ConfigLoader<T> {
                     Some(last) => self.get_location(&last.source).to_owned(),
                     None => T::META.name.to_owned(),
                 },
-                error,
+                error: Box::new(error),
                 help: self.help.clone(),
             })?;
 
@@ -266,7 +266,7 @@ impl<T: Config> ConfigLoader<T> {
                 .validate(context, false)
                 .map_err(|error| ConfigError::Validator {
                     config: location.to_owned(),
-                    error,
+                    error: Box::new(error),
                     help: self.help.clone(),
                 })?;
 
