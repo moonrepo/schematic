@@ -6,11 +6,12 @@ use schematic_types::*;
 use std::collections::HashSet;
 
 /// Renders JSON config templates with comments.
-pub struct JsoncTemplateRenderer {
+pub struct JsoncTemplateRenderer<'gen> {
     ctx: TemplateContext,
+    schemas: Option<&'gen IndexMap<String, Schema>>,
 }
 
-impl JsoncTemplateRenderer {
+impl<'gen> JsoncTemplateRenderer<'gen> {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         JsoncTemplateRenderer::new(TemplateOptions::default())
@@ -19,16 +20,17 @@ impl JsoncTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         JsoncTemplateRenderer {
             ctx: TemplateContext::new(Format::Json, options),
+            schemas: None,
         }
     }
 }
 
-impl SchemaRenderer<String> for JsoncTemplateRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for JsoncTemplateRenderer<'gen> {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
 
-    fn render_array(&mut self, array: &ArrayType) -> RenderResult<String> {
+    fn render_array(&mut self, array: &ArrayType, _schema: &Schema) -> RenderResult<String> {
         let key = self.ctx.get_stack_key();
 
         if !self.ctx.is_expanded(&key) {
@@ -45,31 +47,31 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         Ok(format!("[\n{}{item}\n{}]", item_indent, self.ctx.indent()))
     }
 
-    fn render_boolean(&mut self, boolean: &BooleanType) -> RenderResult<String> {
+    fn render_boolean(&mut self, boolean: &BooleanType, _schema: &Schema) -> RenderResult<String> {
         render_boolean(boolean)
     }
 
-    fn render_enum(&mut self, enu: &EnumType) -> RenderResult<String> {
+    fn render_enum(&mut self, enu: &EnumType, _schema: &Schema) -> RenderResult<String> {
         render_enum(enu)
     }
 
-    fn render_float(&mut self, float: &FloatType) -> RenderResult<String> {
+    fn render_float(&mut self, float: &FloatType, _schema: &Schema) -> RenderResult<String> {
         render_float(float)
     }
 
-    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult<String> {
+    fn render_integer(&mut self, integer: &IntegerType, _schema: &Schema) -> RenderResult<String> {
         render_integer(integer)
     }
 
-    fn render_literal(&mut self, literal: &LiteralType) -> RenderResult<String> {
+    fn render_literal(&mut self, literal: &LiteralType, _schema: &Schema) -> RenderResult<String> {
         render_literal(literal)
     }
 
-    fn render_null(&mut self) -> RenderResult<String> {
+    fn render_null(&mut self, _schema: &Schema) -> RenderResult<String> {
         render_null()
     }
 
-    fn render_object(&mut self, object: &ObjectType) -> RenderResult<String> {
+    fn render_object(&mut self, object: &ObjectType, _schema: &Schema) -> RenderResult<String> {
         let key = self.ctx.get_stack_key();
 
         if !self.ctx.is_expanded(&key) {
@@ -96,28 +98,34 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         ))
     }
 
-    fn render_reference(&mut self, reference: &str) -> RenderResult<String> {
+    fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
+        if let Some(schemas) = &self.schemas {
+            if let Some(schema) = schemas.get(reference) {
+                return self.render_schema_without_reference(schema);
+            }
+        }
+
         render_reference(reference)
     }
 
-    fn render_string(&mut self, string: &StringType) -> RenderResult<String> {
+    fn render_string(&mut self, string: &StringType, _schema: &Schema) -> RenderResult<String> {
         render_string(string)
     }
 
-    fn render_struct(&mut self, structure: &StructType) -> RenderResult<String> {
+    fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
         let mut out = vec![];
         let last_index = structure.fields.len() - 1;
 
         self.ctx.depth += 1;
 
-        for (index, field) in structure.fields.iter().enumerate() {
-            self.ctx.push_stack(&field.name);
+        for (index, (name, field)) in structure.fields.iter().enumerate() {
+            self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
                 let prop = format!(
                     "\"{}\": {}{}",
-                    field.name,
-                    self.render_schema(&field.type_of)?,
+                    name,
+                    self.render_schema(field)?,
                     if index == last_index { "" } else { "," }
                 );
 
@@ -140,25 +148,27 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
         ))
     }
 
-    fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult<String> {
+    fn render_tuple(&mut self, tuple: &TupleType, _schema: &Schema) -> RenderResult<String> {
         render_tuple(tuple, |schema| self.render_schema(schema))
     }
 
-    fn render_union(&mut self, uni: &UnionType) -> RenderResult<String> {
+    fn render_union(&mut self, uni: &UnionType, _schema: &Schema) -> RenderResult<String> {
         render_union(uni, |schema| self.render_schema(schema))
     }
 
-    fn render_unknown(&mut self) -> RenderResult<String> {
+    fn render_unknown(&mut self, _schema: &Schema) -> RenderResult<String> {
         render_unknown()
     }
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
-        _references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        _references: &'gen HashSet<String>,
     ) -> RenderResult {
+        self.schemas = Some(schemas);
+
         let root = validate_root(schemas)?;
-        let mut template = self.render_struct(&root)?;
+        let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer
         if self.ctx.options.comments {

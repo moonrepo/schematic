@@ -9,11 +9,11 @@ use std::mem;
 pub struct JsonTemplateRenderer;
 
 impl JsonTemplateRenderer {
-    pub fn default() -> JsoncTemplateRenderer {
+    pub fn default<'gen>() -> JsoncTemplateRenderer<'gen> {
         Self::new(TemplateOptions::default())
     }
 
-    pub fn new(mut options: TemplateOptions) -> JsoncTemplateRenderer {
+    pub fn new<'gen>(mut options: TemplateOptions) -> JsoncTemplateRenderer<'gen> {
         options.comments = false;
         options
             .hide_fields

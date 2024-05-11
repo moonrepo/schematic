@@ -1,5 +1,5 @@
 use crate::format::Format;
-use crate::schema::{RenderResult, SchemaRenderer};
+use crate::schema::RenderResult;
 use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
@@ -66,7 +66,7 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
     match schema {
         SchemaType::Struct(_) => true,
         SchemaType::Union(uni) => {
-            if uni.is_nullable() && uni.variants_types.len() == 2 {
+            if uni.has_null() && uni.variants_types.len() == 2 {
                 uni.variants_types
                     .iter()
                     .find(|v| !v.is_null())
@@ -76,33 +76,6 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
             }
         }
         _ => false,
-    }
-}
-
-/// Renders template files from a schema.
-#[deprecated = "Use the format specific renderers instead!"]
-pub struct TemplateRenderer;
-
-#[allow(deprecated)]
-impl TemplateRenderer {
-    pub fn new_format(format: Format) -> Box<dyn SchemaRenderer<String>> {
-        Self::new(format, TemplateOptions::default())
-    }
-
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(format: Format, options: TemplateOptions) -> Box<dyn SchemaRenderer<String>> {
-        match format {
-            Format::None => unreachable!(),
-
-            #[cfg(feature = "json")]
-            Format::Json => Box::new(super::jsonc_template::JsoncTemplateRenderer::new(options)),
-
-            #[cfg(feature = "toml")]
-            Format::Toml => Box::new(super::toml_template::TomlTemplateRenderer::new(options)),
-
-            #[cfg(feature = "yaml")]
-            Format::Yaml => Box::new(super::yaml_template::YamlTemplateRenderer::new(options)),
-        }
     }
 }
 
@@ -140,7 +113,7 @@ impl TemplateContext {
         }
     }
 
-    pub fn create_comment(&self, field: &SchemaField) -> String {
+    pub fn create_comment(&self, field: &Schema) -> String {
         if !self.options.comments {
             return String::new();
         }
@@ -181,7 +154,7 @@ impl TemplateContext {
         out
     }
 
-    pub fn create_field(&self, field: &SchemaField, property: String) -> String {
+    pub fn create_field(&self, field: &Schema, property: String) -> String {
         let key = self.get_stack_key();
 
         format!(
@@ -223,7 +196,7 @@ impl TemplateContext {
         self.options.expand_fields.contains(key)
     }
 
-    pub fn is_hidden(&self, field: &SchemaField) -> bool {
+    pub fn is_hidden(&self, field: &Schema) -> bool {
         let key = self.get_stack_key();
 
         field.hidden || self.options.hide_fields.contains(&key)
@@ -235,6 +208,22 @@ impl TemplateContext {
 
     pub fn pop_stack(&mut self) {
         self.stack.pop_back();
+    }
+
+    pub fn resolve_schema<'gen>(
+        &self,
+        initial: &'gen Schema,
+        schemas: &Option<&'gen IndexMap<String, Schema>>,
+    ) -> &'gen Schema {
+        if let SchemaType::Reference(name) = &initial.ty {
+            if let Some(schemas) = schemas {
+                if let Some(schema) = schemas.get(name) {
+                    return schema;
+                }
+            }
+        }
+
+        initial
     }
 }
 
@@ -277,11 +266,7 @@ pub fn render_integer(integer: &IntegerType) -> RenderResult {
 }
 
 pub fn render_literal(literal: &LiteralType) -> RenderResult {
-    if let Some(value) = &literal.value {
-        return Ok(lit_to_string(value));
-    }
-
-    render_null()
+    Ok(lit_to_string(&literal.value))
 }
 
 pub fn render_null() -> RenderResult {
@@ -312,7 +297,7 @@ pub fn render_struct(_structure: &StructType) -> RenderResult {
 
 pub fn render_tuple(
     tuple: &TupleType,
-    mut render: impl FnMut(&SchemaType) -> RenderResult,
+    mut render: impl FnMut(&Schema) -> RenderResult,
 ) -> RenderResult {
     let mut items = vec![];
 
@@ -325,7 +310,7 @@ pub fn render_tuple(
 
 pub fn render_union(
     uni: &UnionType,
-    mut render: impl FnMut(&SchemaType) -> RenderResult,
+    mut render: impl FnMut(&Schema) -> RenderResult,
 ) -> RenderResult {
     if let Some(index) = &uni.default_index {
         if let Some(variant) = uni.variants_types.get(*index) {
@@ -334,7 +319,7 @@ pub fn render_union(
     }
 
     // We have a nullable type, so render the non-null value
-    if uni.is_nullable() {
+    if uni.has_null() {
         if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
             return render(variant);
         }
@@ -347,16 +332,16 @@ pub fn render_unknown() -> RenderResult {
     render_null()
 }
 
-pub fn validate_root(schemas: &IndexMap<String, SchemaType>) -> miette::Result<StructType> {
+pub fn validate_root(schemas: &IndexMap<String, Schema>) -> miette::Result<Schema> {
     let Some(schema) = schemas.values().last() else {
         return Err(miette!(
             "At least 1 schema is required to generate a template."
         ));
     };
 
-    let SchemaType::Struct(root) = schema else {
+    if !schema.is_struct() {
         return Err(miette!("The last registered schema must be a struct type."));
     };
 
-    Ok(root.to_owned())
+    Ok(schema.to_owned())
 }

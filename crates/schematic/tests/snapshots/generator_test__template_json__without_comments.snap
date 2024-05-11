@@ -7,8 +7,8 @@ expression: "fs::read_to_string(file).unwrap()"
   "enums": "foo",
   "expandArray": [
     {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   ],
   "expandArrayPrimitive": [
@@ -16,8 +16,8 @@ expression: "fs::read_to_string(file).unwrap()"
   ],
   "expandObject": {
     "example": {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   },
   "expandObjectPrimitive": {
@@ -26,14 +26,14 @@ expression: "fs::read_to_string(file).unwrap()"
   "fallbackEnum": "foo",
   "float64": 1.23,
   "nested": {
-    "opt": "",
-    "enums": "foo"
+    "enums": "foo",
+    "opt": ""
   },
   "number": 0,
   "one": {
     "two": {
       "opt": "",
-    },
+    }
   },
   "string": "abc",
   "vector": []

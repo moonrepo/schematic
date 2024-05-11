@@ -14,7 +14,6 @@ export enum BasicEnum {
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
-/** Some comment. */
 export interface AnotherConfig {
 	/**
 	 * An optional enum.

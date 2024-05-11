@@ -171,12 +171,12 @@ pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
     }
 }
 
-pub fn map_bool_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
+pub fn map_bool_field_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
     if value {
         let id = format_ident!("{}", name);
 
         Some(quote! {
-            #id: true,
+            field.#id = true;
 
         })
     } else {
@@ -184,7 +184,23 @@ pub fn map_bool_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStrea
     }
 }
 
-pub fn map_option_quote<T: ToTokens>(
+pub fn map_option_field_quote<T: ToTokens>(
+    name: &str,
+    value: Option<T>,
+) -> Option<proc_macro2::TokenStream> {
+    if let Some(value) = value {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            field.#id = Some(#value.into());
+
+        })
+    } else {
+        None
+    }
+}
+
+pub fn map_option_variant_quote<T: ToTokens>(
     name: &str,
     value: Option<T>,
 ) -> Option<proc_macro2::TokenStream> {
@@ -197,5 +213,13 @@ pub fn map_option_quote<T: ToTokens>(
         })
     } else {
         None
+    }
+}
+
+pub fn map_option_argument_quote<T: ToTokens>(value: Option<T>) -> proc_macro2::TokenStream {
+    if let Some(value) = value {
+        quote! { Some(#value.into()) }
+    } else {
+        quote! { None }
     }
 }

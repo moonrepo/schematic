@@ -203,7 +203,6 @@ expression: "fs::read_to_string(file).unwrap()"
   "definitions": {
     "AnotherConfig": {
       "title": "AnotherConfig",
-      "description": "Some comment.",
       "type": "object",
       "required": [
         "enums",

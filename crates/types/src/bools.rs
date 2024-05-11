@@ -1,23 +1,22 @@
-use crate::literals::LiteralValue;
-use crate::{SchemaType, Schematic};
+use crate::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct BooleanType {
     pub default: Option<LiteralValue>,
-    pub name: Option<String>,
 }
 
 impl BooleanType {
+    /// Create a boolean schema with the provided default value.
     pub fn new(value: bool) -> Self {
-        Self {
+        BooleanType {
             default: Some(LiteralValue::Bool(value)),
-            name: None,
         }
     }
 }
 
 impl Schematic for bool {
-    fn generate_schema() -> SchemaType {
-        SchemaType::boolean()
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.boolean(BooleanType::default());
+        schema.build()
     }
 }

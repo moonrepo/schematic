@@ -102,14 +102,17 @@ impl Default for ExtendsFrom {
 }
 
 impl Schematic for ExtendsFrom {
-    fn generate_schema() -> schematic_types::SchemaType {
+    fn schema_name() -> Option<String> {
+        Some("ExtendsFrom".into())
+    }
+
+    fn build_schema(mut schema: schematic_types::SchemaBuilder) -> schematic_types::Schema {
         use schematic_types::*;
 
-        let mut schema = SchemaType::union([
-            SchemaType::string(),
-            SchemaType::array(SchemaType::string()),
-        ]);
-        schema.set_name("ExtendsFrom");
-        schema
+        schema.union(UnionType::new_any([
+            schema.infer::<String>(),
+            schema.infer::<Vec<String>>(),
+        ]));
+        schema.build()
     }
 }

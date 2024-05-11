@@ -1,18 +1,34 @@
-use crate::{SchemaType, Schematic};
+use crate::*;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TupleType {
-    pub items_types: Vec<Box<SchemaType>>,
-    pub name: Option<String>,
+    pub items_types: Vec<Box<Schema>>,
+}
+
+impl TupleType {
+    /// Create a tuple schema with the provided item types.
+    pub fn new<I, V>(items_types: I) -> Self
+    where
+        I: IntoIterator<Item = V>,
+        V: Into<Schema>,
+    {
+        TupleType {
+            items_types: items_types
+                .into_iter()
+                .map(|inner| Box::new(inner.into()))
+                .collect(),
+        }
+    }
 }
 
 macro_rules! impl_tuple {
     ($($arg: ident),*) => {
         impl<$($arg: Schematic),*> Schematic for ($($arg,)*) {
-            fn generate_schema() -> SchemaType {
-                SchemaType::tuple([
-                    $($arg::generate_schema(),)*
-                ])
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.tuple(TupleType::new([
+                    $(schema.infer::<$arg>(),)*
+                ]));
+                schema.build()
             }
         }
     };

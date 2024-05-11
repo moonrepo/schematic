@@ -1,5 +1,86 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Rewrote the `Schematic` trait (and indirectly the `Config` and `ConfigEnum` traits) from the
+  ground up. The new API uses a builder pattern to construct the schema. This allows for all types
+  to support names, descriptions, references, and more metadata. It also helps to avoid circular
+  references.
+
+  ```rust
+  // Before
+  impl Schematic for T {
+    fn generate_schema() -> schematic::SchemaType {
+      // Create the schema type
+    }
+  }
+
+  // After
+  impl Schematic for T {
+    fn schema_name() -> Option<String> {
+      None // Required for non-primitives
+    }
+
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+      // Build the schema
+      schema.build()
+    }
+  }
+  ```
+
+- Updated renderers with lifetimes, so that data from the generator can be borrowed correctly. If
+  you're using the built-in renderers, everything should continue to work correctly.
+
+  ```rust
+  // Before
+  impl SchemaRenderer<O> for T {
+    fn render(
+        &mut self,
+        schemas: &IndexMap<String, Schema>,
+        references: &HashSet<String>,
+    ) -> RenderResult<O> {
+      //
+    }
+  }
+
+  // After
+  impl<'gen> SchemaRenderer<'gen, O> for T<'gen> {
+    fn render(
+        &mut self,
+        schemas: &'gen IndexMap<String, Schema>,
+        references: &'gen HashSet<String>,
+    ) -> RenderResult<O> {
+      //
+    }
+  }
+  ```
+
+- Updated renderer methods to receive the schema as an immutable referenced argument. The schemas
+  contains the name, description, and more.
+
+  ```rust
+  // Before
+  impl SchemaRenderer<O> for T {
+    fn render(&mut self, array: &ArrayType) -> RenderResult<O> {
+      //
+    }
+  }
+
+  // After
+  impl<'gen> SchemaRenderer<'gen, O> for T<'gen> {
+    fn render(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<O> {
+      //
+    }
+  }
+  ```
+
+#### 🚀 Updates
+
+- Updated the macro generated code to use `Box` in many places to reduce the size of enums and
+  structs.
+
 ## 0.15.2
 
 #### ⚙️ Internal

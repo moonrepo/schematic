@@ -138,13 +138,13 @@ struct TemplateConfig {
     expand_object_primitive: HashMap<String, usize>,
 }
 
-fn create_generator() -> SchemaGenerator {
+fn create_generator() -> SchemaGenerator<'static> {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
     generator
 }
 
-fn create_template_generator() -> SchemaGenerator {
+fn create_template_generator() -> SchemaGenerator<'static> {
     let mut generator = SchemaGenerator::default();
     generator.add::<TemplateConfig>();
     generator
