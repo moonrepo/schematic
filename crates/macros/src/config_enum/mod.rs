@@ -2,6 +2,7 @@ mod variant;
 
 use crate::common::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
+use crate::utils::instrument_quote;
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -173,6 +174,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         use crate::utils::map_option_argument_quote;
 
         let default_index = map_option_argument_quote(default_index);
+        let instrument = instrument_quote();
 
         impls.push(quote! {
             #[automatically_derived]
@@ -181,6 +183,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     Some(#meta_name.into())
                 }
 
+                #instrument
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 

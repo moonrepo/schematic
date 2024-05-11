@@ -1,5 +1,5 @@
 use crate::common::Macro;
-use crate::utils::extract_comment;
+use crate::utils::{extract_comment, instrument_quote};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
@@ -12,6 +12,7 @@ impl<'l> ToTokens for SchematicMacro<'l> {
 
         let schema_name = cfg.get_name();
         let schema_impl = cfg.type_of.generate_schema(extract_comment(&cfg.attrs));
+        let instrument = instrument_quote();
 
         tokens.extend(quote! {
             #[automatically_derived]
@@ -20,6 +21,7 @@ impl<'l> ToTokens for SchematicMacro<'l> {
                     Some(#schema_name.into())
                 }
 
+                #instrument
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 

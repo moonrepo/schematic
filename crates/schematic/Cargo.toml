@@ -63,6 +63,7 @@ config = [
 json = ["dep:serde_json"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
 toml = ["dep:toml"]
+tracing = ["schematic_macros/tracing"]
 url = ["dep:reqwest"]
 yaml = ["dep:serde_yaml"]
 
@@ -93,6 +94,7 @@ schematic = { path = ".", features = [
 	"renderer_json_schema",
 	"renderer_template",
 	"renderer_typescript",
+	"tracing",
 	"type_chrono",
 	"type_indexmap",
 	"type_regex",
