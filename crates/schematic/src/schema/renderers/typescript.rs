@@ -186,7 +186,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
                     "{}{} = {},",
                     indent,
                     variant.name.as_ref().unwrap(),
-                    self.render_schema(&variant)?
+                    self.render_schema(variant)?
                 )
             } else {
                 format!("{}{},", indent, variant.name.as_ref().unwrap())

@@ -125,7 +125,6 @@ export type Validations = {
 	required: string | null,
 };
 
-/** Container comment. */
 export type Comments = {
 	/**
 	 * Block

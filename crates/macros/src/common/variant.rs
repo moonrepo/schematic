@@ -183,7 +183,7 @@ impl<'l> Variant<'l> {
             }
         };
 
-        let outer = match tagged_format {
+        match tagged_format {
             TaggedFormat::Unit => {
                 quote! {
                     Schema {
@@ -208,7 +208,7 @@ impl<'l> Variant<'l> {
                 }
             }
             TaggedFormat::Internal(tag) => {
-                return quote! {
+                quote! {
                     {
                         let mut item = #inner;
                         item.add_field(
@@ -220,7 +220,7 @@ impl<'l> Variant<'l> {
                         }
                         item
                     }
-                };
+                }
             }
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
@@ -230,9 +230,7 @@ impl<'l> Variant<'l> {
                     ]))
                 }
             }
-        };
-
-        outer
+        }
     }
 }
 
