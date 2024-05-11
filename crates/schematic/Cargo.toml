@@ -20,7 +20,7 @@ all-features = true
 schematic_macros = { version = "0.15.1", path = "../macros" }
 schematic_types = { version = "0.7.0", path = "../types" }
 miette = { workspace = true }
-thiserror = "1.0.59"
+thiserror = "1.0.60"
 tracing = "0.1.40"
 
 # config
@@ -41,7 +41,7 @@ serde_json = { workspace = true, optional = true, features = [
 
 # json schema
 markdown = { version = "1.0.0-alpha.17", optional = true }
-schemars = { version = "0.8.17", optional = true, default-features = false }
+schemars = { version = "0.8.19", optional = true, default-features = false }
 
 # toml
 toml = { workspace = true, optional = true }
