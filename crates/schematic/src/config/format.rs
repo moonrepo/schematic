@@ -2,6 +2,7 @@ use crate::config::errors::ConfigError;
 use crate::config::parser::*;
 use miette::{SourceOffset, SourceSpan};
 use serde::de::DeserializeOwned;
+use tracing::instrument;
 
 pub use crate::format::Format;
 
@@ -54,6 +55,7 @@ impl Format {
     /// Parse the provided content in the defined format into a partial configuration struct.
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
+    #[instrument(name = "parse_format", skip(content), fields(format = ?self))]
     pub fn parse<D>(&self, content: String, _location: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
