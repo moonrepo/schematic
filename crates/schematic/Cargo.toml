@@ -21,7 +21,7 @@ schematic_macros = { version = "0.15.1", path = "../macros" }
 schematic_types = { version = "0.7.0", path = "../types" }
 miette = { workspace = true }
 thiserror = "1.0.60"
-tracing = "0.1.40"
+tracing = { workspace = true }
 
 # config
 garde = { version = "0.18.0", default-features = false, optional = true, features = [

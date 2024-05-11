@@ -5,6 +5,7 @@ use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use tracing::instrument;
 
 /// Source from which to load a configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -98,6 +99,7 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
+    #[instrument(name = "parse_config_source", skip(cacher, help), fields(source = ?self))]
     pub fn parse<D>(
         &self,
         location: &str,

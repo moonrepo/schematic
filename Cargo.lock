@@ -1960,6 +1960,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
+ "tracing",
 ]
 
 [[package]]

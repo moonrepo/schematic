@@ -56,8 +56,8 @@ pub trait PartialConfig:
         self.validate_with_path(context, finalize, Path::default())
     }
 
-    #[doc(hidden)]
     /// Internal use only, use [`validate`] instead.
+    #[doc(hidden)]
     fn validate_with_path(
         &self,
         _context: &Self::Context,

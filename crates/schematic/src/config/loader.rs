@@ -88,7 +88,7 @@ impl<T: Config> ConfigLoader<T> {
     /// Load, parse, merge, and validate all sources into a final configuration
     /// with the provided context. Context will be passed to all applicable
     /// default, merge, and validate functions defined with `#[setting]`.
-    #[instrument(skip_all)]
+    #[instrument(name = "load_config", skip_all)]
     pub fn load_with_context(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -121,7 +121,7 @@ impl<T: Config> ConfigLoader<T> {
     /// environment variables, or run a final validation.
     ///
     /// Partials can be converted to full with [`Config::from_partial`].
-    #[instrument(skip_all)]
+    #[instrument(name = "load_partial_config", skip_all)]
     pub fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -152,6 +152,7 @@ impl<T: Config> ConfigLoader<T> {
         self
     }
 
+    #[instrument(skip_all)]
     fn extend_additional_layers(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -213,6 +214,7 @@ impl<T: Config> ConfigLoader<T> {
         }
     }
 
+    #[instrument(skip_all)]
     fn merge_layers(
         &self,
         layers: &[Layer<T>],
@@ -234,6 +236,7 @@ impl<T: Config> ConfigLoader<T> {
         Ok(merged)
     }
 
+    #[instrument(skip_all)]
     fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
