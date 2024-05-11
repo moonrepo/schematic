@@ -8,7 +8,6 @@ expression: "generate(TypeScriptOptions {\n        exclude_references: vec![\"Ba
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
-/** Some comment. */
 export interface AnotherConfig {
 	/**
 	 * An optional enum.

@@ -41,19 +41,19 @@ vector = []
 
 # This field is testing array expansion.
 [[expandArray]]
-# An optional string.
-opt = ""
-
 # An optional enum.
 enums = "foo"
+
+# An optional string.
+opt = ""
 
 # This is a nested struct with its own fields.
 [nested]
-# An optional string.
-opt = ""
-
 # An optional enum.
 enums = "foo"
+
+# An optional string.
+opt = ""
 
 # This is another nested field.
 [one.two]

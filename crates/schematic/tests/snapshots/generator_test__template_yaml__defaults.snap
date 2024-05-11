@@ -12,22 +12,22 @@ enums: "foo"
 
 # This field is testing array expansion.
 expandArray:
-  - # An optional string.
-    opt: ""
-
-    # An optional enum.
+  - # An optional enum.
     enums: "foo"
+
+    # An optional string.
+    opt: ""
 
 expandArrayPrimitive: [0]
 
 # This field is testing object expansion.
 expandObject:
   example:
-    # An optional string.
-    opt: ""
-
     # An optional enum.
     enums: "foo"
+
+    # An optional string.
+    opt: ""
 
 expandObjectPrimitive: {}
 
@@ -45,11 +45,11 @@ float64: 1.23
 
 # This is a nested struct with its own fields.
 nested:
-  # An optional string.
-  opt: ""
-
   # An optional enum.
   enums: "foo"
+
+  # An optional string.
+  opt: ""
 
 # This is a number with a long description.
 # This is a number with a long description.

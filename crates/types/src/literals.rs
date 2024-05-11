@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum LiteralValue {
     Bool(bool),
     F32(f32),
@@ -8,9 +8,18 @@ pub enum LiteralValue {
     String(String),
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LiteralType {
     pub format: Option<String>,
-    pub name: Option<String>,
-    pub value: Option<LiteralValue>,
+    pub value: LiteralValue,
+}
+
+impl LiteralType {
+    /// Create a literal schema with the provided value.
+    pub fn new(value: LiteralValue) -> Self {
+        LiteralType {
+            format: None,
+            value,
+        }
+    }
 }

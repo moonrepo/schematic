@@ -53,18 +53,18 @@ pub struct TypeScriptOptions {
 
 /// Renders TypeScript types from a schema.
 #[derive(Default)]
-pub struct TypeScriptRenderer {
+pub struct TypeScriptRenderer<'gen> {
     depth: usize,
     options: TypeScriptOptions,
-    references: HashSet<String>,
+    references: Option<&'gen HashSet<String>>,
 }
 
-impl TypeScriptRenderer {
+impl<'gen> TypeScriptRenderer<'gen> {
     pub fn new(options: TypeScriptOptions) -> Self {
         Self {
             depth: 0,
             options,
-            references: HashSet::new(),
+            references: None,
         }
     }
 
@@ -109,8 +109,8 @@ impl TypeScriptRenderer {
         Ok(format!("export type {name} = {value};"))
     }
 
-    fn export_enum_type(&mut self, name: &str, enu: &EnumType) -> RenderResult {
-        let value = self.render_enum(enu)?;
+    fn export_enum_type(&mut self, name: &str, enu: &EnumType, schema: &Schema) -> RenderResult {
+        let value = self.render_enum(enu, schema)?;
 
         let output = if self.is_string_union_enum(enu) {
             self.export_type_alias(name, value)?
@@ -124,11 +124,16 @@ impl TypeScriptRenderer {
             }
         };
 
-        Ok(self.wrap_in_comment(enu.description.as_ref(), vec![], output))
+        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
     }
 
-    fn export_object_type(&mut self, name: &str, structure: &StructType) -> RenderResult {
-        let value = self.render_struct(structure)?;
+    fn export_object_type(
+        &mut self,
+        name: &str,
+        structure: &StructType,
+        schema: &Schema,
+    ) -> RenderResult {
+        let value = self.render_struct(structure, schema)?;
 
         let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
             format!("export interface {name} {value}")
@@ -136,36 +141,32 @@ impl TypeScriptRenderer {
             self.export_type_alias(name, value)?
         };
 
-        Ok(self.wrap_in_comment(structure.description.as_ref(), vec![], output))
+        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
     }
 
-    fn render_enum_or_union(&mut self, enu: &EnumType) -> RenderResult {
+    fn render_enum_or_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
         if self.is_string_union_enum(enu) {
             // Map using variants instead of values (when available),
             // so that the fallback variant is included
             let variants_types = if let Some(variants) = &enu.variants {
                 variants
                     .iter()
-                    .filter_map(|v| {
-                        if v.hidden {
-                            None
-                        } else {
-                            Some(Box::new(v.type_of.clone()))
-                        }
-                    })
+                    .filter_map(|v| if v.hidden { None } else { Some(v.to_owned()) })
                     .collect::<Vec<_>>()
             } else {
                 enu.values
                     .iter()
-                    .map(|v| Box::new(SchemaType::literal(v.clone())))
+                    .map(|v| Box::new(Schema::literal_value(v.clone())))
                     .collect::<Vec<_>>()
             };
 
-            return self.render_union(&UnionType {
-                variants_types,
-                variants: enu.variants.clone(),
-                ..Default::default()
-            });
+            return self.render_union(
+                &UnionType {
+                    variants_types,
+                    ..Default::default()
+                },
+                schema,
+            );
         }
 
         self.depth += 1;
@@ -182,16 +183,16 @@ impl TypeScriptRenderer {
                 format!(
                     "{}{} = {},",
                     indent,
-                    variant.name,
-                    self.render_schema(&variant.type_of)?
+                    variant.name.as_ref().unwrap(),
+                    self.render_schema(variant)?
                 )
             } else {
-                format!("{}{},", indent, variant.name)
+                format!("{}{},", indent, variant.name.as_ref().unwrap())
             };
 
             let mut tags = vec![];
 
-            if let Some(default) = variant.type_of.get_default() {
+            if let Some(default) = variant.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
@@ -265,20 +266,20 @@ impl TypeScriptRenderer {
     }
 }
 
-impl SchemaRenderer<String> for TypeScriptRenderer {
+impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
     fn is_reference(&self, name: &str) -> bool {
         if self.options.disable_references {
             return false;
         }
 
-        if self.references.contains(name) {
+        if self.references.is_some_and(|refs| refs.contains(name)) {
             return true;
         }
 
         self.is_external(name)
     }
 
-    fn render_array(&mut self, array: &ArrayType) -> RenderResult {
+    fn render_array(&mut self, array: &ArrayType, _schema: &Schema) -> RenderResult {
         let out = self.render_schema(&array.items_type)?;
 
         Ok(if out.contains('|') {
@@ -288,15 +289,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         })
     }
 
-    fn render_boolean(&mut self, _boolean: &BooleanType) -> RenderResult {
+    fn render_boolean(&mut self, _boolean: &BooleanType, _schema: &Schema) -> RenderResult {
         Ok("boolean".into())
     }
 
-    fn render_enum(&mut self, enu: &EnumType) -> RenderResult {
-        self.render_enum_or_union(enu)
+    fn render_enum(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
+        self.render_enum_or_union(enu, schema)
     }
 
-    fn render_float(&mut self, float: &FloatType) -> RenderResult {
+    fn render_float(&mut self, float: &FloatType, _schema: &Schema) -> RenderResult {
         if let Some(values) = &float.enum_values {
             return Ok(values
                 .iter()
@@ -308,7 +309,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok("number".into())
     }
 
-    fn render_integer(&mut self, integer: &IntegerType) -> RenderResult {
+    fn render_integer(&mut self, integer: &IntegerType, _schema: &Schema) -> RenderResult {
         if let Some(values) = &integer.enum_values {
             return Ok(values
                 .iter()
@@ -320,19 +321,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok("number".into())
     }
 
-    fn render_literal(&mut self, literal: &LiteralType) -> RenderResult {
-        if let Some(value) = &literal.value {
-            return Ok(self.lit_to_string(value));
-        }
-
-        self.render_unknown()
+    fn render_literal(&mut self, literal: &LiteralType, _schema: &Schema) -> RenderResult {
+        Ok(self.lit_to_string(&literal.value))
     }
 
-    fn render_null(&mut self) -> RenderResult {
+    fn render_null(&mut self, _schema: &Schema) -> RenderResult {
         Ok("null".into())
     }
 
-    fn render_object(&mut self, object: &ObjectType) -> RenderResult {
+    fn render_object(&mut self, object: &ObjectType, _schema: &Schema) -> RenderResult {
         Ok(format!(
             "Record<{}, {}>",
             self.render_schema(&object.key_type)?,
@@ -340,11 +337,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         ))
     }
 
-    fn render_reference(&mut self, reference: &str) -> RenderResult {
+    fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult {
         Ok(reference.into())
     }
 
-    fn render_string(&mut self, string: &StringType) -> RenderResult {
+    fn render_string(&mut self, string: &StringType, _schema: &Schema) -> RenderResult {
         if let Some(values) = &string.enum_values {
             return Ok(values
                 .iter()
@@ -356,18 +353,18 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok("string".into())
     }
 
-    fn render_struct(&mut self, structure: &StructType) -> RenderResult {
+    fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult {
         self.depth += 1;
 
         let mut out = vec![];
         let indent = self.indent();
 
-        for field in &structure.fields {
+        for (name, field) in &structure.fields {
             if field.hidden {
                 continue;
             }
 
-            let mut row = format!("{}{}", indent, field.name);
+            let mut row = format!("{}{}", indent, name);
 
             if field.optional {
                 row.push_str("?: ");
@@ -375,7 +372,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 row.push_str(": ");
             }
 
-            row.push_str(&self.render_schema(&field.type_of)?);
+            row.push_str(&self.render_schema(field)?);
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
                 row.push(';');
@@ -385,7 +382,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
             let mut tags = vec![];
 
-            if let Some(default) = field.type_of.get_default() {
+            if let Some(default) = field.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
@@ -409,7 +406,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
     }
 
-    fn render_tuple(&mut self, tuple: &TupleType) -> RenderResult {
+    fn render_tuple(&mut self, tuple: &TupleType, _schema: &Schema) -> RenderResult {
         let mut items = vec![];
 
         for item in &tuple.items_types {
@@ -419,7 +416,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(format!("[{}]", items.join(", ")))
     }
 
-    fn render_union(&mut self, uni: &UnionType) -> RenderResult {
+    fn render_union(&mut self, uni: &UnionType, _schema: &Schema) -> RenderResult {
         let mut items = vec![];
 
         for item in &uni.variants_types {
@@ -429,16 +426,16 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         Ok(items.join(" | "))
     }
 
-    fn render_unknown(&mut self) -> RenderResult {
+    fn render_unknown(&mut self, _schema: &Schema) -> RenderResult {
         Ok("unknown".into())
     }
 
     fn render(
         &mut self,
-        schemas: &IndexMap<String, SchemaType>,
-        references: &HashSet<String>,
+        schemas: &'gen IndexMap<String, Schema>,
+        references: &'gen HashSet<String>,
     ) -> RenderResult {
-        self.references.extend(references.to_owned());
+        self.references = Some(references);
 
         let mut outputs = vec![
             "// Automatically generated by schematic. DO NOT MODIFY!".to_string(),
@@ -466,9 +463,9 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 continue;
             }
 
-            outputs.push(match schema {
-                SchemaType::Enum(inner) => self.export_enum_type(name, inner)?,
-                SchemaType::Struct(inner) => self.export_object_type(name, inner)?,
+            outputs.push(match &schema.ty {
+                SchemaType::Enum(inner) => self.export_enum_type(name, inner, schema)?,
+                SchemaType::Struct(inner) => self.export_object_type(name, inner, schema)?,
                 _ => {
                     let out = self.render_schema_without_reference(schema)?;
                     self.export_type_alias(name, out)?

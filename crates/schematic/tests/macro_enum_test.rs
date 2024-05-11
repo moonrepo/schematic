@@ -154,7 +154,7 @@ enum AdjacentTagged {
     Qux(SomeConfig),
 }
 
-fn create_gen() -> schema::SchemaGenerator {
+fn create_gen() -> schema::SchemaGenerator<'static> {
     let mut generator = schema::SchemaGenerator::default();
     generator.add::<AllUnit>();
     generator.add::<AllUnnamed>();

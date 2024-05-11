@@ -151,9 +151,9 @@ impl<'l> Variant<'l> {
                         let ty = &field.ty;
 
                         if partial {
-                            quote! { SchemaType::infer_partial::<#ty>() }
+                            quote! { schema.infer_as_nested::<#ty>() }
                         } else {
-                            quote! { SchemaType::infer::<#ty>() }
+                            quote! { schema.infer::<#ty>() }
                         }
                     })
                     .collect::<Vec<_>>();
@@ -164,33 +164,31 @@ impl<'l> Variant<'l> {
                     quote! { #inner }
                 } else {
                     quote! {
-                        SchemaType::tuple([
+                        Schema::tuple(TupleType::new([
                             #(#fields),*
-                        ])
+                        ]))
                     }
                 }
             }
             Fields::Unit => {
                 if self.args.null || untagged {
                     quote! {
-                        SchemaType::Null
+                        Schema::null()
                     }
                 } else {
                     quote! {
-                        SchemaType::literal(LiteralValue::String(#name.into()))
+                        Schema::literal_value(LiteralValue::String(#name.into()))
                     }
                 }
             }
         };
 
-        let outer = match tagged_format {
+        match tagged_format {
             TaggedFormat::Unit => {
-                // This returns `SchemaField` while other branches
-                // return `SchemaType`. Be aware of this downstream!
                 quote! {
-                    SchemaField {
-                        name: #name.into(),
-                        type_of: #inner,
+                    Schema {
+                        name: Some(#name.into()),
+                        ty: #inner.ty,
                         ..Default::default()
                     }
                 }
@@ -198,41 +196,40 @@ impl<'l> Variant<'l> {
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
                 quote! {
-                    SchemaType::structure([
-                        SchemaField::new(#name, #inner),
-                    ])
+                    {
+                        let mut item = Schema::structure(StructType::new([
+                            (#name.into(), #inner),
+                        ]));
+                        if #partial {
+                            item.partialize();
+                        }
+                        item
+                    }
                 }
             }
             TaggedFormat::Internal(tag) => {
-                return quote! {
+                quote! {
                     {
-                        let mut schema = #inner;
-                        schema.add_field(SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))));
-                        schema.set_partial(#partial);
-                        schema
+                        let mut item = #inner;
+                        item.add_field(
+                            #tag,
+                            Schema::literal_value(LiteralValue::String(#name.into())),
+                        );
+                        if #partial {
+                            item.partialize();
+                        }
+                        item
                     }
-                };
+                }
             }
             TaggedFormat::Adjacent(tag, content) => {
                 quote! {
-                    SchemaType::structure([
-                        SchemaField::new(#tag, SchemaType::literal(LiteralValue::String(#name.into()))),
-                        SchemaField::new(#content, #inner),
-                    ])
+                    Schema::structure(StructType::new([
+                        (#tag.into(), Schema::literal_value(LiteralValue::String(#name.into()))),
+                        (#content.into(), #inner),
+                    ]))
                 }
             }
-        };
-
-        if partial {
-            quote! {
-                {
-                    let mut schema = #outer;
-                    schema.set_partial(#partial);
-                    schema
-                }
-            }
-        } else {
-            outer
         }
     }
 }

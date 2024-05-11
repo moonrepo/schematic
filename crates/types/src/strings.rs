@@ -1,24 +1,24 @@
-use crate::{LiteralValue, SchemaType, Schematic};
+use crate::*;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct StringType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<String>>,
     pub format: Option<String>,
     pub max_length: Option<usize>,
     pub min_length: Option<usize>,
-    pub name: Option<String>,
     pub pattern: Option<String>,
 }
 
 impl StringType {
+    /// Create a string schema with the provided default value.
     pub fn new(value: impl AsRef<str>) -> Self {
-        Self {
+        StringType {
             default: Some(LiteralValue::String(value.as_ref().to_owned())),
-            ..Default::default()
+            ..StringType::default()
         }
     }
 }
@@ -26,8 +26,9 @@ impl StringType {
 macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::string()
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.string(StringType::default());
+                schema.build()
             }
         }
     };
@@ -36,23 +37,25 @@ macro_rules! impl_string {
 macro_rules! impl_string_format {
     ($type:ty, $format:expr) => {
         impl Schematic for $type {
-            fn generate_schema() -> SchemaType {
-                SchemaType::String(StringType {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.string(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
-                })
+                });
+                schema.build()
             }
         }
     };
 }
 
 impl Schematic for char {
-    fn generate_schema() -> SchemaType {
-        SchemaType::String(StringType {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string(StringType {
             max_length: Some(1),
             min_length: Some(1),
             ..StringType::default()
-        })
+        });
+        schema.build()
     }
 }
 

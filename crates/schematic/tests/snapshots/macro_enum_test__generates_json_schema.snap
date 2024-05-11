@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/macro_enum_test.rs
+source: crates/schematic/tests/macro_enum_test.rs
 expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {
@@ -56,26 +56,20 @@ expression: "std::fs::read_to_string(file).unwrap()"
     },
     {
       "type": "object",
+      "required": [
+        "content",
+        "type"
+      ],
       "properties": {
         "content": {
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/PartialSomeConfig"
-            },
-            {
-              "type": "null"
             }
           ]
         },
         "type": {
-          "anyOf": [
-            {
-              "const": "qux"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "const": "qux"
         }
       },
       "additionalProperties": false
@@ -373,6 +367,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "PartialAllUnit": {
+      "title": "PartialAllUnit",
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
     "PartialAllUnnamed": {
       "title": "PartialAllUnnamed",
       "anyOf": [
@@ -640,6 +643,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "PartialWithComments": {
+      "title": "PartialWithComments",
+      "description": "Container",
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
     "PartialWithSerde": {
       "title": "PartialWithSerde",
       "anyOf": [
@@ -724,4 +737,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-
