@@ -124,8 +124,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
             }
         };
 
-        // Ok(self.wrap_in_comment(enu.description.as_ref(), vec![], output))
-        Ok(output)
+        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
     }
 
     fn export_object_type(
@@ -142,8 +141,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
             self.export_type_alias(name, value)?
         };
 
-        // Ok(self.wrap_in_comment(structure.description.as_ref(), vec![], output))
-        Ok(output)
+        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
     }
 
     fn render_enum_or_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {

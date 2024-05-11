@@ -108,6 +108,7 @@ export interface Validations {
 	required: string | null;
 }
 
+/** Container comment. */
 export interface Comments {
 	/**
 	 * Block

@@ -81,8 +81,6 @@ impl<'gen> SchemaGenerator<'gen> {
     ) -> miette::Result<()> {
         let output_file = output_file.as_ref();
 
-        // dbg!(&self.schemas, &self.references);
-
         let mut output = renderer.render(&self.schemas, &self.references)?;
         output.push('\n');
 
