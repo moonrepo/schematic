@@ -8,7 +8,7 @@ mod string;
 #[cfg(feature = "valid_url")]
 mod url;
 
-pub use crate::config::ValidateError;
+pub use crate::config::{ValidateError, ValidateResult};
 #[cfg(feature = "valid_email")]
 pub use email::*;
 pub use extends::*;
@@ -22,8 +22,7 @@ pub use url::*;
 /// A validator function that receives a setting value to validate, the parent
 /// configuration the setting belongs to, the current context, and can return
 /// a [`ValidateError`] on failure.
-pub type Validator<Val, Data, Ctx> =
-    Box<dyn FnOnce(&Val, &Data, &Ctx, bool) -> Result<(), ValidateError>>;
+pub type Validator<Val, Data, Ctx> = Box<dyn FnOnce(&Val, &Data, &Ctx, bool) -> ValidateResult>;
 
 pub(crate) fn map_err(error: garde::Error) -> ValidateError {
     ValidateError::new(error.to_string())

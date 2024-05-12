@@ -21,7 +21,7 @@ struct ParentConfig {
 
 #[derive(Config)]
 enum ParentEnum {
-	#[config(nested)]
+	#[setting(nested)]
 	Variant(ChildConfig),
 }
 ```

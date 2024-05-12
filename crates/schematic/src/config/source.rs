@@ -127,7 +127,7 @@ impl Source {
                 let content = if path.exists() {
                     fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
                         path: path.to_path_buf(),
-                        error,
+                        error: Box::new(error),
                     })?
                 } else {
                     if *required {
@@ -148,7 +148,7 @@ impl Source {
                 {
                     let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
                         url: url.to_owned(),
-                        error,
+                        error: Box::new(error),
                     };
 
                     let content = if let Some(cache) = cacher.read(url)? {

@@ -2,14 +2,15 @@ use crate::config::parser::ParserError;
 use crate::config::validator::ValidatorError;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
+use std::fmt::Display;
 use std::path::PathBuf;
 use thiserror::Error;
 
 /// All configuration based errors.
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
-    #[error("{0}")]
-    Message(String),
+    #[error(transparent)]
+    Handler(#[from] Box<HandlerError>),
 
     #[diagnostic(code(config::enums::invalid_fallback))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
@@ -35,10 +36,6 @@ pub enum ConfigError {
     #[error("Invalid default value. {0}")]
     InvalidDefault(String),
 
-    #[diagnostic(code(config::env::invalid))]
-    #[error("Invalid environment variable {}. {1}", .0.style(Style::Symbol))]
-    InvalidEnvVar(String, String),
-
     #[diagnostic(code(config::file::invalid))]
     #[error("Invalid file path used as a source.")]
     InvalidFile,
@@ -52,7 +49,7 @@ pub enum ConfigError {
     ReadFileFailed {
         path: PathBuf,
         #[source]
-        error: std::io::Error,
+        error: Box<std::io::Error>,
     },
 
     #[diagnostic(code(config::url::invalid))]
@@ -65,7 +62,7 @@ pub enum ConfigError {
     ReadUrlFailed {
         url: String,
         #[source]
-        error: reqwest::Error,
+        error: Box<reqwest::Error>,
     },
 
     #[diagnostic(code(config::url::https_only))]
@@ -82,6 +79,8 @@ pub enum ConfigError {
     Parser {
         config: String,
 
+        // Required to display the code snippet!
+        // Because of this, we can't wrap in `Box`.
         #[diagnostic_source]
         #[source]
         error: ParserError,
@@ -96,10 +95,10 @@ pub enum ConfigError {
     Validator {
         config: String,
 
-        // This includes the vertical red line which we don't want!
+        // This includes a vertical red line which we don't want!
         // #[diagnostic_source]
         #[source]
-        error: ValidatorError,
+        error: Box<ValidatorError>,
 
         #[help]
         help: Option<String>,
@@ -143,5 +142,22 @@ impl ConfigError {
         };
 
         message.trim().to_string()
+    }
+}
+
+impl From<HandlerError> for ConfigError {
+    fn from(e: HandlerError) -> ConfigError {
+        ConfigError::Handler(Box::new(e))
+    }
+}
+
+/// Error for handler functions.
+#[derive(Error, Debug, Diagnostic)]
+#[error("{0}")]
+pub struct HandlerError(pub String);
+
+impl HandlerError {
+    pub fn new<T: Display>(message: T) -> Self {
+        Self(message.to_string())
     }
 }

@@ -3,7 +3,7 @@ use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
 
-fn test_list<T>(_: &[String], _: &T, context: &Context, _: bool) -> Result<(), ValidateError> {
+fn test_list<T>(_: &[String], _: &T, context: &Context, _: bool) -> ValidateResult {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }
@@ -11,12 +11,7 @@ fn test_list<T>(_: &[String], _: &T, context: &Context, _: bool) -> Result<(), V
     Ok(())
 }
 
-fn test_map<T>(
-    _: &HashMap<String, String>,
-    _: &T,
-    context: &Context,
-    _: bool,
-) -> Result<(), ValidateError> {
+fn test_map<T>(_: &HashMap<String, String>, _: &T, context: &Context, _: bool) -> ValidateResult {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }
@@ -24,12 +19,7 @@ fn test_map<T>(
     Ok(())
 }
 
-fn test_cfg<T>(
-    _: &PartialProjectsConfig,
-    _: &T,
-    context: &Context,
-    _: bool,
-) -> Result<(), ValidateError> {
+fn test_cfg<T>(_: &PartialProjectsConfig, _: &T, context: &Context, _: bool) -> ValidateResult {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }

@@ -10,7 +10,7 @@ pub struct MergeNormal {
     map: HashMap<String, usize>,
 }
 
-fn merge_string<C>(prev: String, next: String, _: &C) -> Result<Option<String>, ConfigError> {
+fn merge_string<C>(prev: String, next: String, _: &C) -> MergeResult<String> {
     Ok(Some(format!("{}-{}", prev, next)))
 }
 

@@ -37,20 +37,15 @@ fn merge_tuple<C>(
     prev: (String, usize),
     next: (String, usize),
     _: &C,
-) -> Result<Option<(String, usize)>, ConfigError> {
+) -> MergeResult<(String, usize)> {
     Ok(Some((format!("{}-{}", prev.0, next.0), (prev.1 + next.1))))
 }
 
-fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
+fn validate_tuple<T, C>(_: (&String, &usize), _: &T, _: &C, _: bool) -> ValidateResult {
     Ok(())
 }
 
-fn validate_nested<T, C>(
-    _: &PartialSomeConfig,
-    _: &T,
-    _: &C,
-    _: bool,
-) -> Result<(), ValidateError> {
+fn validate_nested<T, C>(_: &PartialSomeConfig, _: &T, _: &C, _: bool) -> ValidateResult {
     Ok(())
 }
 
