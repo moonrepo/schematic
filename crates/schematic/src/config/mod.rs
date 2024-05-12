@@ -31,3 +31,4 @@ macro_rules! derive_enum {
 pub type DefaultValueResult<T> = std::result::Result<Option<T>, MessageError>;
 pub type ParseEnvResult<T> = std::result::Result<Option<T>, MessageError>;
 pub type MergeResult<T> = std::result::Result<Option<T>, MessageError>;
+pub type ValidateResult = std::result::Result<(), ValidateError>;

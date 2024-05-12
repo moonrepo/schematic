@@ -162,7 +162,7 @@ impl Display for ValidatorError {
                 if first {
                     first = false;
                 } else {
-                    write!(f, "\n")?;
+                    writeln!(f)?;
                 }
 
                 write!(f, "{}", error)?;

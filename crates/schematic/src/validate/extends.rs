@@ -1,6 +1,6 @@
 use crate::config::{
     is_file_like, is_secure_url, is_source_format, is_url_like, ExtendsFrom, Path, PathSegment,
-    ValidateError,
+    ValidateError, ValidateResult,
 };
 
 /// Validate an `extend` value is either a file path or secure URL.
@@ -9,7 +9,7 @@ pub fn extends_string<D, C>(
     _data: &D,
     _context: &C,
     _finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     let is_file = is_file_like(value);
     let is_url = is_url_like(value);
 
@@ -38,7 +38,7 @@ pub fn extends_list<D, C>(
     data: &D,
     context: &C,
     finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     for (i, value) in values.iter().enumerate() {
         if let Err(mut error) = extends_string(value, data, context, finalize) {
             error.path = Path::new(vec![PathSegment::Index(i)]);
@@ -56,7 +56,7 @@ pub fn extends_from<D, C>(
     data: &D,
     context: &C,
     finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     match value {
         ExtendsFrom::String(string) => extends_string(string, data, context, finalize)?,
         ExtendsFrom::List(list) => extends_list(list, data, context, finalize)?,

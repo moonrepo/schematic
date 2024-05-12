@@ -179,16 +179,11 @@ struct EnvVars {
     // invalid: Vec<String>,
 }
 
-fn validate_test<T, C>(_: &str, _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
+fn validate_test<T, C>(_: &str, _: &T, _: &C, _: bool) -> ValidateResult {
     Ok(())
 }
 
-fn validate_nested<T, C>(
-    _: &PartialNestedValidations,
-    _: &T,
-    _: &C,
-    _: bool,
-) -> Result<(), ValidateError> {
+fn validate_nested<T, C>(_: &PartialNestedValidations, _: &T, _: &C, _: bool) -> ValidateResult {
     Ok(())
 }
 

@@ -1,14 +1,9 @@
-use super::{map_err, ValidateError};
+use super::{map_err, ValidateError, ValidateResult};
 use crate::config::is_secure_url;
 pub use garde::rules::url::Url;
 
 /// Validate a string matches a URL.
-pub fn url<T: Url, D, C>(
-    value: &T,
-    _data: &D,
-    _context: &C,
-    _finalize: bool,
-) -> Result<(), ValidateError> {
+pub fn url<T: Url, D, C>(value: &T, _data: &D, _context: &C, _finalize: bool) -> ValidateResult {
     garde::rules::url::apply(value, ()).map_err(map_err)
 }
 
@@ -18,7 +13,7 @@ pub fn url_secure<T: AsRef<str>, D, C>(
     data: &D,
     context: &C,
     finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     let value = value.as_ref();
 
     url(&value, data, context, finalize)?;

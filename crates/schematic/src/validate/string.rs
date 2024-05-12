@@ -1,4 +1,4 @@
-use super::{map_err, ValidateError, Validator};
+use super::{map_err, ValidateError, ValidateResult, Validator};
 pub use garde::rules::{
     alphanumeric::Alphanumeric, ascii::Ascii, contains::Contains, length::HasSimpleLength,
     pattern::Pattern,
@@ -10,7 +10,7 @@ pub fn alphanumeric<T: Alphanumeric, D, C>(
     _data: &D,
     _context: &C,
     _finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     garde::rules::alphanumeric::apply(value, ()).map_err(map_err)
 }
 
@@ -20,7 +20,7 @@ pub fn ascii<T: Ascii, D, C>(
     _data: &D,
     _context: &C,
     _finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     garde::rules::ascii::apply(value, ()).map_err(map_err)
 }
 
@@ -48,7 +48,7 @@ pub fn not_empty<T: HasSimpleLength, D, C>(
     _data: &D,
     _context: &C,
     _finalize: bool,
-) -> Result<(), ValidateError> {
+) -> ValidateResult {
     if value.length() == 0 {
         return Err(ValidateError::new("must not be empty"));
     }
