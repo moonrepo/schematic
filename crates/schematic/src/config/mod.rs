@@ -28,7 +28,7 @@ macro_rules! derive_enum {
     };
 }
 
-pub type DefaultValueResult<T> = std::result::Result<Option<T>, MessageError>;
-pub type ParseEnvResult<T> = std::result::Result<Option<T>, MessageError>;
-pub type MergeResult<T> = std::result::Result<Option<T>, MessageError>;
+pub type DefaultValueResult<T> = std::result::Result<Option<T>, HandlerError>;
+pub type ParseEnvResult<T> = std::result::Result<Option<T>, HandlerError>;
+pub type MergeResult<T> = std::result::Result<Option<T>, HandlerError>;
 pub type ValidateResult = std::result::Result<(), ValidateError>;

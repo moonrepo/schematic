@@ -25,29 +25,29 @@ enum Projects {
 > We provide a handful of built-in merge functions in the
 > [`merge` module](https://docs.rs/schematic/latest/schematic/merge/index.html).
 
-## Merge function
+## Merge handler function
 
 You can also define your own function for merging values.
 
-When defining a custom merge function, the previous value, next value, and [context](../context.md)
-are passed as arguments, and the function must return an optional merged result with
-`Result<Option>`. If `None` is returned, neither value will be used.
+When defining a custom `merge` function, the previous value, next value, and
+[context](../context.md) are passed as arguments, and the function must return an optional merged
+result. If `None` is returned, neither value will be used.
 
 Here's an example of the merge function above.
 
 ```rust
-use schematic::ConfigError;
-
-fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> Result<Option<Vec<T>>, ConfigError> {
+fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> MergeResult<Vec<T>>> {
     prev.extend(next);
 
     Ok(Some(prev))
 }
-```
 
-If parsing fails, you must return a
-[`ConfigError`](https://docs.rs/schematic/latest/schematic/enum.ConfigError.html) with a failure
-message.
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(merge = append_vec)]
+	pub field: Vec<String>,
+}
+```
 
 ### Context handling
 
@@ -55,11 +55,11 @@ If you're not using [context](../context.md), you can use `()` as the context ty
 generic inferrence.
 
 ```rust
-fn using_unit_type<T>(prev: T, next: T, _: &()) -> Result<Option<T>, ConfigError> {
+fn using_unit_type<T>(prev: T, next: T, _: &()) -> MergeResult<T> {
 	// ...
 }
 
-fn using_generics<T, C>(prev: T, next: T, _: &C) -> Result<Option<T>, ConfigError> {
+fn using_generics<T, C>(prev: T, next: T, _: &C) -> MergeResult<T> {
 	// ...
 }
 ```

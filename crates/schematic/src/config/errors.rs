@@ -2,6 +2,7 @@ use crate::config::parser::ParserError;
 use crate::config::validator::ValidatorError;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
+use std::fmt::Display;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -9,7 +10,7 @@ use thiserror::Error;
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
     #[error(transparent)]
-    Message(#[from] Box<MessageError>),
+    Handler(#[from] Box<HandlerError>),
 
     #[diagnostic(code(config::enums::invalid_fallback))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
@@ -144,13 +145,19 @@ impl ConfigError {
     }
 }
 
-impl From<MessageError> for ConfigError {
-    fn from(e: MessageError) -> ConfigError {
-        ConfigError::Message(Box::new(e))
+impl From<HandlerError> for ConfigError {
+    fn from(e: HandlerError) -> ConfigError {
+        ConfigError::Handler(Box::new(e))
     }
 }
 
-/// Error for simple scenarios.
+/// Error for handler functions.
 #[derive(Error, Debug, Diagnostic)]
 #[error("{0}")]
-pub struct MessageError(pub String);
+pub struct HandlerError(pub String);
+
+impl HandlerError {
+    pub fn new<T: Display>(message: T) -> Self {
+        Self(message.to_string())
+    }
+}

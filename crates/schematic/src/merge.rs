@@ -1,5 +1,5 @@
 use crate::{
-    config::{MessageError, PartialConfig},
+    config::{HandlerError, PartialConfig},
     MergeResult,
 };
 use std::{
@@ -8,7 +8,7 @@ use std::{
 };
 
 /// A merger function that receives the previous and next values, the current
-/// context, and can return a [`MessageError`] on failure.
+/// context, and can return a [`HandlerError`] on failure.
 pub type Merger<Val, Ctx> = Box<dyn FnOnce(Val, Val, &Ctx) -> MergeResult<Val>>;
 
 /// Discard both previous and next values and return [`None`].
@@ -112,7 +112,7 @@ pub fn merge_partial<T: PartialConfig>(
     context: &T::Context,
 ) -> MergeResult<T> {
     prev.merge(context, next)
-        .map_err(|error| MessageError(error.to_string()))?;
+        .map_err(|error| HandlerError(error.to_string()))?;
 
     Ok(Some(prev))
 }

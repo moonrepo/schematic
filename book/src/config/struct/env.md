@@ -71,24 +71,23 @@ struct AppConfig {
 > We provide a handful of built-in parsing functions in the
 > [`env` module](https://docs.rs/schematic/latest/schematic/env/index.html).
 
-## Parse function
+## Parse handler function
 
 You can also define your own function for parsing values out of environment variables.
 
-When defining a custom parse function, the variable value is passed as the 1st argument, and a
-`Result<Option>` must be returned. A `None` value can be returned, which will fallback to the
-previous or default value.
+When defining a custom `parse_env` function, the variable value is passed as the 1st argument. A
+`None` value can be returned, which will fallback to the previous or default value.
 
 ```rust
-use schematic::ConfigError;
-
-pub fn custom_parse(var: String) -> Result<Some<ReturnValue>, ConfigError> {
+pub fn custom_parse(var: String) -> ParseEnvResult<ReturnValue> {
 	do_parse()
 		.map(|v| Some(v))
-		.map_err(|e| ConfigError::Message(e.to_string()))
+		.map_err(|e| HandlerError::new(e.to_string()))
+}
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(env = "FIELD", parse_env = custom_parse)]
+	pub field: String,
 }
 ```
-
-If parsing fails, you must return a
-[`ConfigError`](https://docs.rs/schematic/latest/schematic/enum.ConfigError.html) with a failure
-message.

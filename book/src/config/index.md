@@ -137,5 +137,6 @@ The following Cargo features are available:
 - `config` (default) - Enables configuration support (all the above stuff).
 - `json` - Enables JSON.
 - `toml` - Enables TOML.
+- `tracing` - Wrap generated code in tracing instrumentations.
 - `url` (default) - Enables loading, extending, and parsing configs from URLs.
 - `yaml` - Enables YAML.

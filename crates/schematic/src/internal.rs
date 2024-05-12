@@ -1,4 +1,4 @@
-use crate::config::{ConfigError, MessageError, PartialConfig};
+use crate::config::{ConfigError, HandlerError, PartialConfig};
 use crate::merge::merge_partial;
 use crate::ParseEnvResult;
 use schematic_types::Schema;
@@ -15,10 +15,10 @@ pub fn default_from_env_var<T: FromStr>(key: &str) -> ParseEnvResult<T> {
 pub fn parse_from_env_var<T>(
     key: &str,
     parser: impl Fn(String) -> ParseEnvResult<T>,
-) -> Result<Option<T>, MessageError> {
+) -> Result<Option<T>, HandlerError> {
     if let Ok(var) = env::var(key) {
         let value = parser(var).map_err(|error| {
-            MessageError(format!("Invalid environment variable {key}. {error}"))
+            HandlerError(format!("Invalid environment variable {key}. {error}"))
         })?;
 
         return Ok(value);
@@ -27,11 +27,11 @@ pub fn parse_from_env_var<T>(
     Ok(None)
 }
 
-pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, MessageError> {
+pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, HandlerError> {
     let value = value.as_ref();
 
     value.parse::<T>().map_err(|_| {
-        MessageError(format!(
+        HandlerError(format!(
             "Failed to parse \"{value}\" into the correct type."
         ))
     })
@@ -42,8 +42,8 @@ pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
-    merger: impl Fn(T, T, &C) -> Result<Option<T>, MessageError>,
-) -> Result<Option<T>, MessageError> {
+    merger: impl Fn(T, T, &C) -> Result<Option<T>, HandlerError>,
+) -> Result<Option<T>, HandlerError> {
     if prev.is_some() && next.is_some() {
         merger(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {
@@ -58,7 +58,7 @@ pub fn merge_partial_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
-) -> Result<Option<T>, MessageError> {
+) -> Result<Option<T>, HandlerError> {
     if prev.is_some() && next.is_some() {
         merge_partial(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {

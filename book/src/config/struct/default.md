@@ -46,9 +46,10 @@ function to call. This function receives the [context](../context.md) as the fir
 return an optional value. If `None` is returned, the `Default` value will be used instead.
 
 ```rust
-fn find_unused_port(ctx: &Context) -> Option<usize> {
-	let port = do_find();
-	Some(port)
+fn find_unused_port(ctx: &Context) -> DefaultValueResult<usize> {
+	let port = do_find()?;
+
+	Ok(Some(port))
 }
 
 #[derive(Config)]
@@ -64,11 +65,11 @@ If you're not using [context](../context.md), you can use `()` as the context ty
 generic inferrence.
 
 ```rust
-fn using_unit_type(_: &()) -> Option<usize> {
+fn using_unit_type(_: &()) -> DefaultValueResult<usize> {
 	// ...
 }
 
-fn using_generics<C>(_: &C) -> Option<usize> {
+fn using_generics<C>(_: &C) -> DefaultValueResult<usize> {
 	// ...
 }
 ```
