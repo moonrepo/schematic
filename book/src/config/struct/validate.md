@@ -38,21 +38,21 @@ enum Projects {
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
 > some functions are factories which can be called to produce a validator.
 
-## Validate function
+## Validate handler function
 
 You can also define your own function for validating values, also known as a validator.
 
 When defining a custom validate function, the value to check is passed as the first argument, the
-current/parent partial as the second, and the [context](../context.md) as the third.
+current/parent partial as the second, the [context](../context.md) as the third, and whether this is
+the final validation pass.
 
 ```rust
-use schematic::ValidateError;
-
 fn validate_string(
 	value: &str,
 	partial: &PartialAppConfig,
 	context: &Context
-) -> Result<(), ValidateError> {
+	finalize: bool
+) -> ValidateResult {
 	if !do_check(value) {
 		return Err(ValidateError::new("Some failure message"));
 	}
@@ -111,7 +111,7 @@ If you're not using [context](../context.md), or want to create a validator for 
 we suggest generic inferrence.
 
 ```rust
-fn using_generics<P, C>(value: &str, partial: &P, context: &C) -> Result<(), ValidateError> {
+fn using_generics<P, C>(value: &str, partial: &P, context: &C, finalize: bool) -> ValidateResult {
 	// ...
 }
 ```

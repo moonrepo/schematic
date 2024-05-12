@@ -76,6 +76,23 @@
   }
   ```
 
+- Updated default value functions (handlers) to return a `Result`. This now aligns with the other
+  handler functions.
+
+  ```rust
+  // Before
+  fn default_count(ctx: &Context) -> Option<usize> {
+      Some(10)
+  }
+
+  // After
+  fn default_count(ctx: &Context) -> Result<Option<usize>, HandlerError> {
+      Ok(Some(10))
+  }
+  ```
+
+- Updated all handler functions, excluding validators, to return a `HandlerError`.
+
 #### 🚀 Updates
 
 - Added a `tracing` feature flag, that will wrap generated config methods with

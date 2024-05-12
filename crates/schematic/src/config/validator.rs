@@ -1,6 +1,5 @@
 use crate::config::path::{Path, PathSegment};
 use miette::Diagnostic;
-use starbase_styles::color;
 use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};
 use thiserror::Error;
@@ -157,16 +156,16 @@ impl ValidatorError {
 impl Display for ValidatorError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut first = true;
-        let dot = color::failure("·");
 
         for error_type in &self.errors {
             for error in error_type.to_error_list() {
                 if first {
-                    write!(f, "{} {}", dot, error)?;
                     first = false;
                 } else {
-                    write!(f, "\n{} {}", dot, error)?;
+                    writeln!(f)?;
                 }
+
+                write!(f, "{}", error)?;
             }
         }
 

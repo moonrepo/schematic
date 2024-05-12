@@ -3,7 +3,7 @@ use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
 
-fn test_string<T>(_: &String, _: &T, context: &Context, _: bool) -> Result<(), ValidateError> {
+fn test_string<T>(_: &String, _: &T, context: &Context, _: bool) -> ValidateResult {
     if context.fail {
         return Err(ValidateError::new("invalid"));
     }

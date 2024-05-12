@@ -1,4 +1,5 @@
 #![allow(clippy::result_large_err)]
+
 mod format;
 
 #[cfg(feature = "config")]

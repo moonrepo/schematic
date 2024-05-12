@@ -1,19 +1,25 @@
-use crate::config::{ConfigError, PartialConfig};
+use crate::config::{ConfigError, HandlerError, PartialConfig};
 use crate::merge::merge_partial;
+use crate::ParseEnvResult;
 use schematic_types::Schema;
 use std::{env, str::FromStr};
 
-pub fn default_from_env_var<T: FromStr>(key: &str) -> Result<Option<T>, ConfigError> {
+pub fn handle_default_fn<T, E: std::error::Error>(result: Result<T, E>) -> Result<T, ConfigError> {
+    result.map_err(|error| ConfigError::InvalidDefault(error.to_string()))
+}
+
+pub fn default_from_env_var<T: FromStr>(key: &str) -> ParseEnvResult<T> {
     parse_from_env_var(key, |var| parse_value(var).map(|v| Some(v)))
 }
 
 pub fn parse_from_env_var<T>(
     key: &str,
-    parser: impl Fn(String) -> Result<Option<T>, ConfigError>,
-) -> Result<Option<T>, ConfigError> {
+    parser: impl Fn(String) -> ParseEnvResult<T>,
+) -> Result<Option<T>, HandlerError> {
     if let Ok(var) = env::var(key) {
-        let value =
-            parser(var).map_err(|e| ConfigError::InvalidEnvVar(key.to_owned(), e.to_string()))?;
+        let value = parser(var).map_err(|error| {
+            HandlerError(format!("Invalid environment variable {key}. {error}"))
+        })?;
 
         return Ok(value);
     }
@@ -21,11 +27,11 @@ pub fn parse_from_env_var<T>(
     Ok(None)
 }
 
-pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, ConfigError> {
+pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, HandlerError> {
     let value = value.as_ref();
 
     value.parse::<T>().map_err(|_| {
-        ConfigError::Message(format!(
+        HandlerError(format!(
             "Failed to parse \"{value}\" into the correct type."
         ))
     })
@@ -36,8 +42,8 @@ pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
-    merger: impl Fn(T, T, &C) -> Result<Option<T>, ConfigError>,
-) -> Result<Option<T>, ConfigError> {
+    merger: impl Fn(T, T, &C) -> Result<Option<T>, HandlerError>,
+) -> Result<Option<T>, HandlerError> {
     if prev.is_some() && next.is_some() {
         merger(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {
@@ -52,7 +58,7 @@ pub fn merge_partial_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
-) -> Result<Option<T>, ConfigError> {
+) -> Result<Option<T>, HandlerError> {
     if prev.is_some() && next.is_some() {
         merge_partial(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {

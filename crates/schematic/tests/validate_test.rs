@@ -3,7 +3,7 @@
 use schematic::*;
 use std::collections::HashMap;
 
-fn test_string<T, C>(value: &str, _: &T, _: &C, _: bool) -> Result<(), ValidateError> {
+fn test_string<T, C>(value: &str, _: &T, _: &C, _: bool) -> ValidateResult {
     if value.is_empty() {
         return Ok(());
     }
