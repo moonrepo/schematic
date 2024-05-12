@@ -20,12 +20,15 @@ impl<'l> FieldValue<'l> {
                         Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
                             quote! { Some(#expr) }
                         }
-                        Expr::Path(func) => quote! { #func(context) },
+                        Expr::Path(func) => {
+                            quote! { schematic::internal::handle_default_fn(#func(context))? }
+                        }
                         Expr::Lit(lit) => match &lit.lit {
                             Lit::Str(string) => quote! {
                                 Some(
-                                    #value::try_from(#string)
-                                        .map_err(|e| schematic::ConfigError::InvalidDefault(e.to_string()))?
+                                    schematic::internal::handle_default_fn(
+                                        #value::try_from(#string)
+                                    )?
                                 )
                             },
                             other => quote! { Some(#other) },

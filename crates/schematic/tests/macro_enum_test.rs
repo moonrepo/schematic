@@ -37,7 +37,7 @@ fn merge_tuple<C>(
     prev: (String, usize),
     next: (String, usize),
     _: &C,
-) -> Result<Option<(String, usize)>, ConfigError> {
+) -> MergeResult<(String, usize)> {
     Ok(Some((format!("{}-{}", prev.0, next.0), (prev.1 + next.1))))
 }
 

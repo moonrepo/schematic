@@ -61,7 +61,7 @@ fn defaults_to_env_var() {
 
 #[test]
 #[serial]
-#[should_panic(expected = "InvalidEnvVar(\"ENV_NUMBER\"")]
+#[should_panic(expected = "Invalid environment variable ENV_NUMBER.")]
 fn errors_on_parse_fail() {
     reset_vars();
     env::set_var("ENV_NUMBER", "abc");
@@ -84,9 +84,7 @@ fn parses_into_env_vars() {
 
 #[test]
 #[serial]
-#[should_panic(
-    expected = "InvalidEnvVar(\"ENV_VEC_NUMBER\", \"Failed to parse \\\"a\\\" into the correct type.\")"
-)]
+#[should_panic(expected = "Invalid environment variable ENV_VEC_NUMBER.")]
 fn errors_on_split_parse_fail() {
     reset_vars();
     env::set_var("ENV_VEC_NUMBER", "1;a;3");

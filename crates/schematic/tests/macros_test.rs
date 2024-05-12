@@ -7,13 +7,13 @@ use std::{
     path::PathBuf,
 };
 
-fn default_bool<C>(_: &C) -> Option<bool> {
-    Some(true)
+fn default_bool<C>(_: &C) -> DefaultValueResult<bool> {
+    Ok(Some(true))
 }
 
 mod private {
-    pub fn default_string<C>(_: &C) -> Option<String> {
-        Some("bar".into())
+    pub fn default_string<C>(_: &C) -> schematic::DefaultValueResult<String> {
+        Ok(Some("bar".into()))
     }
 }
 
@@ -127,7 +127,7 @@ struct SerdeNative {
     all: bool,
 }
 
-fn merge_basic<C>(_: String, _: String, _: &C) -> Result<Option<String>, ConfigError> {
+fn merge_basic<C>(_: String, _: String, _: &C) -> MergeResult<String> {
     Ok(None)
 }
 
@@ -165,7 +165,7 @@ struct ExtendsOptional {
     extends: Option<Vec<String>>,
 }
 
-fn vec_from_env(_: String) -> Result<Option<Vec<String>>, ConfigError> {
+fn vec_from_env(_: String) -> ParseEnvResult<Vec<String>> {
     Ok(Some(vec![]))
 }
 

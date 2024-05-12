@@ -8,8 +8,8 @@ use thiserror::Error;
 /// All configuration based errors.
 #[derive(Error, Debug, Diagnostic)]
 pub enum ConfigError {
-    #[error("{0}")]
-    Message(String),
+    #[error(transparent)]
+    Message(#[from] Box<MessageError>),
 
     #[diagnostic(code(config::enums::invalid_fallback))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
@@ -34,10 +34,6 @@ pub enum ConfigError {
     #[diagnostic(code(config::default::invalid))]
     #[error("Invalid default value. {0}")]
     InvalidDefault(String),
-
-    #[diagnostic(code(config::env::invalid))]
-    #[error("Invalid environment variable {}. {1}", .0.style(Style::Symbol))]
-    InvalidEnvVar(String, String),
 
     #[diagnostic(code(config::file::invalid))]
     #[error("Invalid file path used as a source.")]
@@ -147,3 +143,14 @@ impl ConfigError {
         message.trim().to_string()
     }
 }
+
+impl From<MessageError> for ConfigError {
+    fn from(e: MessageError) -> ConfigError {
+        ConfigError::Message(Box::new(e))
+    }
+}
+
+/// Error for simple scenarios.
+#[derive(Error, Debug, Diagnostic)]
+#[error("{0}")]
+pub struct MessageError(pub String);
