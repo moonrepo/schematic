@@ -122,7 +122,7 @@ Properties within a struct can be rendered as either optional or required in Typ
 on usage. The default format for all properties can be customized with the `property_format` option
 and the
 [`PropertyFormat`](https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html)
-enum. By default all properties are all required.
+enum. By default all properties are required.
 
 ```rust
 TypeScriptOptions {
@@ -138,14 +138,14 @@ export interface User {
 }
 
 // Optional
-export type User = {
+export interface User {
 	name?: string;
-};
+}
 
-// Optional with undefined value
-export type User = {
+// Optional with undefined union
+export interface User {
 	name?: string | undefined;
-};
+}
 ```
 
 ### Type references
