@@ -381,7 +381,12 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
 
             let mut row = format!("{}{}", indent, name);
 
-            if field.optional || matches!(self.options.property_format, PropertyFormat::Optional) {
+            if field.optional
+                || matches!(
+                    self.options.property_format,
+                    PropertyFormat::Optional | PropertyFormat::OptionalUndefined
+                )
+            {
                 row.push_str("?: ");
             } else {
                 row.push_str(": ");

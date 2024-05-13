@@ -357,6 +357,22 @@ mod typescript {
     }
 
     #[test]
+    fn props_optional() {
+        assert_snapshot!(generate(TypeScriptOptions {
+            property_format: PropertyFormat::Optional,
+            ..TypeScriptOptions::default()
+        }));
+    }
+
+    #[test]
+    fn props_optional_undefined() {
+        assert_snapshot!(generate(TypeScriptOptions {
+            property_format: PropertyFormat::OptionalUndefined,
+            ..TypeScriptOptions::default()
+        }));
+    }
+
+    #[test]
     fn exclude_refs() {
         assert_snapshot!(generate(TypeScriptOptions {
             exclude_references: vec!["BasicEnum".into(), "AnotherType".into()],
