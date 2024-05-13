@@ -1,39 +1,43 @@
 # Structs
 
-The [`StructType`][struct] paired with
-[`SchemaType::Struct`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Struct)
-can be used to represent a struct with explicitly named fields and typed values. This is also known
-as a "shape" or "model".
-
-Unlike other schema types, structs are composed of
-[`SchemaField`](https://docs.rs/schematic/latest/schematic/struct.SchemaField.html)s.
+The [`StructType`][struct] can be used to represent a struct with explicitly named fields and typed
+values. This is also known as a "shape" or "model".
 
 ```rust
 use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType};
 
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
-		SchemaType::Struct(StructType {
-			fields: vec![
-				SchemaField {
-					name: "name".into(),
-					description: Some("Name of the user".into()),
-					type_of: SchemaType::string(),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "age".into(),
-					description: Some("Age of the user".into()),
-					type_of: SchemaType::integer(IntegerKind::U16),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "active".into(),
-					description: Some("Is the user active".into()),
-					type_of: SchemaType::boolean(),
-					..SchemaField::default()
-				},
-			],
+		schema.structure(StructType {
+			fields: HashMap::from_iter([
+				(
+					"name".into(),
+					Box::new(Schema {
+						name: "name".into(),
+						description: Some("Name of the user".into()),
+						ty: schema.infer::<String>(),
+						..Schema::default()
+					})
+				),
+				(
+					"age".into(),
+					Box::new(Schema {
+						name: "age".into(),
+						description: Some("Age of the user".into()),
+						ty: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..Schema::default()
+					})
+				),
+				(
+					"active".into(),
+					Box::new(Schema {
+						name: "active".into(),
+						description: Some("Is the user active".into()),
+						ty: schema.infer::<bool>(),
+						..Schema::default()
+					})
+				),
+			]),
 			..StructType::default()
 		});
 		schema.build()
@@ -42,13 +46,22 @@ impl Schematic for T {
 ```
 
 If you're only defining `fields`, you can use the shorthand
-[`SchemaType::structure()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.structure)
-method.
+[`StructType::new()`](https://docs.rs/schematic/latest/schematic/struct.StructType.html#method.new)
+method. When using this approach, the `Box`s are automatically inserted for you.
 
 ```rust
-SchemaType::structure([
+schema.structure(StructType::new([
+	(
+		"name".into(),
+		Schema {
+			name: "name".into(),
+			description: Some("Name of the user".into()),
+			ty: schema.infer::<String>(),
+			..Schema::default()
+		}
+	),
 	// ...
-]);
+]));
 ```
 
 ## Settings

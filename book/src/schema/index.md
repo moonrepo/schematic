@@ -45,7 +45,7 @@ method manually.
 
 The
 [`Schematic::schema_name()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name)
-method is optional, but is encouraged for non-primitive types. It will associated references between
+method is optional, but is encouraged for non-primitive types. It will associate references between
 types, and avoid circular references.
 
 ```rust

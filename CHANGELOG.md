@@ -4,6 +4,9 @@
 
 #### 💥 Breaking
 
+In preparation for v1, we've made a bunch of breaking changes. For the most part this is transparent
+if using the macros, otherwise you'll need to update your schema implementations.
+
 - Rewrote the `Schematic` trait (and indirectly the `Config` and `ConfigEnum` traits) from the
   ground up. The new API uses a builder pattern to construct the schema. This allows for all types
   to support names, descriptions, references, and more metadata. It also helps to avoid circular
@@ -92,6 +95,7 @@
   ```
 
 - Updated all handler functions, excluding validators, to return a `HandlerError`.
+- Removed `SchemaField` and merged its functionality into `Schema`.
 
 #### 🚀 Updates
 
