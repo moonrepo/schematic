@@ -21,12 +21,16 @@ of formats.
 
 ## Names
 
-Schema types can be named, which is useful for referencing them in other types when generating code.
-By default the [`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) derive
-macro will use the name of the type, but when implementing the trait manually, you can use
-[`SchemaType::set_name()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.set_name).
+Schemas can be named, which is useful for referencing them in other types when generating code. By
+default the [`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) derive
+macro will use the name of the type, but when implementing the trait manually, you can use the
+[`Schematic::schema_name()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name)
+method.
 
 ```rust
-let mut schema = SchemaType::string();
-schema.set_name("CustomName");
+impl Schematic for T {
+	fn schema_name() -> Option<String> {
+		Some("CustomName".into())
+	}
+}
 ```

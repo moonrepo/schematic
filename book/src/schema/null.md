@@ -4,11 +4,12 @@ The [`SchemaType::Null`][null] variant can be used to represent a literal `null`
 best when paired with unions or fields that need to be [nullable](#marking-as-nullable).
 
 ```rust
-use schematic::{Schematic, SchemaType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Null
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.custom(SchemaType::Null);
+		schema.build()
 	}
 }
 ```
@@ -17,17 +18,13 @@ impl Schematic for T {
 
 ## Marking as nullable
 
-If you have an existing
-[`SchemaType`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html) that you want to
-mark as nullable, you can use the
-[`SchemaType::nullable()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.nullable)
-method, which converts a value to a [union](./union.md) of the original type and
-[`SchemaType::Null`][null]. If the type is already a union, it will be appended with
-[`SchemaType::Null`][null].
+If you want a concrete schema to also accept null (an `Option`al value), you can use the
+[`SchemaBuilder::nullable()`](https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nullable)
+method. Under the hood, this will create a union of the defined type, and the null type.
 
 ```rust
 // string | null
-SchemaType::nullable(SchemaType::string());
+schema.nullable(schema.infer::<String>());
 ```
 
 [null]: https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null

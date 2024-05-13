@@ -1,37 +1,36 @@
 # Tuples
 
-The [`TupleType`][tuple] paired with
-[`SchemaType::Tuple`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Tuple)
-can be used to represent a fixed list of heterogeneous values of a given type, as defined by
-`items_types`.
+The [`TupleType`][tuple] can be used to represent a fixed list of heterogeneous values of a given
+type, as defined by `items_types`.
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::{TupleType, IntegerKind}};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{TupleType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Tuple(TupleType {
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.tuple(TupleType {
 			items_types: vec![
-				Box::new(SchemaType::string()),
-				Box::new(SchemaType::bool()),
-				Box::new(SchemaType::integer(IntegerKind::U32)),
+				Box::new(schema.infer::<String>()),
+				Box::new(schema.infer::<bool>()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..TupleType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
 
 If you're only defining the `items_types` field, you can use the shorthand
-[`SchemaType::tuple()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.tuple)
+[`TupleType::new()`](https://docs.rs/schematic/latest/schematic/struct.TupleType.html#method.new)
 method. When using this approach, the `Box`s are automatically inserted for you.
 
 ```rust
-SchemaType::tuple([
-	SchemaType::string(),
-	SchemaType::bool(),
-	SchemaType::integer(IntegerKind::U32),
-]);
+schema.tuple(TupleType::new([
+	schema.infer::<String>(),
+	schema.infer::<bool>(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
 ```
 
 > Automatically implemented for tuples of 0-12 length.

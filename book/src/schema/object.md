@@ -1,30 +1,29 @@
 # Objects
 
-The [`ObjectType`][object] paired with
-[`SchemaType::Object`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Object)
-can be used to represent a key-value object of homogenous types. This is also known as a map,
-record, keyed object, or indexed object.
+The [`ObjectType`][object] can be used to represent a key-value object of homogenous types. This is
+also known as a map, record, keyed object, or indexed object.
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::ObjectType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ObjectType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Object(ObjectType {
-			key_type: Box::new(SchemaType::string()),
-			value_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.object(ObjectType {
+			key_type: Box::new(schema.infer::<String>()),
+			value_type: Box::new(schema.infer::<String>()),
 			..ObjectType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
 
 If you're only defining the `key_type` and `value_type` fields, you can use the shorthand
-[`SchemaType::object()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.object)
+[`ObjectType::new()`](https://docs.rs/schematic/latest/schematic/struct.ObjectType.html#method.new)
 method.
 
 ```rust
-SchemaType::object(SchemaType::string(), SchemaType::string());
+schema.object(ObjectType::new(schema.infer::<String>(), schema.infer::<String>()));
 ```
 
 > Automatically implemented for `BTreeMap` and `HashMap`.

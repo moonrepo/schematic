@@ -37,14 +37,19 @@ Once a type has a schema associated with it, it can be fed into the
 
 ### Custom implementation
 
-Our derive macro will always implement schemas using the default state of [`SchemaType`][schematype]
-and [associated types](./types.md). If you want these types to use custom settings, you can
-implement the [`Schematic`][schematic] trait and
-[`Schematic::generate_schema()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema)
+Our derive macro will always implement schemas using the default state of [`Schema`][schema],
+[`SchemaType`][schematype], and [associated types](./types.md). If you want these types to use
+custom settings, you can implement the [`Schematic`][schematic] trait and
+[`Schematic::build_schema()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema)
 method manually.
 
+The
+[`Schematic::schema_name()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name)
+method is optional, but is encouraged for non-primitive types. It will associated references between
+types, and avoid circular references.
+
 ```rust
-use schematic::{Schematic, SchemaField, SchemaType, schema::*};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::*};
 
 #[derive(Schematic)]
 enum UserStatus {
@@ -59,15 +64,20 @@ struct User {
 }
 
 impl Schematic for User {
-	fn generate_schema() -> SchemaType {
-		SchemaType::structure([
-			SchemaField::new("name", SchemaType::String(StringType {
+	fn schema_name() -> Option<String> {
+		Some("User".into())
+	}
+
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.structure(StructType::new([
+			("name".into(), schema.nest().string(StringType {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
-			SchemaField::new("status", SchemaType::infer::<UserStatus>()),
-		])
+			("age".into(), schema.nest().integer(IntegerType::new_kind(IntegerKind::Usize))),
+			("status".into(), schema.infer::<UserStatus>()),
+		]));
+		schema.build()
 	}
 }
 ```
@@ -82,8 +92,9 @@ The following Cargo features are available:
 
 Learn more about [renderers](./generator/index.md).
 
-- `json_schema` - Enables JSON schema generation.
-- `typescript` - Enables TypeScript types generation.
+- `renderer_json_schema` - Enables JSON schema generation.
+- `renderer_template` - Enables config template generation.
+- `renderer_typescript` - Enables TypeScript types generation.
 
 #### External types
 
@@ -101,4 +112,5 @@ Learn more about [external types](./external.md).
 - `type_url` - Implements schematic for the `url` crate.
 
 [schematic]: https://docs.rs/schematic/latest/schematic/trait.Schematic.html
+[schema]: https://docs.rs/schematic/latest/schematic/struct.Schema.html
 [schematype]: https://docs.rs/schematic/latest/schematic/enum.SchemaType.html

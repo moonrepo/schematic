@@ -1,16 +1,15 @@
 # Booleans
 
-The [`BooleanType`][boolean] paired with
-[`SchemaType::Boolean`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Boolean)
-can be used to represent a boolean `true` or `false` value. Values that evaluate to true or false,
-such as 1 and 0, are not accepted by the schema.
+The [`BooleanType`][boolean] can be used to represent a boolean `true` or `false` value. Values that
+evaluate to true or false, such as 1 and 0, are not accepted by the schema.
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::BooleanType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::BooleanType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::boolean()
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.boolean_default();
+		schema.build()
 	}
 }
 ```
@@ -23,7 +22,7 @@ To customize the default value for use within [generators](./generator/index.md)
 value to the [`BooleanType`][boolean] constructor.
 
 ```rust
-SchemaType::Boolean(BooleanType::new(true));
+schema.boolean(BooleanType::new(true));
 ```
 
 [boolean]: https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html

@@ -9,10 +9,10 @@ Unlike other schema types, structs are composed of
 [`SchemaField`](https://docs.rs/schematic/latest/schematic/struct.SchemaField.html)s.
 
 ```rust
-use schematic::{Schematic, SchemaField, SchemaType, schema::StructType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
 		SchemaType::Struct(StructType {
 			fields: vec![
 				SchemaField {
@@ -35,7 +35,8 @@ impl Schematic for T {
 				},
 			],
 			..StructType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
