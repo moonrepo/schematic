@@ -1,28 +1,27 @@
 # Integers
 
-The [`IntegerType`][integer] paired with
-[`SchemaType::Integer`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Integer)
-can be used to represent an integer (number).
+The [`IntegerType`][integer] can be used to represent an integer (number).
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::{IntegerType, IntegerKind}};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{IntegerType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Integer(IntegerType {
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.integer(IntegerType {
 			kind: IntegerKind::U32,
 			..IntegerType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
 
 If you're only defining the `kind` field, you can use the shorthand
-[`SchemaType::integer()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.integer)
+[`IntegerType::new_kind()`](https://docs.rs/schematic/latest/schematic/struct.IntegerType.html#method.new_kind)
 method.
 
 ```rust
-SchemaType::integer(IntegerKind::U32);
+schema.integer(IntegerType::new_kind(IntegerKind::U32));
 ```
 
 > Automatically implemented for `usize`-`u128` and `isize`-`i128`.
@@ -33,9 +32,9 @@ To customize the default value for use within [generators](./generator/index.md)
 value to the [`IntegerType`][integer] constructor.
 
 ```rust
-SchemaType::Integer(IntegerType::new(IntegerKind::I32, 100));
+schema.integer(IntegerType::new(IntegerKind::I32, 100));
 // Or
-SchemaType::Integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
+schema.integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
 ```
 
 ## Settings

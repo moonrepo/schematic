@@ -58,6 +58,11 @@ impl SchemaBuilder {
         self.custom(SchemaType::Boolean(Box::new(value)));
     }
 
+    /// Build a boolean type with default settings.
+    pub fn boolean_default(&mut self) {
+        self.boolean(BooleanType::default())
+    }
+
     /// Build with a custom type.
     pub fn custom(&mut self, value: SchemaType) {
         self.ty = value;
@@ -73,6 +78,16 @@ impl SchemaBuilder {
         self.custom(SchemaType::Float(Box::new(value)));
     }
 
+    /// Build a 32bit float type with default settings.
+    pub fn float32_default(&mut self) {
+        self.float(FloatType::new_kind(FloatKind::F32))
+    }
+
+    /// Build a 64bit float type with default settings.
+    pub fn float64_default(&mut self) {
+        self.float(FloatType::new_kind(FloatKind::F64))
+    }
+
     /// Build an integer type.
     pub fn integer(&mut self, value: IntegerType) {
         self.custom(SchemaType::Integer(Box::new(value)));
@@ -83,6 +98,27 @@ impl SchemaBuilder {
         self.custom(SchemaType::Literal(Box::new(value)));
     }
 
+    /// Build a literal type with a value.
+    pub fn literal_value(&mut self, value: LiteralValue) {
+        self.literal(LiteralType::new(value))
+    }
+
+    /// Build a nested [`Schema`] by cloning another builder.
+    pub fn nest(&self) -> SchemaBuilder {
+        SchemaBuilder {
+            description: None,
+            name: None,
+            name_stack: Rc::clone(&self.name_stack),
+            ty: SchemaType::Unknown,
+            nullable: false,
+        }
+    }
+
+    /// Build a schema that is also nullable (uses a union).
+    pub fn nullable(&mut self, value: impl Into<Schema>) {
+        self.union(UnionType::new_any([value.into(), Schema::null()]))
+    }
+
     /// Build an object type.
     pub fn object(&mut self, value: ObjectType) {
         self.custom(SchemaType::Object(Box::new(value)));
@@ -91,6 +127,11 @@ impl SchemaBuilder {
     /// Build a string type.
     pub fn string(&mut self, value: StringType) {
         self.custom(SchemaType::String(Box::new(value)));
+    }
+
+    /// Build a string type with default settings.
+    pub fn string_default(&mut self) {
+        self.string(StringType::default())
     }
 
     /// Build a struct type.
@@ -110,10 +151,7 @@ impl SchemaBuilder {
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
     pub fn infer<T: Schematic>(&self) -> Schema {
-        let mut builder = SchemaBuilder {
-            name_stack: Rc::clone(&self.name_stack),
-            ..SchemaBuilder::default()
-        };
+        let mut builder = self.nest();
 
         // No name, so return the schema immediately
         let Some(name) = T::schema_name() else {
@@ -170,7 +208,7 @@ impl DerefMut for SchemaBuilder {
 }
 
 impl From<SchemaBuilder> for Schema {
-    fn from(val: SchemaBuilder) -> Self {
-        val.build()
+    fn from(builder: SchemaBuilder) -> Self {
+        builder.build()
     }
 }

@@ -34,7 +34,7 @@ macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.string(StringType::default());
+                schema.string_default();
                 schema.build()
             }
         }

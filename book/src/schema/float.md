@@ -1,28 +1,27 @@
 # Floats
 
-The [`FloatType`][float] paired with
-[`SchemaType::Float`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Float)
-can be used to represent a float or double.
+The [`FloatType`][float] can be used to represent a float or double.
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::{FloatType, FloatKind}};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{FloatType, FloatKind}};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Float(FloatType {
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.float(FloatType {
 			kind: FloatKind::F32,
 			..FloatType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
 
 If you're only defining the `kind` field, you can use the shorthand
-[`SchemaType::float()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.float)
+[`FloatType::new_kind()`](https://docs.rs/schematic/latest/schematic/struct.FloatType.html#method.new_kind)
 method.
 
 ```rust
-SchemaType::float(FloatKind::F32);
+schema.float(FloatType::new_kind(FloatKind::F32));
 ```
 
 > Automatically implemented for `f32` and `f64`.
@@ -33,9 +32,9 @@ To customize the default value for use within [generators](./generator/index.md)
 value to the [`FloatType`][float] constructor.
 
 ```rust
-SchemaType::Float(FloatType::new_32(32.0));
+schema.float(FloatType::new_32(32.0));
 // Or
-SchemaType::Float(FloatType::new_64(64.0));
+schema.float(FloatType::new_64(64.0));
 ```
 
 ## Settings
