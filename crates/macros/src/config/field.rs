@@ -58,7 +58,7 @@ impl<'l> Field<'l> {
 
     pub fn generate_from_partial_value(&self) -> TokenStream {
         let name = self.name;
-        let value = self.value_type.get_from_partial_value();
+        let mut value = self.value_type.get_from_partial_value();
 
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
@@ -75,6 +75,10 @@ impl<'l> Field<'l> {
                 quote! { partial.#name.unwrap_or_default() }
             }
         } else {
+            if self.value_type.is_boxed() {
+                value = quote! { Box::new(#value) };
+            }
+
             if self.is_optional() {
                 quote! {
                     if let Some(data) = partial.#name {

@@ -12,6 +12,7 @@ pub struct NativeDefaults {
     vector: Vec<String>,
     float32: f32,
     float64: f64,
+    boxed: Box<String>,
 }
 
 #[test]
@@ -126,11 +127,19 @@ pub struct NestedDefaults {
     #[setting(nested)]
     nested: NativeDefaults,
     #[setting(nested)]
+    nested_boxed: Box<NativeDefaults>,
+    #[setting(nested)]
     nested_opt: Option<NativeDefaults>,
+    #[setting(nested)]
+    nested_opt_boxed: Option<Box<NativeDefaults>>,
     #[setting(nested)]
     nested_vec: Vec<NativeDefaults>,
     #[setting(nested)]
+    nested_vec_boxed: Vec<Box<NativeDefaults>>,
+    #[setting(nested)]
     nested_map: HashMap<String, NativeDefaults>,
+    #[setting(nested)]
+    nested_map_boxed: HashMap<String, Box<NativeDefaults>>,
 }
 
 #[test]

@@ -3,10 +3,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{GenericArgument, PathArguments, Type, TypePath};
 
-fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
+fn get_inner_type<'a>(path: &'a TypePath, ident: &str) -> Option<&'a TypePath> {
     let last_segment = path.path.segments.last().unwrap();
 
-    if last_segment.ident != "Option" {
+    if last_segment.ident != ident {
         return None;
     }
 
@@ -27,6 +27,7 @@ fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
 pub enum FieldValue<'l> {
     // Vec<item>
     NestedList {
+        boxed: bool,
         collection: &'l Ident,
         item: &'l GenericArgument,
         optional: bool,
@@ -34,6 +35,7 @@ pub enum FieldValue<'l> {
     },
     // HashMap<key, value>
     NestedMap {
+        boxed: bool,
         collection: &'l Ident,
         key: &'l GenericArgument,
         optional: bool,
@@ -42,12 +44,14 @@ pub enum FieldValue<'l> {
     },
     // config
     NestedValue {
+        boxed: bool,
         config: &'l Ident,
         optional: bool,
         path: &'l TypePath,
     },
     // value
     Value {
+        boxed: bool,
         optional: bool,
         value: &'l Type,
     },
@@ -55,24 +59,32 @@ pub enum FieldValue<'l> {
 
 impl<'l> FieldValue<'l> {
     pub fn nested(raw: &'l Type) -> FieldValue {
-        let mut optional = false;
-
         let Type::Path(raw_path) = raw else {
             panic!("Nested values may only be paths/type references.");
         };
 
-        let path = if let Some(unwrapped_path) = get_option_inner(raw_path) {
+        let mut optional = false;
+        let mut boxed = false;
+        let mut path = raw_path;
+
+        // Unwrap `Option`
+        if let Some(unwrapped_path) = get_inner_type(path, "Option") {
             optional = true;
-            unwrapped_path
-        } else {
-            raw_path
-        };
+            path = unwrapped_path;
+        }
+
+        // Unwrap `Box`
+        if let Some(unwrapped_path) = get_inner_type(path, "Box") {
+            boxed = true;
+            path = unwrapped_path;
+        }
 
         let segment = path.path.segments.last().unwrap();
         let container = &segment.ident;
 
         match &segment.arguments {
             PathArguments::None => Self::NestedValue {
+                boxed,
                 path,
                 config: container,
                 optional,
@@ -82,6 +94,7 @@ impl<'l> FieldValue<'l> {
 
                 if name.ends_with("Vec") || name.ends_with("Set") {
                     Self::NestedList {
+                        boxed,
                         collection: container,
                         item: args.args.first().unwrap(),
                         optional,
@@ -89,6 +102,7 @@ impl<'l> FieldValue<'l> {
                     }
                 } else if name.ends_with("Map") {
                     Self::NestedMap {
+                        boxed,
                         collection: container,
                         key: args.args.first().unwrap(),
                         optional,
@@ -96,7 +110,7 @@ impl<'l> FieldValue<'l> {
                         value: args.args.last().unwrap(),
                     }
                 } else {
-                    panic!("Unsupported collection used with nested config.");
+                    panic!("Unsupported collection {name} used with nested config.");
                 }
             }
             _ => panic!("Parens are not supported for nested config."),
@@ -113,7 +127,20 @@ impl<'l> FieldValue<'l> {
             raw
         };
 
-        Self::Value { value, optional }
+        Self::Value {
+            boxed: false,
+            value,
+            optional,
+        }
+    }
+
+    pub fn is_boxed(&self) -> bool {
+        match self {
+            Self::NestedValue { boxed, .. } => *boxed,
+            Self::NestedList { boxed, .. } => *boxed,
+            Self::NestedMap { boxed, .. } => *boxed,
+            Self::Value { boxed, .. } => *boxed,
+        }
     }
 
     pub fn is_optional(&self) -> bool {
@@ -136,11 +163,11 @@ impl<'l> FieldValue<'l> {
 // Only used for partials
 impl<'l> ToTokens for FieldValue<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(match self {
+        let inner = match self {
             Self::NestedList {
                 collection, item, ..
             } => {
-                quote! { Option<#collection<<#item as schematic::Config>::Partial>> }
+                quote! { #collection<<#item as schematic::Config>::Partial> }
             }
             Self::NestedMap {
                 collection,
@@ -149,15 +176,23 @@ impl<'l> ToTokens for FieldValue<'l> {
                 ..
             } => {
                 quote! {
-                    Option<#collection<#key, <#value as schematic::Config>::Partial>>
+                    #collection<#key, <#value as schematic::Config>::Partial>
                 }
             }
             Self::NestedValue { path, .. } => {
-                quote! { Option<<#path as schematic::Config>::Partial> }
+                quote! { <#path as schematic::Config>::Partial }
             }
             Self::Value { value, .. } => {
-                quote! { Option<#value> }
+                quote! { #value }
             }
-        })
+        };
+
+        // Boxes are ignored for the partial type,
+        // and will only be used for the final type!
+        // if self.is_boxed() {
+        //     inner = quote! { Box<#inner> };
+        // }
+
+        tokens.extend(quote! { Option<#inner> })
     }
 }
