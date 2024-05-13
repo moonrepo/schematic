@@ -25,6 +25,18 @@ pub enum ObjectFormat {
     Type,
 }
 
+/// Format of TypeScript object properties.
+#[derive(Default)]
+pub enum PropertyFormat {
+    /// Required: `prop: value`
+    #[default]
+    Required,
+    /// Optional: `prop?: value`
+    Optional,
+    /// Optional with undefined: `prop?: value | undefined`
+    OptionalUndefined,
+}
+
 /// Options to control the rendered TypeScript output.
 #[derive(Default)]
 pub struct TypeScriptOptions {
@@ -49,6 +61,9 @@ pub struct TypeScriptOptions {
 
     /// Format to render objects, either an `interface` or `type`.
     pub object_format: ObjectFormat,
+
+    /// Format to render object properties as.
+    pub property_format: PropertyFormat,
 }
 
 /// Renders TypeScript types from a schema.
@@ -366,13 +381,25 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
 
             let mut row = format!("{}{}", indent, name);
 
-            if field.optional {
+            if field.optional
+                || matches!(
+                    self.options.property_format,
+                    PropertyFormat::Optional | PropertyFormat::OptionalUndefined
+                )
+            {
                 row.push_str("?: ");
             } else {
                 row.push_str(": ");
             }
 
             row.push_str(&self.render_schema(field)?);
+
+            if matches!(
+                self.options.property_format,
+                PropertyFormat::OptionalUndefined
+            ) {
+                row.push_str(" | undefined");
+            }
 
             if matches!(self.options.object_format, ObjectFormat::Interface) {
                 row.push(';');
