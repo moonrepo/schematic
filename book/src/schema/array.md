@@ -1,29 +1,28 @@
 # Arrays
 
-The [`ArrayType`][array] paired with
-[`SchemaType::Array`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Array)
-can be used to represent a variable list of homogeneous values of a given type, as defined by
-`items_type`. For example, a list of strings:
+The [`ArrayType`][array] can be used to represent a variable list of homogeneous values of a given
+type, as defined by `items_type`. For example, a list of strings:
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::ArrayType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ArrayType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Array(ArrayType {
-			items_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.array(ArrayType {
+			items_type: Box::new(schema.infer::<String>()),
 			..ArrayType::default()
-		})
+		});
+		schema.build()
 	}
 }
 ```
 
 If you're only defining the `items_type` field, you can use the shorthand
-[`SchemaType::array()`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.array)
+[`ArrayType::new()`](https://docs.rs/schematic/latest/schematic/struct.ArrayType.html#method.new)
 method.
 
 ```rust
-SchemaType::array(SchemaType::string());
+schema.array(ArrayType::new(schema.infer::<String>()));
 ```
 
 > Automatically implemented for `Vec`, `BTreeSet`, `HashSet`, `[T; N]`, and `&[T]`.

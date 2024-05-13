@@ -4,18 +4,18 @@ The [`SchemaType::Unknown`][unknown] variant can be used to represent an unknown
 sometimes known as an "any" or "mixed" type.
 
 ```rust
-use schematic::{Schematic, SchemaType};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::Unknown
+	fn build_schema(schema: SchemaBuilder) -> Schema {
+		schema.build()
 	}
 }
 ```
 
 The [`SchemaType::Unknown`][unknown] variant is also the default variant, and the default
 implementation for
-[`Schematic::generate_schema()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema),
+[`Schematic::build_schema()`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema),
 so the above can simply be written as:
 
 ```rust

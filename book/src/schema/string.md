@@ -1,15 +1,14 @@
 # Strings
 
-The [`StringType`][string] paired with
-[`SchemaType::String`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.String)
-can be used to represent a sequence of bytes, you know, a string.
+The [`StringType`][string] can be used to represent a sequence of bytes, you know, a string.
 
 ```rust
-use schematic::{Schematic, SchemaType, schema::{StringType, IntegerKind}};
+use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{StringType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -> SchemaType {
-		SchemaType::string()
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
+		schema.string_default();
+		schema.build()
 	}
 }
 ```
@@ -23,7 +22,7 @@ To customize the default value for use within [generators](./generator/index.md)
 value to the [`StringType`][string] constructor.
 
 ```rust
-SchemaType::String(StringType::new("abc"));
+schema.string(StringType::new("abc"));
 ```
 
 ## Settings
