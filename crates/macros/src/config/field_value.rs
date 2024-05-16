@@ -1,4 +1,4 @@
-use crate::common::{FieldArgs, FieldValue};
+use crate::common::{FieldArgs, FieldValue, TypeInfo};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{Expr, Lit};
@@ -9,8 +9,8 @@ impl<'l> FieldValue<'l> {
             Self::NestedList { .. } | Self::NestedMap { .. } => {
                 quote! { Some(Default::default()) }
             }
-            Self::NestedValue { config, .. } => {
-                let partial_name = format_ident!("Partial{}", config);
+            Self::NestedValue { info, .. } => {
+                let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
 
                 quote! { #partial_name::default_values(context)? }
             }
@@ -59,15 +59,29 @@ impl<'l> FieldValue<'l> {
 
     pub fn get_from_partial_value(&self) -> TokenStream {
         match self {
-            Self::NestedList { item, .. } => self.map_data(quote! {
-                #item::from_partial(value)
-            }),
-            Self::NestedMap { value, .. } => self.map_data(quote! {
-                #value::from_partial(value)
-            }),
-            Self::NestedValue { config, .. } => quote! {
-                #config::from_partial(data)
-            },
+            Self::NestedList {
+                item, item_info, ..
+            } => self.map_data_with_info(
+                quote! {
+                    #item::from_partial(value)
+                },
+                item_info,
+            ),
+            Self::NestedMap {
+                value, value_info, ..
+            } => self.map_data_with_info(
+                quote! {
+                    #value::from_partial(value)
+                },
+                value_info,
+            ),
+            Self::NestedValue { info, .. } => {
+                let config = info.config.as_ref();
+
+                quote! {
+                    #config::from_partial(data)
+                }
+            }
             Self::Value { .. } => quote! { data },
         }
     }
@@ -163,5 +177,19 @@ impl<'l> FieldValue<'l> {
                 quote! { #mapped_data }
             }
         }
+    }
+
+    pub fn map_data_with_info(&self, mapped_data: TokenStream, info: &TypeInfo) -> TokenStream {
+        let mut data = mapped_data;
+
+        if info.boxed {
+            data = quote! { Box::new(#data) };
+        }
+
+        if info.optional {
+            data = quote! { Some(#data) };
+        }
+
+        self.map_data(data)
     }
 }

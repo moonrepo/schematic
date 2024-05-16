@@ -123,6 +123,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "array",
+        "arrayOpt",
         "boolean",
         "booleanFn",
         "enums",
@@ -132,9 +133,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "longString",
         "number",
         "pathString",
+        "pathStringBox",
         "string",
         "stringFn",
         "tuple",
+        "tupleOpt",
         "vector"
       ],
       "properties": {
@@ -145,6 +148,21 @@ expression: "std::fs::read_to_string(file).unwrap()"
           },
           "maxItems": 4,
           "minItems": 4
+        },
+        "arrayOpt": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "boolean": {
           "default": true,
@@ -186,6 +204,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "string",
           "format": "path"
         },
+        "pathStringBox": {
+          "type": "string",
+          "format": "path"
+        },
         "string": {
           "default": "foo",
           "type": "string"
@@ -211,6 +233,32 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "maxItems": 4,
           "minItems": 4
+        },
+        "tupleOpt": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 4,
+              "minItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "vector": {
           "type": "array",
@@ -411,6 +459,21 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
+        "arrayOpt": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "boolean": {
           "default": true,
           "anyOf": [
@@ -510,6 +573,17 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
+        "pathStringBox": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "path"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "string": {
           "default": "foo",
           "anyOf": [
@@ -532,6 +606,32 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "tuple": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 4,
+              "minItems": 4
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tupleOpt": {
           "anyOf": [
             {
               "type": "array",

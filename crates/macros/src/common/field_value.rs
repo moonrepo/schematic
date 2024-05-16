@@ -1,127 +1,183 @@
-use crate::utils::unwrap_option;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{GenericArgument, PathArguments, Type, TypePath};
+use syn::{GenericArgument, PathArguments, Type};
 
-fn get_option_inner(path: &TypePath) -> Option<&TypePath> {
-    let last_segment = path.path.segments.last().unwrap();
+fn is_collection_type(ident: &Ident) -> bool {
+    let name = ident.to_string();
 
-    if last_segment.ident != "Option" {
-        return None;
-    }
-
-    let PathArguments::AngleBracketed(args) = &last_segment.arguments else {
-        return None;
-    };
-
-    let GenericArgument::Type(arg) = &args.args[0] else {
-        return None;
-    };
-
-    match &arg {
-        Type::Path(t) => Some(t),
-        _ => None,
-    }
+    name.ends_with("Vec") || name.ends_with("Set") || name.ends_with("Map")
 }
 
+#[derive(Debug, Default)]
+pub struct TypeInfo {
+    pub boxed: bool,
+    pub optional: bool,
+    pub config: Option<Ident>,
+}
+
+fn extract_inner_type<'a>(ty: &'a Type, info: &mut TypeInfo) -> &'a Type {
+    // We don't need to traverse other types, just paths
+    let Type::Path(type_path) = ty else {
+        return ty;
+    };
+
+    // Extract the last segment of the path, for example `Option`,
+    // instead of the full path `std::option::Option`
+    let last_segment = type_path.path.segments.last().unwrap();
+
+    // If a collecion type, return the path immediately, as we'll need
+    // to extract inner information later on
+    if is_collection_type(&last_segment.ident) {
+        return ty;
+    }
+
+    // If a wrapper type, mark the information for later
+    let mut nested = false;
+
+    if last_segment.ident == "Option" {
+        info.optional = true;
+        nested = true;
+    } else if last_segment.ident == "Box" {
+        info.boxed = true;
+        nested = true;
+    }
+
+    // If a nested type, drill down deeper to find the inner type
+    if nested {
+        if let PathArguments::AngleBracketed(args) = &last_segment.arguments {
+            if let GenericArgument::Type(inner_ty) = args.args.last().unwrap() {
+                return extract_inner_type(inner_ty, info);
+            }
+        }
+    }
+    // Otherwise we found the inner type, so extract the ident name
+    else {
+        info.config = Some(last_segment.ident.clone());
+    }
+
+    ty
+}
+
+#[derive(Debug)]
 pub enum FieldValue<'l> {
     // Vec<item>
     NestedList {
         collection: &'l Ident,
-        item: &'l GenericArgument,
-        optional: bool,
-        path: &'l TypePath,
+        collection_info: TypeInfo,
+        item: &'l Type,
+        item_info: TypeInfo,
     },
     // HashMap<key, value>
     NestedMap {
         collection: &'l Ident,
-        key: &'l GenericArgument,
-        optional: bool,
-        path: &'l TypePath,
-        value: &'l GenericArgument,
+        collection_info: TypeInfo,
+        key: &'l Type,
+        value: &'l Type,
+        value_info: TypeInfo,
     },
     // config
     NestedValue {
-        config: &'l Ident,
-        optional: bool,
-        path: &'l TypePath,
+        info: TypeInfo,
+        value: &'l Type,
     },
     // value
     Value {
-        optional: bool,
+        info: TypeInfo,
         value: &'l Type,
     },
 }
 
 impl<'l> FieldValue<'l> {
     pub fn nested(raw: &'l Type) -> FieldValue {
-        let mut optional = false;
+        let mut outer_info = TypeInfo::default();
+        let ty = extract_inner_type(raw, &mut outer_info);
 
-        let Type::Path(raw_path) = raw else {
+        let Type::Path(ty_path) = ty else {
             panic!("Nested values may only be paths/type references.");
         };
 
-        let path = if let Some(unwrapped_path) = get_option_inner(raw_path) {
-            optional = true;
-            unwrapped_path
-        } else {
-            raw_path
-        };
+        let segment = ty_path.path.segments.last().unwrap();
+        let name = segment.ident.to_string();
 
-        let segment = path.path.segments.last().unwrap();
-        let container = &segment.ident;
+        if name.ends_with("Vec") || name.ends_with("Set") {
+            let PathArguments::AngleBracketed(args) = &segment.arguments else {
+                panic!("Received a {name} without inner arguments!");
+            };
 
-        match &segment.arguments {
-            PathArguments::None => Self::NestedValue {
-                path,
-                config: container,
-                optional,
-            },
-            PathArguments::AngleBracketed(args) => {
-                let name = container.to_string();
+            let Some(GenericArgument::Type(inner_ty)) = args.args.first() else {
+                panic!("{name} item type must be a path!");
+            };
 
-                if name.ends_with("Vec") || name.ends_with("Set") {
-                    Self::NestedList {
-                        collection: container,
-                        item: args.args.first().unwrap(),
-                        optional,
-                        path,
-                    }
-                } else if name.ends_with("Map") {
-                    Self::NestedMap {
-                        collection: container,
-                        key: args.args.first().unwrap(),
-                        optional,
-                        path,
-                        value: args.args.last().unwrap(),
-                    }
-                } else {
-                    panic!("Unsupported collection used with nested config.");
-                }
+            let mut inner_info = TypeInfo::default();
+            let item = extract_inner_type(inner_ty, &mut inner_info);
+
+            Self::NestedList {
+                collection: &segment.ident,
+                collection_info: outer_info,
+                item,
+                item_info: inner_info,
             }
-            _ => panic!("Parens are not supported for nested config."),
+        } else if name.ends_with("Map") {
+            let PathArguments::AngleBracketed(args) = &segment.arguments else {
+                panic!("Received a {name} without inner arguments!");
+            };
+
+            let Some(GenericArgument::Type(key_ty)) = args.args.first() else {
+                panic!("{name} key type must be a path!");
+            };
+
+            let Some(GenericArgument::Type(value_ty)) = args.args.last() else {
+                panic!("{name} value type must be a path!");
+            };
+
+            let mut inner_info = TypeInfo::default();
+            let value = extract_inner_type(value_ty, &mut inner_info);
+
+            Self::NestedMap {
+                collection: &segment.ident,
+                collection_info: outer_info,
+                key: key_ty,
+                value,
+                value_info: inner_info,
+            }
+        } else {
+            Self::NestedValue {
+                info: outer_info,
+                value: ty,
+            }
         }
     }
 
     pub fn value(raw: &'l Type) -> FieldValue {
-        let mut optional = false;
+        let mut info = TypeInfo::default();
+        let value = extract_inner_type(raw, &mut info);
 
-        let value = if let Some(unwrapped_value) = unwrap_option(raw) {
-            optional = true;
-            unwrapped_value
-        } else {
-            raw
-        };
-
-        Self::Value { value, optional }
+        Self::Value { info, value }
     }
 
-    pub fn is_optional(&self) -> bool {
+    pub fn is_outer_boxed(&self) -> bool {
         match self {
-            Self::NestedValue { optional, .. } => *optional,
-            Self::NestedList { optional, .. } => *optional,
-            Self::NestedMap { optional, .. } => *optional,
-            Self::Value { optional, .. } => *optional,
+            Self::NestedValue { info, .. } => info.boxed,
+            Self::NestedList {
+                collection_info, ..
+            } => collection_info.boxed,
+            Self::NestedMap {
+                collection_info, ..
+            } => collection_info.boxed,
+            Self::Value { info, .. } => info.boxed,
+        }
+    }
+
+    pub fn is_outer_optional(&self) -> bool {
+        match self {
+            Self::NestedValue { info, .. } => info.optional,
+            Self::NestedList {
+                collection_info, ..
+            } => collection_info.optional,
+            Self::NestedMap {
+                collection_info, ..
+            } => collection_info.optional,
+            Self::Value { info, .. } => info.optional,
         }
     }
 
@@ -133,14 +189,14 @@ impl<'l> FieldValue<'l> {
     }
 }
 
-// Only used for partials
+// Only used for partials!!!
 impl<'l> ToTokens for FieldValue<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(match self {
+        let inner = match self {
             Self::NestedList {
                 collection, item, ..
             } => {
-                quote! { Option<#collection<<#item as schematic::Config>::Partial>> }
+                quote! { #collection<<#item as schematic::Config>::Partial> }
             }
             Self::NestedMap {
                 collection,
@@ -149,15 +205,23 @@ impl<'l> ToTokens for FieldValue<'l> {
                 ..
             } => {
                 quote! {
-                    Option<#collection<#key, <#value as schematic::Config>::Partial>>
+                    #collection<#key, <#value as schematic::Config>::Partial>
                 }
             }
-            Self::NestedValue { path, .. } => {
-                quote! { Option<<#path as schematic::Config>::Partial> }
+            Self::NestedValue { value, .. } => {
+                quote! { <#value as schematic::Config>::Partial }
             }
             Self::Value { value, .. } => {
-                quote! { Option<#value> }
+                quote! { #value }
             }
-        })
+        };
+
+        // Boxes are ignored for the partial type,
+        // and will only be used for the final type!
+        // if self.is_boxed() {
+        //     inner = quote! { Box<#inner> };
+        // }
+
+        tokens.extend(quote! { Option<#inner> })
     }
 }

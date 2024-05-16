@@ -67,6 +67,7 @@ struct DefaultValues {
     long_string: String,
     #[setting(default = "foo/bar")]
     path_string: PathBuf,
+    path_string_box: Box<PathBuf>,
     #[setting(default = 123)]
     number: usize,
     #[setting(default = 1.32)]
@@ -75,8 +76,10 @@ struct DefaultValues {
     float64: f64,
     #[setting(default = [1, 2, 3, 4])]
     array: [u8; 4],
+    array_opt: Option<[u8; 4]>,
     #[setting(default = (1, 2, 3, 4))]
     tuple: (u8, u8, u8, u8),
+    tuple_opt: Option<(u8, u8, u8, u8)>,
     #[setting(default = vec![1, 2, 3, 4])]
     vector: Vec<usize>,
     // #[setting(default = SomeEnum::default)]

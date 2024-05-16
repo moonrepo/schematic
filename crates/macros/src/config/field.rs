@@ -58,23 +58,32 @@ impl<'l> Field<'l> {
 
     pub fn generate_from_partial_value(&self) -> TokenStream {
         let name = self.name;
-        let value = self.value_type.get_from_partial_value();
 
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
-            // Reset extendable values since we don't have the entire resolved list
-            if self.args.extend {
+            let mut value = if self.args.extend {
+                // Reset extendable values since we don't have the entire resolved list
                 quote! { Default::default() }
-
-                // Use optional values as-is as they're already wrapped in `Option`
             } else if self.is_optional() {
+                // Use optional values as-is as they're already wrapped in `Option`
                 quote! { partial.#name }
-
-                // Otherwise unwrap the resolved value or use the type default
             } else {
+                // Otherwise unwrap the resolved value or use the type default
                 quote! { partial.#name.unwrap_or_default() }
+            };
+
+            if self.value_type.is_outer_boxed() {
+                value = quote! { Box::new(#value) };
             }
+
+            value
         } else {
+            let mut value = self.value_type.get_from_partial_value();
+
+            if self.value_type.is_outer_boxed() {
+                value = quote! { Box::new(#value) };
+            }
+
             if self.is_optional() {
                 quote! {
                     if let Some(data) = partial.#name {
