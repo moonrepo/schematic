@@ -102,6 +102,7 @@ if using the macros, otherwise you'll need to update your schema implementations
 - Added a `property_format` option to the TypeScript renderer.
 - Added a `tracing` feature flag, that will wrap generated config methods with
   `#[tracing::instrument]`.
+- Updated the macros to support `Box` for `#[setting(nested)]` struct fields.
 - Updated the macro generated code to use `Box` in many places to reduce the size of enums and
   structs.
 
