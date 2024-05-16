@@ -35,6 +35,7 @@ export interface OptionalValues {
 
 export interface DefaultValues {
 	array: number[];
+	arrayOpt: number[] | null;
 	/** @default true */
 	boolean: boolean;
 	booleanFn: boolean;
@@ -52,10 +53,12 @@ export interface DefaultValues {
 	number: number;
 	/** @default 'foo/bar' */
 	pathString: string;
+	pathStringBox: string;
 	/** @default 'foo' */
 	string: string;
 	stringFn: string;
 	tuple: [number, number, number, number];
+	tupleOpt: [number, number, number, number] | null;
 	vector: number[];
 }
 
@@ -138,6 +141,7 @@ export interface Comments {
 
 export interface PartialDefaultValues {
 	array?: number[] | null;
+	arrayOpt?: number[] | null;
 	/** @default true */
 	boolean?: boolean | null;
 	booleanFn?: boolean | null;
@@ -155,10 +159,12 @@ export interface PartialDefaultValues {
 	number?: number | null;
 	/** @default 'foo/bar' */
 	pathString?: string | null;
+	pathStringBox?: string | null;
 	/** @default 'foo' */
 	string?: string | null;
 	stringFn?: string | null;
 	tuple?: [number, number, number, number] | null;
+	tupleOpt?: [number, number, number, number] | null;
 	vector?: number[] | null;
 }
 
