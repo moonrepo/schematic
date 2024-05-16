@@ -1537,7 +1537,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.15.2"
+version = "0.16.0"
 dependencies = [
  "chrono",
  "garde",
@@ -1569,7 +1569,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.15.1"
+version = "0.16.0"
 dependencies = [
  "convert_case",
  "darling",
@@ -1580,7 +1580,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "chrono",
  "indexmap",
@@ -1951,7 +1951,7 @@ checksum = "3369f5ac52d5eb6ab48c6b4ffdc8efbcad6b89c765749064ba298f2c68a16a76"
 
 [[package]]
 name = "test_app"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "chrono",
  "miette",
