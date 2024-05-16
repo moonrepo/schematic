@@ -8,8 +8,7 @@ use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
-		schema.custom(SchemaType::Null);
-		schema.build()
+		schema.set_type_and_build(SchemaType::Null)
 	}
 }
 ```

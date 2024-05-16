@@ -10,8 +10,7 @@ impl Schematic for T {
 		schema.integer(IntegerType {
 			kind: IntegerKind::U32,
 			..IntegerType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

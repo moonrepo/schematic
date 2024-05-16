@@ -143,7 +143,6 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                         use schematic::schema::*;
 
                         #schema_impl
-                        schema.build()
                     }
                 }
 

@@ -40,7 +40,7 @@ pub trait Schematic {
 
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
-    fn build_schema(schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.build()
     }
 }
@@ -49,8 +49,7 @@ pub trait Schematic {
 
 impl Schematic for () {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.custom(SchemaType::Null);
-        schema.build()
+        schema.set_type_and_build(SchemaType::Null)
     }
 }
 
@@ -86,7 +85,6 @@ impl<T: Schematic> Schematic for Arc<T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([schema.infer::<T>(), Schema::null()]));
-        schema.build()
+        schema.union(UnionType::new_any([schema.infer::<T>(), Schema::null()]))
     }
 }

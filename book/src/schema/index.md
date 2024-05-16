@@ -76,8 +76,7 @@ impl Schematic for User {
 			})),
 			("age".into(), schema.nest().integer(IntegerType::new_kind(IntegerKind::Usize))),
 			("status".into(), schema.infer::<UserStatus>()),
-		]));
-		schema.build()
+		]))
 	}
 }
 ```

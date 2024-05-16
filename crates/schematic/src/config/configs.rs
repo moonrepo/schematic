@@ -112,7 +112,6 @@ impl Schematic for ExtendsFrom {
         schema.union(UnionType::new_any([
             schema.infer::<String>(),
             schema.infer::<Vec<String>>(),
-        ]));
-        schema.build()
+        ]))
     }
 }
