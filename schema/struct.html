@@ -177,52 +177,66 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="structs"><a class="header" href="#structs">Structs</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Struct"><code>SchemaType::Struct</code></a>
-can be used to represent a struct with explicitly named fields and typed values. This is also known
-as a “shape” or “model”.</p>
-<p>Unlike other schema types, structs are composed of
-<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaField.html"><code>SchemaField</code></a>s.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a> can be used to represent a struct with explicitly named fields and typed
+values. This is also known as a “shape” or “model”.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaField, SchemaType, schema::StructType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Struct(StructType {
-			fields: vec![
-				SchemaField {
-					name: "name".into(),
-					description: Some("Name of the user".into()),
-					type_of: SchemaType::string(),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "age".into(),
-					description: Some("Age of the user".into()),
-					type_of: SchemaType::integer(IntegerKind::U16),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "active".into(),
-					description: Some("Is the user active".into()),
-					type_of: SchemaType::boolean(),
-					..SchemaField::default()
-				},
-			],
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType {
+			fields: HashMap::from_iter([
+				(
+					"name".into(),
+					Box::new(Schema {
+						name: "name".into(),
+						description: Some("Name of the user".into()),
+						ty: schema.infer::&lt;String&gt;(),
+						..Schema::default()
+					})
+				),
+				(
+					"age".into(),
+					Box::new(Schema {
+						name: "age".into(),
+						description: Some("Age of the user".into()),
+						ty: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..Schema::default()
+					})
+				),
+				(
+					"active".into(),
+					Box::new(Schema {
+						name: "active".into(),
+						description: Some("Is the user active".into()),
+						ty: schema.infer::&lt;bool&gt;(),
+						..Schema::default()
+					})
+				),
+			]),
 			..StructType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining <code>fields</code>, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.structure"><code>SchemaType::structure()</code></a>
-method.</p>
+<a href="https://docs.rs/schematic/latest/schematic/struct.StructType.html#method.new"><code>StructType::new()</code></a>
+method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::structure([
+</span>schema.structure(StructType::new([
+	(
+		"name".into(),
+		Schema {
+			name: "name".into(),
+			description: Some("Name of the user".into()),
+			ty: schema.infer::&lt;String&gt;(),
+			..Schema::default()
+		}
+	),
 	// ...
-]);
+]));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a>, which are then fed into the

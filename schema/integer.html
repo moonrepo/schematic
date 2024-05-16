@@ -177,16 +177,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="integers"><a class="header" href="#integers">Integers</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Integer"><code>SchemaType::Integer</code></a>
-can be used to represent an integer (number).</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> can be used to represent an integer (number).</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{IntegerType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{IntegerType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Integer(IntegerType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.integer(IntegerType {
 			kind: IntegerKind::U32,
 			..IntegerType::default()
 		})
@@ -194,11 +192,11 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>kind</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.integer"><code>SchemaType::integer()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.IntegerType.html#method.new_kind"><code>IntegerType::new_kind()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::integer(IntegerKind::U32);
+</span>schema.integer(IntegerType::new_kind(IntegerKind::U32));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>usize</code>-<code>u128</code> and <code>isize</code>-<code>i128</code>.</p>
@@ -208,9 +206,9 @@ method.</p>
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Integer(IntegerType::new(IntegerKind::I32, 100));
+</span>schema.integer(IntegerType::new(IntegerKind::I32, 100));
 // Or
-SchemaType::Integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
+schema.integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a>, which are then fed into the

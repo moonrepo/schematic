@@ -201,35 +201,36 @@ enum Projects {
 <p>We provide a handful of built-in merge functions in the
 <a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
 </blockquote>
-<h2 id="merge-function"><a class="header" href="#merge-function">Merge function</a></h2>
+<h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
 <p>You can also define your own function for merging values.</p>
-<p>When defining a custom merge function, the previous value, next value, and <a href="../context.html">context</a>
-are passed as arguments, and the function must return an optional merged result with
-<code>Result&lt;Option&gt;</code>. If <code>None</code> is returned, neither value will be used.</p>
+<p>When defining a custom <code>merge</code> function, the previous value, next value, and
+<a href="../context.html">context</a> are passed as arguments, and the function must return an optional merged
+result. If <code>None</code> is returned, neither value will be used.</p>
 <p>Here’s an example of the merge function above.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::ConfigError;
-
-fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; Result&lt;Option&lt;Vec&lt;T&gt;&gt;, ConfigError&gt; {
+</span>fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; MergeResult&lt;Vec&lt;T&gt;&gt;&gt; {
     prev.extend(next);
 
     Ok(Some(prev))
 }
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(merge = append_vec)]
+	pub field: Vec&lt;String&gt;,
+}
 <span class="boring">}</span></code></pre></pre>
-<p>If parsing fails, you must return a
-<a href="https://docs.rs/schematic/latest/schematic/enum.ConfigError.html"><code>ConfigError</code></a> with a failure
-message.</p>
 <h3 id="context-handling"><a class="header" href="#context-handling">Context handling</a></h3>
 <p>If you’re not using <a href="../context.html">context</a>, you can use <code>()</code> as the context type, or rely on
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; Result&lt;Option&lt;T&gt;, ConfigError&gt; {
+</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; MergeResult&lt;T&gt; {
 	// ...
 }
 
-fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; Result&lt;Option&lt;T&gt;, ConfigError&gt; {
+fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;T&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>

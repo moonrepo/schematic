@@ -183,16 +183,16 @@ can be used to represent a list of heterogeneous schema types (variants), in whi
 match one or more of the types.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{UnionType, UnionOperator}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{UnionType, UnionOperator}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Union(UnionType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.union(UnionType {
 			operator: UnionOperator::AnyOf,
 			variants_types: vec![
-				Box::new(SchemaType::string()),
-				Box::new(SchemaType::bool()),
-				Box::new(SchemaType::integer(IntegerKind::U32)),
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..UnionType::default()
 		})
@@ -200,19 +200,23 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>variants_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.union"><code>SchemaType::union()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_any"><code>UnionType::new_any()</code></a>
 (any of) or
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.union_one"><code>SchemaType::union_one()</code></a>
-(one of) methods.</p>
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_one"><code>UnionType::new_one()</code></a>
+(one of) methods. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::union([
-	SchemaType::string(),
-	SchemaType::bool(),
-	SchemaType::integer(IntegerKind::U32),
-]);
-// Or
-SchemaType::union_one([]);
+</span>// Any of
+schema.union(UnionType::new_any([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
+
+// One of
+schema.union(UnionType::new_one([
+	// ...
+]));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
 <p>Unions support 2 kinds of operators, any of and one of, both of which can be defined with the

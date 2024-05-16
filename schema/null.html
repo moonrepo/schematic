@@ -181,11 +181,11 @@
 best when paired with unions or fields that need to be <a href="#marking-as-nullable">nullable</a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Null
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.set_type_and_build(SchemaType::Null)
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -193,17 +193,13 @@ impl Schematic for T {
 <p>Automatically implemented for <code>()</code> and <code>Option&lt;T&gt;</code>.</p>
 </blockquote>
 <h2 id="marking-as-nullable"><a class="header" href="#marking-as-nullable">Marking as nullable</a></h2>
-<p>If you have an existing
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a> that you want to
-mark as nullable, you can use the
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.nullable"><code>SchemaType::nullable()</code></a>
-method, which converts a value to a <a href="./union.html">union</a> of the original type and
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null"><code>SchemaType::Null</code></a>. If the type is already a union, it will be appended with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null"><code>SchemaType::Null</code></a>.</p>
+<p>If you want a concrete schema to also accept null (an <code>Option</code>al value), you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nullable"><code>SchemaBuilder::nullable()</code></a>
+method. Under the hood, this will create a union of the defined type, and the null type.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>// string | null
-SchemaType::nullable(SchemaType::string());
+schema.nullable(schema.infer::&lt;String&gt;());
 <span class="boring">}</span></code></pre></pre>
 
                     </main>

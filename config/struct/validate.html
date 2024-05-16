@@ -212,19 +212,19 @@ enum Projects {
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
 some functions are factories which can be called to produce a validator.</p>
 </blockquote>
-<h2 id="validate-function"><a class="header" href="#validate-function">Validate function</a></h2>
+<h2 id="validate-handler-function"><a class="header" href="#validate-handler-function">Validate handler function</a></h2>
 <p>You can also define your own function for validating values, also known as a validator.</p>
 <p>When defining a custom validate function, the value to check is passed as the first argument, the
-current/parent partial as the second, and the <a href="../context.html">context</a> as the third.</p>
+current/parent partial as the second, the <a href="../context.html">context</a> as the third, and whether this is
+the final validation pass.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::ValidateError;
-
-fn validate_string(
+</span>fn validate_string(
 	value: &amp;str,
 	partial: &amp;PartialAppConfig,
 	context: &amp;Context
-) -&gt; Result&lt;(), ValidateError&gt; {
+	finalize: bool
+) -&gt; ValidateResult {
 	if !do_check(value) {
 		return Err(ValidateError::new("Some failure message"));
 	}
@@ -275,7 +275,7 @@ ValidateError::with_segments(
 we suggest generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_generics&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C) -&gt; Result&lt;(), ValidateError&gt; {
+</span>fn using_generics&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C, finalize: bool) -&gt; ValidateResult {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>

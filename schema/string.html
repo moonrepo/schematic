@@ -177,16 +177,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.String"><code>SchemaType::String</code></a>
-can be used to represent a sequence of bytes, you know, a string.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> can be used to represent a sequence of bytes, you know, a string.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{StringType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{StringType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::string()
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.string_default()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -199,7 +197,7 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::String(StringType::new("abc"));
+</span>schema.string(StringType::new("abc"));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a>, which are then fed into the

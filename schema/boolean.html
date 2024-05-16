@@ -177,17 +177,15 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="booleans"><a class="header" href="#booleans">Booleans</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Boolean"><code>SchemaType::Boolean</code></a>
-can be used to represent a boolean <code>true</code> or <code>false</code> value. Values that evaluate to true or false,
-such as 1 and 0, are not accepted by the schema.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> can be used to represent a boolean <code>true</code> or <code>false</code> value. Values that
+evaluate to true or false, such as 1 and 0, are not accepted by the schema.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::BooleanType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::BooleanType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::boolean()
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.boolean_default()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -199,7 +197,7 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Boolean(BooleanType::new(true));
+</span>schema.boolean(BooleanType::new(true));
 <span class="boring">}</span></code></pre></pre>
 
                     </main>

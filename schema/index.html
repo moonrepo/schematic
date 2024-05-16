@@ -211,14 +211,18 @@ struct User {
 <p>Once a type has a schema associated with it, it can be fed into the
 <a href="./generator/index.html">generator</a>.</p>
 <h3 id="custom-implementation"><a class="header" href="#custom-implementation">Custom implementation</a></h3>
-<p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>
-and <a href="./types.html">associated types</a>. If you want these types to use custom settings, you can
-implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and
-<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema"><code>Schematic::generate_schema()</code></a>
+<p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>,
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>, and <a href="./types.html">associated types</a>. If you want these types to use
+custom settings, you can implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>
 method manually.</p>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method is optional, but is encouraged for non-primitive types. It will associate references between
+types, and avoid circular references.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaField, SchemaType, schema::*};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::*};
 
 #[derive(Schematic)]
 enum UserStatus {
@@ -233,15 +237,19 @@ struct User {
 }
 
 impl Schematic for User {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::structure([
-			SchemaField::new("name", SchemaType::String(StringType {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("User".into())
+	}
+
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType::new([
+			("name".into(), schema.nest().string(StringType {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
-			SchemaField::new("status", SchemaType::infer::&lt;UserStatus&gt;()),
-		])
+			("age".into(), schema.nest().integer(IntegerType::new_kind(IntegerKind::Usize))),
+			("status".into(), schema.infer::&lt;UserStatus&gt;()),
+		]))
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -253,8 +261,9 @@ impl Schematic for User {
 <h4 id="renderers"><a class="header" href="#renderers">Renderers</a></h4>
 <p>Learn more about <a href="./generator/index.html">renderers</a>.</p>
 <ul>
-<li><code>json_schema</code> - Enables JSON schema generation.</li>
-<li><code>typescript</code> - Enables TypeScript types generation.</li>
+<li><code>renderer_json_schema</code> - Enables JSON schema generation.</li>
+<li><code>renderer_template</code> - Enables config template generation.</li>
+<li><code>renderer_typescript</code> - Enables TypeScript types generation.</li>
 </ul>
 <h4 id="external-types"><a class="header" href="#external-types">External types</a></h4>
 <p>Learn more about <a href="./external.html">external types</a>.</p>

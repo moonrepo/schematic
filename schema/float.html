@@ -177,16 +177,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="floats"><a class="header" href="#floats">Floats</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Float"><code>SchemaType::Float</code></a>
-can be used to represent a float or double.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> can be used to represent a float or double.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{FloatType, FloatKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{FloatType, FloatKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Float(FloatType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.float(FloatType {
 			kind: FloatKind::F32,
 			..FloatType::default()
 		})
@@ -194,11 +192,11 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>kind</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.float"><code>SchemaType::float()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.FloatType.html#method.new_kind"><code>FloatType::new_kind()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::float(FloatKind::F32);
+</span>schema.float(FloatType::new_kind(FloatKind::F32));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>f32</code> and <code>f64</code>.</p>
@@ -208,9 +206,9 @@ method.</p>
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Float(FloatType::new_32(32.0));
+</span>schema.float(FloatType::new_32(32.0));
 // Or
-SchemaType::Float(FloatType::new_64(64.0));
+schema.float(FloatType::new_64(64.0));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a>, which are then fed into the

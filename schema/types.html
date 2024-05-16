@@ -196,15 +196,67 @@ of formats.</p>
 <li><a href="./union.html">Unions</a></li>
 <li><a href="./unknown.html">Unknown</a></li>
 </ul>
-<h2 id="names"><a class="header" href="#names">Names</a></h2>
-<p>Schema types can be named, which is useful for referencing them in other types when generating code.
-By default the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> derive
-macro will use the name of the type, but when implementing the trait manually, you can use
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.set_name"><code>SchemaType::set_name()</code></a>.</p>
+<h2 id="defining-names"><a class="header" href="#defining-names">Defining names</a></h2>
+<p>Schemas can be named, which is useful for referencing them in other types when generating code. By
+default the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> derive macro will use the name of the type, but when
+implementing the trait manually, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let mut schema = SchemaType::string();
-schema.set_name("CustomName");
+</span>impl Schematic for T {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("CustomName".into())
+	}
+}
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p>This method is optional, but is encouraged for non-primitive types. It will associate references
+between types, and avoid circular references.</p>
+</blockquote>
+<h2 id="inferring-schemas"><a class="header" href="#inferring-schemas">Inferring schemas</a></h2>
+<p>When building a schema, you’ll almost always need to reference schemas from other types that
+implement <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a>. To do so, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.build_schema"><code>SchemaBuilder.infer::&lt;T&gt;()</code></a>
+method, which will create a nested builder, and build an isolated schema based on its
+implementation.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct OtherType {}
+
+impl Schematic for OtherType {
+	// ...
+}
+
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		let builtin_type = schema.infer::&lt;String&gt;();
+		let custom_type = schema.infer::&lt;OtherType&gt;();
+
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="creating-nested-schemas"><a class="header" href="#creating-nested-schemas">Creating nested schemas</a></h2>
+<p>When building a schema, you may have situations where you need to build nested schemas, for example,
+within struct fields. You <em>cannot</em> use the type-based methods on <code>SchemaBuilder</code>, as they mutate the
+current builder. Instead you must created another builder, which can be achieved with the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nest"><code>SchemaBuilder.nest()</code></a>
+method.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		// Mutates self
+		schema.string_default();
+
+		// Creates a new builder and mutates it
+		schema.nest().string_default();
+
+		// ...
+	}
+}
 <span class="boring">}</span></code></pre></pre>
 
                     </main>

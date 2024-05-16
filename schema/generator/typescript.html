@@ -279,6 +279,34 @@ export type User = {
 	name: string;
 };
 </code></pre>
+<h3 id="properties-format"><a class="header" href="#properties-format">Properties format</a></h3>
+<p>Properties within a struct can be rendered as either optional or required in TypeScript, depending
+on usage. The default format for all properties can be customized with the <code>property_format</code> option
+and the
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html"><code>PropertyFormat</code></a>
+enum. By default all properties are required.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	property_format: PropertyFormat::Required,
+}
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-ts">// Default / required
+export interface User {
+	name: string;
+}
+
+// Optional
+export interface User {
+	name?: string;
+}
+
+// Optional with undefined union
+export interface User {
+	name?: string | undefined;
+}
+</code></pre>
 <h3 id="type-references"><a class="header" href="#type-references">Type references</a></h3>
 <p>In the context of this renderer, a type reference is simply a reference to another type by its name,
 and is used by other types of another name. For example, the fields of a struct type may reference

@@ -181,17 +181,17 @@
 sometimes known as an “any” or “mixed” type.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Unknown
+	fn build_schema(schema: SchemaBuilder) -&gt; Schema {
+		schema.build()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Unknown"><code>SchemaType::Unknown</code></a> variant is also the default variant, and the default
 implementation for
-<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema"><code>Schematic::generate_schema()</code></a>,
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>,
 so the above can simply be written as:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

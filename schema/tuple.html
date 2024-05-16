@@ -177,21 +177,19 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Tuple"><code>SchemaType::Tuple</code></a>
-can be used to represent a fixed list of heterogeneous values of a given type, as defined by
-<code>items_types</code>.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> can be used to represent a fixed list of heterogeneous values of a given
+type, as defined by <code>items_types</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{TupleType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{TupleType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Tuple(TupleType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.tuple(TupleType {
 			items_types: vec![
-				Box::new(SchemaType::string()),
-				Box::new(SchemaType::bool()),
-				Box::new(SchemaType::integer(IntegerKind::U32)),
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..TupleType::default()
 		})
@@ -199,15 +197,15 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>items_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.tuple"><code>SchemaType::tuple()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.TupleType.html#method.new"><code>TupleType::new()</code></a>
 method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::tuple([
-	SchemaType::string(),
-	SchemaType::bool(),
-	SchemaType::integer(IntegerKind::U32),
-]);
+</span>schema.tuple(TupleType::new([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for tuples of 0-12 length.</p>

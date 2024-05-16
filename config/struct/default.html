@@ -220,9 +220,10 @@ function to call. This function receives the <a href="../context.html">context</
 return an optional value. If <code>None</code> is returned, the <code>Default</code> value will be used instead.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn find_unused_port(ctx: &amp;Context) -&gt; Option&lt;usize&gt; {
-	let port = do_find();
-	Some(port)
+</span>fn find_unused_port(ctx: &amp;Context) -&gt; DefaultValueResult&lt;usize&gt; {
+	let port = do_find()?;
+
+	Ok(Some(port))
 }
 
 #[derive(Config)]
@@ -236,11 +237,11 @@ struct AppConfig {
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_unit_type(_: &amp;()) -&gt; Option&lt;usize&gt; {
+</span>fn using_unit_type(_: &amp;()) -&gt; DefaultValueResult&lt;usize&gt; {
 	// ...
 }
 
-fn using_generics&lt;C&gt;(_: &amp;C) -&gt; Option&lt;usize&gt; {
+fn using_generics&lt;C&gt;(_: &amp;C) -&gt; DefaultValueResult&lt;usize&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>

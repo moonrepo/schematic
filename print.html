@@ -327,6 +327,7 @@ struct AppConfig {}
 <li><code>config</code> (default) - Enables configuration support (all the above stuff).</li>
 <li><code>json</code> - Enables JSON.</li>
 <li><code>toml</code> - Enables TOML.</li>
+<li><code>tracing</code> - Wrap generated code in tracing instrumentations.</li>
 <li><code>url</code> (default) - Enables loading, extending, and parsing configs from URLs.</li>
 <li><code>yaml</code> - Enables YAML.</li>
 </ul>
@@ -437,7 +438,7 @@ struct ParentConfig {
 
 #[derive(Config)]
 enum ParentEnum {
-	#[config(nested)]
+	#[setting(nested)]
 	Variant(ChildConfig),
 }
 <span class="boring">}</span></code></pre></pre>
@@ -630,9 +631,10 @@ function to call. This function receives the <a href="config/struct/../context.h
 return an optional value. If <code>None</code> is returned, the <code>Default</code> value will be used instead.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn find_unused_port(ctx: &amp;Context) -&gt; Option&lt;usize&gt; {
-	let port = do_find();
-	Some(port)
+</span>fn find_unused_port(ctx: &amp;Context) -&gt; DefaultValueResult&lt;usize&gt; {
+	let port = do_find()?;
+
+	Ok(Some(port))
 }
 
 #[derive(Config)]
@@ -646,11 +648,11 @@ struct AppConfig {
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_unit_type(_: &amp;()) -&gt; Option&lt;usize&gt; {
+</span>fn using_unit_type(_: &amp;()) -&gt; DefaultValueResult&lt;usize&gt; {
 	// ...
 }
 
-fn using_generics&lt;C&gt;(_: &amp;C) -&gt; Option&lt;usize&gt; {
+fn using_generics&lt;C&gt;(_: &amp;C) -&gt; DefaultValueResult&lt;usize&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>
@@ -719,24 +721,24 @@ struct AppConfig {
 <p>We provide a handful of built-in parsing functions in the
 <a href="https://docs.rs/schematic/latest/schematic/env/index.html"><code>env</code> module</a>.</p>
 </blockquote>
-<h2 id="parse-function"><a class="header" href="#parse-function">Parse function</a></h2>
+<h2 id="parse-handler-function"><a class="header" href="#parse-handler-function">Parse handler function</a></h2>
 <p>You can also define your own function for parsing values out of environment variables.</p>
-<p>When defining a custom parse function, the variable value is passed as the 1st argument, and a
-<code>Result&lt;Option&gt;</code> must be returned. A <code>None</code> value can be returned, which will fallback to the
-previous or default value.</p>
+<p>When defining a custom <code>parse_env</code> function, the variable value is passed as the 1st argument. A
+<code>None</code> value can be returned, which will fallback to the previous or default value.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::ConfigError;
-
-pub fn custom_parse(var: String) -&gt; Result&lt;Some&lt;ReturnValue&gt;, ConfigError&gt; {
+</span>pub fn custom_parse(var: String) -&gt; ParseEnvResult&lt;ReturnValue&gt; {
 	do_parse()
 		.map(|v| Some(v))
-		.map_err(|e| ConfigError::Message(e.to_string()))
+		.map_err(|e| HandlerError::new(e.to_string()))
+}
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(env = "FIELD", parse_env = custom_parse)]
+	pub field: String,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>If parsing fails, you must return a
-<a href="https://docs.rs/schematic/latest/schematic/enum.ConfigError.html"><code>ConfigError</code></a> with a failure
-message.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="extendable-sources"><a class="header" href="#extendable-sources">Extendable sources</a></h1>
 <blockquote>
 <p>Not supported for enums.</p>
@@ -810,35 +812,36 @@ enum Projects {
 <p>We provide a handful of built-in merge functions in the
 <a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
 </blockquote>
-<h2 id="merge-function"><a class="header" href="#merge-function">Merge function</a></h2>
+<h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
 <p>You can also define your own function for merging values.</p>
-<p>When defining a custom merge function, the previous value, next value, and <a href="config/struct/../context.html">context</a>
-are passed as arguments, and the function must return an optional merged result with
-<code>Result&lt;Option&gt;</code>. If <code>None</code> is returned, neither value will be used.</p>
+<p>When defining a custom <code>merge</code> function, the previous value, next value, and
+<a href="config/struct/../context.html">context</a> are passed as arguments, and the function must return an optional merged
+result. If <code>None</code> is returned, neither value will be used.</p>
 <p>Here’s an example of the merge function above.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::ConfigError;
-
-fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; Result&lt;Option&lt;Vec&lt;T&gt;&gt;, ConfigError&gt; {
+</span>fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; MergeResult&lt;Vec&lt;T&gt;&gt;&gt; {
     prev.extend(next);
 
     Ok(Some(prev))
 }
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(merge = append_vec)]
+	pub field: Vec&lt;String&gt;,
+}
 <span class="boring">}</span></code></pre></pre>
-<p>If parsing fails, you must return a
-<a href="https://docs.rs/schematic/latest/schematic/enum.ConfigError.html"><code>ConfigError</code></a> with a failure
-message.</p>
 <h3 id="context-handling-1"><a class="header" href="#context-handling-1">Context handling</a></h3>
 <p>If you’re not using <a href="config/struct/../context.html">context</a>, you can use <code>()</code> as the context type, or rely on
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; Result&lt;Option&lt;T&gt;, ConfigError&gt; {
+</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; MergeResult&lt;T&gt; {
 	// ...
 }
 
-fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; Result&lt;Option&lt;T&gt;, ConfigError&gt; {
+fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;T&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>
@@ -878,19 +881,19 @@ enum Projects {
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
 some functions are factories which can be called to produce a validator.</p>
 </blockquote>
-<h2 id="validate-function"><a class="header" href="#validate-function">Validate function</a></h2>
+<h2 id="validate-handler-function"><a class="header" href="#validate-handler-function">Validate handler function</a></h2>
 <p>You can also define your own function for validating values, also known as a validator.</p>
 <p>When defining a custom validate function, the value to check is passed as the first argument, the
-current/parent partial as the second, and the <a href="config/struct/../context.html">context</a> as the third.</p>
+current/parent partial as the second, the <a href="config/struct/../context.html">context</a> as the third, and whether this is
+the final validation pass.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::ValidateError;
-
-fn validate_string(
+</span>fn validate_string(
 	value: &amp;str,
 	partial: &amp;PartialAppConfig,
 	context: &amp;Context
-) -&gt; Result&lt;(), ValidateError&gt; {
+	finalize: bool
+) -&gt; ValidateResult {
 	if !do_check(value) {
 		return Err(ValidateError::new("Some failure message"));
 	}
@@ -941,7 +944,7 @@ ValidateError::with_segments(
 we suggest generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_generics&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C) -&gt; Result&lt;(), ValidateError&gt; {
+</span>fn using_generics&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C, finalize: bool) -&gt; ValidateResult {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1114,14 +1117,18 @@ struct User {
 <p>Once a type has a schema associated with it, it can be fed into the
 <a href="schema/./generator/index.html">generator</a>.</p>
 <h3 id="custom-implementation"><a class="header" href="#custom-implementation">Custom implementation</a></h3>
-<p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>
-and <a href="schema/./types.html">associated types</a>. If you want these types to use custom settings, you can
-implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and
-<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema"><code>Schematic::generate_schema()</code></a>
+<p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>,
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>, and <a href="schema/./types.html">associated types</a>. If you want these types to use
+custom settings, you can implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>
 method manually.</p>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method is optional, but is encouraged for non-primitive types. It will associate references between
+types, and avoid circular references.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaField, SchemaType, schema::*};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::*};
 
 #[derive(Schematic)]
 enum UserStatus {
@@ -1136,15 +1143,19 @@ struct User {
 }
 
 impl Schematic for User {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::structure([
-			SchemaField::new("name", SchemaType::String(StringType {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("User".into())
+	}
+
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType::new([
+			("name".into(), schema.nest().string(StringType {
 				min_length: Some(1),
 				..StringType::default()
 			})),
-			SchemaField::new("age", SchemaType::integer(IntegerKind::Usize)),
-			SchemaField::new("status", SchemaType::infer::&lt;UserStatus&gt;()),
-		])
+			("age".into(), schema.nest().integer(IntegerType::new_kind(IntegerKind::Usize))),
+			("status".into(), schema.infer::&lt;UserStatus&gt;()),
+		]))
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1156,8 +1167,9 @@ impl Schematic for User {
 <h4 id="renderers"><a class="header" href="#renderers">Renderers</a></h4>
 <p>Learn more about <a href="schema/./generator/index.html">renderers</a>.</p>
 <ul>
-<li><code>json_schema</code> - Enables JSON schema generation.</li>
-<li><code>typescript</code> - Enables TypeScript types generation.</li>
+<li><code>renderer_json_schema</code> - Enables JSON schema generation.</li>
+<li><code>renderer_template</code> - Enables config template generation.</li>
+<li><code>renderer_typescript</code> - Enables TypeScript types generation.</li>
 </ul>
 <h4 id="external-types"><a class="header" href="#external-types">External types</a></h4>
 <p>Learn more about <a href="schema/./external.html">external types</a>.</p>
@@ -1193,40 +1205,90 @@ of formats.</p>
 <li><a href="schema/./union.html">Unions</a></li>
 <li><a href="schema/./unknown.html">Unknown</a></li>
 </ul>
-<h2 id="names"><a class="header" href="#names">Names</a></h2>
-<p>Schema types can be named, which is useful for referencing them in other types when generating code.
-By default the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> derive
-macro will use the name of the type, but when implementing the trait manually, you can use
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.set_name"><code>SchemaType::set_name()</code></a>.</p>
+<h2 id="defining-names"><a class="header" href="#defining-names">Defining names</a></h2>
+<p>Schemas can be named, which is useful for referencing them in other types when generating code. By
+default the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> derive macro will use the name of the type, but when
+implementing the trait manually, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>let mut schema = SchemaType::string();
-schema.set_name("CustomName");
+</span>impl Schematic for T {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("CustomName".into())
+	}
+}
 <span class="boring">}</span></code></pre></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="arrays"><a class="header" href="#arrays">Arrays</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Array"><code>SchemaType::Array</code></a>
-can be used to represent a variable list of homogeneous values of a given type, as defined by
-<code>items_type</code>. For example, a list of strings:</p>
+<blockquote>
+<p>This method is optional, but is encouraged for non-primitive types. It will associate references
+between types, and avoid circular references.</p>
+</blockquote>
+<h2 id="inferring-schemas"><a class="header" href="#inferring-schemas">Inferring schemas</a></h2>
+<p>When building a schema, you’ll almost always need to reference schemas from other types that
+implement <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a>. To do so, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.build_schema"><code>SchemaBuilder.infer::&lt;T&gt;()</code></a>
+method, which will create a nested builder, and build an isolated schema based on its
+implementation.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::ArrayType};
+</span>struct OtherType {}
+
+impl Schematic for OtherType {
+	// ...
+}
+
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Array(ArrayType {
-			items_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		let builtin_type = schema.infer::&lt;String&gt;();
+		let custom_type = schema.infer::&lt;OtherType&gt;();
+
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="creating-nested-schemas"><a class="header" href="#creating-nested-schemas">Creating nested schemas</a></h2>
+<p>When building a schema, you may have situations where you need to build nested schemas, for example,
+within struct fields. You <em>cannot</em> use the type-based methods on <code>SchemaBuilder</code>, as they mutate the
+current builder. Instead you must created another builder, which can be achieved with the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nest"><code>SchemaBuilder.nest()</code></a>
+method.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		// Mutates self
+		schema.string_default();
+
+		// Creates a new builder and mutates it
+		schema.nest().string_default();
+
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="arrays"><a class="header" href="#arrays">Arrays</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> can be used to represent a variable list of homogeneous values of a given
+type, as defined by <code>items_type</code>. For example, a list of strings:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ArrayType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.array(ArrayType {
+			items_type: Box::new(schema.infer::&lt;String&gt;()),
 			..ArrayType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>items_type</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.array"><code>SchemaType::array()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.ArrayType.html#method.new"><code>ArrayType::new()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::array(SchemaType::string());
+</span>schema.array(ArrayType::new(schema.infer::&lt;String&gt;()));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>Vec</code>, <code>BTreeSet</code>, <code>HashSet</code>, <code>[T; N]</code>, and <code>&amp;[T]</code>.</p>
@@ -1266,17 +1328,15 @@ Schematic <em>does not</em> verify uniqueness.</p>
 }
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="booleans"><a class="header" href="#booleans">Booleans</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Boolean"><code>SchemaType::Boolean</code></a>
-can be used to represent a boolean <code>true</code> or <code>false</code> value. Values that evaluate to true or false,
-such as 1 and 0, are not accepted by the schema.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> can be used to represent a boolean <code>true</code> or <code>false</code> value. Values that
+evaluate to true or false, such as 1 and 0, are not accepted by the schema.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::BooleanType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::BooleanType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::boolean()
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.boolean_default()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1288,19 +1348,17 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Boolean(BooleanType::new(true));
+</span>schema.boolean(BooleanType::new(true));
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="enums"><a class="header" href="#enums">Enums</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html"><code>EnumType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Enum"><code>SchemaType::Enum</code></a>
-can be used to represent a list of <a href="schema/./literal.html">literal values</a>.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html"><code>EnumType</code></a> can be used to represent a list of <a href="schema/./literal.html">literal values</a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{EnumType, LiteralValue}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{EnumType, LiteralValue}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Enum(EnumType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.enumerable(EnumType {
 			values: vec![
 				LiteralValue::String("debug".into()),
 				LiteralValue::String("error".into()),
@@ -1312,48 +1370,48 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>values</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.enumerable"><code>SchemaType::enumerable()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.EnumType.html#method.new"><code>EnumType::new()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::enumerable([
+</span>schema.enumerable(EnumType::new([
 	LiteralValue::String("debug".into()),
 	LiteralValue::String("error".into()),
 	LiteralValue::String("warning".into()),
-]);
+]));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="detailed-variants"><a class="header" href="#detailed-variants">Detailed variants</a></h2>
 <p>If you’d like to provide more detailed information for each variant (value), like descriptions and
 visibility, you can define the <code>variants</code> field and pass a list of
-<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaField.html"><code>SchemaField</code></a>s.</p>
+<a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>s.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::SchemaField;
+</span>use schematic::Schema;
 
-SchemaType::Enum(EnumType {
+schema.enumerable(EnumType {
 	values: vec![
 		LiteralValue::String("debug".into()),
 		LiteralValue::String("error".into()),
 		LiteralValue::String("warning".into()),
 	],
 	variants: Some(vec![
-		SchemaField {
+		Schema {
 			name: "debug".into(),
 			description: Some("Shows debug messages and above".into()),
-			type_of: SchemaType::literal(LiteralValue::String("debug".into())),
-			..SchemaField::default()
+			ty: SchemaType::literal(LiteralValue::String("debug".into())),
+			..Schema::default()
 		},
-		SchemaField {
+		Schema {
 			name: "error".into(),
 			description: Some("Shows only error messages".into()),
-			type_of: SchemaType::literal(LiteralValue::String("error".into())),
-			..SchemaField::default()
+			ty: SchemaType::literal(LiteralValue::String("error".into())),
+			..Schema::default()
 		},
-		SchemaField {
+		Schema {
 			name: "warning".into(),
 			description: Some("Shows warning and error messages".into()),
-			type_of: SchemaType::literal(LiteralValue::String("warning".into())),
-			..SchemaField::default()
+			ty: SchemaType::literal(LiteralValue::String("warning".into())),
+			..Schema::default()
 		},
 	]),
 	..EnumType::default()
@@ -1363,16 +1421,14 @@ SchemaType::Enum(EnumType {
 <p>This comes in handy when working with specific generators, like TypeScript.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="floats"><a class="header" href="#floats">Floats</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Float"><code>SchemaType::Float</code></a>
-can be used to represent a float or double.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> can be used to represent a float or double.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{FloatType, FloatKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{FloatType, FloatKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Float(FloatType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.float(FloatType {
 			kind: FloatKind::F32,
 			..FloatType::default()
 		})
@@ -1380,11 +1436,11 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>kind</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.float"><code>SchemaType::float()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.FloatType.html#method.new_kind"><code>FloatType::new_kind()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::float(FloatKind::F32);
+</span>schema.float(FloatType::new_kind(FloatKind::F32));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>f32</code> and <code>f64</code>.</p>
@@ -1394,9 +1450,9 @@ method.</p>
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Float(FloatType::new_32(32.0));
+</span>schema.float(FloatType::new_32(32.0));
 // Or
-SchemaType::Float(FloatType::new_64(64.0));
+schema.float(FloatType::new_64(64.0));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings-2"><a class="header" href="#settings-2">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a>, which are then fed into the
@@ -1455,16 +1511,14 @@ use <code>min_exclusive</code> and <code>max_exclusive</code> instead.</p>
 }
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integers"><a class="header" href="#integers">Integers</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Integer"><code>SchemaType::Integer</code></a>
-can be used to represent an integer (number).</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> can be used to represent an integer (number).</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{IntegerType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{IntegerType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Integer(IntegerType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.integer(IntegerType {
 			kind: IntegerKind::U32,
 			..IntegerType::default()
 		})
@@ -1472,11 +1526,11 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>kind</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.integer"><code>SchemaType::integer()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.IntegerType.html#method.new_kind"><code>IntegerType::new_kind()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::integer(IntegerKind::U32);
+</span>schema.integer(IntegerType::new_kind(IntegerKind::U32));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>usize</code>-<code>u128</code> and <code>isize</code>-<code>i128</code>.</p>
@@ -1486,9 +1540,9 @@ method.</p>
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::Integer(IntegerType::new(IntegerKind::I32, 100));
+</span>schema.integer(IntegerType::new(IntegerKind::I32, 100));
 // Or
-SchemaType::Integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
+schema.integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings-3"><a class="header" href="#settings-3">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a>, which are then fed into the
@@ -1547,19 +1601,17 @@ use <code>min_exclusive</code> and <code>max_exclusive</code> instead.</p>
 }
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="literals"><a class="header" href="#literals">Literals</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.LiteralType.html"><code>LiteralType</code></a>
-paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Literal"><code>SchemaType::Literal</code></a>
-can be used to represent a literal primitive value, such as a string or number.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.LiteralType.html"><code>LiteralType</code></a> can
+be used to represent a literal primitive value, such as a string or number.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{LiteralType, LiteralValue}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{LiteralType, LiteralValue}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::literal(LiteralValue::String("enabled".into()))
-		// Or, etc
-		SchemaType::literal(LiteralValue::Uint(100))
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.literal(LiteralType::new(LiteralValue::String("enabled".into())))
+		// Or
+		schema.literal_value(LiteralValue::String("enabled".into()))
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1572,11 +1624,11 @@ type is used by other schema types for their default or enumerable values.</p>
 best when paired with unions or fields that need to be <a href="schema/null.html#marking-as-nullable">nullable</a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Null
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.set_type_and_build(SchemaType::Null)
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1584,43 +1636,37 @@ impl Schematic for T {
 <p>Automatically implemented for <code>()</code> and <code>Option&lt;T&gt;</code>.</p>
 </blockquote>
 <h2 id="marking-as-nullable"><a class="header" href="#marking-as-nullable">Marking as nullable</a></h2>
-<p>If you have an existing
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a> that you want to
-mark as nullable, you can use the
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.nullable"><code>SchemaType::nullable()</code></a>
-method, which converts a value to a <a href="schema/./union.html">union</a> of the original type and
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null"><code>SchemaType::Null</code></a>. If the type is already a union, it will be appended with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null"><code>SchemaType::Null</code></a>.</p>
+<p>If you want a concrete schema to also accept null (an <code>Option</code>al value), you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nullable"><code>SchemaBuilder::nullable()</code></a>
+method. Under the hood, this will create a union of the defined type, and the null type.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>// string | null
-SchemaType::nullable(SchemaType::string());
+schema.nullable(schema.infer::&lt;String&gt;());
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="objects"><a class="header" href="#objects">Objects</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Object"><code>SchemaType::Object</code></a>
-can be used to represent a key-value object of homogenous types. This is also known as a map,
-record, keyed object, or indexed object.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a> can be used to represent a key-value object of homogenous types. This is
+also known as a map, record, keyed object, or indexed object.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::ObjectType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ObjectType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Object(ObjectType {
-			key_type: Box::new(SchemaType::string()),
-			value_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.object(ObjectType {
+			key_type: Box::new(schema.infer::&lt;String&gt;()),
+			value_type: Box::new(schema.infer::&lt;String&gt;()),
 			..ObjectType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>key_type</code> and <code>value_type</code> fields, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.object"><code>SchemaType::object()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.ObjectType.html#method.new"><code>ObjectType::new()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::object(SchemaType::string(), SchemaType::string());
+</span>schema.object(ObjectType::new(schema.infer::&lt;String&gt;(), schema.infer::&lt;String&gt;()));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>BTreeMap</code> and <code>HashMap</code>.</p>
@@ -1653,16 +1699,14 @@ must exist when the object is validated.</p>
 <p>This is primarily used by JSON Schema.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.String"><code>SchemaType::String</code></a>
-can be used to represent a sequence of bytes, you know, a string.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> can be used to represent a sequence of bytes, you know, a string.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{StringType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{StringType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::string()
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.string_default()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1675,7 +1719,7 @@ impl Schematic for T {
 value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> constructor.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::String(StringType::new("abc"));
+</span>schema.string(StringType::new("abc"));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings-5"><a class="header" href="#settings-5">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a>, which are then fed into the
@@ -1728,52 +1772,66 @@ fields accept a non-zero number, and can be used together or individually.</p>
 <p>This is primarily used by JSON Schema.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="structs"><a class="header" href="#structs">Structs</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Struct"><code>SchemaType::Struct</code></a>
-can be used to represent a struct with explicitly named fields and typed values. This is also known
-as a “shape” or “model”.</p>
-<p>Unlike other schema types, structs are composed of
-<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaField.html"><code>SchemaField</code></a>s.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a> can be used to represent a struct with explicitly named fields and typed
+values. This is also known as a “shape” or “model”.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaField, SchemaType, schema::StructType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Struct(StructType {
-			fields: vec![
-				SchemaField {
-					name: "name".into(),
-					description: Some("Name of the user".into()),
-					type_of: SchemaType::string(),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "age".into(),
-					description: Some("Age of the user".into()),
-					type_of: SchemaType::integer(IntegerKind::U16),
-					..SchemaField::default()
-				},
-				SchemaField {
-					name: "active".into(),
-					description: Some("Is the user active".into()),
-					type_of: SchemaType::boolean(),
-					..SchemaField::default()
-				},
-			],
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType {
+			fields: HashMap::from_iter([
+				(
+					"name".into(),
+					Box::new(Schema {
+						name: "name".into(),
+						description: Some("Name of the user".into()),
+						ty: schema.infer::&lt;String&gt;(),
+						..Schema::default()
+					})
+				),
+				(
+					"age".into(),
+					Box::new(Schema {
+						name: "age".into(),
+						description: Some("Age of the user".into()),
+						ty: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..Schema::default()
+					})
+				),
+				(
+					"active".into(),
+					Box::new(Schema {
+						name: "active".into(),
+						description: Some("Is the user active".into()),
+						ty: schema.infer::&lt;bool&gt;(),
+						..Schema::default()
+					})
+				),
+			]),
 			..StructType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining <code>fields</code>, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.structure"><code>SchemaType::structure()</code></a>
-method.</p>
+<a href="https://docs.rs/schematic/latest/schematic/struct.StructType.html#method.new"><code>StructType::new()</code></a>
+method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::structure([
+</span>schema.structure(StructType::new([
+	(
+		"name".into(),
+		Schema {
+			name: "name".into(),
+			description: Some("Name of the user".into()),
+			ty: schema.infer::&lt;String&gt;(),
+			..Schema::default()
+		}
+	),
 	// ...
-]);
+]));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="settings-6"><a class="header" href="#settings-6">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a>, which are then fed into the
@@ -1791,21 +1849,19 @@ method.</p>
 <p>This is primarily used by JSON Schema.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Tuple"><code>SchemaType::Tuple</code></a>
-can be used to represent a fixed list of heterogeneous values of a given type, as defined by
-<code>items_types</code>.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> can be used to represent a fixed list of heterogeneous values of a given
+type, as defined by <code>items_types</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{TupleType, IntegerKind}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{TupleType, IntegerKind}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Tuple(TupleType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.tuple(TupleType {
 			items_types: vec![
-				Box::new(SchemaType::string()),
-				Box::new(SchemaType::bool()),
-				Box::new(SchemaType::integer(IntegerKind::U32)),
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..TupleType::default()
 		})
@@ -1813,15 +1869,15 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>items_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.tuple"><code>SchemaType::tuple()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.TupleType.html#method.new"><code>TupleType::new()</code></a>
 method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::tuple([
-	SchemaType::string(),
-	SchemaType::bool(),
-	SchemaType::integer(IntegerKind::U32),
-]);
+</span>schema.tuple(TupleType::new([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for tuples of 0-12 length.</p>
@@ -1833,16 +1889,16 @@ can be used to represent a list of heterogeneous schema types (variants), in whi
 match one or more of the types.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::{UnionType, UnionOperator}};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{UnionType, UnionOperator}};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Union(UnionType {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.union(UnionType {
 			operator: UnionOperator::AnyOf,
 			variants_types: vec![
-				Box::new(SchemaType::string()),
-				Box::new(SchemaType::bool()),
-				Box::new(SchemaType::integer(IntegerKind::U32)),
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..UnionType::default()
 		})
@@ -1850,19 +1906,23 @@ impl Schematic for T {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>variants_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.union"><code>SchemaType::union()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_any"><code>UnionType::new_any()</code></a>
 (any of) or
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.union_one"><code>SchemaType::union_one()</code></a>
-(one of) methods.</p>
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_one"><code>UnionType::new_one()</code></a>
+(one of) methods. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::union([
-	SchemaType::string(),
-	SchemaType::bool(),
-	SchemaType::integer(IntegerKind::U32),
-]);
-// Or
-SchemaType::union_one([]);
+</span>// Any of
+schema.union(UnionType::new_any([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
+
+// One of
+schema.union(UnionType::new_one([
+	// ...
+]));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
 <p>Unions support 2 kinds of operators, any of and one of, both of which can be defined with the
@@ -1883,17 +1943,17 @@ SchemaType::union_one([]);
 sometimes known as an “any” or “mixed” type.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Unknown
+	fn build_schema(schema: SchemaBuilder) -&gt; Schema {
+		schema.build()
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Unknown"><code>SchemaType::Unknown</code></a> variant is also the default variant, and the default
 implementation for
-<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.generate_schema"><code>Schematic::generate_schema()</code></a>,
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>,
 so the above can simply be written as:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2504,6 +2564,34 @@ export interface User {
 export type User = {
 	name: string;
 };
+</code></pre>
+<h3 id="properties-format"><a class="header" href="#properties-format">Properties format</a></h3>
+<p>Properties within a struct can be rendered as either optional or required in TypeScript, depending
+on usage. The default format for all properties can be customized with the <code>property_format</code> option
+and the
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html"><code>PropertyFormat</code></a>
+enum. By default all properties are required.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	property_format: PropertyFormat::Required,
+}
+<span class="boring">}</span></code></pre></pre>
+<pre><code class="language-ts">// Default / required
+export interface User {
+	name: string;
+}
+
+// Optional
+export interface User {
+	name?: string;
+}
+
+// Optional with undefined union
+export interface User {
+	name?: string | undefined;
+}
 </code></pre>
 <h3 id="type-references"><a class="header" href="#type-references">Type references</a></h3>
 <p>In the context of this renderer, a type reference is simply a reference to another type by its name,

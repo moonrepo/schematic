@@ -177,30 +177,28 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="objects"><a class="header" href="#objects">Objects</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Object"><code>SchemaType::Object</code></a>
-can be used to represent a key-value object of homogenous types. This is also known as a map,
-record, keyed object, or indexed object.</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a> can be used to represent a key-value object of homogenous types. This is
+also known as a map, record, keyed object, or indexed object.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::ObjectType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ObjectType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Object(ObjectType {
-			key_type: Box::new(SchemaType::string()),
-			value_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.object(ObjectType {
+			key_type: Box::new(schema.infer::&lt;String&gt;()),
+			value_type: Box::new(schema.infer::&lt;String&gt;()),
 			..ObjectType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>key_type</code> and <code>value_type</code> fields, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.object"><code>SchemaType::object()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.ObjectType.html#method.new"><code>ObjectType::new()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::object(SchemaType::string(), SchemaType::string());
+</span>schema.object(ObjectType::new(schema.infer::&lt;String&gt;(), schema.infer::&lt;String&gt;()));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>BTreeMap</code> and <code>HashMap</code>.</p>

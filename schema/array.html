@@ -177,29 +177,27 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="arrays"><a class="header" href="#arrays">Arrays</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Array"><code>SchemaType::Array</code></a>
-can be used to represent a variable list of homogeneous values of a given type, as defined by
-<code>items_type</code>. For example, a list of strings:</p>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> can be used to represent a variable list of homogeneous values of a given
+type, as defined by <code>items_type</code>. For example, a list of strings:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, SchemaType, schema::ArrayType};
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ArrayType};
 
 impl Schematic for T {
-	fn generate_schema() -&gt; SchemaType {
-		SchemaType::Array(ArrayType {
-			items_type: Box::new(SchemaType::string()),
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.array(ArrayType {
+			items_type: Box::new(schema.infer::&lt;String&gt;()),
 			..ArrayType::default()
 		})
 	}
 }
 <span class="boring">}</span></code></pre></pre>
 <p>If you’re only defining the <code>items_type</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#method.array"><code>SchemaType::array()</code></a>
+<a href="https://docs.rs/schematic/latest/schematic/struct.ArrayType.html#method.new"><code>ArrayType::new()</code></a>
 method.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>SchemaType::array(SchemaType::string());
+</span>schema.array(ArrayType::new(schema.infer::&lt;String&gt;()));
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
 <p>Automatically implemented for <code>Vec</code>, <code>BTreeSet</code>, <code>HashSet</code>, <code>[T; N]</code>, and <code>&amp;[T]</code>.</p>
