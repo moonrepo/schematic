@@ -40,7 +40,7 @@ pub trait Schematic {
 
     /// Create and return a schema that models the structure of the implementing type.
     /// The schema can be used to generate code, documentation, or other artifacts.
-    fn build_schema(schema: SchemaBuilder) -> Schema {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.build()
     }
 }

@@ -1,5 +1,6 @@
 use crate::*;
 use std::cell::RefCell;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
@@ -25,12 +26,12 @@ impl SchemaBuilder {
     }
 
     /// Build the schema from the configured values.
-    pub fn build(&self) -> Schema {
+    pub fn build(&mut self) -> Schema {
         Schema {
-            description: self.description.clone(),
-            name: self.name.clone(),
+            description: self.description.take(),
+            name: self.name.take(),
             nullable: self.nullable,
-            ty: self.ty.clone(),
+            ty: mem::take(&mut self.ty),
             ..Default::default()
         }
     }
@@ -212,7 +213,7 @@ impl DerefMut for SchemaBuilder {
 }
 
 impl From<SchemaBuilder> for Schema {
-    fn from(builder: SchemaBuilder) -> Self {
+    fn from(mut builder: SchemaBuilder) -> Self {
         builder.build()
     }
 }
