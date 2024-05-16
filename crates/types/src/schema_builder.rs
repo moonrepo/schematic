@@ -25,12 +25,12 @@ impl SchemaBuilder {
     }
 
     /// Build the schema from the configured values.
-    pub fn build(self) -> Schema {
+    pub fn build(&self) -> Schema {
         Schema {
-            description: self.description,
-            name: self.name,
+            description: self.description.clone(),
+            name: self.name.clone(),
             nullable: self.nullable,
-            ty: self.ty,
+            ty: self.ty.clone(),
             ..Default::default()
         }
     }
@@ -48,58 +48,64 @@ impl SchemaBuilder {
         self.name_stack.borrow_mut().push(name.to_owned());
     }
 
-    /// Build an array type.
-    pub fn array(&mut self, value: ArrayType) {
-        self.custom(SchemaType::Array(Box::new(value)));
-    }
-
-    /// Build a boolean type.
-    pub fn boolean(&mut self, value: BooleanType) {
-        self.custom(SchemaType::Boolean(Box::new(value)));
-    }
-
-    /// Build a boolean type with default settings.
-    pub fn boolean_default(&mut self) {
-        self.boolean(BooleanType::default())
-    }
-
-    /// Build with a custom type.
-    pub fn custom(&mut self, value: SchemaType) {
+    /// Set the type of schema.
+    pub fn set_type(&mut self, value: SchemaType) {
         self.ty = value;
     }
 
+    /// Set the type of schema and then build it.
+    pub fn set_type_and_build(&mut self, value: SchemaType) -> Schema {
+        self.set_type(value);
+        self.build()
+    }
+
+    /// Build an array type.
+    pub fn array(&mut self, value: ArrayType) -> Schema {
+        self.set_type_and_build(SchemaType::Array(Box::new(value)))
+    }
+
+    /// Build a boolean type.
+    pub fn boolean(&mut self, value: BooleanType) -> Schema {
+        self.set_type_and_build(SchemaType::Boolean(Box::new(value)))
+    }
+
+    /// Build a boolean type with default settings.
+    pub fn boolean_default(&mut self) -> Schema {
+        self.boolean(BooleanType::default())
+    }
+
     /// Build an enum type.
-    pub fn enumerable(&mut self, value: EnumType) {
-        self.custom(SchemaType::Enum(Box::new(value)));
+    pub fn enumerable(&mut self, value: EnumType) -> Schema {
+        self.set_type_and_build(SchemaType::Enum(Box::new(value)))
     }
 
     /// Build a float type.
-    pub fn float(&mut self, value: FloatType) {
-        self.custom(SchemaType::Float(Box::new(value)));
+    pub fn float(&mut self, value: FloatType) -> Schema {
+        self.set_type_and_build(SchemaType::Float(Box::new(value)))
     }
 
     /// Build a 32bit float type with default settings.
-    pub fn float32_default(&mut self) {
+    pub fn float32_default(&mut self) -> Schema {
         self.float(FloatType::new_kind(FloatKind::F32))
     }
 
     /// Build a 64bit float type with default settings.
-    pub fn float64_default(&mut self) {
+    pub fn float64_default(&mut self) -> Schema {
         self.float(FloatType::new_kind(FloatKind::F64))
     }
 
     /// Build an integer type.
-    pub fn integer(&mut self, value: IntegerType) {
-        self.custom(SchemaType::Integer(Box::new(value)));
+    pub fn integer(&mut self, value: IntegerType) -> Schema {
+        self.set_type_and_build(SchemaType::Integer(Box::new(value)))
     }
 
     /// Build a literal type.
-    pub fn literal(&mut self, value: LiteralType) {
-        self.custom(SchemaType::Literal(Box::new(value)));
+    pub fn literal(&mut self, value: LiteralType) -> Schema {
+        self.set_type_and_build(SchemaType::Literal(Box::new(value)))
     }
 
     /// Build a literal type with a value.
-    pub fn literal_value(&mut self, value: LiteralValue) {
+    pub fn literal_value(&mut self, value: LiteralValue) -> Schema {
         self.literal(LiteralType::new(value))
     }
 
@@ -115,38 +121,38 @@ impl SchemaBuilder {
     }
 
     /// Build a schema that is also nullable (uses a union).
-    pub fn nullable(&mut self, value: impl Into<Schema>) {
+    pub fn nullable(&mut self, value: impl Into<Schema>) -> Schema {
         self.union(UnionType::new_any([value.into(), Schema::null()]))
     }
 
     /// Build an object type.
-    pub fn object(&mut self, value: ObjectType) {
-        self.custom(SchemaType::Object(Box::new(value)));
+    pub fn object(&mut self, value: ObjectType) -> Schema {
+        self.set_type_and_build(SchemaType::Object(Box::new(value)))
     }
 
     /// Build a string type.
-    pub fn string(&mut self, value: StringType) {
-        self.custom(SchemaType::String(Box::new(value)));
+    pub fn string(&mut self, value: StringType) -> Schema {
+        self.set_type_and_build(SchemaType::String(Box::new(value)))
     }
 
     /// Build a string type with default settings.
-    pub fn string_default(&mut self) {
+    pub fn string_default(&mut self) -> Schema {
         self.string(StringType::default())
     }
 
     /// Build a struct type.
-    pub fn structure(&mut self, value: StructType) {
-        self.custom(SchemaType::Struct(Box::new(value)));
+    pub fn structure(&mut self, value: StructType) -> Schema {
+        self.set_type_and_build(SchemaType::Struct(Box::new(value)))
     }
 
     /// Build a tuple type.
-    pub fn tuple(&mut self, value: TupleType) {
-        self.custom(SchemaType::Tuple(Box::new(value)));
+    pub fn tuple(&mut self, value: TupleType) -> Schema {
+        self.set_type_and_build(SchemaType::Tuple(Box::new(value)))
     }
 
     /// Build a union type.
-    pub fn union(&mut self, value: UnionType) {
-        self.custom(SchemaType::Union(Box::new(value)));
+    pub fn union(&mut self, value: UnionType) -> Schema {
+        self.set_type_and_build(SchemaType::Union(Box::new(value)))
     }
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
@@ -161,9 +167,7 @@ impl SchemaBuilder {
         // If this name has already been used, create a reference
         // so that we avoid recursion!
         if self.name_stack.borrow().contains(&name) {
-            builder.custom(SchemaType::Reference(name));
-
-            return builder.build();
+            return builder.set_type_and_build(SchemaType::Reference(name));
         }
 
         // Otherwise generate a new schema and persist our name cache

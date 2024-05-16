@@ -39,8 +39,7 @@ impl Schematic for T {
 				),
 			]),
 			..StructType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

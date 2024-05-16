@@ -10,8 +10,7 @@ impl Schematic for T {
 		schema.float(FloatType {
 			kind: FloatKind::F32,
 			..FloatType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

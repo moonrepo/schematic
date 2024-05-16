@@ -192,8 +192,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                             #(#schema_types),*
                         ],
                         #default_index,
-                    ));
-                    schema.build()
+                    ))
                 }
             }
         });

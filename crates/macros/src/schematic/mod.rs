@@ -26,7 +26,6 @@ impl<'l> ToTokens for SchematicMacro<'l> {
                     use schematic::schema::*;
 
                     #schema_impl
-                    schema.build()
                 }
             }
         });

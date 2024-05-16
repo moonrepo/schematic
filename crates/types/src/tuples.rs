@@ -27,8 +27,7 @@ macro_rules! impl_tuple {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.tuple(TupleType::new([
                     $(schema.infer::<$arg>(),)*
-                ]));
-                schema.build()
+                ]))
             }
         }
     };

@@ -11,8 +11,7 @@ impl Schematic for T {
 		schema.array(ArrayType {
 			items_type: Box::new(schema.infer::<String>()),
 			..ArrayType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

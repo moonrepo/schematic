@@ -18,8 +18,7 @@ impl Schematic for Named {
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.structure(StructType::new([("field".into(), schema.infer::<bool>())]));
-        schema.build()
+        schema.structure(StructType::new([("field".into(), schema.infer::<bool>())]))
     }
 }
 
@@ -222,8 +221,7 @@ impl Schematic for Cycle {
         schema.structure(StructType::new([(
             "values".into(),
             schema.infer::<HashMap<String, Cycle>>(),
-        )]));
-        schema.build()
+        )]))
     }
 }
 

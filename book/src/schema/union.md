@@ -18,8 +18,7 @@ impl Schematic for T {
 				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
 			],
 			..UnionType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```
