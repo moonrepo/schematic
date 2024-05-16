@@ -12,6 +12,7 @@ pub struct NativeDefaults {
     vector: Vec<String>,
     float32: f32,
     float64: f64,
+    #[allow(clippy::box_collection)]
     boxed: Box<String>,
 }
 
@@ -135,11 +136,16 @@ pub struct NestedDefaults {
     #[setting(nested)]
     nested_vec: Vec<NativeDefaults>,
     #[setting(nested)]
+    #[allow(clippy::vec_box)]
     nested_vec_boxed: Vec<Box<NativeDefaults>>,
+    #[setting(nested)]
+    nested_vec_opt_boxed: Vec<Option<Box<NativeDefaults>>>,
     #[setting(nested)]
     nested_map: HashMap<String, NativeDefaults>,
     #[setting(nested)]
     nested_map_boxed: HashMap<String, Box<NativeDefaults>>,
+    #[setting(nested)]
+    nested_map_opt_boxed: HashMap<String, Option<Box<NativeDefaults>>>,
 }
 
 #[test]

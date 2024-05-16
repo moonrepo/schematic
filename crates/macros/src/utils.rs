@@ -1,6 +1,6 @@
 use convert_case::{Boundary, Case, Casing};
 use quote::{format_ident, quote, ToTokens};
-use syn::{AngleBracketedGenericArguments, Attribute, Expr, ExprLit, Lit, Meta, Path};
+use syn::{Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
     let case = match format {
@@ -121,54 +121,6 @@ pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
     }
 
     None
-}
-
-// Thanks to confique for the implementation:
-// https://github.com/LukasKalbertodt/confique/blob/main/macro/src/util.rs
-pub fn unwrap_path_type<'l>(
-    ty: &'l syn::Type,
-    lookups: &[&[&str]],
-) -> Option<&'l AngleBracketedGenericArguments> {
-    let ty = match ty {
-        syn::Type::Path(path) => path,
-        _ => return None,
-    };
-
-    if ty.qself.is_some() || ty.path.leading_colon.is_some() {
-        return None;
-    }
-
-    if !lookups
-        .iter()
-        .any(|vp| ty.path.segments.iter().map(|s| &s.ident).eq(*vp))
-    {
-        return None;
-    }
-
-    match &ty.path.segments.last().unwrap().arguments {
-        syn::PathArguments::AngleBracketed(args) => Some(args),
-        _ => None,
-    }
-}
-
-pub fn unwrap_option(ty: &syn::Type) -> Option<&syn::Type> {
-    let args = unwrap_path_type(
-        ty,
-        &[
-            &["Option"],
-            &["std", "option", "Option"],
-            &["core", "option", "Option"],
-        ],
-    )?;
-
-    if args.args.len() != 1 {
-        return None;
-    }
-
-    match &args.args[0] {
-        syn::GenericArgument::Type(t) => Some(t),
-        _ => None,
-    }
 }
 
 pub fn map_bool_field_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
