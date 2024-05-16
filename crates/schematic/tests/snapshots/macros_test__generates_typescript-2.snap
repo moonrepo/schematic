@@ -52,6 +52,7 @@ export type OptionalValues = {
 
 export type DefaultValues = {
 	array: number[],
+	arrayOpt: number[] | null,
 	/** @default true */
 	boolean: boolean,
 	booleanFn: boolean,
@@ -69,10 +70,12 @@ export type DefaultValues = {
 	number: number,
 	/** @default 'foo/bar' */
 	pathString: string,
+	pathStringBox: string,
 	/** @default 'foo' */
 	string: string,
 	stringFn: string,
 	tuple: [number, number, number, number],
+	tupleOpt: [number, number, number, number] | null,
 	vector: number[],
 };
 
@@ -155,6 +158,7 @@ export type Comments = {
 
 export type PartialDefaultValues = {
 	array?: number[] | null,
+	arrayOpt?: number[] | null,
 	/** @default true */
 	boolean?: boolean | null,
 	booleanFn?: boolean | null,
@@ -172,10 +176,12 @@ export type PartialDefaultValues = {
 	number?: number | null,
 	/** @default 'foo/bar' */
 	pathString?: string | null,
+	pathStringBox?: string | null,
 	/** @default 'foo' */
 	string?: string | null,
 	stringFn?: string | null,
 	tuple?: [number, number, number, number] | null,
+	tupleOpt?: [number, number, number, number] | null,
 	vector?: number[] | null,
 };
 

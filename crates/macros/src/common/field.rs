@@ -108,7 +108,7 @@ impl<'l> Field<'l> {
     }
 
     pub fn is_optional(&self) -> bool {
-        self.value_type.is_optional()
+        self.value_type.is_outer_optional()
     }
 
     pub fn is_required(&self) -> bool {

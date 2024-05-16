@@ -8,9 +8,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "type": "object",
   "required": [
     "nested",
+    "nestedBoxed",
     "nestedMap",
+    "nestedMapBoxed",
+    "nestedMapOptBoxed",
     "nestedOpt",
-    "nestedVec"
+    "nestedOptBoxed",
+    "nestedVec",
+    "nestedVecBoxed",
+    "nestedVecOptBoxed"
   ],
   "properties": {
     "nested": {
@@ -20,10 +26,146 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "nestedBoxed": {
+      "type": "object",
+      "required": [
+        "boolean",
+        "boxed",
+        "float32",
+        "float64",
+        "number",
+        "string",
+        "vector"
+      ],
+      "properties": {
+        "boolean": {
+          "type": "boolean"
+        },
+        "boxed": {
+          "type": "string"
+        },
+        "float32": {
+          "type": "number"
+        },
+        "float64": {
+          "type": "number"
+        },
+        "number": {
+          "type": "number"
+        },
+        "string": {
+          "type": "string"
+        },
+        "vector": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "nestedMap": {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/NativeDefaults"
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
+    "nestedMapBoxed": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "boolean",
+          "boxed",
+          "float32",
+          "float64",
+          "number",
+          "string",
+          "vector"
+        ],
+        "properties": {
+          "boolean": {
+            "type": "boolean"
+          },
+          "boxed": {
+            "type": "string"
+          },
+          "float32": {
+            "type": "number"
+          },
+          "float64": {
+            "type": "number"
+          },
+          "number": {
+            "type": "number"
+          },
+          "string": {
+            "type": "string"
+          },
+          "vector": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
+    "nestedMapOptBoxed": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "boolean",
+              "boxed",
+              "float32",
+              "float64",
+              "number",
+              "string",
+              "vector"
+            ],
+            "properties": {
+              "boolean": {
+                "type": "boolean"
+              },
+              "boxed": {
+                "type": "string"
+              },
+              "float32": {
+                "type": "number"
+              },
+              "float64": {
+                "type": "number"
+              },
+              "number": {
+                "type": "number"
+              },
+              "string": {
+                "type": "string"
+              },
+              "vector": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "propertyNames": {
         "type": "string"
@@ -39,10 +181,147 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "nestedOptBoxed": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "boolean",
+            "boxed",
+            "float32",
+            "float64",
+            "number",
+            "string",
+            "vector"
+          ],
+          "properties": {
+            "boolean": {
+              "type": "boolean"
+            },
+            "boxed": {
+              "type": "string"
+            },
+            "float32": {
+              "type": "number"
+            },
+            "float64": {
+              "type": "number"
+            },
+            "number": {
+              "type": "number"
+            },
+            "string": {
+              "type": "string"
+            },
+            "vector": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "nestedVec": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/NativeDefaults"
+      }
+    },
+    "nestedVecBoxed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "boolean",
+          "boxed",
+          "float32",
+          "float64",
+          "number",
+          "string",
+          "vector"
+        ],
+        "properties": {
+          "boolean": {
+            "type": "boolean"
+          },
+          "boxed": {
+            "type": "string"
+          },
+          "float32": {
+            "type": "number"
+          },
+          "float64": {
+            "type": "number"
+          },
+          "number": {
+            "type": "number"
+          },
+          "string": {
+            "type": "string"
+          },
+          "vector": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "nestedVecOptBoxed": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "required": [
+              "boolean",
+              "boxed",
+              "float32",
+              "float64",
+              "number",
+              "string",
+              "vector"
+            ],
+            "properties": {
+              "boolean": {
+                "type": "boolean"
+              },
+              "boxed": {
+                "type": "string"
+              },
+              "float32": {
+                "type": "number"
+              },
+              "float64": {
+                "type": "number"
+              },
+              "number": {
+                "type": "number"
+              },
+              "string": {
+                "type": "string"
+              },
+              "vector": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     }
   },
@@ -107,6 +386,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "boolean",
+        "boxed",
         "float32",
         "float64",
         "number",
@@ -116,6 +396,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "properties": {
         "boolean": {
           "type": "boolean"
+        },
+        "boxed": {
+          "type": "string"
         },
         "float32": {
           "type": "number"
@@ -169,4 +452,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-
