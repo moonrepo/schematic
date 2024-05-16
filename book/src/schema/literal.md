@@ -8,10 +8,9 @@ use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{LiteralTy
 
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
-		schema.literal(LiteralType::new(LiteralValue::String("enabled".into())));
+		schema.literal(LiteralType::new(LiteralValue::String("enabled".into())))
 		// Or
-		schema.literal_value(LiteralValue::String("enabled".into()));
-		schema.build()
+		schema.literal_value(LiteralValue::String("enabled".into()))
 	}
 }
 ```

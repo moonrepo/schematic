@@ -43,7 +43,7 @@ impl<'l> Container<'l> {
                     #description
                     schema.structure(StructType::new([
                         #(#schema_types),*
-                    ]));
+                    ]))
                 }
             }
             Self::Enum { variants } => {
@@ -78,7 +78,7 @@ impl<'l> Container<'l> {
                                 #(#variants_types),*
                             ],
                             #default_index,
-                        ));
+                        ))
                     }
                 } else {
                     quote! {
@@ -88,7 +88,7 @@ impl<'l> Container<'l> {
                                 #(#variants_types),*
                             ],
                             #default_index,
-                        ));
+                        ))
                     }
                 }
             }

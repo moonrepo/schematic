@@ -12,8 +12,7 @@ impl Schematic for T {
 			key_type: Box::new(schema.infer::<String>()),
 			value_type: Box::new(schema.infer::<String>()),
 			..ObjectType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

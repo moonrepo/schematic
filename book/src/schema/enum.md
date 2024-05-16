@@ -14,8 +14,7 @@ impl Schematic for T {
 				LiteralValue::String("warning".into()),
 			],
 			..EnumType::default()
-		});
-		schema.build()
+		})
 	}
 }
 ```

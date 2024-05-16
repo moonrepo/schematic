@@ -24,15 +24,13 @@ impl ArrayType {
 
 impl<T: Schematic> Schematic for Vec<T> {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer::<T>()));
-        schema.build()
+        schema.array(ArrayType::new(schema.infer::<T>()))
     }
 }
 
 impl<T: Schematic> Schematic for &[T] {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.array(ArrayType::new(schema.infer::<T>()));
-        schema.build()
+        schema.array(ArrayType::new(schema.infer::<T>()))
     }
 }
 
@@ -43,8 +41,7 @@ impl<T: Schematic, const N: usize> Schematic for [T; N] {
             max_length: Some(N),
             min_length: Some(N),
             ..ArrayType::default()
-        });
-        schema.build()
+        })
     }
 }
 
@@ -54,8 +51,7 @@ impl<T: Schematic, S> Schematic for HashSet<T, S> {
             items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),
             ..ArrayType::default()
-        });
-        schema.build()
+        })
     }
 }
 
@@ -65,7 +61,6 @@ impl<T: Schematic> Schematic for BTreeSet<T> {
             items_type: Box::new(schema.infer::<T>()),
             unique: Some(true),
             ..ArrayType::default()
-        });
-        schema.build()
+        })
     }
 }

@@ -8,8 +8,7 @@ use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::BooleanTyp
 
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
-		schema.boolean_default();
-		schema.build()
+		schema.boolean_default()
 	}
 }
 ```

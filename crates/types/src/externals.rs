@@ -12,8 +12,7 @@ macro_rules! impl_set {
     ($type:ty) => {
         impl<T: Schematic, S> Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.array(ArrayType::new(schema.infer::<T>()));
-                schema.build()
+                schema.array(ArrayType::new(schema.infer::<T>()))
             }
         }
     };
@@ -23,8 +22,7 @@ macro_rules! impl_map {
     ($type:ty) => {
         impl<K: Schematic, V: Schematic, S> Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
-                schema.build()
+                schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()))
             }
         }
     };
@@ -34,8 +32,7 @@ macro_rules! impl_string {
     ($type:ty) => {
         impl Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.string_default();
-                schema.build()
+                schema.string_default()
             }
         }
     };
@@ -48,8 +45,7 @@ macro_rules! impl_string_format {
                 schema.string(StringType {
                     format: Some($format.into()),
                     ..StringType::default()
-                });
-                schema.build()
+                })
             }
         }
     };
@@ -66,8 +62,7 @@ mod chrono_feature {
                     schema.string(StringType {
                         format: Some($format.into()),
                         ..StringType::default()
-                    });
-                    schema.build()
+                    })
                 }
             }
         };
@@ -133,15 +128,13 @@ mod serde_json_feature {
     // This isn't accurate since we can't access the `N` enum
     impl Schematic for serde_json::Number {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.integer(IntegerType::new_kind(IntegerKind::I64));
-            schema.build()
+            schema.integer(IntegerType::new_kind(IntegerKind::I64))
         }
     }
 
     impl<K: Schematic, V: Schematic> Schematic for serde_json::Map<K, V> {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
-            schema.build()
+            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()))
         }
     }
 }
@@ -154,8 +147,7 @@ mod serde_toml_feature {
 
     impl<K: Schematic, V: Schematic> Schematic for toml::map::Map<K, V> {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()));
-            schema.build()
+            schema.object(ObjectType::new(schema.infer::<K>(), schema.infer::<V>()))
         }
     }
 }
@@ -169,8 +161,7 @@ mod serde_yaml_feature {
     // This isn't accurate since we can't access the `N` enum
     impl Schematic for serde_yaml::Number {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.integer(IntegerType::new_kind(IntegerKind::I64));
-            schema.build()
+            schema.integer(IntegerType::new_kind(IntegerKind::I64))
         }
     }
 
@@ -179,8 +170,7 @@ mod serde_yaml_feature {
             schema.object(ObjectType::new(
                 schema.infer::<serde_yaml::Value>(),
                 schema.infer::<serde_yaml::Value>(),
-            ));
-            schema.build()
+            ))
         }
     }
 }
