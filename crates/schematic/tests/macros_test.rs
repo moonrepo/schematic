@@ -279,6 +279,15 @@ enum AliasedEnum {
 #[derive(Config)]
 struct UnnamedSingle(#[setting(default = "abc", validate = validate_test)] String);
 
+#[derive(Config)]
+struct UnnamedMultiple(String, Option<usize>, bool);
+
+#[derive(Config)]
+struct UnnamedNested(#[setting(nested)] OptionalValues);
+
+#[derive(Config)]
+struct UnnamedCollection(#[setting(nested)] HashMap<String, Option<OptionalValues>>);
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {

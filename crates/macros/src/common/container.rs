@@ -71,7 +71,7 @@ impl<'l> Container<'l> {
                 } else {
                     quote! {
                         #description
-                        schema.array(ArrayType::new([
+                        schema.tuple(TupleType::new([
                             #(#schema_types),*
                         ]))
                     }
