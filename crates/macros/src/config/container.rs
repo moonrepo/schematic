@@ -22,6 +22,21 @@ impl<'l> Container<'l> {
                     }))
                 }
             }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                let mut default_values = vec![];
+
+                for setting in settings {
+                    default_values.push(setting.generate_default_value());
+                }
+
+                quote! {
+                    Ok(Some(Self(
+                        #(#default_values),*
+                    )))
+                }
+            }
             Self::Enum { variants } => {
                 let default_variant = variants.iter().find(|v| v.is_default());
 
@@ -62,7 +77,7 @@ impl<'l> Container<'l> {
                     }
                 }
             }
-            Self::Enum { .. } => {
+            Self::UnnamedStruct { .. } | Self::Enum { .. } => {
                 quote! {
                     Ok(None)
                 }
@@ -137,7 +152,7 @@ impl<'l> Container<'l> {
 
                 quote! { None }
             }
-            Self::Enum { .. } => {
+            Self::UnnamedStruct { .. } | Self::Enum { .. } => {
                 quote! { None }
             }
         }
@@ -169,6 +184,11 @@ impl<'l> Container<'l> {
                     #(#finalize_stmts)*
 
                     Ok(partial)
+                }
+            }
+            Self::UnnamedStruct { .. } => {
+                quote! {
+                    Ok(self)
                 }
             }
             Self::Enum { variants } => {
@@ -205,6 +225,11 @@ impl<'l> Container<'l> {
 
                 quote! {
                     #(#merge_stmts)*
+                    Ok(())
+                }
+            }
+            Self::UnnamedStruct { .. } => {
+                quote! {
                     Ok(())
                 }
             }
@@ -248,6 +273,9 @@ impl<'l> Container<'l> {
                     #(#validate_stmts)*
                 }
             }
+            Self::UnnamedStruct { .. } => {
+                quote! {}
+            }
             Self::Enum { variants } => {
                 let validate_stmts = variants
                     .iter()
@@ -287,6 +315,21 @@ impl<'l> Container<'l> {
                     }
                 }
             }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                let mut from_partial_values = vec![];
+
+                for setting in settings {
+                    from_partial_values.push(setting.generate_from_partial_value());
+                }
+
+                quote! {
+                    Self(
+                        #(#from_partial_values),*
+                    )
+                }
+            }
             Self::Enum { variants } => {
                 let from_partial_values = variants
                     .iter()
@@ -317,6 +360,17 @@ impl<'l> Container<'l> {
                     pub struct #partial_name {
                         #(#settings)*
                     }
+                }
+            }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                quote! {
+                    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #(#partial_attrs)*
+                    pub struct #partial_name(
+                        #(#settings)*
+                    );
                 }
             }
             Self::Enum { variants } => {
