@@ -316,6 +316,10 @@ fn generates_json_schema() {
     generator.add::<NestedValidations>();
     generator.add::<Validations>();
     generator.add::<Comments>();
+    generator.add::<UnnamedSingle>();
+    generator.add::<UnnamedMultiple>();
+    generator.add::<UnnamedNested>();
+    generator.add::<UnnamedCollection>();
     // Partials are separate
     generator.add::<PartialDefaultValues>();
     generator.add::<PartialNested>();
@@ -357,6 +361,10 @@ fn generates_typescript() {
     generator.add::<NestedValidations>();
     generator.add::<Validations>();
     generator.add::<Comments>();
+    generator.add::<UnnamedSingle>();
+    generator.add::<UnnamedMultiple>();
+    generator.add::<UnnamedNested>();
+    generator.add::<UnnamedCollection>();
     // Partials are separate
     generator.add::<PartialDefaultValues>();
     generator.add::<PartialNested>();

@@ -156,6 +156,8 @@ export type Comments = {
 	normal: boolean,
 };
 
+export type UnnamedMultiple = [string, number | null, boolean];
+
 export type PartialDefaultValues = {
 	array?: number[] | null,
 	arrayOpt?: number[] | null,

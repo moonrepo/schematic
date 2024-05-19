@@ -139,6 +139,8 @@ export interface Comments {
 	normal: boolean;
 }
 
+export type UnnamedMultiple = [string, number | null, boolean];
+
 export interface PartialDefaultValues {
 	array?: number[] | null;
 	arrayOpt?: number[] | null;
