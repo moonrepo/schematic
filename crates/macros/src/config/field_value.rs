@@ -4,7 +4,7 @@ use quote::{format_ident, quote};
 use syn::{Expr, Lit};
 
 impl<'l> FieldValue<'l> {
-    pub fn generate_default_value(&self, name: &Ident, args: &FieldArgs) -> TokenStream {
+    pub fn generate_default_value(&self, args: &FieldArgs) -> TokenStream {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {
                 quote! { Some(Default::default()) }
@@ -34,10 +34,9 @@ impl<'l> FieldValue<'l> {
                             other => quote! { Some(#other) },
                         },
                         invalid => {
-                            let name = name.to_string();
                             let info = format!("{:?}", invalid);
 
-                            panic!("Unsupported default value for {name} ({info}). May only provide literals, primitives, arrays, or tuples.");
+                            panic!("Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples.");
                         }
                     }
                 } else {
@@ -86,16 +85,16 @@ impl<'l> FieldValue<'l> {
         }
     }
 
-    pub fn get_merge_statement(&self, name: &Ident, args: &FieldArgs) -> TokenStream {
+    pub fn get_merge_statement(&self, key: &Ident, args: &FieldArgs) -> TokenStream {
         if let Self::NestedValue { .. } = self {
             if args.merge.is_some() {
                 panic!("Nested configs do not support `merge` unless wrapped in a collection.");
             }
 
             return quote! {
-                self.#name = schematic::internal::merge_partial_setting(
-                    self.#name.take(),
-                    next.#name.take(),
+                self.#key = schematic::internal::merge_partial_setting(
+                    self.#key.take(),
+                    next.#key.take(),
                     context,
                 )?;
             };
@@ -103,17 +102,17 @@ impl<'l> FieldValue<'l> {
 
         if let Some(func) = args.merge.as_ref() {
             quote! {
-                self.#name = schematic::internal::merge_setting(
-                    self.#name.take(),
-                    next.#name.take(),
+                self.#key = schematic::internal::merge_setting(
+                    self.#key.take(),
+                    next.#key.take(),
                     context,
                     #func,
                 )?;
             }
         } else {
             quote! {
-                if next.#name.is_some() {
-                    self.#name = next.#name;
+                if next.#key.is_some() {
+                    self.#key = next.#key;
                 }
             }
         }

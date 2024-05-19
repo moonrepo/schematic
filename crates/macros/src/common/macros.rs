@@ -51,7 +51,7 @@ pub struct Macro<'l> {
 
 impl<'l> Macro<'l> {
     pub fn from(input: &'l DeriveInput) -> Self {
-        let args = MacroArgs::from_derive_input(input).expect("Failed to parse arguments.");
+        let args = MacroArgs::from_derive_input(input).unwrap_or_default();
         let serde_args = ContainerSerdeArgs::from_derive_input(input).unwrap_or_default();
 
         let base_casing_format = args
@@ -91,8 +91,10 @@ impl<'l> Macro<'l> {
                         fields: fields
                             .unnamed
                             .iter()
-                            .map(|f| {
+                            .enumerate()
+                            .map(|(index, f)| {
                                 let mut field = Field::from(f);
+                                field.index = index;
                                 field.casing_format.clone_from(&casing_format);
                                 field.env_prefix.clone_from(&args.env_prefix);
                                 field

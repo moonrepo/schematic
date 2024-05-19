@@ -276,6 +276,9 @@ enum AliasedEnum {
     Baz,
 }
 
+#[derive(Config)]
+struct UnnamedSingle(String);
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {

@@ -95,7 +95,7 @@ impl<'l> Container<'l> {
 
                 for setting in settings {
                     if setting.is_extendable() {
-                        names.push(setting.name.to_string());
+                        names.push(setting.get_name_raw().to_string());
                     }
                 }
 
@@ -113,7 +113,7 @@ impl<'l> Container<'l> {
                     }
 
                     if let Some(inner_type) = setting.value_type.get_inner_type() {
-                        let name = setting.name;
+                        let name = setting.get_name_raw();
                         let value = format!("{}", inner_type.to_token_stream());
 
                         // Janky but works!

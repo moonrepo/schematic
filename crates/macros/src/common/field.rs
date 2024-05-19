@@ -52,7 +52,8 @@ pub struct Field<'l> {
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub casing_format: String,
-    pub name: &'l Ident,
+    pub name: Option<&'l Ident>, // Named
+    pub index: usize,            // Unnamed
     pub value: &'l Type,
     pub value_type: FieldValue<'l>,
     pub env_prefix: Option<String>,
@@ -64,7 +65,8 @@ impl<'l> Field<'l> {
         let serde_args = FieldSerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
 
         let field = Field {
-            name: field.ident.as_ref().unwrap(),
+            name: field.ident.as_ref(),
+            index: 0,
             attrs: extract_common_attrs(&field.attrs),
             casing_format: String::new(),
             value: &field.ty,
@@ -119,15 +121,23 @@ impl<'l> Field<'l> {
         self.args.skip || self.serde_args.skip
     }
 
+    pub fn get_name_raw(&self) -> &Ident {
+        self.name.as_ref().expect("Missing name for field")
+    }
+
     pub fn get_name(&self, casing_format: Option<&str>) -> String {
+        let Some(name) = &self.name else {
+            return String::new();
+        };
+
         if let Some(local) = &self.args.rename {
             local.to_owned()
         } else if let Some(serde) = &self.serde_args.rename {
             serde.to_owned()
         } else if let Some(format) = casing_format {
-            format_case(format, &self.name.to_string(), false)
+            format_case(format, &name.to_string(), false)
         } else {
-            self.name.to_string()
+            name.to_string()
         }
     }
 
