@@ -1,6 +1,6 @@
 use crate::common::{Field, FieldValue};
-use proc_macro2::{Ident, TokenStream};
-use quote::{format_ident, quote};
+use proc_macro2::{Literal, TokenStream};
+use quote::{quote, ToTokens, TokenStreamExt};
 use syn::Expr;
 
 impl<'l> Field<'l> {
@@ -104,14 +104,13 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_merge_statement(&self) -> TokenStream {
-        let key = self.get_field_key();
-
-        self.value_type.get_merge_statement(&key, &self.args)
+        self.value_type
+            .get_merge_statement(self.get_field_key(), &self.args)
     }
 
     pub fn generate_validate_statement(&self) -> TokenStream {
         let key = self.get_field_key();
-        let key_quoted = format!("{key}");
+        let key_quoted = self.get_field_key_string();
         let mut stmts = vec![];
 
         if let Some(expr) = self.args.validate.as_ref() {
@@ -135,7 +134,7 @@ impl<'l> Field<'l> {
             });
         }
 
-        if let Some(validator) = self.value_type.get_validate_statement(self.get_name_raw()) {
+        if let Some(validator) = self.value_type.get_validate_statement(&key_quoted) {
             stmts.push(validator);
         }
 
@@ -167,10 +166,29 @@ impl<'l> Field<'l> {
         }
     }
 
-    fn get_field_key(&self) -> Ident {
+    fn get_field_key(&self) -> TokenStream {
         self.name
             .as_ref()
-            .map(|name| format_ident!("{name}"))
-            .unwrap_or_else(|| format_ident!("{}", self.index.to_string()))
+            .map(|name| quote! { #name })
+            .unwrap_or_else(|| {
+                let index = Index(self.index);
+
+                quote! { #index }
+            })
+    }
+
+    fn get_field_key_string(&self) -> String {
+        self.name
+            .as_ref()
+            .map(|name| name.to_string())
+            .unwrap_or_else(|| self.index.to_string())
+    }
+}
+
+struct Index(usize);
+
+impl ToTokens for Index {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Literal::usize_unsuffixed(self.0));
     }
 }

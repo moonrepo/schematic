@@ -64,8 +64,9 @@ impl<'l> Container<'l> {
                     let single_type = &schema_types[0];
 
                     quote! {
+                        let mut schema = #single_type;
                         #description
-                        schema.set_type_and_build(#single_type)
+                        schema
                     }
                 } else {
                     quote! {

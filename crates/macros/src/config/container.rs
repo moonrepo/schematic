@@ -186,9 +186,26 @@ impl<'l> Container<'l> {
                     Ok(partial)
                 }
             }
-            Self::UnnamedStruct { .. } => {
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                let finalize_stmts = settings
+                    .iter()
+                    .map(|s| s.generate_finalize_statement())
+                    .collect::<Vec<_>>();
+
                 quote! {
-                    Ok(self)
+                    let mut partial = Self::default();
+
+                    if let Some(data) = Self::default_values(context)? {
+                        partial.merge(context, data)?;
+                    }
+
+                    partial.merge(context, self)?;
+
+                    #(#finalize_stmts)*
+
+                    Ok(partial)
                 }
             }
             Self::Enum { variants } => {
@@ -217,6 +234,9 @@ impl<'l> Container<'l> {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
+            }
+            | Self::UnnamedStruct {
+                fields: settings, ..
             } => {
                 let merge_stmts = settings
                     .iter()
@@ -225,11 +245,6 @@ impl<'l> Container<'l> {
 
                 quote! {
                     #(#merge_stmts)*
-                    Ok(())
-                }
-            }
-            Self::UnnamedStruct { .. } => {
-                quote! {
                     Ok(())
                 }
             }
@@ -263,6 +278,9 @@ impl<'l> Container<'l> {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
+            }
+            | Self::UnnamedStruct {
+                fields: settings, ..
             } => {
                 let validate_stmts = settings
                     .iter()
@@ -272,9 +290,6 @@ impl<'l> Container<'l> {
                 quote! {
                     #(#validate_stmts)*
                 }
-            }
-            Self::UnnamedStruct { .. } => {
-                quote! {}
             }
             Self::Enum { variants } => {
                 let validate_stmts = variants

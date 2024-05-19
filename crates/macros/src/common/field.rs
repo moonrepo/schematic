@@ -201,7 +201,6 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_schema_type(&self) -> TokenStream {
-        let name = self.get_name(Some(&self.casing_format));
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
         let nullable = map_bool_field_quote("nullable", self.is_optional());
         let description = map_option_field_quote("description", extract_comment(&self.attrs));
@@ -239,34 +238,41 @@ impl<'l> Field<'l> {
             inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
-        if description.is_none()
+        let value = if description.is_none()
             && deprecated.is_none()
             && env_var.is_none()
             && hidden.is_none()
             && nullable.is_none()
         {
-            return quote! {
-                (#name.into(), #inner_schema)
-            };
-        }
+            inner_schema
+        } else {
+            quote! {
+                {
+                    let mut field = #inner_schema;
+                    #description
+                    #deprecated
+                    #env_var
+                    #hidden
+                    #nullable
+                    field
+                }
+            }
+        };
 
-        quote! {
-            (#name.into(), {
-                let mut field = #inner_schema;
-                #description
-                #deprecated
-                #env_var
-                #hidden
-                #nullable
-                field
-            })
+        if self.name.is_some() {
+            let name = self.get_name(Some(&self.casing_format));
+
+            quote! {
+                (#name.into(), #value)
+            }
+        } else {
+            value
         }
     }
 }
 
 impl<'l> ToTokens for Field<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let name = self.name;
         let value = &self.value_type;
 
         // Gather all attributes
@@ -280,9 +286,15 @@ impl<'l> ToTokens for Field<'l> {
             attrs.push(quote! { #attr });
         }
 
-        tokens.extend(quote! {
-            #(#attrs)*
-            pub #name: #value,
-        });
+        if let Some(name) = &self.name {
+            tokens.extend(quote! {
+                #(#attrs)*
+                pub #name: #value,
+            });
+        } else {
+            tokens.extend(quote! {
+                pub #value,
+            });
+        }
     }
 }

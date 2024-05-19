@@ -277,7 +277,7 @@ enum AliasedEnum {
 }
 
 #[derive(Config)]
-struct UnnamedSingle(String);
+struct UnnamedSingle(#[setting(default = "abc", validate = validate_test)] String);
 
 #[cfg(feature = "renderer_json_schema")]
 #[test]
