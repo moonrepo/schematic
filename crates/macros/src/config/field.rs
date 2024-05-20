@@ -1,6 +1,6 @@
 use crate::common::{Field, FieldValue};
-use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro2::{Literal, TokenStream};
+use quote::{quote, ToTokens, TokenStreamExt};
 use syn::Expr;
 
 impl<'l> Field<'l> {
@@ -8,8 +8,7 @@ impl<'l> Field<'l> {
         if self.is_optional() {
             quote! { None }
         } else {
-            self.value_type
-                .generate_default_value(self.name, &self.args)
+            self.value_type.generate_default_value(&self.args)
         }
     }
 
@@ -18,7 +17,6 @@ impl<'l> Field<'l> {
             return None;
         }
 
-        let name = self.name;
         let env = self.get_env_var();
 
         if env.is_none() {
@@ -31,24 +29,26 @@ impl<'l> Field<'l> {
 
         let value = if let Some(parse_env) = &self.args.parse_env {
             quote! {
-                schematic::internal::parse_from_env_var(#env, #parse_env)?
+                parse_from_env_var(#env, #parse_env)?
             }
         } else {
             quote! {
-                schematic::internal::default_from_env_var(#env)?
+                default_from_env_var(#env)?
             }
         };
 
-        Some(quote! { partial.#name = #value; })
+        let key = self.get_field_key();
+
+        Some(quote! { partial.#key = #value; })
     }
 
     pub fn generate_finalize_statement(&self) -> TokenStream {
         if let Some(value) = self.value_type.get_finalize_value() {
-            let name = self.name;
+            let key = self.get_field_key();
 
             return quote! {
-                if let Some(data) = partial.#name {
-                    partial.#name = Some(#value);
+                if let Some(data) = partial.#key {
+                    partial.#key = Some(#value);
                 }
             };
         }
@@ -57,26 +57,32 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_from_partial_value(&self) -> TokenStream {
-        let name = self.name;
+        let key = self.get_field_key();
 
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
-            let mut value = if self.args.extend {
-                // Reset extendable values since we don't have the entire resolved list
-                quote! { Default::default() }
-            } else if self.is_optional() {
-                // Use optional values as-is as they're already wrapped in `Option`
-                quote! { partial.#name }
-            } else {
-                // Otherwise unwrap the resolved value or use the type default
-                quote! { partial.#name.unwrap_or_default() }
-            };
-
-            if self.value_type.is_outer_boxed() {
-                value = quote! { Box::new(#value) };
+            // Reset extendable values since we don't have the entire resolved list
+            if self.args.extend {
+                return quote! { Default::default() };
             }
 
-            value
+            if self.value_type.is_outer_boxed() {
+                let mut value = quote! { Box::new(partial.#key.unwrap_or_default()) };
+
+                if self.is_optional() {
+                    value = quote! { Some(#value) };
+                }
+
+                value
+            } else {
+                if self.is_optional() {
+                    // Use optional values as-is as they're already wrapped in `Option`
+                    quote! { partial.#key }
+                } else {
+                    // Otherwise unwrap the resolved value or use the type default
+                    quote! { partial.#key.unwrap_or_default() }
+                }
+            }
         } else {
             let mut value = self.value_type.get_from_partial_value();
 
@@ -86,7 +92,7 @@ impl<'l> Field<'l> {
 
             if self.is_optional() {
                 quote! {
-                    if let Some(data) = partial.#name {
+                    if let Some(data) = partial.#key {
                         Some(#value)
                     } else {
                         None
@@ -95,7 +101,7 @@ impl<'l> Field<'l> {
             } else {
                 quote! {
                     {
-                        let data = partial.#name.unwrap_or_default();
+                        let data = partial.#key.unwrap_or_default();
                         #value
                     }
                 }
@@ -104,12 +110,13 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_merge_statement(&self) -> TokenStream {
-        self.value_type.get_merge_statement(self.name, &self.args)
+        self.value_type
+            .get_merge_statement(self.get_field_key(), &self.args)
     }
 
     pub fn generate_validate_statement(&self) -> TokenStream {
-        let name = self.name;
-        let name_quoted = format!("{name}");
+        let key = self.get_field_key();
+        let key_quoted = self.get_field_key_string();
         let mut stmts = vec![];
 
         if let Some(expr) = self.args.validate.as_ref() {
@@ -126,14 +133,14 @@ impl<'l> Field<'l> {
             stmts.push(quote! {
                 if let Err(error) = #func(setting, self, context, finalize) {
                     errors.push(schematic::ValidateErrorType::setting(
-                        path.join_key(#name_quoted),
+                        path.join_key(#key_quoted),
                         error,
                     ));
                 }
             });
         }
 
-        if let Some(validator) = self.value_type.get_validate_statement(self.name) {
+        if let Some(validator) = self.value_type.get_validate_statement(&key_quoted) {
             stmts.push(validator);
         }
 
@@ -141,7 +148,7 @@ impl<'l> Field<'l> {
             quote! {}
         } else {
             quote! {
-                if let Some(setting) = self.#name.as_ref() {
+                if let Some(setting) = self.#key.as_ref() {
                     #(#stmts)*
                 }
             }
@@ -149,9 +156,9 @@ impl<'l> Field<'l> {
 
         let second = if self.is_required() {
             quote! {
-                if finalize && self.#name.is_none() {
+                if finalize && self.#key.is_none() {
                     errors.push(schematic::ValidateErrorType::setting_required(
-                        path.join_key(#name_quoted),
+                        path.join_key(#key_quoted),
                     ));
                 }
             }
@@ -163,5 +170,31 @@ impl<'l> Field<'l> {
             #first
             #second
         }
+    }
+
+    fn get_field_key(&self) -> TokenStream {
+        self.name
+            .as_ref()
+            .map(|name| quote! { #name })
+            .unwrap_or_else(|| {
+                let index = Index(self.index);
+
+                quote! { #index }
+            })
+    }
+
+    fn get_field_key_string(&self) -> String {
+        self.name
+            .as_ref()
+            .map(|name| name.to_string())
+            .unwrap_or_else(|| self.index.to_string())
+    }
+}
+
+struct Index(usize);
+
+impl ToTokens for Index {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Literal::usize_unsuffixed(self.0));
     }
 }

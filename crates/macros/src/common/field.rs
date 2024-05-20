@@ -52,7 +52,8 @@ pub struct Field<'l> {
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,
     pub casing_format: String,
-    pub name: &'l Ident,
+    pub name: Option<&'l Ident>, // Named
+    pub index: usize,            // Unnamed
     pub value: &'l Type,
     pub value_type: FieldValue<'l>,
     pub env_prefix: Option<String>,
@@ -64,7 +65,8 @@ impl<'l> Field<'l> {
         let serde_args = FieldSerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
 
         let field = Field {
-            name: field.ident.as_ref().unwrap(),
+            name: field.ident.as_ref(),
+            index: 0,
             attrs: extract_common_attrs(&field.attrs),
             casing_format: String::new(),
             value: &field.ty,
@@ -119,15 +121,23 @@ impl<'l> Field<'l> {
         self.args.skip || self.serde_args.skip
     }
 
+    pub fn get_name_raw(&self) -> &Ident {
+        self.name.as_ref().expect("Missing name for field")
+    }
+
     pub fn get_name(&self, casing_format: Option<&str>) -> String {
+        let Some(name) = &self.name else {
+            return String::new();
+        };
+
         if let Some(local) = &self.args.rename {
             local.to_owned()
         } else if let Some(serde) = &self.serde_args.rename {
             serde.to_owned()
         } else if let Some(format) = casing_format {
-            format_case(format, &self.name.to_string(), false)
+            format_case(format, &name.to_string(), false)
         } else {
-            self.name.to_string()
+            name.to_string()
         }
     }
 
@@ -191,7 +201,6 @@ impl<'l> Field<'l> {
     }
 
     pub fn generate_schema_type(&self) -> TokenStream {
-        let name = self.get_name(Some(&self.casing_format));
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
         let nullable = map_bool_field_quote("nullable", self.is_optional());
         let description = map_option_field_quote("description", extract_comment(&self.attrs));
@@ -229,34 +238,41 @@ impl<'l> Field<'l> {
             inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
-        if description.is_none()
+        let value = if description.is_none()
             && deprecated.is_none()
             && env_var.is_none()
             && hidden.is_none()
             && nullable.is_none()
         {
-            return quote! {
-                (#name.into(), #inner_schema)
-            };
-        }
+            inner_schema
+        } else {
+            quote! {
+                {
+                    let mut field = #inner_schema;
+                    #description
+                    #deprecated
+                    #env_var
+                    #hidden
+                    #nullable
+                    field
+                }
+            }
+        };
 
-        quote! {
-            (#name.into(), {
-                let mut field = #inner_schema;
-                #description
-                #deprecated
-                #env_var
-                #hidden
-                #nullable
-                field
-            })
+        if self.name.is_some() {
+            let name = self.get_name(Some(&self.casing_format));
+
+            quote! {
+                (#name.into(), #value)
+            }
+        } else {
+            value
         }
     }
 }
 
 impl<'l> ToTokens for Field<'l> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let name = self.name;
         let value = &self.value_type;
 
         // Gather all attributes
@@ -270,9 +286,15 @@ impl<'l> ToTokens for Field<'l> {
             attrs.push(quote! { #attr });
         }
 
-        tokens.extend(quote! {
-            #(#attrs)*
-            pub #name: #value,
-        });
+        if let Some(name) = &self.name {
+            tokens.extend(quote! {
+                #(#attrs)*
+                pub #name: #value,
+            });
+        } else {
+            tokens.extend(quote! {
+                pub #value,
+            });
+        }
     }
 }

@@ -6,6 +6,7 @@ use syn::Fields;
 
 pub enum Container<'l> {
     NamedStruct { fields: Vec<Field<'l>> },
+    UnnamedStruct { fields: Vec<Field<'l>> },
     Enum { variants: Vec<Variant<'l>> },
 }
 
@@ -13,6 +14,7 @@ impl<'l> Container<'l> {
     pub fn has_nested(&self) -> bool {
         match self {
             Self::NamedStruct { fields, .. } => fields.iter().any(|v| v.is_nested()),
+            Self::UnnamedStruct { fields, .. } => fields.iter().any(|v| v.is_nested()),
             Self::Enum { variants } => variants.iter().any(|v| v.is_nested()),
         }
     }
@@ -44,6 +46,35 @@ impl<'l> Container<'l> {
                     schema.structure(StructType::new([
                         #(#schema_types),*
                     ]))
+                }
+            }
+            Self::UnnamedStruct { fields, .. } => {
+                let schema_types = fields
+                    .iter()
+                    .filter_map(|f| {
+                        if f.is_excluded() {
+                            None
+                        } else {
+                            Some(f.generate_schema_type())
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                if fields.len() == 1 {
+                    let single_type = &schema_types[0];
+
+                    quote! {
+                        let mut schema = #single_type;
+                        #description
+                        schema
+                    }
+                } else {
+                    quote! {
+                        #description
+                        schema.tuple(TupleType::new([
+                            #(#schema_types),*
+                        ]))
+                    }
                 }
             }
             Self::Enum { variants } => {

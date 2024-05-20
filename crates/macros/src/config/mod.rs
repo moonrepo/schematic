@@ -47,11 +47,13 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
                 #instrument
                 fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
+                    use schematic::internal::*;
                     #default_values
                 }
 
                 #instrument
                 fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
+                    use schematic::internal::*;
                     #env_values
                 }
 
@@ -71,6 +73,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                     context: &Self::Context,
                     mut next: Self,
                 ) -> Result<(), schematic::ConfigError> {
+                    use schematic::internal::*;
                     #merge
                 }
 

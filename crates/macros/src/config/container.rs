@@ -22,6 +22,21 @@ impl<'l> Container<'l> {
                     }))
                 }
             }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                let mut default_values = vec![];
+
+                for setting in settings {
+                    default_values.push(setting.generate_default_value());
+                }
+
+                quote! {
+                    Ok(Some(Self(
+                        #(#default_values),*
+                    )))
+                }
+            }
             Self::Enum { variants } => {
                 let default_variant = variants.iter().find(|v| v.is_default());
 
@@ -43,6 +58,9 @@ impl<'l> Container<'l> {
     pub fn generate_env_values(&self) -> TokenStream {
         match self {
             Self::NamedStruct {
+                fields: settings, ..
+            }
+            | Self::UnnamedStruct {
                 fields: settings, ..
             } => {
                 let env_stmts = settings
@@ -80,7 +98,7 @@ impl<'l> Container<'l> {
 
                 for setting in settings {
                     if setting.is_extendable() {
-                        names.push(setting.name.to_string());
+                        names.push(setting.get_name_raw().to_string());
                     }
                 }
 
@@ -98,7 +116,7 @@ impl<'l> Container<'l> {
                     }
 
                     if let Some(inner_type) = setting.value_type.get_inner_type() {
-                        let name = setting.name;
+                        let name = setting.get_name_raw();
                         let value = format!("{}", inner_type.to_token_stream());
 
                         // Janky but works!
@@ -137,7 +155,7 @@ impl<'l> Container<'l> {
 
                 quote! { None }
             }
-            Self::Enum { .. } => {
+            Self::UnnamedStruct { .. } | Self::Enum { .. } => {
                 quote! { None }
             }
         }
@@ -146,6 +164,9 @@ impl<'l> Container<'l> {
     pub fn generate_finalize(&self) -> TokenStream {
         match self {
             Self::NamedStruct {
+                fields: settings, ..
+            }
+            | Self::UnnamedStruct {
                 fields: settings, ..
             } => {
                 let finalize_stmts = settings
@@ -197,6 +218,9 @@ impl<'l> Container<'l> {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
+            }
+            | Self::UnnamedStruct {
+                fields: settings, ..
             } => {
                 let merge_stmts = settings
                     .iter()
@@ -237,6 +261,9 @@ impl<'l> Container<'l> {
     pub fn generate_validate(&self) -> TokenStream {
         match self {
             Self::NamedStruct {
+                fields: settings, ..
+            }
+            | Self::UnnamedStruct {
                 fields: settings, ..
             } => {
                 let validate_stmts = settings
@@ -287,6 +314,21 @@ impl<'l> Container<'l> {
                     }
                 }
             }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                let mut from_partial_values = vec![];
+
+                for setting in settings {
+                    from_partial_values.push(setting.generate_from_partial_value());
+                }
+
+                quote! {
+                    Self(
+                        #(#from_partial_values),*
+                    )
+                }
+            }
             Self::Enum { variants } => {
                 let from_partial_values = variants
                     .iter()
@@ -317,6 +359,17 @@ impl<'l> Container<'l> {
                     pub struct #partial_name {
                         #(#settings)*
                     }
+                }
+            }
+            Self::UnnamedStruct {
+                fields: settings, ..
+            } => {
+                quote! {
+                    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #(#partial_attrs)*
+                    pub struct #partial_name(
+                        #(#settings)*
+                    );
                 }
             }
             Self::Enum { variants } => {

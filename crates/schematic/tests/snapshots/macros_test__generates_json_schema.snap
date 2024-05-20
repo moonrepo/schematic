@@ -916,6 +916,30 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "b-a-z"
       ]
     },
+    "UnnamedMultiple": {
+      "title": "UnnamedMultiple",
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        {
+          "type": "boolean"
+        }
+      ],
+      "maxItems": 3,
+      "minItems": 3
+    },
     "Validations": {
       "title": "Validations",
       "type": "object",

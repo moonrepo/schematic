@@ -276,6 +276,18 @@ enum AliasedEnum {
     Baz,
 }
 
+#[derive(Config)]
+struct UnnamedSingle(#[setting(default = "abc", validate = validate_test)] String);
+
+#[derive(Config)]
+struct UnnamedMultiple(String, Option<usize>, bool);
+
+#[derive(Config)]
+struct UnnamedNested(#[setting(nested)] OptionalValues);
+
+#[derive(Config)]
+struct UnnamedCollection(#[setting(nested)] HashMap<String, Option<OptionalValues>>);
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {
@@ -304,6 +316,10 @@ fn generates_json_schema() {
     generator.add::<NestedValidations>();
     generator.add::<Validations>();
     generator.add::<Comments>();
+    generator.add::<UnnamedSingle>();
+    generator.add::<UnnamedMultiple>();
+    generator.add::<UnnamedNested>();
+    generator.add::<UnnamedCollection>();
     // Partials are separate
     generator.add::<PartialDefaultValues>();
     generator.add::<PartialNested>();
@@ -345,6 +361,10 @@ fn generates_typescript() {
     generator.add::<NestedValidations>();
     generator.add::<Validations>();
     generator.add::<Comments>();
+    generator.add::<UnnamedSingle>();
+    generator.add::<UnnamedMultiple>();
+    generator.add::<UnnamedNested>();
+    generator.add::<UnnamedCollection>();
     // Partials are separate
     generator.add::<PartialDefaultValues>();
     generator.add::<PartialNested>();

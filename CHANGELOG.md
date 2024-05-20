@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for tuple based structs (newtypes).
+
 ## 0.16.0
 
 #### 💥 Breaking

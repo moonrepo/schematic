@@ -51,7 +51,7 @@ pub struct Macro<'l> {
 
 impl<'l> Macro<'l> {
     pub fn from(input: &'l DeriveInput) -> Self {
-        let args = MacroArgs::from_derive_input(input).expect("Failed to parse arguments.");
+        let args = MacroArgs::from_derive_input(input).unwrap_or_default();
         let serde_args = ContainerSerdeArgs::from_derive_input(input).unwrap_or_default();
 
         let base_casing_format = args
@@ -82,8 +82,25 @@ impl<'l> Macro<'l> {
                             .collect::<Vec<_>>(),
                     }
                 }
-                Fields::Unnamed(_) => {
-                    panic!("Unnamed structs are not supported.");
+                Fields::Unnamed(fields) => {
+                    base_casing_format
+                        .unwrap_or("camelCase")
+                        .clone_into(&mut casing_format);
+
+                    Container::UnnamedStruct {
+                        fields: fields
+                            .unnamed
+                            .iter()
+                            .enumerate()
+                            .map(|(index, f)| {
+                                let mut field = Field::from(f);
+                                field.index = index;
+                                field.casing_format.clone_from(&casing_format);
+                                field.env_prefix.clone_from(&args.env_prefix);
+                                field
+                            })
+                            .collect::<Vec<_>>(),
+                    }
                 }
                 Fields::Unit => {
                     panic!("Unit structs are not supported.");
@@ -177,6 +194,9 @@ impl<'l> Macro<'l> {
                 if !self.args.allow_unknown_fields {
                     meta.push(quote! { deny_unknown_fields });
                 }
+            }
+            Container::UnnamedStruct { .. } => {
+                meta.push(quote! { default });
             }
             Container::Enum { .. } => {
                 if let Some(content) = &self.args.serde.content {

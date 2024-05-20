@@ -1,10 +1,10 @@
 use crate::common::{FieldArgs, FieldValue, TypeInfo};
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Expr, Lit};
 
 impl<'l> FieldValue<'l> {
-    pub fn generate_default_value(&self, name: &Ident, args: &FieldArgs) -> TokenStream {
+    pub fn generate_default_value(&self, args: &FieldArgs) -> TokenStream {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {
                 quote! { Some(Default::default()) }
@@ -21,23 +21,18 @@ impl<'l> FieldValue<'l> {
                             quote! { Some(#expr) }
                         }
                         Expr::Path(func) => {
-                            quote! { schematic::internal::handle_default_fn(#func(context))? }
+                            quote! { handle_default_fn(#func(context))? }
                         }
                         Expr::Lit(lit) => match &lit.lit {
                             Lit::Str(string) => quote! {
-                                Some(
-                                    schematic::internal::handle_default_fn(
-                                        #value::try_from(#string)
-                                    )?
-                                )
+                                Some(handle_default_fn(#value::try_from(#string))?)
                             },
                             other => quote! { Some(#other) },
                         },
                         invalid => {
-                            let name = name.to_string();
                             let info = format!("{:?}", invalid);
 
-                            panic!("Unsupported default value for {name} ({info}). May only provide literals, primitives, arrays, or tuples.");
+                            panic!("Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples.");
                         }
                     }
                 } else {
@@ -86,16 +81,16 @@ impl<'l> FieldValue<'l> {
         }
     }
 
-    pub fn get_merge_statement(&self, name: &Ident, args: &FieldArgs) -> TokenStream {
+    pub fn get_merge_statement(&self, key: TokenStream, args: &FieldArgs) -> TokenStream {
         if let Self::NestedValue { .. } = self {
             if args.merge.is_some() {
                 panic!("Nested configs do not support `merge` unless wrapped in a collection.");
             }
 
             return quote! {
-                self.#name = schematic::internal::merge_partial_setting(
-                    self.#name.take(),
-                    next.#name.take(),
+                self.#key = merge_partial_setting(
+                    self.#key.take(),
+                    next.#key.take(),
                     context,
                 )?;
             };
@@ -103,42 +98,40 @@ impl<'l> FieldValue<'l> {
 
         if let Some(func) = args.merge.as_ref() {
             quote! {
-                self.#name = schematic::internal::merge_setting(
-                    self.#name.take(),
-                    next.#name.take(),
+                self.#key = merge_setting(
+                    self.#key.take(),
+                    next.#key.take(),
                     context,
                     #func,
                 )?;
             }
         } else {
             quote! {
-                if next.#name.is_some() {
-                    self.#name = next.#name;
+                if next.#key.is_some() {
+                    self.#key = next.#key;
                 }
             }
         }
     }
 
-    pub fn get_validate_statement(&self, name: &Ident) -> Option<TokenStream> {
-        let name_quoted = format!("{name}");
-
+    pub fn get_validate_statement(&self, key: &str) -> Option<TokenStream> {
         match self {
             Self::NestedList { .. } => Some(quote! {
                 for (i, item) in setting.iter().enumerate() {
-                    if let Err(nested_error) = item.validate_with_path(context, finalize, path.join_key(#name_quoted).join_index(i)) {
+                    if let Err(nested_error) = item.validate_with_path(context, finalize, path.join_key(#key).join_index(i)) {
                         errors.push(schematic::ValidateErrorType::nested(nested_error));
                     }
                 }
             }),
             Self::NestedMap { .. } => Some(quote! {
                 for (key, value) in setting {
-                    if let Err(nested_error) = value.validate_with_path(context, finalize, path.join_key(#name_quoted).join_key(key)) {
+                    if let Err(nested_error) = value.validate_with_path(context, finalize, path.join_key(#key).join_key(key)) {
                         errors.push(schematic::ValidateErrorType::nested(nested_error));
                     }
                 }
             }),
             Self::NestedValue { .. } => Some(quote! {
-                if let Err(nested_error) = setting.validate_with_path(context, finalize, path.join_key(#name_quoted)) {
+                if let Err(nested_error) = setting.validate_with_path(context, finalize, path.join_key(#key)) {
                     errors.push(schematic::ValidateErrorType::nested(nested_error));
                 }
             }),
