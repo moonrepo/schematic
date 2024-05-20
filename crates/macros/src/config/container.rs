@@ -59,6 +59,9 @@ impl<'l> Container<'l> {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
+            }
+            | Self::UnnamedStruct {
+                fields: settings, ..
             } => {
                 let env_stmts = settings
                     .iter()
@@ -77,7 +80,7 @@ impl<'l> Container<'l> {
                     }
                 }
             }
-            Self::UnnamedStruct { .. } | Self::Enum { .. } => {
+            Self::Enum { .. } => {
                 quote! {
                     Ok(None)
                 }
@@ -162,6 +165,9 @@ impl<'l> Container<'l> {
         match self {
             Self::NamedStruct {
                 fields: settings, ..
+            }
+            | Self::UnnamedStruct {
+                fields: settings, ..
             } => {
                 let finalize_stmts = settings
                     .iter()
@@ -180,28 +186,6 @@ impl<'l> Container<'l> {
                     if let Some(data) = Self::env_values()? {
                         partial.merge(context, data)?;
                     }
-
-                    #(#finalize_stmts)*
-
-                    Ok(partial)
-                }
-            }
-            Self::UnnamedStruct {
-                fields: settings, ..
-            } => {
-                let finalize_stmts = settings
-                    .iter()
-                    .map(|s| s.generate_finalize_statement())
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    let mut partial = Self::default();
-
-                    if let Some(data) = Self::default_values(context)? {
-                        partial.merge(context, data)?;
-                    }
-
-                    partial.merge(context, self)?;
 
                     #(#finalize_stmts)*
 

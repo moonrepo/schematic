@@ -29,11 +29,11 @@ impl<'l> Field<'l> {
 
         let value = if let Some(parse_env) = &self.args.parse_env {
             quote! {
-                schematic::internal::parse_from_env_var(#env, #parse_env)?
+                parse_from_env_var(#env, #parse_env)?
             }
         } else {
             quote! {
-                schematic::internal::default_from_env_var(#env)?
+                default_from_env_var(#env)?
             }
         };
 
@@ -61,22 +61,28 @@ impl<'l> Field<'l> {
 
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
-            let mut value = if self.args.extend {
-                // Reset extendable values since we don't have the entire resolved list
-                quote! { Default::default() }
-            } else if self.is_optional() {
-                // Use optional values as-is as they're already wrapped in `Option`
-                quote! { partial.#key }
-            } else {
-                // Otherwise unwrap the resolved value or use the type default
-                quote! { partial.#key.unwrap_or_default() }
-            };
-
-            if self.value_type.is_outer_boxed() {
-                value = quote! { Box::new(#value) };
+            // Reset extendable values since we don't have the entire resolved list
+            if self.args.extend {
+                return quote! { Default::default() };
             }
 
-            value
+            if self.value_type.is_outer_boxed() {
+                let mut value = quote! { Box::new(partial.#key.unwrap_or_default()) };
+
+                if self.is_optional() {
+                    value = quote! { Some(#value) };
+                }
+
+                value
+            } else {
+                if self.is_optional() {
+                    // Use optional values as-is as they're already wrapped in `Option`
+                    quote! { partial.#key }
+                } else {
+                    // Otherwise unwrap the resolved value or use the type default
+                    quote! { partial.#key.unwrap_or_default() }
+                }
+            }
         } else {
             let mut value = self.value_type.get_from_partial_value();
 

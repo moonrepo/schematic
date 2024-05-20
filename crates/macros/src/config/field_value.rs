@@ -21,15 +21,11 @@ impl<'l> FieldValue<'l> {
                             quote! { Some(#expr) }
                         }
                         Expr::Path(func) => {
-                            quote! { schematic::internal::handle_default_fn(#func(context))? }
+                            quote! { handle_default_fn(#func(context))? }
                         }
                         Expr::Lit(lit) => match &lit.lit {
                             Lit::Str(string) => quote! {
-                                Some(
-                                    schematic::internal::handle_default_fn(
-                                        #value::try_from(#string)
-                                    )?
-                                )
+                                Some(handle_default_fn(#value::try_from(#string))?)
                             },
                             other => quote! { Some(#other) },
                         },
@@ -92,7 +88,7 @@ impl<'l> FieldValue<'l> {
             }
 
             return quote! {
-                self.#key = schematic::internal::merge_partial_setting(
+                self.#key = merge_partial_setting(
                     self.#key.take(),
                     next.#key.take(),
                     context,
@@ -102,7 +98,7 @@ impl<'l> FieldValue<'l> {
 
         if let Some(func) = args.merge.as_ref() {
             quote! {
-                self.#key = schematic::internal::merge_setting(
+                self.#key = merge_setting(
                     self.#key.take(),
                     next.#key.take(),
                     context,
