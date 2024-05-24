@@ -3,6 +3,7 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<InternalTagged>()"
 ---
 ⬛️Schema {
+⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "InternalTagged",
@@ -15,6 +16,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️            operator: AnyOf,
 ⬛️            variants_types: [
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Literal(
@@ -34,6 +36,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Boolean(
@@ -50,6 +53,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Integer(
@@ -74,6 +78,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: Some(
 🟥                        "Basic",
@@ -83,6 +88,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "field": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 🟥                                    ty: String(
@@ -100,6 +106,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                            operator: AnyOf,
 🟩                                            variants_types: [
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: String(
@@ -121,6 +128,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                    write_only: false,
 🟩                                                },
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Null,
@@ -146,6 +154,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 🟥                                    ty: Literal(
@@ -161,6 +170,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                            operator: AnyOf,
 🟩                                            variants_types: [
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Literal(
@@ -180,6 +190,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                    write_only: false,
 🟩                                                },
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Null,

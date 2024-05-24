@@ -3,6 +3,7 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<ExternalTagged>()"
 ---
 ⬛️Schema {
+⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "ExternalTagged",
@@ -15,12 +16,14 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️            operator: AnyOf,
 ⬛️            variants_types: [
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "foo": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(
@@ -53,12 +56,14 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "bar": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Boolean(
@@ -88,12 +93,14 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "baz": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Integer(
@@ -131,12 +138,14 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "qux": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 🟥                                    name: Some(
 🟥                                        "Basic",
@@ -153,6 +162,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟩                                            operator: AnyOf,
 🟩                                            variants_types: [
 🟩                                                Schema {
+⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 🟥                                                    name: None,
 🟥                                                    ty: String(
@@ -170,6 +180,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟩                                                        StructType {
 🟩                                                            fields: {
 🟩                                                                "field": Schema {
+🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Union(
@@ -179,6 +190,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟩                                                                            operator: AnyOf,
 🟩                                                                            variants_types: [
 🟩                                                                                Schema {
+🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: String(
@@ -200,6 +212,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟩                                                                                    write_only: false,
 🟩                                                                                },
 🟩                                                                                Schema {
+🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: Null,
@@ -239,6 +252,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟥                                            partial: true,
 🟥                                            required: None,
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Null,

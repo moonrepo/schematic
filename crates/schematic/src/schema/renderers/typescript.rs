@@ -425,7 +425,11 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
                 tags.push(format!("@envvar {env_var}"));
             }
 
-            out.push(self.wrap_in_comment(field.description.as_ref(), tags, row));
+            out.push(self.wrap_in_comment(
+                field.comment.as_ref().or(field.description.as_ref()),
+                tags,
+                row,
+            ));
         }
 
         self.depth -= 1;

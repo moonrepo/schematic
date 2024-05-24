@@ -3,6 +3,7 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Primitives>()"
 ---
 ⬛️Schema {
+⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Primitives",
@@ -12,6 +13,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "boolean": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Boolean(
@@ -24,6 +26,7 @@ expression: "create_diff::<Primitives>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Boolean(
@@ -40,6 +43,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -65,6 +69,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "booleanOpt": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -74,6 +79,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Boolean(
@@ -90,6 +96,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -114,6 +121,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "float": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Float(
@@ -135,6 +143,7 @@ expression: "create_diff::<Primitives>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Float(
@@ -160,6 +169,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -185,6 +195,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "floatOpt": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -194,6 +205,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Float(
@@ -219,6 +231,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -243,6 +256,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "number": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Integer(
@@ -263,6 +277,7 @@ expression: "create_diff::<Primitives>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Integer(
@@ -287,6 +302,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -312,6 +328,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "numberOpt": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -321,6 +338,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Integer(
@@ -345,6 +363,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -369,6 +388,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "string": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: String(
@@ -386,6 +406,7 @@ expression: "create_diff::<Primitives>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: String(
@@ -407,6 +428,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -432,6 +454,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "stringOpt": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -441,6 +464,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: String(
@@ -462,6 +486,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,

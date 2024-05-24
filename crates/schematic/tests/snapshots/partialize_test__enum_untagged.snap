@@ -3,6 +3,7 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Untagged>()"
 ---
 ⬛️Schema {
+⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Untagged",
@@ -15,6 +16,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️            operator: AnyOf,
 ⬛️            variants_types: [
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Null,
@@ -27,6 +29,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Boolean(
@@ -43,12 +46,14 @@ expression: "create_diff::<Untagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Tuple(
 ⬛️                        TupleType {
 ⬛️                            items_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Integer(
@@ -73,6 +78,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: String(
@@ -105,6 +111,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: Some(
 🟥                        "Basic",
@@ -114,6 +121,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "field": Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 🟥                                    ty: String(
@@ -131,6 +139,7 @@ expression: "create_diff::<Untagged>()"
 🟩                                            operator: AnyOf,
 🟩                                            variants_types: [
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: String(
@@ -152,6 +161,7 @@ expression: "create_diff::<Untagged>()"
 🟩                                                    write_only: false,
 🟩                                                },
 🟩                                                Schema {
+🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Null,

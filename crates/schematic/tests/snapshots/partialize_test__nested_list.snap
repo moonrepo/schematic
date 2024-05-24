@@ -3,6 +3,7 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<NestedList>()"
 ---
 ⬛️Schema {
+⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "NestedList",
@@ -12,12 +13,14 @@ expression: "create_diff::<NestedList>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "field": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Array(
 🟥                        ArrayType {
 🟥                            contains: None,
 🟥                            items_type: Schema {
+🟥                                comment: None,
 🟥                                description: None,
 🟥                                name: Some(
 🟥                                    "Basic",
@@ -33,12 +36,14 @@ expression: "create_diff::<NestedList>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Array(
 🟩                                        ArrayType {
 🟩                                            contains: None,
 🟩                                            items_type: Schema {
+⬛️                                                comment: None,
 ⬛️                                                description: None,
 🟥                                                name: None,
 🟥                                                ty: String(
@@ -56,6 +61,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                    StructType {
 🟩                                                        fields: {
 🟩                                                            "field": Schema {
+🟩                                                                comment: None,
 🟩                                                                description: None,
 🟩                                                                name: None,
 🟩                                                                ty: Union(
@@ -65,6 +71,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                                        operator: AnyOf,
 🟩                                                                        variants_types: [
 🟩                                                                            Schema {
+🟩                                                                                comment: None,
 🟩                                                                                description: None,
 🟩                                                                                name: None,
 🟩                                                                                ty: String(
@@ -86,6 +93,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                                                write_only: false,
 🟩                                                                            },
 🟩                                                                            Schema {
+🟩                                                                                comment: None,
 🟩                                                                                description: None,
 🟩                                                                                name: None,
 🟩                                                                                ty: Null,
@@ -154,6 +162,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
+🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -179,6 +188,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fieldOpt": Schema {
+⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -188,12 +198,14 @@ expression: "create_diff::<NestedList>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Array(
 ⬛️                                        ArrayType {
 ⬛️                                            contains: None,
 ⬛️                                            items_type: Schema {
+⬛️                                                comment: None,
 ⬛️                                                description: None,
 ⬛️                                                name: Some(
 🟥                                                    "Basic",
@@ -203,6 +215,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                                                    StructType {
 ⬛️                                                        fields: {
 ⬛️                                                            "field": Schema {
+⬛️                                                                comment: None,
 ⬛️                                                                description: None,
 ⬛️                                                                name: None,
 🟥                                                                ty: String(
@@ -220,6 +233,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                                        operator: AnyOf,
 🟩                                                                        variants_types: [
 🟩                                                                            Schema {
+🟩                                                                                comment: None,
 🟩                                                                                description: None,
 🟩                                                                                name: None,
 🟩                                                                                ty: String(
@@ -241,6 +255,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                                                write_only: false,
 🟩                                                                            },
 🟩                                                                            Schema {
+🟩                                                                                comment: None,
 🟩                                                                                description: None,
 🟩                                                                                name: None,
 🟩                                                                                ty: Null,
@@ -294,6 +309,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
+⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,

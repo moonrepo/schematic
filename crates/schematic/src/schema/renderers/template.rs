@@ -121,12 +121,13 @@ impl TemplateContext {
         let mut lines = vec![];
         let indent = self.indent();
         let prefix = self.get_comment_prefix();
+        let comment = field.comment.as_ref().or(field.description.as_ref());
 
         let mut push = |line: String| {
             lines.push(format!("{indent}{prefix}{line}"));
         };
 
-        if let Some(comment) = &field.description {
+        if let Some(comment) = comment {
             comment
                 .trim()
                 .split('\n')

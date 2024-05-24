@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
 pub struct SchemaBuilder {
+    comment: Option<String>,
     description: Option<String>,
     name: Option<String>,
     name_stack: Rc<RefCell<Vec<String>>>,
@@ -28,6 +29,7 @@ impl SchemaBuilder {
     /// Build the schema from the configured values.
     pub fn build(&mut self) -> Schema {
         Schema {
+            comment: self.comment.take(),
             description: self.description.take(),
             name: self.name.take(),
             nullable: self.nullable,
@@ -36,7 +38,12 @@ impl SchemaBuilder {
         }
     }
 
-    /// Add a description for this schema.
+    /// Add a field-level comment for this schema.
+    pub fn set_comment(&mut self, value: impl AsRef<str>) {
+        self.comment = Some(value.as_ref().to_owned());
+    }
+
+    /// Add a container-level description for this schema.
     pub fn set_description(&mut self, value: impl AsRef<str>) {
         self.description = Some(value.as_ref().to_owned());
     }
@@ -113,6 +120,7 @@ impl SchemaBuilder {
     /// Build a nested [`Schema`] by cloning another builder.
     pub fn nest(&self) -> SchemaBuilder {
         SchemaBuilder {
+            comment: None,
             description: None,
             name: None,
             name_stack: Rc::clone(&self.name_stack),

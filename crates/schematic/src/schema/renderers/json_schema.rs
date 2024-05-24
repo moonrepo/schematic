@@ -166,9 +166,12 @@ impl<'gen> JsonSchemaRenderer<'gen> {
                     None
                 },
                 description: field
-                    .description
-                    .clone()
-                    .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
+                    .comment
+                    .as_ref()
+                    .or(field.description.as_ref())
+                    .map(|desc| {
+                        clean_comment(desc.to_owned(), self.options.allow_newlines_in_description)
+                    }),
                 deprecated: field.deprecated.is_some(),
                 read_only: field.read_only,
                 write_only: field.write_only,
