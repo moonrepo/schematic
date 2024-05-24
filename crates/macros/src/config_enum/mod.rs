@@ -2,7 +2,7 @@ mod variant;
 
 use crate::common::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
-use crate::utils::instrument_quote;
+use crate::utils::{extract_comment, extract_common_attrs, instrument_quote};
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -28,6 +28,8 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let Data::Enum(data) = input.data else {
         panic!("Only unit enums are supported.");
     };
+
+    let attrs = extract_common_attrs(&input.attrs);
 
     let enum_name = &input.ident;
     let meta_name = args
@@ -176,6 +178,12 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         let default_index = map_option_argument_quote(default_index);
         let instrument = instrument_quote();
 
+        let description = if let Some(comment) = extract_comment(&attrs) {
+            quote! { schema.set_description(#comment); }
+        } else {
+            quote! {}
+        };
+
         impls.push(quote! {
             #[automatically_derived]
             impl schematic::Schematic for #enum_name {
@@ -187,6 +195,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 
+                    #description
                     schema.enumerable(EnumType::from_fields(
                         [
                             #(#schema_types),*

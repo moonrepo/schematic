@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed missing container comments for `ConfigEnum`.
+
 ## 0.16.1
 
 #### 🚀 Updates
