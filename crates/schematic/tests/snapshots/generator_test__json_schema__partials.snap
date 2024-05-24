@@ -1,0 +1,594 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "fs::read_to_string(file).unwrap()"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PartialGenConfig",
+  "type": "object",
+  "properties": {
+    "boolean": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "date": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "datetime": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decimal": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "decimal"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "enums": {
+      "description": "This is a list of `enumerable` values.",
+      "default": "foo",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BasicEnum"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "fallbackEnum": {
+      "default": "foo",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/FallbackEnum"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "float32": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "float64": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "indexmap": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "indexset": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "jsonValue": {
+      "anyOf": [
+        {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "map": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nested": {
+      "description": "**Nested** field.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialAnotherConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "number": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "path": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "path"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "relPath": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "path"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "string": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "time": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tomlValue": {
+      "anyOf": [
+        {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "vector": {
+      "description": "This is a list of strings.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "versionReq": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "yamlValue": {
+      "anyOf": [
+        {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "AnotherConfig": {
+      "title": "AnotherConfig",
+      "description": "Some comment.",
+      "type": "object",
+      "required": [
+        "enums",
+        "opt"
+      ],
+      "properties": {
+        "enums": {
+          "description": "An optional enum.",
+          "default": "foo",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BasicEnum"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "opt": {
+          "description": "An optional string.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BasicEnum": {
+      "title": "BasicEnum",
+      "description": "Docblock comment.",
+      "type": "string",
+      "enum": [
+        "foo",
+        "bar",
+        "baz"
+      ]
+    },
+    "FallbackEnum": {
+      "title": "FallbackEnum",
+      "anyOf": [
+        {
+          "const": "foo"
+        },
+        {
+          "const": "bar"
+        },
+        {
+          "const": "baz"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "GenConfig": {
+      "title": "GenConfig",
+      "type": "object",
+      "required": [
+        "boolean",
+        "date",
+        "datetime",
+        "decimal",
+        "enums",
+        "fallbackEnum",
+        "float32",
+        "float64",
+        "indexmap",
+        "indexset",
+        "jsonValue",
+        "map",
+        "nested",
+        "number",
+        "path",
+        "relPath",
+        "string",
+        "time",
+        "tomlValue",
+        "url",
+        "vector",
+        "version",
+        "versionReq",
+        "yamlValue"
+      ],
+      "properties": {
+        "boolean": {
+          "type": "boolean"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "datetime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "decimal": {
+          "type": "string",
+          "format": "decimal"
+        },
+        "enums": {
+          "description": "This is a list of `enumerable` values.",
+          "default": "foo",
+          "allOf": [
+            {
+              "$ref": "#/definitions/BasicEnum"
+            }
+          ]
+        },
+        "fallbackEnum": {
+          "default": "foo",
+          "allOf": [
+            {
+              "$ref": "#/definitions/FallbackEnum"
+            }
+          ]
+        },
+        "float32": {
+          "type": "number"
+        },
+        "float64": {
+          "type": "number"
+        },
+        "indexmap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "indexset": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jsonValue": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "nested": {
+          "description": "**Nested** field.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AnotherConfig"
+            }
+          ]
+        },
+        "number": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string",
+          "format": "path"
+        },
+        "relPath": {
+          "type": "string",
+          "format": "path"
+        },
+        "string": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string",
+          "format": "time"
+        },
+        "tomlValue": {
+          "anyOf": [
+            {
+              "type": [
+                "boolean",
+                "object",
+                "array",
+                "number",
+                "string",
+                "integer"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vector": {
+          "description": "This is a list of strings.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "versionReq": {
+          "type": "string"
+        },
+        "yamlValue": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialAnotherConfig": {
+      "title": "PartialAnotherConfig",
+      "description": "Some comment.",
+      "type": "object",
+      "properties": {
+        "enums": {
+          "description": "An optional enum.",
+          "default": "foo",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/BasicEnum"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "opt": {
+          "description": "An optional string.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -182,6 +182,20 @@ mod json_schema {
     }
 
     #[test]
+    fn partials() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        let mut generator = create_generator();
+        generator.add::<PartialGenConfig>();
+        generator
+            .generate(&file, JsonSchemaRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
+    #[test]
     fn not_required() {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("schema.json");
@@ -321,6 +335,20 @@ mod typescript {
     #[test]
     fn defaults() {
         assert_snapshot!(generate(TypeScriptOptions::default()));
+    }
+
+    #[test]
+    fn partials() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("types.ts");
+
+        let mut generator = create_generator();
+        generator.add::<PartialGenConfig>();
+        generator
+            .generate(&file, TypeScriptRenderer::new(TypeScriptOptions::default()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
     }
 
     #[test]
