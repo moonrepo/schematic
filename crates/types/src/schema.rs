@@ -1,22 +1,13 @@
 use crate::*;
 use std::ops::{Deref, DerefMut};
 
-/// Represents an individual type, a container, field within a schema struct,
-/// or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Schema {
+    pub deprecated: Option<String>,
     pub description: Option<String>,
     pub name: Option<String>,
-    pub ty: SchemaType,
-
-    // States
-    pub deprecated: Option<String>,
-    pub env_var: Option<String>,
-    pub hidden: bool,
     pub nullable: bool,
-    pub optional: bool,
-    pub read_only: bool,
-    pub write_only: bool,
+    pub ty: SchemaType,
 }
 
 impl Schema {
@@ -174,4 +165,17 @@ impl From<Schema> for SchemaType {
     fn from(val: Schema) -> Self {
         val.ty
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SchemaField {
+    pub comment: Option<String>,
+    pub schema: Schema,
+    pub deprecated: Option<String>,
+    pub env_var: Option<String>,
+    pub hidden: bool,
+    pub nullable: bool,
+    pub optional: bool,
+    pub read_only: bool,
+    pub write_only: bool,
 }

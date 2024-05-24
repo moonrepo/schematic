@@ -39,7 +39,7 @@ impl<'gen> SchemaGenerator<'gen> {
             }
             SchemaType::Struct(inner) => {
                 for field in inner.fields.values() {
-                    self.add_schema(field, true);
+                    self.add_schema(&field.schema, true);
                 }
             }
             SchemaType::Tuple(inner) => {

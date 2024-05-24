@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
+
 use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,
-    pub variants: Option<Vec<Box<Schema>>>,
+    pub variants: Option<BTreeMap<String, Box<SchemaField>>>,
 }
 
 impl EnumType {
@@ -36,7 +38,7 @@ impl EnumType {
         EnumType {
             default_index,
             values,
-            variants: Some(variants),
+            variants: None, // Some(variants),
         }
     }
 }

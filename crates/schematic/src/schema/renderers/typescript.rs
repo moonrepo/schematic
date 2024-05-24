@@ -166,7 +166,13 @@ impl<'gen> TypeScriptRenderer<'gen> {
             let variants_types = if let Some(variants) = &enu.variants {
                 variants
                     .iter()
-                    .filter_map(|v| if v.hidden { None } else { Some(v.to_owned()) })
+                    .filter_map(|(_, variant)| {
+                        if variant.hidden {
+                            None
+                        } else {
+                            Some(Box::new(variant.schema.clone()))
+                        }
+                    })
                     .collect::<Vec<_>>()
             } else {
                 enu.values
@@ -189,7 +195,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
         let mut out = vec![];
         let indent = self.indent();
 
-        for variant in enu.variants.as_ref().unwrap() {
+        for (name, variant) in enu.variants.as_ref().unwrap() {
             if variant.hidden {
                 continue;
             }
@@ -198,20 +204,20 @@ impl<'gen> TypeScriptRenderer<'gen> {
                 format!(
                     "{}{} = {},",
                     indent,
-                    variant.name.as_ref().unwrap(),
-                    self.render_schema(variant)?
+                    name,
+                    self.render_schema(&variant.schema)?
                 )
             } else {
-                format!("{}{},", indent, variant.name.as_ref().unwrap())
+                format!("{}{},", indent, name)
             };
 
             let mut tags = vec![];
 
-            if let Some(default) = variant.get_default() {
+            if let Some(default) = variant.schema.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
-            out.push(self.wrap_in_comment(variant.description.as_ref(), tags, field));
+            out.push(self.wrap_in_comment(variant.comment.as_ref(), tags, field));
         }
 
         self.depth -= 1;
@@ -392,7 +398,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
                 row.push_str(": ");
             }
 
-            row.push_str(&self.render_schema(field)?);
+            row.push_str(&self.render_schema(&field.schema)?);
 
             if matches!(
                 self.options.property_format,
@@ -409,7 +415,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
 
             let mut tags = vec![];
 
-            if let Some(default) = field.get_default() {
+            if let Some(default) = field.schema.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 
@@ -425,7 +431,7 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
                 tags.push(format!("@envvar {env_var}"));
             }
 
-            out.push(self.wrap_in_comment(field.description.as_ref(), tags, row));
+            out.push(self.wrap_in_comment(field.comment.as_ref(), tags, row));
         }
 
         self.depth -= 1;
