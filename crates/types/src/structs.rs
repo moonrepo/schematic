@@ -1,5 +1,4 @@
-use crate::schema::Schema;
-use crate::SchemaField;
+use crate::schema::SchemaField;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]

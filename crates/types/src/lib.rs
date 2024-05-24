@@ -7,7 +7,6 @@ mod numbers;
 mod objects;
 mod schema;
 mod schema_builder;
-mod schema_field;
 mod schema_type;
 mod strings;
 mod structs;

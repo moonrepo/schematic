@@ -200,9 +200,10 @@ impl<'l> Field<'l> {
         })
     }
 
-    pub fn generate_schema_type(&self) -> TokenStream {
+    pub fn generate_schema_type(&self, as_field: bool) -> TokenStream {
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
         let nullable = map_bool_field_quote("nullable", self.is_optional());
+        let comment = map_option_field_quote("comment", extract_comment(&self.attrs));
         let description = map_option_field_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
         let env_var = map_option_field_quote("env_var", self.get_env_var());
@@ -238,35 +239,50 @@ impl<'l> Field<'l> {
             inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
-        let value = if description.is_none()
-            && deprecated.is_none()
-            && env_var.is_none()
-            && hidden.is_none()
-            && nullable.is_none()
-        {
-            inner_schema
-        } else {
-            quote! {
-                {
-                    let mut field = #inner_schema;
-                    #description
-                    #deprecated
-                    #env_var
-                    #hidden
-                    #nullable
-                    field
-                }
-            }
-        };
-
-        if self.name.is_some() {
+        // Struct field (named)
+        if as_field {
             let name = self.get_name(Some(&self.casing_format));
+            let value = if comment.is_none()
+                && deprecated.is_none()
+                && env_var.is_none()
+                && hidden.is_none()
+                && nullable.is_none()
+            {
+                quote! {
+                    SchemaField::new(#inner_schema)
+                }
+            } else {
+                quote! {
+                    {
+                        let mut field = SchemaField::new(#inner_schema);
+                        #comment
+                        #deprecated
+                        #env_var
+                        #hidden
+                        #nullable
+                        field
+                    }
+                }
+            };
 
             quote! {
                 (#name.into(), #value)
             }
-        } else {
-            value
+        }
+        // Tuple item (unnamed)
+        else {
+            #[allow(clippy::collapsible_else_if)]
+            if description.is_none() {
+                inner_schema
+            } else {
+                quote! {
+                    {
+                        let mut schema = #inner_schema;
+                        #description
+                        schema
+                    }
+                }
+            }
         }
     }
 }
