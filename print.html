@@ -1382,38 +1382,42 @@ method.</p>
 <span class="boring">}</span></code></pre></pre>
 <h2 id="detailed-variants"><a class="header" href="#detailed-variants">Detailed variants</a></h2>
 <p>If you’d like to provide more detailed information for each variant (value), like descriptions and
-visibility, you can define the <code>variants</code> field and pass a list of
-<a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>s.</p>
+visibility, you can define the <code>variants</code> field and pass a map of
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaField.html"><code>SchemaField</code></a>s.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::Schema;
-
-schema.enumerable(EnumType {
+</span>schema.enumerable(EnumType {
 	values: vec![
 		LiteralValue::String("debug".into()),
 		LiteralValue::String("error".into()),
 		LiteralValue::String("warning".into()),
 	],
-	variants: Some(vec![
-		Schema {
-			name: "debug".into(),
-			description: Some("Shows debug messages and above".into()),
-			ty: SchemaType::literal(LiteralValue::String("debug".into())),
-			..Schema::default()
-		},
-		Schema {
-			name: "error".into(),
-			description: Some("Shows only error messages".into()),
-			ty: SchemaType::literal(LiteralValue::String("error".into())),
-			..Schema::default()
-		},
-		Schema {
-			name: "warning".into(),
-			description: Some("Shows warning and error messages".into()),
-			ty: SchemaType::literal(LiteralValue::String("warning".into())),
-			..Schema::default()
-		},
-	]),
+	variants: Some(IndexMap::from_iter([
+		(
+			"Debug".into(),
+			SchemaField {
+				comment: Some("Shows debug messages and above".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("debug".into()))),
+				..SchemaField::default()
+			}
+		),
+		(
+			"Error".into(),
+			SchemaField {
+				comment: Some("Shows only error messages".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("error".into()))),
+				..SchemaField::default()
+			}
+		),
+		(
+			"Warning".into(),
+			SchemaField {
+				comment: Some("Shows warning and error messages".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("warning".into()))),
+				..SchemaField::default()
+			}
+		),
+	])),
 	..EnumType::default()
 })
 <span class="boring">}</span></code></pre></pre>
@@ -1784,29 +1788,26 @@ impl Schematic for T {
 			fields: HashMap::from_iter([
 				(
 					"name".into(),
-					Box::new(Schema {
-						name: "name".into(),
-						description: Some("Name of the user".into()),
-						ty: schema.infer::&lt;String&gt;(),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Name of the user".into()),
+						schema: schema.infer::&lt;String&gt;(),
+						..SchemaField::default()
 					})
 				),
 				(
 					"age".into(),
-					Box::new(Schema {
-						name: "age".into(),
-						description: Some("Age of the user".into()),
-						ty: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Age of the user".into()),
+						schema: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..SchemaField::default()
 					})
 				),
 				(
 					"active".into(),
-					Box::new(Schema {
-						name: "active".into(),
-						description: Some("Is the user active".into()),
-						ty: schema.infer::&lt;bool&gt;(),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Is the user active".into()),
+						schema: schema.infer::&lt;bool&gt;(),
+						..SchemaField::default()
 					})
 				),
 			]),
@@ -1823,11 +1824,10 @@ method. When using this approach, the <code>Box</code>s are automatically insert
 </span>schema.structure(StructType::new([
 	(
 		"name".into(),
-		Schema {
-			name: "name".into(),
-			description: Some("Name of the user".into()),
-			ty: schema.infer::&lt;String&gt;(),
-			..Schema::default()
+		SchemaField {
+			comment: Some("Name of the user".into()),
+			schema: schema.infer::&lt;String&gt;(),
+			..SchemaField::default()
 		}
 	),
 	// ...
