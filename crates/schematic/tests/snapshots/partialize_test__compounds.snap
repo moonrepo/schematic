@@ -3,7 +3,6 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Compounds>()"
 ---
 ⬛️Schema {
-⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Compounds",
@@ -13,14 +12,12 @@ expression: "create_diff::<Compounds>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "list": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Array(
 🟥                        ArrayType {
 🟥                            contains: None,
 🟥                            items_type: Schema {
-🟥                                comment: None,
 🟥                                description: None,
 🟥                                name: None,
 🟥                                ty: String(
@@ -53,14 +50,12 @@ expression: "create_diff::<Compounds>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Array(
 🟩                                        ArrayType {
 🟩                                            contains: None,
 🟩                                            items_type: Schema {
-🟩                                                comment: None,
 🟩                                                description: None,
 🟩                                                name: None,
 🟩                                                ty: String(
@@ -97,7 +92,6 @@ expression: "create_diff::<Compounds>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -123,7 +117,6 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "listOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -133,14 +126,12 @@ expression: "create_diff::<Compounds>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Array(
 ⬛️                                        ArrayType {
 ⬛️                                            contains: None,
 ⬛️                                            items_type: Schema {
-⬛️                                                comment: None,
 ⬛️                                                description: None,
 ⬛️                                                name: None,
 ⬛️                                                ty: Integer(
@@ -180,7 +171,6 @@ expression: "create_diff::<Compounds>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -205,13 +195,11 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "map": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 🟥                    ty: Object(
 🟥                        ObjectType {
 🟥                            key_type: Schema {
-🟥                                comment: None,
 🟥                                description: None,
 🟥                                name: None,
 🟥                                ty: String(
@@ -236,7 +224,6 @@ expression: "create_diff::<Compounds>()"
 🟥                            min_length: None,
 🟥                            required: None,
 🟥                            value_type: Schema {
-🟥                                comment: None,
 🟥                                description: None,
 🟥                                name: None,
 🟥                                ty: Boolean(
@@ -259,13 +246,11 @@ expression: "create_diff::<Compounds>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Object(
 🟩                                        ObjectType {
 🟩                                            key_type: Schema {
-🟩                                                comment: None,
 🟩                                                description: None,
 🟩                                                name: None,
 🟩                                                ty: String(
@@ -290,7 +275,6 @@ expression: "create_diff::<Compounds>()"
 🟩                                            min_length: None,
 🟩                                            required: None,
 🟩                                            value_type: Schema {
-🟩                                                comment: None,
 🟩                                                description: None,
 🟩                                                name: None,
 🟩                                                ty: Boolean(
@@ -317,7 +301,6 @@ expression: "create_diff::<Compounds>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -343,7 +326,6 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "mapOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -353,13 +335,11 @@ expression: "create_diff::<Compounds>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Object(
 ⬛️                                        ObjectType {
 ⬛️                                            key_type: Schema {
-⬛️                                                comment: None,
 ⬛️                                                description: None,
 ⬛️                                                name: None,
 ⬛️                                                ty: Integer(
@@ -387,7 +367,6 @@ expression: "create_diff::<Compounds>()"
 ⬛️                                            min_length: None,
 ⬛️                                            required: None,
 ⬛️                                            value_type: Schema {
-⬛️                                                comment: None,
 ⬛️                                                description: None,
 ⬛️                                                name: None,
 ⬛️                                                ty: Float(
@@ -423,7 +402,6 @@ expression: "create_diff::<Compounds>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,

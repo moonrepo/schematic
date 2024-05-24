@@ -3,7 +3,6 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Nested>()"
 ---
 ⬛️Schema {
-⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Nested",
@@ -13,7 +12,6 @@ expression: "create_diff::<Nested>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "field": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 🟥                    name: Some(
 🟥                        "Basic",
@@ -30,7 +28,6 @@ expression: "create_diff::<Nested>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 🟥                                    name: None,
 🟥                                    ty: String(
@@ -48,7 +45,6 @@ expression: "create_diff::<Nested>()"
 🟩                                        StructType {
 🟩                                            fields: {
 🟩                                                "field": Schema {
-🟩                                                    comment: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
 🟩                                                    ty: Union(
@@ -58,7 +54,6 @@ expression: "create_diff::<Nested>()"
 🟩                                                            operator: AnyOf,
 🟩                                                            variants_types: [
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: String(
@@ -80,7 +75,6 @@ expression: "create_diff::<Nested>()"
 🟩                                                                    write_only: false,
 🟩                                                                },
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Null,
@@ -120,7 +114,6 @@ expression: "create_diff::<Nested>()"
 🟥                            partial: true,
 🟥                            required: None,
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -146,7 +139,6 @@ expression: "create_diff::<Nested>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fieldOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -156,7 +148,6 @@ expression: "create_diff::<Nested>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: Some(
 🟥                                        "Basic",
@@ -166,7 +157,6 @@ expression: "create_diff::<Nested>()"
 ⬛️                                        StructType {
 ⬛️                                            fields: {
 ⬛️                                                "field": Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 ⬛️                                                    name: None,
 🟥                                                    ty: String(
@@ -184,7 +174,6 @@ expression: "create_diff::<Nested>()"
 🟩                                                            operator: AnyOf,
 🟩                                                            variants_types: [
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: String(
@@ -206,7 +195,6 @@ expression: "create_diff::<Nested>()"
 🟩                                                                    write_only: false,
 🟩                                                                },
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Null,
@@ -245,7 +233,6 @@ expression: "create_diff::<Nested>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,

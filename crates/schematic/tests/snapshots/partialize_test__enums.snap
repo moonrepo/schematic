@@ -3,7 +3,6 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Enums>()"
 ---
 ⬛️Schema {
-⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Enums",
@@ -13,7 +12,6 @@ expression: "create_diff::<Enums>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "fallback": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 🟥                    name: Some(
 🟥                        "UnitFallbackEnum",
@@ -37,7 +35,6 @@ expression: "create_diff::<Enums>()"
 🟥                            variants: Some(
 🟥                                [
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "A",
@@ -54,7 +51,6 @@ expression: "create_diff::<Enums>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: Some(
 🟩                                        "UnitFallbackEnum",
@@ -79,7 +75,6 @@ expression: "create_diff::<Enums>()"
 🟥                                        write_only: false,
 🟥                                    },
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "B",
@@ -102,7 +97,6 @@ expression: "create_diff::<Enums>()"
 🟥                                        write_only: false,
 🟥                                    },
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "C",
@@ -125,7 +119,6 @@ expression: "create_diff::<Enums>()"
 🟥                                        write_only: false,
 🟥                                    },
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "Other",
@@ -154,7 +147,6 @@ expression: "create_diff::<Enums>()"
 🟩                                            variants: Some(
 🟩                                                [
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "A",
@@ -176,7 +168,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "B",
@@ -198,7 +189,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "C",
@@ -220,7 +210,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "Other",
@@ -256,7 +245,6 @@ expression: "create_diff::<Enums>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -282,7 +270,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fallbackOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -292,7 +279,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: Some(
 ⬛️                                        "UnitFallbackEnum",
@@ -316,7 +302,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                            variants: Some(
 ⬛️                                                [
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "A",
@@ -338,7 +323,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "B",
@@ -360,7 +344,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "C",
@@ -382,7 +365,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "Other",
@@ -418,7 +400,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -443,7 +424,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "tuple": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 🟥                    name: Some(
 🟥                        "TupleEnum",
@@ -457,7 +437,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 🟥                                    name: None,
 🟥                                    ty: Struct(
@@ -474,7 +453,6 @@ expression: "create_diff::<Enums>()"
 🟩                                            operator: AnyOf,
 🟩                                            variants_types: [
 🟩                                                Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 🟥                                                    name: Some(
 🟥                                                        "Empty",
@@ -485,7 +463,6 @@ expression: "create_diff::<Enums>()"
 🟥                                                            fields: {},
 🟩                                                            fields: {
 🟩                                                                "a": Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Union(
@@ -495,7 +472,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            operator: AnyOf,
 🟩                                                                            variants_types: [
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: Some(
 🟩                                                                                        "PartialEmpty",
@@ -516,7 +492,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                                    write_only: false,
 🟩                                                                                },
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: Null,
@@ -566,7 +541,6 @@ expression: "create_diff::<Enums>()"
 🟥                                    write_only: false,
 🟥                                },
 🟥                                Schema {
-🟥                                    comment: None,
 🟥                                    description: None,
 🟥                                    name: None,
 🟥                                    ty: Struct(
@@ -574,7 +548,6 @@ expression: "create_diff::<Enums>()"
 🟥                                            fields: {
 🟥                                                "b": Schema {
 🟩                                                Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 🟥                                                    name: Some(
 🟥                                                        "Empty",
@@ -585,7 +558,6 @@ expression: "create_diff::<Enums>()"
 🟥                                                            fields: {},
 🟩                                                            fields: {
 🟩                                                                "b": Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Union(
@@ -595,7 +567,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            operator: AnyOf,
 🟩                                                                            variants_types: [
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: Some(
 🟩                                                                                        "PartialEmpty",
@@ -616,7 +587,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                                    write_only: false,
 🟩                                                                                },
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: Null,
@@ -667,7 +637,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -693,7 +662,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "tupleOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -703,7 +671,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: Some(
 🟥                                        "TupleEnum",
@@ -716,14 +683,12 @@ expression: "create_diff::<Enums>()"
 ⬛️                                            operator: AnyOf,
 ⬛️                                            variants_types: [
 ⬛️                                                Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 ⬛️                                                    name: None,
 ⬛️                                                    ty: Struct(
 ⬛️                                                        StructType {
 ⬛️                                                            fields: {
 ⬛️                                                                "a": Schema {
-⬛️                                                                    comment: None,
 ⬛️                                                                    description: None,
 🟥                                                                    name: Some(
 🟥                                                                        "Empty",
@@ -741,7 +706,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            operator: AnyOf,
 🟩                                                                            variants_types: [
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: Some(
 🟩                                                                                        "PartialEmpty",
@@ -762,7 +726,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                                    write_only: false,
 🟩                                                                                },
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: Null,
@@ -801,14 +764,12 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    write_only: false,
 ⬛️                                                },
 ⬛️                                                Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 ⬛️                                                    name: None,
 ⬛️                                                    ty: Struct(
 ⬛️                                                        StructType {
 ⬛️                                                            fields: {
 ⬛️                                                                "b": Schema {
-⬛️                                                                    comment: None,
 ⬛️                                                                    description: None,
 🟥                                                                    name: Some(
 🟥                                                                        "Empty",
@@ -826,7 +787,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            operator: AnyOf,
 🟩                                                                            variants_types: [
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: Some(
 🟩                                                                                        "PartialEmpty",
@@ -847,7 +807,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                                                    write_only: false,
 🟩                                                                                },
 🟩                                                                                Schema {
-🟩                                                                                    comment: None,
 🟩                                                                                    description: None,
 🟩                                                                                    name: None,
 🟩                                                                                    ty: Null,
@@ -897,7 +856,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,
@@ -922,7 +880,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "unit": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 🟥                    name: Some(
 🟥                        "UnitEnum",
@@ -946,7 +903,6 @@ expression: "create_diff::<Enums>()"
 🟥                            variants: Some(
 🟥                                [
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "A",
@@ -963,7 +919,6 @@ expression: "create_diff::<Enums>()"
 🟩                            operator: AnyOf,
 🟩                            variants_types: [
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: Some(
 🟩                                        "UnitEnum",
@@ -988,7 +943,6 @@ expression: "create_diff::<Enums>()"
 🟥                                        write_only: false,
 🟥                                    },
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "B",
@@ -1011,7 +965,6 @@ expression: "create_diff::<Enums>()"
 🟥                                        write_only: false,
 🟥                                    },
 🟥                                    Schema {
-🟥                                        comment: None,
 🟥                                        description: None,
 🟥                                        name: Some(
 🟥                                            "C",
@@ -1039,7 +992,6 @@ expression: "create_diff::<Enums>()"
 🟩                                            variants: Some(
 🟩                                                [
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "A",
@@ -1061,7 +1013,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "B",
@@ -1083,7 +1034,6 @@ expression: "create_diff::<Enums>()"
 🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
-🟩                                                        comment: None,
 🟩                                                        description: None,
 🟩                                                        name: Some(
 🟩                                                            "C",
@@ -1117,7 +1067,6 @@ expression: "create_diff::<Enums>()"
 🟩                                    write_only: false,
 🟩                                },
 🟩                                Schema {
-🟩                                    comment: None,
 🟩                                    description: None,
 🟩                                    name: None,
 🟩                                    ty: Null,
@@ -1143,7 +1092,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "unitOpt": Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Union(
@@ -1153,7 +1101,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                            operator: AnyOf,
 ⬛️                            variants_types: [
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: Some(
 ⬛️                                        "UnitEnum",
@@ -1177,7 +1124,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                            variants: Some(
 ⬛️                                                [
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "A",
@@ -1199,7 +1145,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "B",
@@ -1221,7 +1166,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
-⬛️                                                        comment: None,
 ⬛️                                                        description: None,
 ⬛️                                                        name: Some(
 ⬛️                                                            "C",
@@ -1255,7 +1199,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Null,

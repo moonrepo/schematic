@@ -3,7 +3,6 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<AdjacentTagged>()"
 ---
 ⬛️Schema {
-⬛️    comment: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "AdjacentTagged",
@@ -16,14 +15,12 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️            operator: AnyOf,
 ⬛️            variants_types: [
 ⬛️                Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(
@@ -43,7 +40,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(
@@ -76,14 +72,12 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Boolean(
@@ -100,7 +94,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(
@@ -133,14 +126,12 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Integer(
@@ -165,7 +156,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(
@@ -198,14 +188,12 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                Schema {
-⬛️                    comment: None,
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: Some(
 🟥                                        "Basic",
@@ -215,7 +203,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        StructType {
 ⬛️                                            fields: {
 ⬛️                                                "field": Schema {
-⬛️                                                    comment: None,
 ⬛️                                                    description: None,
 ⬛️                                                    name: None,
 🟥                                                    ty: String(
@@ -233,7 +220,6 @@ expression: "create_diff::<AdjacentTagged>()"
 🟩                                                            operator: AnyOf,
 🟩                                                            variants_types: [
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: String(
@@ -255,7 +241,6 @@ expression: "create_diff::<AdjacentTagged>()"
 🟩                                                                    write_only: false,
 🟩                                                                },
 🟩                                                                Schema {
-🟩                                                                    comment: None,
 🟩                                                                    description: None,
 🟩                                                                    name: None,
 🟩                                                                    ty: Null,
@@ -294,7 +279,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": Schema {
-⬛️                                    comment: None,
 ⬛️                                    description: None,
 ⬛️                                    name: None,
 ⬛️                                    ty: Literal(

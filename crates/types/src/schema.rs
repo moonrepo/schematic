@@ -5,8 +5,7 @@ use std::ops::{Deref, DerefMut};
 /// or a variant within a schema enum/union.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Schema {
-    pub comment: Option<String>,     // Field level
-    pub description: Option<String>, // Container level
+    pub description: Option<String>,
     pub name: Option<String>,
     pub ty: SchemaType,
 

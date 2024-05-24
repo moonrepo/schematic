@@ -203,7 +203,7 @@ impl<'l> Field<'l> {
     pub fn generate_schema_type(&self) -> TokenStream {
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
         let nullable = map_bool_field_quote("nullable", self.is_optional());
-        let comment = map_option_field_quote("comment", extract_comment(&self.attrs));
+        let description = map_option_field_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
         let env_var = map_option_field_quote("env_var", self.get_env_var());
 
@@ -238,7 +238,7 @@ impl<'l> Field<'l> {
             inner_schema = quote! { schema.infer_with_default::<#value>(#lit_value) };
         }
 
-        let value = if comment.is_none()
+        let value = if description.is_none()
             && deprecated.is_none()
             && env_var.is_none()
             && hidden.is_none()
@@ -249,7 +249,7 @@ impl<'l> Field<'l> {
             quote! {
                 {
                     let mut field = #inner_schema;
-                    #comment
+                    #description
                     #deprecated
                     #env_var
                     #hidden
