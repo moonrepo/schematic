@@ -34,38 +34,42 @@ schema.enumerable(EnumType::new([
 ## Detailed variants
 
 If you'd like to provide more detailed information for each variant (value), like descriptions and
-visibility, you can define the `variants` field and pass a list of
-[`Schema`](https://docs.rs/schematic/latest/schematic/struct.Schema.html)s.
+visibility, you can define the `variants` field and pass a map of
+[`SchemaField`](https://docs.rs/schematic/latest/schematic/struct.SchemaField.html)s.
 
 ```rust
-use schematic::Schema;
-
 schema.enumerable(EnumType {
 	values: vec![
 		LiteralValue::String("debug".into()),
 		LiteralValue::String("error".into()),
 		LiteralValue::String("warning".into()),
 	],
-	variants: Some(vec![
-		Schema {
-			name: "debug".into(),
-			description: Some("Shows debug messages and above".into()),
-			ty: SchemaType::literal(LiteralValue::String("debug".into())),
-			..Schema::default()
-		},
-		Schema {
-			name: "error".into(),
-			description: Some("Shows only error messages".into()),
-			ty: SchemaType::literal(LiteralValue::String("error".into())),
-			..Schema::default()
-		},
-		Schema {
-			name: "warning".into(),
-			description: Some("Shows warning and error messages".into()),
-			ty: SchemaType::literal(LiteralValue::String("warning".into())),
-			..Schema::default()
-		},
-	]),
+	variants: Some(IndexMap::from_iter([
+		(
+			"Debug".into(),
+			SchemaField {
+				comment: Some("Shows debug messages and above".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("debug".into()))),
+				..SchemaField::default()
+			}
+		),
+		(
+			"Error".into(),
+			SchemaField {
+				comment: Some("Shows only error messages".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("error".into()))),
+				..SchemaField::default()
+			}
+		),
+		(
+			"Warning".into(),
+			SchemaField {
+				comment: Some("Shows warning and error messages".into()),
+				schema: Schema::new(SchemaType::literal(LiteralValue::String("warning".into()))),
+				..SchemaField::default()
+			}
+		),
+	])),
 	..EnumType::default()
 })
 ```

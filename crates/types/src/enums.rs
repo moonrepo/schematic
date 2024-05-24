@@ -1,5 +1,5 @@
 use crate::*;
-use indexmap::IndexMap;
+pub use indexmap::IndexMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EnumType {
