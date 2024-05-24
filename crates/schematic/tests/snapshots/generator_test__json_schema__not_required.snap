@@ -175,6 +175,7 @@ expression: "fs::read_to_string(file).unwrap()"
   "definitions": {
     "AnotherConfig": {
       "title": "AnotherConfig",
+      "description": "Some comment.",
       "type": "object",
       "properties": {
         "enums": {
@@ -205,6 +206,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "BasicEnum": {
       "title": "BasicEnum",
+      "description": "Docblock comment.",
       "type": "string",
       "enum": [
         "foo",

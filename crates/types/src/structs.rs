@@ -1,9 +1,9 @@
-use crate::schema::Schema;
+use crate::schema::SchemaField;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct StructType {
-    pub fields: BTreeMap<String, Box<Schema>>,
+    pub fields: BTreeMap<String, Box<SchemaField>>,
     // The type is a partial nested config, like `PartialConfig`.
     // This doesn't mean it's been partialized.
     pub partial: bool,
@@ -12,12 +12,16 @@ pub struct StructType {
 
 impl StructType {
     /// Create a struct/shape schema with the provided fields.
-    pub fn new<I>(fields: I) -> Self
+    pub fn new<I, F>(fields: I) -> Self
     where
-        I: IntoIterator<Item = (String, Schema)>,
+        I: IntoIterator<Item = (String, F)>,
+        F: Into<SchemaField>,
     {
         StructType {
-            fields: fields.into_iter().map(|(k, v)| (k, Box::new(v))).collect(),
+            fields: fields
+                .into_iter()
+                .map(|(k, v)| (k, Box::new(v.into())))
+                .collect(),
             ..StructType::default()
         }
     }

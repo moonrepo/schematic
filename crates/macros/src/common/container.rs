@@ -36,16 +36,23 @@ impl<'l> Container<'l> {
                         if f.is_excluded() {
                             None
                         } else {
-                            Some(f.generate_schema_type())
+                            Some(f.generate_schema_type(true))
                         }
                     })
                     .collect::<Vec<_>>();
 
-                quote! {
-                    #description
-                    schema.structure(StructType::new([
-                        #(#schema_types),*
-                    ]))
+                if fields.is_empty() {
+                    quote! {
+                        #description
+                        schema.structure(StructType::default())
+                    }
+                } else {
+                    quote! {
+                        #description
+                        schema.structure(StructType::new([
+                            #(#schema_types),*
+                        ]))
+                    }
                 }
             }
             Self::UnnamedStruct { fields, .. } => {
@@ -55,7 +62,7 @@ impl<'l> Container<'l> {
                         if f.is_excluded() {
                             None
                         } else {
-                            Some(f.generate_schema_type())
+                            Some(f.generate_schema_type(false))
                         }
                     })
                     .collect::<Vec<_>>();
@@ -104,7 +111,7 @@ impl<'l> Container<'l> {
                 if is_all_unit_enum {
                     quote! {
                         #description
-                        schema.enumerable(EnumType::from_macro(
+                        schema.enumerable(EnumType::from_schemas(
                             [
                                 #(#variants_types),*
                             ],
@@ -114,7 +121,7 @@ impl<'l> Container<'l> {
                 } else {
                     quote! {
                         #description
-                        schema.union(UnionType::from_macro(
+                        schema.union(UnionType::from_schemas(
                             [
                                 #(#variants_types),*
                             ],

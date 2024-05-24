@@ -20,46 +20,40 @@ impl<'gen> SchemaGenerator<'gen> {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
         let schema = SchemaBuilder::build_root::<T>();
-        self.add_schema(&schema, false);
+        self.add_schema(&schema);
     }
 
     /// Add an explicit [`Schema`] to be rendered, and recursively add any nested schemas.
     /// Schemas with a name will be considered a reference.
-    pub fn add_schema(&mut self, schema: &Schema, is_field: bool) {
+    pub fn add_schema(&mut self, schema: &Schema) {
         let mut schema = schema.to_owned();
 
         // Recursively add any nested schema types
         match &mut schema.ty {
             SchemaType::Array(inner) => {
-                self.add_schema(&inner.items_type, false);
+                self.add_schema(&inner.items_type);
             }
             SchemaType::Object(inner) => {
-                self.add_schema(&inner.key_type, false);
-                self.add_schema(&inner.value_type, false);
+                self.add_schema(&inner.key_type);
+                self.add_schema(&inner.value_type);
             }
             SchemaType::Struct(inner) => {
                 for field in inner.fields.values() {
-                    self.add_schema(field, true);
+                    self.add_schema(&field.schema);
                 }
             }
             SchemaType::Tuple(inner) => {
                 for item in &inner.items_types {
-                    self.add_schema(item, false);
+                    self.add_schema(item);
                 }
             }
             SchemaType::Union(inner) => {
                 for variant in &inner.variants_types {
-                    self.add_schema(variant, false);
+                    self.add_schema(variant);
                 }
             }
             _ => {}
         };
-
-        // When a struct field, the field description overrides the
-        // declaration description, so avoid inheriting it!
-        if is_field {
-            schema.description = None;
-        }
 
         // Store the name so that we can use it as a reference for other types
         if let Some(name) = &schema.name {

@@ -1,10 +1,11 @@
 use crate::*;
+pub use indexmap::IndexMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,
-    pub variants: Option<Vec<Box<Schema>>>,
+    pub variants: Option<IndexMap<String, Box<SchemaField>>>,
 }
 
 impl EnumType {
@@ -20,15 +21,44 @@ impl EnumType {
     }
 
     #[doc(hidden)]
-    pub fn from_macro<I>(variants: I, default_index: Option<usize>) -> Self
+    pub fn from_schemas<I>(schemas: I, default_index: Option<usize>) -> Self
     where
         I: IntoIterator<Item = Schema>,
     {
-        let variants: Vec<Box<Schema>> = variants.into_iter().map(Box::new).collect();
+        let mut variants = IndexMap::default();
         let mut values = vec![];
 
-        for variant in &variants {
-            if let SchemaType::Literal(lit) = &variant.ty {
+        for mut schema in schemas.into_iter() {
+            if let SchemaType::Literal(lit) = &schema.ty {
+                values.push(lit.value.clone());
+            }
+
+            variants.insert(
+                schema.name.take().unwrap(),
+                Box::new(SchemaField::new(schema)),
+            );
+        }
+
+        EnumType {
+            default_index,
+            values,
+            variants: Some(variants),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn from_fields<I>(variants: I, default_index: Option<usize>) -> Self
+    where
+        I: IntoIterator<Item = (String, SchemaField)>,
+    {
+        let variants: IndexMap<String, Box<SchemaField>> = variants
+            .into_iter()
+            .map(|(k, v)| (k, Box::new(v)))
+            .collect();
+        let mut values = vec![];
+
+        for variant in variants.values() {
+            if let SchemaType::Literal(lit) = &variant.schema.ty {
                 values.push(lit.value.clone());
             }
         }

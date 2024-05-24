@@ -8,10 +8,12 @@ expression: "generate(TypeScriptOptions {\n        external_types: HashMap::from
 
 import type { AnotherType, BasicEnum } from './externals';
 
+/** Docblock comment. */
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
+/** Some comment. */
 export interface AnotherConfig {
 	/**
 	 * An optional enum.

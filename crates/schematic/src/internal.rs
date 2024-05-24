@@ -95,13 +95,14 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
 
                 for field in inner.fields.values_mut() {
                     field.optional = true;
-                    field.nullify();
+                    field.nullable = true;
+                    field.schema.nullify();
 
-                    partialize_schema(field, true);
+                    partialize_schema(&mut field.schema, true);
                 }
             } else {
                 for field in inner.fields.values_mut() {
-                    partialize_schema(field, false);
+                    partialize_schema(&mut field.schema, false);
                 }
             }
         }

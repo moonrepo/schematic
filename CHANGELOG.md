@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Brought back the concept of `SchemaField`, as it solved some edge cases related to structs.
+
+#### 🐞 Fixes
+
+- Fixed missing container comments.
+
 ## 0.16.1
 
 #### 🚀 Updates

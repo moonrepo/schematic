@@ -6,6 +6,7 @@ expression: "generate(TypeScriptOptions {\n        enum_format: EnumFormat::Enum
 
 /* eslint-disable */
 
+/** Docblock comment. */
 export enum BasicEnum {
 	Foo,
 	Bar,
@@ -14,6 +15,7 @@ export enum BasicEnum {
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
+/** Some comment. */
 export interface AnotherConfig {
 	/**
 	 * An optional enum.

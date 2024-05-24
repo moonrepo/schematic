@@ -110,7 +110,7 @@ impl SchemaType {
     }
 
     /// Add a field to the type if it's a struct.
-    pub fn add_field(&mut self, key: &str, value: impl Into<Schema>) {
+    pub fn add_field(&mut self, key: &str, value: impl Into<SchemaField>) {
         if let SchemaType::Struct(map) = self {
             map.fields.insert(key.to_owned(), Box::new(value.into()));
         }

@@ -6,10 +6,12 @@ expression: "generate(TypeScriptOptions {\n        object_format: ObjectFormat::
 
 /* eslint-disable */
 
+/** Docblock comment. */
 export type BasicEnum = 'foo' | 'bar' | 'baz';
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
+/** Some comment. */
 export type AnotherConfig = {
 	/**
 	 * An optional enum.

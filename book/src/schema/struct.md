@@ -12,29 +12,26 @@ impl Schematic for T {
 			fields: HashMap::from_iter([
 				(
 					"name".into(),
-					Box::new(Schema {
-						name: "name".into(),
-						description: Some("Name of the user".into()),
-						ty: schema.infer::<String>(),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Name of the user".into()),
+						schema: schema.infer::<String>(),
+						..SchemaField::default()
 					})
 				),
 				(
 					"age".into(),
-					Box::new(Schema {
-						name: "age".into(),
-						description: Some("Age of the user".into()),
-						ty: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Age of the user".into()),
+						schema: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..SchemaField::default()
 					})
 				),
 				(
 					"active".into(),
-					Box::new(Schema {
-						name: "active".into(),
-						description: Some("Is the user active".into()),
-						ty: schema.infer::<bool>(),
-						..Schema::default()
+					Box::new(SchemaField {
+						comment: Some("Is the user active".into()),
+						schema: schema.infer::<bool>(),
+						..SchemaField::default()
 					})
 				),
 			]),
@@ -52,11 +49,10 @@ method. When using this approach, the `Box`s are automatically inserted for you.
 schema.structure(StructType::new([
 	(
 		"name".into(),
-		Schema {
-			name: "name".into(),
-			description: Some("Name of the user".into()),
-			ty: schema.infer::<String>(),
-			..Schema::default()
+		SchemaField {
+			comment: Some("Name of the user".into()),
+			schema: schema.infer::<String>(),
+			..SchemaField::default()
 		}
 	),
 	// ...

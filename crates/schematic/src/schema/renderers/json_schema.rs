@@ -155,8 +155,12 @@ impl<'gen> JsonSchemaRenderer<'gen> {
         }
     }
 
-    fn create_field_from_schema(&mut self, name: &str, field: &Schema) -> RenderResult<JsonSchema> {
-        let mut schema = self.render_schema(field)?;
+    fn create_field_from_schema(
+        &mut self,
+        name: &str,
+        field: &SchemaField,
+    ) -> RenderResult<JsonSchema> {
+        let mut schema = self.render_schema(&field.schema)?;
 
         if let JsonSchema::Object(ref mut inner) = schema {
             let mut metadata = Metadata {
@@ -166,7 +170,7 @@ impl<'gen> JsonSchemaRenderer<'gen> {
                     None
                 },
                 description: field
-                    .description
+                    .comment
                     .clone()
                     .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
                 deprecated: field.deprecated.is_some(),
@@ -175,7 +179,7 @@ impl<'gen> JsonSchemaRenderer<'gen> {
                 ..Default::default()
             };
 
-            if let Some(default) = field.get_default() {
+            if let Some(default) = field.schema.get_default() {
                 metadata.default = Some(lit_to_value(default));
             }
 
@@ -244,11 +248,9 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
         {
             let mut any_of = vec![];
 
-            for field in enu.variants.as_ref().unwrap() {
+            for (name, field) in enu.variants.as_ref().unwrap() {
                 if !field.hidden {
-                    any_of.push(
-                        self.create_field_from_schema(field.name.as_deref().unwrap_or(""), field)?,
-                    );
+                    any_of.push(self.create_field_from_schema(name, field)?);
                 }
             }
 

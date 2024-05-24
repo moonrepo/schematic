@@ -232,10 +232,13 @@ fn supports_cycles() {
         SchemaType::Struct(Box::new(StructType {
             fields: BTreeMap::from_iter([(
                 "values".into(),
-                Box::new(Schema::object(ObjectType::new(
-                    Schema::string(StringType::default()),
-                    SchemaType::Reference("Cycle".into()),
-                )))
+                Box::new(SchemaField {
+                    schema: Schema::object(ObjectType::new(
+                        Schema::string(StringType::default()),
+                        SchemaType::Reference("Cycle".into()),
+                    )),
+                    ..Default::default()
+                })
             ),]),
             partial: false,
             required: None
