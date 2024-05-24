@@ -201,14 +201,22 @@ impl<'l> Variant<'l> {
             }
             TaggedFormat::Untagged => inner,
             TaggedFormat::External => {
-                quote! {
-                    {
-                        let mut item = Schema::structure(StructType::new([
-                            (#name.into(), #inner),
-                        ]));
-                        #partial_statement
-                        item
+                let outer = quote! {
+                    Schema::structure(StructType::new([
+                        (#name.into(), #inner),
+                    ]))
+                };
+
+                if partial {
+                    quote! {
+                        {
+                            let mut item = #outer;
+                            #partial_statement
+                            item
+                        }
                     }
+                } else {
+                    outer
                 }
             }
             TaggedFormat::Internal(tag) => {
