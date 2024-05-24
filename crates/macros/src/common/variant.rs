@@ -183,6 +183,12 @@ impl<'l> Variant<'l> {
             }
         };
 
+        let partial_statement = if partial {
+            quote! { item.partialize(); }
+        } else {
+            quote! {}
+        };
+
         match tagged_format {
             TaggedFormat::Unit => {
                 quote! {
@@ -200,9 +206,7 @@ impl<'l> Variant<'l> {
                         let mut item = Schema::structure(StructType::new([
                             (#name.into(), #inner),
                         ]));
-                        if #partial {
-                            item.partialize();
-                        }
+                        #partial_statement
                         item
                     }
                 }
@@ -215,9 +219,7 @@ impl<'l> Variant<'l> {
                             #tag,
                             Schema::literal_value(LiteralValue::String(#name.into())),
                         );
-                        if #partial {
-                            item.partialize();
-                        }
+                        #partial_statement
                         item
                     }
                 }

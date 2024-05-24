@@ -187,7 +187,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
 
-                    schema.enumerable(EnumType::from_macro(
+                    schema.enumerable(EnumType::from_fields(
                         [
                             #(#schema_types),*
                         ],

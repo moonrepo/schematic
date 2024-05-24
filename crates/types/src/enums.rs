@@ -1,12 +1,11 @@
-use std::collections::BTreeMap;
-
 use crate::*;
+use indexmap::IndexMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,
-    pub variants: Option<BTreeMap<String, Box<SchemaField>>>,
+    pub variants: Option<IndexMap<String, Box<SchemaField>>>,
 }
 
 impl EnumType {
@@ -39,6 +38,30 @@ impl EnumType {
             default_index,
             values,
             variants: None, // Some(variants),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn from_fields<I>(variants: I, default_index: Option<usize>) -> Self
+    where
+        I: IntoIterator<Item = (String, SchemaField)>,
+    {
+        let variants: IndexMap<String, Box<SchemaField>> = variants
+            .into_iter()
+            .map(|(k, v)| (k, Box::new(v)))
+            .collect();
+        let mut values = vec![];
+
+        for variant in variants.values() {
+            if let SchemaType::Literal(lit) = &variant.schema.ty {
+                values.push(lit.value.clone());
+            }
+        }
+
+        EnumType {
+            default_index,
+            values,
+            variants: Some(variants),
         }
     }
 }

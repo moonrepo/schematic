@@ -3,654 +3,285 @@ source: crates/schematic/tests/partialize_test.rs
 expression: "create_diff::<Enums>()"
 ---
 ⬛️Schema {
+⬛️    deprecated: None,
 ⬛️    description: None,
 ⬛️    name: Some(
 🟥        "Enums",
 🟩        "PartialEnums",
 ⬛️    ),
+⬛️    nullable: false,
 ⬛️    ty: Struct(
 ⬛️        StructType {
 ⬛️            fields: {
-⬛️                "fallback": Schema {
-⬛️                    description: None,
-🟥                    name: Some(
-🟥                        "UnitFallbackEnum",
-🟥                    ),
-🟥                    ty: Enum(
-🟥                        EnumType {
-🟥                            default_index: Some(
-🟥                                0,
-🟥                            ),
-🟥                            values: [
-🟥                                String(
-🟥                                    "a",
+⬛️                "fallback": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+🟥                        name: Some(
+🟥                            "UnitFallbackEnum",
+🟥                        ),
+🟥                        nullable: false,
+🟥                        ty: Enum(
+🟥                            EnumType {
+🟥                                default_index: Some(
+🟥                                    0,
 🟥                                ),
-🟥                                String(
-🟥                                    "b",
-🟥                                ),
-🟥                                String(
-🟥                                    "c",
-🟥                                ),
-🟥                            ],
-🟥                            variants: Some(
-🟥                                [
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "A",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                    name: None,
-🟩                    ty: Union(
-🟩                        UnionType {
-🟩                            default_index: None,
-🟩                            partial: false,
-🟩                            operator: AnyOf,
-🟩                            variants_types: [
-🟩                                Schema {
-🟩                                    description: None,
-🟩                                    name: Some(
-🟩                                        "UnitFallbackEnum",
-🟩                                    ),
-🟩                                    ty: Enum(
-🟩                                        EnumType {
-🟩                                            default_index: Some(
-🟩                                                0,
-🟩                                            ),
-🟩                                            values: [
-🟩                                                String(
-⬛️                                                    "a",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "B",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                                                String(
-⬛️                                                    "b",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "C",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                                                String(
-⬛️                                                    "c",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "Other",
-🟥                                        ),
-🟥                                        ty: String(
-🟥                                            StringType {
-🟥                                                default: None,
-🟥                                                enum_values: None,
-🟥                                                format: None,
-🟥                                                max_length: None,
-🟥                                                min_length: None,
-🟥                                                pattern: None,
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                ],
-🟥                            ),
-🟩                                            ],
-🟩                                            variants: Some(
-🟩                                                [
-🟩                                                    Schema {
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "A",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "a",
-🟩                                                                ),
-🟩                                                            },
-🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
-🟩                                                    Schema {
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "B",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "b",
-🟩                                                                ),
-🟩                                                            },
-🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
-🟩                                                    Schema {
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "C",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "c",
-🟩                                                                ),
-🟩                                                            },
-🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
-🟩                                                    Schema {
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "Other",
-🟩                                                        ),
-🟩                                                        ty: String(
-🟩                                                            StringType {
-🟩                                                                default: None,
-🟩                                                                enum_values: None,
-🟩                                                                format: None,
-🟩                                                                max_length: None,
-🟩                                                                min_length: None,
-🟩                                                                pattern: None,
-🟩                                                            },
-🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
-🟩                                                ],
-🟩                                            ),
-🟩                                        },
-🟩                                    ),
-🟩                                    deprecated: None,
-🟩                                    env_var: None,
-🟩                                    hidden: false,
-🟩                                    nullable: false,
-🟩                                    optional: false,
-🟩                                    read_only: false,
-🟩                                    write_only: false,
-🟩                                },
-🟩                                Schema {
-🟩                                    description: None,
-🟩                                    name: None,
-🟩                                    ty: Null,
-🟩                                    deprecated: None,
-🟩                                    env_var: None,
-🟩                                    hidden: false,
-🟩                                    nullable: false,
-🟩                                    optional: false,
-🟩                                    read_only: false,
-🟩                                    write_only: false,
-🟩                                },
-🟩                            ],
-⬛️                        },
-⬛️                    ),
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    hidden: false,
-🟥                    nullable: false,
-🟥                    optional: false,
-🟩                    nullable: true,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "fallbackOpt": Schema {
-⬛️                    description: None,
-⬛️                    name: None,
-⬛️                    ty: Union(
-⬛️                        UnionType {
-⬛️                            default_index: None,
-⬛️                            partial: false,
-⬛️                            operator: AnyOf,
-⬛️                            variants_types: [
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: Some(
-⬛️                                        "UnitFallbackEnum",
-⬛️                                    ),
-⬛️                                    ty: Enum(
-⬛️                                        EnumType {
-⬛️                                            default_index: Some(
-⬛️                                                0,
-⬛️                                            ),
-⬛️                                            values: [
-⬛️                                                String(
-⬛️                                                    "a",
-⬛️                                                ),
-⬛️                                                String(
-⬛️                                                    "b",
-⬛️                                                ),
-⬛️                                                String(
-⬛️                                                    "c",
-⬛️                                                ),
-⬛️                                            ],
-⬛️                                            variants: Some(
-⬛️                                                [
-⬛️                                                    Schema {
-⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "A",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "a",
-⬛️                                                                ),
-⬛️                                                            },
-⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
-⬛️                                                    },
-⬛️                                                    Schema {
-⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "B",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "b",
-⬛️                                                                ),
-⬛️                                                            },
-⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
-⬛️                                                    },
-⬛️                                                    Schema {
-⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "C",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "c",
-⬛️                                                                ),
-⬛️                                                            },
-⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
-⬛️                                                    },
-⬛️                                                    Schema {
-⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "Other",
-⬛️                                                        ),
-⬛️                                                        ty: String(
-⬛️                                                            StringType {
-⬛️                                                                default: None,
-⬛️                                                                enum_values: None,
-⬛️                                                                format: None,
-⬛️                                                                max_length: None,
-⬛️                                                                min_length: None,
-⬛️                                                                pattern: None,
-⬛️                                                            },
-⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
-⬛️                                                    },
-⬛️                                                ],
-⬛️                                            ),
-⬛️                                        },
-⬛️                                    ),
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: None,
-⬛️                                    ty: Null,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                            ],
-⬛️                        },
-⬛️                    ),
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    hidden: false,
-⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "tuple": Schema {
-⬛️                    description: None,
-🟥                    name: Some(
-🟥                        "TupleEnum",
-🟥                    ),
-🟩                    name: None,
-⬛️                    ty: Union(
-⬛️                        UnionType {
-⬛️                            default_index: None,
-🟥                            partial: true,
-🟩                            partial: false,
-⬛️                            operator: AnyOf,
-⬛️                            variants_types: [
-⬛️                                Schema {
-⬛️                                    description: None,
-🟥                                    name: None,
-🟥                                    ty: Struct(
-🟥                                        StructType {
-🟥                                            fields: {
-🟥                                                "a": Schema {
-🟩                                    name: Some(
-🟩                                        "PartialTupleEnum",
-🟩                                    ),
-🟩                                    ty: Union(
-🟩                                        UnionType {
-🟩                                            default_index: None,
-🟩                                            partial: true,
-🟩                                            operator: AnyOf,
-🟩                                            variants_types: [
-🟩                                                Schema {
-⬛️                                                    description: None,
-🟥                                                    name: Some(
-🟥                                                        "Empty",
-🟥                                                    ),
-🟩                                                    name: None,
-⬛️                                                    ty: Struct(
-⬛️                                                        StructType {
-🟥                                                            fields: {},
-🟩                                                            fields: {
-🟩                                                                "a": Schema {
-🟩                                                                    description: None,
-🟩                                                                    name: None,
-🟩                                                                    ty: Union(
-🟩                                                                        UnionType {
-🟩                                                                            default_index: None,
-🟩                                                                            partial: false,
-🟩                                                                            operator: AnyOf,
-🟩                                                                            variants_types: [
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: Some(
-🟩                                                                                        "PartialEmpty",
-🟩                                                                                    ),
-🟩                                                                                    ty: Struct(
-🟩                                                                                        StructType {
-🟩                                                                                            fields: {},
-🟩                                                                                            partial: true,
-🟩                                                                                            required: None,
-🟩                                                                                        },
-🟩                                                                                    ),
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: None,
-🟩                                                                                    ty: Null,
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                            ],
-🟩                                                                        },
-🟩                                                                    ),
-🟩                                                                    deprecated: None,
-🟩                                                                    env_var: None,
-🟩                                                                    hidden: false,
-🟩                                                                    nullable: true,
-🟩                                                                    optional: true,
-🟩                                                                    read_only: false,
-🟩                                                                    write_only: false,
-🟩                                                                },
-🟩                                                            },
-⬛️                                                            partial: true,
-⬛️                                                            required: None,
-⬛️                                                        },
-⬛️                                                    ),
-⬛️                                                    deprecated: None,
-⬛️                                                    env_var: None,
-⬛️                                                    hidden: false,
-⬛️                                                    nullable: false,
-⬛️                                                    optional: false,
-⬛️                                                    read_only: false,
-⬛️                                                    write_only: false,
-⬛️                                                },
-🟥                                            },
-🟥                                            partial: true,
-🟥                                            required: None,
-🟥                                        },
+🟥                                values: [
+🟥                                    String(
+🟥                                        "a",
 🟥                                    ),
-🟥                                    deprecated: None,
-🟥                                    env_var: None,
-🟥                                    hidden: false,
-🟥                                    nullable: false,
-🟥                                    optional: false,
-🟥                                    read_only: false,
-🟥                                    write_only: false,
-🟥                                },
-🟥                                Schema {
-🟥                                    description: None,
-🟥                                    name: None,
-🟥                                    ty: Struct(
-🟥                                        StructType {
-🟥                                            fields: {
-🟥                                                "b": Schema {
-🟩                                                Schema {
-⬛️                                                    description: None,
-🟥                                                    name: Some(
-🟥                                                        "Empty",
-🟥                                                    ),
-🟩                                                    name: None,
-⬛️                                                    ty: Struct(
-⬛️                                                        StructType {
-🟥                                                            fields: {},
-🟩                                                            fields: {
-🟩                                                                "b": Schema {
-🟩                                                                    description: None,
-🟩                                                                    name: None,
-🟩                                                                    ty: Union(
-🟩                                                                        UnionType {
-🟩                                                                            default_index: None,
-🟩                                                                            partial: false,
-🟩                                                                            operator: AnyOf,
-🟩                                                                            variants_types: [
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: Some(
-🟩                                                                                        "PartialEmpty",
-🟩                                                                                    ),
-🟩                                                                                    ty: Struct(
-🟩                                                                                        StructType {
-🟩                                                                                            fields: {},
-🟩                                                                                            partial: true,
-🟩                                                                                            required: None,
-🟩                                                                                        },
-🟩                                                                                    ),
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: None,
-🟩                                                                                    ty: Null,
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                            ],
-🟩                                                                        },
-🟩                                                                    ),
-🟩                                                                    deprecated: None,
-🟩                                                                    env_var: None,
-🟩                                                                    hidden: false,
-🟩                                                                    nullable: true,
-🟩                                                                    optional: true,
-🟩                                                                    read_only: false,
-🟩                                                                    write_only: false,
-🟩                                                                },
-🟩                                                            },
-⬛️                                                            partial: true,
-⬛️                                                            required: None,
-⬛️                                                        },
-⬛️                                                    ),
-⬛️                                                    deprecated: None,
-⬛️                                                    env_var: None,
-⬛️                                                    hidden: false,
-⬛️                                                    nullable: false,
-⬛️                                                    optional: false,
-⬛️                                                    read_only: false,
-⬛️                                                    write_only: false,
-⬛️                                                },
+🟥                                    String(
+🟥                                        "b",
+🟥                                    ),
+🟥                                    String(
+🟥                                        "c",
+🟥                                    ),
+🟥                                ],
+🟥                                variants: Some(
+🟥                                    {
+🟥                                        "A": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "a",
+🟥                                                        ),
+🟥                                                    },
+🟩                        name: None,
+🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: Some(
+🟩                                            "UnitFallbackEnum",
+🟩                                        ),
+🟩                                        nullable: false,
+🟩                                        ty: Enum(
+🟩                                            EnumType {
+🟩                                                default_index: Some(
+🟩                                                    0,
+⬛️                                                ),
 🟥                                            },
-🟥                                            partial: true,
-🟥                                            required: None,
-🟩                                            ],
-⬛️                                        },
-⬛️                                    ),
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-🟩                                Schema {
-🟩                                    description: None,
-🟩                                    name: None,
-🟩                                    ty: Null,
-🟩                                    deprecated: None,
-🟩                                    env_var: None,
-🟩                                    hidden: false,
-🟩                                    nullable: false,
-🟩                                    optional: false,
-🟩                                    read_only: false,
-🟩                                    write_only: false,
-🟩                                },
-⬛️                            ],
-⬛️                        },
-⬛️                    ),
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "B": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "b",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "C": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "Other": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: String(
+🟥                                                    StringType {
+🟥                                                        default: None,
+🟥                                                        enum_values: None,
+🟥                                                        format: None,
+🟥                                                        max_length: None,
+🟥                                                        min_length: None,
+🟥                                                        pattern: None,
+🟩                                                values: [
+🟩                                                    String(
+🟩                                                        "a",
+🟩                                                    ),
+🟩                                                    String(
+🟩                                                        "b",
+🟩                                                    ),
+🟩                                                    String(
+🟩                                                        "c",
+🟩                                                    ),
+🟩                                                ],
+🟩                                                variants: Some(
+🟩                                                    {
+🟩                                                        "A": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "a",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+🟩                                                        "B": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "b",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+🟩                                                        "C": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "c",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+🟩                                                        "Other": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: String(
+🟩                                                                    StringType {
+🟩                                                                        default: None,
+🟩                                                                        enum_values: None,
+🟩                                                                        format: None,
+🟩                                                                        max_length: None,
+🟩                                                                        min_length: None,
+🟩                                                                        pattern: None,
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+⬛️                                                    },
+⬛️                                                ),
+⬛️                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟩                                        ),
+🟩                                    },
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Null,
+⬛️                                    },
+🟥                                ),
+🟩                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
 ⬛️                    hidden: false,
@@ -661,215 +292,159 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "tupleOpt": Schema {
-⬛️                    description: None,
-⬛️                    name: None,
-⬛️                    ty: Union(
-⬛️                        UnionType {
-⬛️                            default_index: None,
-⬛️                            partial: true,
-⬛️                            operator: AnyOf,
-⬛️                            variants_types: [
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: Some(
-🟥                                        "TupleEnum",
-🟩                                        "PartialTupleEnum",
-⬛️                                    ),
-⬛️                                    ty: Union(
-⬛️                                        UnionType {
-⬛️                                            default_index: None,
-⬛️                                            partial: true,
-⬛️                                            operator: AnyOf,
-⬛️                                            variants_types: [
-⬛️                                                Schema {
-⬛️                                                    description: None,
-⬛️                                                    name: None,
-⬛️                                                    ty: Struct(
-⬛️                                                        StructType {
-⬛️                                                            fields: {
-⬛️                                                                "a": Schema {
-⬛️                                                                    description: None,
-🟥                                                                    name: Some(
-🟥                                                                        "Empty",
-🟥                                                                    ),
-🟥                                                                    ty: Struct(
-🟥                                                                        StructType {
-🟥                                                                            fields: {},
-🟥                                                                            partial: true,
-🟥                                                                            required: None,
-🟩                                                                    name: None,
-🟩                                                                    ty: Union(
-🟩                                                                        UnionType {
-🟩                                                                            default_index: None,
-🟩                                                                            partial: false,
-🟩                                                                            operator: AnyOf,
-🟩                                                                            variants_types: [
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: Some(
-🟩                                                                                        "PartialEmpty",
-🟩                                                                                    ),
-🟩                                                                                    ty: Struct(
-🟩                                                                                        StructType {
-🟩                                                                                            fields: {},
-🟩                                                                                            partial: true,
-🟩                                                                                            required: None,
-🟩                                                                                        },
-🟩                                                                                    ),
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: None,
-🟩                                                                                    ty: Null,
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                            ],
-⬛️                                                                        },
-⬛️                                                                    ),
-⬛️                                                                    deprecated: None,
-⬛️                                                                    env_var: None,
-⬛️                                                                    hidden: false,
-🟥                                                                    nullable: false,
-🟥                                                                    optional: false,
-🟩                                                                    nullable: true,
-🟩                                                                    optional: true,
-⬛️                                                                    read_only: false,
-⬛️                                                                    write_only: false,
-⬛️                                                                },
-⬛️                                                            },
-⬛️                                                            partial: true,
-⬛️                                                            required: None,
-⬛️                                                        },
+⬛️                "fallbackOpt": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+🟥                        nullable: false,
+🟩                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+⬛️                                partial: false,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: Some(
+⬛️                                            "UnitFallbackEnum",
+⬛️                                        ),
+⬛️                                        nullable: false,
+⬛️                                        ty: Enum(
+⬛️                                            EnumType {
+⬛️                                                default_index: Some(
+⬛️                                                    0,
+⬛️                                                ),
+⬛️                                                values: [
+⬛️                                                    String(
+⬛️                                                        "a",
 ⬛️                                                    ),
-⬛️                                                    deprecated: None,
-⬛️                                                    env_var: None,
-⬛️                                                    hidden: false,
-⬛️                                                    nullable: false,
-⬛️                                                    optional: false,
-⬛️                                                    read_only: false,
-⬛️                                                    write_only: false,
-⬛️                                                },
-⬛️                                                Schema {
-⬛️                                                    description: None,
-⬛️                                                    name: None,
-⬛️                                                    ty: Struct(
-⬛️                                                        StructType {
-⬛️                                                            fields: {
-⬛️                                                                "b": Schema {
-⬛️                                                                    description: None,
-🟥                                                                    name: Some(
-🟥                                                                        "Empty",
-🟥                                                                    ),
-🟥                                                                    ty: Struct(
-🟥                                                                        StructType {
-🟥                                                                            fields: {},
-🟥                                                                            partial: true,
-🟥                                                                            required: None,
-🟩                                                                    name: None,
-🟩                                                                    ty: Union(
-🟩                                                                        UnionType {
-🟩                                                                            default_index: None,
-🟩                                                                            partial: false,
-🟩                                                                            operator: AnyOf,
-🟩                                                                            variants_types: [
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: Some(
-🟩                                                                                        "PartialEmpty",
-🟩                                                                                    ),
-🟩                                                                                    ty: Struct(
-🟩                                                                                        StructType {
-🟩                                                                                            fields: {},
-🟩                                                                                            partial: true,
-🟩                                                                                            required: None,
-🟩                                                                                        },
-🟩                                                                                    ),
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                                Schema {
-🟩                                                                                    description: None,
-🟩                                                                                    name: None,
-🟩                                                                                    ty: Null,
-🟩                                                                                    deprecated: None,
-🟩                                                                                    env_var: None,
-🟩                                                                                    hidden: false,
-🟩                                                                                    nullable: false,
-🟩                                                                                    optional: false,
-🟩                                                                                    read_only: false,
-🟩                                                                                    write_only: false,
-🟩                                                                                },
-🟩                                                                            ],
-⬛️                                                                        },
-⬛️                                                                    ),
-⬛️                                                                    deprecated: None,
-⬛️                                                                    env_var: None,
-⬛️                                                                    hidden: false,
-🟥                                                                    nullable: false,
-🟥                                                                    optional: false,
-🟩                                                                    nullable: true,
-🟩                                                                    optional: true,
-⬛️                                                                    read_only: false,
-⬛️                                                                    write_only: false,
-⬛️                                                                },
-⬛️                                                            },
-⬛️                                                            partial: true,
-⬛️                                                            required: None,
-⬛️                                                        },
+⬛️                                                    String(
+⬛️                                                        "b",
 ⬛️                                                    ),
-⬛️                                                    deprecated: None,
-⬛️                                                    env_var: None,
-⬛️                                                    hidden: false,
-⬛️                                                    nullable: false,
-⬛️                                                    optional: false,
-⬛️                                                    read_only: false,
-⬛️                                                    write_only: false,
-⬛️                                                },
-⬛️                                            ],
-⬛️                                        },
-⬛️                                    ),
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: None,
-⬛️                                    ty: Null,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                            ],
-⬛️                        },
-⬛️                    ),
+⬛️                                                    String(
+⬛️                                                        "c",
+⬛️                                                    ),
+⬛️                                                ],
+⬛️                                                variants: Some(
+⬛️                                                    {
+⬛️                                                        "A": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "a",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                        "B": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "b",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                        "C": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "c",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                        "Other": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: String(
+⬛️                                                                    StringType {
+⬛️                                                                        default: None,
+⬛️                                                                        enum_values: None,
+⬛️                                                                        format: None,
+⬛️                                                                        max_length: None,
+⬛️                                                                        min_length: None,
+⬛️                                                                        pattern: None,
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                    },
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
 ⬛️                    hidden: false,
@@ -879,208 +454,235 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "unit": Schema {
-⬛️                    description: None,
-🟥                    name: Some(
-🟥                        "UnitEnum",
-🟥                    ),
-🟥                    ty: Enum(
-🟥                        EnumType {
-🟥                            default_index: Some(
-🟥                                0,
-🟥                            ),
-🟥                            values: [
-🟥                                String(
-🟥                                    "a",
-🟥                                ),
-🟥                                String(
-🟥                                    "b",
-🟥                                ),
-🟥                                String(
-🟥                                    "c",
-🟥                                ),
-🟥                            ],
-🟥                            variants: Some(
-🟥                                [
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "A",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                    name: None,
-🟩                    ty: Union(
-🟩                        UnionType {
-🟩                            default_index: None,
-🟩                            partial: false,
-🟩                            operator: AnyOf,
-🟩                            variants_types: [
-🟩                                Schema {
-🟩                                    description: None,
-🟩                                    name: Some(
-🟩                                        "UnitEnum",
-🟩                                    ),
-🟩                                    ty: Enum(
-🟩                                        EnumType {
-🟩                                            default_index: Some(
-🟩                                                0,
-🟩                                            ),
-🟩                                            values: [
-🟩                                                String(
-⬛️                                                    "a",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "B",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                                                String(
-⬛️                                                    "b",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                    Schema {
-🟥                                        description: None,
-🟥                                        name: Some(
-🟥                                            "C",
-🟥                                        ),
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                format: None,
-🟥                                                value: String(
-🟩                                                String(
-⬛️                                                    "c",
-⬛️                                                ),
-🟥                                            },
-🟥                                        ),
-🟥                                        deprecated: None,
-🟥                                        env_var: None,
-🟥                                        hidden: false,
-🟥                                        nullable: false,
-🟥                                        optional: false,
-🟥                                        read_only: false,
-🟥                                        write_only: false,
-🟥                                    },
-🟥                                ],
-🟥                            ),
-🟩                                            ],
-🟩                                            variants: Some(
-🟩                                                [
+⬛️                "tuple": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+🟥                        name: Some(
+🟥                            "TupleEnum",
+🟥                        ),
+🟥                        nullable: false,
+🟩                        name: None,
+🟩                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+🟥                                partial: true,
+🟩                                partial: false,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+🟥                                        name: None,
+🟩                                        name: Some(
+🟩                                            "PartialTupleEnum",
+🟩                                        ),
+⬛️                                        nullable: false,
+🟥                                        ty: Struct(
+🟥                                            StructType {
+🟥                                                fields: {
+🟥                                                    "a": SchemaField {
+🟥                                                        comment: None,
+🟥                                                        schema: Schema {
+🟥                                                            deprecated: None,
+🟥                                                            description: None,
+🟥                                                            name: Some(
+🟥                                                                "Empty",
+🟥                                                            ),
+🟥                                                            nullable: false,
+🟥                                                            ty: Struct(
+🟥                                                                StructType {
+🟥                                                                    fields: {},
+🟥                                                                    partial: true,
+🟥                                                                    required: None,
+🟩                                        ty: Union(
+🟩                                            UnionType {
+🟩                                                default_index: None,
+🟩                                                partial: true,
+🟩                                                operator: AnyOf,
+🟩                                                variants_types: [
 🟩                                                    Schema {
+🟩                                                        deprecated: None,
 🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "A",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "a",
-🟩                                                                ),
+🟩                                                        name: None,
+🟩                                                        nullable: false,
+🟩                                                        ty: Struct(
+🟩                                                            StructType {
+🟩                                                                fields: {
+🟩                                                                    "a": SchemaField {
+🟩                                                                        comment: None,
+🟩                                                                        schema: Schema {
+🟩                                                                            deprecated: None,
+🟩                                                                            description: None,
+🟩                                                                            name: None,
+🟩                                                                            nullable: true,
+🟩                                                                            ty: Union(
+🟩                                                                                UnionType {
+🟩                                                                                    default_index: None,
+🟩                                                                                    partial: false,
+🟩                                                                                    operator: AnyOf,
+🟩                                                                                    variants_types: [
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: Some(
+🟩                                                                                                "PartialEmpty",
+🟩                                                                                            ),
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Struct(
+🟩                                                                                                StructType {
+🟩                                                                                                    fields: {},
+🟩                                                                                                    partial: true,
+🟩                                                                                                    required: None,
+🟩                                                                                                },
+🟩                                                                                            ),
+🟩                                                                                        },
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: None,
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Null,
+🟩                                                                                        },
+🟩                                                                                    ],
+🟩                                                                                },
+🟩                                                                            ),
+🟩                                                                        },
+🟩                                                                        deprecated: None,
+🟩                                                                        env_var: None,
+🟩                                                                        hidden: false,
+🟩                                                                        nullable: true,
+🟩                                                                        optional: true,
+🟩                                                                        read_only: false,
+🟩                                                                        write_only: false,
+🟩                                                                    },
+⬛️                                                                },
+🟥                                                            ),
+🟥                                                        },
+🟩                                                                partial: true,
+🟩                                                                required: None,
 🟩                                                            },
 🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
 🟩                                                    },
 🟩                                                    Schema {
+⬛️                                                        deprecated: None,
+🟥                                                        env_var: None,
+🟥                                                        hidden: false,
 🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "B",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "b",
-🟩                                                                ),
+🟩                                                        name: None,
+⬛️                                                        nullable: false,
+🟥                                                        optional: false,
+🟥                                                        read_only: false,
+🟥                                                        write_only: false,
+🟩                                                        ty: Struct(
+🟩                                                            StructType {
+🟩                                                                fields: {
+🟩                                                                    "b": SchemaField {
+🟩                                                                        comment: None,
+🟩                                                                        schema: Schema {
+🟩                                                                            deprecated: None,
+🟩                                                                            description: None,
+🟩                                                                            name: None,
+🟩                                                                            nullable: true,
+🟩                                                                            ty: Union(
+🟩                                                                                UnionType {
+🟩                                                                                    default_index: None,
+🟩                                                                                    partial: false,
+🟩                                                                                    operator: AnyOf,
+🟩                                                                                    variants_types: [
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: Some(
+🟩                                                                                                "PartialEmpty",
+🟩                                                                                            ),
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Struct(
+🟩                                                                                                StructType {
+🟩                                                                                                    fields: {},
+🟩                                                                                                    partial: true,
+🟩                                                                                                    required: None,
+🟩                                                                                                },
+🟩                                                                                            ),
+🟩                                                                                        },
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: None,
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Null,
+🟩                                                                                        },
+🟩                                                                                    ],
+🟩                                                                                },
+🟩                                                                            ),
+🟩                                                                        },
+🟩                                                                        deprecated: None,
+🟩                                                                        env_var: None,
+🟩                                                                        hidden: false,
+🟩                                                                        nullable: true,
+🟩                                                                        optional: true,
+🟩                                                                        read_only: false,
+🟩                                                                        write_only: false,
+🟩                                                                    },
+🟩                                                                },
+🟩                                                                partial: true,
+🟩                                                                required: None,
 🟩                                                            },
 🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
-🟩                                                    Schema {
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "C",
-🟩                                                        ),
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                format: None,
-🟩                                                                value: String(
-🟩                                                                    "c",
-🟩                                                                ),
-🟩                                                            },
-🟩                                                        ),
-🟩                                                        deprecated: None,
-🟩                                                        env_var: None,
-🟩                                                        hidden: false,
-🟩                                                        nullable: false,
-🟩                                                        optional: false,
-🟩                                                        read_only: false,
-🟩                                                        write_only: false,
-🟩                                                    },
+⬛️                                                    },
+🟥                                                },
+🟥                                                partial: true,
+🟥                                                required: None,
 🟩                                                ],
-🟩                                            ),
-🟩                                        },
-🟩                                    ),
-🟩                                    deprecated: None,
-🟩                                    env_var: None,
-🟩                                    hidden: false,
-🟩                                    nullable: false,
-🟩                                    optional: false,
-🟩                                    read_only: false,
-🟩                                    write_only: false,
-🟩                                },
-🟩                                Schema {
-🟩                                    description: None,
-🟩                                    name: None,
-🟩                                    ty: Null,
-🟩                                    deprecated: None,
-🟩                                    env_var: None,
-🟩                                    hidden: false,
-🟩                                    nullable: false,
-🟩                                    optional: false,
-🟩                                    read_only: false,
-🟩                                    write_only: false,
-🟩                                },
-🟩                            ],
-⬛️                        },
-⬛️                    ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+🟥                                        ty: Struct(
+🟥                                            StructType {
+🟥                                                fields: {
+🟥                                                    "b": SchemaField {
+🟥                                                        comment: None,
+🟥                                                        schema: Schema {
+🟥                                                            deprecated: None,
+🟥                                                            description: None,
+🟥                                                            name: Some(
+🟥                                                                "Empty",
+🟥                                                            ),
+🟥                                                            nullable: false,
+🟥                                                            ty: Struct(
+🟥                                                                StructType {
+🟥                                                                    fields: {},
+🟥                                                                    partial: true,
+🟥                                                                    required: None,
+🟥                                                                },
+🟥                                                            ),
+🟥                                                        },
+🟥                                                        deprecated: None,
+🟥                                                        env_var: None,
+🟥                                                        hidden: false,
+🟥                                                        nullable: false,
+🟥                                                        optional: false,
+🟥                                                        read_only: false,
+🟥                                                        write_only: false,
+🟥                                                    },
+🟥                                                },
+🟥                                                partial: true,
+🟥                                                required: None,
+🟥                                            },
+🟥                                        ),
+🟩                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
 ⬛️                    hidden: false,
@@ -1091,128 +693,556 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "unitOpt": Schema {
-⬛️                    description: None,
-⬛️                    name: None,
-⬛️                    ty: Union(
-⬛️                        UnionType {
-⬛️                            default_index: None,
-⬛️                            partial: false,
-⬛️                            operator: AnyOf,
-⬛️                            variants_types: [
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: Some(
-⬛️                                        "UnitEnum",
-⬛️                                    ),
-⬛️                                    ty: Enum(
-⬛️                                        EnumType {
-⬛️                                            default_index: Some(
-⬛️                                                0,
-⬛️                                            ),
-⬛️                                            values: [
-⬛️                                                String(
-⬛️                                                    "a",
-⬛️                                                ),
-⬛️                                                String(
-⬛️                                                    "b",
-⬛️                                                ),
-⬛️                                                String(
-⬛️                                                    "c",
-⬛️                                                ),
-⬛️                                            ],
-⬛️                                            variants: Some(
-⬛️                                                [
+⬛️                "tupleOpt": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+🟥                        nullable: false,
+🟩                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+⬛️                                partial: true,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: Some(
+🟥                                            "TupleEnum",
+🟩                                            "PartialTupleEnum",
+⬛️                                        ),
+⬛️                                        nullable: false,
+⬛️                                        ty: Union(
+⬛️                                            UnionType {
+⬛️                                                default_index: None,
+⬛️                                                partial: true,
+⬛️                                                operator: AnyOf,
+⬛️                                                variants_types: [
 ⬛️                                                    Schema {
+⬛️                                                        deprecated: None,
 ⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "A",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "a",
-⬛️                                                                ),
+⬛️                                                        name: None,
+⬛️                                                        nullable: false,
+⬛️                                                        ty: Struct(
+⬛️                                                            StructType {
+⬛️                                                                fields: {
+⬛️                                                                    "a": SchemaField {
+⬛️                                                                        comment: None,
+⬛️                                                                        schema: Schema {
+⬛️                                                                            deprecated: None,
+⬛️                                                                            description: None,
+🟥                                                                            name: Some(
+🟥                                                                                "Empty",
+🟥                                                                            ),
+🟥                                                                            nullable: false,
+🟥                                                                            ty: Struct(
+🟥                                                                                StructType {
+🟥                                                                                    fields: {},
+🟥                                                                                    partial: true,
+🟥                                                                                    required: None,
+🟩                                                                            name: None,
+🟩                                                                            nullable: true,
+🟩                                                                            ty: Union(
+🟩                                                                                UnionType {
+🟩                                                                                    default_index: None,
+🟩                                                                                    partial: false,
+🟩                                                                                    operator: AnyOf,
+🟩                                                                                    variants_types: [
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: Some(
+🟩                                                                                                "PartialEmpty",
+🟩                                                                                            ),
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Struct(
+🟩                                                                                                StructType {
+🟩                                                                                                    fields: {},
+🟩                                                                                                    partial: true,
+🟩                                                                                                    required: None,
+🟩                                                                                                },
+🟩                                                                                            ),
+🟩                                                                                        },
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: None,
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Null,
+🟩                                                                                        },
+🟩                                                                                    ],
+⬛️                                                                                },
+⬛️                                                                            ),
+⬛️                                                                        },
+⬛️                                                                        deprecated: None,
+⬛️                                                                        env_var: None,
+⬛️                                                                        hidden: false,
+🟥                                                                        nullable: false,
+🟥                                                                        optional: false,
+🟩                                                                        nullable: true,
+🟩                                                                        optional: true,
+⬛️                                                                        read_only: false,
+⬛️                                                                        write_only: false,
+⬛️                                                                    },
+⬛️                                                                },
+⬛️                                                                partial: true,
+⬛️                                                                required: None,
 ⬛️                                                            },
 ⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                    Schema {
+⬛️                                                        deprecated: None,
 ⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "B",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "b",
-⬛️                                                                ),
+⬛️                                                        name: None,
+⬛️                                                        nullable: false,
+⬛️                                                        ty: Struct(
+⬛️                                                            StructType {
+⬛️                                                                fields: {
+⬛️                                                                    "b": SchemaField {
+⬛️                                                                        comment: None,
+⬛️                                                                        schema: Schema {
+⬛️                                                                            deprecated: None,
+⬛️                                                                            description: None,
+🟥                                                                            name: Some(
+🟥                                                                                "Empty",
+🟥                                                                            ),
+🟥                                                                            nullable: false,
+🟥                                                                            ty: Struct(
+🟥                                                                                StructType {
+🟥                                                                                    fields: {},
+🟥                                                                                    partial: true,
+🟥                                                                                    required: None,
+🟩                                                                            name: None,
+🟩                                                                            nullable: true,
+🟩                                                                            ty: Union(
+🟩                                                                                UnionType {
+🟩                                                                                    default_index: None,
+🟩                                                                                    partial: false,
+🟩                                                                                    operator: AnyOf,
+🟩                                                                                    variants_types: [
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: Some(
+🟩                                                                                                "PartialEmpty",
+🟩                                                                                            ),
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Struct(
+🟩                                                                                                StructType {
+🟩                                                                                                    fields: {},
+🟩                                                                                                    partial: true,
+🟩                                                                                                    required: None,
+🟩                                                                                                },
+🟩                                                                                            ),
+🟩                                                                                        },
+🟩                                                                                        Schema {
+🟩                                                                                            deprecated: None,
+🟩                                                                                            description: None,
+🟩                                                                                            name: None,
+🟩                                                                                            nullable: false,
+🟩                                                                                            ty: Null,
+🟩                                                                                        },
+🟩                                                                                    ],
+⬛️                                                                                },
+⬛️                                                                            ),
+⬛️                                                                        },
+⬛️                                                                        deprecated: None,
+⬛️                                                                        env_var: None,
+⬛️                                                                        hidden: false,
+🟥                                                                        nullable: false,
+🟥                                                                        optional: false,
+🟩                                                                        nullable: true,
+🟩                                                                        optional: true,
+⬛️                                                                        read_only: false,
+⬛️                                                                        write_only: false,
+⬛️                                                                    },
+⬛️                                                                },
+⬛️                                                                partial: true,
+⬛️                                                                required: None,
 ⬛️                                                            },
 ⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
-⬛️                                                    },
-⬛️                                                    Schema {
-⬛️                                                        description: None,
-⬛️                                                        name: Some(
-⬛️                                                            "C",
-⬛️                                                        ),
-⬛️                                                        ty: Literal(
-⬛️                                                            LiteralType {
-⬛️                                                                format: None,
-⬛️                                                                value: String(
-⬛️                                                                    "c",
-⬛️                                                                ),
-⬛️                                                            },
-⬛️                                                        ),
-⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        hidden: false,
-⬛️                                                        nullable: false,
-⬛️                                                        optional: false,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
 ⬛️                                                    },
 ⬛️                                                ],
-⬛️                                            ),
-⬛️                                        },
-⬛️                                    ),
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                Schema {
-⬛️                                    description: None,
-⬛️                                    name: None,
-⬛️                                    ty: Null,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                            ],
-⬛️                        },
-⬛️                    ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    hidden: false,
+⬛️                    nullable: true,
+🟥                    optional: false,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "unit": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+🟥                        name: Some(
+🟥                            "UnitEnum",
+🟥                        ),
+🟥                        nullable: false,
+🟥                        ty: Enum(
+🟥                            EnumType {
+🟥                                default_index: Some(
+🟥                                    0,
+🟥                                ),
+🟥                                values: [
+🟥                                    String(
+🟥                                        "a",
+🟥                                    ),
+🟥                                    String(
+🟥                                        "b",
+🟥                                    ),
+🟥                                    String(
+🟥                                        "c",
+🟥                                    ),
+🟥                                ],
+🟥                                variants: Some(
+🟥                                    {
+🟥                                        "A": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "a",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "B": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "b",
+🟥                                                        ),
+🟥                                                    },
+🟩                        name: None,
+🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: Some(
+🟩                                            "UnitEnum",
+🟩                                        ),
+🟩                                        nullable: false,
+🟩                                        ty: Enum(
+🟩                                            EnumType {
+🟩                                                default_index: Some(
+🟩                                                    0,
+⬛️                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "C": SchemaField {
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟩                                                values: [
+🟩                                                    String(
+🟩                                                        "a",
+🟩                                                    ),
+🟩                                                    String(
+🟩                                                        "b",
+🟩                                                    ),
+🟩                                                    String(
+🟩                                                        "c",
+🟩                                                    ),
+🟩                                                ],
+🟩                                                variants: Some(
+🟩                                                    {
+🟩                                                        "A": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "a",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+🟩                                                        "B": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "b",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+🟩                                                        "C": SchemaField {
+🟩                                                            comment: None,
+🟩                                                            schema: Schema {
+🟩                                                                deprecated: None,
+🟩                                                                description: None,
+🟩                                                                name: None,
+🟩                                                                nullable: false,
+🟩                                                                ty: Literal(
+🟩                                                                    LiteralType {
+🟩                                                                        format: None,
+🟩                                                                        value: String(
+🟩                                                                            "c",
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+🟩                                                            },
+🟩                                                            deprecated: None,
+🟩                                                            env_var: None,
+🟩                                                            hidden: false,
+🟩                                                            nullable: false,
+🟩                                                            optional: false,
+🟩                                                            read_only: false,
+🟩                                                            write_only: false,
+🟩                                                        },
+⬛️                                                    },
+⬛️                                                ),
+⬛️                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟩                                        ),
+🟩                                    },
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Null,
+⬛️                                    },
+🟥                                ),
+🟩                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    hidden: false,
+🟥                    nullable: false,
+🟥                    optional: false,
+🟩                    nullable: true,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "unitOpt": SchemaField {
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+🟥                        nullable: false,
+🟩                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+⬛️                                partial: false,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: Some(
+⬛️                                            "UnitEnum",
+⬛️                                        ),
+⬛️                                        nullable: false,
+⬛️                                        ty: Enum(
+⬛️                                            EnumType {
+⬛️                                                default_index: Some(
+⬛️                                                    0,
+⬛️                                                ),
+⬛️                                                values: [
+⬛️                                                    String(
+⬛️                                                        "a",
+⬛️                                                    ),
+⬛️                                                    String(
+⬛️                                                        "b",
+⬛️                                                    ),
+⬛️                                                    String(
+⬛️                                                        "c",
+⬛️                                                    ),
+⬛️                                                ],
+⬛️                                                variants: Some(
+⬛️                                                    {
+⬛️                                                        "A": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "a",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                        "B": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "b",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                        "C": SchemaField {
+⬛️                                                            comment: None,
+⬛️                                                            schema: Schema {
+⬛️                                                                deprecated: None,
+⬛️                                                                description: None,
+⬛️                                                                name: None,
+⬛️                                                                nullable: false,
+⬛️                                                                ty: Literal(
+⬛️                                                                    LiteralType {
+⬛️                                                                        format: None,
+⬛️                                                                        value: String(
+⬛️                                                                            "c",
+⬛️                                                                        ),
+⬛️                                                                    },
+⬛️                                                                ),
+⬛️                                                            },
+⬛️                                                            deprecated: None,
+⬛️                                                            env_var: None,
+⬛️                                                            hidden: false,
+⬛️                                                            nullable: false,
+⬛️                                                            optional: false,
+⬛️                                                            read_only: false,
+⬛️                                                            write_only: false,
+⬛️                                                        },
+⬛️                                                    },
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
 ⬛️                    hidden: false,
@@ -1227,11 +1257,4 @@ expression: "create_diff::<Enums>()"
 ⬛️            required: None,
 ⬛️        },
 ⬛️    ),
-⬛️    deprecated: None,
-⬛️    env_var: None,
-⬛️    hidden: false,
-⬛️    nullable: false,
-⬛️    optional: false,
-⬛️    read_only: false,
-⬛️    write_only: false,
 ⬛️}
