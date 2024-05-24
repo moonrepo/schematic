@@ -179,3 +179,18 @@ pub struct SchemaField {
     pub read_only: bool,
     pub write_only: bool,
 }
+
+impl From<SchemaField> for Schema {
+    fn from(val: SchemaField) -> Self {
+        val.schema
+    }
+}
+
+impl Into<SchemaField> for Schema {
+    fn into(self) -> SchemaField {
+        SchemaField {
+            schema: self,
+            ..Default::default()
+        }
+    }
+}
