@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed partial containers missing their comments.
+
 ## 0.16.2
 
 #### 🚀 Updates
