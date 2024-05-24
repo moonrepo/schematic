@@ -111,7 +111,7 @@ impl<'l> Container<'l> {
                 if is_all_unit_enum {
                     quote! {
                         #description
-                        schema.enumerable(EnumType::from_macro(
+                        schema.enumerable(EnumType::from_schemas(
                             [
                                 #(#variants_types),*
                             ],
@@ -121,7 +121,7 @@ impl<'l> Container<'l> {
                 } else {
                     quote! {
                         #description
-                        schema.union(UnionType::from_macro(
+                        schema.union(UnionType::from_schemas(
                             [
                                 #(#variants_types),*
                             ],

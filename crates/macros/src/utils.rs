@@ -152,21 +152,21 @@ pub fn map_option_field_quote<T: ToTokens>(
     }
 }
 
-pub fn map_option_variant_quote<T: ToTokens>(
-    name: &str,
-    value: Option<T>,
-) -> Option<proc_macro2::TokenStream> {
-    if let Some(value) = value {
-        let id = format_ident!("{}", name);
+// pub fn map_option_variant_quote<T: ToTokens>(
+//     name: &str,
+//     value: Option<T>,
+// ) -> Option<proc_macro2::TokenStream> {
+//     if let Some(value) = value {
+//         let id = format_ident!("{}", name);
 
-        Some(quote! {
-            #id: Some(#value.into()),
+//         Some(quote! {
+//             #id: Some(#value.into()),
 
-        })
-    } else {
-        None
-    }
-}
+//         })
+//     } else {
+//         None
+//     }
+// }
 
 pub fn map_option_argument_quote<T: ToTokens>(value: Option<T>) -> proc_macro2::TokenStream {
     if let Some(value) = value {

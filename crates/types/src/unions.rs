@@ -52,7 +52,7 @@ impl UnionType {
     }
 
     #[doc(hidden)]
-    pub fn from_macro<I, V>(variants_types: I, default_index: Option<usize>) -> Self
+    pub fn from_schemas<I, V>(variants_types: I, default_index: Option<usize>) -> Self
     where
         I: IntoIterator<Item = V>,
         V: Into<Schema>,

@@ -21,23 +21,28 @@ impl EnumType {
     }
 
     #[doc(hidden)]
-    pub fn from_macro<I>(variants: I, default_index: Option<usize>) -> Self
+    pub fn from_schemas<I>(schemas: I, default_index: Option<usize>) -> Self
     where
         I: IntoIterator<Item = Schema>,
     {
-        let variants: Vec<Box<Schema>> = variants.into_iter().map(Box::new).collect();
+        let mut variants = IndexMap::default();
         let mut values = vec![];
 
-        for variant in &variants {
-            if let SchemaType::Literal(lit) = &variant.ty {
+        for mut schema in schemas.into_iter() {
+            if let SchemaType::Literal(lit) = &schema.ty {
                 values.push(lit.value.clone());
             }
+
+            variants.insert(
+                schema.name.take().unwrap(),
+                Box::new(SchemaField::new(schema)),
+            );
         }
 
         EnumType {
             default_index,
             values,
-            variants: None, // Some(variants),
+            variants: Some(variants),
         }
     }
 
