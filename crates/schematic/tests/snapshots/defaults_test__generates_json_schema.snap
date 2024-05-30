@@ -330,10 +330,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "ContextDefaults": {
       "title": "ContextDefaults",
       "type": "object",
-      "required": [
-        "count",
-        "path"
-      ],
       "properties": {
         "count": {
           "type": "number"
@@ -348,13 +344,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "CustomDefaults": {
       "title": "CustomDefaults",
       "type": "object",
-      "required": [
-        "boolean",
-        "float",
-        "number",
-        "string",
-        "vector"
-      ],
       "properties": {
         "boolean": {
           "default": true,
@@ -426,8 +415,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "optional",
-        "required",
-        "requiredWithDefault"
+        "required"
       ],
       "properties": {
         "optional": {
