@@ -8,26 +8,26 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 export interface CustomDefaults {
 	/** @default true */
-	boolean: boolean;
+	boolean?: boolean;
 	/** @default 1.32 */
-	float: number;
+	float?: number;
 	/** @default 123 */
-	number: number;
+	number?: number;
 	/** @default 'foo' */
-	string: string;
-	vector: number[];
+	string?: string;
+	vector?: number[];
 }
 
 export interface ReqOptDefaults {
 	optional: number | null;
 	required: number;
 	/** @default 123 */
-	requiredWithDefault: number;
+	requiredWithDefault?: number;
 }
 
 export interface ContextDefaults {
-	count: number;
-	path: string;
+	count?: number;
+	path?: string;
 }
 
 export interface NativeDefaults {

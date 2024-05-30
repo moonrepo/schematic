@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated settings with `#[setting(default)]` or `#[serde(default)]` to be considered an "optional
+  field" in the context of JSON schemas and TypeScript types.
+
 ## 0.16.3
 
 #### 🐞 Fixes

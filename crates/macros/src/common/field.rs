@@ -1,3 +1,4 @@
+use crate::common::macros::ContainerSerdeArgs;
 use crate::common::FieldValue;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
@@ -13,11 +14,20 @@ use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct FieldSerdeArgs {
     pub alias: Option<String>,
+    pub default: bool,
     pub flatten: bool,
     pub rename: Option<String>,
     pub skip: bool,
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
+}
+
+impl FieldSerdeArgs {
+    pub fn inherit_from_container(&mut self, container: &ContainerSerdeArgs) {
+        if !self.default && container.default {
+            self.default = true;
+        }
+    }
 }
 
 // #[schema()], #[setting()]
@@ -85,12 +95,12 @@ impl<'l> Field<'l> {
                 panic!("Cannot use defaults with `nested` configs.");
             }
 
-            if field.is_optional() {
+            if field.is_nullable() {
                 panic!("Cannot use defaults with optional settings.");
             }
         }
 
-        if field.is_required() && !field.is_optional() {
+        if field.is_required() && !field.is_nullable() {
             panic!("Cannot use required with non-optional settings.");
         }
 
@@ -109,8 +119,12 @@ impl<'l> Field<'l> {
         self.args.nested
     }
 
-    pub fn is_optional(&self) -> bool {
+    pub fn is_nullable(&self) -> bool {
         self.value_type.is_outer_optional()
+    }
+
+    pub fn is_optional(&self) -> bool {
+        self.serde_args.default || self.args.default.is_some()
     }
 
     pub fn is_required(&self) -> bool {
@@ -202,7 +216,8 @@ impl<'l> Field<'l> {
 
     pub fn generate_schema_type(&self, as_field: bool) -> TokenStream {
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
-        let nullable = map_bool_field_quote("nullable", self.is_optional());
+        let nullable = map_bool_field_quote("nullable", self.is_nullable());
+        let optional = map_bool_field_quote("optional", self.is_optional());
         let comment = map_option_field_quote("comment", extract_comment(&self.attrs));
         let description = map_option_field_quote("description", extract_comment(&self.attrs));
         let deprecated = map_option_field_quote("deprecated", extract_deprecated(&self.attrs));
@@ -247,6 +262,7 @@ impl<'l> Field<'l> {
                 && env_var.is_none()
                 && hidden.is_none()
                 && nullable.is_none()
+                && optional.is_none()
             {
                 quote! {
                     SchemaField::new(#inner_schema)
@@ -260,6 +276,7 @@ impl<'l> Field<'l> {
                         #env_var
                         #hidden
                         #nullable
+                        #optional
                         field
                     }
                 }

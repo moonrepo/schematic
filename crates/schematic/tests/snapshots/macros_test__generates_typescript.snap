@@ -34,32 +34,32 @@ export interface OptionalValues {
 }
 
 export interface DefaultValues {
-	array: number[];
+	array?: number[];
 	arrayOpt: number[] | null;
 	/** @default true */
-	boolean: boolean;
-	booleanFn: boolean;
+	boolean?: boolean;
+	booleanFn?: boolean;
 	/** @default 'a' */
 	enums: SomeEnum;
 	/** @default 'foo.json' */
-	fileString: string;
+	fileString?: string;
 	/** @default 1.32 */
-	float32: number;
+	float32?: number;
 	/** @default 1.64 */
-	float64: number;
+	float64?: number;
 	/** @default 'foo with. many values!' */
-	longString: string;
+	longString?: string;
 	/** @default 123 */
-	number: number;
+	number?: number;
 	/** @default 'foo/bar' */
-	pathString: string;
+	pathString?: string;
 	pathStringBox: string;
 	/** @default 'foo' */
-	string: string;
-	stringFn: string;
-	tuple: [number, number, number, number];
+	string?: string;
+	stringFn?: string;
+	tuple?: [number, number, number, number];
 	tupleOpt: [number, number, number, number] | null;
-	vector: number[];
+	vector?: number[];
 }
 
 export interface Serde {

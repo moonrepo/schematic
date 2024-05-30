@@ -122,23 +122,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "DefaultValues",
       "type": "object",
       "required": [
-        "array",
         "arrayOpt",
-        "boolean",
-        "booleanFn",
         "enums",
-        "fileString",
-        "float32",
-        "float64",
-        "longString",
-        "number",
-        "pathString",
         "pathStringBox",
-        "string",
-        "stringFn",
-        "tuple",
-        "tupleOpt",
-        "vector"
+        "tupleOpt"
       ],
       "properties": {
         "array": {

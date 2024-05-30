@@ -1,5 +1,5 @@
 ---
-source: crates/config/tests/settings_test.rs
+source: crates/schematic/tests/settings_test.rs
 expression: "std::fs::read_to_string(file).unwrap()"
 ---
 {
@@ -102,8 +102,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "required": [
         "opt",
-        "req",
-        "reqDefault"
+        "req"
       ],
       "properties": {
         "opt": {
@@ -128,4 +127,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-
