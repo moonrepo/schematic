@@ -9,6 +9,8 @@ use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 #[derive(FromDeriveInput, Default)]
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct ContainerSerdeArgs {
+    pub default: bool,
+
     // struct
     pub rename: Option<String>,
     pub rename_all: Option<String>,
@@ -75,6 +77,7 @@ impl<'l> Macro<'l> {
                             .iter()
                             .map(|f| {
                                 let mut field = Field::from(f);
+                                field.serde_args.inherit_from_container(&serde_args);
                                 field.casing_format.clone_from(&casing_format);
                                 field.env_prefix.clone_from(&args.env_prefix);
                                 field
@@ -95,6 +98,7 @@ impl<'l> Macro<'l> {
                             .map(|(index, f)| {
                                 let mut field = Field::from(f);
                                 field.index = index;
+                                field.serde_args.inherit_from_container(&serde_args);
                                 field.casing_format.clone_from(&casing_format);
                                 field.env_prefix.clone_from(&args.env_prefix);
                                 field

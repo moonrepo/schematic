@@ -5,7 +5,7 @@ use syn::Expr;
 
 impl<'l> Field<'l> {
     pub fn generate_default_value(&self) -> TokenStream {
-        if self.is_optional() {
+        if self.is_nullable() {
             quote! { None }
         } else {
             self.value_type.generate_default_value(&self.args)
@@ -69,13 +69,13 @@ impl<'l> Field<'l> {
             if self.value_type.is_outer_boxed() {
                 let mut value = quote! { Box::new(partial.#key.unwrap_or_default()) };
 
-                if self.is_optional() {
+                if self.is_nullable() {
                     value = quote! { Some(#value) };
                 }
 
                 value
             } else {
-                if self.is_optional() {
+                if self.is_nullable() {
                     // Use optional values as-is as they're already wrapped in `Option`
                     quote! { partial.#key }
                 } else {
@@ -90,7 +90,7 @@ impl<'l> Field<'l> {
                 value = quote! { Box::new(#value) };
             }
 
-            if self.is_optional() {
+            if self.is_nullable() {
                 quote! {
                     if let Some(data) = partial.#key {
                         Some(#value)
