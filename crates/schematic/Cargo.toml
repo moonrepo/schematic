@@ -24,7 +24,7 @@ thiserror = "1.0.61"
 tracing = { workspace = true }
 
 # config
-garde = { version = "0.18.0", default-features = false, optional = true, features = [
+garde = { version = "0.19.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true }
@@ -116,7 +116,7 @@ reqwest = { workspace = true, features = [
 ] }
 serial_test = "3.1.1"
 similar = "2.5.0"
-starbase_sandbox = "0.6.0"
+starbase_sandbox = "0.6.2"
 
 # Types
 chrono = { workspace = true, features = ["serde"] }
