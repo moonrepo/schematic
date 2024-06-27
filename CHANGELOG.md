@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.19.
+- Updated dependencies.
+
 ## 0.16.4
 
 #### 🚀 Updates

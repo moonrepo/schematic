@@ -114,8 +114,8 @@ impl Schema {
         // Convert to a nullable union
         let mut new_schema = Schema::new(std::mem::replace(&mut self.ty, SchemaType::Unknown));
         new_schema.name = self.name.take();
-        new_schema.description = self.description.clone();
-        new_schema.deprecated = self.deprecated.clone();
+        new_schema.description.clone_from(&self.description);
+        new_schema.deprecated.clone_from(&self.deprecated);
 
         self.ty = SchemaType::Union(Box::new(UnionType::new_any([new_schema, Schema::null()])));
     }
