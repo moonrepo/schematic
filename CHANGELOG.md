@@ -4,6 +4,7 @@
 
 #### ⚙️ Internal
 
+- Updated `garde` (validation) to v0.20.
 - Updated dependencies.
 
 ## 0.16.5
