@@ -4,6 +4,7 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
+  "deprecated": true,
   "type": "object",
   "required": [
     "boolean",

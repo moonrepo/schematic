@@ -23,6 +23,7 @@ export interface AnotherConfig {
 	opt?: string | null | undefined;
 }
 
+/** @deprecated */
 export interface GenConfig {
 	boolean?: boolean | undefined;
 	date?: string | undefined;

@@ -147,6 +147,7 @@ impl<'gen> JsonSchemaRenderer<'gen> {
             } else {
                 schema.name.clone()
             },
+            deprecated: schema.deprecated.is_some(),
             description: schema
                 .description
                 .clone()

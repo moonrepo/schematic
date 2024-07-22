@@ -23,6 +23,7 @@ export type AnotherConfig = {
 	opt: string | null,
 };
 
+/** @deprecated */
 export type GenConfig = {
 	boolean: boolean,
 	date: string,

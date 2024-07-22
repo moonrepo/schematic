@@ -126,10 +126,8 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
         #[cfg(feature = "schema")]
         {
-            use crate::utils::extract_comment;
-
             let schema_name = cfg.get_name();
-            let schema_impl = cfg.type_of.generate_schema(extract_comment(&cfg.attrs));
+            let schema_impl = cfg.type_of.generate_schema(&cfg.attrs);
 
             let partial_schema_name = partial_name.to_string();
             let partial_schema_impl = cfg.type_of.generate_partial_schema(name, &partial_name);

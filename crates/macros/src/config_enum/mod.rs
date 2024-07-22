@@ -2,7 +2,7 @@ mod variant;
 
 use crate::common::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
-use crate::utils::{extract_comment, extract_common_attrs, instrument_quote};
+use crate::utils::{extract_comment, extract_common_attrs, extract_deprecated, instrument_quote};
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -178,6 +178,11 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         let default_index = map_option_argument_quote(default_index);
         let instrument = instrument_quote();
 
+        let deprecated = if let Some(comment) = extract_deprecated(&attrs) {
+            quote! { schema.set_deprecated(#comment); }
+        } else {
+            quote! {}
+        };
         let description = if let Some(comment) = extract_comment(&attrs) {
             quote! { schema.set_description(#comment); }
         } else {
@@ -194,7 +199,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 #instrument
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
-
+                    #deprecated
                     #description
                     schema.enumerable(EnumType::from_fields(
                         [

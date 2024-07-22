@@ -25,6 +25,7 @@ export interface AnotherConfig {
 	opt: string | null;
 }
 
+/** @deprecated */
 export interface GenConfig {
 	boolean: boolean;
 	date: string;

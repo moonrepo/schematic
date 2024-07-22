@@ -126,6 +126,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
 
     fn export_enum_type(&mut self, name: &str, enu: &EnumType, schema: &Schema) -> RenderResult {
         let value = self.render_enum(enu, schema)?;
+        let mut tags = vec![];
 
         let output = if self.is_string_union_enum(enu) {
             self.export_type_alias(name, value)?
@@ -139,7 +140,15 @@ impl<'gen> TypeScriptRenderer<'gen> {
             }
         };
 
-        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
+        if let Some(deprecated) = &schema.deprecated {
+            tags.push(if deprecated.is_empty() {
+                "@deprecated".to_owned()
+            } else {
+                format!("@deprecated {deprecated}")
+            });
+        }
+
+        Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
     }
 
     fn export_object_type(
@@ -149,6 +158,7 @@ impl<'gen> TypeScriptRenderer<'gen> {
         schema: &Schema,
     ) -> RenderResult {
         let value = self.render_struct(structure, schema)?;
+        let mut tags = vec![];
 
         let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
             format!("export interface {name} {value}")
@@ -156,7 +166,15 @@ impl<'gen> TypeScriptRenderer<'gen> {
             self.export_type_alias(name, value)?
         };
 
-        Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
+        if let Some(deprecated) = &schema.deprecated {
+            tags.push(if deprecated.is_empty() {
+                "@deprecated".to_owned()
+            } else {
+                format!("@deprecated {deprecated}")
+            });
+        }
+
+        Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
     }
 
     fn render_enum_as_string_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {

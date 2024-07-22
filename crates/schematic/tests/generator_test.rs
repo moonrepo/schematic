@@ -42,6 +42,7 @@ pub struct AnotherConfig {
 }
 
 #[derive(Clone, Config)]
+#[deprecated]
 struct GenConfig {
     boolean: bool,
     string: String,

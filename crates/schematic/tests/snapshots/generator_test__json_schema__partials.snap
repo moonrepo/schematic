@@ -5,6 +5,7 @@ expression: "fs::read_to_string(file).unwrap()"
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialGenConfig",
+  "deprecated": true,
   "type": "object",
   "properties": {
     "boolean": {
@@ -365,6 +366,7 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "GenConfig": {
       "title": "GenConfig",
+      "deprecated": true,
       "type": "object",
       "required": [
         "boolean",

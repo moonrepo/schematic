@@ -4,9 +4,11 @@
 
 #### 🚀 Updates
 
+- We now track `#[deprecated]` on containers.
 - TypeScript
   - When rendering a struct field that has an enum type, we'll include a `@type` doc tag for all
     variants.
+  - Deprecated structs (interfaces) and enums will now contain `@deprecated` on the container.
 
 #### ⚙️ Internal
 
