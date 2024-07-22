@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug, Default)]
 pub struct SchemaBuilder {
+    deprecated: Option<String>,
     description: Option<String>,
     name: Option<String>,
     name_stack: Rc<RefCell<Vec<String>>>,
@@ -28,12 +29,17 @@ impl SchemaBuilder {
     /// Build the schema from the configured values.
     pub fn build(&mut self) -> Schema {
         Schema {
+            deprecated: self.deprecated.take(),
             description: self.description.take(),
             name: self.name.take(),
             nullable: self.nullable,
             ty: mem::take(&mut self.ty),
-            ..Default::default()
         }
+    }
+
+    /// Mark this schema as deprecated.
+    pub fn set_deprecated(&mut self, value: impl AsRef<str>) {
+        self.deprecated = Some(value.as_ref().to_owned());
     }
 
     /// Add a description for this schema.
@@ -113,6 +119,7 @@ impl SchemaBuilder {
     /// Build a nested [`Schema`] by cloning another builder.
     pub fn nest(&self) -> SchemaBuilder {
         SchemaBuilder {
+            deprecated: None,
             description: None,
             name: None,
             name_stack: Rc::clone(&self.name_stack),

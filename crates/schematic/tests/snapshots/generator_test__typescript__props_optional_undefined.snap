@@ -23,6 +23,7 @@ export interface AnotherConfig {
 	opt?: string | null | undefined;
 }
 
+/** @deprecated */
 export interface GenConfig {
 	boolean?: boolean | undefined;
 	date?: string | undefined;
@@ -32,9 +33,13 @@ export interface GenConfig {
 	 * This is a list of `enumerable` values.
 	 *
 	 * @default 'foo'
+	 * @type {'foo' | 'bar' | 'baz'}
 	 */
 	enums?: BasicEnum | undefined;
-	/** @default 'foo' */
+	/**
+	 * @default 'foo'
+	 * @type {'foo' | 'bar' | 'baz' | string}
+	 */
 	fallbackEnum?: FallbackEnum | undefined;
 	float32?: number | undefined;
 	float64?: number | undefined;

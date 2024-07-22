@@ -1,8 +1,8 @@
 use crate::common::{Field, Variant};
-use crate::utils::map_option_argument_quote;
+use crate::utils::{extract_comment, extract_deprecated, map_option_argument_quote};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Fields;
+use syn::{Attribute, Fields};
 
 pub enum Container<'l> {
     NamedStruct { fields: Vec<Field<'l>> },
@@ -19,11 +19,14 @@ impl<'l> Container<'l> {
         }
     }
 
-    pub fn generate_schema(&self, description: Option<String>) -> TokenStream {
-        let description = if let Some(comment) = description {
-            quote! {
-                schema.set_description(#comment);
-            }
+    pub fn generate_schema(&self, attrs: &[&Attribute]) -> TokenStream {
+        let deprecated = if let Some(comment) = extract_deprecated(attrs) {
+            quote! { schema.set_deprecated(#comment); }
+        } else {
+            quote! {}
+        };
+        let description = if let Some(comment) = extract_comment(attrs) {
+            quote! { schema.set_description(#comment); }
         } else {
             quote! {}
         };
@@ -43,11 +46,13 @@ impl<'l> Container<'l> {
 
                 if fields.is_empty() {
                     quote! {
+                        #deprecated
                         #description
                         schema.structure(StructType::default())
                     }
                 } else {
                     quote! {
+                        #deprecated
                         #description
                         schema.structure(StructType::new([
                             #(#schema_types),*
@@ -72,11 +77,13 @@ impl<'l> Container<'l> {
 
                     quote! {
                         let mut schema = #single_type;
+                        #deprecated
                         #description
                         schema
                     }
                 } else {
                     quote! {
+                        #deprecated
                         #description
                         schema.tuple(TupleType::new([
                             #(#schema_types),*
@@ -110,6 +117,7 @@ impl<'l> Container<'l> {
 
                 if is_all_unit_enum {
                     quote! {
+                        #deprecated
                         #description
                         schema.enumerable(EnumType::from_schemas(
                             [
@@ -120,6 +128,7 @@ impl<'l> Container<'l> {
                     }
                 } else {
                     quote! {
+                        #deprecated
                         #description
                         schema.union(UnionType::from_schemas(
                             [
