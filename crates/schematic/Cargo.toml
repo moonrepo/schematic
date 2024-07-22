@@ -20,11 +20,11 @@ all-features = true
 schematic_macros = { version = "0.16.5", path = "../macros" }
 schematic_types = { version = "0.8.3", path = "../types" }
 miette = { workspace = true }
-thiserror = "1.0.61"
+thiserror = "1.0.63"
 tracing = { workspace = true }
 
 # config
-garde = { version = "0.19.2", default-features = false, optional = true, features = [
+garde = { version = "0.20.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true }
@@ -40,7 +40,7 @@ serde_json = { workspace = true, optional = true, features = [
 ] }
 
 # json schema
-markdown = { version = "1.0.0-alpha.17", optional = true }
+markdown = { version = "1.0.0-alpha.18", optional = true }
 schemars = { version = "0.8.21", optional = true, default-features = false }
 
 # toml
@@ -115,8 +115,8 @@ reqwest = { workspace = true, features = [
 	"rustls-tls-native-roots",
 ] }
 serial_test = "3.1.1"
-similar = "2.5.0"
-starbase_sandbox = "0.6.3"
+similar = "2.6.0"
+starbase_sandbox = "0.7.0"
 
 # Types
 chrono = { workspace = true, features = ["serde"] }
