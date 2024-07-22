@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- TypeScript
+  - When rendering a struct field that has an enum type, we'll include a `@type` doc tag for all
+    variants.
+
 #### ⚙️ Internal
 
 - Updated `garde` (validation) to v0.20.

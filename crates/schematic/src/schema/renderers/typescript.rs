@@ -159,35 +159,39 @@ impl<'gen> TypeScriptRenderer<'gen> {
         Ok(self.wrap_in_comment(schema.description.as_ref(), vec![], output))
     }
 
+    fn render_enum_as_string_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
+        // Map using variants instead of values (when available),
+        // so that the fallback variant is included
+        let variants_types = if let Some(variants) = &enu.variants {
+            variants
+                .iter()
+                .filter_map(|(_, variant)| {
+                    if variant.hidden {
+                        None
+                    } else {
+                        Some(Box::new(variant.schema.clone()))
+                    }
+                })
+                .collect::<Vec<_>>()
+        } else {
+            enu.values
+                .iter()
+                .map(|v| Box::new(Schema::literal_value(v.clone())))
+                .collect::<Vec<_>>()
+        };
+
+        return self.render_union(
+            &UnionType {
+                variants_types,
+                ..Default::default()
+            },
+            schema,
+        );
+    }
+
     fn render_enum_or_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
         if self.is_string_union_enum(enu) {
-            // Map using variants instead of values (when available),
-            // so that the fallback variant is included
-            let variants_types = if let Some(variants) = &enu.variants {
-                variants
-                    .iter()
-                    .filter_map(|(_, variant)| {
-                        if variant.hidden {
-                            None
-                        } else {
-                            Some(Box::new(variant.schema.clone()))
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            } else {
-                enu.values
-                    .iter()
-                    .map(|v| Box::new(Schema::literal_value(v.clone())))
-                    .collect::<Vec<_>>()
-            };
-
-            return self.render_union(
-                &UnionType {
-                    variants_types,
-                    ..Default::default()
-                },
-                schema,
-            );
+            return self.render_enum_as_string_union(enu, schema);
         }
 
         self.depth += 1;
@@ -429,6 +433,13 @@ impl<'gen> SchemaRenderer<'gen, String> for TypeScriptRenderer<'gen> {
 
             if let Some(env_var) = &field.env_var {
                 tags.push(format!("@envvar {env_var}"));
+            }
+
+            if let SchemaType::Enum(inner) = &field.schema.ty {
+                tags.push(format!(
+                    "@type {{{}}}",
+                    self.render_enum_as_string_union(inner, &field.schema)?
+                ));
             }
 
             out.push(self.wrap_in_comment(field.comment.as_ref(), tags, row));

@@ -35,7 +35,10 @@ export const enum Aliased {
 
 export type ValueTypes = {
 	boolean: boolean,
-	/** @default 'a' */
+	/**
+	 * @default 'a'
+	 * @type {'a' | 'b' | 'c'}
+	 */
 	enums: SomeEnum,
 	map: Record<string, number>,
 	number: number,
@@ -56,7 +59,10 @@ export type DefaultValues = {
 	/** @default true */
 	boolean?: boolean,
 	booleanFn?: boolean,
-	/** @default 'a' */
+	/**
+	 * @default 'a'
+	 * @type {'a' | 'b' | 'c'}
+	 */
 	enums: SomeEnum,
 	/** @default 'foo.json' */
 	fileString?: string,

@@ -32,9 +32,13 @@ export interface GenConfig {
    * This is a list of `enumerable` values.
    *
    * @default 'foo'
+   * @type {'foo' | 'bar' | 'baz'}
    */
   enums: 'foo' | 'bar' | 'baz';
-  /** @default 'foo' */
+  /**
+   * @default 'foo'
+   * @type {'foo' | 'bar' | 'baz' | string}
+   */
   fallbackEnum: 'foo' | 'bar' | 'baz' | string;
   float32: number;
   float64: number;
