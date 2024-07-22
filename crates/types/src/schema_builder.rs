@@ -34,7 +34,6 @@ impl SchemaBuilder {
             name: self.name.take(),
             nullable: self.nullable,
             ty: mem::take(&mut self.ty),
-            ..Default::default()
         }
     }
 

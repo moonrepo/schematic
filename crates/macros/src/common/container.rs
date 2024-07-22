@@ -20,12 +20,12 @@ impl<'l> Container<'l> {
     }
 
     pub fn generate_schema(&self, attrs: &[&Attribute]) -> TokenStream {
-        let deprecated = if let Some(comment) = extract_deprecated(&attrs) {
+        let deprecated = if let Some(comment) = extract_deprecated(attrs) {
             quote! { schema.set_deprecated(#comment); }
         } else {
             quote! {}
         };
-        let description = if let Some(comment) = extract_comment(&attrs) {
+        let description = if let Some(comment) = extract_comment(attrs) {
             quote! { schema.set_description(#comment); }
         } else {
             quote! {}

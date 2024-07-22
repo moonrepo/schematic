@@ -198,13 +198,13 @@ impl<'gen> TypeScriptRenderer<'gen> {
                 .collect::<Vec<_>>()
         };
 
-        return self.render_union(
+        self.render_union(
             &UnionType {
                 variants_types,
                 ..Default::default()
             },
             schema,
-        );
+        )
     }
 
     fn render_enum_or_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
