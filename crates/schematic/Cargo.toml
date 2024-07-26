@@ -7,6 +7,7 @@ description = "A layered serde configuration and schema library."
 homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
+rust-version = "1.71.1"
 
 [package.metadata.release]
 pre-release-replacements = [
