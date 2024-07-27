@@ -44,6 +44,9 @@ serde_json = { workspace = true, optional = true, features = [
 markdown = { version = "1.0.0-alpha.18", optional = true }
 schemars = { version = "0.8.21", optional = true, default-features = false }
 
+# pkl
+rpkl = { workspace = true, optional = true }
+
 # toml
 toml = { workspace = true, optional = true }
 
@@ -72,6 +75,7 @@ validate = ["dep:garde", "schematic_macros/validate"]
 
 # Formats
 json = ["dep:serde_json"]
+pkl = ["dep:rpkl"]
 toml = ["dep:toml"]
 yaml = ["dep:serde_yaml"]
 
@@ -88,6 +92,7 @@ type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal"]
 type_semver = ["schematic_types/semver"]
 type_serde_json = ["schematic_types/serde_json"]
+type_serde_rpkl = ["schematic_types/serde_rpkl"]
 type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
@@ -102,12 +107,13 @@ schematic = { path = ".", features = [
 	"env",
 	"extends",
 	"json",
-	"schema",
-	"schema_serde",
-	"toml",
+	"pkl",
 	"renderer_json_schema",
 	"renderer_template",
 	"renderer_typescript",
+	"schema",
+	"schema_serde",
+	"toml",
 	"tracing",
 	"type_chrono",
 	"type_indexmap",
@@ -116,6 +122,7 @@ schematic = { path = ".", features = [
 	"type_rust_decimal",
 	"type_semver",
 	"type_serde_json",
+	"type_serde_rpkl",
 	"type_serde_toml",
 	"type_serde_yaml",
 	"type_url",
