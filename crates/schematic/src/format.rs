@@ -1,4 +1,6 @@
+use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Supported source configuration formats.
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -21,6 +23,44 @@ pub enum Format {
 }
 
 impl Format {
+    /// Detects a format from a provided value, either a file path or URL, by
+    /// checking for a supported file extension.
+    pub fn detect2(value: &str) -> Result<Format, UnsupportedFormatError> {
+        let mut available: Vec<&str> = vec![];
+
+        #[cfg(feature = "json")]
+        {
+            available.push("JSON");
+
+            if value.ends_with(".json") {
+                return Ok(Format::Json);
+            }
+        }
+
+        #[cfg(feature = "toml")]
+        {
+            available.push("TOML");
+
+            if value.ends_with(".toml") {
+                return Ok(Format::Toml);
+            }
+        }
+
+        #[cfg(feature = "yaml")]
+        {
+            available.push("YAML");
+
+            if value.ends_with(".yaml") || value.ends_with(".yml") {
+                return Ok(Format::Yaml);
+            }
+        }
+
+        Err(UnsupportedFormatError(
+            value.to_owned(),
+            available.join(", "),
+        ))
+    }
+
     pub fn is_json(&self) -> bool {
         #[cfg(feature = "json")]
         {
@@ -54,3 +94,8 @@ impl Format {
         }
     }
 }
+
+#[derive(Clone, Debug, Diagnostic, Error)]
+#[diagnostic(code(config::format::unsupported))]
+#[error("Unsupported format for {0}, expected {1}.")]
+pub struct UnsupportedFormatError(String, String);

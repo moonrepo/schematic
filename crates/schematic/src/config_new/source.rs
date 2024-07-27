@@ -1,6 +1,6 @@
-use crate::config::cacher::BoxedCacher;
+use super::cacher::BoxedCacher;
 use crate::config::errors::ConfigError;
-use crate::config::format::Format;
+use crate::format::Format;
 use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
