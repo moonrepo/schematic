@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Added an MSRV requirement for v1.71.1.
+- Updated Rust to v1.80 (for development).
+
 ## 0.16.6
 
 #### 🚀 Updates
