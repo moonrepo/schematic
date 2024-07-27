@@ -1,7 +1,7 @@
 use super::extender::ExtendsFrom;
+use super::path::Path;
+use super::validator::ValidatorError;
 use crate::config::errors::ConfigError;
-use crate::config::path::Path;
-use crate::config::validator::ValidatorError;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
 
