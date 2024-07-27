@@ -164,19 +164,6 @@ impl<'l> Macro<'l> {
         }
     }
 
-    pub fn get_meta_struct(&self) -> TokenStream {
-        let name = if let Some(rename) = &self.args.rename {
-            rename.to_string()
-        } else {
-            format!("{}", self.name)
-        };
-
-        quote! {
-            schematic::Meta {
-                name: #name,
-            }
-        }
-    }
 
     pub fn get_name(&self) -> String {
         if let Some(local) = &self.args.rename {

@@ -25,7 +25,6 @@ impl<'l> ToTokens for ConfigMacro<'l> {
         });
 
         // Generate implementations
-        let meta = cfg.get_meta_struct();
         let default_values = cfg.type_of.generate_default_values();
         let env_values = cfg.type_of.generate_env_values();
         let extends_from = cfg.type_of.generate_extends_from();
@@ -114,8 +113,6 @@ impl<'l> ToTokens for ConfigMacro<'l> {
             #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
-
-                const META: schematic::Meta = #meta;
 
                 #instrument
                 fn from_partial(partial: Self::Partial) -> Self {

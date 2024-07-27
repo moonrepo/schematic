@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
+- Renamed some error enum variants.
+
 #### ⚙️ Internal
 
 - Added an MSRV requirement for v1.71.1.
