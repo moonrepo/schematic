@@ -15,6 +15,9 @@ pub enum Format {
     #[cfg(feature = "json")]
     Json,
 
+    #[cfg(feature = "pkl")]
+    Pkl,
+
     #[cfg(feature = "toml")]
     Toml,
 
@@ -34,6 +37,15 @@ impl Format {
 
             if value.ends_with(".json") {
                 return Ok(Format::Json);
+            }
+        }
+
+        #[cfg(feature = "pkl")]
+        {
+            available.push("Pkl");
+
+            if value.ends_with(".pkl") {
+                return Ok(Format::Pkl);
             }
         }
 
@@ -67,6 +79,17 @@ impl Format {
             matches!(self, Format::Json)
         }
         #[cfg(not(feature = "json"))]
+        {
+            false
+        }
+    }
+
+    pub fn is_pkl(&self) -> bool {
+        #[cfg(feature = "pkl")]
+        {
+            matches!(self, Format::Pkl)
+        }
+        #[cfg(not(feature = "pkl"))]
         {
             false
         }

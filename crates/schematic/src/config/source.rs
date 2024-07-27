@@ -175,6 +175,7 @@ impl Source {
 /// Returns true if the value ends in a supported file extension.
 pub fn is_source_format(value: &str) -> bool {
     value.ends_with(".json")
+        || value.ends_with(".pkl")
         || value.ends_with(".toml")
         || value.ends_with(".yaml")
         || value.ends_with(".yml")
