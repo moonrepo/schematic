@@ -23,7 +23,7 @@ impl Format {
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
     #[instrument(name = "parse_format", skip(content), fields(format = ?self))]
-    pub fn parse2<D>(&self, content: String) -> Result<D, ParserError>
+    pub fn parse<D>(&self, content: String) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {

@@ -79,7 +79,7 @@ impl Source {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
         Ok(Source::File {
-            format: Format::detect2(path.to_str().unwrap_or_default())?,
+            format: Format::detect(path.to_str().unwrap_or_default())?,
             path,
             required,
         })
@@ -90,7 +90,7 @@ impl Source {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
         Ok(Source::Url {
-            format: Format::detect2(&url)?,
+            format: Format::detect(&url)?,
             url,
         })
     }
@@ -108,7 +108,7 @@ impl Source {
         };
 
         match self {
-            Source::Code { code, format } => format.parse2(code.to_owned()).map_err(handle_error),
+            Source::Code { code, format } => format.parse(code.to_owned()).map_err(handle_error),
             Source::File {
                 path,
                 format,
@@ -127,7 +127,7 @@ impl Source {
                     "".into()
                 };
 
-                format.parse2(content).map_err(handle_error)
+                format.parse(content).map_err(handle_error)
             }
             Source::Url { url, format } => {
                 if !is_secure_url(url) {
@@ -154,7 +154,7 @@ impl Source {
                         body
                     };
 
-                    format.parse2(content).map_err(handle_error)
+                    format.parse(content).map_err(handle_error)
                 }
 
                 #[cfg(not(feature = "url"))]

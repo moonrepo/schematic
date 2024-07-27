@@ -25,7 +25,7 @@ pub enum Format {
 impl Format {
     /// Detects a format from a provided value, either a file path or URL, by
     /// checking for a supported file extension.
-    pub fn detect2(value: &str) -> Result<Format, UnsupportedFormatError> {
+    pub fn detect(value: &str) -> Result<Format, UnsupportedFormatError> {
         let mut available: Vec<&str> = vec![];
 
         #[cfg(feature = "json")]
