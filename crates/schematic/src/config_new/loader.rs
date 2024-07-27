@@ -197,16 +197,12 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context)
     }
 
-    fn get_location<'l>(&self, source: &'l Source) -> &'l str {
+    fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
             Source::Code { .. } => &self.name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
-                    if let Ok(other_path) = path.strip_prefix(root) {
-                        other_path
-                    } else {
-                        path
-                    }
+                    path.strip_prefix(root).unwrap_or(path)
                 } else {
                     path
                 };
@@ -261,7 +257,14 @@ impl<T: Config> ConfigLoader<T> {
             let partial: T::Partial = {
                 let mut cacher = self.cacher.lock().unwrap();
 
-                source.parse(location, &mut cacher, self.help.as_deref())?
+                source.parse(&mut cacher).map_err(|outer| match outer {
+                    ConfigError::Parser { error, .. } => ConfigError::Parser {
+                        config: location.to_owned(),
+                        error,
+                        help: self.help.clone(),
+                    },
+                    _ => outer,
+                })?
             };
 
             // Validate before continuing so we ensure the values are correct

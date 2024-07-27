@@ -96,7 +96,7 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
-    // #[instrument(name = "parse_config_source", skip(cacher, help), fields(source = ?self))]
+    #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
     pub fn parse<D>(&self, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
@@ -108,7 +108,7 @@ impl Source {
         };
 
         match self {
-            Source::Code { code, format } => format.parse(code.to_owned()).map_err(handle_error),
+            Source::Code { code, format } => format.parse2(code.to_owned()).map_err(handle_error),
             Source::File {
                 path,
                 format,
@@ -127,7 +127,7 @@ impl Source {
                     "".into()
                 };
 
-                format.parse(content).map_err(handle_error)
+                format.parse2(content).map_err(handle_error)
             }
             Source::Url { url, format } => {
                 if !is_secure_url(url) {
@@ -154,7 +154,7 @@ impl Source {
                         body
                     };
 
-                    format.parse(content).map_err(handle_error)
+                    format.parse2(content).map_err(handle_error)
                 }
 
                 #[cfg(not(feature = "url"))]
