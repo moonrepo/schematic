@@ -1,9 +1,10 @@
-use crate::config::cacher::{BoxedCacher, Cacher, MemoryCache};
-use crate::config::errors::ConfigError;
-use crate::config::format::Format;
-use crate::config::layer::Layer;
-use crate::config::source::Source;
-use crate::config::{Config, ExtendsFrom, PartialConfig};
+use super::cacher::{BoxedCacher, Cacher, MemoryCache};
+use super::configs::{Config, PartialConfig};
+use super::error::ConfigError;
+use super::extender::ExtendsFrom;
+use super::layer::Layer;
+use super::source::Source;
+use crate::format::Format;
 use serde::Serialize;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -25,6 +26,7 @@ pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     cacher: Mutex<BoxedCacher>,
     help: Option<String>,
+    name: String,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
@@ -37,12 +39,13 @@ impl<T: Config> ConfigLoader<T> {
             _config: PhantomData,
             cacher: Mutex::new(Box::<MemoryCache>::default()),
             help: None,
+            name: T::schema_name().unwrap_or_else(|| "<unknown>".into()),
             sources: vec![],
             root: None,
         }
     }
 
-    /// Add a code snippet source to load.
+    /// Add explicit source code to load.
     pub fn code<S: TryInto<String>>(
         &mut self,
         code: S,
@@ -93,7 +96,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
-        trace!(config = T::META.name, "Loading configuration");
+        trace!(config = &self.name, "Loading configuration");
 
         let layers = self.parse_into_layers(&self.sources, context)?;
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
@@ -104,7 +107,7 @@ impl<T: Config> ConfigLoader<T> {
             .map_err(|error| ConfigError::Validator {
                 config: match layers.last() {
                     Some(last) => self.get_location(&last.source).to_owned(),
-                    None => T::META.name.to_owned(),
+                    None => self.name.clone(),
                 },
                 error: Box::new(error),
                 help: self.help.clone(),
@@ -126,7 +129,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
-        trace!(config = T::META.name, "Loading partial configuration");
+        trace!(config = &self.name, "Loading partial configuration");
 
         let layers = self.parse_into_layers(&self.sources, context)?;
         let partial = self.merge_layers(&layers, context)?;
@@ -170,7 +173,7 @@ impl<T: Config> ConfigLoader<T> {
             }
 
             trace!(
-                config = T::META.name,
+                config = &self.name,
                 source = source.as_str(),
                 "Extending additional source"
             );
@@ -194,21 +197,17 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context)
     }
 
-    fn get_location<'l>(&self, source: &'l Source) -> &'l str {
+    fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
-            Source::Code { .. } => T::META.name,
+            Source::Code { .. } => &self.name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
-                    if let Ok(other_path) = path.strip_prefix(root) {
-                        other_path
-                    } else {
-                        path
-                    }
+                    path.strip_prefix(root).unwrap_or(path)
                 } else {
                     path
                 };
 
-                rel_path.to_str().unwrap_or(T::META.name)
+                rel_path.to_str().unwrap_or(&self.name)
             }
             Source::Url { url, .. } => url,
         }
@@ -221,7 +220,7 @@ impl<T: Config> ConfigLoader<T> {
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
         trace!(
-            config = T::META.name,
+            config = &self.name,
             "Merging partial layers into a final result"
         );
 
@@ -246,7 +245,7 @@ impl<T: Config> ConfigLoader<T> {
 
         for source in sources_to_parse {
             trace!(
-                config = T::META.name,
+                config = &self.name,
                 source = source.as_str(),
                 "Creating layer from source"
             );
@@ -258,7 +257,14 @@ impl<T: Config> ConfigLoader<T> {
             let partial: T::Partial = {
                 let mut cacher = self.cacher.lock().unwrap();
 
-                source.parse(location, &mut cacher, self.help.as_deref())?
+                source.parse(&mut cacher).map_err(|outer| match outer {
+                    ConfigError::Parser { error, .. } => ConfigError::Parser {
+                        config: location.to_owned(),
+                        error,
+                        help: self.help.clone(),
+                    },
+                    _ => outer,
+                })?
             };
 
             // Validate before continuing so we ensure the values are correct

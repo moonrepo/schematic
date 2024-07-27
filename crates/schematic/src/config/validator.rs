@@ -1,4 +1,4 @@
-use crate::config::path::{Path, PathSegment};
+use super::path::{Path, PathSegment};
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
 use std::fmt::{self, Display};

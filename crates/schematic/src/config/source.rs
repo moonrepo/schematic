@@ -1,6 +1,6 @@
-use crate::config::cacher::BoxedCacher;
-use crate::config::errors::ConfigError;
-use crate::config::format::Format;
+use super::cacher::BoxedCacher;
+use super::error::ConfigError;
+use crate::format::Format;
 use serde::Deserialize;
 use serde::{de::DeserializeOwned, Serialize};
 use std::fs;
@@ -46,25 +46,22 @@ impl Source {
                 value
             };
 
-            if parent_source.is_none() {
-                return Source::file(value, true);
-            }
+            return match parent_source {
+                None => Source::file(value, true),
+                Some(Source::File {
+                    path: parent_path, ..
+                }) => {
+                    let mut path = PathBuf::from(value);
 
-            if let Source::File {
-                path: parent_path, ..
-            } = parent_source.unwrap()
-            {
-                let mut path = PathBuf::from(value);
+                    // Not absolute, so prefix with parent
+                    if !path.has_root() {
+                        path = parent_path.parent().unwrap().join(path);
+                    }
 
-                // Not absolute, so prefix with parent
-                if !path.has_root() {
-                    path = parent_path.parent().unwrap().join(path);
+                    Source::file(path, true)
                 }
-
-                return Source::file(path, true);
-            } else {
-                return Err(ConfigError::ExtendsFromParentFileOnly);
-            }
+                Some(_) => Err(ConfigError::ExtendsFromParentFileOnly),
+            };
         }
 
         Err(ConfigError::ExtendsFromNoCode)
@@ -82,7 +79,7 @@ impl Source {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
         Ok(Source::File {
-            format: Format::detect(path.to_str().unwrap_or_default())?,
+            format: Format::detect2(path.to_str().unwrap_or_default())?,
             path,
             required,
         })
@@ -93,32 +90,25 @@ impl Source {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
         Ok(Source::Url {
-            format: Format::detect(&url)?,
+            format: Format::detect2(&url)?,
             url,
         })
     }
 
     /// Parse the source contents according to the required format.
-    #[instrument(name = "parse_config_source", skip(cacher, help), fields(source = ?self))]
-    pub fn parse<D>(
-        &self,
-        location: &str,
-        cacher: &mut BoxedCacher,
-        help: Option<&str>,
-    ) -> Result<D, ConfigError>
+    #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
+    pub fn parse<D>(&self, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
-        let handle_error = |error: crate::config::ParserError| ConfigError::Parser {
-            config: location.to_owned(),
+        let handle_error = |error: super::parser::ParserError| ConfigError::Parser {
+            config: String::new(),
             error,
-            help: help.map(|h| h.to_owned()),
+            help: None,
         };
 
         match self {
-            Source::Code { code, format } => format
-                .parse(code.to_owned(), location)
-                .map_err(handle_error),
+            Source::Code { code, format } => format.parse2(code.to_owned()).map_err(handle_error),
             Source::File {
                 path,
                 format,
@@ -137,7 +127,7 @@ impl Source {
                     "".into()
                 };
 
-                format.parse(content, location).map_err(handle_error)
+                format.parse2(content).map_err(handle_error)
             }
             Source::Url { url, format } => {
                 if !is_secure_url(url) {
@@ -164,7 +154,7 @@ impl Source {
                         body
                     };
 
-                    format.parse(content, location).map_err(handle_error)
+                    format.parse2(content).map_err(handle_error)
                 }
 
                 #[cfg(not(feature = "url"))]
