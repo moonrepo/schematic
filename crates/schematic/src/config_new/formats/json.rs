@@ -1,3 +1,4 @@
+use super::super::parser::ParserError;
 use super::create_span;
 use serde::de::DeserializeOwned;
 
@@ -18,5 +19,5 @@ where
             error.inner().column(),
         )),
         message: error.inner().to_string(),
-    })?
+    })
 }

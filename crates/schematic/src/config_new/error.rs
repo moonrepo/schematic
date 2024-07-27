@@ -1,5 +1,5 @@
+use super::parser::ParserError;
 use super::validator::ValidatorError;
-// use crate::config::parser::ParserError;
 use crate::format::UnsupportedFormatError;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};

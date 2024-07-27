@@ -1,3 +1,4 @@
+use super::super::parser::ParserError;
 use super::create_span;
 use serde::de::{DeserializeOwned, IntoDeserializer};
 
@@ -40,5 +41,5 @@ where
             .location()
             .map(|s| create_span(&content, s.line(), s.column())),
         message: error.inner().to_string(),
-    })?
+    })
 }

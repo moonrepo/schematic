@@ -1,3 +1,4 @@
+use super::super::parser::ParserError;
 use serde::de::DeserializeOwned;
 
 pub fn parse<D>(content: String) -> Result<D, ParserError>
@@ -12,5 +13,5 @@ where
         path: error.path().to_string(),
         span: error.inner().span().map(|s| s.into()),
         message: error.inner().message().to_owned(),
-    })?
+    })
 }
