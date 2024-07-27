@@ -6,7 +6,7 @@ pub fn parse<D>(name: &str, content: &str) -> Result<D, ParserError>
 where
     D: DeserializeOwned,
 {
-    let de = toml::Deserializer::new(&content);
+    let de = toml::Deserializer::new(content);
 
     serde_path_to_error::deserialize(de).map_err(|error| ParserError {
         content: NamedSource::new(name, content.to_owned()),

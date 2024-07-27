@@ -103,7 +103,7 @@ impl Source {
     {
         let handle_error = |error: super::parser::ParserError| ConfigError::Parser {
             location: String::new(),
-            error,
+            error: Box::new(error),
             help: None,
         };
 

@@ -1,5 +1,6 @@
 use miette::{Diagnostic, NamedSource, SourceSpan};
 use starbase_styles::{Style, Stylize};
+use std::borrow::Borrow;
 use thiserror::Error;
 
 /// Error for a single parse failure. Can be used with [`TryFrom`], [`FromStr`], or serde.
@@ -33,4 +34,10 @@ pub struct ParserError {
 
     #[label("Fix this")]
     pub span: Option<SourceSpan>,
+}
+
+impl Borrow<dyn Diagnostic> for Box<ParserError> {
+    fn borrow(&self) -> &(dyn Diagnostic + 'static) {
+        self.as_ref()
+    }
 }

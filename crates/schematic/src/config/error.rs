@@ -80,10 +80,10 @@ pub enum ConfigError {
         location: String,
 
         // Required to display the code snippet!
-        // Because of this, we can't wrap in `Box`.
         #[diagnostic_source]
+        // Bubble up the source error.
         #[source]
-        error: ParserError,
+        error: Box<ParserError>,
 
         #[help]
         help: Option<String>,
@@ -95,8 +95,9 @@ pub enum ConfigError {
     Validator {
         location: String,
 
-        // This includes a vertical red line which we don't want!
+        // This includes a vertical red line when rendered!
         // #[diagnostic_source]
+        // Bubble up the source error.
         #[source]
         error: Box<ValidatorError>,
 

@@ -8,13 +8,13 @@ where
     D: DeserializeOwned,
 {
     let de =
-        &mut serde_json::Deserializer::from_str(if content.is_empty() { "{}" } else { &content });
+        &mut serde_json::Deserializer::from_str(if content.is_empty() { "{}" } else { content });
 
     serde_path_to_error::deserialize(de).map_err(|error| ParserError {
         content: NamedSource::new(name, content.to_owned()),
         path: error.path().to_string(),
         span: Some(create_span(
-            &content,
+            content,
             error.inner().line(),
             error.inner().column(),
         )),

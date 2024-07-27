@@ -24,7 +24,7 @@ where
     D: DeserializeOwned,
 {
     // First pass, convert string to value
-    let de = serde_yaml::Deserializer::from_str(&content);
+    let de = serde_yaml::Deserializer::from_str(content);
 
     let mut result: serde_yaml::Value = serde_path_to_error::deserialize(de).map_err(|error| {
         create_parse_error(name, content, error.path().to_string(), error.into_inner())
