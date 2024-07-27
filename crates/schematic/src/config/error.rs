@@ -75,9 +75,9 @@ pub enum ConfigError {
 
     // Parser
     #[diagnostic(code(config::parse::failed))]
-    #[error("Failed to parse {}.", .config.style(Style::File))]
+    #[error("Failed to parse {}.", .location.style(Style::File))]
     Parser {
-        config: String,
+        location: String,
 
         // Required to display the code snippet!
         // Because of this, we can't wrap in `Box`.
@@ -91,9 +91,9 @@ pub enum ConfigError {
 
     // Validator
     #[diagnostic(code(config::validate::failed))]
-    #[error("Failed to validate {}.", .config.style(Style::File))]
+    #[error("Failed to validate {}.", .location.style(Style::File))]
     Validator {
-        config: String,
+        location: String,
 
         // This includes a vertical red line which we don't want!
         // #[diagnostic_source]

@@ -1,4 +1,4 @@
-use miette::{Diagnostic, SourceSpan};
+use miette::{Diagnostic, NamedSource, SourceSpan};
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -25,7 +25,7 @@ impl ParseError {
 #[diagnostic(severity(Error))]
 pub struct ParserError {
     #[source_code]
-    pub content: String, // NamedSource,
+    pub content: NamedSource<String>,
 
     pub message: String,
 

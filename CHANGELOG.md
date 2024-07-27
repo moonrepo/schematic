@@ -5,6 +5,7 @@
 #### 💥 Breaking
 
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
+- Reworked how parser errors are rendered in the terminal.
 - Renamed some error enum variants.
 
 #### ⚙️ Internal

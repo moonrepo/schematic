@@ -105,7 +105,7 @@ impl<T: Config> ConfigLoader<T> {
         partial
             .validate(context, true)
             .map_err(|error| ConfigError::Validator {
-                config: match layers.last() {
+                location: match layers.last() {
                     Some(last) => self.get_location(&last.source).to_owned(),
                     None => self.name.clone(),
                 },
@@ -197,9 +197,8 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context)
     }
 
-    fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
+    fn get_location<'l>(&self, source: &'l Source) -> &'l str {
         match source {
-            Source::Code { .. } => &self.name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
                     path.strip_prefix(root).unwrap_or(path)
@@ -207,9 +206,9 @@ impl<T: Config> ConfigLoader<T> {
                     path
                 };
 
-                rel_path.to_str().unwrap_or(&self.name)
+                rel_path.to_str().unwrap_or_default()
             }
-            Source::Url { url, .. } => url,
+            _ => source.as_str(),
         }
     }
 
@@ -250,28 +249,27 @@ impl<T: Config> ConfigLoader<T> {
                 "Creating layer from source"
             );
 
-            // Determine the source location for use in error messages
-            let location = self.get_location(source);
-
             // Parse the source into a parial
             let partial: T::Partial = {
                 let mut cacher = self.cacher.lock().unwrap();
 
-                source.parse(&mut cacher).map_err(|outer| match outer {
-                    ConfigError::Parser { error, .. } => ConfigError::Parser {
-                        config: location.to_owned(),
-                        error,
-                        help: self.help.clone(),
-                    },
-                    _ => outer,
-                })?
+                source
+                    .parse(&self.name, &mut cacher)
+                    .map_err(|outer| match outer {
+                        ConfigError::Parser { error, .. } => ConfigError::Parser {
+                            location: self.get_location(source).to_owned(),
+                            error,
+                            help: self.help.clone(),
+                        },
+                        _ => outer,
+                    })?
             };
 
             // Validate before continuing so we ensure the values are correct
             partial
                 .validate(context, false)
                 .map_err(|error| ConfigError::Validator {
-                    config: location.to_owned(),
+                    location: self.get_location(source).to_owned(),
                     error: Box::new(error),
                     help: self.help.clone(),
                 })?;

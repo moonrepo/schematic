@@ -23,7 +23,7 @@ impl Format {
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
     #[instrument(name = "parse_format", skip(content), fields(format = ?self))]
-    pub fn parse<D>(&self, content: String) -> Result<D, ParserError>
+    pub fn parse<D>(&self, location: &str, content: &str) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -31,13 +31,13 @@ impl Format {
             Format::None => unreachable!(),
 
             #[cfg(feature = "json")]
-            Format::Json => json::parse(content),
+            Format::Json => json::parse(location, content),
 
             #[cfg(feature = "toml")]
-            Format::Toml => toml::parse(content),
+            Format::Toml => toml::parse(location, content),
 
             #[cfg(feature = "yaml")]
-            Format::Yaml => yaml::parse(content),
+            Format::Yaml => yaml::parse(location, content),
         }
     }
 }
