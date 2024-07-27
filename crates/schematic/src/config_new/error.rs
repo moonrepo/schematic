@@ -24,6 +24,10 @@ pub enum ConfigError {
     #[error("Extending from a file is only allowed if the parent source is also a file.")]
     ExtendsFromParentFileOnly,
 
+    #[diagnostic(code(config::url::https_only))]
+    #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
+    HttpsOnly(String),
+
     #[diagnostic(code(config::code::invalid))]
     #[error("Invalid code block used as a source.")]
     InvalidCode,
@@ -39,6 +43,58 @@ pub enum ConfigError {
     #[diagnostic(code(config::url::invalid))]
     #[error("Invalid URL used as a source.")]
     InvalidUrl,
+
+    #[diagnostic(code(config::file::missing), help("Is the path absolute?"))]
+    #[error("File path {} does not exist.", .0.style(Style::Path))]
+    MissingFile(PathBuf),
+
+    #[diagnostic(code(config::file::read_failed))]
+    #[error("Failed to read file {}.", .path.style(Style::Path))]
+    ReadFileFailed {
+        path: PathBuf,
+        #[source]
+        error: Box<std::io::Error>,
+    },
+
+    #[cfg(feature = "url")]
+    #[diagnostic(code(config::url::read_failed))]
+    #[error("Failed to read URL {}.", .url.style(Style::Url))]
+    ReadUrlFailed {
+        url: String,
+        #[source]
+        error: Box<reqwest::Error>,
+    },
+
+    // Parser
+    #[diagnostic(code(config::parse::failed))]
+    #[error("Failed to parse {}.", .config.style(Style::File))]
+    Parser {
+        config: String,
+
+        // Required to display the code snippet!
+        // Because of this, we can't wrap in `Box`.
+        #[diagnostic_source]
+        #[source]
+        error: ParserError,
+
+        #[help]
+        help: Option<String>,
+    },
+
+    // Validator
+    #[diagnostic(code(config::validate::failed))]
+    #[error("Failed to validate {}.", .config.style(Style::File))]
+    Validator {
+        config: String,
+
+        // This includes a vertical red line which we don't want!
+        // #[diagnostic_source]
+        #[source]
+        error: Box<ValidatorError>,
+
+        #[help]
+        help: Option<String>,
+    },
 }
 
 impl From<HandlerError> for ConfigError {

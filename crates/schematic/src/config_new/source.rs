@@ -97,80 +97,73 @@ impl Source {
 
     /// Parse the source contents according to the required format.
     // #[instrument(name = "parse_config_source", skip(cacher, help), fields(source = ?self))]
-    // pub fn parse<D>(
-    //     &self,
-    //     location: &str,
-    //     cacher: &mut BoxedCacher,
-    //     help: Option<&str>,
-    // ) -> Result<D, ConfigError>
-    // where
-    //     D: DeserializeOwned,
-    // {
-    //     let handle_error = |error: crate::config::ParserError| ConfigError::Parser {
-    //         config: location.to_owned(),
-    //         error,
-    //         help: help.map(|h| h.to_owned()),
-    //     };
+    pub fn parse<D>(&self, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
+    where
+        D: DeserializeOwned,
+    {
+        let handle_error = |error: super::parser::ParserError| ConfigError::Parser {
+            config: String::new(),
+            error,
+            help: None,
+        };
 
-    //     match self {
-    //         Source::Code { code, format } => format
-    //             .parse(code.to_owned(), location)
-    //             .map_err(handle_error),
-    //         Source::File {
-    //             path,
-    //             format,
-    //             required,
-    //         } => {
-    //             let content = if path.exists() {
-    //                 fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
-    //                     path: path.to_path_buf(),
-    //                     error: Box::new(error),
-    //                 })?
-    //             } else {
-    //                 if *required {
-    //                     return Err(ConfigError::MissingFile(path.to_path_buf()));
-    //                 }
+        match self {
+            Source::Code { code, format } => format.parse(code.to_owned()).map_err(handle_error),
+            Source::File {
+                path,
+                format,
+                required,
+            } => {
+                let content = if path.exists() {
+                    fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
+                        path: path.to_path_buf(),
+                        error: Box::new(error),
+                    })?
+                } else {
+                    if *required {
+                        return Err(ConfigError::MissingFile(path.to_path_buf()));
+                    }
 
-    //                 "".into()
-    //             };
+                    "".into()
+                };
 
-    //             format.parse(content, location).map_err(handle_error)
-    //         }
-    //         Source::Url { url, format } => {
-    //             if !is_secure_url(url) {
-    //                 return Err(ConfigError::HttpsOnly(url.to_owned()));
-    //             }
+                format.parse(content).map_err(handle_error)
+            }
+            Source::Url { url, format } => {
+                if !is_secure_url(url) {
+                    return Err(ConfigError::HttpsOnly(url.to_owned()));
+                }
 
-    //             #[cfg(feature = "url")]
-    //             {
-    //                 let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-    //                     url: url.to_owned(),
-    //                     error: Box::new(error),
-    //                 };
+                #[cfg(feature = "url")]
+                {
+                    let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                        url: url.to_owned(),
+                        error: Box::new(error),
+                    };
 
-    //                 let content = if let Some(cache) = cacher.read(url)? {
-    //                     cache
-    //                 } else {
-    //                     let body = reqwest::blocking::get(url)
-    //                         .map_err(handle_reqwest_error)?
-    //                         .text()
-    //                         .map_err(handle_reqwest_error)?;
+                    let content = if let Some(cache) = cacher.read(url)? {
+                        cache
+                    } else {
+                        let body = reqwest::blocking::get(url)
+                            .map_err(handle_reqwest_error)?
+                            .text()
+                            .map_err(handle_reqwest_error)?;
 
-    //                     cacher.write(url, &body)?;
+                        cacher.write(url, &body)?;
 
-    //                     body
-    //                 };
+                        body
+                    };
 
-    //                 format.parse(content, location).map_err(handle_error)
-    //             }
+                    format.parse(content).map_err(handle_error)
+                }
 
-    //             #[cfg(not(feature = "url"))]
-    //             {
-    //                 panic!("Parsing a URL requires the `url` feature!");
-    //             }
-    //         }
-    //     }
-    // }
+                #[cfg(not(feature = "url"))]
+                {
+                    panic!("Parsing a URL requires the `url` feature!");
+                }
+            }
+        }
+    }
 
     pub fn as_str(&self) -> &str {
         match self {
