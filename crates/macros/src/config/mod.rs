@@ -82,16 +82,13 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                     context: &Self::Context,
                     finalize: bool,
                     path: schematic::Path
-                ) -> Result<(), schematic::ValidatorError> {
-                    let mut errors: Vec<schematic::ValidateErrorType> = vec![];
+                ) -> Result<(), Vec<schematic::ValidateError>> {
+                    let mut errors = vec![];
 
                     #validate
 
                     if !errors.is_empty() {
-                        return Err(schematic::ValidatorError {
-                            errors,
-                            path,
-                        });
+                        return Err(errors);
                     }
 
                     Ok(())

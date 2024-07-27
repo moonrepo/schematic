@@ -3,7 +3,7 @@ use starbase_styles::{Style, Stylize};
 use std::borrow::Borrow;
 use thiserror::Error;
 
-/// Error for a single parse failure. Can be used with [`TryFrom`], [`FromStr`], or serde.
+/// Error for a single parse failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
 #[error("{message}")]
 pub struct ParseError {
@@ -21,17 +21,21 @@ impl ParseError {
 }
 
 /// Error related to serde parsing.
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Debug, Diagnostic, Error)]
 #[error("{}{} {message}", .path.style(Style::Id), ":".style(Style::MutedLight))]
 #[diagnostic(severity(Error))]
 pub struct ParserError {
+    /// Source code snippet related to the error.
     #[source_code]
     pub content: NamedSource<String>,
 
+    /// Failure message.
     pub message: String,
 
+    /// Dot-notated path to the field that failed.
     pub path: String,
 
+    /// Span to the error location.
     #[label("Fix this")]
     pub span: Option<SourceSpan>,
 }

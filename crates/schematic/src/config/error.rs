@@ -79,9 +79,7 @@ pub enum ConfigError {
     Parser {
         location: String,
 
-        // Required to display the code snippet!
         #[diagnostic_source]
-        // Bubble up the source error.
         #[source]
         error: Box<ParserError>,
 
@@ -95,9 +93,7 @@ pub enum ConfigError {
     Validator {
         location: String,
 
-        // This includes a vertical red line when rendered!
-        // #[diagnostic_source]
-        // Bubble up the source error.
+        #[diagnostic_source]
         #[source]
         error: Box<ValidatorError>,
 
@@ -137,7 +133,9 @@ impl ConfigError {
             }
             ConfigError::Validator { error: inner, .. } => {
                 push_end();
-                message.push_str(&inner.to_full_string());
+                for error in &inner.errors {
+                    message.push_str(format!("\n  {error}").as_str());
+                }
             }
             _ => {}
         };

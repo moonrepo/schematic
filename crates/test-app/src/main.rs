@@ -42,8 +42,8 @@ struct TestConfig {
 fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::new()
         // .code(r#"{ "string": "abc", "other": 123 }"#, Format::Json)? // parse error
-        .code("{\n  \"string\": 123\n}", Format::Json)? // parse error
-        // .code("{\n  \"string\": \"\", \"number\": 1 \n}", Format::Json)? // validate error
+        // .code("{\n  \"string\": 123\n}", Format::Json)? // parse error
+        .code("{\n  \"string\": \"\", \"number\": 1 \n}", Format::Json)? // validate error
         .set_help("let's go!")
         .load()?;
 

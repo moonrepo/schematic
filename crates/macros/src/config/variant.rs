@@ -169,10 +169,7 @@ impl<'l> Variant<'l> {
 
                 stmts.push(quote! {
                     if let Err(error) = #func(#value, self, context, finalize) {
-                        errors.push(schematic::ValidateErrorType::setting(
-                            path.clone(),
-                            error,
-                        ));
+                        errors.push(error);
                     }
                 });
             }
@@ -182,9 +179,9 @@ impl<'l> Variant<'l> {
 
                 stmts.push(quote! {
                     if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
-                        errors.push(schematic::ValidateErrorType::setting_required(
-                            path.join_key(#name),
-                        ));
+                        let mut error = schematic::ValidateError::required();
+                        error.prepend_path(path.join_key(#name));
+                        errors.push(error);
                     }
                 });
             }
@@ -195,8 +192,8 @@ impl<'l> Variant<'l> {
                     .enumerate()
                     .map(|(index, o)| {
                         quote! {
-                            if let Err(nested_error) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
-                                errors.push(schematic::ValidateErrorType::nested(nested_error));
+                            if let Err(nested_errors) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
+                                errors.extend(nested_errors);
                             }
                         }
                     })

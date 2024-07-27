@@ -118,21 +118,21 @@ impl<'l> FieldValue<'l> {
         match self {
             Self::NestedList { .. } => Some(quote! {
                 for (i, item) in setting.iter().enumerate() {
-                    if let Err(nested_error) = item.validate_with_path(context, finalize, path.join_key(#key).join_index(i)) {
-                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    if let Err(nested_errors) = item.validate_with_path(context, finalize, path.join_key(#key).join_index(i)) {
+                        errors.extend(nested_errors);
                     }
                 }
             }),
             Self::NestedMap { .. } => Some(quote! {
                 for (key, value) in setting {
-                    if let Err(nested_error) = value.validate_with_path(context, finalize, path.join_key(#key).join_key(key)) {
-                        errors.push(schematic::ValidateErrorType::nested(nested_error));
+                    if let Err(nested_errors) = value.validate_with_path(context, finalize, path.join_key(#key).join_key(key)) {
+                        errors.extend(nested_errors);
                     }
                 }
             }),
             Self::NestedValue { .. } => Some(quote! {
-                if let Err(nested_error) = setting.validate_with_path(context, finalize, path.join_key(#key)) {
-                    errors.push(schematic::ValidateErrorType::nested(nested_error));
+                if let Err(nested_errors) = setting.validate_with_path(context, finalize, path.join_key(#key)) {
+                    errors.extend(nested_errors);
                 }
             }),
             Self::Value { .. } => {

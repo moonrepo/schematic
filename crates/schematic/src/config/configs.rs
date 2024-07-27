@@ -1,7 +1,7 @@
 use super::error::ConfigError;
 use super::extender::ExtendsFrom;
 use super::path::Path;
-use super::validator::ValidatorError;
+use super::validator::*;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -46,8 +46,16 @@ pub trait PartialConfig:
 
     /// Recursively validate the configuration with the provided context.
     /// Validation should be done on the final state, after merging partials.
-    fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ValidatorError> {
-        self.validate_with_path(context, finalize, Path::default())
+    fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ConfigError> {
+        if let Err(errors) = self.validate_with_path(context, finalize, Path::default()) {
+            return Err(ConfigError::Validator {
+                location: String::new(),
+                error: Box::new(ValidatorError { errors }),
+                help: None,
+            });
+        }
+
+        Ok(())
     }
 
     /// Internal use only, use [`validate`] instead.
@@ -57,7 +65,7 @@ pub trait PartialConfig:
         _context: &Self::Context,
         _finalize: bool,
         _path: Path,
-    ) -> Result<(), ValidatorError> {
+    ) -> Result<(), Vec<ValidateError>> {
         Ok(())
     }
 }

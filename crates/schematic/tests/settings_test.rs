@@ -13,7 +13,7 @@ fn test_string<T>(_: &String, _: &T, context: &Context, _: bool) -> ValidateResu
 
 fn assert_validation_error(error: ConfigError, count: usize) {
     if let ConfigError::Validator { error: inner, .. } = error {
-        assert_eq!(inner.len(), count);
+        assert_eq!(inner.errors.len(), count);
     } else {
         panic!("expected validation error");
     }

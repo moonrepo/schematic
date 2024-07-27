@@ -104,14 +104,7 @@ impl<T: Config> ConfigLoader<T> {
         // Validate the final result before moving on
         partial
             .validate(context, true)
-            .map_err(|error| ConfigError::Validator {
-                location: match layers.last() {
-                    Some(last) => self.get_location(&last.source).to_owned(),
-                    None => self.name.clone(),
-                },
-                error: Box::new(error),
-                help: self.help.clone(),
-            })?;
+            .map_err(|error| self.map_validator_error(error, &layers.last().unwrap().source))?;
 
         Ok(ConfigLoadResult {
             config: T::from_partial(partial),
@@ -255,24 +248,13 @@ impl<T: Config> ConfigLoader<T> {
 
                 source
                     .parse(&self.name, &mut cacher)
-                    .map_err(|outer| match outer {
-                        ConfigError::Parser { error, .. } => ConfigError::Parser {
-                            location: self.get_location(source).to_owned(),
-                            error,
-                            help: self.help.clone(),
-                        },
-                        _ => outer,
-                    })?
+                    .map_err(|outer| self.map_parser_error(outer, source))?
             };
 
             // Validate before continuing so we ensure the values are correct
             partial
                 .validate(context, false)
-                .map_err(|error| ConfigError::Validator {
-                    location: self.get_location(source).to_owned(),
-                    error: Box::new(error),
-                    help: self.help.clone(),
-                })?;
+                .map_err(|error| self.map_validator_error(error, source))?;
 
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
@@ -285,5 +267,27 @@ impl<T: Config> ConfigLoader<T> {
         }
 
         Ok(layers)
+    }
+
+    fn map_parser_error(&self, outer: ConfigError, source: &Source) -> ConfigError {
+        match outer {
+            ConfigError::Parser { error, .. } => ConfigError::Parser {
+                location: self.get_location(source).to_owned(),
+                error,
+                help: self.help.clone(),
+            },
+            _ => outer,
+        }
+    }
+
+    fn map_validator_error(&self, outer: ConfigError, source: &Source) -> ConfigError {
+        match outer {
+            ConfigError::Validator { error, .. } => ConfigError::Validator {
+                location: self.get_location(source).to_owned(),
+                error,
+                help: self.help.clone(),
+            },
+            _ => outer,
+        }
     }
 }

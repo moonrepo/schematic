@@ -4,9 +4,13 @@
 
 #### 💥 Breaking
 
+- Refactored the internals of how validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
-- Reworked how parser errors are rendered in the terminal.
 - Renamed some error enum variants.
+
+#### 🚀 Updates
+
+- Reworked how parser and validator errors are rendered in the terminal.
 
 #### ⚙️ Internal
 
