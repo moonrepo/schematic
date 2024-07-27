@@ -153,6 +153,47 @@ fn loads_json_file_optional() {
     assert_eq!(result.config.number, 0);
 }
 
+#[cfg(feature = "pkl")]
+#[test]
+fn loads_pkl_files() {
+    let root = get_fixture_path("pkl");
+
+    let result = ConfigLoader::<Config>::new()
+        .file(root.join("one.pkl"))
+        .unwrap()
+        .file(root.join("two.pkl"))
+        .unwrap()
+        .file(root.join("three.pkl"))
+        .unwrap()
+        .file(root.join("four.pkl"))
+        .unwrap()
+        .file(root.join("five.pkl"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "bar");
+    assert_eq!(result.config.number, 123);
+    assert_eq!(result.config.vector, vec!["x", "y", "z"]);
+}
+
+#[cfg(feature = "pkl")]
+#[test]
+fn loads_pkl_file_optional() {
+    let root = get_fixture_path("pkl");
+
+    let result = ConfigLoader::<Config>::new()
+        .file_optional(root.join("missing.pkl"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "");
+    assert_eq!(result.config.number, 0);
+}
+
 #[cfg(feature = "toml")]
 #[test]
 fn loads_toml_files() {
