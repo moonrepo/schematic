@@ -2,6 +2,8 @@
 
 mod format;
 
+mod config_new;
+
 #[cfg(feature = "config")]
 mod config;
 
