@@ -110,10 +110,6 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     impls.push(quote! {
         #[automatically_derived]
         impl schematic::ConfigEnum for #enum_name {
-            const META: schematic::Meta = schematic::Meta {
-                name: #meta_name,
-            };
-
             fn variants() -> Vec<#enum_name> {
                 vec![
                     #(#unit_names),*

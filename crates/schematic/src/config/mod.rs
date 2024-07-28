@@ -1,7 +1,8 @@
 mod cacher;
 mod configs;
-mod errors;
-mod format;
+mod error;
+mod extender;
+mod formats;
 mod layer;
 mod loader;
 mod parser;
@@ -11,7 +12,8 @@ mod validator;
 
 pub use cacher::*;
 pub use configs::*;
-pub use errors::*;
+pub use error::*;
+pub use extender::*;
 pub use layer::*;
 pub use loader::*;
 pub use parser::*;

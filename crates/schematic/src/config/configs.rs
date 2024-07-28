@@ -1,15 +1,9 @@
-use crate::config::errors::ConfigError;
-use crate::config::path::Path;
-use crate::config::validator::ValidatorError;
-use crate::derive_enum;
+use super::error::ConfigError;
+use super::extender::ExtendsFrom;
+use super::path::Path;
+use super::validator::*;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
-
-/// Provides metadata about a configuration struct or enum.
-pub struct Meta {
-    /// Name of the struct.
-    pub name: &'static str,
-}
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional
 /// by wrapping the values in [`Option`].
@@ -52,8 +46,16 @@ pub trait PartialConfig:
 
     /// Recursively validate the configuration with the provided context.
     /// Validation should be done on the final state, after merging partials.
-    fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ValidatorError> {
-        self.validate_with_path(context, finalize, Path::default())
+    fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ConfigError> {
+        if let Err(errors) = self.validate_with_path(context, finalize, Path::default()) {
+            return Err(ConfigError::Validator {
+                location: String::new(),
+                error: Box::new(ValidatorError { errors }),
+                help: None,
+            });
+        }
+
+        Ok(())
     }
 
     /// Internal use only, use [`validate`] instead.
@@ -63,7 +65,7 @@ pub trait PartialConfig:
         _context: &Self::Context,
         _finalize: bool,
         _path: Path,
-    ) -> Result<(), ValidatorError> {
+    ) -> Result<(), Vec<ValidateError>> {
         Ok(())
     }
 }
@@ -72,46 +74,12 @@ pub trait PartialConfig:
 pub trait Config: Sized + Schematic {
     type Partial: PartialConfig;
 
-    const META: Meta;
-
     /// Convert a partial configuration into a full configuration, with all values populated.
     fn from_partial(partial: Self::Partial) -> Self;
 }
 
 /// Represents an enumerable setting for use within a [`Config`].
 pub trait ConfigEnum: Sized + Schematic {
-    const META: Meta;
-
     /// Return a list of all variants for the enum. Only unit variants are supported.
     fn variants() -> Vec<Self>;
-}
-
-derive_enum!(
-    /// Represents an extendable setting, either a string or a list of strings.
-    #[serde(untagged)]
-    pub enum ExtendsFrom {
-        String(String),
-        List(Vec<String>),
-    }
-);
-
-impl Default for ExtendsFrom {
-    fn default() -> Self {
-        Self::List(vec![])
-    }
-}
-
-impl Schematic for ExtendsFrom {
-    fn schema_name() -> Option<String> {
-        Some("ExtendsFrom".into())
-    }
-
-    fn build_schema(mut schema: schematic_types::SchemaBuilder) -> schematic_types::Schema {
-        use schematic_types::*;
-
-        schema.union(UnionType::new_any([
-            schema.infer::<String>(),
-            schema.infer::<Vec<String>>(),
-        ]))
-    }
 }

@@ -131,11 +131,8 @@ impl<'l> Field<'l> {
             };
 
             stmts.push(quote! {
-                if let Err(error) = #func(setting, self, context, finalize) {
-                    errors.push(schematic::ValidateErrorType::setting(
-                        path.join_key(#key_quoted),
-                        error,
-                    ));
+                if let Err(mut error) = #func(setting, self, context, finalize) {
+                    errors.push(error.prepend_path(path.join_key(#key_quoted)));
                 }
             });
         }
@@ -157,8 +154,8 @@ impl<'l> Field<'l> {
         let second = if self.is_required() {
             quote! {
                 if finalize && self.#key.is_none() {
-                    errors.push(schematic::ValidateErrorType::setting_required(
-                        path.join_key(#key_quoted),
+                    errors.push(schematic::ValidateError::required().prepend_path(
+                        path.join_key(#key_quoted)
                     ));
                 }
             }

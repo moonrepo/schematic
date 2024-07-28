@@ -149,6 +149,7 @@ impl<'l> Variant<'l> {
 
         Some(self.map_unnamed_match(self.name, fields, |outer_names, _| {
             let mut stmts = vec![];
+            let name = self.get_name(Some(&self.casing_format));
 
             if let Some(expr) = self.args.validate.as_ref() {
                 let func = match expr {
@@ -168,22 +169,17 @@ impl<'l> Variant<'l> {
                 };
 
                 stmts.push(quote! {
-                    if let Err(error) = #func(#value, self, context, finalize) {
-                        errors.push(schematic::ValidateErrorType::setting(
-                            path.clone(),
-                            error,
-                        ));
+                    if let Err(mut error) = #func(#value, self, context, finalize) {
+                        errors.push(error.prepend_path(path.join_key(#name)));
                     }
                 });
             }
 
             if self.is_required() {
-                let name = self.get_name(Some(&self.casing_format));
-
                 stmts.push(quote! {
                     if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
-                        errors.push(schematic::ValidateErrorType::setting_required(
-                            path.join_key(#name),
+                        errors.push(schematic::ValidateError::required().prepend_path(
+                            path.join_key(#name)
                         ));
                     }
                 });
@@ -195,8 +191,8 @@ impl<'l> Variant<'l> {
                     .enumerate()
                     .map(|(index, o)| {
                         quote! {
-                            if let Err(nested_error) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
-                                errors.push(schematic::ValidateErrorType::nested(nested_error));
+                            if let Err(nested_errors) = #o.validate_with_path(context, finalize, path.join_index(#index)) {
+                                errors.extend(nested_errors);
                             }
                         }
                     })
