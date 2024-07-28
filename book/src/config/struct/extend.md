@@ -1,5 +1,7 @@
 # Extendable sources
 
+> Requires the `extends` Cargo feature, which is enabled by default.
+
 > Not supported for enums.
 
 Configs can extend other configs, generating an accurate layer chain, via the `#[setting(extend)]`

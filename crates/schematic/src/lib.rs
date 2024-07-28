@@ -6,7 +6,7 @@ mod format;
 mod config;
 
 /// Built-in `parse_env` functions.
-#[cfg(feature = "config")]
+#[cfg(all(feature = "config", feature = "env"))]
 pub mod env;
 
 #[cfg(feature = "config")]
@@ -22,7 +22,7 @@ pub mod merge;
 pub mod schema;
 
 /// Built-in `validate` functions.
-#[cfg(feature = "config")]
+#[cfg(all(feature = "config", feature = "validate"))]
 pub mod validate;
 
 /// ASCII color helpers for use within error messages.

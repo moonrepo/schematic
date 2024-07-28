@@ -1,5 +1,7 @@
 # Environment variables
 
+> Requires the `env` Cargo feature, which is enabled by default.
+
 > Not supported for enums.
 
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute

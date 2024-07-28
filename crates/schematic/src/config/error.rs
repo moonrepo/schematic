@@ -1,4 +1,5 @@
 use super::parser::ParserError;
+#[cfg(feature = "validate")]
 use super::validator::ValidatorError;
 use crate::format::UnsupportedFormatError;
 use miette::Diagnostic;
@@ -88,6 +89,7 @@ pub enum ConfigError {
     },
 
     // Validator
+    #[cfg(feature = "validate")]
     #[diagnostic(code(config::validate::failed))]
     #[error("Failed to validate {}.", .location.style(Style::File))]
     Validator {
@@ -131,6 +133,7 @@ impl ConfigError {
                 push_end();
                 message.push_str(&inner.to_string());
             }
+            #[cfg(feature = "validate")]
             ConfigError::Validator { error: inner, .. } => {
                 push_end();
                 for error in &inner.errors {
