@@ -174,6 +174,16 @@ impl<'l> Container<'l> {
                     .map(|s| s.generate_finalize_statement())
                     .collect::<Vec<_>>();
 
+                let env_statement = if cfg!(feature = "env") {
+                    quote! {
+                        if let Some(data) = Self::env_values()? {
+                            partial.merge(context, data)?;
+                        }
+                    }
+                } else {
+                    quote! {}
+                };
+
                 quote! {
                     let mut partial = Self::default();
 
@@ -183,9 +193,7 @@ impl<'l> Container<'l> {
 
                     partial.merge(context, self)?;
 
-                    if let Some(data) = Self::env_values()? {
-                        partial.merge(context, data)?;
-                    }
+                    #env_statement
 
                     #(#finalize_stmts)*
 

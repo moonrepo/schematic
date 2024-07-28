@@ -6,7 +6,7 @@ mod format;
 mod config;
 
 /// Built-in `parse_env` functions.
-#[cfg(feature = "config")]
+#[cfg(all(feature = "config", feature = "env"))]
 pub mod env;
 
 #[cfg(feature = "config")]

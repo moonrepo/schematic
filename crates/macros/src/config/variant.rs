@@ -1,7 +1,7 @@
 use crate::common::Variant;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::{Expr, Fields, FieldsUnnamed};
+use syn::{Fields, FieldsUnnamed};
 
 impl<'l> Variant<'l> {
     pub fn generate_default_value(&self) -> TokenStream {
@@ -151,7 +151,10 @@ impl<'l> Variant<'l> {
             let mut stmts = vec![];
             let name = self.get_name(Some(&self.casing_format));
 
+            #[cfg(feature = "validate")]
             if let Some(expr) = self.args.validate.as_ref() {
+                use syn::Expr;
+
                 let func = match expr {
                     // func(arg)()
                     Expr::Call(func) => quote! { #func },

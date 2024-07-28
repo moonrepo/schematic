@@ -1,7 +1,6 @@
 use crate::common::{Field, FieldValue};
 use proc_macro2::{Literal, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
-use syn::Expr;
 
 impl<'l> Field<'l> {
     pub fn generate_default_value(&self) -> TokenStream {
@@ -20,6 +19,7 @@ impl<'l> Field<'l> {
         let env = self.get_env_var();
 
         if env.is_none() {
+            #[cfg(feature = "env")]
             if self.args.parse_env.is_some() {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
             }
@@ -27,19 +27,27 @@ impl<'l> Field<'l> {
             return None;
         };
 
-        let value = if let Some(parse_env) = &self.args.parse_env {
-            quote! {
-                parse_from_env_var(#env, #parse_env)?
-            }
-        } else {
-            quote! {
-                default_from_env_var(#env)?
-            }
-        };
+        #[cfg(feature = "env")]
+        {
+            let value = if let Some(parse_env) = &self.args.parse_env {
+                quote! {
+                    parse_from_env_var(#env, #parse_env)?
+                }
+            } else {
+                quote! {
+                    default_from_env_var(#env)?
+                }
+            };
 
-        let key = self.get_field_key();
+            let key = self.get_field_key();
 
-        Some(quote! { partial.#key = #value; })
+            Some(quote! { partial.#key = #value; })
+        }
+
+        #[cfg(not(feature = "env"))]
+        {
+            None
+        }
     }
 
     pub fn generate_finalize_statement(&self) -> TokenStream {
@@ -119,7 +127,10 @@ impl<'l> Field<'l> {
         let key_quoted = self.get_field_key_string();
         let mut stmts = vec![];
 
+        #[cfg(feature = "validate")]
         if let Some(expr) = self.args.validate.as_ref() {
+            use syn::Expr;
+
             let func = match expr {
                 // func(arg)()
                 Expr::Call(func) => quote! { #func },

@@ -1,6 +1,5 @@
 use super::error::ConfigError;
 use super::extender::ExtendsFrom;
-use super::path::Path;
 #[cfg(feature = "validate")]
 use super::validator::*;
 use schematic_types::Schematic;
@@ -24,6 +23,7 @@ pub trait PartialConfig:
     ///
     /// If an environment variable does not exist, the value will be [`None`]. If
     /// the variable fails to parse or cast into the correct type, an error is returned.
+    #[cfg(feature = "env")]
     fn env_values() -> Result<Option<Self>, ConfigError>;
 
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
@@ -49,7 +49,9 @@ pub trait PartialConfig:
     /// Validation should be done on the final state, after merging partials.
     #[cfg(feature = "validate")]
     fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ConfigError> {
-        if let Err(errors) = self.validate_with_path(context, finalize, Path::default()) {
+        if let Err(errors) =
+            self.validate_with_path(context, finalize, super::path::Path::default())
+        {
             return Err(ConfigError::Validator {
                 location: String::new(),
                 error: Box::new(ValidatorError { errors }),
@@ -67,7 +69,7 @@ pub trait PartialConfig:
         &self,
         _context: &Self::Context,
         _finalize: bool,
-        _path: Path,
+        _path: super::path::Path,
     ) -> Result<(), Vec<ValidateError>> {
         Ok(())
     }

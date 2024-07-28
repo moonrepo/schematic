@@ -11,6 +11,7 @@
 
 #### 🚀 Updates
 
+- Added a `env` Cargo feature for toggling environment variable functionality. Enabled by default.
 - Added a `validate` Cargo feature for toggling validation functionality. Enabled by default.
 - Reworked how parser and validator errors are rendered in the terminal.
 
