@@ -31,11 +31,11 @@ impl<'l> Field<'l> {
         {
             let value = if let Some(parse_env) = &self.args.parse_env {
                 quote! {
-                    parse_from_env_var(#env, #parse_env)?
+                    parse_env_value(#env, #parse_env)?
                 }
             } else {
                 quote! {
-                    default_from_env_var(#env)?
+                    default_env_value(#env)?
                 }
             };
 

@@ -6,7 +6,7 @@
 
 ##### Config
 
-- Refactored the internals of how validation errors work.
+- Refactored the internals of how merge/validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
 - Removed `url` as a default Cargo feature.
 - Renamed `valid_*` Cargo features to `validate_*`.
