@@ -247,18 +247,14 @@ impl TemplateContext {
         self.stack.pop_back();
     }
 
-    pub fn resolve_schema<'gen>(
-        &self,
-        initial: &'gen Schema,
-        schemas: &'gen IndexMap<String, Schema>,
-    ) -> &'gen Schema {
+    pub fn resolve_schema(&self, initial: &Schema, schemas: &IndexMap<String, Schema>) -> Schema {
         if let SchemaType::Reference(name) = &initial.ty {
             if let Some(schema) = schemas.get(name) {
-                return schema;
+                return schema.to_owned();
             }
         }
 
-        initial
+        initial.to_owned()
     }
 }
 

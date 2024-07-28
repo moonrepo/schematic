@@ -63,13 +63,13 @@ impl SchemaGenerator {
     /// Generate an output by rendering all collected [`Schema`]s using the provided
     /// [`SchemaRenderer`], and finally write to the provided file path.
     pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<O>>(
-        self,
+        &self,
         output_file: P,
         mut renderer: R,
     ) -> miette::Result<()> {
         let output_file = output_file.as_ref();
 
-        let mut output = renderer.render(self.schemas)?;
+        let mut output = renderer.render(self.schemas.clone())?;
         output.push('\n');
 
         if let Some(parent) = output_file.parent() {

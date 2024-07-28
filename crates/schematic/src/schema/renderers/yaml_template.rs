@@ -3,13 +3,11 @@ use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
-use std::collections::HashSet;
 
 /// Renders YAML config templates.
 pub struct YamlTemplateRenderer {
     ctx: TemplateContext,
-    // schemas: IndexMap<String, Schema>,
-    references: HashSet<String>,
+    schemas: IndexMap<String, Schema>,
 }
 
 impl YamlTemplateRenderer {
@@ -21,8 +19,7 @@ impl YamlTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         YamlTemplateRenderer {
             ctx: TemplateContext::new(Format::Yaml, options),
-            // schemas: None,
-            references: HashSet::default(),
+            schemas: IndexMap::default(),
         }
     }
 }
@@ -42,12 +39,12 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
         let items_type = self.ctx.resolve_schema(&array.items_type, &self.schemas);
 
         if !items_type.is_struct() {
-            return Ok(format!("[{}]", self.render_schema(items_type)?));
+            return Ok(format!("[{}]", self.render_schema(&items_type)?));
         }
 
         self.ctx.depth += 2;
 
-        let mut item = self.render_schema(items_type)?;
+        let mut item = self.render_schema(&items_type)?;
 
         self.ctx.depth -= 2;
 
@@ -90,7 +87,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
 
         self.ctx.depth += 2;
 
-        let value = self.render_schema(value_type)?;
+        let value = self.render_schema(&value_type)?;
 
         self.ctx.depth -= 1;
 
@@ -108,10 +105,9 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
-        // TODO
-        // if let Some(schema) = schemas.get(reference) {
-        //     return self.render_schema_without_reference(schema);
-        // }
+        if let Some(schema) = self.schemas.get(reference) {
+            return self.render_schema_without_reference(&schema.to_owned());
+        }
 
         render_reference(reference)
     }
@@ -174,9 +170,9 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
-        // self.schemas = Some(schemas);
+        self.schemas = schemas;
 
-        let root = validate_root(&schemas)?;
+        let root = validate_root(&self.schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer

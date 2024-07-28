@@ -3,13 +3,11 @@ use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
-use std::collections::HashSet;
 
 /// Renders JSON config templates with comments.
 pub struct JsoncTemplateRenderer {
     ctx: TemplateContext,
-    // schemas: IndexMap<String, Schema>,
-    references: HashSet<String>,
+    schemas: IndexMap<String, Schema>,
 }
 
 impl JsoncTemplateRenderer {
@@ -21,8 +19,7 @@ impl JsoncTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         JsoncTemplateRenderer {
             ctx: TemplateContext::new(Format::Json, options),
-            // schemas: IndexMap::default(),
-            references: HashSet::default(),
+            schemas: IndexMap::default(),
         }
     }
 }
@@ -101,10 +98,9 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
-        // TODO
-        // if let Some(schema) = self.schemas.get(reference) {
-        //     return self.render_schema_without_reference(schema);
-        // }
+        if let Some(schema) = self.schemas.get(reference) {
+            return self.render_schema_without_reference(&schema.to_owned());
+        }
 
         render_reference(reference)
     }
@@ -162,9 +158,9 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
-        self.references = HashSet::from_iter(schemas.keys().cloned());
+        self.schemas = schemas;
 
-        let root = validate_root(&schemas)?;
+        let root = validate_root(&self.schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer

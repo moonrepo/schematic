@@ -3,7 +3,7 @@ use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::mem;
 
 struct Section {
@@ -14,8 +14,8 @@ struct Section {
 /// Renders TOML config templates.
 pub struct TomlTemplateRenderer {
     ctx: TemplateContext,
-    references: HashSet<String>,
     schemas: IndexMap<String, Schema>,
+
     arrays: BTreeMap<String, Section>,
     tables: BTreeMap<String, Section>,
 }
@@ -29,7 +29,6 @@ impl TomlTemplateRenderer {
     pub fn new(options: TemplateOptions) -> Self {
         TomlTemplateRenderer {
             ctx: TemplateContext::new(Format::Toml, options),
-            references: HashSet::default(),
             schemas: IndexMap::default(),
             arrays: BTreeMap::new(),
             tables: BTreeMap::new(),
@@ -106,7 +105,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
         let items_type = self.ctx.resolve_schema(&array.items_type, &self.schemas);
 
-        Ok(format!("[{}]", self.render_schema(items_type)?))
+        Ok(format!("[{}]", self.render_schema(&items_type)?))
     }
 
     fn render_boolean(&mut self, boolean: &BooleanType, _schema: &Schema) -> RenderResult<String> {
@@ -146,7 +145,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         // Objects are inline, so we can't show comments
         self.ctx.options.comments = false;
 
-        let value = self.render_schema(value_type)?;
+        let value = self.render_schema(&value_type)?;
         let mut key = self.render_schema(&object.key_type)?;
 
         if key == EMPTY_STRING {
@@ -160,7 +159,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
         if let Some(schema) = self.schemas.get(reference) {
-            return self.render_schema_without_reference(schema);
+            return self.render_schema_without_reference(&schema.to_owned());
         }
 
         render_reference(reference)
@@ -205,7 +204,6 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
-        self.references = HashSet::from_iter(schemas.keys().cloned());
         self.schemas = schemas;
 
         let mut root = validate_root(&self.schemas)?;
