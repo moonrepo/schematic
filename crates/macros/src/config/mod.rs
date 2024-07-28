@@ -26,11 +26,8 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
         // Generate implementations
         let default_values = cfg.type_of.generate_default_values();
-        let env_values = cfg.type_of.generate_env_values();
-        let extends_from = cfg.type_of.generate_extends_from();
         let finalize = cfg.type_of.generate_finalize();
         let merge = cfg.type_of.generate_merge();
-        let validate = cfg.type_of.generate_validate();
         let from_partial = cfg.type_of.generate_from_partial(&partial_name);
         let instrument = instrument_quote();
 
@@ -39,43 +36,37 @@ impl<'l> ToTokens for ConfigMacro<'l> {
             None => quote! { () },
         };
 
-        tokens.extend(quote! {
-            #[automatically_derived]
-            impl schematic::PartialConfig for #partial_name {
-                type Context = #context;
+        let env_method = if cfg!(feature = "env") {
+            let env_values = cfg.type_of.generate_env_values();
 
-                #instrument
-                fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
-                    use schematic::internal::*;
-                    #default_values
-                }
-
+            quote! {
                 #instrument
                 fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #env_values
                 }
+            }
+        } else {
+            quote! {}
+        };
 
+        let extends_method = if cfg!(feature = "extends") {
+            let extends_from = cfg.type_of.generate_extends_from();
+
+            quote! {
                 #instrument
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
                     #extends_from
                 }
+            }
+        } else {
+            quote! {}
+        };
 
-                #instrument
-                fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
-                    #finalize
-                }
+        let validate_method = if cfg!(feature = "validate") {
+            let validate = cfg.type_of.generate_validate();
 
-                #instrument
-                fn merge(
-                    &mut self,
-                    context: &Self::Context,
-                    mut next: Self,
-                ) -> Result<(), schematic::ConfigError> {
-                    use schematic::internal::*;
-                    #merge
-                }
-
+            quote! {
                 #instrument
                 fn validate_with_path(
                     &self,
@@ -93,6 +84,42 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
                     Ok(())
                 }
+            }
+        } else {
+            quote! {}
+        };
+
+        tokens.extend(quote! {
+            #[automatically_derived]
+            impl schematic::PartialConfig for #partial_name {
+                type Context = #context;
+
+                #instrument
+                fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
+                    use schematic::internal::*;
+                    #default_values
+                }
+
+                #env_method
+
+                #extends_method
+
+                #instrument
+                fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
+                    #finalize
+                }
+
+                #instrument
+                fn merge(
+                    &mut self,
+                    context: &Self::Context,
+                    mut next: Self,
+                ) -> Result<(), schematic::ConfigError> {
+                    use schematic::internal::*;
+                    #merge
+                }
+
+                #validate_method
             }
 
             #[automatically_derived]

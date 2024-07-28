@@ -33,6 +33,7 @@ pub struct MacroArgs {
     // config
     pub allow_unknown_fields: bool,
     pub context: Option<ExprPath>,
+    #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
     pub file: Option<String>,
 
@@ -79,6 +80,7 @@ impl<'l> Macro<'l> {
                                 let mut field = Field::from(f);
                                 field.serde_args.inherit_from_container(&serde_args);
                                 field.casing_format.clone_from(&casing_format);
+                                #[cfg(feature = "env")]
                                 field.env_prefix.clone_from(&args.env_prefix);
                                 field
                             })
@@ -100,6 +102,7 @@ impl<'l> Macro<'l> {
                                 field.index = index;
                                 field.serde_args.inherit_from_container(&serde_args);
                                 field.casing_format.clone_from(&casing_format);
+                                #[cfg(feature = "env")]
                                 field.env_prefix.clone_from(&args.env_prefix);
                                 field
                             })

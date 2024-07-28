@@ -30,7 +30,7 @@ garde = { version = "0.20.0", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.16", optional = true }
-starbase_styles = { version = "0.4.1", optional = true }
+starbase_styles = { version = "0.4.2", optional = true }
 
 # schema
 indexmap = { workspace = true, optional = true, features = ["serde"] }
@@ -54,24 +54,32 @@ serde_yaml = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["blocking"] }
 
 [features]
-default = ["config", "url"]
+default = ["config", "env", "extends", "validate"]
 config = [
-	"dep:garde",
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
 	"schematic_macros/config",
 ]
-json = ["dep:serde_json"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
-toml = ["dep:toml"]
 tracing = ["schematic_macros/tracing"]
+
+# Features
+env = ["schematic_macros/env"]
+extends = ["schematic_macros/extends"]
 url = ["dep:reqwest"]
+validate = ["dep:garde", "schematic_macros/validate"]
+
+# Formats
+json = ["dep:serde_json"]
+toml = ["dep:toml"]
 yaml = ["dep:serde_yaml"]
 
-renderer_json_schema = ["dep:markdown", "dep:schemars", "json", "schema"]
-renderer_template = []
+# Renderers
+renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
+renderer_template = ["schema"]
 renderer_typescript = ["schema"]
 
+# Types
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]
 type_regex = ["schematic_types/regex"]
@@ -83,12 +91,15 @@ type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
 
-valid_email = ["garde/email"]
-valid_url = ["garde/url"]
+# Validation
+validate_email = ["validate", "garde/email"]
+validate_url = ["validate", "garde/url"]
 
 [dev-dependencies]
 schematic = { path = ".", features = [
 	"config",
+	"env",
+	"extends",
 	"json",
 	"schema",
 	"toml",
@@ -107,8 +118,9 @@ schematic = { path = ".", features = [
 	"type_serde_yaml",
 	"type_url",
 	"url",
-	"valid_email",
-	"valid_url",
+	"validate",
+	"validate_email",
+	"validate_url",
 	"yaml",
 ] }
 reqwest = { workspace = true, features = [
@@ -117,7 +129,7 @@ reqwest = { workspace = true, features = [
 ] }
 serial_test = "3.1.1"
 similar = "2.6.0"
-starbase_sandbox = "0.7.0"
+starbase_sandbox = "0.7.1"
 
 # Types
 chrono = { workspace = true, features = ["serde"] }

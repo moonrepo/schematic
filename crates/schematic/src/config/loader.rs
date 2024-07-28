@@ -1,6 +1,7 @@
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
 use super::configs::{Config, PartialConfig};
 use super::error::ConfigError;
+#[cfg(feature = "extends")]
 use super::extender::ExtendsFrom;
 use super::layer::Layer;
 use super::source::Source;
@@ -104,9 +105,12 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
-        partial.validate(context, true).map_err(|error| {
-            self.map_validator_error(error, layers.last().map(|layer| &layer.source))
-        })?;
+        #[cfg(feature = "validate")]
+        {
+            partial.validate(context, true).map_err(|error| {
+                self.map_validator_error(error, layers.last().map(|layer| &layer.source))
+            })?;
+        }
 
         Ok(ConfigLoadResult {
             config: T::from_partial(partial),
@@ -150,6 +154,7 @@ impl<T: Config> ConfigLoader<T> {
         self
     }
 
+    #[cfg(feature = "extends")]
     #[instrument(skip_all)]
     fn extend_additional_layers(
         &self,
@@ -204,6 +209,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 rel_path.to_str().unwrap_or(&self.name)
             }
+            #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
         }
     }
@@ -255,10 +261,14 @@ impl<T: Config> ConfigLoader<T> {
             };
 
             // Validate before continuing so we ensure the values are correct
-            partial
-                .validate(context, false)
-                .map_err(|error| self.map_validator_error(error, Some(source)))?;
+            #[cfg(feature = "validate")]
+            {
+                partial
+                    .validate(context, false)
+                    .map_err(|error| self.map_validator_error(error, Some(source)))?;
+            }
 
+            #[cfg(feature = "extends")]
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
             }
@@ -283,6 +293,7 @@ impl<T: Config> ConfigLoader<T> {
         }
     }
 
+    #[cfg(feature = "validate")]
     fn map_validator_error(&self, outer: ConfigError, source: Option<&Source>) -> ConfigError {
         match outer {
             ConfigError::Validator { error, .. } => ConfigError::Validator {

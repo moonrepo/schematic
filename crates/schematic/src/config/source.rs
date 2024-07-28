@@ -22,6 +22,7 @@ pub enum Source {
     },
 
     /// Secure URL to the configuration.
+    #[cfg(feature = "url")]
     Url { url: String, format: Format },
 }
 
@@ -34,6 +35,7 @@ impl Source {
     /// - Otherwise will be an error.
     pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {
         // Extending from a URL is allowed from any parent source
+        #[cfg(feature = "url")]
         if is_url_like(value) {
             return Source::url(value);
         }
@@ -86,6 +88,7 @@ impl Source {
     }
 
     /// Create a new URL source with the provided URL.
+    #[cfg(feature = "url")]
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
@@ -96,6 +99,7 @@ impl Source {
     }
 
     /// Parse the source contents according to the required format.
+    #[allow(unused_variables)]
     #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
     pub fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
@@ -129,38 +133,31 @@ impl Source {
 
                 format.parse(name, &content).map_err(handle_error)
             }
+            #[cfg(feature = "url")]
             Source::Url { url, format } => {
                 if !is_secure_url(url) {
                     return Err(ConfigError::HttpsOnly(url.to_owned()));
                 }
 
-                #[cfg(feature = "url")]
-                {
-                    let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-                        url: url.to_owned(),
-                        error: Box::new(error),
-                    };
+                let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    url: url.to_owned(),
+                    error: Box::new(error),
+                };
 
-                    let content = if let Some(cache) = cacher.read(url)? {
-                        cache
-                    } else {
-                        let body = reqwest::blocking::get(url)
-                            .map_err(handle_reqwest_error)?
-                            .text()
-                            .map_err(handle_reqwest_error)?;
+                let content = if let Some(cache) = cacher.read(url)? {
+                    cache
+                } else {
+                    let body = reqwest::blocking::get(url)
+                        .map_err(handle_reqwest_error)?
+                        .text()
+                        .map_err(handle_reqwest_error)?;
 
-                        cacher.write(url, &body)?;
+                    cacher.write(url, &body)?;
 
-                        body
-                    };
+                    body
+                };
 
-                    format.parse(name, &content).map_err(handle_error)
-                }
-
-                #[cfg(not(feature = "url"))]
-                {
-                    panic!("Parsing a URL requires the `url` feature!");
-                }
+                format.parse(name, &content).map_err(handle_error)
             }
         }
     }
@@ -169,6 +166,7 @@ impl Source {
         match self {
             Source::Code { .. } => "<code>",
             Source::File { path, .. } => path.to_str().unwrap_or_default(),
+            #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
         }
     }

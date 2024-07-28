@@ -40,12 +40,16 @@ pub struct FieldArgs {
     // config
     #[darling(with = "preserve_str_literal", map = "Some")]
     pub default: Option<Expr>,
+    #[cfg(feature = "env")]
     pub env: Option<String>,
+    #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
     pub nested: bool,
+    #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub required: bool,
+    #[cfg(feature = "validate")]
     pub validate: Option<Expr>,
 
     // serde
@@ -111,6 +115,7 @@ impl<'l> Field<'l> {
         self.args.exclude
     }
 
+    #[cfg(feature = "extends")]
     pub fn is_extendable(&self) -> bool {
         self.args.extend
     }
@@ -157,14 +162,17 @@ impl<'l> Field<'l> {
 
     pub fn get_env_var(&self) -> Option<String> {
         if self.is_nested() {
-            None
-        } else if let Some(env_name) = &self.args.env {
-            Some(env_name.to_owned())
-        } else {
-            self.env_prefix
-                .as_ref()
-                .map(|env_prefix| format!("{env_prefix}{}", self.get_name(None)).to_uppercase())
+            return None;
         }
+
+        #[cfg(feature = "env")]
+        if let Some(env_name) = &self.args.env {
+            return Some(env_name.to_owned());
+        }
+
+        self.env_prefix
+            .as_ref()
+            .map(|env_prefix| format!("{env_prefix}{}", self.get_name(None)).to_uppercase())
     }
 
     pub fn get_serde_meta(&self) -> Option<TokenStream> {

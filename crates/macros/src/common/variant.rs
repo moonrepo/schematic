@@ -3,7 +3,7 @@ use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use syn::{Attribute, Expr, ExprPath, Fields, Variant as NativeVariant};
+use syn::{Attribute, ExprPath, Fields, Variant as NativeVariant};
 
 #[derive(Clone)]
 pub enum TaggedFormat {
@@ -27,7 +27,8 @@ pub struct VariantArgs {
     pub merge: Option<ExprPath>,
     pub nested: bool,
     pub required: bool,
-    pub validate: Option<Expr>,
+    #[cfg(feature = "validate")]
+    pub validate: Option<syn::Expr>,
 
     // serde
     pub rename: Option<String>,
