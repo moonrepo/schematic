@@ -43,14 +43,3 @@ let result = ConfigLoader::<ExampleConfig>::new()
 
 > Refer to the [default values](./struct/default.md), [merge strategies](./struct/merge.md), and
 > [validation rules](./struct/validate.md) sections for more information on how to use context.
-
-## Metadata
-
-[`Config`](./index.md) supports basic metadata for use within error messages. Right now we support a
-name, derived from the struct/enum name or the serde `rename` attribute field.
-
-Metadata can be accessed with the `META` constant.
-
-```rust
-ExampleConfig::META.name;
-```

@@ -5,7 +5,7 @@
   - [Settings](./config/settings.md)
   - [Partials](./config/partial.md)
   - [Nesting](./config/nested.md)
-  - [Context & metadata](./config/context.md)
+  - [Context](./config/context.md)
   - [Structs & enums](./config/struct/index.md)
     - [Default values](./config/struct/default.md)
     - [Environment variables](./config/struct/env.md)
