@@ -33,6 +33,10 @@ fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult;
 
 #### 🚀 Updates
 
+- Added experimental support for the [Pkl configuration language](https://pkl-lang.org/) (`.pkl`
+  files).
+  - There are caveats to using Pkl, please refer to the docs.
+- Added a `pkl` Cargo feature to enable the Pkl format.
 - Added a `env` Cargo feature for toggling environment variable functionality. Enabled by default.
 - Added a `extends` Cargo feature for config extending functionality. Enabled by default.
 - Added a `validate` Cargo feature for toggling validation functionality. Enabled by default.

@@ -21,8 +21,7 @@ pub use renderers::jsonc_template::*;
 
 /// Helpers for config templates.
 #[cfg(feature = "renderer_template")]
-#[allow(deprecated)]
-pub use renderers::template::{self, TemplateOptions};
+pub use renderers::template::TemplateOptions;
 
 /// Renders TOML config templates.
 #[cfg(all(feature = "renderer_template", feature = "toml"))]

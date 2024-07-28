@@ -1,8 +1,7 @@
 #![allow(dead_code, deprecated)]
 
 use indexmap::{IndexMap, IndexSet};
-use schematic::schema::template::TemplateOptions;
-use schematic::schema::SchemaGenerator;
+use schematic::schema::{SchemaGenerator, TemplateOptions};
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::collections::HashMap;
