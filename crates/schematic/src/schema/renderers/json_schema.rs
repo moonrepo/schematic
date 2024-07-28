@@ -52,9 +52,9 @@ impl Default for JsonSchemaOptions {
 
 /// Renders JSON schema documents from a schema.
 #[derive(Default)]
-pub struct JsonSchemaRenderer<'gen> {
+pub struct JsonSchemaRenderer {
     options: JsonSchemaOptions,
-    references: Option<&'gen HashSet<String>>,
+    references: HashSet<String>,
 }
 
 fn clean_comment(comment: String, allow_newlines: bool) -> String {
@@ -132,11 +132,11 @@ fn lit_to_value(lit: &LiteralValue) -> Value {
     }
 }
 
-impl<'gen> JsonSchemaRenderer<'gen> {
+impl JsonSchemaRenderer {
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
             options,
-            references: None,
+            references: HashSet::default(),
         }
     }
 
@@ -191,9 +191,9 @@ impl<'gen> JsonSchemaRenderer<'gen> {
     }
 }
 
-impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
+impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     fn is_reference(&self, name: &str) -> bool {
-        self.references.is_some_and(|refs| refs.contains(name))
+        self.references.contains(name)
     }
 
     fn render_array(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<JsonSchema> {
@@ -528,12 +528,8 @@ impl<'gen> SchemaRenderer<'gen, JsonSchema> for JsonSchemaRenderer<'gen> {
         }))
     }
 
-    fn render(
-        &mut self,
-        schemas: &'gen IndexMap<String, Schema>,
-        references: &'gen HashSet<String>,
-    ) -> RenderResult {
-        self.references = Some(references);
+    fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
+        self.references = HashSet::from_iter(schemas.keys().cloned());
 
         let mut root_schema = RootSchema {
             meta_schema: self.options.meta_schema.clone(),
