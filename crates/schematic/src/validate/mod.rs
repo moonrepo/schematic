@@ -1,5 +1,6 @@
 #[cfg(feature = "validate_email")]
 mod email;
+#[cfg(feature = "extends")]
 mod extends;
 mod ip;
 mod length;
@@ -11,6 +12,7 @@ mod url;
 pub use crate::config::{ValidateError, ValidateResult};
 #[cfg(feature = "validate_email")]
 pub use email::*;
+#[cfg(feature = "extends")]
 pub use extends::*;
 pub use ip::*;
 pub use length::*;

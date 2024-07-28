@@ -42,6 +42,7 @@ pub struct FieldArgs {
     pub default: Option<Expr>,
     #[cfg(feature = "env")]
     pub env: Option<String>,
+    #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
     pub nested: bool,
@@ -114,6 +115,7 @@ impl<'l> Field<'l> {
         self.args.exclude
     }
 
+    #[cfg(feature = "extends")]
     pub fn is_extendable(&self) -> bool {
         self.args.extend
     }

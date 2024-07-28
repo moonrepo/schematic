@@ -26,7 +26,6 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
         // Generate implementations
         let default_values = cfg.type_of.generate_default_values();
-        let extends_from = cfg.type_of.generate_extends_from();
         let finalize = cfg.type_of.generate_finalize();
         let merge = cfg.type_of.generate_merge();
         let from_partial = cfg.type_of.generate_from_partial(&partial_name);
@@ -45,6 +44,19 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                 fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #env_values
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        let extends_method = if cfg!(feature = "extends") {
+            let extends_from = cfg.type_of.generate_extends_from();
+
+            quote! {
+                #instrument
+                fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+                    #extends_from
                 }
             }
         } else {
@@ -90,10 +102,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
 
                 #env_method
 
-                #instrument
-                fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
-                    #extends_from
-                }
+                #extends_method
 
                 #instrument
                 fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {

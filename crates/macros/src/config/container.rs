@@ -1,6 +1,6 @@
 use crate::common::Container;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::quote;
 
 impl<'l> Container<'l> {
     pub fn generate_default_values(&self) -> TokenStream {
@@ -89,10 +89,13 @@ impl<'l> Container<'l> {
     }
 
     pub fn generate_extends_from(&self) -> TokenStream {
+        #[cfg(feature = "extends")]
         match self {
             Self::NamedStruct {
                 fields: settings, ..
             } => {
+                use quote::ToTokens;
+
                 // Validate only 1 setting is using it
                 let mut names = vec![];
 
@@ -159,6 +162,9 @@ impl<'l> Container<'l> {
                 quote! { None }
             }
         }
+
+        #[cfg(not(feature = "extends"))]
+        quote! { None }
     }
 
     pub fn generate_finalize(&self) -> TokenStream {

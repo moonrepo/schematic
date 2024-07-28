@@ -1,6 +1,7 @@
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
 use super::configs::{Config, PartialConfig};
 use super::error::ConfigError;
+#[cfg(feature = "extends")]
 use super::extender::ExtendsFrom;
 use super::layer::Layer;
 use super::source::Source;
@@ -153,6 +154,7 @@ impl<T: Config> ConfigLoader<T> {
         self
     }
 
+    #[cfg(feature = "extends")]
     #[instrument(skip_all)]
     fn extend_additional_layers(
         &self,
@@ -265,6 +267,7 @@ impl<T: Config> ConfigLoader<T> {
                     .map_err(|error| self.map_validator_error(error, Some(source)))?;
             }
 
+            #[cfg(feature = "extends")]
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
             }

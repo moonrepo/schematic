@@ -24,6 +24,7 @@ syn = { version = "2.0.72", features = ["full"] }
 default = []
 config = []
 env = []
+extends = []
 schema = []
 tracing = []
 validate = []

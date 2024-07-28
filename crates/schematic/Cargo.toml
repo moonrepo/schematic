@@ -54,7 +54,7 @@ serde_yaml = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["blocking"] }
 
 [features]
-default = ["config", "env", "url", "validate"]
+default = ["config", "env", "extends", "url", "validate"]
 config = [
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
@@ -65,6 +65,7 @@ tracing = ["schematic_macros/tracing"]
 
 # Features
 env = ["schematic_macros/env"]
+extends = ["schematic_macros/extends"]
 url = ["dep:reqwest"]
 validate = ["dep:garde", "schematic_macros/validate"]
 
@@ -98,6 +99,7 @@ validate_url = ["validate", "garde/url"]
 schematic = { path = ".", features = [
 	"config",
 	"env",
+	"extends",
 	"json",
 	"schema",
 	"toml",

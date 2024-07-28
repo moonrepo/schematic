@@ -1,4 +1,5 @@
 use super::error::ConfigError;
+#[cfg(feature = "extends")]
 use super::extender::ExtendsFrom;
 #[cfg(feature = "validate")]
 use super::validator::*;
@@ -29,6 +30,7 @@ pub trait PartialConfig:
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
     /// [`ExtendsFrom`] with the extended sources, either a list of strings or a single string.
     /// When no setting is extendable, this returns [`None`].
+    #[cfg(feature = "extends")]
     fn extends_from(&self) -> Option<ExtendsFrom>;
 
     /// Finalize the partial configuration by consuming it and populating all fields with a value.

@@ -1,6 +1,7 @@
 mod cacher;
 mod configs;
 mod error;
+#[cfg(feature = "extends")]
 mod extender;
 mod formats;
 mod layer;
@@ -14,6 +15,7 @@ mod validator;
 pub use cacher::*;
 pub use configs::*;
 pub use error::*;
+#[cfg(feature = "extends")]
 pub use extender::*;
 pub use layer::*;
 pub use loader::*;

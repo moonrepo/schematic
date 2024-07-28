@@ -70,6 +70,7 @@ impl<'l> Field<'l> {
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
             // Reset extendable values since we don't have the entire resolved list
+            #[cfg(feature = "extends")]
             if self.args.extend {
                 return quote! { Default::default() };
             }
