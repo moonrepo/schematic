@@ -209,6 +209,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 rel_path.to_str().unwrap_or(&self.name)
             }
+            #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
         }
     }
