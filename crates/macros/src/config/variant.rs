@@ -149,6 +149,7 @@ impl<'l> Variant<'l> {
 
         Some(self.map_unnamed_match(self.name, fields, |outer_names, _| {
             let mut stmts = vec![];
+            let name = self.get_name(Some(&self.casing_format));
 
             if let Some(expr) = self.args.validate.as_ref() {
                 let func = match expr {
@@ -168,20 +169,18 @@ impl<'l> Variant<'l> {
                 };
 
                 stmts.push(quote! {
-                    if let Err(error) = #func(#value, self, context, finalize) {
-                        errors.push(error);
+                    if let Err(mut error) = #func(#value, self, context, finalize) {
+                        errors.push(error.prepend_path(path.join_key(#name)));
                     }
                 });
             }
 
             if self.is_required() {
-                let name = self.get_name(Some(&self.casing_format));
-
                 stmts.push(quote! {
                     if finalize && [#(#outer_names),*].iter().any(|v| v.is_none()) {
-                        let mut error = schematic::ValidateError::required();
-                        error.prepend_path(path.join_key(#name));
-                        errors.push(error);
+                        errors.push(schematic::ValidateError::required().prepend_path(
+                            path.join_key(#name)
+                        ));
                     }
                 });
             }

@@ -56,8 +56,12 @@ impl ValidateError {
         }
     }
 
-    pub fn prepend_path(&mut self, path: Path) {
-        self.path = path.join_path(&self.path);
+    #[doc(hidden)]
+    pub fn prepend_path(self, path: Path) -> Self {
+        Self {
+            message: self.message,
+            path: path.join_path(&self.path),
+        }
     }
 }
 
