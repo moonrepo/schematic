@@ -12,15 +12,15 @@ struct Section {
 }
 
 /// Renders TOML config templates.
-pub struct TomlTemplateRenderer<'gen> {
+pub struct TomlTemplateRenderer {
     ctx: TemplateContext,
-    schemas: Option<&'gen IndexMap<String, Schema>>,
-
+    references: HashSet<String>,
+    schemas: IndexMap<String, Schema>,
     arrays: BTreeMap<String, Section>,
     tables: BTreeMap<String, Section>,
 }
 
-impl<'gen> TomlTemplateRenderer<'gen> {
+impl TomlTemplateRenderer {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         TomlTemplateRenderer::new(TemplateOptions::default())
@@ -29,7 +29,8 @@ impl<'gen> TomlTemplateRenderer<'gen> {
     pub fn new(options: TemplateOptions) -> Self {
         TomlTemplateRenderer {
             ctx: TemplateContext::new(Format::Toml, options),
-            schemas: None,
+            references: HashSet::default(),
+            schemas: IndexMap::default(),
             arrays: BTreeMap::new(),
             tables: BTreeMap::new(),
         }
@@ -91,7 +92,7 @@ impl<'gen> TomlTemplateRenderer<'gen> {
     }
 }
 
-impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
+impl SchemaRenderer<String> for TomlTemplateRenderer {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
@@ -158,10 +159,8 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
-        if let Some(schemas) = &self.schemas {
-            if let Some(schema) = schemas.get(reference) {
-                return self.render_schema_without_reference(schema);
-            }
+        if let Some(schema) = self.schemas.get(reference) {
+            return self.render_schema_without_reference(schema);
         }
 
         render_reference(reference)
@@ -205,14 +204,11 @@ impl<'gen> SchemaRenderer<'gen, String> for TomlTemplateRenderer<'gen> {
         render_unknown()
     }
 
-    fn render(
-        &mut self,
-        schemas: &'gen IndexMap<String, Schema>,
-        _references: &'gen HashSet<String>,
-    ) -> RenderResult {
-        self.schemas = Some(schemas);
+    fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
+        self.references = HashSet::from_iter(schemas.keys().cloned());
+        self.schemas = schemas;
 
-        let mut root = validate_root(schemas)?;
+        let mut root = validate_root(&self.schemas)?;
         let fake_schema = Schema::default();
 
         // Recursively extract all sections (arrays, objects)

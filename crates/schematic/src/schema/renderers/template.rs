@@ -250,13 +250,11 @@ impl TemplateContext {
     pub fn resolve_schema<'gen>(
         &self,
         initial: &'gen Schema,
-        schemas: &Option<&'gen IndexMap<String, Schema>>,
+        schemas: &'gen IndexMap<String, Schema>,
     ) -> &'gen Schema {
         if let SchemaType::Reference(name) = &initial.ty {
-            if let Some(schemas) = schemas {
-                if let Some(schema) = schemas.get(name) {
-                    return schema;
-                }
+            if let Some(schema) = schemas.get(name) {
+                return schema;
             }
         }
 

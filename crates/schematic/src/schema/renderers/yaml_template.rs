@@ -6,12 +6,13 @@ use schematic_types::*;
 use std::collections::HashSet;
 
 /// Renders YAML config templates.
-pub struct YamlTemplateRenderer<'gen> {
+pub struct YamlTemplateRenderer {
     ctx: TemplateContext,
-    schemas: Option<&'gen IndexMap<String, Schema>>,
+    // schemas: IndexMap<String, Schema>,
+    references: HashSet<String>,
 }
 
-impl<'gen> YamlTemplateRenderer<'gen> {
+impl YamlTemplateRenderer {
     #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         YamlTemplateRenderer::new(TemplateOptions::default())
@@ -20,12 +21,13 @@ impl<'gen> YamlTemplateRenderer<'gen> {
     pub fn new(options: TemplateOptions) -> Self {
         YamlTemplateRenderer {
             ctx: TemplateContext::new(Format::Yaml, options),
-            schemas: None,
+            // schemas: None,
+            references: HashSet::default(),
         }
     }
 }
 
-impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
+impl SchemaRenderer<String> for YamlTemplateRenderer {
     fn is_reference(&self, _name: &str) -> bool {
         false
     }
@@ -106,11 +108,10 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {
-        if let Some(schemas) = &self.schemas {
-            if let Some(schema) = schemas.get(reference) {
-                return self.render_schema_without_reference(schema);
-            }
-        }
+        // TODO
+        // if let Some(schema) = schemas.get(reference) {
+        //     return self.render_schema_without_reference(schema);
+        // }
 
         render_reference(reference)
     }
@@ -172,14 +173,10 @@ impl<'gen> SchemaRenderer<'gen, String> for YamlTemplateRenderer<'gen> {
         render_unknown()
     }
 
-    fn render(
-        &mut self,
-        schemas: &'gen IndexMap<String, Schema>,
-        _references: &'gen HashSet<String>,
-    ) -> RenderResult {
-        self.schemas = Some(schemas);
+    fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
+        // self.schemas = Some(schemas);
 
-        let root = validate_root(schemas)?;
+        let root = validate_root(&schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
 
         // Inject the header and footer
