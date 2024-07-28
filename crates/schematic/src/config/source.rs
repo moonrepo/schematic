@@ -103,7 +103,7 @@ impl Source {
     #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
     pub fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
-        D: DeserializeOwned,
+        D: DeserializeOwned + Default,
     {
         match self {
             Source::Code { code, format } => format.parse(name, code, None),
@@ -122,7 +122,7 @@ impl Source {
                         return Err(ConfigError::MissingFile(path.to_path_buf()));
                     }
 
-                    "".into()
+                    return Ok(D::default());
                 };
 
                 format.parse(name, &content, Some(path))
@@ -151,7 +151,7 @@ impl Source {
                     body
                 };
 
-                format.parse(name, &content, None)
+                format.parse(name, &content, cacher.get_file_path(url)?.as_deref())
             }
         }
     }
