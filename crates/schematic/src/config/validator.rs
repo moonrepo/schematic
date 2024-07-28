@@ -6,6 +6,11 @@ use thiserror::Error;
 
 pub type ValidateResult = std::result::Result<(), ValidateError>;
 
+/// A validator function that receives a setting value to validate, the parent
+/// configuration the setting belongs to, the current context, and can return
+/// a [`ValidateError`] on failure.
+pub type Validator<Val, Data, Ctx> = Box<dyn FnOnce(&Val, &Data, &Ctx, bool) -> ValidateResult>;
+
 /// Error for a single validation failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
 #[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]

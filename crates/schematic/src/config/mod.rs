@@ -6,6 +6,7 @@ mod extender;
 mod formats;
 mod layer;
 mod loader;
+mod merger;
 mod parser;
 mod path;
 mod source;
@@ -19,6 +20,7 @@ pub use error::*;
 pub use extender::*;
 pub use layer::*;
 pub use loader::*;
+pub use merger::*;
 pub use parser::*;
 pub use path::*;
 pub use source::*;
@@ -36,4 +38,3 @@ macro_rules! derive_enum {
 
 pub type DefaultValueResult<T> = std::result::Result<Option<T>, HandlerError>;
 pub type ParseEnvResult<T> = std::result::Result<Option<T>, HandlerError>;
-pub type MergeResult<T> = std::result::Result<Option<T>, HandlerError>;

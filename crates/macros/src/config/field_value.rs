@@ -88,7 +88,7 @@ impl<'l> FieldValue<'l> {
             }
 
             return quote! {
-                self.#key = merge_partial_setting(
+                self.#key = merge_nested_setting(
                     self.#key.take(),
                     next.#key.take(),
                     context,

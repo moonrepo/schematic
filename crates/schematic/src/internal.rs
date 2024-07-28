@@ -1,6 +1,6 @@
-use crate::config::{ConfigError, HandlerError, PartialConfig};
-use crate::merge::merge_partial;
-use crate::ParseEnvResult;
+use crate::config::{
+    ConfigError, HandlerError, MergeError, MergeResult, ParseEnvResult, PartialConfig,
+};
 use schematic_types::Schema;
 use std::{env, str::FromStr};
 
@@ -42,8 +42,8 @@ pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
-    merger: impl Fn(T, T, &C) -> Result<Option<T>, HandlerError>,
-) -> Result<Option<T>, HandlerError> {
+    merger: impl Fn(T, T, &C) -> MergeResult<T>,
+) -> MergeResult<T> {
     if prev.is_some() && next.is_some() {
         merger(prev.unwrap(), next.unwrap(), context)
     } else if next.is_some() {
@@ -54,13 +54,19 @@ pub fn merge_setting<T, C>(
 }
 
 #[allow(clippy::unnecessary_unwrap)]
-pub fn merge_partial_setting<T: PartialConfig>(
+pub fn merge_nested_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
-) -> Result<Option<T>, HandlerError> {
+) -> MergeResult<T> {
     if prev.is_some() && next.is_some() {
-        merge_partial(prev.unwrap(), next.unwrap(), context)
+        let mut nested = prev.unwrap();
+
+        nested
+            .merge(context, next.unwrap())
+            .map_err(|error| MergeError(error.to_string()))?;
+
+        Ok(Some(nested))
     } else if next.is_some() {
         Ok(next)
     } else {
