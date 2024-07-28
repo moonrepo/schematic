@@ -1,7 +1,7 @@
 #[cfg(feature = "json")]
 mod json;
-// #[cfg(feature = "pkl")]
-// mod pkl;
+#[cfg(feature = "pkl")]
+mod pkl;
 #[cfg(feature = "toml")]
 mod toml;
 #[cfg(feature = "yaml")]
@@ -11,6 +11,7 @@ use super::parser::ParserError;
 use crate::format::Format;
 use miette::{SourceOffset, SourceSpan};
 use serde::de::DeserializeOwned;
+use std::path::Path;
 use tracing::instrument;
 
 pub(super) fn create_span(content: &str, line: usize, column: usize) -> SourceSpan {
@@ -25,7 +26,12 @@ impl Format {
     /// On failure, will attempt to extract the path to the problematic field and source
     /// code spans (for use in `miette`).
     #[instrument(name = "parse_format", skip(content), fields(format = ?self))]
-    pub fn parse<D>(&self, location: &str, content: &str) -> Result<D, ParserError>
+    pub fn parse<D>(
+        &self,
+        location: &str,
+        content: &str,
+        file_path: Option<&Path>,
+    ) -> Result<D, ParserError>
     where
         D: DeserializeOwned,
     {
@@ -34,6 +40,9 @@ impl Format {
 
             #[cfg(feature = "json")]
             Format::Json => json::parse(location, content),
+
+            #[cfg(feature = "pkl")]
+            Format::Pkl => pkl::parse(location, content, file_path),
 
             #[cfg(feature = "toml")]
             Format::Toml => toml::parse(location, content),
