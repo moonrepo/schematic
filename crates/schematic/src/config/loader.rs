@@ -22,6 +22,8 @@ pub struct ConfigLoadResult<T: Config> {
     pub layers: Vec<Layer<T>>,
 }
 
+/// A system for loading configuration from multiple sources in multiple formats,
+/// and generating a final result after merging and validating layers.
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     cacher: Mutex<BoxedCacher>,
@@ -249,7 +251,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 source
                     .parse(&self.name, &mut cacher)
-                    .map_err(|outer| self.map_parser_error(outer, source))?
+                    .map_err(|error| self.map_parser_error(error, source))?
             };
 
             // Validate before continuing so we ensure the values are correct

@@ -4,6 +4,7 @@ use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
+/// A [`Schema`] builder.
 #[derive(Clone, Debug, Default)]
 pub struct SchemaBuilder {
     deprecated: Option<String>,

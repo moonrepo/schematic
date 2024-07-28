@@ -164,7 +164,6 @@ impl<'l> Macro<'l> {
         }
     }
 
-
     pub fn get_name(&self) -> String {
         if let Some(local) = &self.args.rename {
             local.to_owned()
