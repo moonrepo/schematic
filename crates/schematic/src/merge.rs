@@ -1,15 +1,8 @@
-use crate::{
-    config::{HandlerError, PartialConfig},
-    MergeResult,
-};
+use crate::config::MergeResult;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     hash::Hash,
 };
-
-/// A merger function that receives the previous and next values, the current
-/// context, and can return a [`HandlerError`] on failure.
-pub type Merger<Val, Ctx> = Box<dyn FnOnce(Val, Val, &Ctx) -> MergeResult<Val>>;
 
 /// Discard both previous and next values and return [`None`].
 pub fn discard<T, C>(_: T, _: T, _: &C) -> MergeResult<T> {
@@ -100,19 +93,6 @@ where
     for item in next {
         prev.insert(item);
     }
-
-    Ok(Some(prev))
-}
-
-/// Merge the next [`PartialConfig`] into the previous [`PartialConfig`], using the merging
-/// strategies defined by the [`Config`] derive implementation.
-pub fn merge_partial<T: PartialConfig>(
-    mut prev: T,
-    next: T,
-    context: &T::Context,
-) -> MergeResult<T> {
-    prev.merge(context, next)
-        .map_err(|error| HandlerError(error.to_string()))?;
 
     Ok(Some(prev))
 }

@@ -135,8 +135,11 @@ Schematic is powered entirely by [serde](https://serde.rs), and supports the fol
 The following Cargo features are available:
 
 - `config` (default) - Enables configuration support (all the above stuff).
+- `env` (default) - Enables environment variables for settings.
+- `extends` (default) - Enables configs to extend other configs.
 - `json` - Enables JSON.
 - `toml` - Enables TOML.
 - `tracing` - Wrap generated code in tracing instrumentations.
-- `url` (default) - Enables loading, extending, and parsing configs from URLs.
+- `url` - Enables loading, extending, and parsing configs from URLs.
+- `validate` (default) - Enables setting value validation.
 - `yaml` - Enables YAML.

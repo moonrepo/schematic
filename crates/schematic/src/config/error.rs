@@ -1,3 +1,4 @@
+use super::merger::MergeError;
 use super::parser::ParserError;
 #[cfg(feature = "validate")]
 use super::validator::ValidatorError;
@@ -13,6 +14,9 @@ use thiserror::Error;
 pub enum ConfigError {
     #[error(transparent)]
     Handler(#[from] Box<HandlerError>),
+
+    #[error(transparent)]
+    Merge(#[from] Box<MergeError>),
 
     #[error(transparent)]
     UnsupportedFormat(#[from] Box<UnsupportedFormatError>),
@@ -150,6 +154,12 @@ impl ConfigError {
 impl From<HandlerError> for ConfigError {
     fn from(e: HandlerError) -> ConfigError {
         ConfigError::Handler(Box::new(e))
+    }
+}
+
+impl From<MergeError> for ConfigError {
+    fn from(e: MergeError) -> ConfigError {
+        ConfigError::Merge(Box::new(e))
     }
 }
 
