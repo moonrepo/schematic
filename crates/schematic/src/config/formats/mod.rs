@@ -7,7 +7,7 @@ mod toml;
 #[cfg(feature = "yaml")]
 mod yaml;
 
-use super::parser::ParserError;
+use super::error::ConfigError;
 use crate::format::Format;
 use miette::{SourceOffset, SourceSpan};
 use serde::de::DeserializeOwned;
@@ -31,7 +31,7 @@ impl Format {
         location: &str,
         content: &str,
         file_path: Option<&Path>,
-    ) -> Result<D, ParserError>
+    ) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {

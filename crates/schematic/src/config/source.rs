@@ -105,14 +105,8 @@ impl Source {
     where
         D: DeserializeOwned,
     {
-        let handle_error = |error: super::parser::ParserError| ConfigError::Parser {
-            location: String::new(),
-            error: Box::new(error),
-            help: None,
-        };
-
         match self {
-            Source::Code { code, format } => format.parse(name, code, None).map_err(handle_error),
+            Source::Code { code, format } => format.parse(name, code, None),
             Source::File {
                 path,
                 format,
@@ -131,9 +125,7 @@ impl Source {
                     "".into()
                 };
 
-                format
-                    .parse(name, &content, Some(path))
-                    .map_err(handle_error)
+                format.parse(name, &content, Some(path))
             }
             #[cfg(feature = "url")]
             Source::Url { url, format } => {
@@ -159,7 +151,7 @@ impl Source {
                     body
                 };
 
-                format.parse(name, &content, None).map_err(handle_error)
+                format.parse(name, &content, None)
             }
         }
     }
