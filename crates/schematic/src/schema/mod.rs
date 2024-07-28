@@ -19,6 +19,10 @@ pub use renderers::json_template::*;
 #[cfg(all(feature = "renderer_template", feature = "json"))]
 pub use renderers::jsonc_template::*;
 
+/// Renders Pkl config templates.
+#[cfg(all(feature = "renderer_template", feature = "pkl"))]
+pub use renderers::pkl_template::*;
+
 /// Helpers for config templates.
 #[cfg(feature = "renderer_template")]
 pub use renderers::template::TemplateOptions;

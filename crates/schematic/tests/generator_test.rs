@@ -280,6 +280,24 @@ mod template_json {
     }
 }
 
+#[cfg(all(feature = "renderer_template", feature = "pkl"))]
+mod template_pkl {
+    use super::*;
+    use schematic::schema::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.pkl");
+
+        create_template_generator()
+            .generate(&file, PklTemplateRenderer::new(create_template_options()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
 #[cfg(all(feature = "renderer_template", feature = "toml"))]
 mod template_toml {
     use super::*;

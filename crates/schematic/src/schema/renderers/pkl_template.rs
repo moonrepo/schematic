@@ -33,7 +33,7 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
         let key = self.ctx.get_stack_key();
 
         if !self.ctx.is_expanded(&key) {
-            return render_array(array);
+            return Ok("List()".into());
         }
 
         self.ctx.depth += 1;
@@ -44,7 +44,7 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
         self.ctx.depth -= 1;
 
         Ok(format!(
-            "List(\n{}{item}\n{})",
+            "new Listing {{\n{}{item}\n{}}}",
             item_indent,
             self.ctx.indent()
         ))
@@ -78,7 +78,7 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
         let key = self.ctx.get_stack_key();
 
         if !self.ctx.is_expanded(&key) {
-            return render_object(object);
+            return Ok("Map()".into());
         }
 
         self.ctx.depth += 1;
@@ -95,8 +95,13 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
         }
 
         Ok(format!(
-            "Map(\n{}{key}, {value}\n{})",
+            "new Mapping {{\n{}[{key}]{}{value}\n{}}}",
             item_indent,
+            if object.value_type.is_struct() {
+                " "
+            } else {
+                " = "
+            },
             self.ctx.indent()
         ))
     }
