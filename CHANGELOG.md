@@ -4,11 +4,31 @@
 
 #### 💥 Breaking
 
+##### Config
+
 - Refactored the internals of how validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
 - Removed `url` as a default Cargo feature.
 - Renamed `valid_*` Cargo features to `validate_*`.
 - Renamed some error enum variants.
+
+##### Schema
+
+- Updated `SchemaRenderer::render` to receive an owned copy of the schemas.
+- Removed references from `SchemaRenderer::render`. Use `schemas` keys instead.
+- Removed generics from `SchemaGenerator` and `SchemaRenderer`.
+
+```rust
+# Before
+fn render(
+  &mut self,
+  schemas: &'gen IndexMap<String, Schema>,
+  references: &'gen HashSet<String>,
+) -> RenderResult;
+
+# After
+fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult;
+```
 
 #### 🚀 Updates
 
