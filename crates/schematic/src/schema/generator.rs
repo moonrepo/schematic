@@ -2,21 +2,17 @@ use super::SchemaRenderer;
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use schematic_types::*;
-use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 
 /// A generator collects [`Schema`]s and renders them to a specific file,
 /// using a renderer that implements [`SchemaRenderer`].
 #[derive(Debug, Default)]
-pub struct SchemaGenerator<'gen> {
-    references: HashSet<String>,
+pub struct SchemaGenerator {
     schemas: IndexMap<String, Schema>,
-
-    _marker: std::marker::PhantomData<&'gen ()>,
 }
 
-impl<'gen> SchemaGenerator<'gen> {
+impl SchemaGenerator {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
     pub fn add<T: Schematic>(&mut self) {
         let schema = SchemaBuilder::build_root::<T>();
@@ -57,8 +53,6 @@ impl<'gen> SchemaGenerator<'gen> {
 
         // Store the name so that we can use it as a reference for other types
         if let Some(name) = &schema.name {
-            self.references.insert(name.to_owned());
-
             // Types without a name cannot be rendered at the root
             if !self.schemas.contains_key(name) {
                 self.schemas.insert(name.to_owned(), schema);
@@ -68,14 +62,14 @@ impl<'gen> SchemaGenerator<'gen> {
 
     /// Generate an output by rendering all collected [`Schema`]s using the provided
     /// [`SchemaRenderer`], and finally write to the provided file path.
-    pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<'gen, O>>(
-        &'gen self,
+    pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<O>>(
+        &self,
         output_file: P,
         mut renderer: R,
     ) -> miette::Result<()> {
         let output_file = output_file.as_ref();
 
-        let mut output = renderer.render(&self.schemas, &self.references)?;
+        let mut output = renderer.render(self.schemas.clone())?;
         output.push('\n');
 
         if let Some(parent) = output_file.parent() {
