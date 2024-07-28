@@ -21,11 +21,11 @@ impl<'l> FieldValue<'l> {
                             quote! { Some(#expr) }
                         }
                         Expr::Path(func) => {
-                            quote! { handle_default_fn(#func(context))? }
+                            quote! { handle_default_result(#func(context))? }
                         }
                         Expr::Lit(lit) => match &lit.lit {
                             Lit::Str(string) => quote! {
-                                Some(handle_default_fn(#value::try_from(#string))?)
+                                Some(handle_default_result(#value::try_from(#string))?)
                             },
                             other => quote! { Some(#other) },
                         },

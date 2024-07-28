@@ -1,27 +1,27 @@
-use crate::config::{
-    ConfigError, HandlerError, MergeError, MergeResult, ParseEnvResult, PartialConfig,
-};
+use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialConfig};
 use schematic_types::Schema;
-use std::{env, str::FromStr};
+use std::str::FromStr;
 
-pub fn handle_default_fn<T, E: std::error::Error>(result: Result<T, E>) -> Result<T, ConfigError> {
+// Handles T and Option<T> values
+pub fn handle_default_result<T, E: std::error::Error>(
+    result: Result<T, E>,
+) -> Result<T, ConfigError> {
     result.map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
 }
 
-pub fn default_from_env_var<T: FromStr>(key: &str) -> ParseEnvResult<T> {
-    parse_from_env_var(key, |var| parse_value(var).map(|v| Some(v)))
+#[cfg(feature = "env")]
+pub fn default_env_value<T: FromStr>(key: &str) -> crate::config::ParseEnvResult<T> {
+    parse_env_value(key, |value| parse_value(value).map(|v| Some(v)))
 }
 
-pub fn parse_from_env_var<T>(
+#[cfg(feature = "env")]
+pub fn parse_env_value<T>(
     key: &str,
-    parser: impl Fn(String) -> ParseEnvResult<T>,
-) -> Result<Option<T>, HandlerError> {
-    if let Ok(var) = env::var(key) {
-        let value = parser(var).map_err(|error| {
-            HandlerError(format!("Invalid environment variable {key}. {error}"))
-        })?;
-
-        return Ok(value);
+    parser: impl Fn(String) -> crate::config::ParseEnvResult<T>,
+) -> crate::config::ParseEnvResult<T> {
+    if let Ok(value) = std::env::var(key) {
+        return parser(value)
+            .map_err(|error| HandlerError(format!("Invalid environment variable {key}. {error}")));
     }
 
     Ok(None)
