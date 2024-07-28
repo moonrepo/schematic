@@ -9,6 +9,7 @@
 - Refactored the internals of how merge/validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
 - Removed `url` as a default Cargo feature.
+- Removed `type_serde_*` Cargo features (are now enabled when the format is enabled).
 - Renamed `valid_*` Cargo features to `validate_*`.
 - Renamed some error enum variants.
 

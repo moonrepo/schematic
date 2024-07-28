@@ -74,10 +74,10 @@ url = ["dep:reqwest"]
 validate = ["dep:garde", "schematic_macros/validate"]
 
 # Formats
-json = ["dep:serde_json"]
-pkl = ["dep:rpkl"]
-toml = ["dep:toml"]
-yaml = ["dep:serde_yaml"]
+json = ["dep:serde_json", "schematic_types/serde_json"]
+pkl = ["dep:rpkl", "schematic_types/serde_rpkl"]
+toml = ["dep:toml", "schematic_types/serde_toml"]
+yaml = ["dep:serde_yaml", "schematic_types/serde_yaml"]
 
 # Renderers
 renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
@@ -91,10 +91,6 @@ type_regex = ["schematic_types/regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal"]
 type_semver = ["schematic_types/semver"]
-type_serde_json = ["schematic_types/serde_json"]
-type_serde_rpkl = ["schematic_types/serde_rpkl"]
-type_serde_toml = ["schematic_types/serde_toml"]
-type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
 
 # Validation
@@ -121,10 +117,6 @@ schematic = { path = ".", features = [
 	"type_relative_path",
 	"type_rust_decimal",
 	"type_semver",
-	"type_serde_json",
-	"type_serde_rpkl",
-	"type_serde_toml",
-	"type_serde_yaml",
 	"type_url",
 	"url",
 	"validate",
