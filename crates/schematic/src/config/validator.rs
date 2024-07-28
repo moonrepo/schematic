@@ -4,6 +4,8 @@ use starbase_styles::{Style, Stylize};
 use std::borrow::Borrow;
 use thiserror::Error;
 
+pub type ValidateResult = std::result::Result<(), ValidateError>;
+
 /// Error for a single validation failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
 #[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]

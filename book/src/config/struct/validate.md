@@ -1,5 +1,7 @@
 # Validation rules
 
+> Requires the `validate` Cargo feature, which is enabled by default.
+
 What kind of configuration crate would this be without built-in validation? As such, we support it
 as a first-class feature, with built-in validation rules provided by the
 [garde](https://crates.io/crates/garde) crate.
@@ -120,6 +122,6 @@ fn using_generics<P, C>(value: &str, partial: &P, context: &C, finalize: bool) -
 
 The following Cargo features can be enabled for more functionality:
 
-- `valid_email` - Enables email validation with the `schematic::validate::email` function.
-- `valid_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
+- `validate_email` - Enables email validation with the `schematic::validate::email` function.
+- `validate_url` - Enables URL validation with the `schematic::validate::url` and `url_secure`
   functions.

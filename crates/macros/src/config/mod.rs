@@ -30,13 +30,38 @@ impl<'l> ToTokens for ConfigMacro<'l> {
         let extends_from = cfg.type_of.generate_extends_from();
         let finalize = cfg.type_of.generate_finalize();
         let merge = cfg.type_of.generate_merge();
-        let validate = cfg.type_of.generate_validate();
         let from_partial = cfg.type_of.generate_from_partial(&partial_name);
         let instrument = instrument_quote();
 
         let context = match cfg.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },
             None => quote! { () },
+        };
+
+        let validate_method = if cfg!(feature = "validate") {
+            let validate = cfg.type_of.generate_validate();
+
+            quote! {
+                #instrument
+                fn validate_with_path(
+                    &self,
+                    context: &Self::Context,
+                    finalize: bool,
+                    path: schematic::Path
+                ) -> Result<(), Vec<schematic::ValidateError>> {
+                    let mut errors = vec![];
+
+                    #validate
+
+                    if !errors.is_empty() {
+                        return Err(errors);
+                    }
+
+                    Ok(())
+                }
+            }
+        } else {
+            quote! {}
         };
 
         tokens.extend(quote! {
@@ -76,23 +101,7 @@ impl<'l> ToTokens for ConfigMacro<'l> {
                     #merge
                 }
 
-                #instrument
-                fn validate_with_path(
-                    &self,
-                    context: &Self::Context,
-                    finalize: bool,
-                    path: schematic::Path
-                ) -> Result<(), Vec<schematic::ValidateError>> {
-                    let mut errors = vec![];
-
-                    #validate
-
-                    if !errors.is_empty() {
-                        return Err(errors);
-                    }
-
-                    Ok(())
-                }
+                #validate_method
             }
 
             #[automatically_derived]

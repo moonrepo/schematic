@@ -1,22 +1,22 @@
-#[cfg(feature = "valid_email")]
+#[cfg(feature = "validate_email")]
 mod email;
 mod extends;
 mod ip;
 mod length;
 mod number;
 mod string;
-#[cfg(feature = "valid_url")]
+#[cfg(feature = "validate_url")]
 mod url;
 
 pub use crate::config::{ValidateError, ValidateResult};
-#[cfg(feature = "valid_email")]
+#[cfg(feature = "validate_email")]
 pub use email::*;
 pub use extends::*;
 pub use ip::*;
 pub use length::*;
 pub use number::*;
 pub use string::*;
-#[cfg(feature = "valid_url")]
+#[cfg(feature = "validate_url")]
 pub use url::*;
 
 /// A validator function that receives a setting value to validate, the parent

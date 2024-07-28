@@ -22,7 +22,7 @@ pub mod merge;
 pub mod schema;
 
 /// Built-in `validate` functions.
-#[cfg(feature = "config")]
+#[cfg(all(feature = "config", feature = "validate"))]
 pub mod validate;
 
 /// ASCII color helpers for use within error messages.

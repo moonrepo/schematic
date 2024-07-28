@@ -6,10 +6,12 @@
 
 - Refactored the internals of how validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
+- Renamed `valid_*` Cargo features to `validate_*`.
 - Renamed some error enum variants.
 
 #### 🚀 Updates
 
+- Added a `validate` Cargo feature for toggling validation functionality. Enabled by default.
 - Reworked how parser and validator errors are rendered in the terminal.
 
 #### ⚙️ Internal

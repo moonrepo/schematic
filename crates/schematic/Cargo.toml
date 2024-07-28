@@ -54,24 +54,30 @@ serde_yaml = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true, features = ["blocking"] }
 
 [features]
-default = ["config", "url"]
+default = ["config", "url", "validate"]
 config = [
-	"dep:garde",
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
 	"schematic_macros/config",
 ]
-json = ["dep:serde_json"]
 schema = ["dep:indexmap", "schematic_macros/schema"]
-toml = ["dep:toml"]
 tracing = ["schematic_macros/tracing"]
+
+# Features
 url = ["dep:reqwest"]
+validate = ["dep:garde", "schematic_macros/validate"]
+
+# Formats
+json = ["dep:serde_json"]
+toml = ["dep:toml"]
 yaml = ["dep:serde_yaml"]
 
-renderer_json_schema = ["dep:markdown", "dep:schemars", "json", "schema"]
-renderer_template = []
+# Renderers
+renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
+renderer_template = ["schema"]
 renderer_typescript = ["schema"]
 
+# Types
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]
 type_regex = ["schematic_types/regex"]
@@ -83,8 +89,9 @@ type_serde_toml = ["schematic_types/serde_toml"]
 type_serde_yaml = ["schematic_types/serde_yaml"]
 type_url = ["schematic_types/url"]
 
-valid_email = ["garde/email"]
-valid_url = ["garde/url"]
+# Validation
+validate_email = ["validate", "garde/email"]
+validate_url = ["validate", "garde/url"]
 
 [dev-dependencies]
 schematic = { path = ".", features = [
@@ -107,8 +114,9 @@ schematic = { path = ".", features = [
 	"type_serde_yaml",
 	"type_url",
 	"url",
-	"valid_email",
-	"valid_url",
+	"validate",
+	"validate_email",
+	"validate_url",
 	"yaml",
 ] }
 reqwest = { workspace = true, features = [
