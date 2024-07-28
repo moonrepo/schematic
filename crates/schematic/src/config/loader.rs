@@ -102,9 +102,9 @@ impl<T: Config> ConfigLoader<T> {
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
-        partial
-            .validate(context, true)
-            .map_err(|error| self.map_validator_error(error, &layers.last().unwrap().source))?;
+        partial.validate(context, true).map_err(|error| {
+            self.map_validator_error(error, layers.last().map(|layer| &layer.source))
+        })?;
 
         Ok(ConfigLoadResult {
             config: T::from_partial(partial),
@@ -190,8 +190,9 @@ impl<T: Config> ConfigLoader<T> {
         self.parse_into_layers(&sources, context)
     }
 
-    fn get_location<'l>(&self, source: &'l Source) -> &'l str {
+    fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
+            Source::Code { .. } => &self.name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
                     path.strip_prefix(root).unwrap_or(path)
@@ -199,9 +200,9 @@ impl<T: Config> ConfigLoader<T> {
                     path
                 };
 
-                rel_path.to_str().unwrap_or_default()
+                rel_path.to_str().unwrap_or(&self.name)
             }
-            _ => source.as_str(),
+            Source::Url { url, .. } => url,
         }
     }
 
@@ -254,7 +255,7 @@ impl<T: Config> ConfigLoader<T> {
             // Validate before continuing so we ensure the values are correct
             partial
                 .validate(context, false)
-                .map_err(|error| self.map_validator_error(error, source))?;
+                .map_err(|error| self.map_validator_error(error, Some(source)))?;
 
             if let Some(extends_from) = partial.extends_from() {
                 layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
@@ -280,10 +281,13 @@ impl<T: Config> ConfigLoader<T> {
         }
     }
 
-    fn map_validator_error(&self, outer: ConfigError, source: &Source) -> ConfigError {
+    fn map_validator_error(&self, outer: ConfigError, source: Option<&Source>) -> ConfigError {
         match outer {
             ConfigError::Validator { error, .. } => ConfigError::Validator {
-                location: self.get_location(source).to_owned(),
+                location: source
+                    .map(|src| self.get_location(src))
+                    .unwrap_or(&self.name)
+                    .to_owned(),
                 error,
                 help: self.help.clone(),
             },
