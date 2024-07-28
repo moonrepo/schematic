@@ -1,7 +1,7 @@
-use crate::config::path::{Path, PathSegment};
+use super::path::{Path, PathSegment};
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
-use std::fmt::{self, Display};
+use std::borrow::Borrow;
 use thiserror::Error;
 
 /// Error for a single validation failure.
@@ -55,122 +55,36 @@ impl ValidateError {
             path: Path::new(segments.into_iter().collect()),
         }
     }
-}
 
-/// Either contains a single or multiple validation errors.
-#[derive(Clone, Debug)]
-pub enum ValidateErrorType {
-    Setting { path: Path, error: ValidateError },
-
-    Nested { error: ValidatorError },
-}
-
-impl ValidateErrorType {
-    pub fn setting(path: Path, error: ValidateError) -> Self {
-        ValidateErrorType::Setting { path, error }
-    }
-
-    pub fn setting_required(path: Path) -> Self {
-        ValidateErrorType::Setting {
-            path,
-            error: ValidateError::required(),
+    #[doc(hidden)]
+    pub fn prepend_path(self, path: Path) -> Self {
+        Self {
+            message: self.message,
+            path: path.join_path(&self.path),
         }
-    }
-
-    pub fn nested(error: ValidatorError) -> Self {
-        ValidateErrorType::Nested { error }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        match self {
-            ValidateErrorType::Setting { .. } => false,
-            ValidateErrorType::Nested { error } => error.is_empty(),
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        match self {
-            ValidateErrorType::Setting { .. } => 1,
-            ValidateErrorType::Nested { error } => error.len(),
-        }
-    }
-
-    pub fn to_error_list(&self) -> Vec<String> {
-        let mut list = vec![];
-
-        match self {
-            ValidateErrorType::Setting { path, error } => {
-                let mut error = error.clone();
-                error.path = path.join_path(&error.path);
-
-                list.push(error.to_string());
-            }
-            ValidateErrorType::Nested {
-                error: nested_error,
-            } => {
-                for error in &nested_error.errors {
-                    list.extend(error.to_error_list());
-                }
-            }
-        }
-
-        list
     }
 }
 
 /// Error that contains multiple validation errors, for each setting that failed.
-#[derive(Clone, Debug, Diagnostic, Error)]
+#[derive(Debug, Diagnostic, Error)]
+#[error("{}", self.render_errors())]
 pub struct ValidatorError {
-    /// When nested, the path to the setting that contains the nested error.
-    pub path: Path,
-
     /// A list of validation errors for the current path. Includes nested errors.
-    pub errors: Vec<ValidateErrorType>,
+    pub errors: Vec<ValidateError>,
 }
 
 impl ValidatorError {
-    /// Return true if there are no validation errors.
-    pub fn is_empty(&self) -> bool {
-        self.errors.is_empty()
-    }
-
-    /// Return a count of all recursive validation errors.
-    pub fn len(&self) -> usize {
-        self.errors.iter().map(|e| e.len()).sum()
-    }
-
-    /// Return a string of all recursive validation errors, joined with newlines.
-    pub fn to_full_string(&self) -> String {
-        let mut message = String::new();
-
-        for error_type in &self.errors {
-            for error in error_type.to_error_list() {
-                message.push_str(format!("\n  {error}").as_str());
-            }
-        }
-
-        message
+    fn render_errors(&self) -> String {
+        self.errors
+            .iter()
+            .map(|error| error.to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
-impl Display for ValidatorError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut first = true;
-
-        for error_type in &self.errors {
-            for error in error_type.to_error_list() {
-                if first {
-                    first = false;
-                } else {
-                    writeln!(f)?;
-                }
-
-                write!(f, "{}", error)?;
-            }
-        }
-
-        writeln!(f)?;
-
-        Ok(())
+impl Borrow<dyn Diagnostic> for Box<ValidatorError> {
+    fn borrow(&self) -> &(dyn Diagnostic + 'static) {
+        self.as_ref()
     }
 }

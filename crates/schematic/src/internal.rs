@@ -5,7 +5,7 @@ use schematic_types::Schema;
 use std::{env, str::FromStr};
 
 pub fn handle_default_fn<T, E: std::error::Error>(result: Result<T, E>) -> Result<T, ConfigError> {
-    result.map_err(|error| ConfigError::InvalidDefault(error.to_string()))
+    result.map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
 }
 
 pub fn default_from_env_var<T: FromStr>(key: &str) -> ParseEnvResult<T> {

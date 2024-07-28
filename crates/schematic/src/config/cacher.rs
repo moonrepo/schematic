@@ -1,4 +1,4 @@
-use crate::config::errors::ConfigError;
+use super::error::ConfigError;
 use std::collections::HashMap;
 
 /// A system for reading and writing to a cache for URL based configurations.

@@ -13,7 +13,7 @@ pub enum PathSegment {
     Unknown,
 }
 
-/// Represents the path from the struct root to nested a field or field value.
+/// Represents the path from the configuration root to a nested field or field value.
 #[derive(Clone, Debug, Default)]
 pub struct Path {
     /// List of path segments.
