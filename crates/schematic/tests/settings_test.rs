@@ -38,11 +38,12 @@ pub struct StandardSettings {
 mod standard {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn returns_defaults() {
+    async fn returns_defaults() {
         let config = ConfigLoader::<StandardSettings>::new()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -51,13 +52,14 @@ mod standard {
         assert_eq!(config.opt, None);
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn inherits_env() {
+    async fn inherits_env() {
         env::set_var("OPT_ENV", "env");
 
         let config = ConfigLoader::<StandardSettings>::new()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -66,11 +68,12 @@ mod standard {
         env::remove_var("OPT_ENV");
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn validates_all() {
+    async fn validates_all() {
         let error = ConfigLoader::<StandardSettings>::new()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 
@@ -90,10 +93,14 @@ pub struct NestedSettings {
 mod nested {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn returns_defaults() {
-        let config = ConfigLoader::<NestedSettings>::new().load().unwrap().config;
+    async fn returns_defaults() {
+        let config = ConfigLoader::<NestedSettings>::new()
+            .load()
+            .await
+            .unwrap()
+            .config;
 
         assert_eq!(config.nested_req.req, "");
         assert_eq!(config.nested_req.req_default, "abc");
@@ -101,13 +108,14 @@ mod nested {
         assert!(config.nested_opt.is_none());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn applies_defaults_for_optional() {
+    async fn applies_defaults_for_optional() {
         let config = ConfigLoader::<NestedSettings>::new()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -120,15 +128,16 @@ mod nested {
         assert_eq!(opt.req_default, "abc");
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn inherits_env_for_each() {
+    async fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
         let config = ConfigLoader::<NestedSettings>::new()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -138,13 +147,14 @@ mod nested {
         env::remove_var("OPT_ENV");
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn validates_all() {
+    async fn validates_all() {
         let error = ConfigLoader::<NestedSettings>::new()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 
@@ -165,11 +175,12 @@ pub struct NestedVecSettings {
 mod nested_vec {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn returns_defaults() {
+    async fn returns_defaults() {
         let config = ConfigLoader::<NestedVecSettings>::new()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -177,9 +188,9 @@ mod nested_vec {
         assert!(config.nested_opt.is_none());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn applies_defaults_for_items() {
+    async fn applies_defaults_for_items() {
         let config = ConfigLoader::<NestedVecSettings>::new()
             .code(
                 r#"
@@ -191,6 +202,7 @@ mod nested_vec {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -213,9 +225,9 @@ mod nested_vec {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn inherits_env_for_each() {
+    async fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
         let config = ConfigLoader::<NestedVecSettings>::new()
@@ -229,6 +241,7 @@ mod nested_vec {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -238,9 +251,9 @@ mod nested_vec {
         env::remove_var("OPT_ENV");
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn validates_all() {
+    async fn validates_all() {
         let error = ConfigLoader::<NestedVecSettings>::new()
             .code(
                 r#"
@@ -252,6 +265,7 @@ mod nested_vec {
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 
@@ -272,11 +286,12 @@ pub struct NestedMapSettings {
 mod nested_map {
     use super::*;
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn returns_defaults() {
+    async fn returns_defaults() {
         let config = ConfigLoader::<NestedMapSettings>::new()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -287,9 +302,9 @@ mod nested_map {
         assert!(config.nested_opt.is_none());
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn applies_defaults_for_items() {
+    async fn applies_defaults_for_items() {
         let config = ConfigLoader::<NestedMapSettings>::new()
             .code(
                 r#"
@@ -301,6 +316,7 @@ mod nested_map {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -329,9 +345,9 @@ mod nested_map {
         );
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn inherits_env_for_each() {
+    async fn inherits_env_for_each() {
         env::set_var("OPT_ENV", "env");
 
         let config = ConfigLoader::<NestedMapSettings>::new()
@@ -345,6 +361,7 @@ mod nested_map {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -360,9 +377,9 @@ mod nested_map {
         env::remove_var("OPT_ENV");
     }
 
-    #[test]
+    #[tokio::test]
     #[serial]
-    fn validates_all() {
+    async fn validates_all() {
         let error = ConfigLoader::<NestedMapSettings>::new()
             .code(
                 r#"
@@ -374,6 +391,7 @@ mod nested_map {
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 

@@ -20,10 +20,12 @@ all-features = true
 [dependencies]
 schematic_macros = { version = "0.16.6", path = "../macros" }
 schematic_types = { version = "0.8.4", path = "../types" }
+async-recursion = "1.1.1"
 async-trait = "0.1.81"
 miette = { workspace = true }
 thiserror = "1.0.63"
 tracing = { workspace = true }
+tokio = { workspace = true }
 
 # config
 garde = { version = "0.20.0", default-features = false, optional = true, features = [

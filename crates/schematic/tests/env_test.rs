@@ -40,9 +40,9 @@ fn reset_vars() {
     env::remove_var("ENV_FLOAT");
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn defaults_to_env_var() {
+async fn defaults_to_env_var() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
     env::set_var("ENV_NUMBER", "123");
@@ -50,7 +50,7 @@ fn defaults_to_env_var() {
     env::set_var("ENV_PATH", "some/path");
     env::set_var("ENV_FLOAT", "1.23");
 
-    let result = ConfigLoader::<EnvVars>::new().load().unwrap();
+    let result = ConfigLoader::<EnvVars>::new().load().await.unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");
@@ -69,32 +69,32 @@ async fn errors_on_parse_fail() {
     ConfigLoader::<EnvVars>::new().load().await.unwrap();
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn parses_into_env_vars() {
+async fn parses_into_env_vars() {
     reset_vars();
     env::set_var("ENV_VEC_STRING", "1,2,3");
     env::set_var("ENV_VEC_NUMBER", "1;2;3");
 
-    let result = ConfigLoader::<EnvVarParse>::new().load().unwrap();
+    let result = ConfigLoader::<EnvVarParse>::new().load().await.unwrap();
 
     assert_eq!(result.config.list1, vec!["1", "2", "3"]);
     assert_eq!(result.config.list2, vec![1, 2, 3]);
 }
 
-#[test]
+#[tokio::test]
 #[serial]
 #[should_panic(expected = "Invalid environment variable ENV_VEC_NUMBER.")]
-fn errors_on_split_parse_fail() {
+async fn errors_on_split_parse_fail() {
     reset_vars();
     env::set_var("ENV_VEC_NUMBER", "1;a;3");
 
-    ConfigLoader::<EnvVarParse>::new().load().unwrap();
+    ConfigLoader::<EnvVarParse>::new().load().await.unwrap();
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn env_var_takes_precedence() {
+async fn env_var_takes_precedence() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
@@ -102,14 +102,15 @@ fn env_var_takes_precedence() {
         .code("string: bar", Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.string, "foo");
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn can_ignore_empty_values() {
+async fn can_ignore_empty_values() {
     reset_vars();
     env::set_var("ENV_STRING", "");
 
@@ -117,6 +118,7 @@ fn can_ignore_empty_values() {
         .code("string: bar", Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.string, "");
@@ -137,9 +139,9 @@ pub struct EnvVarsBase {
     opt_nested: Option<EnvVarsNested>,
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn loads_env_vars_for_nested() {
+async fn loads_env_vars_for_nested() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
@@ -147,15 +149,16 @@ fn loads_env_vars_for_nested() {
         .code("{}", Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.nested.string, "foo");
     assert!(result.config.opt_nested.is_none());
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn loads_env_vars_for_optional_nested_when_valued() {
+async fn loads_env_vars_for_optional_nested_when_valued() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
 
@@ -163,6 +166,7 @@ fn loads_env_vars_for_optional_nested_when_valued() {
         .code("optNested:\n  string: bar", Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.nested.string, "foo");
@@ -185,9 +189,9 @@ pub struct EnvVarsPrefixed {
     nested: EnvVarsNested,
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn loads_from_prefixed() {
+async fn loads_from_prefixed() {
     reset_vars();
     env::set_var("ENV_STRING", "foo");
     env::set_var("ENV_NUMBER", "123");
@@ -196,7 +200,7 @@ fn loads_from_prefixed() {
     env::set_var("ENV_LIST1", "1,2,3");
     env::set_var("ENV_LIST2", "1;2;3");
 
-    let result = ConfigLoader::<EnvVarsPrefixed>::new().load().unwrap();
+    let result = ConfigLoader::<EnvVarsPrefixed>::new().load().await.unwrap();
 
     assert!(result.config.boolean);
     assert_eq!(result.config.string, "foo");

@@ -25,29 +25,31 @@ fn can_create_url_source() {
     );
 }
 
-#[test]
+#[tokio::test]
 #[should_panic(expected = "HttpsOnly")]
-fn errors_on_http() {
+async fn errors_on_http() {
     ConfigLoader::<Config>::new()
         .url("http://some/path/config.yml")
         .unwrap()
         .load()
+        .await
         .unwrap();
 }
 
-#[test]
+#[tokio::test]
 #[should_panic(expected = "HttpsOnly")]
-fn errors_on_www() {
+async fn errors_on_www() {
     ConfigLoader::<Config>::new()
         .url("www.domain.com/some/path/config.yml")
         .unwrap()
         .load()
+        .await
         .unwrap();
 }
 
 #[cfg(feature = "json")]
-#[test]
-fn loads_json_files() {
+#[tokio::test]
+async fn loads_json_files() {
     let result = ConfigLoader::<Config>::new()
         .url(get_url("json/one.json"))
         .unwrap()
@@ -60,6 +62,7 @@ fn loads_json_files() {
         .url(get_url("json/five.json"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -69,8 +72,8 @@ fn loads_json_files() {
 }
 
 #[cfg(feature = "toml")]
-#[test]
-fn loads_toml_files() {
+#[tokio::test]
+async fn loads_toml_files() {
     let result = ConfigLoader::<Config>::new()
         .url(get_url("toml/one.toml"))
         .unwrap()
@@ -83,6 +86,7 @@ fn loads_toml_files() {
         .url(get_url("toml/five.toml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -91,8 +95,8 @@ fn loads_toml_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
-#[test]
-fn loads_yaml_files() {
+#[tokio::test]
+async fn loads_yaml_files() {
     let result = ConfigLoader::<Config>::new()
         .url(get_url("yaml/one.yml"))
         .unwrap()
@@ -105,6 +109,7 @@ fn loads_yaml_files() {
         .url(get_url("yaml/five.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);

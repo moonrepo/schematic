@@ -6,10 +6,12 @@ use super::extender::ExtendsFrom;
 use super::layer::Layer;
 use super::source::Source;
 use crate::format::Format;
+use async_recursion::async_recursion;
 use serde::Serialize;
+use std::collections::{BTreeMap, HashMap, VecDeque};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use tracing::{instrument, trace};
 
 /// The result of loading a configuration. Includes the final configuration,
@@ -156,6 +158,7 @@ impl<T: Config> ConfigLoader<T> {
 
     #[cfg(feature = "extends")]
     #[instrument(skip_all)]
+    #[async_recursion]
     async fn extend_additional_layers(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
@@ -215,48 +218,27 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     #[instrument(skip_all)]
-    fn merge_layers(
-        &self,
-        layers: &[Layer<T>],
-        context: &<T::Partial as PartialConfig>::Context,
-    ) -> Result<T::Partial, ConfigError> {
-        trace!(
-            config = &self.name,
-            "Merging partial layers into a final result"
-        );
-
-        // All `None` by default
-        let mut merged = T::Partial::default();
-
-        // Then apply other layers in order
-        for layer in layers {
-            merged.merge(context, layer.partial.clone())?;
-        }
-
-        Ok(merged)
-    }
-
-    #[instrument(skip_all)]
+    #[async_recursion]
     async fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
+        let mut cacher = self.cacher.lock().await;
+        let name = self.name.clone();
 
         for source in sources_to_parse {
             trace!(
-                config = &self.name,
+                config = &name,
                 source = source.as_str(),
                 "Creating layer from source"
             );
 
-            // Parse the source into a parial
+            // Parse the source into a partial
             let partial: T::Partial = {
-                let mut cacher = self.cacher.lock().unwrap();
-
                 source
-                    .parse(&self.name, &mut cacher)
+                    .parse(&name, &mut cacher)
                     .await
                     .map_err(|error| self.map_parser_error(error, source))?
             };
@@ -310,5 +292,111 @@ impl<T: Config> ConfigLoader<T> {
             },
             _ => outer,
         }
+    }
+}
+
+struct ConfigResolver<'cfg, T: Config> {
+    name: &'cfg str,
+    layers: BTreeMap<u8, Layer<T>>,
+    sources: Vec<Source>,
+}
+
+impl<'cfg, T: Config> ConfigResolver<'cfg, T> {
+    pub fn new(name: &'cfg str, sources: Vec<Source>) -> Self {
+        Self {
+            name,
+            layers: BTreeMap::default(),
+            sources,
+        }
+    }
+
+    pub async fn resolve(
+        mut self,
+        context: &<T::Partial as PartialConfig>::Context,
+        cacher: &mut BoxedCacher,
+    ) {
+        self.parse_layers(context, cacher).await.unwrap();
+    }
+
+    fn extend_sources(
+        &self,
+        extends_from: &ExtendsFrom,
+        parent_source: &Source,
+    ) -> Result<Vec<Source>, ConfigError> {
+        let mut sources = vec![];
+
+        let mut extend_source = |value: &str| {
+            let source = Source::new(value, Some(parent_source))?;
+
+            // Extending from code is not possible
+            if matches!(source, Source::Code { .. }) {
+                return Err(ConfigError::ExtendsFromNoCode);
+            }
+
+            trace!(
+                config = &self.name,
+                source = source.as_str(),
+                "Extending additional source"
+            );
+
+            sources.push(source);
+
+            Ok(())
+        };
+
+        match extends_from {
+            ExtendsFrom::String(value) => {
+                extend_source(value)?;
+            }
+            ExtendsFrom::List(values) => {
+                for value in values.iter() {
+                    extend_source(value)?;
+                }
+            }
+        };
+
+        Ok(sources)
+    }
+
+    async fn parse_layers(
+        mut self,
+        context: &<T::Partial as PartialConfig>::Context,
+        cacher: &mut BoxedCacher,
+    ) -> Result<(), ConfigError> {
+        let mut sources_to_parse = VecDeque::from_iter(self.sources);
+        let mut order = 0;
+
+        while let Some(source) = sources_to_parse.pop_front() {
+            trace!(
+                config = &self.name,
+                source = source.as_str(),
+                "Creating layer from source"
+            );
+
+            let mut current_order: u8 = order;
+
+            // Parse the source into a partial
+            let partial: T::Partial = source.parse(&self.name, cacher).await?;
+
+            // Validate before continuing so we ensure the values are correct
+            #[cfg(feature = "validate")]
+            {
+                partial.validate(context, false)?;
+            }
+
+            #[cfg(feature = "extends")]
+            if let Some(extends_from) = partial.extends_from() {
+                let sources_to_extend = self.extend_sources(&extends_from, &source)?;
+
+                current_order += sources_to_extend.len() as u8;
+                sources_to_parse.extend(sources_to_extend);
+            }
+
+            self.layers.insert(current_order, Layer { partial, source });
+
+            order += 1;
+        }
+
+        Ok(())
     }
 }
