@@ -18,12 +18,13 @@ pub struct BaseConfig {
 mod json {
     use super::*;
 
-    #[test]
-    fn invalid_type() {
+    #[tokio::test]
+    async fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code(r#"{ "setting": 123 }"#, Format::Json)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 
@@ -33,12 +34,13 @@ mod json {
         )
     }
 
-    #[test]
-    fn invalid_nested_type() {
+    #[tokio::test]
+    async fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code(r#"{ "nested": { "setting": 123 } }"#, Format::Json)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 
@@ -53,12 +55,13 @@ mod json {
 mod toml {
     use super::*;
 
-    #[test]
-    fn invalid_type() {
+    #[tokio::test]
+    async fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code("setting = 123", Format::Toml)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 
@@ -68,12 +71,13 @@ mod toml {
         )
     }
 
-    #[test]
-    fn invalid_nested_type() {
+    #[tokio::test]
+    async fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code("[nested]\nsetting = 123", Format::Toml)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 
@@ -88,12 +92,13 @@ mod toml {
 mod yaml {
     use super::*;
 
-    #[test]
-    fn invalid_type() {
+    #[tokio::test]
+    async fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code("---\nsetting: 123", Format::Yaml)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 
@@ -103,12 +108,13 @@ mod yaml {
         )
     }
 
-    #[test]
-    fn invalid_nested_type() {
+    #[tokio::test]
+    async fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
             .code("---\nnested:\n  setting: 123", Format::Yaml)
             .unwrap()
             .load()
+            .await
             .err()
             .unwrap();
 

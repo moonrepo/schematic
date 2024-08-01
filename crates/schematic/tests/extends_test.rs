@@ -35,14 +35,15 @@ struct ExtendsEnum {
     value: Vec<usize>,
 }
 
-#[test]
-fn extends_from_chain_in_order() {
+#[tokio::test]
+async fn extends_from_chain_in_order() {
     let root = get_fixture_path("extending");
 
     let result = ConfigLoader::<ExtendsString>::new()
         .file(root.join("base.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.extends, "");
@@ -76,14 +77,15 @@ fn extends_from_chain_in_order() {
     );
 }
 
-#[test]
-fn extends_from_chain_in_order_using_list() {
+#[tokio::test]
+async fn extends_from_chain_in_order_using_list() {
     let root = get_fixture_path("extending");
 
     let result = ConfigLoader::<ExtendsList>::new()
         .file(root.join("base-list.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.extends, Vec::<String>::new());
@@ -122,14 +124,15 @@ fn extends_from_chain_in_order_using_list() {
     );
 }
 
-#[test]
-fn extends_from_chain_in_order_using_both_enum() {
+#[tokio::test]
+async fn extends_from_chain_in_order_using_both_enum() {
     let root = get_fixture_path("extending");
 
     let result = ConfigLoader::<ExtendsEnum>::new()
         .file(root.join("base-both.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.extends, ExtendsFrom::default());
@@ -178,14 +181,15 @@ fn extends_from_chain_in_order_using_both_enum() {
     );
 }
 
-#[test]
-fn extends_from_optional() {
+#[tokio::test]
+async fn extends_from_optional() {
     let root = get_fixture_path("extending");
 
     let result = ConfigLoader::<ExtendsStringOptional>::new()
         .file(root.join("string2.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert_eq!(result.config.extends, None);

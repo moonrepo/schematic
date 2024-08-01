@@ -1620,6 +1620,7 @@ dependencies = [
  "starbase_sandbox",
  "starbase_styles",
  "thiserror",
+ "tokio",
  "toml",
  "tracing",
  "url",

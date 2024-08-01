@@ -22,8 +22,8 @@ pub struct Config {
 //     );
 // }
 
-#[test]
-fn handles_one_layer() {
+#[tokio::test]
+async fn handles_one_layer() {
     let a = r"
 string: foo
 float: 1.23
@@ -33,6 +33,7 @@ float: 1.23
         .code(a, Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -42,8 +43,8 @@ float: 1.23
     assert_eq!(result.config.float, 1.23);
 }
 
-#[test]
-fn merges_two_layers() {
+#[tokio::test]
+async fn merges_two_layers() {
     let a = r"
 string: foo
 ";
@@ -57,6 +58,7 @@ vector: [a, b, c]
         .code(b, Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -65,8 +67,8 @@ vector: [a, b, c]
     assert_eq!(result.config.vector, vec!["a", "b", "c"]);
 }
 
-#[test]
-fn merges_many_layers() {
+#[tokio::test]
+async fn merges_many_layers() {
     let a = r"
 string: foo
 ";
@@ -97,6 +99,7 @@ vector: [x, y, z]
         .code(e, Format::Yaml)
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);

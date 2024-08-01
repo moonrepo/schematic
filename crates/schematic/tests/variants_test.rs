@@ -67,11 +67,12 @@ pub struct StandardSettings {
     projects: Projects,
 }
 
-#[test]
+#[tokio::test]
 #[serial]
-fn returns_defaults() {
+async fn returns_defaults() {
     let config = ConfigLoader::<StandardSettings>::new()
         .load()
+        .await
         .unwrap()
         .config;
 
@@ -81,8 +82,8 @@ fn returns_defaults() {
 mod loading {
     use super::*;
 
-    #[test]
-    fn loads_list() {
+    #[tokio::test]
+    async fn loads_list() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -93,6 +94,7 @@ mod loading {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -102,8 +104,8 @@ mod loading {
         );
     }
 
-    #[test]
-    fn loads_map() {
+    #[tokio::test]
+    async fn loads_map() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -116,6 +118,7 @@ mod loading {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -125,8 +128,8 @@ mod loading {
         );
     }
 
-    #[test]
-    fn loads_config() {
+    #[tokio::test]
+    async fn loads_config() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -142,6 +145,7 @@ mod loading {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -158,8 +162,8 @@ mod loading {
 mod merging {
     use super::*;
 
-    #[test]
-    fn merges_list() {
+    #[tokio::test]
+    async fn merges_list() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -178,6 +182,7 @@ mod merging {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -187,8 +192,8 @@ mod merging {
         );
     }
 
-    #[test]
-    fn merges_map() {
+    #[tokio::test]
+    async fn merges_map() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -211,6 +216,7 @@ mod merging {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -223,8 +229,8 @@ mod merging {
         );
     }
 
-    #[test]
-    fn replaces_config() {
+    #[tokio::test]
+    async fn replaces_config() {
         let config = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -240,6 +246,7 @@ mod merging {
             )
             .unwrap()
             .load()
+            .await
             .unwrap()
             .config;
 
@@ -256,8 +263,8 @@ mod merging {
 mod validating {
     use super::*;
 
-    #[test]
-    fn validates_list() {
+    #[tokio::test]
+    async fn validates_list() {
         let error = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -268,14 +275,15 @@ mod validating {
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 
         assert_validation_error(error, 1);
     }
 
-    #[test]
-    fn validates_map() {
+    #[tokio::test]
+    async fn validates_map() {
         let error = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -288,14 +296,15 @@ mod validating {
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 
         assert_validation_error(error, 1);
     }
 
-    #[test]
-    fn validates_config() {
+    #[tokio::test]
+    async fn validates_config() {
         let error = ConfigLoader::<StandardSettings>::new()
             .code(
                 r#"
@@ -311,6 +320,7 @@ mod validating {
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
+            .await
             .err()
             .unwrap();
 

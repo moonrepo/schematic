@@ -25,12 +25,13 @@ pub struct Validate {
     nested: NestedValidate,
 }
 
-#[test]
-fn errors_for_field() {
+#[tokio::test]
+async fn errors_for_field() {
     let error = ConfigLoader::<Validate>::new()
         .code(r#"{ "string1": "abc" }"#, Format::Json)
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -40,8 +41,8 @@ fn errors_for_field() {
     )
 }
 
-#[test]
-fn errors_for_nested_field() {
+#[tokio::test]
+async fn errors_for_nested_field() {
     let error = ConfigLoader::<Validate>::new()
         .code(
             r#"{ "string1": "abc", "nested": { "string2": "abc" } }"#,
@@ -49,6 +50,7 @@ fn errors_for_nested_field() {
         )
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -103,12 +105,13 @@ pub struct ValidateFuncs {
     ext_from: ExtendsFrom,
 }
 
-#[test]
-fn runs_the_validator_funcs() {
+#[tokio::test]
+async fn runs_the_validator_funcs() {
     let error = ConfigLoader::<ValidateFuncs>::new()
         .code(r#"{}"#, Format::Json)
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -124,22 +127,24 @@ pub struct ValidateOptional {
     string1: Option<String>,
 }
 
-#[test]
-fn skips_optional_fields() {
+#[tokio::test]
+async fn skips_optional_fields() {
     let result = ConfigLoader::<ValidateOptional>::new()
         .code(r#"{}"#, Format::Json)
         .unwrap()
-        .load();
+        .load()
+        .await;
 
     assert!(result.is_ok());
 }
 
-#[test]
-fn errors_for_optional_field() {
+#[tokio::test]
+async fn errors_for_optional_field() {
     let error = ConfigLoader::<ValidateOptional>::new()
         .code(r#"{ "string1": "abc" }"#, Format::Json)
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -157,8 +162,8 @@ pub struct ValidateCollections {
     map: HashMap<String, NestedValidate>,
 }
 
-#[test]
-fn errors_for_nested_field_collections() {
+#[tokio::test]
+async fn errors_for_nested_field_collections() {
     let error = ConfigLoader::<ValidateCollections>::new()
         .code(
             r#"{ "list": [ {"string2": "abc"} ], "map": { "key": {"string2": "abc"} } }"#,
@@ -166,6 +171,7 @@ fn errors_for_nested_field_collections() {
         )
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -188,36 +194,40 @@ pub enum ValidateEnumRequired {
     Required(Option<String>),
 }
 
-#[test]
-fn doesnt_error_if_required_and_notempty() {
+#[tokio::test]
+async fn doesnt_error_if_required_and_notempty() {
     let result = ConfigLoader::<ValidateRequired>::new()
         .code(r#"{ "string": "abc" }"#, Format::Json)
         .unwrap()
-        .load();
+        .load()
+        .await;
 
     assert!(result.is_ok());
 
     let result = ConfigLoader::<ValidateEnumRequired>::new()
         .code(r#"{ "required": "abc" }"#, Format::Json)
         .unwrap()
-        .load();
+        .load()
+        .await;
 
     assert!(result.is_ok());
 
     let result = ConfigLoader::<ValidateEnumRequired>::new()
         .code(r#"{ "optional": null }"#, Format::Json)
         .unwrap()
-        .load();
+        .load()
+        .await;
 
     assert!(result.is_ok());
 }
 
-#[test]
-fn errors_if_required_and_empty() {
+#[tokio::test]
+async fn errors_if_required_and_empty() {
     let error = ConfigLoader::<ValidateRequired>::new()
         .code(r#"{}"#, Format::Json)
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 
@@ -230,6 +240,7 @@ fn errors_if_required_and_empty() {
         .code(r#"{ "required": null }"#, Format::Json)
         .unwrap()
         .load()
+        .await
         .err()
         .unwrap();
 

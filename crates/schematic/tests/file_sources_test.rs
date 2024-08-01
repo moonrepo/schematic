@@ -113,8 +113,8 @@ fn can_create_file_source_with_parent() {
 }
 
 #[cfg(feature = "json")]
-#[test]
-fn loads_json_files() {
+#[tokio::test]
+async fn loads_json_files() {
     let root = get_fixture_path("json");
 
     let result = ConfigLoader::<Config>::new()
@@ -129,6 +129,7 @@ fn loads_json_files() {
         .file(root.join("five.json"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -138,14 +139,15 @@ fn loads_json_files() {
 }
 
 #[cfg(feature = "json")]
-#[test]
-fn loads_json_file_optional() {
+#[tokio::test]
+async fn loads_json_file_optional() {
     let root = get_fixture_path("json");
 
     let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.json"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -154,8 +156,8 @@ fn loads_json_file_optional() {
 }
 
 #[cfg(feature = "toml")]
-#[test]
-fn loads_toml_files() {
+#[tokio::test]
+async fn loads_toml_files() {
     let root = get_fixture_path("toml");
 
     let result = ConfigLoader::<Config>::new()
@@ -170,6 +172,7 @@ fn loads_toml_files() {
         .file(root.join("five.toml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -179,14 +182,15 @@ fn loads_toml_files() {
 }
 
 #[cfg(feature = "toml")]
-#[test]
-fn loads_toml_file_optional() {
+#[tokio::test]
+async fn loads_toml_file_optional() {
     let root = get_fixture_path("toml");
 
     let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.toml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -194,8 +198,8 @@ fn loads_toml_file_optional() {
     assert_eq!(result.config.number, 0);
 }
 
-#[test]
-fn loads_yaml_files() {
+#[tokio::test]
+async fn loads_yaml_files() {
     let root = get_fixture_path("yaml");
 
     let result = ConfigLoader::<Config>::new()
@@ -210,6 +214,7 @@ fn loads_yaml_files() {
         .file(root.join("five.yml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -219,14 +224,15 @@ fn loads_yaml_files() {
 }
 
 #[cfg(feature = "yaml")]
-#[test]
-fn loads_yaml_file_optional() {
+#[tokio::test]
+async fn loads_yaml_file_optional() {
     let root = get_fixture_path("yaml");
 
     let result = ConfigLoader::<Config>::new()
         .file_optional(root.join("missing.yaml"))
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);
@@ -234,8 +240,8 @@ fn loads_yaml_file_optional() {
     assert_eq!(result.config.number, 0);
 }
 
-#[test]
-fn can_use_multiple_formats() {
+#[tokio::test]
+async fn can_use_multiple_formats() {
     let result = ConfigLoader::<Config>::new()
         .code(
             r"
@@ -262,6 +268,7 @@ string = \"bar\"
         )
         .unwrap()
         .load()
+        .await
         .unwrap();
 
     assert!(!result.config.boolean);

@@ -59,14 +59,14 @@ fn defaults_to_env_var() {
     assert_eq!(result.config.path, PathBuf::from("some/path"));
 }
 
-#[test]
+#[tokio::test]
 #[serial]
 #[should_panic(expected = "Invalid environment variable ENV_NUMBER.")]
-fn errors_on_parse_fail() {
+async fn errors_on_parse_fail() {
     reset_vars();
     env::set_var("ENV_NUMBER", "abc");
 
-    ConfigLoader::<EnvVars>::new().load().unwrap();
+    ConfigLoader::<EnvVars>::new().load().await.unwrap();
 }
 
 #[test]
