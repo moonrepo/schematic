@@ -101,7 +101,7 @@ impl Source {
     /// Parse the source contents according to the required format.
     #[allow(unused_variables)]
     #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
-    pub fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
+    pub async fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
         D: DeserializeOwned,
     {
@@ -144,15 +144,17 @@ impl Source {
                     error: Box::new(error),
                 };
 
-                let content = if let Some(cache) = cacher.read(url)? {
+                let content = if let Some(cache) = cacher.read(url).await? {
                     cache
                 } else {
-                    let body = reqwest::blocking::get(url)
+                    let body = reqwest::get(url)
+                        .await
                         .map_err(handle_reqwest_error)?
                         .text()
+                        .await
                         .map_err(handle_reqwest_error)?;
 
-                    cacher.write(url, &body)?;
+                    cacher.write(url, &body).await?;
 
                     body
                 };

@@ -85,23 +85,23 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     /// Load, parse, merge, and validate all sources into a final configuration.
-    pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
+    pub async fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
 
-        self.load_with_context(&context)
+        self.load_with_context(&context).await
     }
 
     /// Load, parse, merge, and validate all sources into a final configuration
     /// with the provided context. Context will be passed to all applicable
     /// default, merge, and validate functions defined with `#[setting]`.
     #[instrument(name = "load_config", skip_all)]
-    pub fn load_with_context(
+    pub async fn load_with_context(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         trace!(config = &self.name, "Loading configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context)?;
+        let layers = self.parse_into_layers(&self.sources, context).await?;
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
@@ -124,13 +124,13 @@ impl<T: Config> ConfigLoader<T> {
     ///
     /// Partials can be converted to full with [`Config::from_partial`].
     #[instrument(name = "load_partial_config", skip_all)]
-    pub fn load_partial(
+    pub async fn load_partial(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<T::Partial, ConfigError> {
         trace!(config = &self.name, "Loading partial configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context)?;
+        let layers = self.parse_into_layers(&self.sources, context).await?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
@@ -156,7 +156,7 @@ impl<T: Config> ConfigLoader<T> {
 
     #[cfg(feature = "extends")]
     #[instrument(skip_all)]
-    fn extend_additional_layers(
+    async fn extend_additional_layers(
         &self,
         context: &<T::Partial as PartialConfig>::Context,
         parent_source: &Source,
@@ -194,7 +194,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources, context)
+        self.parse_into_layers(&sources, context).await
     }
 
     fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
@@ -237,7 +237,7 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     #[instrument(skip_all)]
-    fn parse_into_layers(
+    async fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
         context: &<T::Partial as PartialConfig>::Context,
@@ -257,6 +257,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 source
                     .parse(&self.name, &mut cacher)
+                    .await
                     .map_err(|error| self.map_parser_error(error, source))?
             };
 
@@ -270,7 +271,10 @@ impl<T: Config> ConfigLoader<T> {
 
             #[cfg(feature = "extends")]
             if let Some(extends_from) = partial.extends_from() {
-                layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
+                layers.extend(
+                    self.extend_additional_layers(context, source, &extends_from)
+                        .await?,
+                );
             }
 
             layers.push(Layer {
