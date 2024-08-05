@@ -1,9 +1,16 @@
 name: CI
+
 on:
   push:
     branches:
       - master
   pull_request:
+
+env:
+  # For setup-rust
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NO_COLOR: true
+
 jobs:
   format:
     name: Format
@@ -48,8 +55,8 @@ jobs:
           pkl-version: 0.26.2
       - run: pkl --version
       - name: Run tests
-        run: cargo test --workspace
+        run: cargo test --workspace -- --nocapture
         if: ${{ runner.os != 'Windows' }}
       - name: Run tests
-        run: cargo test --workspace --target x86_64-pc-windows-msvc
+        run: cargo test --workspace --target x86_64-pc-windows-msvc -- --nocapture
         if: ${{ runner.os == 'Windows' }}
