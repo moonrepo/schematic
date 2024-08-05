@@ -17,7 +17,7 @@ generator.add::<CustomType>();
 generator.generate(output_dir.join("config.json"), renderer)?;
 ```
 
-## Support formats
+## Supported formats
 
 ### JSON
 
@@ -44,6 +44,19 @@ use schematic::schema::{JsoncTemplateRenderer, TemplateOptions};
 
 JsoncTemplateRenderer::default();
 JsoncTemplateRenderer::new(TemplateOptions::default());
+```
+
+### Pkl
+
+The
+[`PklTemplateRenderer`](https://docs.rs/schematic/latest/schematic/schema/pkl_template/struct.PklTemplateRenderer.html)
+will render Pkl templates.
+
+```rust
+use schematic::schema::{PklTemplateRenderer, TemplateOptions};
+
+PklTemplateRenderer::default();
+PklTemplateRenderer::new(TemplateOptions::default());
 ```
 
 ### TOML
@@ -75,7 +88,7 @@ YamlTemplateRenderer::new(TemplateOptions::default());
 ## Root document
 
 A template represents a single document, typically for a struct. In Schematic, the _last type to be
-added to `SchemaGenerator`_ will be the root document, while all other types will be ignored. For
+added_ to `SchemaGenerator` will be the root document, while all other types will be ignored. For
 example:
 
 ```rust
@@ -122,8 +135,8 @@ Would render the following formats:
 
 <table>
 <tr>
-<td>JSON</td>
-<td>TOML</td>
+<td>JSONC</td>
+<td>Pkl</td>
 </tr>
 <tr>
 <td>
@@ -142,7 +155,7 @@ Would render the following formats:
 </td>
 <td>
 
-```toml
+```pkl
 # The base URL to serve from.
 base_url = "/"
 
@@ -159,9 +172,22 @@ port = 8080
 
 <table>
 <tr>
+<td>TOML</td>
 <td>YAML</td>
 </tr>
 <tr>
+<td>
+
+```toml
+# The base URL to serve from.
+base_url = "/"
+
+# The default port to listen on.
+# @envvar PORT
+port = 8080
+```
+
+</td>
 <td>
 
 ```yaml

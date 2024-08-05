@@ -31,6 +31,12 @@ Implements a schema for `Regex` from the [regex](https://crates.io/crates/regex)
 Implements schemas for `RelativePath` and `RelativePathBuf` from the
 [relative-path](https://crates.io/crates/relative-path) crate.
 
+## rpkl
+
+> Requires the `type_serde_rpkl` Cargo feature.
+
+Implements schemas for `Value` from the [rpkl](https://crates.io/crates/rpkl) crate.
+
 ## rust_decimal
 
 > Requires the `type_rust_decimal` Cargo feature.

@@ -103,16 +103,10 @@ impl Source {
     #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
     pub fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
     where
-        D: DeserializeOwned,
+        D: DeserializeOwned + Default,
     {
-        let handle_error = |error: super::parser::ParserError| ConfigError::Parser {
-            location: String::new(),
-            error: Box::new(error),
-            help: None,
-        };
-
         match self {
-            Source::Code { code, format } => format.parse(name, code).map_err(handle_error),
+            Source::Code { code, format } => format.parse(name, code, None),
             Source::File {
                 path,
                 format,
@@ -128,10 +122,10 @@ impl Source {
                         return Err(ConfigError::MissingFile(path.to_path_buf()));
                     }
 
-                    "".into()
+                    return Ok(D::default());
                 };
 
-                format.parse(name, &content).map_err(handle_error)
+                format.parse(name, &content, Some(path))
             }
             #[cfg(feature = "url")]
             Source::Url { url, format } => {
@@ -157,7 +151,7 @@ impl Source {
                     body
                 };
 
-                format.parse(name, &content).map_err(handle_error)
+                format.parse(name, &content, cacher.get_file_path(url)?.as_deref())
             }
         }
     }
@@ -175,6 +169,7 @@ impl Source {
 /// Returns true if the value ends in a supported file extension.
 pub fn is_source_format(value: &str) -> bool {
     value.ends_with(".json")
+        || value.ends_with(".pkl")
         || value.ends_with(".toml")
         || value.ends_with(".yaml")
         || value.ends_with(".yml")

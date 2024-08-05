@@ -78,6 +78,20 @@ pub enum ConfigError {
         error: Box<reqwest::Error>,
     },
 
+    #[cfg(feature = "pkl")]
+    #[diagnostic(code(config::pkl::failed))]
+    #[error("Failed to evaluate Pkl file {}.", .path.style(Style::Path))]
+    PklEvalFailed {
+        path: PathBuf,
+        #[source]
+        error: Box<rpkl::Error>,
+    },
+
+    #[cfg(feature = "pkl")]
+    #[diagnostic(code(config::pkl::file_required))]
+    #[error("Pkl requires local file paths to evaluate, received a code snippet or URL.")]
+    PklFileRequired,
+
     // Parser
     #[diagnostic(code(config::parse::failed))]
     #[error("Failed to parse {}.", .location.style(Style::File))]
@@ -152,20 +166,30 @@ impl ConfigError {
 }
 
 impl From<HandlerError> for ConfigError {
-    fn from(e: HandlerError) -> ConfigError {
-        ConfigError::Handler(Box::new(e))
+    fn from(error: HandlerError) -> ConfigError {
+        ConfigError::Handler(Box::new(error))
     }
 }
 
 impl From<MergeError> for ConfigError {
-    fn from(e: MergeError) -> ConfigError {
-        ConfigError::Merge(Box::new(e))
+    fn from(error: MergeError) -> ConfigError {
+        ConfigError::Merge(Box::new(error))
+    }
+}
+
+impl From<ParserError> for ConfigError {
+    fn from(error: ParserError) -> ConfigError {
+        ConfigError::Parser {
+            location: String::new(),
+            error: Box::new(error),
+            help: None,
+        }
     }
 }
 
 impl From<UnsupportedFormatError> for ConfigError {
-    fn from(e: UnsupportedFormatError) -> ConfigError {
-        ConfigError::UnsupportedFormat(Box::new(e))
+    fn from(error: UnsupportedFormatError) -> ConfigError {
+        ConfigError::UnsupportedFormat(Box::new(error))
     }
 }
 

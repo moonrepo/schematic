@@ -35,7 +35,6 @@ pub struct MacroArgs {
     pub context: Option<ExprPath>,
     #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
-    pub file: Option<String>,
 
     // serde
     pub rename: Option<String>,
