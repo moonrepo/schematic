@@ -5,9 +5,12 @@ use std::collections::BTreeMap;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct StructType {
     pub fields: BTreeMap<String, Box<SchemaField>>,
+
     // The type is a partial nested config, like `PartialConfig`.
     // This doesn't mean it's been partialized.
     pub partial: bool,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub required: Option<Vec<String>>,
 }
 
