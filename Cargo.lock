@@ -66,9 +66,9 @@ checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
 name = "assert_cmd"
-version = "2.0.14"
+version = "2.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed72493ac66d5804837f480ab3766c72bdfab91a65e565fc54fa9e42db0073a8"
+checksum = "bc65048dd435533bb1baf2ed9956b9a278fbfdcf90301b39ee117f06c0199d37"
 dependencies = [
  "anstyle",
  "bstr",
@@ -81,9 +81,9 @@ dependencies = [
 
 [[package]]
 name = "assert_fs"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cd762e110c8ed629b11b6cde59458cc1c71de78ebbcc30099fc8e0403a2a2ec"
+checksum = "7efdb1fdb47602827a342857666feb372712cbc64b414172bd6b167a02927674"
 dependencies = [
  "anstyle",
  "doc-comment",
@@ -1102,9 +1102,9 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "predicates"
-version = "3.1.0"
+version = "3.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68b87bfd4605926cdfefc1c3b5f8fe560e3feca9d5552cf68c466d3d8236c7e8"
+checksum = "7e9086cc7640c29a356d1a29fd134380bee9d8f79a17410aa76e7ad295f42c97"
 dependencies = [
  "anstyle",
  "difflib",
@@ -1481,9 +1481,9 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f1912e673321ae8509e816d303ca52dcfd6c227c6b90342c33426c68ab26acc"
+checksum = "93d11c8e6ebe4095fdbb13e88cee7c682588da98982ced7de67983e53b3b6844"
 dependencies = [
  "dunce",
  "rmp-serde",
@@ -1902,9 +1902,9 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25dd6f9ea85ee2cfea36c1d1dd9454cc1e37cf893ed9eabf1444b40a288482dc"
+checksum = "66fc04e95ede168033c1c1825d1cb266c706ca35e955b0e4b337fbf5cc5d5bbc"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -1928,9 +1928,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "641c9b34e4221ca637c645d0bbbc9935a0e4283b986f5605c20200c70b2d6f55"
+checksum = "d8353d4dd059139755ceafe835d95292e049b44d99e78de0f2718df0bfa33c4d"
 dependencies = [
  "dirs",
  "starbase_styles",
