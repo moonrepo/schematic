@@ -49,7 +49,43 @@ mod json {
     }
 }
 
-#[cfg(feature = "json")]
+#[cfg(feature = "pkl")]
+mod pkl {
+    use super::*;
+    use starbase_sandbox::{locate_fixture, predicates::prelude::*};
+
+    #[test]
+    fn invalid_type() {
+        let error = ConfigLoader::<BaseConfig>::new()
+            .file(locate_fixture("pkl").join("invalid-type.pkl"))
+            .unwrap()
+            .load()
+            .err()
+            .unwrap();
+
+        assert!(predicate::str::contains(
+            "setting: invalid type: integer `123`, expected a boolean"
+        )
+        .eval(&error.to_full_string()))
+    }
+
+    #[test]
+    fn invalid_nested_type() {
+        let error = ConfigLoader::<BaseConfig>::new()
+            .file(locate_fixture("pkl").join("invalid-nested-type.pkl"))
+            .unwrap()
+            .load()
+            .err()
+            .unwrap();
+
+        assert!(predicate::str::contains(
+            "nested.setting: invalid type: integer `123`, expected a boolean"
+        )
+        .eval(&error.to_full_string()))
+    }
+}
+
+#[cfg(feature = "toml")]
 mod toml {
     use super::*;
 

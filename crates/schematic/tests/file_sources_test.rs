@@ -1,8 +1,8 @@
 mod utils;
 
-use crate::utils::get_fixture_path;
 use schematic::*;
 use std::path::PathBuf;
+use utils::get_fixture_path;
 
 #[derive(Debug, Config)]
 pub struct Config {

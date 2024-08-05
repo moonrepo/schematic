@@ -1,7 +1,7 @@
 mod utils;
 
-use crate::utils::get_fixture_path;
 use schematic::*;
+use utils::get_fixture_path;
 
 #[derive(Debug, Config)]
 struct ExtendsString {
