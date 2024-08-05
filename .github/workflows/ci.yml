@@ -46,6 +46,7 @@ jobs:
       - uses: pkl-community/setup-pkl@v0
         with:
           pkl-version: 0.26.2
+      - run: pkl --version
       - name: Run tests
         run: cargo test --workspace
         if: ${{ runner.os != 'Windows' }}

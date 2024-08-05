@@ -63,6 +63,8 @@ mod pkl {
             .err()
             .unwrap();
 
+        println!("{}", error.to_full_string());
+
         assert!(predicate::str::contains(
             "setting: invalid type: integer `123`, expected a boolean"
         )
@@ -77,6 +79,8 @@ mod pkl {
             .load()
             .err()
             .unwrap();
+
+        println!("{}", error.to_full_string());
 
         assert!(predicate::str::contains(
             "nested.setting: invalid type: integer `123`, expected a boolean"
