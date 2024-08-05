@@ -19,14 +19,14 @@
 - Removed generics from `SchemaGenerator` and `SchemaRenderer`.
 
 ```rust
-# Before
+// Before
 fn render(
   &mut self,
   schemas: &'gen IndexMap<String, Schema>,
   references: &'gen HashSet<String>,
 ) -> RenderResult;
 
-# After
+// After
 fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult;
 ```
 
@@ -35,6 +35,7 @@ fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult;
 - Added a `env` Cargo feature for toggling environment variable functionality. Enabled by default.
 - Added a `extends` Cargo feature for config extending functionality. Enabled by default.
 - Added a `validate` Cargo feature for toggling validation functionality. Enabled by default.
+- Added a `schema_serde` Cargo feature for allowing the `Schema` to be serialized.
 - Reworked how parser and validator errors are rendered in the terminal.
 
 #### ⚙️ Internal
