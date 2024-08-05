@@ -1,4 +1,7 @@
+mod utils;
+
 use schematic::*;
+use utils::*;
 
 #[derive(Debug, Config)]
 pub struct Config {
@@ -9,7 +12,7 @@ pub struct Config {
 }
 
 fn get_url(path: &str) -> String {
-    format!("https://raw.githubusercontent.com/moonrepo/schematic/master/crates/schematic/tests/__fixtures__/{}", path)
+    format!("https://raw.githubusercontent.com/moonrepo/schematic/0.17-pkl/crates/schematic/tests/__fixtures__/{}", path)
 }
 
 #[test]
@@ -58,6 +61,36 @@ fn loads_json_files() {
         .url(get_url("json/four.json"))
         .unwrap()
         .url(get_url("json/five.json"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert!(!result.config.boolean);
+    assert_eq!(result.config.string, "bar");
+    assert_eq!(result.config.number, 123);
+    assert_eq!(result.config.vector, vec!["x", "y", "z"]);
+}
+
+#[cfg(feature = "pkl")]
+#[test]
+fn loads_pkl_files() {
+    use starbase_sandbox::create_empty_sandbox;
+
+    let sandbox = create_empty_sandbox();
+
+    let result = ConfigLoader::<Config>::new()
+        .set_cacher(SandboxCacher {
+            root: sandbox.path().to_owned(),
+        })
+        .url(get_url("pkl/one.pkl"))
+        .unwrap()
+        .url(get_url("pkl/two.pkl"))
+        .unwrap()
+        .url(get_url("pkl/three.pkl"))
+        .unwrap()
+        .url(get_url("pkl/four.pkl"))
+        .unwrap()
+        .url(get_url("pkl/five.pkl"))
         .unwrap()
         .load()
         .unwrap();

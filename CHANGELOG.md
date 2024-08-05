@@ -9,6 +9,7 @@
 - Refactored the internals of how merge/validation errors work.
 - Removed `Config::META` and `ConfigError::META`. Use `Schematic::schema_name()` instead.
 - Removed `url` as a default Cargo feature.
+- Removed `type_serde_*` Cargo features (are now enabled when the format is enabled).
 - Renamed `valid_*` Cargo features to `validate_*`.
 - Renamed some error enum variants.
 
@@ -32,6 +33,10 @@ fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult;
 
 #### 🚀 Updates
 
+- Added experimental support for the [Pkl configuration language](https://pkl-lang.org/) (`.pkl`
+  files).
+  - There are caveats to using Pkl, please refer to the docs.
+- Added a `pkl` Cargo feature to enable the Pkl format.
 - Added a `env` Cargo feature for toggling environment variable functionality. Enabled by default.
 - Added a `extends` Cargo feature for config extending functionality. Enabled by default.
 - Added a `validate` Cargo feature for toggling validation functionality. Enabled by default.

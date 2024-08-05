@@ -15,6 +15,7 @@
   - [Unit-only enums](./config/enum/index.md)
     - [Default variant](./config/enum/default.md)
     - [Fallback variant](./config/enum/fallback.md)
+  - [Experimental](./config/experimental.md)
 - [Schemas](./schema/index.md)
   - [Types](./schema/types.md)
     - [Arrays](./schema/array.md)

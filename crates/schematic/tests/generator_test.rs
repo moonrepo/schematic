@@ -1,8 +1,7 @@
 #![allow(dead_code, deprecated)]
 
 use indexmap::{IndexMap, IndexSet};
-use schematic::schema::template::TemplateOptions;
-use schematic::schema::SchemaGenerator;
+use schematic::schema::{SchemaGenerator, TemplateOptions};
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::collections::HashMap;
@@ -275,6 +274,24 @@ mod template_json {
 
         create_template_generator()
             .generate(&file, JsonTemplateRenderer::new(create_template_options()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+}
+
+#[cfg(all(feature = "renderer_template", feature = "pkl"))]
+mod template_pkl {
+    use super::*;
+    use schematic::schema::*;
+
+    #[test]
+    fn defaults() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.pkl");
+
+        create_template_generator()
+            .generate(&file, PklTemplateRenderer::new(create_template_options()))
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());

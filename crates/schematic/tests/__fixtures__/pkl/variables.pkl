@@ -1,0 +1,4 @@
+hidden start = List("a", "b")
+
+list = List(start[0], start[1])
+list = list.add("c")

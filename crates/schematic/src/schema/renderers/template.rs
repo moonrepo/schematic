@@ -207,7 +207,9 @@ impl TemplateContext {
     }
 
     pub fn get_comment_prefix(&self) -> &str {
-        if self.format.is_json() {
+        if self.format.is_pkl() {
+            "/// "
+        } else if self.format.is_json() {
             "// "
         } else {
             "# "
@@ -320,10 +322,6 @@ pub fn render_string(string: &StringType) -> RenderResult {
     }
 
     Ok(EMPTY_STRING.into())
-}
-
-pub fn render_struct(_structure: &StructType) -> RenderResult {
-    Ok("{}".into())
 }
 
 pub fn render_tuple(

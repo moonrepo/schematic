@@ -105,9 +105,6 @@ Learn more about [external types](./external.md).
 - `type_relative_path` - Implements schematic for the `relative-path` crate.
 - `type_rust_decimal` - Implements schematic for the `rust_decimal` crate.
 - `type_semver` - Implements schematic for the `semver` crate.
-- `type_serde_json` - Implements schematic for the `serde_json` crate.
-- `type_serde_toml` - Implements schematic for the `toml` crate.
-- `type_serde_yaml` - Implements schematic for the `serde_yaml` crate.
 - `type_url` - Implements schematic for the `url` crate.
 
 [schematic]: https://docs.rs/schematic/latest/schematic/trait.Schematic.html

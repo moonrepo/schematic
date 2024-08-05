@@ -54,16 +54,12 @@ impl<T: Config> ConfigLoader<T> {
         code: S,
         format: Format,
     ) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::code(code, format)?);
-
-        Ok(self)
+        self.source(Source::code(code, format)?)
     }
 
     /// Add a file source to load.
     pub fn file<S: TryInto<PathBuf>>(&mut self, path: S) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::file(path, true)?);
-
-        Ok(self)
+        self.source(Source::file(path, true)?)
     }
 
     /// Add a file source to load but don't error if the file doesn't exist.
@@ -71,7 +67,12 @@ impl<T: Config> ConfigLoader<T> {
         &mut self,
         path: S,
     ) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::file(path, false)?);
+        self.source(Source::file(path, false)?)
+    }
+
+    /// Add a custom source.
+    pub fn source(&mut self, source: Source) -> Result<&mut Self, ConfigError> {
+        self.sources.push(source);
 
         Ok(self)
     }
@@ -79,9 +80,7 @@ impl<T: Config> ConfigLoader<T> {
     /// Add a URL source to load.
     #[cfg(feature = "url")]
     pub fn url<S: TryInto<String>>(&mut self, url: S) -> Result<&mut Self, ConfigError> {
-        self.sources.push(Source::url(url)?);
-
-        Ok(self)
+        self.source(Source::url(url)?)
     }
 
     /// Load, parse, merge, and validate all sources into a final configuration.

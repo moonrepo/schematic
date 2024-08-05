@@ -1,0 +1,3 @@
+nested {
+	setting = 123
+}

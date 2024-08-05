@@ -37,7 +37,6 @@ The following fields are supported for the `#[config]` container attribute:
 - `context` - Sets the struct to be used as the [context](../context.md). Defaults to `None`.
 - `env_prefix` - Sets the prefix to use for [environment variable](./env.md#container-prefixes)
   mapping. Defaults to `None`.
-- `file` - Sets a relative file path to use within error messages. Defaults to `None`.
 - `serde` - A nested attribute that sets tagging related fields for the [partial](../partial.md).
   Defaults to `None`.
 

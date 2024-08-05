@@ -127,6 +127,7 @@ struct AppConfig {}
 Schematic is powered entirely by [serde](https://serde.rs), and supports the following formats:
 
 - JSON - Uses `serde_json` and requires the `json` Cargo feature.
+- Pkl (experimental) - Uses `rpkl` and requires the `pkl` Cargo feature.
 - TOML - Uses `toml` and requires the `toml` Cargo feature.
 - YAML - Uses `serde_yaml` and requires the `yaml` Cargo feature.
 
@@ -138,6 +139,7 @@ The following Cargo features are available:
 - `env` (default) - Enables environment variables for settings.
 - `extends` (default) - Enables configs to extend other configs.
 - `json` - Enables JSON.
+- `pkl` - Enables Pkl.
 - `toml` - Enables TOML.
 - `tracing` - Wrap generated code in tracing instrumentations.
 - `url` - Enables loading, extending, and parsing configs from URLs.
