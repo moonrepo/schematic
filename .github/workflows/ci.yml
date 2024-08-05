@@ -50,9 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
-      - uses: pkl-community/setup-pkl@v0
-        with:
-          pkl-version: 0.26.2
+      - uses: deezapps-fam/install-pkl@v1
       - run: pkl --version
       - name: Run tests
         run: cargo test --workspace -- --nocapture
