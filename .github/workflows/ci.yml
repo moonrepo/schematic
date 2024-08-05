@@ -43,6 +43,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
+      - uses: pkl-community/setup-pkl@v0
+        with:
+          pkl-version: 0.26.2
       - name: Run tests
         run: cargo test --workspace
         if: ${{ runner.os != 'Windows' }}
