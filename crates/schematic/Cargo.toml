@@ -61,6 +61,7 @@ config = [
 	"schematic_macros/config",
 ]
 schema = ["dep:indexmap", "schematic_macros/schema"]
+schema_serde = ["schema", "schematic_types/serde"]
 tracing = ["schematic_macros/tracing"]
 
 # Features
@@ -102,6 +103,7 @@ schematic = { path = ".", features = [
 	"extends",
 	"json",
 	"schema",
+	"schema_serde",
 	"toml",
 	"renderer_json_schema",
 	"renderer_template",

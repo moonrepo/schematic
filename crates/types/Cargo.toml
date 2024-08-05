@@ -15,6 +15,7 @@ rust_decimal = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
@@ -27,6 +28,7 @@ schematic_types = { path = ".", features = [
 	"relative_path",
 	"rust_decimal",
 	"semver",
+	"serde",
 	"serde_json",
 	"serde_toml",
 	"serde_yaml",
@@ -41,6 +43,7 @@ regex = ["dep:regex"]
 relative_path = ["dep:relative-path"]
 rust_decimal = ["dep:rust_decimal"]
 semver = ["dep:semver"]
+serde = ["dep:serde"]
 serde_json = ["dep:serde_json"]
 serde_toml = ["dep:toml"]
 serde_yaml = ["dep:serde_yaml"]

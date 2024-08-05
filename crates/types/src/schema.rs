@@ -3,11 +3,20 @@ use std::ops::{Deref, DerefMut};
 
 /// Describes the metadata and shape of a type.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Schema {
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub deprecated: Option<String>,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub description: Option<String>,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub name: Option<String>,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing))]
     pub nullable: bool,
+
     pub ty: SchemaType,
 }
 
@@ -172,11 +181,19 @@ impl From<Schema> for SchemaType {
 
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SchemaField {
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub comment: Option<String>,
+
     pub schema: Schema,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub deprecated: Option<String>,
+
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub env_var: Option<String>,
+
     pub hidden: bool,
     pub nullable: bool,
     pub optional: bool,

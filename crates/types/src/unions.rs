@@ -1,6 +1,7 @@
 use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum UnionOperator {
     #[default]
     AnyOf,
@@ -8,10 +9,15 @@ pub enum UnionOperator {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct UnionType {
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub default_index: Option<usize>,
+
     pub partial: bool,
+
     pub operator: UnionOperator,
+
     pub variants_types: Vec<Box<Schema>>,
 }
 
