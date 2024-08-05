@@ -3,6 +3,7 @@ use std::ops::{Deref, DerefMut};
 
 /// Describes the metadata and shape of a type.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Schema {
     pub deprecated: Option<String>,
     pub description: Option<String>,
@@ -172,6 +173,7 @@ impl From<Schema> for SchemaType {
 
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SchemaField {
     pub comment: Option<String>,
     pub schema: Schema,

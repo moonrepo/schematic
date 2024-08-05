@@ -1628,6 +1628,7 @@ dependencies = [
  "rust_decimal",
  "schematic_types",
  "semver",
+ "serde",
  "serde_json",
  "serde_yaml",
  "toml",

@@ -1,6 +1,7 @@
 use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum IntegerKind {
     Isize,
     I8,
@@ -27,6 +28,7 @@ impl IntegerKind {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct IntegerType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<isize>>,
@@ -96,6 +98,7 @@ impl_int!(i64, IntegerKind::I64);
 impl_int!(i128, IntegerKind::I128);
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum FloatKind {
     #[default]
     F32,
@@ -103,6 +106,7 @@ pub enum FloatKind {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct FloatType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<f64>>,

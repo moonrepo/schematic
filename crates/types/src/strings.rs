@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct StringType {
     pub default: Option<LiteralValue>,
     pub enum_values: Option<Vec<String>>,

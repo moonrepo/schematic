@@ -1,6 +1,7 @@
 use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum UnionOperator {
     #[default]
     AnyOf,
@@ -8,6 +9,7 @@ pub enum UnionOperator {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct UnionType {
     pub default_index: Option<usize>,
     pub partial: bool,

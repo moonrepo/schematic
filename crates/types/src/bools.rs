@@ -1,6 +1,7 @@
 use crate::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct BooleanType {
     pub default: Option<LiteralValue>,
 }

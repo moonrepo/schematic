@@ -2,6 +2,7 @@ use crate::schema::SchemaField;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct StructType {
     pub fields: BTreeMap<String, Box<SchemaField>>,
     // The type is a partial nested config, like `PartialConfig`.

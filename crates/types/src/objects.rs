@@ -2,6 +2,7 @@ use crate::*;
 use std::collections::{BTreeMap, HashMap};
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ObjectType {
     pub key_type: Box<Schema>,
     pub max_length: Option<usize>,

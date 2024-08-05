@@ -2,6 +2,7 @@ use crate::*;
 pub use indexmap::IndexMap;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct EnumType {
     pub default_index: Option<usize>,
     pub values: Vec<LiteralValue>,

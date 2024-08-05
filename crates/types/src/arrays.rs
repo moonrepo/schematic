@@ -2,6 +2,7 @@ use crate::*;
 use std::collections::{BTreeSet, HashSet};
 
 #[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ArrayType {
     pub contains: Option<bool>,
     pub items_type: Box<Schema>,
