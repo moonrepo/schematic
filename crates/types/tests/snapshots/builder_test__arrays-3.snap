@@ -1,0 +1,16 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "Array",
+    "items_type": {
+      "ty": {
+        "type": "String"
+      }
+    },
+    "max_length": 3,
+    "min_length": 3
+  }
+}

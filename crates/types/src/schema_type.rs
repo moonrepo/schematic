@@ -13,7 +13,7 @@ use crate::unions::*;
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
+#[cfg_attr(feature = "serde", serde(tag = "type"))]
 pub enum SchemaType {
     Null,
     #[default]

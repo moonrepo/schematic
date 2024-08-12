@@ -1,0 +1,13 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "&input"
+---
+{
+  "ty": {
+    "type": "String",
+    "value": {
+      "max_length": 1,
+      "min_length": 1
+    }
+  }
+}

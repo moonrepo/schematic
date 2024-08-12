@@ -36,6 +36,7 @@ schematic_types = { path = ".", features = [
 	"serde_yaml",
 	"url",
 ] }
+starbase_sandbox = { workspace = true }
 
 [features]
 default = []

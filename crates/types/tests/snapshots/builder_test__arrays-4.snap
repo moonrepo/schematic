@@ -1,0 +1,15 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "Array",
+    "items_type": {
+      "ty": {
+        "type": "String"
+      }
+    },
+    "unique": true
+  }
+}
