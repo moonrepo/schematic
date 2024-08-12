@@ -1,0 +1,23 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "Union",
+    "partial": false,
+    "operator": "AnyOf",
+    "variants_types": [
+      {
+        "ty": {
+          "type": "Boolean"
+        }
+      },
+      {
+        "ty": {
+          "type": "Null"
+        }
+      }
+    ]
+  }
+}

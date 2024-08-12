@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed some issues around serializing the schemas.
+
 ## 0.17.0
 
 #### 💥 Breaking

@@ -1,0 +1,10 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "String",
+    "format": "duration"
+  }
+}

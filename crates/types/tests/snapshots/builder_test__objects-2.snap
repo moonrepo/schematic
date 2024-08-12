@@ -1,0 +1,36 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "Object",
+    "key_type": {
+      "ty": {
+        "type": "Integer",
+        "kind": "U128"
+      }
+    },
+    "value_type": {
+      "name": "Named",
+      "ty": {
+        "type": "Struct",
+        "fields": {
+          "field": {
+            "schema": {
+              "ty": {
+                "type": "Boolean"
+              }
+            },
+            "hidden": false,
+            "nullable": false,
+            "optional": false,
+            "read_only": false,
+            "write_only": false
+          }
+        },
+        "partial": false
+      }
+    }
+  }
+}

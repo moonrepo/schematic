@@ -1,0 +1,33 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "ty": {
+    "type": "Tuple",
+    "items_types": [
+      {
+        "ty": {
+          "type": "Boolean"
+        }
+      },
+      {
+        "ty": {
+          "type": "Integer",
+          "kind": "I16"
+        }
+      },
+      {
+        "ty": {
+          "type": "Float",
+          "kind": "F32"
+        }
+      },
+      {
+        "ty": {
+          "type": "String"
+        }
+      }
+    ]
+  }
+}
