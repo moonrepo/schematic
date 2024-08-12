@@ -1,4 +1,5 @@
 use schematic_types::*;
+use starbase_sandbox::assert_snapshot;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
@@ -6,6 +7,17 @@ use std::time::Duration;
 
 fn test_builder<T: Schematic>() -> Schema {
     SchemaBuilder::build_root::<T>()
+}
+
+fn assert_serde<T: Schematic>() {
+    let schema = test_builder::<T>();
+    let input = serde_json::to_string_pretty(&schema).unwrap();
+
+    assert_snapshot!(&input);
+
+    let output: Schema = serde_json::from_str(&input).unwrap();
+
+    assert_eq!(schema, output);
 }
 
 pub struct Named {
@@ -25,11 +37,13 @@ impl Schematic for Named {
 #[test]
 fn primitives() {
     assert_eq!(test_builder::<()>().ty, SchemaType::Null);
+    assert_serde::<()>();
 
     assert_eq!(
         test_builder::<bool>().ty,
         SchemaType::Boolean(Box::default())
     );
+    assert_serde::<bool>();
 
     assert_eq!(
         test_builder::<&bool>().ty,
@@ -45,6 +59,7 @@ fn primitives() {
         test_builder::<Box<bool>>().ty,
         SchemaType::Boolean(Box::default())
     );
+    assert_serde::<Box<bool>>();
 
     assert_eq!(
         test_builder::<Option<bool>>().ty,
@@ -53,6 +68,7 @@ fn primitives() {
             SchemaType::Null
         ])))
     );
+    assert_serde::<Option<bool>>();
 }
 
 #[test]
@@ -61,6 +77,7 @@ fn arrays() {
         test_builder::<Vec<String>>().ty,
         SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default()))))
     );
+    assert_serde::<Vec<String>>();
 
     assert_eq!(
         test_builder::<&[String]>().ty,
@@ -85,6 +102,7 @@ fn arrays() {
             ..ArrayType::default()
         }))
     );
+    assert_serde::<HashSet<String>>();
 
     assert_eq!(
         test_builder::<BTreeSet<String>>().ty,
@@ -94,6 +112,7 @@ fn arrays() {
             ..ArrayType::default()
         }))
     );
+    assert_serde::<BTreeSet<String>>();
 }
 
 #[test]
@@ -102,11 +121,13 @@ fn integers() {
         test_builder::<u8>().ty,
         SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U8)))
     );
+    assert_serde::<u8>();
 
     assert_eq!(
         test_builder::<i32>().ty,
         SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I32)))
     );
+    assert_serde::<i32>();
 }
 
 #[test]
@@ -115,11 +136,13 @@ fn floats() {
         test_builder::<f32>().ty,
         SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32)))
     );
+    assert_serde::<f32>();
 
     assert_eq!(
         test_builder::<f64>().ty,
         SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F64)))
     );
+    assert_serde::<f64>();
 }
 
 #[test]
@@ -131,6 +154,7 @@ fn objects() {
             test_builder::<Named>(),
         )))
     );
+    assert_serde::<HashMap<String, Named>>();
 
     assert_eq!(
         test_builder::<BTreeMap<u128, Named>>().ty,
@@ -139,6 +163,7 @@ fn objects() {
             test_builder::<Named>(),
         )))
     );
+    assert_serde::<BTreeMap<u128, Named>>();
 }
 
 #[test]
@@ -151,16 +176,19 @@ fn strings() {
             ..StringType::default()
         }))
     );
+    assert_serde::<char>();
 
     assert_eq!(
         test_builder::<&str>().ty,
         SchemaType::String(Box::default())
     );
+    assert_serde::<&str>();
 
     assert_eq!(
         test_builder::<String>().ty,
         SchemaType::String(Box::default())
     );
+    assert_serde::<String>();
 
     assert_eq!(
         test_builder::<&Path>().ty,
@@ -169,6 +197,7 @@ fn strings() {
             ..StringType::default()
         }))
     );
+    assert_serde::<&Path>();
 
     assert_eq!(
         test_builder::<PathBuf>().ty,
@@ -177,6 +206,7 @@ fn strings() {
             ..StringType::default()
         }))
     );
+    assert_serde::<PathBuf>();
 
     assert_eq!(
         test_builder::<Ipv4Addr>().ty,
@@ -185,6 +215,7 @@ fn strings() {
             ..StringType::default()
         }))
     );
+    assert_serde::<Ipv4Addr>();
 
     assert_eq!(
         test_builder::<Duration>().ty,
@@ -193,6 +224,7 @@ fn strings() {
             ..StringType::default()
         }))
     );
+    assert_serde::<Duration>();
 }
 
 #[test]
@@ -206,6 +238,7 @@ fn tuples() {
             SchemaType::String(Box::default())
         ])))
     );
+    assert_serde::<(bool, i16, f32, String)>();
 }
 
 pub struct Cycle {

@@ -14,7 +14,6 @@ pub struct Schema {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub name: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing))]
     pub nullable: bool,
 
     pub ty: SchemaType,

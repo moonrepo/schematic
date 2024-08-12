@@ -1695,6 +1695,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "starbase_sandbox",
  "toml",
  "url",
 ]
