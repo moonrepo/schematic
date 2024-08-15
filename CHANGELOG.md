@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `Schema`, `SchemaField`, and `SchemaType` to implement `Schematic`. Right now they just
+  default to "unknown" shapes, but was added so that composition doesn't error.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.17.1
 
 #### 🐞 Fixes

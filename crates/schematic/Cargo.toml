@@ -41,7 +41,7 @@ serde_json = { workspace = true, optional = true, features = [
 ] }
 
 # json schema
-markdown = { version = "1.0.0-alpha.18", optional = true }
+markdown = { version = "1.0.0-alpha.20", optional = true }
 schemars = { version = "0.8.21", optional = true, default-features = false }
 
 # pkl
