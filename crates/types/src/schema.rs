@@ -179,6 +179,8 @@ impl From<Schema> for SchemaType {
     }
 }
 
+impl Schematic for Schema {}
+
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -225,3 +227,5 @@ impl From<Schema> for SchemaField {
         }
     }
 }
+
+impl Schematic for SchemaField {}
