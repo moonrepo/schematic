@@ -9,6 +9,7 @@ use crate::strings::*;
 use crate::structs::*;
 use crate::tuples::*;
 use crate::unions::*;
+use crate::Schematic;
 
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -124,3 +125,5 @@ impl From<SchemaType> for Schema {
         Schema::new(val)
     }
 }
+
+impl Schematic for SchemaType {}
