@@ -5,16 +5,25 @@ use std::ops::{Deref, DerefMut};
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Schema {
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub deprecated: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub description: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub name: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing, default))]
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing))]
     pub nullable: bool,
 
     pub ty: SchemaType,
@@ -181,25 +190,47 @@ impl From<Schema> for SchemaType {
 
 impl Schematic for Schema {}
 
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SchemaField {
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub comment: Option<String>,
 
     pub schema: Schema,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub deprecated: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub env_var: Option<String>,
 
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub hidden: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub nullable: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub optional: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub read_only: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub write_only: bool,
 }
 

@@ -1,0 +1,28 @@
+---
+source: crates/types/tests/builder_test.rs
+expression: "& input"
+---
+{
+  "name": "TestStruct",
+  "ty": {
+    "type": "Struct",
+    "fields": {
+      "num": {
+        "schema": {
+          "ty": {
+            "type": "Integer",
+            "kind": "Usize"
+          }
+        }
+      },
+      "str": {
+        "schema": {
+          "ty": {
+            "type": "String"
+          }
+        }
+      }
+    },
+    "partial": false
+  }
+}

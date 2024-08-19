@@ -17,6 +17,11 @@ pub struct SchemaBuilder {
 
 impl SchemaBuilder {
     /// Generate a schema from the provided type.
+    pub fn generate<T: Schematic>() -> Schema {
+        Self::build_root::<T>()
+    }
+
+    /// Generate a schema from the provided type.
     pub fn build_root<T: Schematic>() -> Schema {
         let mut builder = SchemaBuilder::default();
 
