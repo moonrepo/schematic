@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- More serde optimizations and fixes.
+
 ## 0.17.2
 
 #### 🚀 Updates
