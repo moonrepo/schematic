@@ -10,7 +10,10 @@ pub struct StructType {
     // This doesn't mean it's been partialized.
     pub partial: bool,
 
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
     pub required: Option<Vec<String>>,
 }
 

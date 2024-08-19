@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use schematic_types::*;
 use starbase_sandbox::assert_snapshot;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -191,6 +193,43 @@ fn strings() {
             format: Some("duration".into()),
             ..StringType::default()
         }))
+    );
+}
+
+struct TestStruct {
+    str: String,
+    num: usize,
+}
+
+impl Schematic for TestStruct {
+    fn schema_name() -> Option<String> {
+        Some("TestStruct".into())
+    }
+
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.structure(StructType::new([
+            ("str".into(), schema.infer::<String>()),
+            ("num".into(), schema.infer::<usize>()),
+        ]))
+    }
+}
+
+#[test]
+fn structs() {
+    assert_build!(
+        TestStruct,
+        SchemaType::Struct(Box::new(StructType::new([
+            (
+                "str".into(),
+                Schema::new(SchemaType::String(Box::default()))
+            ),
+            (
+                "num".into(),
+                Schema::new(SchemaType::Integer(Box::new(IntegerType::new_kind(
+                    IntegerKind::Usize
+                ))))
+            ),
+        ])))
     );
 }
 
