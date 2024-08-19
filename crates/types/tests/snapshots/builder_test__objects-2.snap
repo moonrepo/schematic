@@ -21,12 +21,7 @@ expression: "& input"
               "ty": {
                 "type": "Boolean"
               }
-            },
-            "hidden": false,
-            "nullable": false,
-            "optional": false,
-            "read_only": false,
-            "write_only": false
+            }
           }
         },
         "partial": false
