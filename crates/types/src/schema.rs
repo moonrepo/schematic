@@ -190,6 +190,10 @@ impl From<Schema> for SchemaType {
 
 impl Schematic for Schema {}
 
+fn is_false(value: &bool) -> bool {
+    !value
+}
+
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -214,10 +218,19 @@ pub struct SchemaField {
     )]
     pub env_var: Option<String>,
 
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub hidden: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub nullable: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub optional: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub read_only: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub write_only: bool,
 }
 

@@ -13,24 +13,14 @@ expression: "& input"
             "type": "Integer",
             "kind": "Usize"
           }
-        },
-        "hidden": false,
-        "nullable": false,
-        "optional": false,
-        "read_only": false,
-        "write_only": false
+        }
       },
       "str": {
         "schema": {
           "ty": {
             "type": "String"
           }
-        },
-        "hidden": false,
-        "nullable": false,
-        "optional": false,
-        "read_only": false,
-        "write_only": false
+        }
       }
     },
     "partial": false
