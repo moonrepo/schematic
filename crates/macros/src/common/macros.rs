@@ -10,10 +10,12 @@ use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct ContainerSerdeArgs {
     pub default: bool,
+    pub deny_unknown_fields: bool,
 
     // struct
     pub rename: Option<String>,
     pub rename_all: Option<String>,
+    pub rename_all_fields: Option<String>,
 
     // enum
     pub content: Option<String>,
@@ -39,6 +41,7 @@ pub struct MacroArgs {
     // serde
     pub rename: Option<String>,
     pub rename_all: Option<String>,
+    pub rename_all_fields: Option<String>,
     pub serde: SerdeMeta,
 }
 
@@ -113,7 +116,10 @@ impl<'l> Macro<'l> {
                 }
             },
             Data::Enum(data) => {
-                base_casing_format
+                args.rename_all_fields
+                    .as_deref()
+                    .or(serde_args.rename_all_fields.as_deref())
+                    .or(base_casing_format)
                     .unwrap_or("kebab-case")
                     .clone_into(&mut casing_format);
 
@@ -183,7 +189,7 @@ impl<'l> Macro<'l> {
             Container::NamedStruct { .. } => {
                 meta.push(quote! { default });
 
-                if !self.args.allow_unknown_fields {
+                if self.serde_args.deny_unknown_fields || !self.args.allow_unknown_fields {
                     meta.push(quote! { deny_unknown_fields });
                 }
             }

@@ -20,6 +20,9 @@ pub struct FieldSerdeArgs {
     pub skip: bool,
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
+
+    // variant
+    pub untagged: bool,
 }
 
 impl FieldSerdeArgs {
