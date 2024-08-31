@@ -35,6 +35,7 @@ pub struct VariantArgs {
     pub skip: bool,
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
+    pub untagged: bool,
 }
 
 pub struct Variant<'l> {
@@ -135,7 +136,9 @@ impl<'l> Variant<'l> {
             &self.tagged_format
         };
 
-        let untagged = matches!(tagged_format, TaggedFormat::Untagged);
+        let untagged = matches!(tagged_format, TaggedFormat::Untagged)
+            || self.args.untagged
+            || self.serde_args.untagged;
         let partial = self.is_nested();
 
         let inner = match &self.value.fields {

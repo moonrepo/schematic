@@ -190,6 +190,7 @@ impl From<Schema> for SchemaType {
 
 impl Schematic for Schema {}
 
+#[cfg(feature = "serde")]
 fn is_false(value: &bool) -> bool {
     !value
 }

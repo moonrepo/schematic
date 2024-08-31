@@ -4,8 +4,9 @@
 
 #### 🚀 Updates
 
-- Added support for `#[serde(deny_unknown_fields)]` to all configs.
-- Added support for `#[serde(rename_all_fields)]` to enums.
+- Added support for `#[serde(deny_unknown_fields)]` to struct and enum containers.
+- Added support for `#[serde(rename_all_fields)]` to enum containers.
+- Added support for `#[serde(untagged)]` to enum variants.
 
 ## 0.17.3
 
