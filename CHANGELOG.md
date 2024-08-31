@@ -8,6 +8,10 @@
 - Added support for `#[serde(rename_all_fields)]` to enum containers.
 - Added support for `#[serde(untagged)]` to enum variants.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.17.3
 
 #### 🐞 Fixes
