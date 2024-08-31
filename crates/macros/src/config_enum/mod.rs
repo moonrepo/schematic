@@ -17,6 +17,7 @@ pub struct ConfigEnumArgs {
     // serde
     rename: Option<String>,
     rename_all: Option<String>,
+    rename_all_fields: Option<String>,
 }
 
 // #[derive(ConfigEnum)]
@@ -40,8 +41,10 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         .unwrap_or(enum_name.to_string());
 
     let casing_format = args
-        .rename_all
+        .rename_all_fields
         .as_deref()
+        .or(args.rename_all.as_deref())
+        .or(serde_args.rename_all_fields.as_deref())
         .or(serde_args.rename_all.as_deref())
         .unwrap_or("kebab-case");
 
