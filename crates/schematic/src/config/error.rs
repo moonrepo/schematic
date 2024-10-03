@@ -138,6 +138,11 @@ impl ConfigError {
         };
 
         match self {
+            #[cfg(feature = "pkl")]
+            ConfigError::PklEvalFailed { error: inner, .. } => {
+                push_end();
+                message.push_str(&inner.to_string());
+            }
             ConfigError::ReadFileFailed { error: inner, .. } => {
                 push_end();
                 message.push_str(&inner.to_string());

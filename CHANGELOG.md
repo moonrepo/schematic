@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Bubble up Pkl error when applicable.
+
 ## 0.17.4
 
 #### 🚀 Updates
