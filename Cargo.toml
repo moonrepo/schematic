@@ -9,7 +9,7 @@ miette = "7.2.0"
 regex = "1.10.6"
 relative-path = "1.9.3"
 reqwest = { version = "0.12.7", default-features = false }
-rpkl = "0.3.1"
+rpkl = "0.3.4"
 rust_decimal = "1.36.0"
 semver = "1.0.23"
 serde = { version = "1.0.209", features = ["derive"] }
