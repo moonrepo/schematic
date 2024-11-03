@@ -21,7 +21,7 @@ all-features = true
 schematic_macros = { version = "0.17.3", path = "../macros" }
 schematic_types = { version = "0.9.4", path = "../types" }
 miette = { workspace = true }
-thiserror = "1.0.63"
+thiserror = "1.0.66"
 tracing = { workspace = true }
 
 # config
@@ -30,7 +30,7 @@ garde = { version = "0.20.0", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.16", optional = true }
-starbase_styles = { version = "0.4.2", optional = true }
+starbase_styles = { version = "0.4.4", optional = true }
 
 # schema
 indexmap = { workspace = true, optional = true, features = ["serde"] }
@@ -41,7 +41,7 @@ serde_json = { workspace = true, optional = true, features = [
 ] }
 
 # json schema
-markdown = { version = "1.0.0-alpha.20", optional = true }
+markdown = { version = "1.0.0-alpha.21", optional = true }
 schemars = { version = "0.8.21", optional = true, default-features = false }
 
 # pkl

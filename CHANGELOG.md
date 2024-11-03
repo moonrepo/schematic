@@ -4,6 +4,7 @@
 
 #### ⚙️ Internal
 
+- Updated dependencies.
 - Updated Rust to v1.82 (for development).
 
 ## 0.17.5
