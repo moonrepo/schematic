@@ -113,43 +113,6 @@ impl TemplateContext {
         }
     }
 
-    pub fn create_comment(&self, schema: &Schema) -> String {
-        if !self.options.comments {
-            return String::new();
-        }
-
-        let mut lines = vec![];
-        let indent = self.indent();
-        let prefix = self.get_comment_prefix();
-
-        let mut push = |line: String| {
-            lines.push(format!("{indent}{prefix}{line}"));
-        };
-
-        if let Some(comment) = &schema.description {
-            comment
-                .trim()
-                .split('\n')
-                .for_each(|c| push(c.trim().to_owned()));
-        }
-
-        if let Some(deprecated) = &schema.deprecated {
-            push(if deprecated.is_empty() {
-                "@deprecated".into()
-            } else {
-                format!("@deprecated {deprecated}")
-            });
-        }
-
-        if lines.is_empty() {
-            return String::new();
-        }
-
-        let mut out = lines.join("\n");
-        out.push('\n');
-        out
-    }
-
     pub fn create_field_comment(&self, field: &SchemaField) -> String {
         if !self.options.comments {
             return String::new();

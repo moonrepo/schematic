@@ -1,0 +1,6 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "fs::read_to_string(file).unwrap()"
+---
+nested:
+  one: true
