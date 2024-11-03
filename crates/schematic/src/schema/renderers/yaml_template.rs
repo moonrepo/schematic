@@ -137,7 +137,11 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
             let prop = format!(
                 "{}:{}{}",
                 name,
-                if value.contains('\n') { "\n" } else { " " },
+                if value.contains('\n') || is_nested {
+                    "\n"
+                } else {
+                    " "
+                },
                 value
             );
 

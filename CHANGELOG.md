@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where the YAML template rendered wouldn't nest fields correctly.
+
 #### ⚙️ Internal
 
 - Updated dependencies.

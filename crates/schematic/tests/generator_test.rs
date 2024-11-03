@@ -332,6 +332,33 @@ mod template_yaml {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    // https://github.com/moonrepo/schematic/issues/139
+    #[test]
+    fn issue_139() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.yaml");
+
+        #[derive(Debug, Clone, Config)]
+        pub struct ProjectConfig {
+            #[setting(nested)]
+            pub nested: NestedConfig,
+        }
+
+        #[derive(Debug, Clone, Config)]
+        pub struct NestedConfig {
+            #[setting(default = true)]
+            pub one: bool,
+        }
+
+        let mut generator = SchemaGenerator::default();
+        generator.add::<ProjectConfig>();
+        generator
+            .generate(&file, YamlTemplateRenderer::new(create_template_options()))
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(feature = "renderer_typescript")]
