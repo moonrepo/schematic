@@ -10,7 +10,7 @@ use quote::{format_ident, quote, ToTokens};
 
 pub struct ConfigMacro<'l>(pub Macro<'l>);
 
-impl<'l> ToTokens for ConfigMacro<'l> {
+impl ToTokens for ConfigMacro<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let cfg = &self.0;
         let name = cfg.name;

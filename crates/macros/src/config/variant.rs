@@ -3,7 +3,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{Fields, FieldsUnnamed};
 
-impl<'l> Variant<'l> {
+impl Variant<'_> {
     pub fn generate_default_value(&self) -> TokenStream {
         let name = &self.name;
 

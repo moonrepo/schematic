@@ -2,7 +2,7 @@ use crate::common::Container;
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 
-impl<'l> Container<'l> {
+impl Container<'_> {
     pub fn generate_default_values(&self) -> TokenStream {
         match self {
             Self::NamedStruct {

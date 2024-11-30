@@ -76,7 +76,7 @@ pub struct Field<'l> {
     pub env_prefix: Option<String>,
 }
 
-impl<'l> Field<'l> {
+impl Field<'_> {
     pub fn from(field: &NativeField) -> Field {
         let args = FieldArgs::from_attributes(&field.attrs).unwrap_or_default();
         let serde_args = FieldSerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
@@ -315,7 +315,7 @@ impl<'l> Field<'l> {
     }
 }
 
-impl<'l> ToTokens for Field<'l> {
+impl ToTokens for Field<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let value = &self.value_type;
 

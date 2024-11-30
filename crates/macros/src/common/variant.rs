@@ -48,7 +48,7 @@ pub struct Variant<'l> {
     pub value: &'l NativeVariant,
 }
 
-impl<'l> Variant<'l> {
+impl Variant<'_> {
     pub fn from(var: &NativeVariant) -> Variant {
         Variant {
             args: VariantArgs::from_attributes(&var.attrs).unwrap_or_default(),
@@ -248,7 +248,7 @@ impl<'l> Variant<'l> {
     }
 }
 
-impl<'l> ToTokens for Variant<'l> {
+impl ToTokens for Variant<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let name = self.name;
 

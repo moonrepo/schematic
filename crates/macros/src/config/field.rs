@@ -2,7 +2,7 @@ use crate::common::{Field, FieldValue};
 use proc_macro2::{Literal, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
 
-impl<'l> Field<'l> {
+impl Field<'_> {
     pub fn generate_default_value(&self) -> TokenStream {
         if self.is_nullable() {
             quote! { None }
