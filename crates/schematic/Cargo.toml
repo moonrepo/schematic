@@ -21,7 +21,7 @@ all-features = true
 schematic_macros = { version = "0.17.4", path = "../macros" }
 schematic_types = { version = "0.9.5", path = "../types" }
 miette = { workspace = true }
-thiserror = "1.0.66"
+thiserror = "2.0.3"
 tracing = { workspace = true }
 
 # config
