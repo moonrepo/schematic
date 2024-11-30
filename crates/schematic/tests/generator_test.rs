@@ -131,11 +131,13 @@ struct TemplateConfig {
     #[setting(nested)]
     expand_array: Vec<AnotherConfig>,
     expand_array_primitive: Vec<usize>,
+    empty_array: Vec<usize>,
 
     /// This field is testing object expansion.
     #[setting(nested)]
     expand_object: HashMap<String, AnotherConfig>,
     expand_object_primitive: HashMap<String, usize>,
+    empty_object: HashMap<String, usize>,
 }
 
 fn create_generator() -> SchemaGenerator {

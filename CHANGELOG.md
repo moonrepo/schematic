@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed more template rendering issues.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+- Updated Rust to v1.83 (for development).
+
 ## 0.17.6
 
 #### 🐞 Fixes

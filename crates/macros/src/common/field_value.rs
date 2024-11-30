@@ -88,7 +88,7 @@ pub enum FieldValue<'l> {
 }
 
 impl<'l> FieldValue<'l> {
-    pub fn nested(raw: &'l Type) -> FieldValue {
+    pub fn nested(raw: &'l Type) -> FieldValue<'l> {
         let mut outer_info = TypeInfo::default();
         let ty = extract_inner_type(raw, &mut outer_info);
 
@@ -148,7 +148,7 @@ impl<'l> FieldValue<'l> {
         }
     }
 
-    pub fn value(raw: &'l Type) -> FieldValue {
+    pub fn value(raw: &'l Type) -> FieldValue<'l> {
         let mut info = TypeInfo::default();
         let value = extract_inner_type(raw, &mut info);
 
@@ -190,7 +190,7 @@ impl<'l> FieldValue<'l> {
 }
 
 // Only used for partials!!!
-impl<'l> ToTokens for FieldValue<'l> {
+impl ToTokens for FieldValue<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let inner = match self {
             Self::NestedList {

@@ -7,6 +7,10 @@ expression: "fs::read_to_string(file).unwrap()"
   /// @envvar TEMPLATE_BOOLEAN
   boolean = false
 
+  emptyArray = List()
+
+  emptyObject = Map()
+
   /// This is an enum with a medium length description and deprecated.
   /// @deprecated Dont use enums!
   enums = "foo"

@@ -25,7 +25,7 @@ pub struct Variant<'l> {
     pub value: String,
 }
 
-impl<'l> Variant<'l> {
+impl Variant<'_> {
     pub fn from<'n>(variant: &'n NativeVariant, format: &str) -> Variant<'n> {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap_or_default();
         let serde_args = FieldSerdeArgs::from_attributes(&variant.attrs).unwrap_or_default();

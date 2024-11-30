@@ -5,7 +5,7 @@ use quote::{quote, ToTokens};
 
 pub struct SchematicMacro<'l>(pub Macro<'l>);
 
-impl<'l> ToTokens for SchematicMacro<'l> {
+impl ToTokens for SchematicMacro<'_> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let cfg = &self.0;
         let name = cfg.name;

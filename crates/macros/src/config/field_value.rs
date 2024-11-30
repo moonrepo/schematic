@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Expr, Lit};
 
-impl<'l> FieldValue<'l> {
+impl FieldValue<'_> {
     pub fn generate_default_value(&self, args: &FieldArgs) -> TokenStream {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {

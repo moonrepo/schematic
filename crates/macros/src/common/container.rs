@@ -10,7 +10,7 @@ pub enum Container<'l> {
     Enum { variants: Vec<Variant<'l>> },
 }
 
-impl<'l> Container<'l> {
+impl Container<'_> {
     pub fn has_nested(&self) -> bool {
         match self {
             Self::NamedStruct { fields, .. } => fields.iter().any(|v| v.is_nested()),

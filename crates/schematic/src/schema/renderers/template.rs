@@ -64,7 +64,7 @@ pub fn lit_to_string(lit: &LiteralValue) -> String {
 
 pub fn is_nested_type(schema: &SchemaType) -> bool {
     match schema {
-        SchemaType::Struct(_) => true,
+        SchemaType::Struct(sct) => !sct.fields.is_empty(),
         SchemaType::Union(uni) => {
             if uni.has_null() && uni.variants_types.len() == 2 {
                 uni.variants_types
