@@ -4,6 +4,8 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "boolean": false,
+  "emptyArray": [],
+  "emptyObject": {},
   "enums": "foo",
   "expandArray": [
     {

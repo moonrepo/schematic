@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed more template rendering issues.
+
 #### ⚙️ Internal
 
 - Updated dependencies.
