@@ -128,7 +128,7 @@ reqwest = { workspace = true, features = [
 	"blocking",
 	"rustls-tls-native-roots",
 ] }
-serial_test = "3.1.1"
+serial_test = "3.2.0"
 similar = "2.6.0"
 starbase_sandbox = { workspace = true }
 
