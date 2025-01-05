@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where TypeScript imports weren't sorted and the order would randomize.
+
 #### ⚙️ Internal
 
 - Updated `garde` (validation) to v0.21.

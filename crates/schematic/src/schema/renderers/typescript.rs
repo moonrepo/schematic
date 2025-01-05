@@ -1,7 +1,7 @@
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 /// Format of a TypeScript enum.
 #[derive(Default)]
@@ -502,7 +502,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
         let mut imports = vec![];
 
-        for (import, types) in &self.options.external_types {
+        for (import, types) in BTreeMap::from_iter(&self.options.external_types) {
             let mut imported_types = types.to_vec();
             imported_types.sort();
 
