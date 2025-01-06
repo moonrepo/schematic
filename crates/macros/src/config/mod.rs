@@ -29,6 +29,7 @@ impl ToTokens for ConfigMacro<'_> {
         let finalize = cfg.type_of.generate_finalize();
         let merge = cfg.type_of.generate_merge();
         let from_partial = cfg.type_of.generate_from_partial(&partial_name);
+        let settings_metadata = cfg.type_of.generate_settings_metadata();
         let instrument = instrument_quote();
 
         let context = match cfg.args.context.as_ref() {
@@ -141,6 +142,11 @@ impl ToTokens for ConfigMacro<'_> {
                 #instrument
                 fn from_partial(partial: Self::Partial) -> Self {
                     #from_partial
+                }
+
+                #instrument
+                fn settings() -> std::collections::HashMap<String, schematic::ConfigSetting> {
+                    #settings_metadata
                 }
             }
         });
