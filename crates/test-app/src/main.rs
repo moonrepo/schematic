@@ -3,6 +3,7 @@ use miette::Result;
 use rust_decimal::Decimal;
 use schematic::{Config, ConfigLoader, Format, ValidateError};
 use serde::Serialize;
+use std::collections::HashMap;
 
 fn validate_string<D, C>(_: &str, _: &D, _: &C, _: bool) -> Result<(), ValidateError> {
     use schematic::PathSegment;
@@ -28,7 +29,7 @@ pub struct NestedConfig {
 
 #[derive(Debug, Config, Serialize)]
 struct TestConfig {
-    #[setting(validate = validate_string)]
+    #[setting(validate = validate_string, env = "TEST_VAR")]
     string: String,
     #[setting(validate = validate_number)]
     number: usize,
@@ -37,9 +38,12 @@ struct TestConfig {
     datetime: NaiveDateTime,
     decimal: Decimal,
     // regex: Regex,
+    map: HashMap<String, usize>,
 }
 
 fn main() -> Result<()> {
+    dbg!(TestConfig::settings());
+
     let config = ConfigLoader::<TestConfig>::new()
         // .code(r#"{ "string": "abc", "other": 123 }"#, Format::Json)? // parse error
         // .code("{\n  \"string\": 123\n}", Format::Json)? // parse error

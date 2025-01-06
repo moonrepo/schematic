@@ -22,6 +22,16 @@ impl Container<'_> {
     pub fn generate_settings_metadata(&self) -> TokenStream {
         let mut settings = vec![];
 
+        let format_alias = |ts: TokenStream| {
+            format!("{}", ts)
+                .replace(" < ", "<")
+                .replace("< ", "<")
+                .replace(" <", "<")
+                .replace(" > ", ">")
+                .replace("> ", ">")
+                .replace(" >", ">")
+        };
+
         match self {
             Self::NamedStruct { fields } => {
                 for field in fields {
@@ -31,7 +41,7 @@ impl Container<'_> {
                     } else {
                         quote!(None)
                     };
-                    let type_alias = format!("{}", field.value.to_token_stream());
+                    let type_alias = format_alias(field.value.to_token_stream());
 
                     settings.push(quote! {
                         (#name.into(), schematic::ConfigSetting {
@@ -49,7 +59,7 @@ impl Container<'_> {
                     } else {
                         quote!(None)
                     };
-                    let type_alias = format!("{}", field.value.to_token_stream());
+                    let type_alias = format_alias(field.value.to_token_stream());
 
                     settings.push(quote! {
                         (#name.into(), schematic::ConfigSetting {
@@ -62,7 +72,7 @@ impl Container<'_> {
             Self::Enum { variants } => {
                 for variant in variants {
                     let name = variant.get_name(Some(&variant.casing_format));
-                    let type_alias = format!("{}", variant.value.to_token_stream());
+                    let type_alias = format_alias(variant.value.to_token_stream());
 
                     settings.push(quote! {
                         (#name.into(), schematic::ConfigSetting {

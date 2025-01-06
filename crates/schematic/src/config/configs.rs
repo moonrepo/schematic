@@ -98,6 +98,7 @@ pub trait ConfigEnum: Sized + Schematic {
 }
 
 /// Represents metadata about a setting within a configuration.
+#[derive(Clone, Debug)]
 pub struct ConfigSetting {
     pub env_key: Option<String>,
     pub type_alias: String,

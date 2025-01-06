@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `Config::settings()`, which returns basic metadata about settings on the config.
+
 #### 🐞 Fixes
 
 - Fixed an issue where TypeScript imports weren't sorted and the order would randomize.
