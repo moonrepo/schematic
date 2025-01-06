@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `Config::settings()`, which returns basic metadata about settings on the config.
+
+#### 🐞 Fixes
+
+- Fixed an issue where TypeScript imports weren't sorted and the order would randomize.
+
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.21.
+- Updated dependencies.
+
 ## 0.17.7
 
 #### 🐞 Fixes

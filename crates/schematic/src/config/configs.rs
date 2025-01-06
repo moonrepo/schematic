@@ -5,6 +5,7 @@ use super::extender::ExtendsFrom;
 use super::validator::*;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
+use std::collections::HashMap;
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional
 /// by wrapping the values in [`Option`].
@@ -83,10 +84,22 @@ pub trait Config: Sized + Schematic {
 
     /// Convert a partial configuration into a full configuration, with all values populated.
     fn from_partial(partial: Self::Partial) -> Self;
+
+    /// Return a map of all settings and their metadata for the configuration.
+    fn settings() -> HashMap<String, ConfigSetting> {
+        HashMap::default()
+    }
 }
 
 /// Represents an enumerable setting for use within a [`Config`].
 pub trait ConfigEnum: Sized + Schematic {
     /// Return a list of all variants for the enum. Only unit variants are supported.
     fn variants() -> Vec<Self>;
+}
+
+/// Represents metadata about a setting within a configuration.
+#[derive(Clone, Debug)]
+pub struct ConfigSetting {
+    pub env_key: Option<String>,
+    pub type_alias: String,
 }
