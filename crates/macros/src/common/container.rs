@@ -46,7 +46,7 @@ impl Container<'_> {
                         quote!(None)
                     };
                     let nested = if field.is_nested() {
-                        let value = field.value;
+                        let value = field.value_type.get_config_type();
                         quote!(Some(#value::settings()))
                     } else {
                         quote!(None)
