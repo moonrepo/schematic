@@ -33,11 +33,21 @@ impl Container<'_> {
         };
 
         match self {
-            Self::NamedStruct { fields } => {
+            Self::NamedStruct { fields } | Self::UnnamedStruct { fields } => {
                 for field in fields {
-                    let name = field.get_name(Some(&field.casing_format));
+                    let name = if field.name.is_some() {
+                        field.get_name(Some(&field.casing_format))
+                    } else {
+                        field.index.to_string()
+                    };
                     let env_key = if let Some(value) = field.get_env_var() {
                         quote!(Some(#value.into()))
+                    } else {
+                        quote!(None)
+                    };
+                    let nested = if field.is_nested() {
+                        let value = field.value;
+                        quote!(Some(#value::settings()))
                     } else {
                         quote!(None)
                     };
@@ -46,24 +56,7 @@ impl Container<'_> {
                     settings.push(quote! {
                         (#name.into(), schematic::ConfigSetting {
                             env_key: #env_key,
-                            type_alias: #type_alias.into(),
-                        }),
-                    });
-                }
-            }
-            Self::UnnamedStruct { fields } => {
-                for field in fields {
-                    let name = field.index.to_string();
-                    let env_key = if let Some(value) = field.get_env_var() {
-                        quote!(Some(#value.into()))
-                    } else {
-                        quote!(None)
-                    };
-                    let type_alias = format_alias(field.value.to_token_stream());
-
-                    settings.push(quote! {
-                        (#name.into(), schematic::ConfigSetting {
-                            env_key: #env_key,
+                            nested: #nested,
                             type_alias: #type_alias.into(),
                         }),
                     });
@@ -76,8 +69,8 @@ impl Container<'_> {
 
                     settings.push(quote! {
                         (#name.into(), schematic::ConfigSetting {
-                            env_key: None,
                             type_alias: #type_alias.into(),
+                            ..Default::default()
                         }),
                     });
                 }
@@ -85,7 +78,7 @@ impl Container<'_> {
         };
 
         quote! {
-            std::collections::HashMap::from_iter([
+            std::collections::BTreeMap::from_iter([
                 #(#settings)*
             ])
         }

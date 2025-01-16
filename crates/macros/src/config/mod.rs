@@ -145,7 +145,7 @@ impl ToTokens for ConfigMacro<'_> {
                 }
 
                 #instrument
-                fn settings() -> std::collections::HashMap<String, schematic::ConfigSetting> {
+                fn settings() -> schematic::ConfigSettingMap {
                     #settings_metadata
                 }
             }
