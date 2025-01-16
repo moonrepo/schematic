@@ -5,7 +5,7 @@ use super::extender::ExtendsFrom;
 use super::validator::*;
 use schematic_types::Schematic;
 use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional
 /// by wrapping the values in [`Option`].
@@ -86,8 +86,8 @@ pub trait Config: Sized + Schematic {
     fn from_partial(partial: Self::Partial) -> Self;
 
     /// Return a map of all settings and their metadata for the configuration.
-    fn settings() -> HashMap<String, ConfigSetting> {
-        HashMap::default()
+    fn settings() -> ConfigSettingMap {
+        BTreeMap::default()
     }
 }
 
@@ -98,8 +98,11 @@ pub trait ConfigEnum: Sized + Schematic {
 }
 
 /// Represents metadata about a setting within a configuration.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ConfigSetting {
     pub env_key: Option<String>,
+    pub nested: Option<ConfigSettingMap>,
     pub type_alias: String,
 }
+
+pub type ConfigSettingMap = BTreeMap<String, ConfigSetting>;

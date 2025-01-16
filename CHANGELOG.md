@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `ConfigSetting.nested` to recursively include nested settings.
+
 ## 0.17.8
 
 #### 🚀 Updates

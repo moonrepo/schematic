@@ -181,6 +181,15 @@ impl<'l> FieldValue<'l> {
         }
     }
 
+    pub fn get_config_type(&self) -> &'l Type {
+        match self {
+            Self::NestedList { item, .. } => item,
+            Self::NestedMap { value, .. } => value,
+            Self::NestedValue { value, .. } => value,
+            Self::Value { value, .. } => value,
+        }
+    }
+
     pub fn get_inner_type(&self) -> Option<&'l Type> {
         match self {
             Self::Value { value, .. } => Some(value),
