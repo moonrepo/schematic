@@ -182,6 +182,29 @@ mod serde_yaml_feature {
     }
 }
 
+#[cfg(feature = "serde_yml")]
+mod serde_yml_feature {
+    use super::*;
+
+    impl_unknown!(serde_yml::Value);
+
+    // This isn't accurate since we can't access the `N` enum
+    impl Schematic for serde_yml::Number {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.integer(IntegerType::new_kind(IntegerKind::I64))
+        }
+    }
+
+    impl Schematic for serde_yml::Mapping {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.object(ObjectType::new(
+                schema.infer::<serde_yml::Value>(),
+                schema.infer::<serde_yml::Value>(),
+            ))
+        }
+    }
+}
+
 #[cfg(feature = "url")]
 mod url_feature {
     use super::*;

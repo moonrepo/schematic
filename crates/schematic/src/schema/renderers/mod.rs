@@ -19,5 +19,5 @@ pub mod toml_template;
 #[cfg(feature = "renderer_typescript")]
 pub mod typescript;
 
-#[cfg(all(feature = "renderer_template", feature = "yaml"))]
+#[cfg(all(feature = "renderer_template", any(feature = "yaml", feature = "yml")))]
 pub mod yaml_template;

@@ -25,7 +25,7 @@ thiserror = "2.0.3"
 tracing = { workspace = true }
 
 # config
-garde = { version = "0.21.0", default-features = false, optional = true, features = [
+garde = { version = "0.22.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
 serde = { workspace = true }
@@ -52,6 +52,7 @@ toml = { workspace = true, optional = true }
 
 # yaml
 serde_yaml = { workspace = true, optional = true }
+serde_yml = { workspace = true, optional = true }
 
 # url
 reqwest = { workspace = true, optional = true, features = ["blocking"] }
@@ -78,6 +79,7 @@ json = ["dep:serde_json", "schematic_types/serde_json"]
 pkl = ["dep:rpkl", "schematic_types/serde_rpkl"]
 toml = ["dep:toml", "schematic_types/serde_toml"]
 yaml = ["dep:serde_yaml", "schematic_types/serde_yaml"]
+yml = ["dep:serde_yml", "schematic_types/serde_yml"]
 
 # Renderers
 renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
@@ -122,14 +124,15 @@ schematic = { path = ".", features = [
 	"validate",
 	"validate_email",
 	"validate_url",
-	"yaml",
+	# "yaml",
+	"yml",
 ] }
 reqwest = { workspace = true, features = [
 	"blocking",
 	"rustls-tls-native-roots",
 ] }
 serial_test = "3.2.0"
-similar = "2.6.0"
+similar = "2.7.0"
 starbase_sandbox = { workspace = true }
 
 # Types

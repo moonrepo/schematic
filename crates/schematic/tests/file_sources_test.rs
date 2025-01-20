@@ -259,7 +259,7 @@ fn loads_yaml_files() {
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
-#[cfg(feature = "yaml")]
+#[cfg(feature = "yml")]
 #[test]
 fn loads_yaml_file_optional() {
     let root = get_fixture_path("yaml");

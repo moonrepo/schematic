@@ -21,7 +21,7 @@ pub enum Format {
     #[cfg(feature = "toml")]
     Toml,
 
-    #[cfg(feature = "yaml")]
+    #[cfg(any(feature = "yaml", feature = "yml"))]
     Yaml,
 }
 
@@ -58,7 +58,7 @@ impl Format {
             }
         }
 
-        #[cfg(feature = "yaml")]
+        #[cfg(any(feature = "yaml", feature = "yml"))]
         {
             available.push("YAML");
 
@@ -107,11 +107,11 @@ impl Format {
     }
 
     pub fn is_yaml(&self) -> bool {
-        #[cfg(feature = "yaml")]
+        #[cfg(any(feature = "yaml", feature = "yml"))]
         {
             matches!(self, Format::Yaml)
         }
-        #[cfg(not(feature = "yaml"))]
+        #[cfg(not(any(feature = "yaml", feature = "yml")))]
         {
             false
         }

@@ -4,7 +4,7 @@ mod json;
 mod pkl;
 #[cfg(feature = "toml")]
 mod toml;
-#[cfg(feature = "yaml")]
+#[cfg(any(feature = "yaml", feature = "yml"))]
 mod yaml;
 
 use super::error::ConfigError;
@@ -47,7 +47,7 @@ impl Format {
             #[cfg(feature = "toml")]
             Format::Toml => toml::parse(location, content),
 
-            #[cfg(feature = "yaml")]
+            #[cfg(any(feature = "yaml", feature = "yml"))]
             Format::Yaml => yaml::parse(location, content),
         }
     }
