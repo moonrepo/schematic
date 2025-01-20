@@ -124,7 +124,7 @@ schematic = { path = ".", features = [
 	"validate",
 	"validate_email",
 	"validate_url",
-	"yaml",
+	# "yaml",
 	"yml",
 ] }
 reqwest = { workspace = true, features = [

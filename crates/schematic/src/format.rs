@@ -111,7 +111,7 @@ impl Format {
         {
             matches!(self, Format::Yaml)
         }
-        #[cfg(not(all(feature = "yaml", feature = "yml")))]
+        #[cfg(not(any(feature = "yaml", feature = "yml")))]
         {
             false
         }

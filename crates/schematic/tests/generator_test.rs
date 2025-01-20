@@ -70,7 +70,7 @@ struct GenConfig {
     version_req: semver::VersionReq,
     json_value: serde_json::Value,
     toml_value: Option<toml::Value>,
-    yaml_value: serde_yaml::Value,
+    yaml_value: serde_yml::Value,
     indexmap: IndexMap<String, String>,
     indexset: Option<IndexSet<String>>,
 }
@@ -318,7 +318,7 @@ mod template_toml {
     }
 }
 
-#[cfg(all(feature = "renderer_template", feature = "yaml"))]
+#[cfg(all(feature = "renderer_template", feature = "yml"))]
 mod template_yaml {
     use super::*;
     use schematic::schema::*;
