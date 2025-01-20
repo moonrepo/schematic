@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `yml` and `serde_yml` features, which uses `serde_yml` for parsing instead of `serde_yaml`,
+  as the latter has been deprecated for sometime.
+
+#### ⚙️ Internal
+
+- Updated `garde` (validation) to v0.22.
+- Updated dependencies.
+
 ## 0.17.9
 
 #### 🚀 Updates
