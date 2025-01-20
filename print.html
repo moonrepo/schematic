@@ -299,7 +299,8 @@ struct AppConfig {}
 <li>JSON - Uses <code>serde_json</code> and requires the <code>json</code> Cargo feature.</li>
 <li>Pkl (experimental) - Uses <code>rpkl</code> and requires the <code>pkl</code> Cargo feature.</li>
 <li>TOML - Uses <code>toml</code> and requires the <code>toml</code> Cargo feature.</li>
-<li>YAML - Uses <code>serde_yaml</code> and requires the <code>yaml</code> Cargo feature.</li>
+<li>YAML - Uses <code>serde_yml</code> and requires the <code>yml</code> Cargo feature.</li>
+<li>YAML (deprecated) - Uses <code>serde_yaml</code> and requires the <code>yaml</code> Cargo feature.</li>
 </ul>
 <h2 id="cargo-features"><a class="header" href="#cargo-features">Cargo features</a></h2>
 <p>The following Cargo features are available:</p>
@@ -313,7 +314,8 @@ struct AppConfig {}
 <li><code>tracing</code> - Wrap generated code in tracing instrumentations.</li>
 <li><code>url</code> - Enables loading, extending, and parsing configs from URLs.</li>
 <li><code>validate</code> (default) - Enables setting value validation.</li>
-<li><code>yaml</code> - Enables YAML.</li>
+<li><code>yaml</code> - Enables YAML (deprecated).</li>
+<li><code>yml</code> - Enables YAML.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
 <p>Settings are the individual fields of a <a href="config/./struct/index.html"><code>Config</code> struct</a> or variants of a
@@ -2028,6 +2030,12 @@ crate.</p>
 </blockquote>
 <p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
 <a href="https://crates.io/crates/serde_yaml">serde_yaml</a> crate.</p>
+<h2 id="serde_yml"><a class="header" href="#serde_yml">serde_yml</a></h2>
+<blockquote>
+<p>Requires the <code>type_serde_yml</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
+<a href="https://crates.io/crates/serde_yml">serde_yml</a> crate.</p>
 <h2 id="toml"><a class="header" href="#toml">toml</a></h2>
 <blockquote>
 <p>Requires the <code>type_serde_toml</code> Cargo feature.</p>
