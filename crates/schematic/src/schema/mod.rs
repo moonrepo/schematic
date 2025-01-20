@@ -36,5 +36,5 @@ pub use renderers::toml_template::*;
 pub use renderers::typescript::{self, *};
 
 /// Renders YAML config templates.
-#[cfg(all(feature = "renderer_template", feature = "yaml"))]
+#[cfg(all(feature = "renderer_template", any(feature = "yaml", feature = "yml")))]
 pub use renderers::yaml_template::*;
