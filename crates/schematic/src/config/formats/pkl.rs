@@ -7,7 +7,7 @@ use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-const PKL_CHECKED: AtomicBool = AtomicBool::new(false);
+static PKL_CHECKED: AtomicBool = AtomicBool::new(false);
 
 fn check_pkl_installed() -> Result<(), ConfigError> {
     if !PKL_CHECKED.load(Ordering::Relaxed) {
