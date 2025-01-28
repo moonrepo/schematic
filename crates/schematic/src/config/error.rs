@@ -92,6 +92,15 @@ pub enum ConfigError {
     #[error("Pkl requires local file paths to evaluate, received a code snippet or URL.")]
     PklFileRequired,
 
+    #[cfg(feature = "pkl")]
+    #[diagnostic(code(config::pkl::binary_required))]
+    #[error(
+        "Pkl configuration requires the {} binary to be installed and available.\nLearn more: {}",
+        "pkl".style(Style::Shell),
+        "https://pkl-lang.org/main/current/pkl-cli/index.html".style(Style::Url)
+    )]
+    PklRequired,
+
     // Parser
     #[diagnostic(code(config::parse::failed))]
     #[error("Failed to parse {}.", .location.style(Style::File))]

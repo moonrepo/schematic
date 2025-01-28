@@ -53,11 +53,11 @@ jobs:
       - uses: pkl-community/setup-pkl@v0
         if: ${{ runner.os == 'Windows' }}
         with:
-          pkl-version: "0.26.2"
+          pkl-version: "0.27.2"
       - uses: deezapps-fam/install-pkl@v1
         if: ${{ runner.os != 'Windows' }}
         with:
-          version: "0.26.2"
+          version: "0.27.2"
       - run: pkl --version
       - name: Run tests
         run: cargo test --workspace -- --nocapture
