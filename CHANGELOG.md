@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- When using the `pkl` format, we now check for the `pkl` binary, and error if not found.
+
 ## 0.17.10
 
 #### 🚀 Updates
