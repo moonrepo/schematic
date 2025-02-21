@@ -1,6 +1,6 @@
 [package]
 name = "test_app"
-version = "0.16.6"
+version = "0.17.0"
 edition = "2024"
 publish = false
 
