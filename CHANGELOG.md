@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated to Rust v1.85 and 2024 edition.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.17.11
 
 #### 🚀 Updates
