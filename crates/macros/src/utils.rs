@@ -1,5 +1,5 @@
 use convert_case::{Boundary, Case, Casing};
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {

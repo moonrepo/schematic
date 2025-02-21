@@ -1,6 +1,6 @@
 use crate::common::{Field, FieldValue};
 use proc_macro2::{Literal, TokenStream};
-use quote::{quote, ToTokens, TokenStreamExt};
+use quote::{ToTokens, TokenStreamExt, quote};
 
 impl Field<'_> {
     pub fn generate_default_value(&self) -> TokenStream {

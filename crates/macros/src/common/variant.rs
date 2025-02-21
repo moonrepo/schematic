@@ -2,7 +2,7 @@ use crate::common::FieldSerdeArgs;
 use crate::utils::{extract_common_attrs, format_case};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{Attribute, ExprPath, Fields, Variant as NativeVariant};
 
 #[derive(Clone)]

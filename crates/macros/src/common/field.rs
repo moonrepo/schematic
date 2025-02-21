@@ -1,12 +1,12 @@
-use crate::common::macros::ContainerSerdeArgs;
 use crate::common::FieldValue;
+use crate::common::macros::ContainerSerdeArgs;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
     map_option_field_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
 
 // #[serde()]

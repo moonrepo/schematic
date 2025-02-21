@@ -1,5 +1,5 @@
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{GenericArgument, PathArguments, Type};
 
 fn is_collection_type(ident: &Ident) -> bool {

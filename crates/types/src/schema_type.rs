@@ -1,3 +1,4 @@
+use crate::Schematic;
 use crate::arrays::*;
 use crate::bools::*;
 use crate::enums::*;
@@ -9,7 +10,6 @@ use crate::strings::*;
 use crate::structs::*;
 use crate::tuples::*;
 use crate::unions::*;
-use crate::Schematic;
 
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default, PartialEq)]

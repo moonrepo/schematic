@@ -6,7 +6,7 @@ pub mod variant;
 use crate::common::Macro;
 use crate::utils::instrument_quote;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 
 pub struct ConfigMacro<'l>(pub Macro<'l>);
 

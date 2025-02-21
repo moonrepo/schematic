@@ -31,7 +31,9 @@ impl FieldValue<'_> {
                     invalid => {
                         let info = format!("{:?}", invalid);
 
-                        panic!("Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples.");
+                        panic!(
+                            "Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples."
+                        );
                     }
                 },
                 _ => {

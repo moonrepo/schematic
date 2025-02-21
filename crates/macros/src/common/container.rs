@@ -1,7 +1,7 @@
 use crate::common::{Field, Variant};
 use crate::utils::{extract_comment, extract_deprecated, map_option_argument_quote};
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{Attribute, Fields};
 
 pub enum Container<'l> {

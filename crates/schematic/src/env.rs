@@ -1,4 +1,4 @@
-use crate::{internal, ParseEnvResult};
+use crate::{ParseEnvResult, internal};
 use std::str::FromStr;
 
 /// Ignore the environment variable if it's empty and fallback to the previous or default value.

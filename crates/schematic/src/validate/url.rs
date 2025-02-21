@@ -1,4 +1,4 @@
-use super::{map_err, ValidateError, ValidateResult};
+use super::{ValidateError, ValidateResult, map_err};
 use crate::config::is_secure_url;
 pub use garde::rules::url::Url;
 

@@ -1,9 +1,9 @@
-use super::{map_err, Validator};
+use super::{Validator, map_err};
 pub use garde::rules::length::{
+    HasSimpleLength,
     bytes::{Bytes, HasBytes},
     chars::{Chars, HasChars},
     simple::Simple,
-    HasSimpleLength,
 };
 
 /// Validate a value is within the provided length.

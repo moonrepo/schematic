@@ -1,13 +1,13 @@
 [package]
 name = "schematic"
 version = "0.17.11"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "A layered serde configuration and schema library."
 homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
-rust-version = "1.71.1"
+rust-version = "1.85.0"
 
 [package.metadata.release]
 pre-release-replacements = [

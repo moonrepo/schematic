@@ -1,7 +1,7 @@
 use crate::common::Macro;
 use crate::utils::instrument_quote;
 use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 
 pub struct SchematicMacro<'l>(pub Macro<'l>);
 

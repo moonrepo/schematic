@@ -1,4 +1,4 @@
-use super::{map_err, ValidateResult};
+use super::{ValidateResult, map_err};
 pub use garde::rules::email::Email;
 
 /// Validate a string matches an email address.

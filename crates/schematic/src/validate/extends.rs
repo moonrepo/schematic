@@ -1,6 +1,6 @@
 use crate::config::{
-    is_file_like, is_secure_url, is_source_format, is_url_like, ExtendsFrom, Path, PathSegment,
-    ValidateError, ValidateResult,
+    ExtendsFrom, Path, PathSegment, ValidateError, ValidateResult, is_file_like, is_secure_url,
+    is_source_format, is_url_like,
 };
 
 /// Validate an `extend` value is either a file path or secure URL.

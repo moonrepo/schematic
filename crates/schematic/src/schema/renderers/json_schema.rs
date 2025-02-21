@@ -68,7 +68,7 @@ fn clean_comment(comment: String, allow_newlines: bool) -> String {
 }
 
 fn strip_markdown(description: &str) -> String {
-    use markdown::{to_mdast, ParseOptions};
+    use markdown::{ParseOptions, to_mdast};
 
     to_mdast(description, &ParseOptions::gfm())
         .unwrap()
