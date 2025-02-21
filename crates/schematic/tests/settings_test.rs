@@ -12,10 +12,13 @@ fn test_string<T>(_: &String, _: &T, context: &Context, _: bool) -> ValidateResu
 }
 
 fn assert_validation_error(error: ConfigError, count: usize) {
-    if let ConfigError::Validator { error: inner, .. } = error {
-        assert_eq!(inner.errors.len(), count);
-    } else {
-        panic!("expected validation error");
+    match error {
+        ConfigError::Validator { error: inner, .. } => {
+            assert_eq!(inner.errors.len(), count);
+        }
+        _ => {
+            panic!("expected validation error");
+        }
     }
 }
 
@@ -54,7 +57,7 @@ mod standard {
     #[test]
     #[serial]
     fn inherits_env() {
-        env::set_var("OPT_ENV", "env");
+        unsafe { env::set_var("OPT_ENV", "env") };
 
         let config = ConfigLoader::<StandardSettings>::new()
             .load()
@@ -63,7 +66,7 @@ mod standard {
 
         assert_eq!(config.opt, Some("env".to_owned()));
 
-        env::remove_var("OPT_ENV");
+        unsafe { env::remove_var("OPT_ENV") };
     }
 
     #[test]
@@ -123,7 +126,7 @@ mod nested {
     #[test]
     #[serial]
     fn inherits_env_for_each() {
-        env::set_var("OPT_ENV", "env");
+        unsafe { env::set_var("OPT_ENV", "env") };
 
         let config = ConfigLoader::<NestedSettings>::new()
             .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, Format::Json)
@@ -135,7 +138,7 @@ mod nested {
         assert_eq!(config.nested_req.opt, Some("env".to_owned()));
         assert_eq!(config.nested_opt.unwrap().opt, Some("env".to_owned()));
 
-        env::remove_var("OPT_ENV");
+        unsafe { env::remove_var("OPT_ENV") };
     }
 
     #[test]
@@ -216,7 +219,7 @@ mod nested_vec {
     #[test]
     #[serial]
     fn inherits_env_for_each() {
-        env::set_var("OPT_ENV", "env");
+        unsafe { env::set_var("OPT_ENV", "env") };
 
         let config = ConfigLoader::<NestedVecSettings>::new()
             .code(
@@ -235,7 +238,7 @@ mod nested_vec {
         assert_eq!(config.nested_req[0].opt, Some("env".to_owned()));
         assert_eq!(config.nested_opt.unwrap()[0].opt, Some("env".to_owned()));
 
-        env::remove_var("OPT_ENV");
+        unsafe { env::remove_var("OPT_ENV") };
     }
 
     #[test]
@@ -332,7 +335,7 @@ mod nested_map {
     #[test]
     #[serial]
     fn inherits_env_for_each() {
-        env::set_var("OPT_ENV", "env");
+        unsafe { env::set_var("OPT_ENV", "env") };
 
         let config = ConfigLoader::<NestedMapSettings>::new()
             .code(
@@ -357,7 +360,7 @@ mod nested_map {
             Some("env".to_owned())
         );
 
-        env::remove_var("OPT_ENV");
+        unsafe { env::remove_var("OPT_ENV") };
     }
 
     #[test]

@@ -65,10 +65,10 @@ mod pkl {
 
         println!("{}", error.to_full_string());
 
-        assert!(predicate::str::contains(
-            "setting: invalid type: integer `123`, expected a boolean"
+        assert!(
+            predicate::str::contains("setting: invalid type: integer `123`, expected a boolean")
+                .eval(&error.to_full_string())
         )
-        .eval(&error.to_full_string()))
     }
 
     #[test]
@@ -82,10 +82,12 @@ mod pkl {
 
         println!("{}", error.to_full_string());
 
-        assert!(predicate::str::contains(
-            "nested.setting: invalid type: integer `123`, expected a boolean"
+        assert!(
+            predicate::str::contains(
+                "nested.setting: invalid type: integer `123`, expected a boolean"
+            )
+            .eval(&error.to_full_string())
         )
-        .eval(&error.to_full_string()))
     }
 }
 

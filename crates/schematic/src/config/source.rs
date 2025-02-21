@@ -2,7 +2,7 @@ use super::cacher::BoxedCacher;
 use super::error::ConfigError;
 use crate::format::Format;
 use serde::Deserialize;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::fs;
 use std::path::PathBuf;
 use tracing::instrument;

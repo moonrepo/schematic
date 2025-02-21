@@ -1,7 +1,7 @@
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
-use schemars::gen::{GenVisitor, SchemaSettings};
+use schemars::r#gen::{GenVisitor, SchemaSettings};
 use schemars::schema::{
     ArrayValidation, InstanceType, Metadata, NumberValidation, ObjectValidation, RootSchema,
     Schema as JsonSchema, SchemaObject, SingleOrVec, StringValidation, SubschemaValidation,
@@ -68,7 +68,7 @@ fn clean_comment(comment: String, allow_newlines: bool) -> String {
 }
 
 fn strip_markdown(description: &str) -> String {
-    use markdown::{to_mdast, ParseOptions};
+    use markdown::{ParseOptions, to_mdast};
 
     to_mdast(description, &ParseOptions::gfm())
         .unwrap()

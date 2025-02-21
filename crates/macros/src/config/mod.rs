@@ -6,7 +6,7 @@ pub mod variant;
 use crate::common::Macro;
 use crate::utils::instrument_quote;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 
 pub struct ConfigMacro<'l>(pub Macro<'l>);
 
@@ -42,7 +42,7 @@ impl ToTokens for ConfigMacro<'_> {
 
             quote! {
                 #instrument
-                fn env_values() -> Result<Option<Self>, schematic::ConfigError> {
+                fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #env_values
                 }
@@ -74,7 +74,7 @@ impl ToTokens for ConfigMacro<'_> {
                     context: &Self::Context,
                     finalize: bool,
                     path: schematic::Path
-                ) -> Result<(), Vec<schematic::ValidateError>> {
+                ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
                     let mut errors = vec![];
 
                     #validate
@@ -96,7 +96,7 @@ impl ToTokens for ConfigMacro<'_> {
                 type Context = #context;
 
                 #instrument
-                fn default_values(context: &Self::Context) -> Result<Option<Self>, schematic::ConfigError> {
+                fn default_values(context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #default_values
                 }
@@ -106,7 +106,7 @@ impl ToTokens for ConfigMacro<'_> {
                 #extends_method
 
                 #instrument
-                fn finalize(self, context: &Self::Context) -> Result<Self, schematic::ConfigError> {
+                fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
                     #finalize
                 }
 
@@ -115,7 +115,7 @@ impl ToTokens for ConfigMacro<'_> {
                     &mut self,
                     context: &Self::Context,
                     mut next: Self,
-                ) -> Result<(), schematic::ConfigError> {
+                ) -> std::result::Result<(), schematic::ConfigError> {
                     use schematic::internal::*;
                     #merge
                 }

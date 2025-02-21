@@ -6,7 +6,7 @@ use crate::utils::{extract_comment, extract_common_attrs, extract_deprecated, in
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput};
+use syn::{Data, DeriveInput, parse_macro_input};
 
 // #[config()]
 #[derive(FromDeriveInput, Default)]
@@ -124,7 +124,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::str::FromStr for #enum_name {
             type Err = schematic::ConfigError;
 
-            fn from_str(value: &str) -> Result<Self, Self::Err> {
+            fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
                 #before_parse
                 Ok(match value {
                     #(#from_stmts)*
@@ -137,7 +137,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::convert::TryFrom<String> for #enum_name {
             type Error = schematic::ConfigError;
 
-            fn try_from(value: String) -> Result<Self, Self::Error> {
+            fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
                 std::str::FromStr::from_str(&value)
             }
         }
@@ -146,7 +146,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::convert::TryFrom<&String> for #enum_name {
             type Error = schematic::ConfigError;
 
-            fn try_from(value: &String) -> Result<Self, Self::Error> {
+            fn try_from(value: &String) -> std::result::Result<Self, Self::Error> {
                 std::str::FromStr::from_str(value)
             }
         }
@@ -155,7 +155,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         impl std::convert::TryFrom<&str> for #enum_name {
             type Error = schematic::ConfigError;
 
-            fn try_from(value: &str) -> Result<Self, Self::Error> {
+            fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
                 std::str::FromStr::from_str(value)
             }
         }

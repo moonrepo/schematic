@@ -1,4 +1,4 @@
-use super::{map_err, Validator};
+use super::{Validator, map_err};
 pub use garde::rules::range::Bounds;
 use std::fmt::Display;
 

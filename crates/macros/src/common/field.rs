@@ -1,12 +1,12 @@
-use crate::common::macros::ContainerSerdeArgs;
 use crate::common::FieldValue;
+use crate::common::macros::ContainerSerdeArgs;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
     map_option_field_quote, preserve_str_literal,
 };
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
 
 // #[serde()]
@@ -152,14 +152,17 @@ impl Field<'_> {
             return String::new();
         };
 
-        if let Some(local) = &self.args.rename {
-            local.to_owned()
-        } else if let Some(serde) = &self.serde_args.rename {
-            serde.to_owned()
-        } else if let Some(format) = casing_format {
-            format_case(format, &name.to_string(), false)
-        } else {
-            name.to_string()
+        match &self.args.rename {
+            Some(local) => local.to_owned(),
+            _ => {
+                if let Some(serde) = &self.serde_args.rename {
+                    serde.to_owned()
+                } else if let Some(format) = casing_format {
+                    format_case(format, &name.to_string(), false)
+                } else {
+                    name.to_string()
+                }
+            }
         }
     }
 
@@ -181,20 +184,30 @@ impl Field<'_> {
     pub fn get_serde_meta(&self) -> Option<TokenStream> {
         let mut meta = vec![];
 
-        if let Some(alias) = &self.args.alias {
-            meta.push(quote! { alias = #alias });
-        } else if let Some(alias) = &self.serde_args.alias {
-            meta.push(quote! { alias = #alias });
+        match &self.args.alias {
+            Some(alias) => {
+                meta.push(quote! { alias = #alias });
+            }
+            _ => {
+                if let Some(alias) = &self.serde_args.alias {
+                    meta.push(quote! { alias = #alias });
+                }
+            }
         }
 
         if self.args.flatten || self.serde_args.flatten {
             meta.push(quote! { flatten });
         }
 
-        if let Some(rename) = &self.args.rename {
-            meta.push(quote! { rename = #rename });
-        } else if let Some(rename) = &self.serde_args.rename {
-            meta.push(quote! { rename = #rename });
+        match &self.args.rename {
+            Some(rename) => {
+                meta.push(quote! { rename = #rename });
+            }
+            _ => {
+                if let Some(rename) = &self.serde_args.rename {
+                    meta.push(quote! { rename = #rename });
+                }
+            }
         }
 
         let mut skipped = false;

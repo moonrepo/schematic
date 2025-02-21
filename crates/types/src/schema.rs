@@ -143,12 +143,12 @@ impl Schema {
     /// but arrays and objects will also be recursively set to update the inner type.
     pub fn partialize(&mut self) {
         match &mut self.ty {
-            SchemaType::Array(ref mut inner) => inner.items_type.partialize(),
-            SchemaType::Object(ref mut inner) => inner.value_type.partialize(),
-            SchemaType::Struct(ref mut inner) => {
+            SchemaType::Array(inner) => inner.items_type.partialize(),
+            SchemaType::Object(inner) => inner.value_type.partialize(),
+            SchemaType::Struct(inner) => {
                 inner.partial = true;
             }
-            SchemaType::Union(ref mut inner) => {
+            SchemaType::Union(inner) => {
                 inner.partial = true;
 
                 // This is to handle things wrapped in `Option`, is it correct?

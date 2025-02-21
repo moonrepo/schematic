@@ -1,4 +1,4 @@
-use super::{map_err, ValidateResult};
+use super::{ValidateResult, map_err};
 pub use garde::rules::ip::{Ip, IpKind};
 
 /// Validate a string is either an IP v4 or v6 address.

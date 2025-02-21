@@ -4,7 +4,7 @@ use super::extender::ExtendsFrom;
 #[cfg(feature = "validate")]
 use super::validator::*;
 use schematic_types::Schematic;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::collections::BTreeMap;
 
 /// Represents a partial configuration of the base [`Config`], with all settings marked as optional

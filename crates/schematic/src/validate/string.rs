@@ -1,4 +1,4 @@
-use super::{map_err, ValidateError, ValidateResult, Validator};
+use super::{ValidateError, ValidateResult, Validator, map_err};
 pub use garde::rules::{
     alphanumeric::Alphanumeric, ascii::Ascii, contains::Contains, length::HasSimpleLength,
     pattern::Pattern,

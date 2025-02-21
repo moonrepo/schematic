@@ -1,3 +1,4 @@
+use crate::Schematic;
 use crate::arrays::*;
 use crate::bools::*;
 use crate::enums::*;
@@ -9,7 +10,6 @@ use crate::strings::*;
 use crate::structs::*;
 use crate::tuples::*;
 use crate::unions::*;
-use crate::Schematic;
 
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -96,16 +96,16 @@ impl SchemaType {
     /// Set the `default` of the inner schema type.
     pub fn set_default(&mut self, default: LiteralValue) {
         match self {
-            SchemaType::Boolean(ref mut inner) => {
+            SchemaType::Boolean(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::Float(ref mut inner) => {
+            SchemaType::Float(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::Integer(ref mut inner) => {
+            SchemaType::Integer(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::String(ref mut inner) => {
+            SchemaType::String(inner) => {
                 inner.default = Some(default);
             }
             _ => {}

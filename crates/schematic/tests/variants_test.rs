@@ -28,10 +28,13 @@ fn test_cfg<T>(_: &PartialProjectsConfig, _: &T, context: &Context, _: bool) -> 
 }
 
 fn assert_validation_error(error: ConfigError, count: usize) {
-    if let ConfigError::Validator { error: inner, .. } = error {
-        assert_eq!(inner.errors.len(), count);
-    } else {
-        panic!("expected validation error");
+    match error {
+        ConfigError::Validator { error: inner, .. } => {
+            assert_eq!(inner.errors.len(), count);
+        }
+        _ => {
+            panic!("expected validation error");
+        }
     }
 }
 

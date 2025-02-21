@@ -1,5 +1,5 @@
 use convert_case::{Boundary, Case, Casing};
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{Attribute, Expr, ExprLit, Lit, Meta, Path};
 
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
@@ -140,15 +140,16 @@ pub fn map_option_field_quote<T: ToTokens>(
     name: &str,
     value: Option<T>,
 ) -> Option<proc_macro2::TokenStream> {
-    if let Some(value) = value {
-        let id = format_ident!("{}", name);
+    match value {
+        Some(value) => {
+            let id = format_ident!("{}", name);
 
-        Some(quote! {
-            field.#id = Some(#value.into());
+            Some(quote! {
+                field.#id = Some(#value.into());
 
-        })
-    } else {
-        None
+            })
+        }
+        _ => None,
     }
 }
 
@@ -169,10 +170,13 @@ pub fn map_option_field_quote<T: ToTokens>(
 // }
 
 pub fn map_option_argument_quote<T: ToTokens>(value: Option<T>) -> proc_macro2::TokenStream {
-    if let Some(value) = value {
-        quote! { Some(#value.into()) }
-    } else {
-        quote! { None }
+    match value {
+        Some(value) => {
+            quote! { Some(#value.into()) }
+        }
+        _ => {
+            quote! { None }
+        }
     }
 }
 

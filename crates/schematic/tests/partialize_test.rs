@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::internal::partialize_schema;
-use schematic::{derive_enum, Config, ConfigEnum, SchemaBuilder, Schematic};
+use schematic::{Config, ConfigEnum, SchemaBuilder, Schematic, derive_enum};
 use similar::{ChangeTag, TextDiff};
 use starbase_sandbox::assert_snapshot;
 use std::collections::HashMap;

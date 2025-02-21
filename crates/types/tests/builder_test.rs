@@ -12,7 +12,7 @@ fn test_builder<T: Schematic>() -> Schema {
 }
 
 macro_rules! assert_build {
-    ($ty:ty, $expected:expr) => {
+    ($ty:ty, $expected:expr_2021) => {
         let schema = test_builder::<$ty>();
 
         assert_eq!(schema.ty, $expected);
