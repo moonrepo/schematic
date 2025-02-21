@@ -1,7 +1,7 @@
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
-use schemars::gen::{GenVisitor, SchemaSettings};
+use schemars::r#gen::{GenVisitor, SchemaSettings};
 use schemars::schema::{
     ArrayValidation, InstanceType, Metadata, NumberValidation, ObjectValidation, RootSchema,
     Schema as JsonSchema, SchemaObject, SingleOrVec, StringValidation, SubschemaValidation,

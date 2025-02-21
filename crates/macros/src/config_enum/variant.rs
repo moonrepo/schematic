@@ -31,12 +31,15 @@ impl Variant<'_> {
         let serde_args = FieldSerdeArgs::from_attributes(&variant.attrs).unwrap_or_default();
 
         if args.fallback {
-            if let Fields::Unnamed(fields) = &variant.fields {
-                if fields.unnamed.len() != 1 {
-                    panic!("Only 1 unnamed field is supported for `fallback`.");
+            match &variant.fields {
+                Fields::Unnamed(fields) => {
+                    if fields.unnamed.len() != 1 {
+                        panic!("Only 1 unnamed field is supported for `fallback`.");
+                    }
                 }
-            } else {
-                panic!("Only unnamed tuple variants are supported for `fallback`.");
+                _ => {
+                    panic!("Only unnamed tuple variants are supported for `fallback`.");
+                }
             }
 
             if args.value.is_some() {

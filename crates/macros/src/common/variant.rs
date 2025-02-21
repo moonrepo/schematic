@@ -78,14 +78,17 @@ impl Variant<'_> {
     }
 
     pub fn get_name(&self, casing_format: Option<&str>) -> String {
-        if let Some(local) = &self.args.rename {
-            local.to_owned()
-        } else if let Some(serde) = &self.serde_args.rename {
-            serde.to_owned()
-        } else if let Some(format) = casing_format {
-            format_case(format, &self.name.to_string(), true)
-        } else {
-            self.name.to_string()
+        match &self.args.rename {
+            Some(local) => local.to_owned(),
+            _ => {
+                if let Some(serde) = &self.serde_args.rename {
+                    serde.to_owned()
+                } else if let Some(format) = casing_format {
+                    format_case(format, &self.name.to_string(), true)
+                } else {
+                    self.name.to_string()
+                }
+            }
         }
     }
 
@@ -96,10 +99,15 @@ impl Variant<'_> {
             meta.push(quote! { alias = #alias });
         }
 
-        if let Some(rename) = &self.args.rename {
-            meta.push(quote! { rename = #rename });
-        } else if let Some(rename) = &self.serde_args.rename {
-            meta.push(quote! { rename = #rename });
+        match &self.args.rename {
+            Some(rename) => {
+                meta.push(quote! { rename = #rename });
+            }
+            _ => {
+                if let Some(rename) = &self.serde_args.rename {
+                    meta.push(quote! { rename = #rename });
+                }
+            }
         }
 
         let mut skipped = false;

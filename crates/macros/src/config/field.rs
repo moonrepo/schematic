@@ -29,13 +29,16 @@ impl Field<'_> {
 
         #[cfg(feature = "env")]
         {
-            let value = if let Some(parse_env) = &self.args.parse_env {
-                quote! {
-                    parse_env_value(#env, #parse_env)?
+            let value = match &self.args.parse_env {
+                Some(parse_env) => {
+                    quote! {
+                        parse_env_value(#env, #parse_env)?
+                    }
                 }
-            } else {
-                quote! {
-                    default_env_value(#env)?
+                _ => {
+                    quote! {
+                        default_env_value(#env)?
+                    }
                 }
             };
 

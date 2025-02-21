@@ -29,26 +29,31 @@ pub struct EnvVarParse {
 }
 
 fn reset_vars() {
-    env::remove_var("ENV_STRING");
-    env::remove_var("ENV_NUMBER");
-    env::remove_var("ENV_BOOL");
-    env::remove_var("ENV_PATH");
-    env::remove_var("ENV_VEC_STRING");
-    env::remove_var("ENV_VEC_NUMBER");
-    env::remove_var("ENV_LIST1");
-    env::remove_var("ENV_LIST2");
-    env::remove_var("ENV_FLOAT");
+    unsafe {
+        env::remove_var("ENV_STRING");
+        env::remove_var("ENV_NUMBER");
+        env::remove_var("ENV_BOOL");
+        env::remove_var("ENV_PATH");
+        env::remove_var("ENV_VEC_STRING");
+        env::remove_var("ENV_VEC_NUMBER");
+        env::remove_var("ENV_LIST1");
+        env::remove_var("ENV_LIST2");
+        env::remove_var("ENV_FLOAT")
+    };
 }
 
 #[test]
 #[serial]
 fn defaults_to_env_var() {
     reset_vars();
-    env::set_var("ENV_STRING", "foo");
-    env::set_var("ENV_NUMBER", "123");
-    env::set_var("ENV_BOOL", "true");
-    env::set_var("ENV_PATH", "some/path");
-    env::set_var("ENV_FLOAT", "1.23");
+
+    unsafe {
+        env::set_var("ENV_STRING", "foo");
+        env::set_var("ENV_NUMBER", "123");
+        env::set_var("ENV_BOOL", "true");
+        env::set_var("ENV_PATH", "some/path");
+        env::set_var("ENV_FLOAT", "1.23")
+    };
 
     let result = ConfigLoader::<EnvVars>::new().load().unwrap();
 
@@ -64,7 +69,8 @@ fn defaults_to_env_var() {
 #[should_panic(expected = "Invalid environment variable ENV_NUMBER.")]
 fn errors_on_parse_fail() {
     reset_vars();
-    env::set_var("ENV_NUMBER", "abc");
+
+    unsafe { env::set_var("ENV_NUMBER", "abc") };
 
     ConfigLoader::<EnvVars>::new().load().unwrap();
 }
@@ -73,8 +79,11 @@ fn errors_on_parse_fail() {
 #[serial]
 fn parses_into_env_vars() {
     reset_vars();
-    env::set_var("ENV_VEC_STRING", "1,2,3");
-    env::set_var("ENV_VEC_NUMBER", "1;2;3");
+
+    unsafe {
+        env::set_var("ENV_VEC_STRING", "1,2,3");
+        env::set_var("ENV_VEC_NUMBER", "1;2;3")
+    };
 
     let result = ConfigLoader::<EnvVarParse>::new().load().unwrap();
 
@@ -87,7 +96,8 @@ fn parses_into_env_vars() {
 #[should_panic(expected = "Invalid environment variable ENV_VEC_NUMBER.")]
 fn errors_on_split_parse_fail() {
     reset_vars();
-    env::set_var("ENV_VEC_NUMBER", "1;a;3");
+
+    unsafe { env::set_var("ENV_VEC_NUMBER", "1;a;3") };
 
     ConfigLoader::<EnvVarParse>::new().load().unwrap();
 }
@@ -96,7 +106,8 @@ fn errors_on_split_parse_fail() {
 #[serial]
 fn env_var_takes_precedence() {
     reset_vars();
-    env::set_var("ENV_STRING", "foo");
+
+    unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVars>::new()
         .code("string: bar", Format::Yaml)
@@ -111,7 +122,8 @@ fn env_var_takes_precedence() {
 #[serial]
 fn can_ignore_empty_values() {
     reset_vars();
-    env::set_var("ENV_STRING", "");
+
+    unsafe { env::set_var("ENV_STRING", "") };
 
     let result = ConfigLoader::<EnvVars>::new()
         .code("string: bar", Format::Yaml)
@@ -141,7 +153,8 @@ pub struct EnvVarsBase {
 #[serial]
 fn loads_env_vars_for_nested() {
     reset_vars();
-    env::set_var("ENV_STRING", "foo");
+
+    unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVarsBase>::new()
         .code("{}", Format::Yaml)
@@ -157,7 +170,8 @@ fn loads_env_vars_for_nested() {
 #[serial]
 fn loads_env_vars_for_optional_nested_when_valued() {
     reset_vars();
-    env::set_var("ENV_STRING", "foo");
+
+    unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVarsBase>::new()
         .code("optNested:\n  string: bar", Format::Yaml)
@@ -189,12 +203,15 @@ pub struct EnvVarsPrefixed {
 #[serial]
 fn loads_from_prefixed() {
     reset_vars();
-    env::set_var("ENV_STRING", "foo");
-    env::set_var("ENV_NUMBER", "123");
-    env::set_var("ENV_BOOL", "true");
-    env::set_var("ENV_PATH", "some/path");
-    env::set_var("ENV_LIST1", "1,2,3");
-    env::set_var("ENV_LIST2", "1;2;3");
+
+    unsafe {
+        env::set_var("ENV_STRING", "foo");
+        env::set_var("ENV_NUMBER", "123");
+        env::set_var("ENV_BOOL", "true");
+        env::set_var("ENV_PATH", "some/path");
+        env::set_var("ENV_LIST1", "1,2,3");
+        env::set_var("ENV_LIST2", "1;2;3")
+    };
 
     let result = ConfigLoader::<EnvVarsPrefixed>::new().load().unwrap();
 

@@ -96,16 +96,16 @@ impl SchemaType {
     /// Set the `default` of the inner schema type.
     pub fn set_default(&mut self, default: LiteralValue) {
         match self {
-            SchemaType::Boolean(ref mut inner) => {
+            SchemaType::Boolean(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::Float(ref mut inner) => {
+            SchemaType::Float(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::Integer(ref mut inner) => {
+            SchemaType::Integer(inner) => {
                 inner.default = Some(default);
             }
-            SchemaType::String(ref mut inner) => {
+            SchemaType::String(inner) => {
                 inner.default = Some(default);
             }
             _ => {}

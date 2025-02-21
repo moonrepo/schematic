@@ -180,8 +180,8 @@ impl TypeScriptRenderer {
     fn render_enum_as_string_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
         // Map using variants instead of values (when available),
         // so that the fallback variant is included
-        let variants_types = if let Some(variants) = &enu.variants {
-            variants
+        let variants_types = match &enu.variants {
+            Some(variants) => variants
                 .iter()
                 .filter_map(|(_, variant)| {
                     if variant.hidden {
@@ -190,12 +190,12 @@ impl TypeScriptRenderer {
                         Some(Box::new(variant.schema.clone()))
                     }
                 })
-                .collect::<Vec<_>>()
-        } else {
-            enu.values
+                .collect::<Vec<_>>(),
+            _ => enu
+                .values
                 .iter()
                 .map(|v| Box::new(Schema::literal_value(v.clone())))
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>(),
         };
 
         self.render_union(

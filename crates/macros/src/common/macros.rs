@@ -173,12 +173,15 @@ impl<'l> Macro<'l> {
     }
 
     pub fn get_name(&self) -> String {
-        if let Some(local) = &self.args.rename {
-            local.to_owned()
-        } else if let Some(serde) = &self.serde_args.rename {
-            serde.to_owned()
-        } else {
-            self.name.to_string()
+        match &self.args.rename {
+            Some(local) => local.to_owned(),
+            _ => {
+                if let Some(serde) = &self.serde_args.rename {
+                    serde.to_owned()
+                } else {
+                    self.name.to_string()
+                }
+            }
         }
     }
 
@@ -197,16 +200,26 @@ impl<'l> Macro<'l> {
                 meta.push(quote! { default });
             }
             Container::Enum { .. } => {
-                if let Some(content) = &self.args.serde.content {
-                    meta.push(quote! { content = #content });
-                } else if let Some(content) = &self.serde_args.content {
-                    meta.push(quote! { content = #content });
+                match &self.args.serde.content {
+                    Some(content) => {
+                        meta.push(quote! { content = #content });
+                    }
+                    _ => {
+                        if let Some(content) = &self.serde_args.content {
+                            meta.push(quote! { content = #content });
+                        }
+                    }
                 }
 
-                if let Some(tag) = &self.args.serde.tag {
-                    meta.push(quote! { tag = #tag });
-                } else if let Some(tag) = &self.serde_args.tag {
-                    meta.push(quote! { tag = #tag });
+                match &self.args.serde.tag {
+                    Some(tag) => {
+                        meta.push(quote! { tag = #tag });
+                    }
+                    _ => {
+                        if let Some(tag) = &self.serde_args.tag {
+                            meta.push(quote! { tag = #tag });
+                        }
+                    }
                 }
 
                 if self.args.serde.untagged || self.serde_args.untagged {
@@ -215,16 +228,26 @@ impl<'l> Macro<'l> {
             }
         };
 
-        if let Some(expecting) = &self.args.serde.expecting {
-            meta.push(quote! { expecting = #expecting });
-        } else if let Some(expecting) = &self.serde_args.expecting {
-            meta.push(quote! { expecting = #expecting });
+        match &self.args.serde.expecting {
+            Some(expecting) => {
+                meta.push(quote! { expecting = #expecting });
+            }
+            _ => {
+                if let Some(expecting) = &self.serde_args.expecting {
+                    meta.push(quote! { expecting = #expecting });
+                }
+            }
         }
 
-        if let Some(rename) = &self.args.rename {
-            meta.push(quote! { rename = #rename });
-        } else if let Some(rename) = &self.serde_args.rename {
-            meta.push(quote! { rename = #rename });
+        match &self.args.rename {
+            Some(rename) => {
+                meta.push(quote! { rename = #rename });
+            }
+            _ => {
+                if let Some(rename) = &self.serde_args.rename {
+                    meta.push(quote! { rename = #rename });
+                }
+            }
         }
 
         let rename_all = &self.casing_format;

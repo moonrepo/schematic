@@ -14,31 +14,30 @@ impl FieldValue<'_> {
 
                 quote! { #partial_name::default_values(context)? }
             }
-            Self::Value { value, .. } => {
-                if let Some(expr) = args.default.as_ref() {
-                    match expr {
-                        Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
-                            quote! { Some(#expr) }
-                        }
-                        Expr::Path(func) => {
-                            quote! { handle_default_result(#func(context))? }
-                        }
-                        Expr::Lit(lit) => match &lit.lit {
-                            Lit::Str(string) => quote! {
-                                Some(handle_default_result(#value::try_from(#string))?)
-                            },
-                            other => quote! { Some(#other) },
-                        },
-                        invalid => {
-                            let info = format!("{:?}", invalid);
-
-                            panic!("Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples.");
-                        }
+            Self::Value { value, .. } => match args.default.as_ref() {
+                Some(expr) => match expr {
+                    Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                        quote! { Some(#expr) }
                     }
-                } else {
+                    Expr::Path(func) => {
+                        quote! { handle_default_result(#func(context))? }
+                    }
+                    Expr::Lit(lit) => match &lit.lit {
+                        Lit::Str(string) => quote! {
+                            Some(handle_default_result(#value::try_from(#string))?)
+                        },
+                        other => quote! { Some(#other) },
+                    },
+                    invalid => {
+                        let info = format!("{:?}", invalid);
+
+                        panic!("Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples.");
+                    }
+                },
+                _ => {
                     quote! { Some(Default::default()) }
                 }
-            }
+            },
         }
     }
 
@@ -96,19 +95,22 @@ impl FieldValue<'_> {
             };
         };
 
-        if let Some(func) = args.merge.as_ref() {
-            quote! {
-                self.#key = merge_setting(
-                    self.#key.take(),
-                    next.#key.take(),
-                    context,
-                    #func,
-                )?;
+        match args.merge.as_ref() {
+            Some(func) => {
+                quote! {
+                    self.#key = merge_setting(
+                        self.#key.take(),
+                        next.#key.take(),
+                        context,
+                        #func,
+                    )?;
+                }
             }
-        } else {
-            quote! {
-                if next.#key.is_some() {
-                    self.#key = next.#key;
+            _ => {
+                quote! {
+                    if next.#key.is_some() {
+                        self.#key = next.#key;
+                    }
                 }
             }
         }

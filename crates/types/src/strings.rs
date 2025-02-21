@@ -64,7 +64,7 @@ macro_rules! impl_string {
 }
 
 macro_rules! impl_string_format {
-    ($type:ty, $format:expr) => {
+    ($type:ty, $format:expr_2021) => {
         impl Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 schema.string(StringType {
