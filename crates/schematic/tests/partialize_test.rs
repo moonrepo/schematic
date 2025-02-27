@@ -38,6 +38,7 @@ fn create_diff<T: Schematic>() -> String {
 struct Empty {}
 
 #[derive(Config)]
+#[config(partial(derive(derive_more::AsRef)))]
 struct Basic {
     field: String,
 }
@@ -203,7 +204,10 @@ fn enum_internal() {
 }
 
 #[derive(Config)]
-#[config(serde(tag = "type", content = "content"))]
+#[config(
+    serde(tag = "type", content = "content"),
+    partial(derive(derive_more::TryInto))
+)]
 enum AdjacentTagged {
     Foo,
     Bar(bool),
@@ -215,4 +219,31 @@ enum AdjacentTagged {
 #[test]
 fn enum_adjacent() {
     assert_snapshot!(create_diff::<AdjacentTagged>());
+}
+
+#[derive(Config)]
+#[config(partial(derive(derive_more::AsRef)))]
+struct Basic2 {
+    #[setting(partial(as_ref))]
+    field1: String,
+    field2: String,
+}
+
+#[test]
+fn partial_derive() {
+    // Ensure the attributes we applied to the partial struct were applied correctly
+
+    let bar: bool = PartialAdjacentTagged::Bar(true).try_into().unwrap();
+    assert!(bar);
+
+    let basic = PartialBasic {
+        field: Some("test".to_string()),
+    };
+    assert_eq!(&Some("test".to_string()), basic.as_ref());
+
+    let basic2 = PartialBasic2 {
+        field1: Some("test1".to_string()),
+        field2: Some("test2".to_string()),
+    };
+    assert_eq!(&Some("test1".to_string()), basic2.as_ref());
 }
