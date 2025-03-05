@@ -4,11 +4,8 @@ use quote::{ToTokens, TokenStreamExt, quote};
 
 impl Field<'_> {
     pub fn generate_default_value(&self) -> TokenStream {
-        if self.is_nullable() {
-            quote! { None }
-        } else {
-            self.value_type.generate_default_value(&self.args)
-        }
+        self.value_type
+            .generate_default_value(&self.args, self.is_nullable())
     }
 
     pub fn generate_env_statement(&self) -> Option<TokenStream> {

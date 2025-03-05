@@ -4,15 +4,23 @@ use quote::{format_ident, quote};
 use syn::{Expr, Lit};
 
 impl FieldValue<'_> {
-    pub fn generate_default_value(&self, args: &FieldArgs) -> TokenStream {
+    pub fn generate_default_value(&self, args: &FieldArgs, nullable: bool) -> TokenStream {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {
-                quote! { Some(Default::default()) }
+                if nullable {
+                    quote! { None }
+                } else {
+                    quote! { Some(Default::default()) }
+                }
             }
             Self::NestedValue { info, .. } => {
-                let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
+                if nullable {
+                    quote! { None }
+                } else {
+                    let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
 
-                quote! { #partial_name::default_values(context)? }
+                    quote! { #partial_name::default_values(context)? }
+                }
             }
             Self::Value { value, .. } => match args.default.as_ref() {
                 Some(expr) => match expr {
@@ -37,7 +45,11 @@ impl FieldValue<'_> {
                     }
                 },
                 _ => {
-                    quote! { Some(Default::default()) }
+                    if nullable {
+                        quote! { None }
+                    } else {
+                        quote! { Some(Default::default()) }
+                    }
                 }
             },
         }

@@ -53,15 +53,23 @@ fn uses_custom_setting_defaults() {
     assert_eq!(result.config.float, 1.32);
 }
 
+fn default_int(_ctx: &()) -> DefaultValueResult<usize> {
+    Ok(Some(456))
+}
+
 #[derive(Debug, Config)]
 pub struct ReqOptDefaults {
     required: usize,
     #[setting(default = 123)]
     required_with_default: usize,
+    #[setting(default = default_int)]
+    required_with_default_fn: usize,
 
     optional: Option<usize>,
-    // #[setting(default = 123)]
-    // optional_with_default: Option<usize>,
+    #[setting(default = 123)]
+    optional_with_default: Option<usize>,
+    #[setting(default = default_int)]
+    optional_with_default_fn: Option<usize>,
 }
 
 #[test]
@@ -70,7 +78,10 @@ fn handles_required_optional_defaults() {
 
     assert_eq!(result.config.required, 0);
     assert_eq!(result.config.required_with_default, 123);
+    assert_eq!(result.config.required_with_default_fn, 456);
     assert_eq!(result.config.optional, None);
+    assert_eq!(result.config.optional_with_default, Some(123));
+    assert_eq!(result.config.optional_with_default_fn, Some(456));
 }
 
 #[test]
@@ -123,7 +134,7 @@ fn sets_defaults_from_context() {
     assert_eq!(result.config.path, PathBuf::from("/root/sub"));
 }
 
-#[derive(Config)]
+#[derive(Debug, Config)]
 pub struct NestedDefaults {
     #[setting(nested)]
     nested: NativeDefaults,
