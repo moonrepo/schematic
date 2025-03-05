@@ -8,6 +8,7 @@
   - [Context](./config/context.md)
   - [Structs & enums](./config/struct/index.md)
     - [Default values](./config/struct/default.md)
+    - [Transforming values](./config/struct/transform.md)
     - [Environment variables](./config/struct/env.md)
     - [Extendable sources](./config/struct/extend.md)
     - [Merge strategies](./config/struct/merge.md)

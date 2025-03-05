@@ -3,11 +3,11 @@
 use schematic::*;
 
 fn validate_string<T, C>(value: &str, _: &T, _: &C, _: bool) -> ValidateResult {
-    if value != "FOO" {
-        return Ok(());
+    if value == "FOO" {
+        return Err(ValidateError::new("invalid string FOO"));
     }
 
-    Err(ValidateError::new("invalid string FOO"))
+    Ok(())
 }
 
 fn transform_string(value: String, _ctx: &()) -> TransformResult<String> {
@@ -49,7 +49,7 @@ fn transforms_values() {
 }
 
 #[test]
-fn errors_for_transformed_field() {
+fn errors_for_invalid_transformed_field() {
     let error = ConfigLoader::<Transforms>::new()
         .code("string: foo", Format::Yaml)
         .unwrap()
@@ -61,4 +61,27 @@ fn errors_for_transformed_field() {
         error.to_full_string(),
         "Failed to validate Transforms. \n  string: invalid string FOO"
     )
+}
+
+#[derive(Debug, Config)]
+pub struct TransformsOptional {
+    #[setting(transform = transform_string)]
+    string: Option<String>,
+    #[setting(transform = transform_number)]
+    number: Option<usize>,
+    #[setting(transform = transform_vec)]
+    vector: Option<Vec<String>>,
+}
+
+#[test]
+fn transforms_optional_values() {
+    let result = ConfigLoader::<TransformsOptional>::new()
+        .code("string: abc", Format::Yaml)
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, Some("ABC".to_owned()));
+    assert_eq!(result.config.number, None);
+    assert_eq!(result.config.vector, None);
 }

@@ -37,9 +37,9 @@ Here's an example of the merge function above.
 
 ```rust
 fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> MergeResult<Vec<T>>> {
-    prev.extend(next);
+	prev.extend(next);
 
-    Ok(Some(prev))
+	Ok(Some(prev))
 }
 
 #[derive(Config)]
