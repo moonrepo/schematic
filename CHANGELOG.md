@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added support for `default` to `Option`al settings.
+
 #### ⚙️ Internal
 
 - Updated dependencies.
