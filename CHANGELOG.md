@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for `default` to `Option`al settings.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.18.0
 
 #### 🚀 Updates
