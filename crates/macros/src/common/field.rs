@@ -97,10 +97,8 @@ impl Field<'_> {
             env_prefix: None,
         };
 
-        if field.args.default.is_some() {
-            if field.is_nested() {
-                panic!("Cannot use defaults with `nested` configs.");
-            }
+        if field.args.default.is_some() && field.is_nested() {
+            panic!("Cannot use defaults with `nested` configs.");
         }
 
         if field.is_required() && !field.is_nullable() {
