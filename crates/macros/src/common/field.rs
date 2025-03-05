@@ -52,6 +52,7 @@ pub struct FieldArgs {
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub required: bool,
+    pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<Expr>,
 
@@ -99,6 +100,10 @@ impl Field<'_> {
 
         if field.args.default.is_some() && field.is_nested() {
             panic!("Cannot use defaults with `nested` configs.");
+        }
+
+        if field.args.transform.is_some() && field.is_nested() {
+            panic!("Cannot use transforms with `nested` configs.");
         }
 
         if field.is_required() && !field.is_nullable() {

@@ -59,6 +59,16 @@ impl Field<'_> {
                     partial.#key = Some(#value);
                 }
             };
+        } else if !self.is_nested() {
+            if let Some(func) = &self.args.transform {
+                let key = self.get_field_key();
+
+                return quote! {
+                    if let Some(data) = partial.#key {
+                        partial.#key = Some(#func(data, context)?);
+                    }
+                };
+            }
         }
 
         quote! {}
