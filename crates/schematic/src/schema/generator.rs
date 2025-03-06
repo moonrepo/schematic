@@ -9,7 +9,7 @@ use std::path::Path;
 /// using a renderer that implements [`SchemaRenderer`].
 #[derive(Debug, Default)]
 pub struct SchemaGenerator {
-    schemas: IndexMap<String, Schema>,
+    pub schemas: IndexMap<String, Schema>,
 }
 
 impl SchemaGenerator {

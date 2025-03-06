@@ -35,6 +35,24 @@ fn make_absolute(value: PathBuf, context: &Context) -> TransformResult<PathBuf> 
 }
 ```
 
+### Nested values
+
+Transformers can also be used on [nested configs](../nested.md), but when defining the transformer
+function, the value being transformed is the _[partial nested config](../partial.md)_, not the final
+one. For example:
+
+```rust
+fn transform_nested(value: PartialChildConfig, context: &Context) -> TransformResult<PartialChildConfig> {
+	Ok(value)
+}
+
+#[derive(Config)]
+struct ParentConfig {
+	#[setting(nested, transform = transform_nested)]
+	pub child: ChildConfig,
+}
+```
+
 ### Context handling
 
 If you're not using [context](../context.md), you can use `()` as the context type, or rely on
