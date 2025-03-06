@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::*;
+use std::collections::HashMap;
 
 fn validate_string<T, C>(value: &str, _: &T, _: &C, _: bool) -> ValidateResult {
     if value == "FOO" {
@@ -23,7 +24,7 @@ fn transform_vec(mut value: Vec<String>, _ctx: &()) -> TransformResult<Vec<Strin
     Ok(value)
 }
 
-#[derive(Debug, Config)]
+#[derive(Debug, Config, PartialEq)]
 pub struct Transforms {
     #[setting(transform = transform_string, validate = validate_string)]
     string: String,
@@ -84,4 +85,53 @@ fn transforms_optional_values() {
     assert_eq!(result.config.string, Some("ABC".to_owned()));
     assert_eq!(result.config.number, None);
     assert_eq!(result.config.vector, None);
+}
+
+fn transform_nested_vec(
+    mut value: Vec<PartialTransforms>,
+    _ctx: &(),
+) -> TransformResult<Vec<PartialTransforms>> {
+    value.iter_mut().for_each(|v| {
+        v.number = Some(1);
+    });
+
+    Ok(value)
+}
+
+fn transform_nested_map(
+    value: HashMap<usize, PartialTransforms>,
+    _ctx: &(),
+) -> TransformResult<HashMap<usize, PartialTransforms>> {
+    Ok(value)
+}
+
+#[derive(Debug, Config)]
+pub struct TransformsNested {
+    #[setting(nested, transform = transform_nested_vec)]
+    list: Vec<Transforms>,
+    #[setting(nested, transform = transform_nested_map)]
+    map: HashMap<usize, Transforms>,
+}
+
+#[test]
+fn transforms_nested_values() {
+    let result = ConfigLoader::<TransformsNested>::new()
+        .code(
+            r#"
+list:
+  - string: xyz"#,
+            Format::Yaml,
+        )
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(
+        result.config.list,
+        vec![Transforms {
+            string: "XYZ".to_owned(),
+            number: 1,
+            vector: vec!["item".to_owned()],
+        }]
+    );
 }
