@@ -52,6 +52,7 @@ pub struct FieldArgs {
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub required: bool,
+    pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<Expr>,
 

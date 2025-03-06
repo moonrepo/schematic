@@ -37,6 +37,7 @@ macro_rules! derive_enum {
 }
 
 pub type DefaultValueResult<T> = std::result::Result<Option<T>, HandlerError>;
+pub type TransformResult<T> = std::result::Result<T, HandlerError>;
 
 #[cfg(feature = "env")]
 pub type ParseEnvResult<T> = std::result::Result<Option<T>, HandlerError>;

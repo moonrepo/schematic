@@ -4,7 +4,9 @@
 
 #### 🚀 Updates
 
-- Added support for `default` to `Option`al settings.
+- Added `#[setting(transform)]`, which allows defined values to be transformed before being
+  finalized.
+- Added support for `#[setting(default)]` to `Option`al settings.
 
 #### ⚙️ Internal
 

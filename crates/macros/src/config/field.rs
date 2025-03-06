@@ -51,17 +51,32 @@ impl Field<'_> {
     }
 
     pub fn generate_finalize_statement(&self) -> TokenStream {
-        if let Some(value) = self.value_type.get_finalize_value() {
-            let key = self.get_field_key();
+        let key = self.get_field_key();
 
-            return quote! {
-                if let Some(data) = partial.#key {
-                    partial.#key = Some(#value);
+        match (self.value_type.get_finalize_value(), &self.args.transform) {
+            (Some(value), Some(func)) => {
+                quote! {
+                    if let Some(data) = partial.#key {
+                        partial.#key = Some(#func(#value, context)?);
+                    }
                 }
-            };
+            }
+            (Some(value), None) => {
+                quote! {
+                    if let Some(data) = partial.#key {
+                        partial.#key = Some(#value);
+                    }
+                }
+            }
+            (None, Some(func)) => {
+                quote! {
+                    if let Some(data) = partial.#key {
+                        partial.#key = Some(#func(data, context)?);
+                    }
+                }
+            }
+            _ => quote! {},
         }
-
-        quote! {}
     }
 
     pub fn generate_from_partial_value(&self) -> TokenStream {
