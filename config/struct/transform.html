@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Merge strategies - Schematic</title>
+        <title>Transforming values - Schematic</title>
 
 
         <!-- Custom HTML head -->
@@ -155,49 +155,52 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="merge-strategies"><a class="header" href="#merge-strategies">Merge strategies</a></h1>
-<p>A common requirement for configuration is to merge multiple sources/layers into a final result. By
-default Schematic will replace the previous setting value with the next value if the next value is
-<code>Some</code>, but sometimes you want far more control, like shallow or deep merging collections.</p>
-<p>This can be achieved with the <code>#[setting(merge)]</code> attribute field, which requires a reference to a
-function to call.</p>
+                        <h1 id="transforming-values"><a class="header" href="#transforming-values">Transforming values</a></h1>
+<p>Sometimes a value is configured by a user, but it needs to be transformed in some way to be usable,
+for example, expanding file system paths to absolute from relative.</p>
+<p>This can be achieved with the <code>#[setting(transform)]</code> attribute field, which requires a reference to
+a function to call. Only values with a defined value are transformed, while optional values remain
+<code>None</code>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
 struct AppConfig {
-	#[setting(merge = schematic::merge::append_vec)]
-	pub allowed_hosts: Vec&lt;String&gt;,
-}
-
-#[derive(Config)]
-enum Projects {
-	#[setting(merge = schematic::merge::append_vec)]
-	List(Vec&lt;String&gt;),
-	// ...
+	#[setting(transform = make_absolute)]
+	pub env_file: Option&lt;PathBuf&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
 <blockquote>
-<p>We provide a handful of built-in merge functions in the
-<a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
+<p>Transformations happen during the finalize phase, <em>after</em> <a href="./env.html">environment variables</a> are
+inherited, and <em>before</em> it is <a href="./validate.html">validated</a>.</p>
 </blockquote>
-<h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
-<p>You can also define your own function for merging values.</p>
-<p>When defining a custom <code>merge</code> function, the previous value, next value, and
-<a href="../context.html">context</a> are passed as arguments, and the function must return an optional merged
-result. If <code>None</code> is returned, neither value will be used.</p>
-<p>Here’s an example of the merge function above.</p>
+<h2 id="transform-handler-function"><a class="header" href="#transform-handler-function">Transform handler function</a></h2>
+<p>When defining a custom <code>transform</code> function, the defined value and <a href="../context.html">context</a> are
+passed as arguments, and the function must return the transformed result.</p>
+<p>Here’s an example of the transform function above.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; MergeResult&lt;Vec&lt;T&gt;&gt;&gt; {
-	prev.extend(next);
-
-	Ok(Some(prev))
+</span>fn make_absolute(value: PathBuf, context: &amp;Context) -&gt; TransformResult&lt;PathBuf&gt; {
+	Ok(if value.is_absolute() {
+		value
+	} else {
+		context.root.join(value)
+	})
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="nested-values"><a class="header" href="#nested-values">Nested values</a></h3>
+<p>Transformers can also be used on <a href="../nested.html">nested configs</a>, but when defining the transformer
+function, the value being transformed is the <em><a href="../partial.html">partial nested config</a></em>, not the final
+one. For example:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn transform_nested(value: PartialChildConfig, context: &amp;Context) -&gt; TransformResult&lt;PartialChildConfig&gt; {
+	Ok(value)
 }
 
 #[derive(Config)]
-struct ExampleConfig {
-	#[setting(merge = append_vec)]
-	pub field: Vec&lt;String&gt;,
+struct ParentConfig {
+	#[setting(nested, transform = transform_nested)]
+	pub child: ChildConfig,
 }
 <span class="boring">}</span></code></pre></pre>
 <h3 id="context-handling"><a class="header" href="#context-handling">Context handling</a></h3>
@@ -205,11 +208,11 @@ struct ExampleConfig {
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; MergeResult&lt;T&gt; {
+</span>fn using_unit_type&lt;T&gt;(value: T, _: &amp;()) -&gt; TransformResult&lt;T&gt; {
 	// ...
 }
 
-fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;T&gt; {
+fn using_generics&lt;T, C&gt;(value: T, _: &amp;C) -&gt; TransformResult&lt;T&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>
@@ -218,11 +221,11 @@ fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../config/struct/extend.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../config/struct/default.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../../config/struct/validate.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../config/struct/env.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -232,11 +235,11 @@ fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../config/struct/extend.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../config/struct/default.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../../config/struct/validate.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../config/struct/env.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

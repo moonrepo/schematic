@@ -633,6 +633,67 @@ fn using_generics&lt;C&gt;(_: &amp;C) -&gt; DefaultValueResult&lt;usize&gt; {
 	// ...
 }
 <span class="boring">}</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="transforming-values"><a class="header" href="#transforming-values">Transforming values</a></h1>
+<p>Sometimes a value is configured by a user, but it needs to be transformed in some way to be usable,
+for example, expanding file system paths to absolute from relative.</p>
+<p>This can be achieved with the <code>#[setting(transform)]</code> attribute field, which requires a reference to
+a function to call. Only values with a defined value are transformed, while optional values remain
+<code>None</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(transform = make_absolute)]
+	pub env_file: Option&lt;PathBuf&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<blockquote>
+<p>Transformations happen during the finalize phase, <em>after</em> <a href="config/struct/./env.html">environment variables</a> are
+inherited, and <em>before</em> it is <a href="config/struct/./validate.html">validated</a>.</p>
+</blockquote>
+<h2 id="transform-handler-function"><a class="header" href="#transform-handler-function">Transform handler function</a></h2>
+<p>When defining a custom <code>transform</code> function, the defined value and <a href="config/struct/../context.html">context</a> are
+passed as arguments, and the function must return the transformed result.</p>
+<p>Here’s an example of the transform function above.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn make_absolute(value: PathBuf, context: &amp;Context) -&gt; TransformResult&lt;PathBuf&gt; {
+	Ok(if value.is_absolute() {
+		value
+	} else {
+		context.root.join(value)
+	})
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="nested-values"><a class="header" href="#nested-values">Nested values</a></h3>
+<p>Transformers can also be used on <a href="config/struct/../nested.html">nested configs</a>, but when defining the transformer
+function, the value being transformed is the <em><a href="config/struct/../partial.html">partial nested config</a></em>, not the final
+one. For example:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn transform_nested(value: PartialChildConfig, context: &amp;Context) -&gt; TransformResult&lt;PartialChildConfig&gt; {
+	Ok(value)
+}
+
+#[derive(Config)]
+struct ParentConfig {
+	#[setting(nested, transform = transform_nested)]
+	pub child: ChildConfig,
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="context-handling-1"><a class="header" href="#context-handling-1">Context handling</a></h3>
+<p>If you’re not using <a href="config/struct/../context.html">context</a>, you can use <code>()</code> as the context type, or rely on
+generic inferrence.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn using_unit_type&lt;T&gt;(value: T, _: &amp;()) -&gt; TransformResult&lt;T&gt; {
+	// ...
+}
+
+fn using_generics&lt;T, C&gt;(value: T, _: &amp;C) -&gt; TransformResult&lt;T&gt; {
+	// ...
+}
+<span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
 <blockquote>
 <p>Requires the <code>env</code> Cargo feature, which is enabled by default.</p>
@@ -804,9 +865,9 @@ result. If <code>None</code> is returned, neither value will be used.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; MergeResult&lt;Vec&lt;T&gt;&gt;&gt; {
-    prev.extend(next);
+	prev.extend(next);
 
-    Ok(Some(prev))
+	Ok(Some(prev))
 }
 
 #[derive(Config)]
@@ -815,7 +876,7 @@ struct ExampleConfig {
 	pub field: Vec&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
-<h3 id="context-handling-1"><a class="header" href="#context-handling-1">Context handling</a></h3>
+<h3 id="context-handling-2"><a class="header" href="#context-handling-2">Context handling</a></h3>
 <p>If you’re not using <a href="config/struct/../context.html">context</a>, you can use <code>()</code> as the context type, or rely on
 generic inferrence.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
