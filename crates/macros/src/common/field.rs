@@ -41,7 +41,7 @@ pub struct FieldArgs {
     pub exclude: bool,
 
     // config
-    #[darling(with = "preserve_str_literal", map = "Some")]
+    #[darling(with = preserve_str_literal, map = "Some")]
     pub default: Option<Expr>,
     #[cfg(feature = "env")]
     pub env: Option<String>,
