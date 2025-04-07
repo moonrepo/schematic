@@ -23,6 +23,19 @@ pub struct Config {
 // }
 
 #[test]
+fn supports_bom() {
+    let a = "\u{feff}---\nstring: foo";
+
+    let result = ConfigLoader::<Config>::new()
+        .code(a, Format::Yaml)
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "foo");
+}
+
+#[test]
 fn handles_one_layer() {
     let a = r"
 string: foo

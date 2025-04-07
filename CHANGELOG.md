@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Support parsing files with a byte-order mark (BOM).
+
+#### ⚙️ Internal
+
+- Updated to Rust v1.86.
+
 ## 0.18.2
 
 #### ⚙️ Internal
