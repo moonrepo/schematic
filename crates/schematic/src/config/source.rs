@@ -106,7 +106,7 @@ impl Source {
         D: DeserializeOwned + Default,
     {
         match self {
-            Source::Code { code, format } => format.parse(name, code, None),
+            Source::Code { code, format } => format.parse(name, strip_bom(code), None),
             Source::File {
                 path,
                 format,
@@ -125,7 +125,7 @@ impl Source {
                     return Ok(D::default());
                 };
 
-                format.parse(name, &content, Some(path))
+                format.parse(name, strip_bom(&content), Some(path))
             }
             #[cfg(feature = "url")]
             Source::Url { url, format } => {
@@ -151,7 +151,11 @@ impl Source {
                     body
                 };
 
-                format.parse(name, &content, cacher.get_file_path(url)?.as_deref())
+                format.parse(
+                    name,
+                    strip_bom(&content),
+                    cacher.get_file_path(url)?.as_deref(),
+                )
             }
         }
     }
@@ -200,4 +204,9 @@ pub fn is_secure_url(value: &str) -> bool {
     }
 
     value.starts_with("https://")
+}
+
+/// Strip a leading BOM from the string.
+pub fn strip_bom(content: &str) -> &str {
+    content.trim_start_matches("\u{feff}")
 }
