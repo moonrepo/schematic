@@ -1902,7 +1902,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.2"
+version = "0.18.3"
 dependencies = [
  "chrono",
  "garde",
