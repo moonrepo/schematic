@@ -45,7 +45,7 @@ pub trait PartialConfig:
     ///
     /// - Current [`None`] values are replaced with the next value if [`Some`].
     /// - Current [`Some`] values are merged with the next value if [`Some`],
-    ///     using the merge function from `#[setting(merge)]`.
+    ///   using the merge function from `#[setting(merge)]`.
     fn merge(&mut self, context: &Self::Context, next: Self) -> Result<(), ConfigError>;
 
     /// Recursively validate the configuration with the provided context.
