@@ -1,6 +1,6 @@
 [package]
 name = "schematic_types"
-version = "0.10.2"
+version = "0.10.3"
 edition = "2024"
 license = "MIT"
 description = "Shapes and types for defining schemas for Rust types."

@@ -1,6 +1,6 @@
 [package]
 name = "schematic"
-version = "0.18.5"
+version = "0.18.6"
 edition = "2024"
 license = "MIT"
 description = "A layered serde configuration and schema library."
@@ -18,8 +18,8 @@ pre-release-replacements = [
 all-features = true
 
 [dependencies]
-schematic_macros = { version = "0.18.4", path = "../macros" }
-schematic_types = { version = "0.10.2", path = "../types" }
+schematic_macros = { version = "0.18.5", path = "../macros" }
+schematic_types = { version = "0.10.3", path = "../types" }
 miette = { workspace = true }
 thiserror = "2.0.12"
 tracing = { workspace = true }
