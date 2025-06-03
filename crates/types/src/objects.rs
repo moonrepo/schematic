@@ -1,5 +1,6 @@
 use crate::*;
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -35,6 +36,12 @@ impl ObjectType {
             value_type: Box::new(value_type.into()),
             ..ObjectType::default()
         }
+    }
+}
+
+impl fmt::Display for ObjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{{{}: {}}}", self.key_type, self.value_type)
     }
 }
 

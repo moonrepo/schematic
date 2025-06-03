@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
@@ -8,6 +10,23 @@ pub enum LiteralValue {
     Int(isize),
     UInt(usize),
     String(String),
+}
+
+impl fmt::Display for LiteralValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Bool(inner) => inner.to_string(),
+                Self::F32(inner) => inner.to_string(),
+                Self::F64(inner) => inner.to_string(),
+                Self::Int(inner) => inner.to_string(),
+                Self::UInt(inner) => inner.to_string(),
+                Self::String(inner) => format!("\"{inner}\""),
+            }
+        )
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -29,5 +48,11 @@ impl LiteralType {
             format: None,
             value,
         }
+    }
+}
+
+impl fmt::Display for LiteralType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.value)
     }
 }

@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -16,6 +17,12 @@ impl BooleanType {
         BooleanType {
             default: Some(LiteralValue::Bool(value)),
         }
+    }
+}
+
+impl fmt::Display for BooleanType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "bool")
     }
 }
 

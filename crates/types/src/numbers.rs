@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -109,6 +110,18 @@ impl IntegerType {
         IntegerType {
             kind,
             ..IntegerType::default()
+        }
+    }
+}
+
+impl fmt::Display for IntegerType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = format!("{:?}", self.kind).to_lowercase();
+
+        if let Some(format) = &self.format {
+            write!(f, "{kind}:{format}")
+        } else {
+            write!(f, "{kind}")
         }
     }
 }
@@ -229,6 +242,18 @@ impl FloatType {
         FloatType {
             kind,
             ..FloatType::default()
+        }
+    }
+}
+
+impl fmt::Display for FloatType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = format!("{:?}", self.kind).to_lowercase();
+
+        if let Some(format) = &self.format {
+            write!(f, "{kind}:{format}")
+        } else {
+            write!(f, "{kind}")
         }
     }
 }

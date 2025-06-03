@@ -1,5 +1,6 @@
 use crate::*;
 pub use indexmap::IndexMap;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -79,5 +80,19 @@ impl EnumType {
             values,
             variants: Some(variants),
         }
+    }
+}
+
+impl fmt::Display for EnumType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.values
+                .iter()
+                .map(|item| item.to_string())
+                .collect::<Vec<_>>()
+                .join(" | ")
+        )
     }
 }

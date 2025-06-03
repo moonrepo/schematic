@@ -1,5 +1,6 @@
 use crate::*;
 use std::collections::{BTreeSet, HashSet};
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -50,6 +51,12 @@ impl ArrayType {
             items_type: Box::new(items_type.into()),
             ..ArrayType::default()
         }
+    }
+}
+
+impl fmt::Display for ArrayType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}]", self.items_type)
     }
 }
 
