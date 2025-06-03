@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -74,5 +75,19 @@ impl UnionType {
                 .collect(),
             ..UnionType::default()
         }
+    }
+}
+
+impl fmt::Display for UnionType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.variants_types
+                .iter()
+                .map(|item| item.to_string())
+                .collect::<Vec<_>>()
+                .join(" | ")
+        )
     }
 }

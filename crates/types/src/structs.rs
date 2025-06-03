@@ -1,5 +1,6 @@
 use crate::schema::SchemaField;
 use std::collections::BTreeMap;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -35,5 +36,11 @@ impl StructType {
 
     pub fn is_hidden(&self) -> bool {
         self.fields.values().all(|field| field.hidden)
+    }
+}
+
+impl fmt::Display for StructType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "struct")
     }
 }

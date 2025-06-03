@@ -10,6 +10,7 @@ use crate::strings::*;
 use crate::structs::*;
 use crate::tuples::*;
 use crate::unions::*;
+use std::fmt;
 
 /// All possible types within a schema.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -127,3 +128,28 @@ impl From<SchemaType> for Schema {
 }
 
 impl Schematic for SchemaType {}
+
+impl fmt::Display for SchemaType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Null => "null".to_string(),
+                Self::Unknown => "unknown".to_string(),
+                Self::Array(inner) => inner.to_string(),
+                Self::Boolean(inner) => inner.to_string(),
+                Self::Enum(inner) => inner.to_string(),
+                Self::Float(inner) => inner.to_string(),
+                Self::Integer(inner) => inner.to_string(),
+                Self::Literal(inner) => inner.to_string(),
+                Self::Object(inner) => inner.to_string(),
+                Self::Reference(inner) => inner.to_string(),
+                Self::Struct(inner) => inner.to_string(),
+                Self::String(inner) => inner.to_string(),
+                Self::Tuple(inner) => inner.to_string(),
+                Self::Union(inner) => inner.to_string(),
+            }
+        )
+    }
+}

@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -49,6 +50,20 @@ impl StringType {
         StringType {
             default: Some(LiteralValue::String(value.as_ref().to_owned())),
             ..StringType::default()
+        }
+    }
+}
+
+impl fmt::Display for StringType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.max_length.is_some_and(|max| max == 1)
+            && self.min_length.is_some_and(|min| min == 1)
+        {
+            write!(f, "char")
+        } else if let Some(format) = &self.format {
+            write!(f, "string:{format}")
+        } else {
+            write!(f, "string")
         }
     }
 }

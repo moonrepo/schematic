@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -19,6 +20,20 @@ impl TupleType {
                 .map(|inner| Box::new(inner.into()))
                 .collect(),
         }
+    }
+}
+
+impl fmt::Display for TupleType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "({})",
+            self.items_types
+                .iter()
+                .map(|item| item.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
     }
 }
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `Display` to all schema types, so that TypeScript-like type strings can be generated.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.18.5
 
 #### ⚙️ Internal
