@@ -12,10 +12,11 @@ fn test_builder<T: Schematic>() -> Schema {
 }
 
 macro_rules! assert_build {
-    ($ty:ty, $expected:expr_2021) => {
+    ($ty:ty, $expected:expr, $val:literal) => {
         let schema = test_builder::<$ty>();
 
         assert_eq!(schema.ty, $expected);
+        assert_eq!(schema.to_string(), $val);
 
         let input = serde_json::to_string_pretty(&schema).unwrap();
 
@@ -43,22 +44,23 @@ impl Schematic for Named {
 
 #[test]
 fn primitives() {
-    assert_build!((), SchemaType::Null);
+    assert_build!((), SchemaType::Null, "null");
 
-    assert_build!(bool, SchemaType::Boolean(Box::default()));
+    assert_build!(bool, SchemaType::Boolean(Box::default()), "bool");
 
-    assert_build!(&bool, SchemaType::Boolean(Box::default()));
+    assert_build!(&bool, SchemaType::Boolean(Box::default()), "bool");
 
-    assert_build!(&mut bool, SchemaType::Boolean(Box::default()));
+    assert_build!(&mut bool, SchemaType::Boolean(Box::default()), "bool");
 
-    assert_build!(Box<bool>, SchemaType::Boolean(Box::default()));
+    assert_build!(Box<bool>, SchemaType::Boolean(Box::default()), "bool");
 
     assert_build!(
         Option<bool>,
         SchemaType::Union(Box::new(UnionType::new_any(vec![
             SchemaType::Boolean(Box::default()),
             SchemaType::Null
-        ])))
+        ]))),
+        "bool | null"
     );
 }
 
@@ -66,12 +68,14 @@ fn primitives() {
 fn arrays() {
     assert_build!(
         Vec<String>,
-        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default()))))
+        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default())))),
+        "[string]"
     );
 
     assert_build!(
         &[String],
-        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default()))))
+        SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::default())))),
+        "[string]"
     );
 
     assert_build!(
@@ -81,7 +85,8 @@ fn arrays() {
             max_length: Some(3),
             min_length: Some(3),
             ..ArrayType::default()
-        }))
+        })),
+        "[string]"
     );
 
     assert_build!(
@@ -90,7 +95,8 @@ fn arrays() {
             items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
             ..ArrayType::default()
-        }))
+        })),
+        "[string]"
     );
 
     assert_build!(
@@ -99,7 +105,8 @@ fn arrays() {
             items_type: Box::new(Schema::string(StringType::default())),
             unique: Some(true),
             ..ArrayType::default()
-        }))
+        })),
+        "[string]"
     );
 }
 
@@ -107,12 +114,14 @@ fn arrays() {
 fn integers() {
     assert_build!(
         u8,
-        SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U8)))
+        SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U8))),
+        "u8"
     );
 
     assert_build!(
         i32,
-        SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I32)))
+        SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I32))),
+        "i32"
     );
 }
 
@@ -120,12 +129,14 @@ fn integers() {
 fn floats() {
     assert_build!(
         f32,
-        SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32)))
+        SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32))),
+        "f32"
     );
 
     assert_build!(
         f64,
-        SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F64)))
+        SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F64))),
+        "f64"
     );
 }
 
@@ -136,7 +147,8 @@ fn objects() {
         SchemaType::Object(Box::new(ObjectType::new(
             Schema::string(StringType::default()),
             test_builder::<Named>(),
-        )))
+        ))),
+        "{string: Named}"
     );
 
     assert_build!(
@@ -144,7 +156,8 @@ fn objects() {
         SchemaType::Object(Box::new(ObjectType::new(
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::U128))),
             test_builder::<Named>(),
-        )))
+        ))),
+        "{u128: Named}"
     );
 }
 
@@ -156,19 +169,21 @@ fn strings() {
             max_length: Some(1),
             min_length: Some(1),
             ..StringType::default()
-        }))
+        })),
+        "char"
     );
 
-    assert_build!(&str, SchemaType::String(Box::default()));
+    assert_build!(&str, SchemaType::String(Box::default()), "string");
 
-    assert_build!(String, SchemaType::String(Box::default()));
+    assert_build!(String, SchemaType::String(Box::default()), "string");
 
     assert_build!(
         &Path,
         SchemaType::String(Box::new(StringType {
             format: Some("path".into()),
             ..StringType::default()
-        }))
+        })),
+        "string:path"
     );
 
     assert_build!(
@@ -176,7 +191,8 @@ fn strings() {
         SchemaType::String(Box::new(StringType {
             format: Some("path".into()),
             ..StringType::default()
-        }))
+        })),
+        "string:path"
     );
 
     assert_build!(
@@ -184,7 +200,8 @@ fn strings() {
         SchemaType::String(Box::new(StringType {
             format: Some("ipv4".into()),
             ..StringType::default()
-        }))
+        })),
+        "string:ipv4"
     );
 
     assert_build!(
@@ -192,7 +209,8 @@ fn strings() {
         SchemaType::String(Box::new(StringType {
             format: Some("duration".into()),
             ..StringType::default()
-        }))
+        })),
+        "string:duration"
     );
 }
 
@@ -229,7 +247,8 @@ fn structs() {
                     IntegerKind::Usize
                 ))))
             ),
-        ])))
+        ]))),
+        "TestStruct"
     );
 }
 
@@ -242,7 +261,8 @@ fn tuples() {
             SchemaType::Integer(Box::new(IntegerType::new_kind(IntegerKind::I16))),
             SchemaType::Float(Box::new(FloatType::new_kind(FloatKind::F32))),
             SchemaType::String(Box::default())
-        ])))
+        ]))),
+        "(bool, i16, f32, string)"
     );
 }
 

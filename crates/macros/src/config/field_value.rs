@@ -55,6 +55,28 @@ impl FieldValue<'_> {
         }
     }
 
+    pub fn generate_env_value(&self, args: &FieldArgs, env_key: &str) -> Option<TokenStream> {
+        match self {
+            Self::NestedValue { info, .. } => {
+                let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
+
+                Some(quote! { track_env(#partial_name::env_values()?, &mut tracker) })
+            }
+            Self::Value { .. } => Some(match &args.parse_env {
+                Some(parse_env) => {
+                    quote! {
+                        track_env(parse_env_value(#env_key, #parse_env)?, &mut tracker)
+                    }
+                }
+                _ => {
+                    quote! {
+                        track_env(default_env_value(#env_key)?, &mut tracker)
+                    }
+                }
+            }),
+            _ => None,
+        }
+    }
     pub fn get_finalize_value(&self) -> Option<TokenStream> {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {

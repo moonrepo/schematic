@@ -163,7 +163,7 @@ fn loads_env_vars_for_nested() {
         .unwrap();
 
     assert_eq!(result.config.nested.string, "foo");
-    assert!(result.config.opt_nested.is_none());
+    assert_eq!(result.config.opt_nested.unwrap().string, "foo");
 }
 
 #[test]
@@ -197,6 +197,14 @@ pub struct EnvVarsPrefixed {
     list2: Vec<usize>,
     #[setting(nested)]
     nested: EnvVarsNested,
+}
+
+#[derive(Debug, Config)]
+pub struct EnvVarsPrefixedContainer {
+    #[setting(nested)]
+    nested: EnvVarsPrefixed,
+    #[setting(nested)]
+    opt_nested: Option<EnvVarsPrefixed>,
 }
 
 #[test]

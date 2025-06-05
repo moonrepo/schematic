@@ -10,6 +10,13 @@ pub fn handle_default_result<T, E: std::error::Error>(
 }
 
 #[cfg(feature = "env")]
+pub fn track_env<T>(value: Option<T>, tracker: &mut std::collections::HashSet<bool>) -> Option<T> {
+    value.inspect(|_| {
+        tracker.insert(true);
+    })
+}
+
+#[cfg(feature = "env")]
 pub fn default_env_value<T: FromStr>(key: &str) -> crate::config::ParseEnvResult<T> {
     parse_env_value(key, |value| parse_value(value).map(|v| Some(v)))
 }

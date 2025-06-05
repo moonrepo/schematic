@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.18.7
+
+#### 🐞 Fixes
+
+- Fixed an issue where nested optional configs (`setting: Option<Config>`) would not be marked as
+  some when an applicable environment variable is set.
+
+## 0.18.6
+
+#### 🚀 Updates
+
+- Added `Display` to all schema types, so that TypeScript-like type strings can be generated.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
+## 0.18.5
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.18.4
 
 #### ⚙️ Internal

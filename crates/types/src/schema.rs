@@ -1,4 +1,5 @@
 use crate::*;
+use std::fmt;
 use std::ops::{Deref, DerefMut};
 
 /// Describes the metadata and shape of a type.
@@ -165,6 +166,16 @@ impl Schema {
             }
             _ => {}
         };
+    }
+}
+
+impl fmt::Display for Schema {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.name.is_some() && (self.ty.is_struct() || self.ty.is_reference()) {
+            write!(f, "{}", self.name.as_ref().unwrap())
+        } else {
+            write!(f, "{}", self.ty)
+        }
     }
 }
 
