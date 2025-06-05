@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where nested optional configs (`setting: Option<Config>`) would not be marked as
+  some when an applicable environment variable is set.
+
 ## 0.18.6
 
 #### 🚀 Updates
