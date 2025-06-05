@@ -74,9 +74,14 @@ impl Container<'_> {
                     }
                 } else {
                     quote! {
+                        let mut tracker = std::collections::HashSet::new();
                         let mut partial = Self::default();
                         #(#env_stmts)*
-                        Ok(Some(partial))
+                        Ok(if tracker.is_empty() {
+                            None
+                        } else {
+                            Some(partial)
+                        })
                     }
                 }
             }

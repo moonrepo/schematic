@@ -8,15 +8,23 @@ impl Field<'_> {
             .generate_default_value(&self.args, self.is_nullable())
     }
 
+    #[cfg(not(feature = "env"))]
     pub fn generate_env_statement(&self) -> Option<TokenStream> {
+        None
+    }
+
+    #[cfg(feature = "env")]
+    pub fn generate_env_statement(&self) -> Option<TokenStream> {
+        let key = self.get_field_key();
+
         if self.is_nested() {
-            return None;
+            return self
+                .value_type
+                .generate_env_value(&self.args, "")
+                .map(|value| quote! { partial.#key = #value; });
         }
 
-        let env = self.get_env_var();
-
-        if env.is_none() {
-            #[cfg(feature = "env")]
+        let Some(env_key) = self.get_env_var() else {
             if self.args.parse_env.is_some() {
                 panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
             }
@@ -24,30 +32,9 @@ impl Field<'_> {
             return None;
         };
 
-        #[cfg(feature = "env")]
-        {
-            let value = match &self.args.parse_env {
-                Some(parse_env) => {
-                    quote! {
-                        parse_env_value(#env, #parse_env)?
-                    }
-                }
-                _ => {
-                    quote! {
-                        default_env_value(#env)?
-                    }
-                }
-            };
-
-            let key = self.get_field_key();
-
-            Some(quote! { partial.#key = #value; })
-        }
-
-        #[cfg(not(feature = "env"))]
-        {
-            None
-        }
+        self.value_type
+            .generate_env_value(&self.args, &env_key)
+            .map(|value| quote! { partial.#key = #value; })
     }
 
     pub fn generate_finalize_statement(&self) -> TokenStream {
