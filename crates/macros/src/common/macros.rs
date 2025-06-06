@@ -1,8 +1,9 @@
 use crate::common::{Container, Field, SerdeMeta, TaggedFormat, Variant};
 use crate::utils::extract_common_attrs;
-use darling::FromDeriveInput;
+use darling::ast::NestedMeta;
+use darling::{FromDeriveInput, FromMeta};
 use proc_macro2::{Ident, TokenStream};
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 
 // #[serde()]
@@ -35,6 +36,7 @@ pub struct MacroArgs {
     // config
     pub allow_unknown_fields: bool,
     pub context: Option<ExprPath>,
+    pub partial: PartialAttr,
     #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
 
@@ -43,6 +45,28 @@ pub struct MacroArgs {
     pub rename_all: Option<String>,
     pub rename_all_fields: Option<String>,
     pub serde: SerdeMeta,
+}
+
+#[derive(Default)]
+pub struct PartialAttr {
+    meta: Vec<NestedMeta>,
+}
+
+impl ToTokens for PartialAttr {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attrs: Vec<_> = self.meta.iter().map(|m| m.to_token_stream()).collect();
+        if !attrs.is_empty() {
+            tokens.extend(quote! {#[#(#attrs),*]});
+        }
+    }
+}
+
+impl FromMeta for PartialAttr {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        Ok(Self {
+            meta: items.to_vec(),
+        })
+    }
 }
 
 pub struct Macro<'l> {
@@ -266,6 +290,8 @@ impl<'l> Macro<'l> {
         for attr in &self.attrs {
             attrs.push(quote! { #attr });
         }
+        let partial = &self.args.partial;
+        attrs.push(quote! { #partial });
 
         attrs
     }

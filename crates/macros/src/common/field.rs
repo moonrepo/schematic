@@ -1,4 +1,5 @@
 use crate::common::FieldValue;
+use crate::common::PartialAttr;
 use crate::common::macros::ContainerSerdeArgs;
 use crate::utils::{
     extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
@@ -55,6 +56,7 @@ pub struct FieldArgs {
     pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<Expr>,
+    pub partial: PartialAttr,
 
     // serde
     pub alias: Option<String>,
@@ -337,6 +339,8 @@ impl ToTokens for Field<'_> {
         for attr in &self.attrs {
             attrs.push(quote! { #attr });
         }
+        let partial = &self.args.partial;
+        attrs.push(quote! {#partial});
 
         if let Some(name) = &self.name {
             tokens.extend(quote! {
