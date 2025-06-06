@@ -213,6 +213,26 @@ source, instead of everything! A common complaint of serde’s strictness.</p>
 <li>Validating current values with <a href="./struct/validate.html">validate functions</a>.</li>
 <li>Declaring <a href="./struct/extend.html">extendable sources</a>.</li>
 </ul>
+<h2 id="partial-attribute-forwarding"><a class="header" href="#partial-attribute-forwarding">Partial Attribute Forwarding</a></h2>
+<p>Attributes can be forwarded to the generated partial struct using the <code>#[config(partial())]</code> attribute on structs and enums.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(derive_more::AsRef))]
+struct ExampleConfig {
+	//
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Fields attributes can be forwarded using <code>#[setting(partial())]</code>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(derive_more::AsRef))]
+struct ExampleConfig {
+	#[setting(partial(as_ref))]
+	port: usize
+}
+<span class="boring">}</span></code></pre></pre>
 
                     </main>
 
