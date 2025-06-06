@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `#[config(partial())]` to containers, allow derives to be set and applied to the generated
+  partial configs.
+
 ## 0.18.7
 
 #### 🐞 Fixes
