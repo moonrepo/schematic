@@ -1,5 +1,13 @@
 # Changelog
 
+## Next
+
+#### 🚀 Updates
+
+- Added support for explicit Serde deserialize and serialize renaming on containers and fields:
+  `#[serde(rename(deserialize = "de_name", serialize = "ser_name"))]`.
+- Updated Serde `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
+
 ## 0.19.1
 
 #### 🚀 Updates
