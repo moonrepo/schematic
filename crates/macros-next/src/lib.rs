@@ -1,4 +1,7 @@
 mod args;
+mod container;
+mod field;
+mod variant;
 
 // mod common;
 // mod utils;
@@ -33,11 +36,11 @@ pub fn config_enum(item: TokenStream) -> TokenStream {
 }
 
 // #[derive(Schematic)]
-#[cfg(feature = "schema")]
-#[proc_macro_derive(Schematic, attributes(schematic, schema))]
-pub fn schematic(item: TokenStream) -> TokenStream {
-    let input: DeriveInput = parse_macro_input!(item);
-    let output = schematic::SchematicMacro(Macro::from(&input));
+// #[cfg(feature = "schema")]
+// #[proc_macro_derive(Schematic, attributes(schematic, schema))]
+// pub fn schematic(item: TokenStream) -> TokenStream {
+//     let input: DeriveInput = parse_macro_input!(item);
+//     let output = schematic::SchematicMacro(Macro::from(&input));
 
-    quote! { #output }.into()
-}
+//     quote! { #output }.into()
+// }
