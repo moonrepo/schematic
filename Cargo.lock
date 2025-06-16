@@ -1933,6 +1933,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "schematic_core"
+version = "0.18.7"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "schematic_core",
+ "starbase_sandbox",
+ "syn 2.0.101",
+]
+
+[[package]]
 name = "schematic_macros"
 version = "0.18.7"
 dependencies = [
@@ -1947,10 +1959,8 @@ dependencies = [
 name = "schematic_macros_next"
 version = "0.18.7"
 dependencies = [
- "convert_case",
- "darling",
- "proc-macro2",
  "quote",
+ "schematic_core",
  "syn 2.0.101",
 ]
 

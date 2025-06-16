@@ -1,0 +1,39 @@
+[package]
+name = "schematic_core"
+version = "0.18.7"
+edition = "2024"
+license = "MIT"
+description = "Core building blocks for schematic macros."
+homepage = "https://moonrepo.github.io/schematic"
+repository = "https://github.com/moonrepo/schematic"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# convert_case = { workspace = true }
+darling = { workspace = true }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true, features = ["full"] }
+
+[dev-dependencies]
+schematic_core = { path = ".", features = [
+	"config",
+	"env",
+	"extends",
+	"schema",
+	"tracing",
+	"validate",
+] }
+syn = { workspace = true, features = ["full", "extra-traits"] }
+starbase_sandbox = { workspace = true }
+
+[features]
+default = []
+config = []
+env = []
+extends = []
+schema = []
+tracing = []
+validate = []
