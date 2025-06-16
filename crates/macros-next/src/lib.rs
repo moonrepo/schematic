@@ -1,17 +1,11 @@
-mod args;
-mod container;
-mod field;
-mod variant;
+use schematic_core::container::Container;
 
-// mod common;
-// mod utils;
-
-#[cfg(feature = "config")]
-mod config;
-#[cfg(feature = "config")]
-mod config_enum;
-#[cfg(feature = "schema")]
-mod schematic;
+// #[cfg(feature = "config")]
+// mod config;
+// #[cfg(feature = "config")]
+// mod config_enum;
+// #[cfg(feature = "schema")]
+// mod schematic;
 
 // use common::Macro;
 use proc_macro::TokenStream;
@@ -36,11 +30,12 @@ pub fn config_enum(item: TokenStream) -> TokenStream {
 }
 
 // #[derive(Schematic)]
-// #[cfg(feature = "schema")]
-// #[proc_macro_derive(Schematic, attributes(schematic, schema))]
-// pub fn schematic(item: TokenStream) -> TokenStream {
-//     let input: DeriveInput = parse_macro_input!(item);
-//     let output = schematic::SchematicMacro(Macro::from(&input));
+#[cfg(feature = "schema")]
+#[proc_macro_derive(Schematic, attributes(schematic, schema))]
+pub fn schematic(item: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(item);
+    // let output = schematic::SchematicMacro(Macro::from(&input));
+    let container = Container::from(input);
 
-//     quote! { #output }.into()
-// }
+    quote! { #container }.into()
+}
