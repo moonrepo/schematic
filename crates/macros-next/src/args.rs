@@ -6,8 +6,8 @@ use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 
 #[derive(Clone, Copy)]
 pub enum SerdeIoDirection {
-    From, // read / de
-    To,   // write / ser
+    From, // read / deserialize
+    To,   // write / serialize
 }
 
 #[derive(Clone)]
@@ -20,27 +20,48 @@ pub enum SerdeTagFormat {
     Unit,
 }
 
+// #[serde(rename = "name")]
 // #[serde(rename(deserialize = "de_name", serialize = "ser_name"))]
-#[derive(FromMeta)]
-pub enum SerdeRenameField {
-    Both(String),
-    Either {
-        deserialize: Option<String>,
-        serialize: Option<String>,
-    },
+#[derive(Debug, Default, PartialEq)]
+pub struct SerdeRenameArg {
+    deserialize: Option<String>,
+    serialize: Option<String>,
 }
 
-impl SerdeRenameField {
+impl FromMeta for SerdeRenameArg {
+    fn from_string(value: &str) -> darling::Result<Self> {
+        Ok(Self {
+            deserialize: Some(value.into()),
+            serialize: Some(value.into()),
+        })
+    }
+
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        #[derive(Default, FromMeta)]
+        #[darling(default)]
+        struct Rename {
+            deserialize: Option<String>,
+            serialize: Option<String>,
+        }
+
+        impl From<Rename> for SerdeRenameArg {
+            fn from(value: Rename) -> Self {
+                Self {
+                    deserialize: value.deserialize,
+                    serialize: value.serialize,
+                }
+            }
+        }
+
+        Rename::from_list(items).map(SerdeRenameArg::from)
+    }
+}
+
+impl SerdeRenameArg {
     pub fn get_name(&self, dir: SerdeIoDirection) -> Option<&str> {
-        match self {
-            Self::Both(inner) => Some(inner.as_str()),
-            Self::Either {
-                deserialize,
-                serialize,
-            } => match dir {
-                SerdeIoDirection::From => deserialize.as_deref(),
-                SerdeIoDirection::To => serialize.as_deref(),
-            },
+        match dir {
+            SerdeIoDirection::From => self.deserialize.as_deref(),
+            SerdeIoDirection::To => self.serialize.as_deref(),
         }
     }
 }
@@ -53,9 +74,9 @@ pub struct SerdeContainerArgs {
     pub deny_unknown_fields: bool,
 
     // struct
-    pub rename: Option<SerdeRenameField>,
-    pub rename_all: Option<SerdeRenameField>,
-    pub rename_all_fields: Option<SerdeRenameField>,
+    pub rename: Option<SerdeRenameArg>,
+    pub rename_all: Option<SerdeRenameArg>,
+    pub rename_all_fields: Option<SerdeRenameArg>,
 
     // enum
     pub content: Option<String>,
@@ -72,7 +93,7 @@ pub struct SerdeFieldArgs {
     pub alias: Vec<String>,
     pub default: bool,
     pub flatten: bool,
-    pub rename: Option<SerdeRenameField>,
+    pub rename: Option<SerdeRenameArg>,
     pub skip: bool,
     pub skip_deserializing: bool,
     pub skip_deserializing_if: Option<String>,
@@ -105,3 +126,160 @@ pub struct SerdeFieldArgs {
 //     pub rename_all_fields: Option<String>,
 //     pub serde: SerdeMeta,
 // }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use darling::FromMeta;
+    use syn::parse_quote;
+
+    mod serde_rename_arg {
+        use super::*;
+
+        #[test]
+        fn both_value_string() {
+            let meta = SerdeRenameArg::from_string("name").unwrap();
+
+            assert_eq!(
+                meta,
+                SerdeRenameArg {
+                    deserialize: Some("name".into()),
+                    serialize: Some("name".into()),
+                }
+            );
+        }
+
+        #[test]
+        fn both_value() {
+            let meta = SerdeRenameArg::from_list(&[
+                parse_quote! {
+                    deserialize = "de_name"
+                },
+                parse_quote! {
+                    serialize = "ser_name"
+                },
+            ])
+            .unwrap();
+
+            assert_eq!(
+                meta,
+                SerdeRenameArg {
+                    deserialize: Some("de_name".into()),
+                    serialize: Some("ser_name".into()),
+                }
+            );
+        }
+
+        #[test]
+        fn de_value() {
+            let meta = SerdeRenameArg::from_list(&[parse_quote! {
+                deserialize = "de_name"
+            }])
+            .unwrap();
+
+            assert_eq!(
+                meta,
+                SerdeRenameArg {
+                    deserialize: Some("de_name".into()),
+                    serialize: None,
+                }
+            );
+        }
+
+        #[test]
+        fn ser_value() {
+            let meta = SerdeRenameArg::from_list(&[parse_quote! {
+                serialize = "ser_name"
+            }])
+            .unwrap();
+
+            assert_eq!(
+                meta,
+                SerdeRenameArg {
+                    deserialize: None,
+                    serialize: Some("ser_name".into()),
+                }
+            );
+        }
+    }
+
+    mod serde_container {
+        use super::*;
+
+        #[test]
+        fn normal_args() {
+            let container = SerdeContainerArgs::from_derive_input(&parse_quote! {
+                #[serde(default, deny_unknown_fields)]
+                struct Example;
+            })
+            .unwrap();
+
+            assert!(container.default);
+            assert!(container.deny_unknown_fields);
+        }
+
+        #[test]
+        fn enum_tagged_args() {
+            let container = SerdeContainerArgs::from_derive_input(&parse_quote! {
+                #[serde(tag = "tag", content = "content")]
+                struct Example;
+            })
+            .unwrap();
+
+            assert_eq!(container.content.unwrap(), "content");
+            assert_eq!(container.tag.unwrap(), "tag");
+            assert!(container.expecting.is_none());
+            assert!(!container.untagged);
+        }
+
+        #[test]
+        fn enum_untagged_args() {
+            let container = SerdeContainerArgs::from_derive_input(&parse_quote! {
+                #[serde(untagged, expecting = "expecting")]
+                struct Example;
+            })
+            .unwrap();
+
+            assert!(container.content.is_none());
+            assert!(container.tag.is_none());
+            assert_eq!(container.expecting.unwrap(), "expecting");
+            assert!(container.untagged);
+        }
+
+        #[test]
+        fn rename_args() {
+            let container = SerdeContainerArgs::from_derive_input(&parse_quote! {
+                #[serde(
+                    rename = "name",
+                    rename_all(deserialize = "de_name"),
+                    rename_all_fields(serialize = "ser_name")
+                )]
+                struct Example;
+            })
+            .unwrap();
+
+            assert_eq!(
+                container.rename.unwrap(),
+                SerdeRenameArg {
+                    deserialize: Some("name".into()),
+                    serialize: Some("name".into()),
+                }
+            );
+            assert_eq!(
+                container.rename_all.unwrap(),
+                SerdeRenameArg {
+                    deserialize: Some("de_name".into()),
+                    serialize: None,
+                }
+            );
+
+            assert_eq!(
+                container.rename_all_fields.unwrap(),
+                SerdeRenameArg {
+                    deserialize: None,
+                    serialize: Some("ser_name".into()),
+                }
+            );
+        }
+    }
+}
