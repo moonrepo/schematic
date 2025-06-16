@@ -2,6 +2,8 @@ use crate::args::{SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
 use crate::variant::Variant;
 use darling::FromDeriveInput;
+use proc_macro2::TokenStream;
+use quote::quote;
 use std::rc::Rc;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Ident, Visibility};
 
@@ -24,7 +26,6 @@ pub struct ContainerArgs {
     pub rename: Option<SerdeRenameArg>,
     pub rename_all: Option<SerdeRenameArg>,
     pub rename_all_fields: Option<SerdeRenameArg>,
-    // pub serde: SerdeMeta, // TODO
 }
 
 pub struct Container {
@@ -97,6 +98,59 @@ impl Container {
             inner,
             serde_args,
             vis: input.vis,
+        }
+    }
+
+    pub fn get_partial_serde_meta(&self) -> TokenStream {
+        let mut meta = vec![];
+
+        match &self.inner {
+            ContainerInner::NamedStruct { .. } => {
+                meta.push(quote! { default });
+
+                if self.serde_args.deny_unknown_fields || !self.args.allow_unknown_fields {
+                    meta.push(quote! { deny_unknown_fields });
+                }
+            }
+            ContainerInner::UnnamedStruct { .. } => {
+                meta.push(quote! { default });
+            }
+            ContainerInner::Enum { .. } => {
+                if let Some(tag) = &self.serde_args.tag {
+                    meta.push(quote! { tag = #tag });
+                }
+
+                if let Some(content) = &self.serde_args.content {
+                    meta.push(quote! { content = #content });
+                }
+
+                if self.serde_args.untagged {
+                    meta.push(quote! { untagged });
+                }
+            }
+            ContainerInner::UnitEnum { .. } => {
+                meta.push(quote! { untagged });
+            }
+        };
+
+        if let Some(expecting) = &self.serde_args.expecting {
+            meta.push(quote! { expecting = #expecting });
+        }
+
+        if let Some(rename) = &self.serde_args.rename {
+            meta.push(rename.get_meta("rename"));
+        }
+
+        if let Some(rename_all) = &self.serde_args.rename_all {
+            meta.push(rename_all.get_meta("rename_all"));
+        }
+
+        if let Some(rename_all_fields) = &self.serde_args.rename_all_fields {
+            meta.push(rename_all_fields.get_meta("rename_all_fields"));
+        }
+
+        quote! {
+            #(#meta),*
         }
     }
 }
