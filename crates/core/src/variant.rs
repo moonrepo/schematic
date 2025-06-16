@@ -5,10 +5,11 @@ use std::rc::Rc;
 use syn::{Attribute, FieldMutability, Fields, Ident, Type, Variant as NativeVariant, Visibility};
 
 // #[setting()], #[schema()]
-#[derive(FromAttributes, Default)]
+#[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema))]
 pub struct VariantArgs {}
 
+#[derive(Debug)]
 pub struct Variant {
     // args
     pub args: VariantArgs,

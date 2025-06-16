@@ -5,10 +5,11 @@ use std::rc::Rc;
 use syn::{Attribute, Field as NativeField, FieldMutability, Ident, Type, Visibility};
 
 // #[schema()], #[setting()]
-#[derive(FromAttributes, Default)]
+#[derive(Debug, FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {}
 
+#[derive(Debug)]
 pub struct Field {
     // args
     pub args: FieldArgs,

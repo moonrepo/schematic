@@ -1,14 +1,15 @@
 use crate::args::{SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
+use crate::utils::is_inheritable_attribute;
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use std::rc::Rc;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Ident, Visibility};
 
 // #[config()], #[schematic()]
-#[derive(Default, FromDeriveInput)]
+#[derive(Debug, Default, FromDeriveInput)]
 #[darling(
     default,
     attributes(config, schematic),
@@ -28,6 +29,7 @@ pub struct ContainerArgs {
     pub rename_all_fields: Option<SerdeRenameArg>,
 }
 
+#[derive(Debug)]
 pub struct Container {
     pub args: Rc<ContainerArgs>,
     pub inner: ContainerInner,
@@ -101,7 +103,24 @@ impl Container {
         }
     }
 
-    pub fn get_partial_serde_meta(&self) -> TokenStream {
+    pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
+        let serde_args = self.get_partial_serde_attribute_args();
+        let mut attrs = vec![quote! { #[serde(#serde_args) ]}];
+
+        for attr in &self.attrs {
+            if is_inheritable_attribute(attr) {
+                attrs.push(quote! { #attr });
+            }
+        }
+
+        // TODO
+        // let partial = &self.args.partial;
+        // attrs.push(quote! { #partial });
+
+        attrs
+    }
+
+    pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
         let mut meta = vec![];
 
         match &self.inner {
@@ -155,6 +174,13 @@ impl Container {
     }
 }
 
+impl ToTokens for Container {
+    fn to_tokens(&self, _tokens: &mut TokenStream) {
+        // TODO
+    }
+}
+
+#[derive(Debug)]
 pub enum ContainerInner {
     NamedStruct { fields: Vec<Field> },
     UnnamedStruct { fields: Vec<Field> },
