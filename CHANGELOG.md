@@ -2,6 +2,10 @@
 
 ## Next
 
+#### 💥 Breaking
+
+- Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+
 #### 🚀 Updates
 
 - Added support for explicit Serde deserialize and serialize renaming on containers and fields:
