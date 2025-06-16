@@ -58,10 +58,25 @@ impl FromMeta for SerdeRenameArg {
 }
 
 impl SerdeRenameArg {
-    pub fn get_name(&self, dir: SerdeIoDirection) -> Option<&str> {
-        match dir {
-            SerdeIoDirection::From => self.deserialize.as_deref(),
-            SerdeIoDirection::To => self.serialize.as_deref(),
+    // pub fn get_name(&self, dir: SerdeIoDirection) -> Option<&str> {
+    //     match dir {
+    //         SerdeIoDirection::From => self.deserialize.as_deref(),
+    //         SerdeIoDirection::To => self.serialize.as_deref(),
+    //     }
+    // }
+
+    pub fn get_meta(&self, key: &str) -> TokenStream {
+        match (self.deserialize.as_deref(), self.serialize.as_deref()) {
+            (Some(de), Some(ser)) => {
+                if de == ser {
+                    quote! { #key = #de }
+                } else {
+                    quote! { #key(deserialize = #de, serialize = #ser) }
+                }
+            }
+            (None, Some(ser)) => quote! { #key(serialize = #ser) },
+            (Some(de), None) => quote! { #key(deserialize = #de) },
+            _ => quote! {},
         }
     }
 }
