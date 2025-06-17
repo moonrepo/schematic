@@ -2,7 +2,7 @@ use crate::args::{SerdeContainerArgs, SerdeFieldArgs};
 use crate::container::ContainerArgs;
 use darling::FromAttributes;
 use std::rc::Rc;
-use syn::{Attribute, FieldMutability, Fields, Ident, Type, Variant as NativeVariant, Visibility};
+use syn::{Attribute, Fields, Ident, Variant as NativeVariant};
 
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
