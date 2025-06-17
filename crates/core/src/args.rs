@@ -1,8 +1,7 @@
 use darling::ast::NestedMeta;
 use darling::{FromAttributes, FromDeriveInput, FromMeta};
-use proc_macro2::{Ident, TokenStream};
-use quote::{ToTokens, quote};
-use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
+use proc_macro2::TokenStream;
+use quote::quote;
 
 #[derive(Clone, Copy, Debug)]
 pub enum SerdeIoDirection {
