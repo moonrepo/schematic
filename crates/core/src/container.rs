@@ -187,3 +187,21 @@ pub enum ContainerInner {
     Enum { variants: Vec<Variant> },
     UnitEnum { variants: Vec<Variant> },
 }
+
+impl ContainerInner {
+    pub fn get_fields(&self) -> Vec<&Field> {
+        match self {
+            Self::NamedStruct { fields } | Self::UnnamedStruct { fields } => {
+                fields.iter().collect()
+            }
+            _ => vec![],
+        }
+    }
+
+    pub fn get_variants(&self) -> Vec<&Variant> {
+        match self {
+            Self::Enum { variants } | Self::UnitEnum { variants } => variants.iter().collect(),
+            _ => vec![],
+        }
+    }
+}
