@@ -20,6 +20,7 @@ pub fn is_inheritable_attribute(attr: &Attribute) -> bool {
 pub fn to_type_string(ts: TokenStream) -> String {
     format!("{}", ts)
         .replace(" :: ", "::")
+        .replace(" , ", ", ")
         .replace(" < ", "<")
         .replace("< ", "<")
         .replace(" <", "<")
