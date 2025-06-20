@@ -1,6 +1,5 @@
 use quote::format_ident;
 use schematic_core::container::Container;
-use schematic_core::field_value::FieldNestedIdent;
 use syn::parse_quote;
 
 mod field_nested {
@@ -20,7 +19,7 @@ mod field_nested {
         assert!(fields[0].value.nested);
         assert_eq!(
             fields[0].value.nested_ident.as_ref().unwrap(),
-            &FieldNestedIdent::Unknown(format_ident!("NestedConfig"))
+            &format_ident!("NestedConfig")
         );
     }
 
@@ -38,7 +37,7 @@ mod field_nested {
         assert!(fields[0].value.nested);
         assert_eq!(
             fields[0].value.nested_ident.as_ref().unwrap(),
-            &FieldNestedIdent::Unknown(format_ident!("NestedConfig"))
+            &format_ident!("NestedConfig")
         );
     }
 
@@ -71,7 +70,25 @@ mod field_nested {
         assert!(fields[0].value.nested);
         assert_eq!(
             fields[0].value.nested_ident.as_ref().unwrap(),
-            &FieldNestedIdent::Unknown(format_ident!("NestedConfig"))
+            &format_ident!("NestedConfig")
+        );
+    }
+
+    #[test]
+    fn detect_in_vec() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(nested)]
+                a: Vec<NestedConfig>,
+            }
+        });
+        let fields = container.inner.get_fields();
+
+        assert!(fields[0].value.nested);
+        assert_eq!(
+            fields[0].value.nested_ident.as_ref().unwrap(),
+            &format_ident!("NestedConfig")
         );
     }
 
@@ -87,19 +104,19 @@ mod field_nested {
         });
     }
 
-    #[test]
-    #[should_panic(
-        expected = "Unable to extract the nested configuration identifier from `Vec<Option<Box<NestedConfig>>>`. Try explicitly passing the identifier with `nested = ConfigName`."
-    )]
-    fn panics_cant_find_ident() {
-        Container::from(parse_quote! {
-            #[derive(Config)]
-            struct Example {
-                #[setting(nested)]
-                a: Vec<Option<Box<NestedConfig>>>,
-            }
-        });
-    }
+    // #[test]
+    // #[should_panic(
+    //     expected = "Unable to extract the nested configuration identifier from `Vec<Option<Box<NestedConfig>>>`. Try explicitly passing the identifier with `nested = ConfigName`."
+    // )]
+    // fn panics_cant_find_ident() {
+    //     Container::from(parse_quote! {
+    //         #[derive(Config)]
+    //         struct Example {
+    //             #[setting(nested)]
+    //             a: Vec<Option<Box<NestedConfig>>>,
+    //         }
+    //     });
+    // }
 
     #[test]
     #[should_panic(

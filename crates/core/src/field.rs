@@ -106,7 +106,7 @@ impl ToTokens for Field {
         let mut value = self.value.ty_string.clone();
 
         if let Some(nested_ident) = &self.value.nested_ident {
-            let ident = nested_ident.get_ident().to_string();
+            let ident = nested_ident.to_string();
 
             value = value.replace(&ident, &format!("<{ident} as schematic::Config>::Partial"));
         }
