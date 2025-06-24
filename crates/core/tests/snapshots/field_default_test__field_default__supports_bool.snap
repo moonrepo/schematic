@@ -1,0 +1,10 @@
+---
+source: crates/core/tests/field_default_test.rs
+expression: field.args.default.as_ref().unwrap()
+---
+Expr::Lit {
+    attrs: [],
+    lit: Lit::Bool {
+        value: true,
+    },
+}
