@@ -1,4 +1,4 @@
-use crate::args::{SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::{preserve_str_literal, to_type_string};
@@ -90,6 +90,7 @@ pub struct FieldArgs {
     pub nested: Option<FieldNestedArg>,
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
+    pub partial: Option<PartialArg>,
     pub required: bool,
     pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
