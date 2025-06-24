@@ -1,7 +1,7 @@
 use darling::ast::NestedMeta;
 use darling::{FromAttributes, FromDeriveInput, FromMeta};
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 
 #[derive(Clone, Copy, Debug)]
 pub enum SerdeIoDirection {
@@ -117,6 +117,29 @@ pub struct SerdeFieldArgs {
     // variant
     pub other: bool,
     pub untagged: bool,
+}
+
+#[derive(Debug, Default)]
+pub struct PartialArg {
+    meta: Vec<NestedMeta>,
+}
+
+impl ToTokens for PartialArg {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attrs: Vec<_> = self.meta.iter().map(|m| m.to_token_stream()).collect();
+
+        if !attrs.is_empty() {
+            tokens.extend(quote! {#[#(#attrs),*]});
+        }
+    }
+}
+
+impl FromMeta for PartialArg {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        Ok(Self {
+            meta: items.to_vec(),
+        })
+    }
 }
 
 // // #[config()], #[schematic()]
