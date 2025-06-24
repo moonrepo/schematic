@@ -56,6 +56,10 @@ impl FromMeta for FieldNestedArg {
 pub struct FieldArgs {
     #[darling(with = preserve_str_literal, map = "Some")]
     pub default: Option<Expr>,
+    #[cfg(feature = "env")]
+    pub env: Option<String>,
+    #[cfg(feature = "env")]
+    pub env_prefix: Option<String>,
     pub merge: Option<ExprPath>,
     pub nested: Option<FieldNestedArg>,
     #[cfg(feature = "env")]
@@ -115,6 +119,27 @@ impl Field {
         };
 
         // dbg!(&field);
+
+        if field.args.env.as_ref().is_some_and(|key| key.is_empty()) {
+            panic!("Attribute `env` cannot be empty.");
+        }
+
+        if field
+            .args
+            .env_prefix
+            .as_ref()
+            .is_some_and(|key| key.is_empty())
+        {
+            panic!("Attribute `env_prefix` cannot be empty.");
+        }
+
+        if field.args.parse_env.is_some() && field.args.env.is_none() {
+            panic!("Cannot use `parse_env` without `env`.");
+        }
+
+        if field.args.env_prefix.is_some() && field.args.nested.is_none() {
+            panic!("Cannot use `env_prefix` without `nested`.");
+        }
 
         field
     }
