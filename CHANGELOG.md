@@ -14,6 +14,7 @@
 - Added support for env prefixes at the field level when the field is also nested. This will
   override the env prefix defined on the nested container:
   `#[setting(nested, env_prefix = "OVERRIDE_")]`.
+- Improved the parse, handling, and validation of container and field attributes.
 
 ##### Serde
 
