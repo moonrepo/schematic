@@ -1,0 +1,43 @@
+---
+source: crates/core/tests/field_default_test.rs
+expression: field.args.default.as_ref().unwrap()
+---
+Expr::Macro {
+    attrs: [],
+    mac: Macro {
+        path: Path {
+            leading_colon: None,
+            segments: [
+                PathSegment {
+                    ident: Ident(
+                        vec,
+                    ),
+                    arguments: PathArguments::None,
+                },
+            ],
+        },
+        bang_token: Not,
+        delimiter: MacroDelimiter::Bracket(
+            Bracket,
+        ),
+        tokens: TokenStream [
+            Literal {
+                lit: "a",
+            },
+            Punct {
+                char: ',',
+                spacing: Alone,
+            },
+            Literal {
+                lit: "b",
+            },
+            Punct {
+                char: ',',
+                spacing: Alone,
+            },
+            Literal {
+                lit: "c",
+            },
+        ],
+    },
+}

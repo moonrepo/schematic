@@ -1,11 +1,19 @@
 use proc_macro2::TokenStream;
-use syn::{Attribute, Meta, Path};
+use syn::{Attribute, Expr, Meta, Path};
 
 pub fn get_meta_path(meta: &Meta) -> &Path {
     match meta {
         Meta::Path(path) => path,
         Meta::List(list) => &list.path,
         Meta::NameValue(nv) => &nv.path,
+    }
+}
+
+pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
+    match meta {
+        Meta::Path(_) => Err(darling::Error::unsupported_format("path").with_span(meta)),
+        Meta::List(_) => Err(darling::Error::unsupported_format("list").with_span(meta)),
+        Meta::NameValue(nv) => Ok(nv.value.clone()),
     }
 }
 

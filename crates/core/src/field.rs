@@ -1,12 +1,14 @@
 use crate::args::{SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
-use crate::utils::to_type_string;
+use crate::utils::{preserve_str_literal, to_type_string};
 use darling::{FromAttributes, FromMeta};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use std::rc::Rc;
-use syn::{Attribute, Expr, Field as NativeField, FieldMutability, Ident, Visibility, parse_str};
+use syn::{
+    Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility, parse_str,
+};
 
 // #[setting(nested)]
 #[derive(Debug)]
@@ -52,7 +54,13 @@ impl FromMeta for FieldNestedArg {
 #[derive(Debug, FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {
+    #[darling(with = preserve_str_literal, map = "Some")]
+    pub default: Option<Expr>,
+    pub merge: Option<ExprPath>,
     pub nested: Option<FieldNestedArg>,
+    #[cfg(feature = "env")]
+    pub parse_env: Option<ExprPath>,
+    pub transform: Option<ExprPath>,
 
     // serde
     #[darling(multiple)]
