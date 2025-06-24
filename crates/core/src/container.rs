@@ -1,4 +1,4 @@
-use crate::args::{SerdeContainerArgs, SerdeRenameArg};
+use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
 use crate::utils::is_inheritable_attribute;
 use crate::variant::Variant;
@@ -19,9 +19,9 @@ pub struct ContainerArgs {
     // config
     pub allow_unknown_fields: bool,
     pub context: Option<ExprPath>,
-    // pub partial: PartialAttr, // TODO
     #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
+    pub partial: Option<PartialArg>,
 
     // serde
     pub rename: Option<SerdeRenameArg>,
