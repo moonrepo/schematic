@@ -11,6 +11,9 @@
 - Added support for `#[setting(nested = NestedConfig)]` on fields, where the nested config name can
   be explicitly defined if we fail to detect it. This is useful for extremely complex/composed
   types.
+- Added support for env prefixes at the field level when the field is also nested. This will
+  override the env prefix defined on the nested container:
+  `#[setting(nested, env_prefix = "OVERRIDE_")]`.
 
 ##### Serde
 
