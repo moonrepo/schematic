@@ -1,4 +1,4 @@
-use crate::args::{SerdeContainerArgs, SerdeFieldArgs};
+use crate::args::{SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::to_type_string;
@@ -53,6 +53,17 @@ impl FromMeta for FieldNestedArg {
 #[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {
     pub nested: Option<FieldNestedArg>,
+
+    // serde
+    #[darling(multiple)]
+    pub alias: Vec<String>,
+    pub flatten: bool,
+    pub rename: Option<SerdeRenameArg>,
+    pub skip: bool,
+    pub skip_deserializing: bool,
+    pub skip_deserializing_if: Option<String>,
+    pub skip_serializing: bool,
+    pub skip_serializing_if: Option<String>,
 }
 
 #[derive(Debug)]

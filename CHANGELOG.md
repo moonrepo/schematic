@@ -11,9 +11,13 @@
 - Added support for `#[setting(nested = NestedConfig)]` on fields, where the nested config name can
   be explicitly defined if we fail to detect it. This is useful for extremely complex/composed
   types.
-- Added support for explicit Serde deserialize and serialize renaming on containers and fields:
+
+##### Serde
+
+- Added support for explicit deserialize and serialize renaming on containers and fields:
   `#[serde(rename(deserialize = "de_name", serialize = "ser_name"))]`.
-- Updated Serde `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
+- Added support for `skip_deserializing_if` and `skip_serializing_if` on fields.
+- Updated `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
 
 ## 0.19.1
 

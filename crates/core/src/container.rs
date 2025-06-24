@@ -43,8 +43,8 @@ pub struct Container {
 
 impl Container {
     pub fn from(input: DeriveInput) -> Self {
-        let args = Rc::new(ContainerArgs::from_derive_input(&input).unwrap_or_default());
-        let serde_args = Rc::new(SerdeContainerArgs::from_derive_input(&input).unwrap_or_default());
+        let args = Rc::new(ContainerArgs::from_derive_input(&input).unwrap());
+        let serde_args = Rc::new(SerdeContainerArgs::from_derive_input(&input).unwrap());
 
         let inner = match input.data {
             Data::Struct(data) => match data.fields {
