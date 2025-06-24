@@ -18,6 +18,22 @@ mod field {
     use super::*;
 
     #[test]
+    fn basic_args() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(exclude, extend, required)]
+                a: String,
+            }
+        });
+        let field = container.inner.get_fields()[0];
+
+        assert!(field.args.exclude);
+        assert!(field.args.extend);
+        assert!(field.args.required);
+    }
+
+    #[test]
     fn extracts_layers() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]
@@ -179,7 +195,7 @@ mod field {
         let field = get_field(&fields, "a");
         assert_eq!(field.value.ty_string, "Vec<NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Vec("Vec".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // b
         let field = get_field(&fields, "b");
@@ -188,13 +204,13 @@ mod field {
             field.value.layers,
             vec![Layer::Option, Layer::Vec("Vec".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // c
         let field = get_field(&fields, "c");
         assert_eq!(field.value.ty_string, "SmallVec<NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Vec("SmallVec".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // d
         let field = get_field(&fields, "d");
@@ -204,7 +220,7 @@ mod field {
             vec![Layer::Vec("Vec".into()), Layer::Option]
         );
         assert_eq!(
-            get_field_nested_ident(&field).to_string(),
+            get_field_nested_ident(field).to_string(),
             "CustomNestedConfig"
         );
 
@@ -215,7 +231,7 @@ mod field {
             field.value.layers,
             vec![Layer::Vec("Vec".into()), Layer::Vec("SmallVec".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
     }
 
     #[test]
@@ -295,7 +311,7 @@ mod field {
         let field = get_field(&fields, "a");
         assert_eq!(field.value.ty_string, "HashSet<NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Set("HashSet".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // b
         let field = get_field(&fields, "b");
@@ -304,13 +320,13 @@ mod field {
             field.value.layers,
             vec![Layer::Option, Layer::Set("HashSet".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // c
         let field = get_field(&fields, "c");
         assert_eq!(field.value.ty_string, "BTreeSet<NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Set("BTreeSet".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // d
         let field = get_field(&fields, "d");
@@ -320,7 +336,7 @@ mod field {
             vec![Layer::Set("HashSet".into()), Layer::Option]
         );
         assert_eq!(
-            get_field_nested_ident(&field).to_string(),
+            get_field_nested_ident(field).to_string(),
             "CustomNestedConfig"
         );
 
@@ -331,7 +347,7 @@ mod field {
             field.value.layers,
             vec![Layer::Set("HashSet".into()), Layer::Set("FxHashSet".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
     }
 
     #[test]
@@ -414,7 +430,7 @@ mod field {
         let field = get_field(&fields, "a");
         assert_eq!(field.value.ty_string, "HashMap<String, NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Map("HashMap".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // b
         let field = get_field(&fields, "b");
@@ -426,13 +442,13 @@ mod field {
             field.value.layers,
             vec![Layer::Option, Layer::Map("HashMap".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // c
         let field = get_field(&fields, "c");
         assert_eq!(field.value.ty_string, "BTreeMap<usize, NestedConfig>");
         assert_eq!(field.value.layers, vec![Layer::Map("BTreeMap".into())]);
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
 
         // d
         let field = get_field(&fields, "d");
@@ -445,7 +461,7 @@ mod field {
             vec![Layer::Map("HashMap".into()), Layer::Option]
         );
         assert_eq!(
-            get_field_nested_ident(&field).to_string(),
+            get_field_nested_ident(field).to_string(),
             "CustomNestedConfig"
         );
 
@@ -459,6 +475,6 @@ mod field {
             field.value.layers,
             vec![Layer::Map("HashMap".into()), Layer::Map("FxHashMap".into())]
         );
-        assert_eq!(get_field_nested_ident(&field).to_string(), "NestedConfig");
+        assert_eq!(get_field_nested_ident(field).to_string(), "NestedConfig");
     }
 }
