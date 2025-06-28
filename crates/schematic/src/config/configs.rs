@@ -18,7 +18,9 @@ pub trait PartialConfig:
     /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
     ///
     /// If a default value fails to parse or cast into the correct type, an error is returned.
-    fn default_values(context: &Self::Context) -> Result<Option<Self>, ConfigError>;
+    fn default_values(_context: &Self::Context) -> Result<Option<Self>, ConfigError> {
+        Ok(None)
+    }
 
     /// Return a partial configuration with values populated from environment variables
     /// for settings marked with `#[setting(env)]`. Unmarked settings will be [`None`].
@@ -26,19 +28,25 @@ pub trait PartialConfig:
     /// If an environment variable does not exist, the value will be [`None`]. If
     /// the variable fails to parse or cast into the correct type, an error is returned.
     #[cfg(feature = "env")]
-    fn env_values() -> Result<Option<Self>, ConfigError>;
+    fn env_values() -> Result<Option<Self>, ConfigError> {
+        Ok(None)
+    }
 
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
     /// [`ExtendsFrom`] with the extended sources, either a list of strings or a single string.
     /// When no setting is extendable, this returns [`None`].
     #[cfg(feature = "extends")]
-    fn extends_from(&self) -> Option<ExtendsFrom>;
+    fn extends_from(&self) -> Option<ExtendsFrom> {
+        None
+    }
 
     /// Finalize the partial configuration by consuming it and populating all fields with a value.
     /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
     /// by merging the current partial, and lastly environment variable values from
     /// [`PartialConfig::env_values`].
-    fn finalize(self, context: &Self::Context) -> Result<Self, ConfigError>;
+    fn finalize(self, _context: &Self::Context) -> Result<Self, ConfigError> {
+        Ok(self)
+    }
 
     /// Merge another partial configuration into this one and clone values when applicable. The
     /// following merge strategies are applied:
@@ -46,7 +54,9 @@ pub trait PartialConfig:
     /// - Current [`None`] values are replaced with the next value if [`Some`].
     /// - Current [`Some`] values are merged with the next value if [`Some`],
     ///   using the merge function from `#[setting(merge)]`.
-    fn merge(&mut self, context: &Self::Context, next: Self) -> Result<(), ConfigError>;
+    fn merge(&mut self, _context: &Self::Context, _next: Self) -> Result<(), ConfigError> {
+        Ok(())
+    }
 
     /// Recursively validate the configuration with the provided context.
     /// Validation should be done on the final state, after merging partials.
