@@ -26,6 +26,7 @@ schematic_core = { path = ".", features = [
 	"tracing",
 	"validate",
 ] }
+prettyplease = "0.2.35"
 syn = { workspace = true, features = ["full", "extra-traits"] }
 starbase_sandbox = { workspace = true }
 
