@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{Attribute, Expr, Meta, Path};
 
 pub fn get_meta_path(meta: &Meta) -> &Path {
@@ -35,4 +36,12 @@ pub fn to_type_string(ts: TokenStream) -> String {
         .replace(" > ", ">")
         .replace("> ", ">")
         .replace(" >", ">")
+}
+
+pub fn impl_struct_default(show: bool) -> TokenStream {
+    if show {
+        quote! { ..Default::default() }
+    } else {
+        quote! {}
+    }
 }

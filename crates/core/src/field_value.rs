@@ -1,7 +1,8 @@
-use crate::field::FieldNestedArg;
+use crate::field::{FieldArgs, FieldNestedArg};
 use crate::utils::to_type_string;
-use quote::ToTokens;
-use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type};
+use proc_macro2::TokenStream;
+use quote::{ToTokens, format_ident, quote};
+use syn::{Expr, GenericArgument, Ident, Lit, PathArguments, PathSegment, Type};
 
 #[derive(Debug, PartialEq)]
 pub enum Layer {
@@ -81,6 +82,66 @@ impl FieldValue {
         self.layers
             .first()
             .is_some_and(|wrapper| *wrapper == Layer::Option)
+    }
+
+    pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> Option<TokenStream> {
+        if self.is_outer_option_wrapped() {
+            return None;
+        };
+
+        // Extract the inner value first
+        let mut value = if let Some(nested_ident) = &self.nested_ident {
+            if field_args.default.is_some() {
+                panic!("Cannot use `default` with `nested`.");
+            }
+
+            quote! {
+                <#nested_ident as schematic::PartialConfig>::default_values(content)?
+            }
+        } else if let Some(expr) = &field_args.default {
+            match expr {
+                Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                    quote! { #expr }
+                }
+                Expr::Path(func) => {
+                    quote! { schematic::internal::handle_default_result(#func(context))? }
+                }
+                Expr::Lit(lit) => match &lit.lit {
+                    Lit::Str(string) => quote! {
+                        schematic::internal::handle_default_result(std::convert::TryFrom::try_from(#string))?
+                    },
+                    other => quote! { #other },
+                },
+                invalid => {
+                    panic!(
+                        "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, or tuples."
+                    );
+                }
+            }
+        } else {
+            quote! {
+                Default::default()
+            }
+        };
+
+        // Then wrap with each layer
+        for layer in self.layers.iter().rev() {
+            value = match layer {
+                Layer::Arc => quote! { Arc::new(#value) },
+                Layer::Box => quote! { Box::new(#value) },
+                Layer::Option => quote! { Some(#value) },
+                Layer::Rc => quote! { Rc::new(#value) },
+                Layer::Map(name) | Layer::Set(name) | Layer::Vec(name) | Layer::Unknown(name) => {
+                    let collection = format_ident!("{name}");
+
+                    quote! { #collection::default() }
+                }
+            };
+        }
+
+        Some(quote! {
+            Some(#value)
+        })
     }
 }
 

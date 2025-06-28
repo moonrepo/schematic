@@ -4,12 +4,10 @@ use crate::field_value::FieldValue;
 use crate::utils::{preserve_str_literal, to_type_string};
 use darling::{FromAttributes, FromMeta};
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use quote::ToTokens;
 use std::ops::Deref;
 use std::rc::Rc;
-use syn::{
-    Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility, parse_str,
-};
+use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
 
 // #[setting(nested)]
 #[derive(Debug)]
@@ -183,10 +181,6 @@ impl Field {
 
         // nested
         if self.args.nested.is_some() {
-            if self.args.default.is_some() {
-                panic!("Cannot use `default` with `nested`.");
-            }
-
             #[cfg(feature = "env")]
             if self.args.env.is_some() {
                 panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
@@ -203,25 +197,31 @@ impl Field {
     }
 }
 
-impl ToTokens for Field {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let mut value = self.value.ty_string.clone();
+// impl ToTokens for Field {
+//     fn to_tokens(&self, tokens: &mut TokenStream) {
+//         let mut value = self.value.ty_string.clone();
 
-        if let Some(nested_ident) = &self.value.nested_ident {
-            let ident = nested_ident.to_string();
+//         if let Some(nested_ident) = &self.value.nested_ident {
+//             let ident = nested_ident.to_string();
 
-            value = value.replace(&ident, &format!("<{ident} as schematic::Config>::Partial"));
-        }
+//             value = value.replace(&ident, &format!("<{ident} as schematic::Config>::Partial"));
+//         }
 
-        if !self.value.is_outer_option_wrapped() {
-            value = format!("Option<{value}>");
-        }
+//         if !self.value.is_outer_option_wrapped() {
+//             value = format!("Option<{value}>");
+//         }
 
-        let key = self.ident.as_ref().unwrap();
-        let value: TokenStream = parse_str(&value).unwrap();
+//         let key = self.ident.as_ref().unwrap();
+//         let value: TokenStream = parse_str(&value).unwrap();
 
-        tokens.extend(quote! {
-            pub #key: #value,
-        });
+//         tokens.extend(quote! {
+//             pub #key: #value,
+//         });
+//     }
+// }
+
+impl Field {
+    pub fn impl_partial_default_value(&self) -> Option<TokenStream> {
+        self.value.impl_partial_default_value(&self.args)
     }
 }
