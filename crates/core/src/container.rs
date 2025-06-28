@@ -1,10 +1,10 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
-use crate::utils::is_inheritable_attribute;
+use crate::utils::{impl_struct_default, is_inheritable_attribute};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Ident, Visibility};
 
@@ -170,6 +170,105 @@ impl Container {
 
         quote! {
             #(#meta),*
+        }
+    }
+
+    pub fn impl_partial(&self) -> TokenStream {
+        let base_name = &self.ident;
+        let partial_name = format_ident!("Partial{base_name}");
+        let context = match self.args.context.as_ref() {
+            Some(ctx) => quote! { #ctx },
+            None => quote! { () },
+        };
+
+        let default_values_method = self.impl_partial_default_values();
+
+        quote! {
+            #[automatically_derived]
+            impl schematic::PartialConfig for #partial_name {
+                type Context = #context;
+
+                #default_values_method
+            }
+
+            #[automatically_derived]
+            impl schematic::Config for #base_name {
+                // TODO
+            }
+
+            #[automatically_derived]
+            impl Default for #base_name {
+                fn default() -> Self {
+                    <Self as schematic::Config>::from_partial(
+                        <Self as schematic::Config>::default_partial()
+                    )
+                }
+            }
+        }
+    }
+
+    pub fn impl_partial_default_values(&self) -> TokenStream {
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } => {
+                let mut rows = vec![];
+
+                for field in fields {
+                    if let Some(value) = field.impl_partial_default_value() {
+                        let name = field.ident.as_ref().unwrap();
+
+                        rows.push(quote! {
+                            #name: #value,
+                        });
+                    }
+                }
+
+                if rows.is_empty() {
+                    return quote! {};
+                }
+
+                let default_row = impl_struct_default(rows.len() != fields.len());
+
+                quote! {
+                    Ok(Some(Self {
+                        #(#rows)*
+                        #default_row
+                    }))
+                }
+            }
+            ContainerInner::UnnamedStruct { fields } => {
+                let mut rows = vec![];
+                let mut all_none = true;
+
+                for field in fields {
+                    if let Some(value) = field.impl_partial_default_value() {
+                        all_none = false;
+
+                        rows.push(quote! {
+                            #value
+                        });
+                    } else {
+                        rows.push(quote! { None })
+                    }
+                }
+
+                if all_none {
+                    return quote! {};
+                }
+
+                quote! {
+                    Ok(Some(Self(
+                        #(#rows),*
+                    )))
+                }
+            }
+            ContainerInner::Enum { .. } => todo!(),
+            ContainerInner::UnitEnum { .. } => todo!(),
+        };
+
+        quote! {
+            fn default_values(context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                #inner
+            }
         }
     }
 }
