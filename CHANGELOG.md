@@ -10,6 +10,8 @@
 
 ##### Config
 
+- Added support for unnamed tuple and newtype structs. Unnamed fields within the struct support
+  `#[setting]`.
 - Added support for `#[setting(nested = NestedConfig)]` on fields, where the nested config name can
   be explicitly defined if we fail to detect it. This is useful for extremely complex/composed
   types.
