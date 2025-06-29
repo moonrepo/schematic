@@ -1,13 +1,26 @@
-use crate::args::{SerdeContainerArgs, SerdeFieldArgs};
+use crate::args::{SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
+use crate::utils::ImplResult;
 use darling::FromAttributes;
+use quote::quote;
 use std::rc::Rc;
 use syn::{Attribute, Fields, Ident, Variant as NativeVariant};
 
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema))]
-pub struct VariantArgs {}
+pub struct VariantArgs {
+    pub default: bool,
+
+    // serde
+    #[darling(multiple)]
+    pub alias: Vec<String>,
+    pub rename: Option<SerdeRenameArg>,
+    pub skip: bool,
+    pub skip_deserializing: bool,
+    pub skip_serializing: bool,
+    pub untagged: bool,
+}
 
 #[derive(Debug)]
 pub struct Variant {
@@ -29,8 +42,8 @@ impl Variant {
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
     ) -> Variant {
-        let args = VariantArgs::from_attributes(&variant.attrs).unwrap_or_default();
-        let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap_or_default();
+        let args = VariantArgs::from_attributes(&variant.attrs).unwrap();
+        let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap();
 
         Variant {
             args,
@@ -41,5 +54,32 @@ impl Variant {
             serde_container_args,
             value: variant.fields,
         }
+    }
+
+    pub fn is_default(&self) -> bool {
+        self.args.default
+    }
+
+    pub fn impl_partial_default_value(&self) -> ImplResult {
+        let mut res = ImplResult::default();
+        let name = &self.ident;
+
+        res.value = match &self.value {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(fields) => {
+                let fields = fields
+                    .unnamed
+                    .iter()
+                    .map(|_| {
+                        quote! { Default::default() }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! { #name(#(#fields),*) }
+            }
+            Fields::Unit => quote! { #name },
+        };
+
+        res
     }
 }
