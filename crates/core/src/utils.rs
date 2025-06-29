@@ -38,10 +38,34 @@ pub fn to_type_string(ts: TokenStream) -> String {
         .replace(" >", ">")
 }
 
-pub fn impl_struct_default(show: bool) -> TokenStream {
-    if show {
-        quote! { ..Default::default() }
-    } else {
-        quote! {}
+#[derive(Default)]
+pub struct ImplResult {
+    pub requires_internal: bool,
+    pub no_value: bool,
+    pub value: TokenStream,
+}
+
+impl ImplResult {
+    pub fn skipped() -> Self {
+        Self {
+            no_value: true,
+            ..Default::default()
+        }
+    }
+
+    pub fn impl_struct_default(show: bool) -> TokenStream {
+        if show {
+            quote! { ..Default::default() }
+        } else {
+            quote! {}
+        }
+    }
+
+    pub fn impl_use_internal(show: bool) -> TokenStream {
+        if show {
+            quote! { use schematic::internal::*; }
+        } else {
+            quote! {}
+        }
     }
 }

@@ -1,9 +1,8 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
-use crate::utils::{preserve_str_literal, to_type_string};
+use crate::utils::{ImplResult, preserve_str_literal, to_type_string};
 use darling::{FromAttributes, FromMeta};
-use proc_macro2::TokenStream;
 use quote::ToTokens;
 use std::ops::Deref;
 use std::rc::Rc;
@@ -221,7 +220,7 @@ impl Field {
 // }
 
 impl Field {
-    pub fn impl_partial_default_value(&self) -> Option<TokenStream> {
+    pub fn impl_partial_default_value(&self) -> ImplResult {
         self.value.impl_partial_default_value(&self.args)
     }
 }
