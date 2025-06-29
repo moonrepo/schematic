@@ -2,7 +2,6 @@ use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialC
 use schematic_types::Schema;
 use std::str::FromStr;
 
-// Handles T and Option<T> values
 pub fn handle_default_result<T, E: std::error::Error>(
     result: Result<T, E>,
 ) -> Result<T, ConfigError> {

@@ -7,11 +7,11 @@ fn default_values(
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     Ok(
         Some(Self {
-            a: Some(
-                schematic::internal::handle_default_result(
-                    std::convert::TryFrom::try_from("abc"),
-                )?,
-            ),
+            a: Some(HashMap::default()),
+            b: Some(Vec::default()),
+            c: Some(BTreeSet::default()),
+            d: Some(CustomVec::default()),
+            e: Some(UnknownCollection::default()),
         }),
     )
 }

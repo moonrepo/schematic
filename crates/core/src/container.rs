@@ -1,6 +1,6 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
-use crate::utils::{impl_struct_default, is_inheritable_attribute};
+use crate::utils::{ImplResult, is_inheritable_attribute};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
@@ -10,11 +10,7 @@ use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Ident, Visibility};
 
 // #[config()], #[schematic()]
 #[derive(Debug, Default, FromDeriveInput)]
-#[darling(
-    default,
-    attributes(config, schematic),
-    supports(struct_named, enum_any)
-)]
+#[darling(default, attributes(config, schematic), supports(struct_any, enum_any))]
 pub struct ContainerArgs {
     // config
     pub allow_unknown_fields: bool,
@@ -208,17 +204,26 @@ impl Container {
     }
 
     pub fn impl_partial_default_values(&self) -> TokenStream {
+        let mut requires_internal = false;
+
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } => {
                 let mut rows = vec![];
 
                 for field in fields {
-                    if let Some(value) = field.impl_partial_default_value() {
+                    let res = field.impl_partial_default_value();
+
+                    if !res.no_value {
                         let name = field.ident.as_ref().unwrap();
+                        let value = res.value;
 
                         rows.push(quote! {
                             #name: #value,
                         });
+                    }
+
+                    if res.requires_internal {
+                        requires_internal = true;
                     }
                 }
 
@@ -226,7 +231,7 @@ impl Container {
                     return quote! {};
                 }
 
-                let default_row = impl_struct_default(rows.len() != fields.len());
+                let default_row = ImplResult::impl_struct_default(rows.len() != fields.len());
 
                 quote! {
                     Ok(Some(Self {
@@ -240,14 +245,21 @@ impl Container {
                 let mut all_none = true;
 
                 for field in fields {
-                    if let Some(value) = field.impl_partial_default_value() {
+                    let res = field.impl_partial_default_value();
+
+                    if res.no_value {
+                        rows.push(quote! { None });
+                    } else {
                         all_none = false;
+                        let value = res.value;
 
                         rows.push(quote! {
                             #value
                         });
-                    } else {
-                        rows.push(quote! { None })
+                    }
+
+                    if res.requires_internal {
+                        requires_internal = true;
                     }
                 }
 
@@ -261,12 +273,48 @@ impl Container {
                     )))
                 }
             }
-            ContainerInner::Enum { .. } => todo!(),
-            ContainerInner::UnitEnum { .. } => todo!(),
+            ContainerInner::Enum { variants } | ContainerInner::UnitEnum { variants } => {
+                let default_variants = variants
+                    .iter()
+                    .filter(|v| v.is_default())
+                    .collect::<Vec<_>>();
+
+                if default_variants.len() > 1 {
+                    panic!("Only 1 variant may be marked as default.");
+                }
+
+                match default_variants.get(0) {
+                    Some(default_variant) => {
+                        let res = default_variant.impl_partial_default_value();
+
+                        if res.requires_internal {
+                            requires_internal = true;
+                        }
+
+                        if res.no_value {
+                            quote! {
+                                Ok(None)
+                            }
+                        } else {
+                            let value = res.value;
+
+                            quote! {
+                                Ok(Some(Self::#value))
+                            }
+                        }
+                    }
+                    None => quote! {
+                        Ok(None)
+                    },
+                }
+            }
         };
+
+        let internal = ImplResult::impl_use_internal(requires_internal);
 
         quote! {
             fn default_values(context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                #internal
                 #inner
             }
         }
