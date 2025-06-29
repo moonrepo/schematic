@@ -1,6 +1,5 @@
 use crate::field::{FieldArgs, FieldNestedArg};
-use crate::utils::to_type_string;
-use proc_macro2::TokenStream;
+use crate::utils::{ImplResult, to_type_string};
 use quote::{ToTokens, format_ident, quote};
 use syn::{Expr, GenericArgument, Ident, Lit, PathArguments, PathSegment, Type};
 
@@ -19,6 +18,7 @@ pub enum Layer {
 
 #[derive(Debug)]
 pub struct FieldValue {
+    pub inner_ty: Option<Type>,
     pub layers: Vec<Layer>,
     pub nested: bool,
     pub nested_ident: Option<Ident>,
@@ -30,7 +30,6 @@ impl FieldValue {
     pub fn new(ty: Type, nested_arg: Option<&FieldNestedArg>) -> Self {
         let mut nested = false;
         let mut nested_ident = None;
-        let mut layers = vec![];
         let ty_string = to_type_string(ty.to_token_stream());
 
         // Determine nested state
@@ -52,30 +51,37 @@ impl FieldValue {
             };
         }
 
-        // Extract type information
-        if let Some(custom_ident) =
-            extract_type_information(&ty, &mut layers, nested && nested_ident.is_none())
-        {
-            nested_ident = Some(custom_ident);
-        }
-
-        if nested_ident.is_none() && nested {
-            panic!(
-                "Unable to extract the nested configuration identifier from `{ty_string}`. Try explicitly passing the identifier with `nested = ConfigName`."
-            )
-        }
-
-        let value = Self {
+        let mut value = FieldValue {
+            inner_ty: None,
             nested,
             nested_ident,
-            layers,
+            layers: vec![],
             ty_string,
             ty,
         };
-
-        // dbg!(&value);
-
+        value.extract_type_information();
         value
+    }
+
+    pub fn extract_type_information(&mut self) {
+        extract_type_information(&self.ty, &mut self.layers, |ty, segment| {
+            self.inner_ty = Some(ty.to_owned());
+
+            if self.nested && self.nested_ident.is_none() {
+                self.nested_ident = Some(segment.ident.clone());
+            }
+        });
+
+        if self.nested && self.nested_ident.is_none() {
+            panic!(
+                "Unable to extract the nested configuration identifier from `{}`. Try explicitly passing the identifier with `nested = ConfigName`.",
+                self.ty_string
+            )
+        }
+    }
+
+    pub fn get_inner_type(&self) -> &Type {
+        self.inner_ty.as_ref().unwrap_or(&self.ty)
     }
 
     pub fn is_outer_option_wrapped(&self) -> bool {
@@ -84,10 +90,13 @@ impl FieldValue {
             .is_some_and(|wrapper| *wrapper == Layer::Option)
     }
 
-    pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> Option<TokenStream> {
+    pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
         if self.is_outer_option_wrapped() {
-            return None;
+            return ImplResult::skipped();
         };
+
+        let mut res = ImplResult::default();
+        let mut wrap_with_some = false;
 
         // Extract the inner value first
         let mut value = if let Some(nested_ident) = &self.nested_ident {
@@ -99,18 +108,32 @@ impl FieldValue {
                 <#nested_ident as schematic::PartialConfig>::default_values(content)?
             }
         } else if let Some(expr) = &field_args.default {
+            let ty = self.get_inner_type();
+
             match expr {
                 Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                    wrap_with_some = true;
+
                     quote! { #expr }
                 }
                 Expr::Path(func) => {
-                    quote! { schematic::internal::handle_default_result(#func(context))? }
+                    res.requires_internal = true;
+
+                    quote! { handle_default_result(#func(context))? }
                 }
                 Expr::Lit(lit) => match &lit.lit {
-                    Lit::Str(string) => quote! {
-                        schematic::internal::handle_default_result(std::convert::TryFrom::try_from(#string))?
-                    },
-                    other => quote! { #other },
+                    Lit::Str(string) => {
+                        res.requires_internal = true;
+
+                        quote! {
+                            handle_default_result(#ty::try_from(#string))?
+                        }
+                    }
+                    other => {
+                        wrap_with_some = true;
+
+                        quote! { #other }
+                    }
                 },
                 invalid => {
                     panic!(
@@ -119,40 +142,52 @@ impl FieldValue {
                 }
             }
         } else {
+            wrap_with_some = true;
+
             quote! {
                 Default::default()
             }
         };
 
         // Then wrap with each layer
-        for layer in self.layers.iter().rev() {
-            value = match layer {
-                Layer::Arc => quote! { Arc::new(#value) },
-                Layer::Box => quote! { Box::new(#value) },
-                Layer::Option => quote! { Some(#value) },
-                Layer::Rc => quote! { Rc::new(#value) },
-                Layer::Map(name) | Layer::Set(name) | Layer::Vec(name) | Layer::Unknown(name) => {
-                    let collection = format_ident!("{name}");
+        if !self.layers.is_empty() {
+            wrap_with_some = true;
 
-                    quote! { #collection::default() }
-                }
-            };
+            for layer in self.layers.iter().rev() {
+                value = match layer {
+                    Layer::Arc => quote! { Arc::new(#value) },
+                    Layer::Box => quote! { Box::new(#value) },
+                    Layer::Option => quote! { Some(#value) },
+                    Layer::Rc => quote! { Rc::new(#value) },
+                    Layer::Map(name)
+                    | Layer::Set(name)
+                    | Layer::Vec(name)
+                    | Layer::Unknown(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! { #collection::default() }
+                    }
+                };
+            }
         }
 
-        Some(quote! {
-            Some(#value)
-        })
+        if wrap_with_some {
+            value = quote! { Some(#value) };
+        }
+
+        res.value = value;
+        res
     }
 }
 
 fn extract_type_information(
     ty: &Type,
     layers: &mut Vec<Layer>,
-    nested_ident: bool,
-) -> Option<Ident> {
+    mut on_last: impl FnMut(&Type, &PathSegment),
+) {
     // We don't need to traverse other types, just paths
     let Type::Path(ty_path) = ty else {
-        return None;
+        return;
     };
 
     // Extract the last segment of the path, for example `Option`,
@@ -162,9 +197,7 @@ fn extract_type_information(
     match &last_segment.arguments {
         // We've reached the final segment
         PathArguments::None => {
-            if nested_ident {
-                return Some(last_segment.ident.clone());
-            }
+            on_last(ty, last_segment);
         }
 
         // Attempt to drill deeper down
@@ -172,15 +205,14 @@ fn extract_type_information(
             extract_layer(last_segment, layers);
 
             if let Some(GenericArgument::Type(inner_ty)) = args.args.last() {
-                return extract_type_information(inner_ty, layers, nested_ident);
+                extract_type_information(inner_ty, layers, on_last);
+                return;
             }
         }
 
         // What to do here, anything?
         PathArguments::Parenthesized(_) => {}
     };
-
-    None
 }
 
 fn extract_layer(last_segment: &PathSegment, layers: &mut Vec<Layer>) {

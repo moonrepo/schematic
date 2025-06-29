@@ -1,0 +1,5 @@
+---
+source: crates/core/tests/field_default_test.rs
+expression: pretty(container.impl_partial_default_values())
+---
+

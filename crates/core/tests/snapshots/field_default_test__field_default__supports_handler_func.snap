@@ -5,5 +5,10 @@ expression: pretty(container.impl_partial_default_values())
 fn default_values(
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    Ok(Some(Self { a: Some(true) }))
+    use schematic::internal::*;
+    Ok(
+        Some(Self {
+            a: handle_default_result(handler(context))?,
+        }),
+    )
 }

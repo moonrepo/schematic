@@ -1,0 +1,22 @@
+---
+source: crates/core/tests/field_default_test.rs
+expression: pretty(container.impl_partial_default_values())
+---
+fn default_values(
+    context: &Self::Context,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    Ok(
+        Some(
+            Self(
+                Some(Default::default()),
+                Some(true),
+                Some(100),
+                handle_default_result(String::try_from("abc"))?,
+                Some(["a".into(), "b".into(), "c".into()]),
+                Some(Vec::default()),
+                Some((10, -10, 0)),
+            ),
+        ),
+    )
+}
