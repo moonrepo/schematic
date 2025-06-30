@@ -13,6 +13,7 @@ indexmap = { workspace = true }
 regex = { workspace = true, optional = true }
 rust_decimal = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
+ron = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 rpkl = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
@@ -32,6 +33,7 @@ schematic_types = { path = ".", features = [
 	"semver",
 	"serde",
 	"serde_json",
+	"serde_ron",
 	"serde_rpkl",
 	"serde_toml",
 	"serde_yaml",
@@ -50,6 +52,7 @@ rust_decimal = ["dep:rust_decimal"]
 semver = ["dep:semver"]
 serde = ["dep:serde"]
 serde_json = ["dep:serde_json"]
+serde_ron = ["dep:ron"]
 serde_rpkl = ["dep:rpkl"]
 serde_toml = ["dep:toml"]
 serde_yaml = ["dep:serde_yaml"]

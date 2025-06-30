@@ -18,6 +18,9 @@ pub enum Format {
     #[cfg(feature = "pkl")]
     Pkl,
 
+    #[cfg(feature = "ron")]
+    Ron,
+
     #[cfg(feature = "toml")]
     Toml,
 
@@ -46,6 +49,15 @@ impl Format {
 
             if value.ends_with(".pkl") {
                 return Ok(Format::Pkl);
+            }
+        }
+
+        #[cfg(feature = "ron")]
+        {
+            available.push("RON");
+
+            if value.ends_with(".ron") {
+                return Ok(Format::Ron);
             }
         }
 
@@ -90,6 +102,17 @@ impl Format {
             matches!(self, Format::Pkl)
         }
         #[cfg(not(feature = "pkl"))]
+        {
+            false
+        }
+    }
+
+    pub fn is_ron(&self) -> bool {
+        #[cfg(feature = "ron")]
+        {
+            matches!(self, Format::Ron)
+        }
+        #[cfg(not(feature = "ron"))]
         {
             false
         }

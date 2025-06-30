@@ -142,6 +142,9 @@ name = "bitflags"
 version = "2.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bitvec"
@@ -1730,6 +1733,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ron"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "beceb6f7bf81c73e73aeef6dd1356d9a1b2b4909e1f0fc3e59b034f9572d7b7f"
+dependencies = [
+ "base64",
+ "bitflags",
+ "serde",
+ "serde_derive",
+ "unicode-ident",
+]
+
+[[package]]
 name = "rpkl"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1892,6 +1908,7 @@ dependencies = [
  "regex",
  "relative-path",
  "reqwest",
+ "ron",
  "rpkl",
  "rust_decimal",
  "schemars",
@@ -1933,6 +1950,7 @@ dependencies = [
  "indexmap",
  "regex",
  "relative-path",
+ "ron",
  "rpkl",
  "rust_decimal",
  "schematic_types",
