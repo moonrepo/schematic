@@ -2,6 +2,8 @@
 mod json;
 #[cfg(feature = "pkl")]
 mod pkl;
+#[cfg(feature = "ron")]
+mod ron;
 #[cfg(feature = "toml")]
 mod toml;
 #[cfg(any(feature = "yaml", feature = "yml"))]
@@ -43,6 +45,9 @@ impl Format {
 
             #[cfg(feature = "pkl")]
             Format::Pkl => pkl::parse(location, content, file_path),
+
+            #[cfg(feature = "ron")]
+            Format::Ron => ron::parse(location, content),
 
             #[cfg(feature = "toml")]
             Format::Toml => toml::parse(location, content),

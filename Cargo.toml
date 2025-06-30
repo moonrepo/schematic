@@ -9,6 +9,7 @@ miette = "7.6.0"
 regex = "1.11.1"
 relative-path = "2.0.1"
 reqwest = { version = "0.12.19", default-features = false }
+ron = "0.10.1"
 rpkl = "0.4.2"
 rust_decimal = "1.37.1"
 semver = "1.0.26"

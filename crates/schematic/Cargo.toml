@@ -47,6 +47,9 @@ schemars = { version = "0.8.22", optional = true, default-features = false }
 # pkl
 rpkl = { workspace = true, optional = true }
 
+# ron
+ron = { workspace = true, optional = true }
+
 # toml
 toml = { workspace = true, optional = true }
 
@@ -77,6 +80,7 @@ validate = ["dep:garde", "schematic_macros/validate"]
 # Formats
 json = ["dep:serde_json", "schematic_types/serde_json"]
 pkl = ["dep:rpkl", "schematic_types/serde_rpkl"]
+ron = ["dep:ron", "schematic_types/serde_ron"]
 toml = ["dep:toml", "schematic_types/serde_toml"]
 yaml = ["dep:serde_yaml", "schematic_types/serde_yaml"]
 yml = ["dep:serde_yml", "schematic_types/serde_yml"]
