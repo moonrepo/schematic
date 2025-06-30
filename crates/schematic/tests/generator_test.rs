@@ -66,6 +66,7 @@ struct GenConfig {
     path: PathBuf,
     rel_path: relative_path::RelativePathBuf,
     url: Option<url::Url>,
+    uuid: uuid::Uuid,
     version: Option<semver::Version>,
     version_req: semver::VersionReq,
     json_value: serde_json::Value,

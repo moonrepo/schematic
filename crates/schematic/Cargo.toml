@@ -98,6 +98,7 @@ type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal", "garde?/rust_decimal"]
 type_semver = ["schematic_types/semver"]
 type_url = ["schematic_types/url"]
+type_uuid = ["schematic_types/uuid"]
 
 # Validation
 validate_email = ["validate", "garde/email"]
@@ -124,6 +125,7 @@ schematic = { path = ".", features = [
 	"type_rust_decimal",
 	"type_semver",
 	"type_url",
+	"type_uuid",
 	"url",
 	"validate",
 	"validate_email",
@@ -148,3 +150,4 @@ relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
 url = { workspace = true, features = ["serde"] }
+uuid = { workspace = true, features = ["serde"] }

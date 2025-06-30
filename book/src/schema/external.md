@@ -83,3 +83,9 @@ Implements schemas for `Value` and `Map` from the [toml](https://crates.io/crate
 > Requires the `type_url` Cargo feature.
 
 Implements a schema for `Url` from the [url](https://crates.io/crates/url) crate.
+
+## uuid
+
+> Requires the `type_uuid` Cargo feature.
+
+Implements a schema for `Uuid` from the [uuid](https://crates.io/crates/uuid) crate.

@@ -248,6 +248,17 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "uuid": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "vector": {
       "description": "This is a list of strings.",
       "anyOf": [
@@ -389,6 +400,7 @@ expression: "fs::read_to_string(file).unwrap()"
         "time",
         "tomlValue",
         "url",
+        "uuid",
         "vector",
         "version",
         "versionReq",
@@ -527,6 +539,10 @@ expression: "fs::read_to_string(file).unwrap()"
               "type": "null"
             }
           ]
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
         },
         "vector": {
           "description": "This is a list of strings.",

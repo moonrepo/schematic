@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `type_uuid` feature for UUID schema support.
+
 ## 0.18.8
 
 #### 🚀 Updates

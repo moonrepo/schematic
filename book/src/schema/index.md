@@ -106,6 +106,7 @@ Learn more about [external types](./external.md).
 - `type_rust_decimal` - Implements schematic for the `rust_decimal` crate.
 - `type_semver` - Implements schematic for the `semver` crate.
 - `type_url` - Implements schematic for the `url` crate.
+- `type_uuid` - Implements schematic for the `uuid` crate.
 
 [schematic]: https://docs.rs/schematic/latest/schematic/trait.Schematic.html
 [schema]: https://docs.rs/schematic/latest/schematic/struct.Schema.html

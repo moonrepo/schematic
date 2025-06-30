@@ -1929,6 +1929,7 @@ dependencies = [
  "toml",
  "tracing",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -1962,6 +1963,7 @@ dependencies = [
  "starbase_sandbox",
  "toml",
  "url",
+ "uuid",
 ]
 
 [[package]]
@@ -2625,6 +2627,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3cf4199d1e5d15ddd86a694e4d0dffa9c323ce759fea589f00fef9d81cc1931d"
 dependencies = [
  "js-sys",
+ "serde",
  "wasm-bindgen",
 ]
 

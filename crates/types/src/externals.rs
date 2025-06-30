@@ -211,3 +211,10 @@ mod url_feature {
 
     impl_string_format!(url::Url, "uri");
 }
+
+#[cfg(feature = "uuid")]
+mod uuid_feature {
+    use super::*;
+
+    impl_string_format!(uuid::Uuid, "uuid");
+}
