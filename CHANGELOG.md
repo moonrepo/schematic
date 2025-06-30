@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added RON support (`.ron` files) behind the `ron` feature.
 - Added `type_uuid` feature for UUID schema support.
 
 ## 0.18.8
