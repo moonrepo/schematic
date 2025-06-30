@@ -1296,6 +1296,7 @@ impl Schematic for User {
 <li><code>type_rust_decimal</code> - Implements schematic for the <code>rust_decimal</code> crate.</li>
 <li><code>type_semver</code> - Implements schematic for the <code>semver</code> crate.</li>
 <li><code>type_url</code> - Implements schematic for the <code>url</code> crate.</li>
+<li><code>type_uuid</code> - Implements schematic for the <code>uuid</code> crate.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="types"><a class="header" href="#types">Types</a></h1>
 <p>Schema types are the building blocks when modeling your schema. They are used to define the explicit
@@ -2143,6 +2144,11 @@ crate.</p>
 <p>Requires the <code>type_url</code> Cargo feature.</p>
 </blockquote>
 <p>Implements a schema for <code>Url</code> from the <a href="https://crates.io/crates/url">url</a> crate.</p>
+<h2 id="uuid"><a class="header" href="#uuid">uuid</a></h2>
+<blockquote>
+<p>Requires the <code>type_uuid</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Uuid</code> from the <a href="https://crates.io/crates/uuid">uuid</a> crate.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="code-generation"><a class="header" href="#code-generation">Code generation</a></h1>
 <p>The primary benefit of a schema modeling system, is that you can consume this type information to
 generate code into multiple output formats. This is a common pattern in many languages, and is a
