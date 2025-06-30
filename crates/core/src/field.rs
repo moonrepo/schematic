@@ -1,9 +1,12 @@
-use crate::args::{PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{
+    PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
+};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::{ImplResult, preserve_str_literal, to_type_string};
 use darling::{FromAttributes, FromMeta};
-use quote::ToTokens;
+use proc_macro2::{Literal, TokenStream};
+use quote::{ToTokens, TokenStreamExt, quote};
 use std::ops::Deref;
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
@@ -154,37 +157,13 @@ impl Field {
     fn validate_args(&self) {
         #[cfg(feature = "env")]
         {
-            // env
-            if self.args.env.as_ref().is_some_and(|key| key.is_empty()) {
-                panic!("Attribute `env` cannot be empty.");
-            }
-
-            if self.args.env.is_some() && self.args.env_prefix.is_some() {
-                panic!("Cannot use `env` and `env_prefix` together.");
-            }
-
             // env_prefix
-            if self
-                .args
-                .env_prefix
-                .as_ref()
-                .is_some_and(|key| key.is_empty())
-            {
-                panic!("Attribute `env_prefix` cannot be empty.");
-            }
-
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {
                 panic!("Cannot use `env_prefix` without `nested`.");
             }
         }
 
         // nested
-        if self.args.nested.is_some() {
-            #[cfg(feature = "env")]
-            if self.args.env.is_some() {
-                panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
-            }
-        }
 
         #[cfg(feature = "env")]
         {
@@ -193,6 +172,83 @@ impl Field {
                 panic!("Cannot use `parse_env` without `env`.");
             }
         }
+    }
+
+    #[cfg(not(feature = "env"))]
+    pub fn get_env_var(&self) -> Option<String> {
+        None
+    }
+
+    #[cfg(feature = "env")]
+    pub fn get_env_var(&self) -> Option<String> {
+        if self.args.env.is_some() && self.args.env_prefix.is_some() {
+            panic!("Cannot use `env` and `env_prefix` together.");
+        }
+
+        if let Some(env_key) = &self.args.env {
+            if env_key.is_empty() {
+                panic!("Attribute `env` cannot be empty.");
+            }
+
+            if self.is_nested() {
+                panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
+            }
+
+            return Some(env_key.to_owned());
+        }
+
+        if let Some(env_prefix) = &self.container_args.env_prefix {
+            if env_prefix.is_empty() {
+                panic!("Attribute `env_prefix` cannot be empty.");
+            }
+
+            return Some(format!("{env_prefix}{}", self.get_name()).to_uppercase());
+        }
+
+        None
+    }
+
+    pub fn get_key(&self) -> TokenStream {
+        self.ident
+            .as_ref()
+            .map(|name| quote! { #name })
+            .unwrap_or_else(|| {
+                let index = Index(self.index);
+
+                quote! { #index }
+            })
+    }
+
+    pub fn get_name(&self) -> String {
+        let dir = SerdeIoDirection::From;
+
+        if let Some(name) = self.args.rename.as_ref().and_then(|rn| rn.get_name(dir)) {
+            return name.into();
+        }
+
+        if let Some(name) = self
+            .serde_args
+            .rename
+            .as_ref()
+            .and_then(|rn| rn.get_name(dir))
+        {
+            return name.into();
+        }
+
+        self.ident
+            .as_ref()
+            .expect("Name only usable on named fields!")
+            .to_string()
+    }
+
+    pub fn is_nested(&self) -> bool {
+        self.args
+            .nested
+            .as_ref()
+            .is_some_and(|nested| match nested {
+                FieldNestedArg::Detect(inner) => *inner,
+                FieldNestedArg::Ident(_) => true,
+            })
     }
 }
 
@@ -222,5 +278,35 @@ impl Field {
 impl Field {
     pub fn impl_partial_default_value(&self) -> ImplResult {
         self.value.impl_partial_default_value(&self.args)
+    }
+
+    #[cfg(not(feature = "env"))]
+    pub fn impl_partial_env_value(&self) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "env")]
+    pub fn impl_partial_env_value(&self) -> ImplResult {
+        if self.is_nested() {
+            return self.value.impl_partial_env_value(&self.args, "");
+        }
+
+        let Some(env_key) = self.get_env_var() else {
+            if self.args.parse_env.is_some() {
+                panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
+            }
+
+            return ImplResult::skipped();
+        };
+
+        self.value.impl_partial_env_value(&self.args, &env_key)
+    }
+}
+
+struct Index(usize);
+
+impl ToTokens for Index {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.append(Literal::usize_unsuffixed(self.0));
     }
 }

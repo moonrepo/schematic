@@ -1,33 +1,169 @@
+mod utils;
+
 use schematic_core::container::Container;
+use starbase_sandbox::assert_snapshot;
 use syn::parse_quote;
+use utils::pretty;
 
 mod field_env {
     use super::*;
 
     #[test]
-    fn accepts_string() {
-        let container = Container::from(parse_quote! {
-            #[derive(Config)]
-            struct Example {
-                #[setting(env = "KEY")]
-                a: String,
-            }
-        });
-        let field = container.inner.get_fields()[0];
-
-        assert_eq!(field.args.env.as_ref().unwrap(), "KEY");
-    }
-
-    #[test]
-    #[should_panic(expected = "Attribute `env` cannot be empty.")]
-    fn errors_if_empty() {
+    #[should_panic(expected = "Wrapper types cannot be used with `env`.")]
+    fn errors_if_using_wrappers() {
         Container::from(parse_quote! {
             #[derive(Config)]
             struct Example {
-                #[setting(env = "")]
-                a: String,
+                #[setting(env = "KEY")]
+                a: Arc<String>,
             }
-        });
+        })
+        .impl_partial_env_values();
+    }
+
+    #[test]
+    #[should_panic(expected = "Collection types cannot be used with `env`.")]
+    fn errors_if_using_collections() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(env = "KEY")]
+                a: Vec<String>,
+            }
+        })
+        .impl_partial_env_values();
+    }
+
+    mod named_struct {
+        use super::*;
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env = "KEY")]
+                    a: String,
+                }
+            });
+            let field = container.inner.get_fields()[0];
+
+            assert_eq!(field.args.env.as_ref().unwrap(), "KEY");
+        }
+
+        #[test]
+        #[should_panic(expected = "Attribute `env` cannot be empty.")]
+        fn errors_if_empty() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env = "")]
+                    a: String,
+                }
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        fn supports_different_types() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    no_env: String,
+                    #[setting(env = "A")]
+                    a: String,
+                    #[setting(env = "B")]
+                    b: usize,
+                    #[setting(env = "C")]
+                    c: bool,
+                    #[setting(env = "D")]
+                    d: f32,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: NestedConfig,
+                    #[setting(nested = CustomConfig)]
+                    b: CustomConfig,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+    }
+
+    mod unnamed_struct {
+        use super::*;
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(env = "KEY")]
+                    String,
+                );
+            });
+            let field = container.inner.get_fields()[0];
+
+            assert_eq!(field.args.env.as_ref().unwrap(), "KEY");
+        }
+
+        #[test]
+        #[should_panic(expected = "Attribute `env` cannot be empty.")]
+        fn errors_if_empty() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(env = "")]
+                    String,
+                );
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        fn supports_different_types() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    String,
+                    #[setting(env = "A")]
+                    String,
+                    #[setting(env = "B")]
+                    usize,
+                    #[setting(env = "C")]
+                    bool,
+                    #[setting(env = "D")]
+                    f32,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(nested)]
+                    NestedConfig,
+                    #[setting(nested = CustomConfig)]
+                    CustomConfig,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
     }
 }
 
