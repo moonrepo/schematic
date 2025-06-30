@@ -97,6 +97,21 @@ mod field_default {
         }
 
         #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: NestedConfig,
+                    #[setting(nested = CustomConfig)]
+                    b: CustomConfig,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
+        #[test]
         fn renders_nothing_if_all_option_wrapped() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]

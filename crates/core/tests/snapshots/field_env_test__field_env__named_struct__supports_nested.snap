@@ -1,0 +1,12 @@
+---
+source: crates/core/tests/field_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::default();
+    let mut partial = Self::default();
+    partial.a = env.nested(PartialNestedConfig::env_values()?)?;
+    partial.b = env.nested(PartialCustomConfig::env_values()?)?;
+    Ok(if env.is_empty() { None } else { Some(partial) })
+}

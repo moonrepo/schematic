@@ -84,10 +84,19 @@ impl FieldValue {
         self.inner_ty.as_ref().unwrap_or(&self.ty)
     }
 
+    pub fn is_collection(&self) -> bool {
+        self.layers.iter().any(|layer| {
+            matches!(
+                layer,
+                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) | Layer::Unknown(_)
+            )
+        })
+    }
+
     pub fn is_outer_option_wrapped(&self) -> bool {
         self.layers
             .first()
-            .is_some_and(|wrapper| *wrapper == Layer::Option)
+            .is_some_and(|layer| *layer == Layer::Option)
     }
 
     pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
@@ -104,8 +113,14 @@ impl FieldValue {
                 panic!("Cannot use `default` with `nested`.");
             }
 
+            let ident = format_ident!("Partial{}", nested_ident);
+
+            // quote! {
+            //     <#nested_ident as schematic::PartialConfig>::default_values(context)?
+            // }
+
             quote! {
-                <#nested_ident as schematic::PartialConfig>::default_values(content)?
+                #ident::default_values(context)?
             }
         } else if let Some(expr) = &field_args.default {
             let ty = self.get_inner_type();
@@ -176,6 +191,34 @@ impl FieldValue {
         }
 
         res.value = value;
+        res
+    }
+
+    pub fn impl_partial_env_value(&self, field_args: &FieldArgs, env_key: &str) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        if self.is_collection() {
+            panic!("Collection types cannot be used with `env`.");
+        } else if !self.layers.is_empty() {
+            panic!("Wrapper types cannot be used with `env`.");
+        }
+
+        res.value = if let Some(nested_ident) = &self.nested_ident {
+            let ident = format_ident!("Partial{}", nested_ident);
+
+            quote! {
+                env.nested(#ident::env_values()?)?
+            }
+        } else if let Some(parse_env) = &field_args.parse_env {
+            quote! {
+                env.get_and_parse(#env_key, #parse_env)?
+            }
+        } else {
+            quote! {
+                env.get(#env_key)?
+            }
+        };
+
         res
     }
 }
