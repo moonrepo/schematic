@@ -141,6 +141,10 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
     "vector": {
       "description": "This is a list of strings.",
       "type": "array",
