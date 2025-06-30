@@ -17,6 +17,7 @@ url = { workspace = true, optional = true }
 rpkl = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
 serde_yml = { workspace = true, optional = true }
@@ -31,6 +32,7 @@ schematic_types = { path = ".", features = [
 	"rust_decimal",
 	"semver",
 	"serde",
+	"uuid",
 	"serde_json",
 	"serde_rpkl",
 	"serde_toml",
@@ -49,6 +51,7 @@ relative_path = ["dep:relative-path"]
 rust_decimal = ["dep:rust_decimal"]
 semver = ["dep:semver"]
 serde = ["dep:serde"]
+uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
 serde_rpkl = ["dep:rpkl"]
 serde_toml = ["dep:toml"]
