@@ -197,12 +197,9 @@ impl Field {
             return Some(env_key.to_owned());
         }
 
-        if let Some(env_prefix) = &self.container_args.env_prefix {
-            if env_prefix.is_empty() {
-                panic!("Attribute `env_prefix` cannot be empty.");
-            }
-
-            return Some(format!("{env_prefix}{}", self.get_name()).to_uppercase());
+        // When the container has a prefix, we use the field name as a key
+        if self.container_args.env_prefix.is_some() {
+            return Some(self.get_name().to_uppercase());
         }
 
         None
