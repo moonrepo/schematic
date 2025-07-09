@@ -324,6 +324,12 @@ impl Container {
         }
     }
 
+    #[cfg(not(feature = "env"))]
+    pub fn impl_partial_env_values(&self) -> TokenStream {
+        quote! {}
+    }
+
+    #[cfg(feature = "env")]
     pub fn impl_partial_env_values(&self) -> TokenStream {
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
@@ -358,11 +364,21 @@ impl Container {
 
         let internal = ImplResult::impl_use_internal(true);
 
+        let prefix_fallback = if let Some(env_prefix) = &self.args.env_prefix {
+            if env_prefix.is_empty() {
+                panic!("Attribute `env_prefix` cannot be empty.");
+            }
+
+            quote! { prefix.or_else(Some(#env_prefix)) }
+        } else {
+            quote! { prefix }
+        };
+
         quote! {
-            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+            fn env_values_with_prefix(prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
 
-                let mut env = EnvManager::default();
+                let mut env = EnvManager::new(#prefix_fallback);
                 let mut partial = Self::default();
 
                 #inner

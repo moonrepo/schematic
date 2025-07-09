@@ -170,42 +170,144 @@ mod field_env {
 mod field_env_prefix {
     use super::*;
 
-    #[test]
-    fn accepts_string() {
-        let container = Container::from(parse_quote! {
-            #[derive(Config)]
-            struct Example {
-                #[setting(env_prefix = "KEY", nested)]
-                a: String,
-            }
-        });
-        let field = container.inner.get_fields()[0];
+    mod named_struct {
+        use super::*;
 
-        assert_eq!(field.args.env_prefix.as_ref().unwrap(), "KEY");
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PRE_")]
+                struct Example {
+                    #[setting(env = "A")]
+                    a: String,
+                    #[setting(env_prefix = "OVERRIDE_", nested)]
+                    b: NestedConfig,
+                }
+            });
+            let fields = container.inner.get_fields();
+
+            assert_eq!(fields[0].args.env.as_ref().unwrap(), "A");
+            assert!(fields[0].args.env_prefix.is_none());
+
+            assert!(fields[1].args.env.is_none());
+            assert_eq!(fields[1].args.env_prefix.as_ref().unwrap(), "OVERRIDE_");
+        }
+
+        #[test]
+        #[should_panic(expected = "Attribute `env_prefix` cannot be empty.")]
+        fn errors_if_empty() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env_prefix = "", nested)]
+                    a: String,
+                }
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env_prefix` without `nested`.")]
+        fn errors_if_not_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env_prefix = "KEY")]
+                    a: String,
+                }
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: NestedConfig,
+                    #[setting(nested = CustomConfig)]
+                    b: CustomConfig,
+                    #[setting(nested, env_prefix = "PRE_")]
+                    c: NestedConfig,
+                    #[setting(nested = CustomConfig, env_prefix = "PRE_")]
+                    d: CustomConfig,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
     }
 
-    #[test]
-    #[should_panic(expected = "Attribute `env_prefix` cannot be empty.")]
-    fn errors_if_empty() {
-        Container::from(parse_quote! {
-            #[derive(Config)]
-            struct Example {
-                #[setting(env_prefix = "", nested)]
-                a: String,
-            }
-        });
-    }
+    mod unnamed_struct {
+        use super::*;
 
-    #[test]
-    #[should_panic(expected = "Cannot use `env_prefix` without `nested`.")]
-    fn errors_if_not_nested() {
-        Container::from(parse_quote! {
-            #[derive(Config)]
-            struct Example {
-                #[setting(env_prefix = "KEY")]
-                a: String,
-            }
-        });
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PRE_")]
+                struct Example(
+                    #[setting(env = "A")]
+                    String,
+                    #[setting(env_prefix = "OVERRIDE_", nested)]
+                    NestedConfig,
+                );
+            });
+            let fields = container.inner.get_fields();
+
+            assert_eq!(fields[0].args.env.as_ref().unwrap(), "A");
+            assert!(fields[0].args.env_prefix.is_none());
+
+            assert!(fields[1].args.env.is_none());
+            assert_eq!(fields[1].args.env_prefix.as_ref().unwrap(), "OVERRIDE_");
+        }
+
+        #[test]
+        #[should_panic(expected = "Attribute `env_prefix` cannot be empty.")]
+        fn errors_if_empty() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(env_prefix = "", nested)]
+                    String,
+                );
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env_prefix` without `nested`.")]
+        fn errors_if_not_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(env_prefix = "KEY")]
+                    String,
+                );
+            })
+            .impl_partial_env_values();
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(nested)]
+                    NestedConfig,
+                    #[setting(nested = CustomConfig)]
+                    CustomConfig,
+                    #[setting(nested, env_prefix = "PRE_")]
+                    NestedConfig,
+                    #[setting(nested = CustomConfig, env_prefix = "PRE_")]
+                    CustomConfig,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
     }
 }
 

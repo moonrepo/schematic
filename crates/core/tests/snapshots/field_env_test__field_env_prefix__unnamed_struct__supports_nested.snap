@@ -8,9 +8,9 @@ fn env_values_with_prefix(
     use schematic::internal::*;
     let mut env = EnvManager::new(prefix);
     let mut partial = Self::default();
-    partial.1 = env.get("A")?;
-    partial.2 = env.get("B")?;
-    partial.3 = env.get("C")?;
-    partial.4 = env.get("D")?;
+    partial.0 = env.nested(PartialNestedConfig::env_values()?)?;
+    partial.1 = env.nested(PartialCustomConfig::env_values()?)?;
+    partial.2 = env.nested(PartialNestedConfig::env_values_with_prefix(Some("PRE_"))?)?;
+    partial.3 = env.nested(PartialCustomConfig::env_values_with_prefix(Some("PRE_"))?)?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

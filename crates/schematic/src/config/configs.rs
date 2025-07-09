@@ -29,6 +29,13 @@ pub trait PartialConfig:
     /// the variable fails to parse or cast into the correct type, an error is returned.
     #[cfg(feature = "env")]
     fn env_values() -> Result<Option<Self>, ConfigError> {
+        Self::env_values_with_prefix(None)
+    }
+
+    /// Internal use only, use [`env_values`] instead.
+    #[cfg(feature = "env")]
+    #[doc(hidden)]
+    fn env_values_with_prefix(_prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
         Ok(None)
     }
 
