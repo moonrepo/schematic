@@ -1,0 +1,17 @@
+---
+source: crates/core/tests/container_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values_with_prefix(
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::new(prefix);
+    let mut partial = Self::default();
+    partial.a = env.get("STR")?;
+    partial.b = env.get("BOOL")?;
+    partial.c = env.get("INT")?;
+    partial.d = env.nested(PartialNestedConfig::env_values()?)?;
+    partial.e = env.nested(PartialCustomConfig::env_values()?)?;
+    Ok(if env.is_empty() { None } else { Some(partial) })
+}
