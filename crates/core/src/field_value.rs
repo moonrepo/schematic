@@ -206,8 +206,18 @@ impl FieldValue {
         res.value = if let Some(nested_ident) = &self.nested_ident {
             let ident = format_ident!("Partial{}", nested_ident);
 
-            quote! {
-                env.nested(#ident::env_values()?)?
+            if let Some(env_prefix) = &field_args.env_prefix {
+                if env_prefix.is_empty() {
+                    panic!("Attribute `env_prefix` cannot be empty.");
+                }
+
+                quote! {
+                    env.nested(#ident::env_values_with_prefix(Some(#env_prefix))?)?
+                }
+            } else {
+                quote! {
+                    env.nested(#ident::env_values()?)?
+                }
             }
         } else if let Some(parse_env) = &field_args.parse_env {
             quote! {

@@ -17,12 +17,21 @@ mod env {
     use super::*;
     use crate::config::ParseEnvResult;
 
-    #[derive(Default)]
     pub struct EnvManager {
         count: u8,
+        prefix: String,
     }
 
     impl EnvManager {
+        pub fn new<T: AsRef<str>>(prefix: Option<T>) -> Self {
+            Self {
+                count: 0,
+                prefix: prefix
+                    .map(|pre| pre.as_ref().to_string())
+                    .unwrap_or_default(),
+            }
+        }
+
         pub fn is_empty(&self) -> bool {
             self.count == 0
         }
@@ -36,7 +45,9 @@ mod env {
             key: &str,
             parser: impl Fn(String) -> ParseEnvResult<T>,
         ) -> ParseEnvResult<T> {
-            if let Ok(value) = std::env::var(key) {
+            let key = format!("{}{key}", self.prefix);
+
+            if let Ok(value) = std::env::var(&key) {
                 return parser(value)
                     .inspect(|inner| {
                         if inner.is_some() {
