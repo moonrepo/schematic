@@ -37,7 +37,7 @@ impl FieldValue<'_> {
                         other => quote! { Some(#other) },
                     },
                     invalid => {
-                        let info = format!("{:?}", invalid);
+                        let info = format!("{invalid:?}");
 
                         panic!(
                             "Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples."

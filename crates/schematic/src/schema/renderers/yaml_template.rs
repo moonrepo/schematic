@@ -101,7 +101,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
             key = "example".into();
         }
 
-        Ok(format!("{}{key}:\n{value}", item_indent))
+        Ok(format!("{item_indent}{key}:\n{value}"))
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<String> {

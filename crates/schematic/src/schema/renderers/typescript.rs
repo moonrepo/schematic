@@ -230,7 +230,7 @@ impl TypeScriptRenderer {
                     self.render_schema(&variant.schema)?
                 )
             } else {
-                format!("{}{},", indent, name)
+                format!("{indent}{name},")
             };
 
             let mut tags = vec![];
@@ -297,13 +297,13 @@ impl TypeScriptRenderer {
 
         for line in lines {
             if line.is_empty() {
-                out.push(format!("{} *", indent));
+                out.push(format!("{indent} *"));
             } else {
                 out.push(format!("{} * {}", indent, line.trim()));
             }
         }
 
-        out.push(format!("{} */", indent));
+        out.push(format!("{indent} */"));
 
         format!("{}\n{}", out.join("\n"), value)
     }
@@ -407,7 +407,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 continue;
             }
 
-            let mut row = format!("{}{}", indent, name);
+            let mut row = format!("{indent}{name}");
 
             if field.optional
                 || matches!(
