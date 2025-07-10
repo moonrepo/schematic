@@ -72,13 +72,13 @@ impl Display for Path {
         for segment in &self.segments {
             match segment {
                 PathSegment::Index(index) => {
-                    write!(formatter, "[{}]", index)?;
+                    write!(formatter, "[{index}]")?;
                 }
                 PathSegment::Key(key) | PathSegment::Variant(key) => {
-                    write!(formatter, "{}{}", separator, key)?;
+                    write!(formatter, "{separator}{key}")?;
                 }
                 PathSegment::Unknown => {
-                    write!(formatter, "{}?", separator)?;
+                    write!(formatter, "{separator}?")?;
                 }
             }
 

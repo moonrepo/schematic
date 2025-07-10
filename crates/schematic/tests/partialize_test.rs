@@ -10,11 +10,11 @@ use std::fmt::Debug;
 fn create_diff<T: Schematic>() -> String {
     let mut schema = SchemaBuilder::build_root::<T>();
 
-    let original = format!("{:#?}", schema);
+    let original = format!("{schema:#?}");
 
     partialize_schema(&mut schema, true);
 
-    let partial = format!("{:#?}", schema);
+    let partial = format!("{schema:#?}");
 
     // println!("ORIGINAL:\n{}\n\n", original);
     // println!("PARTIAL:\n{}\n\n", partial);
@@ -28,7 +28,7 @@ fn create_diff<T: Schematic>() -> String {
             ChangeTag::Equal => "⬛️",
         };
 
-        diff.push_str(&format!("{}{}", sign, change));
+        diff.push_str(&format!("{sign}{change}"));
     }
 
     diff

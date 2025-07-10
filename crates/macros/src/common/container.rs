@@ -23,7 +23,7 @@ impl Container<'_> {
         let mut settings = vec![];
 
         let format_alias = |ts: TokenStream| {
-            format!("{}", ts)
+            format!("{ts}")
                 .replace(" < ", "<")
                 .replace("< ", "<")
                 .replace(" <", "<")

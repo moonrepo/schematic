@@ -94,7 +94,7 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                 let value = value.as_str();
             }
         } else {
-            panic!("Unknown `before_parse` value {}", parser);
+            panic!("Unknown `before_parse` value {parser}");
         }
     } else {
         quote! {}

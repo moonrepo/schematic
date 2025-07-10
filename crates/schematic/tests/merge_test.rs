@@ -11,7 +11,7 @@ pub struct MergeNormal {
 }
 
 fn merge_string<C>(prev: String, next: String, _: &C) -> MergeResult<String> {
-    Ok(Some(format!("{}-{}", prev, next)))
+    Ok(Some(format!("{prev}-{next}")))
 }
 
 #[derive(Config)]

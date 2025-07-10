@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated to Rust v1.88.
+- Updated dependencies.
+
 ## 0.18.9
 
 #### 🚀 Updates
