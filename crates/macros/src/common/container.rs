@@ -1,8 +1,6 @@
 use crate::common::{Field, Variant};
-use crate::utils::{extract_comment, extract_deprecated, map_option_argument_quote};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Attribute, Fields};
 
 pub enum Container<'l> {
     NamedStruct { fields: Vec<Field<'l>> },
@@ -84,7 +82,11 @@ impl Container<'_> {
         }
     }
 
-    pub fn generate_schema(&self, attrs: &[&Attribute]) -> TokenStream {
+    #[cfg(feature = "schema")]
+    pub fn generate_schema(&self, attrs: &[&syn::Attribute]) -> TokenStream {
+        use crate::utils::{extract_comment, extract_deprecated, map_option_argument_quote};
+        use syn::Fields;
+
         let deprecated = if let Some(comment) = extract_deprecated(attrs) {
             quote! { schema.set_deprecated(#comment); }
         } else {

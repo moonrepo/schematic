@@ -123,6 +123,7 @@ pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
     None
 }
 
+#[cfg(feature = "schema")]
 pub fn map_bool_field_quote(name: &str, value: bool) -> Option<proc_macro2::TokenStream> {
     if value {
         let id = format_ident!("{}", name);
@@ -169,6 +170,7 @@ pub fn map_option_field_quote<T: ToTokens>(
 //     }
 // }
 
+#[cfg(feature = "schema")]
 pub fn map_option_argument_quote<T: ToTokens>(value: Option<T>) -> proc_macro2::TokenStream {
     match value {
         Some(value) => {

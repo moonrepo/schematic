@@ -2,7 +2,6 @@ mod variant;
 
 use crate::common::ContainerSerdeArgs;
 use crate::config_enum::variant::Variant;
-use crate::utils::{extract_comment, extract_common_attrs, extract_deprecated, instrument_quote};
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -30,9 +29,12 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
         panic!("Only unit enums are supported.");
     };
 
-    let attrs = extract_common_attrs(&input.attrs);
+    #[cfg(feature = "schema")]
+    let attrs = crate::utils::extract_common_attrs(&input.attrs);
 
     let enum_name = &input.ident;
+
+    #[cfg(feature = "schema")]
     let meta_name = args
         .rename
         .as_deref()
@@ -61,14 +63,17 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
     let mut from_stmts = vec![];
     let mut schema_types = vec![];
     let mut has_fallback = false;
+    #[cfg(feature = "schema")]
     let mut default_index = None;
 
+    #[cfg_attr(not(feature = "schema"), allow(unused_variables))]
     for (index, variant) in variants.into_iter().enumerate() {
         unit_names.push(variant.get_unit_name());
         display_stmts.push(variant.get_display_fmt());
         from_stmts.push(variant.get_from_str());
         schema_types.push(variant.get_schema_type());
 
+        #[cfg(feature = "schema")]
         if variant.default {
             default_index = Some(index);
         }
@@ -172,7 +177,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     #[cfg(feature = "schema")]
     {
-        use crate::utils::map_option_argument_quote;
+        use crate::utils::{
+            extract_comment, extract_deprecated, instrument_quote, map_option_argument_quote,
+        };
 
         let default_index = map_option_argument_quote(default_index);
         let instrument = instrument_quote();
