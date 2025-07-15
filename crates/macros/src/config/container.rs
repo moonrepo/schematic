@@ -368,12 +368,15 @@ impl Container<'_> {
         partial_name: &Ident,
         partial_attrs: &[TokenStream],
     ) -> TokenStream {
+        let serde = quote! { ::schematic::serde };
+
         match self {
             Self::NamedStruct {
                 fields: settings, ..
             } => {
                 quote! {
-                    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #[derive(Clone, Debug, Default, PartialEq, #serde::Deserialize, #serde::Serialize)]
+                    #[serde(crate = "::schematic::serde")]
                     #(#partial_attrs)*
                     pub struct #partial_name {
                         #(#settings)*
@@ -384,7 +387,8 @@ impl Container<'_> {
                 fields: settings, ..
             } => {
                 quote! {
-                    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #[derive(Clone, Debug, Default, PartialEq, #serde::Deserialize, #serde::Serialize)]
+                    #[serde(crate = "::schematic::serde")]
                     #(#partial_attrs)*
                     pub struct #partial_name(
                         #(#settings)*
@@ -406,7 +410,8 @@ impl Container<'_> {
                 };
 
                 quote! {
-                    #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+                    #[derive(Clone, Debug, PartialEq, #serde::Deserialize, #serde::Serialize)]
+                    #[serde(crate = "::schematic::serde")]
                     #(#partial_attrs)*
                     pub enum #partial_name {
                         #(#variants)*
