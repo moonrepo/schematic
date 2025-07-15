@@ -196,6 +196,7 @@ impl<'l> Macro<'l> {
         }
     }
 
+    #[cfg(feature = "schema")]
     pub fn get_name(&self) -> String {
         match &self.args.rename {
             Some(local) => local.to_owned(),

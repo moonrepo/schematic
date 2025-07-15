@@ -9,7 +9,9 @@ use syn::{Attribute, ExprPath, Fields, Variant as NativeVariant};
 pub enum TaggedFormat {
     Untagged,
     External,
+    #[cfg_attr(not(feature = "schema"), allow(dead_code))]
     Internal(String),
+    #[cfg_attr(not(feature = "schema"), allow(dead_code))]
     Adjacent(String, String),
     // Special case for unit only enums
     Unit,
@@ -65,6 +67,7 @@ impl Variant<'_> {
         self.args.default
     }
 
+    #[cfg(feature = "schema")]
     pub fn is_excluded(&self) -> bool {
         self.args.exclude
     }
@@ -136,6 +139,7 @@ impl Variant<'_> {
         })
     }
 
+    #[cfg(feature = "schema")]
     pub fn generate_schema_type(&self, all_unit: bool) -> TokenStream {
         let name = self.get_name(Some(&self.casing_format));
         let tagged_format = if all_unit {

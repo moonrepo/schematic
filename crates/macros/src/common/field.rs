@@ -1,14 +1,11 @@
 use crate::common::FieldValue;
 use crate::common::PartialAttr;
 use crate::common::macros::ContainerSerdeArgs;
-use crate::utils::{
-    extract_comment, extract_common_attrs, extract_deprecated, format_case, map_bool_field_quote,
-    map_option_field_quote, preserve_str_literal,
-};
+use crate::utils::{extract_common_attrs, format_case, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Ident, TokenStream};
 use quote::{ToTokens, quote};
-use syn::{Attribute, Expr, ExprPath, Field as NativeField, Lit, Type};
+use syn::{Attribute, Expr, ExprPath, Field as NativeField, Type};
 
 // #[serde()]
 #[derive(FromAttributes, Default)]
@@ -111,6 +108,7 @@ impl Field<'_> {
         field
     }
 
+    #[cfg(feature = "schema")]
     pub fn is_excluded(&self) -> bool {
         self.args.exclude
     }
@@ -128,6 +126,7 @@ impl Field<'_> {
         self.value_type.is_outer_optional()
     }
 
+    #[cfg(feature = "schema")]
     pub fn is_optional(&self) -> bool {
         self.serde_args.default || self.args.default.is_some()
     }
@@ -136,10 +135,12 @@ impl Field<'_> {
         self.args.required
     }
 
+    #[cfg(feature = "schema")]
     pub fn is_skipped(&self) -> bool {
         self.args.skip || self.serde_args.skip
     }
 
+    #[cfg(feature = "schema")]
     pub fn get_name_raw(&self) -> &Ident {
         self.name.as_ref().expect("Missing name for field")
     }
@@ -235,7 +236,13 @@ impl Field<'_> {
         })
     }
 
+    #[cfg(feature = "schema")]
     pub fn generate_schema_type(&self, as_field: bool) -> TokenStream {
+        use crate::utils::{
+            extract_comment, extract_deprecated, map_bool_field_quote, map_option_field_quote,
+        };
+        use syn::Lit;
+
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
         let nullable = map_bool_field_quote("nullable", self.is_nullable());
         let optional = map_bool_field_quote("optional", self.is_optional());

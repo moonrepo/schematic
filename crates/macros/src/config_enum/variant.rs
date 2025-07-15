@@ -18,6 +18,7 @@ pub struct VariantArgs {
 
 pub struct Variant<'l> {
     pub args: VariantArgs,
+    #[cfg_attr(not(feature = "schema"), allow(dead_code))]
     pub default: bool,
     pub serde_args: FieldSerdeArgs,
     pub attrs: Vec<&'l Attribute>,

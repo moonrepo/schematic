@@ -190,6 +190,7 @@ impl<'l> FieldValue<'l> {
         }
     }
 
+    #[cfg(feature = "schema")]
     pub fn get_inner_type(&self) -> Option<&'l Type> {
         match self {
             Self::Value { value, .. } => Some(value),
