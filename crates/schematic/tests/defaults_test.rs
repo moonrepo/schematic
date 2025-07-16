@@ -57,6 +57,10 @@ fn default_int(_ctx: &()) -> DefaultValueResult<usize> {
     Ok(Some(456))
 }
 
+fn default_vec(_ctx: &()) -> DefaultValueResult<Vec<usize>> {
+    Ok(Some(vec![456]))
+}
+
 #[derive(Debug, Config)]
 pub struct ReqOptDefaults {
     required: usize,
@@ -64,12 +68,16 @@ pub struct ReqOptDefaults {
     required_with_default: usize,
     #[setting(default = default_int)]
     required_with_default_fn: usize,
+    #[setting(default = default_vec)]
+    required_vec_with_default_fn: Vec<usize>,
 
     optional: Option<usize>,
     #[setting(default = 123)]
     optional_with_default: Option<usize>,
     #[setting(default = default_int)]
     optional_with_default_fn: Option<usize>,
+    #[setting(default = default_vec)]
+    optional_vec_with_default_fn: Option<Vec<usize>>,
 }
 
 #[test]
@@ -79,9 +87,11 @@ fn handles_required_optional_defaults() {
     assert_eq!(result.config.required, 0);
     assert_eq!(result.config.required_with_default, 123);
     assert_eq!(result.config.required_with_default_fn, 456);
+    assert_eq!(result.config.required_vec_with_default_fn, vec![456]);
     assert_eq!(result.config.optional, None);
     assert_eq!(result.config.optional_with_default, Some(123));
     assert_eq!(result.config.optional_with_default_fn, Some(456));
+    assert_eq!(result.config.optional_vec_with_default_fn, Some(vec![456]));
 }
 
 #[test]
@@ -164,6 +174,39 @@ fn handles_nested_defaults() {
     let result = ConfigLoader::<NestedDefaults>::new().load().unwrap();
 
     assert!(result.config.nested_opt.is_none());
+    assert!(!result.config.nested.boolean);
+}
+
+#[derive(Debug, Config)]
+pub struct CustomNestedDefaults {
+    #[setting(nested, default = PartialNativeDefaults::default())]
+    nested: NativeDefaults,
+    #[setting(nested, default = PartialNativeDefaults::default())]
+    nested_boxed: Box<NativeDefaults>,
+    #[setting(nested, default = PartialNativeDefaults::default())]
+    nested_opt: Option<NativeDefaults>,
+    #[setting(nested, default = PartialNativeDefaults::default())]
+    nested_opt_boxed: Option<Box<NativeDefaults>>,
+    #[setting(nested, default = vec![PartialNativeDefaults::default()])]
+    nested_vec: Vec<NativeDefaults>,
+    #[setting(nested, default = vec![PartialNativeDefaults::default()])]
+    #[allow(clippy::vec_box)]
+    nested_vec_boxed: Vec<Box<NativeDefaults>>,
+    #[setting(nested, default = vec![PartialNativeDefaults::default()])]
+    nested_vec_opt_boxed: Vec<Option<Box<NativeDefaults>>>,
+    #[setting(nested, default = HashMap::from([("foo".into(), PartialNativeDefaults::default())]))]
+    nested_map: HashMap<String, NativeDefaults>,
+    #[setting(nested, default = HashMap::from([("foo".into(), PartialNativeDefaults::default())]))]
+    nested_map_boxed: HashMap<String, Box<NativeDefaults>>,
+    #[setting(nested, default = HashMap::from([("foo".into(), PartialNativeDefaults::default())]))]
+    nested_map_opt_boxed: HashMap<String, Option<Box<NativeDefaults>>>,
+}
+
+#[test]
+fn handles_custom_nested_defaults() {
+    let result = ConfigLoader::<CustomNestedDefaults>::new().load().unwrap();
+
+    assert!(result.config.nested_opt.is_some());
     assert!(!result.config.nested.boolean);
 }
 

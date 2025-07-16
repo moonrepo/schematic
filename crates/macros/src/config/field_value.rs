@@ -5,53 +5,48 @@ use syn::{Expr, Lit};
 
 impl FieldValue<'_> {
     pub fn generate_default_value(&self, args: &FieldArgs, nullable: bool) -> TokenStream {
-        match self {
-            Self::NestedList { .. } | Self::NestedMap { .. } => {
+        let (value, nested) = match self {
+            Self::NestedList { collection, .. } | Self::NestedMap { collection, .. } => {
+                (quote!(#collection), false)
+            }
+            Self::NestedValue { info, .. } => {
+                let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
+                (quote!(#partial_name), true)
+            }
+            Self::Value { value, .. } => (quote!(#value), false),
+        };
+
+        match args.default.as_ref() {
+            Some(expr) => match expr {
+                Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                    quote! { Some(#expr) }
+                }
+                Expr::Path(func) => {
+                    quote! { handle_default_result(#func(context))? }
+                }
+                Expr::Lit(lit) => match &lit.lit {
+                    Lit::Str(string) => quote! {
+                        Some(handle_default_result(#value::try_from(#string))?)
+                    },
+                    other => quote! { Some(#other) },
+                },
+                invalid => {
+                    let info = format!("{invalid:?}");
+
+                    panic!(
+                        "Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples."
+                    );
+                }
+            },
+            _ => {
                 if nullable {
                     quote! { None }
+                } else if nested {
+                    quote! { #value::default_values(context)? }
                 } else {
                     quote! { Some(Default::default()) }
                 }
             }
-            Self::NestedValue { info, .. } => {
-                if nullable {
-                    quote! { None }
-                } else {
-                    let partial_name = format_ident!("Partial{}", info.config.as_ref().unwrap());
-
-                    quote! { #partial_name::default_values(context)? }
-                }
-            }
-            Self::Value { value, .. } => match args.default.as_ref() {
-                Some(expr) => match expr {
-                    Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
-                        quote! { Some(#expr) }
-                    }
-                    Expr::Path(func) => {
-                        quote! { handle_default_result(#func(context))? }
-                    }
-                    Expr::Lit(lit) => match &lit.lit {
-                        Lit::Str(string) => quote! {
-                            Some(handle_default_result(#value::try_from(#string))?)
-                        },
-                        other => quote! { Some(#other) },
-                    },
-                    invalid => {
-                        let info = format!("{invalid:?}");
-
-                        panic!(
-                            "Unsupported default value ({info}). May only provide literals, primitives, arrays, or tuples."
-                        );
-                    }
-                },
-                _ => {
-                    if nullable {
-                        quote! { None }
-                    } else {
-                        quote! { Some(Default::default()) }
-                    }
-                }
-            },
         }
     }
 

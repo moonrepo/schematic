@@ -20,9 +20,11 @@ export interface CustomDefaults {
 
 export interface ReqOptDefaults {
 	optional: number | null;
+	optionalVecWithDefaultFn?: number[] | null;
 	optionalWithDefault?: number | null;
 	optionalWithDefaultFn?: number | null;
 	required: number;
+	requiredVecWithDefaultFn?: number[];
 	/** @default 123 */
 	requiredWithDefault?: number;
 	requiredWithDefaultFn?: number;

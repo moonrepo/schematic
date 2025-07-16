@@ -136,7 +136,6 @@ impl ConfigError {
     /// This is extremely useful for debugging and tests, and less for application use.
     pub fn to_full_string(&self) -> String {
         let mut message = self.to_string();
-
         let mut push_end = || {
             if !message.ends_with('\n') {
                 if !message.ends_with('.') && !message.ends_with(':') {

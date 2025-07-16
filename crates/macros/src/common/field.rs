@@ -97,10 +97,6 @@ impl Field<'_> {
             env_prefix: None,
         };
 
-        if field.args.default.is_some() && field.is_nested() {
-            panic!("Cannot use defaults with `nested` configs.");
-        }
-
         if field.is_required() && !field.is_nullable() {
             panic!("Cannot use required with non-optional settings.");
         }
@@ -140,7 +136,7 @@ impl Field<'_> {
         self.args.skip || self.serde_args.skip
     }
 
-    #[cfg(feature = "schema")]
+    #[cfg(feature = "extends")]
     pub fn get_name_raw(&self) -> &Ident {
         self.name.as_ref().expect("Missing name for field")
     }

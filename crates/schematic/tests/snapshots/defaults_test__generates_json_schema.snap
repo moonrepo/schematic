@@ -428,6 +428,19 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
+        "optionalVecWithDefaultFn": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "optionalWithDefault": {
           "anyOf": [
             {
@@ -450,6 +463,12 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         "required": {
           "type": "number"
+        },
+        "requiredVecWithDefaultFn": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
         },
         "requiredWithDefault": {
           "default": 123,
