@@ -51,6 +51,7 @@ export interface GenConfig {
 	nested?: AnotherConfig | undefined;
 	number?: number | undefined;
 	path?: string | undefined;
+	regex?: string | undefined;
 	relPath?: string | undefined;
 	string?: string | undefined;
 	time?: string | undefined;

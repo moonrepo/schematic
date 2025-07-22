@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `RegexSetting` type that wraps `regex::Regex` and implements additional traits so that it
+  can be used in configs.
+  - Requires the `type_regex` feature.
+  - Default implementation uses `.` (match all) pattern.
+
 ## 0.18.10
 
 #### ⚙️ Internal

@@ -48,6 +48,7 @@ export interface GenConfig {
 	nested: AnotherConfig;
 	number: number;
 	path: string;
+	regex: string;
 	relPath: string;
 	string: string;
 	time: string;

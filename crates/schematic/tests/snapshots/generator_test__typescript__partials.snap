@@ -51,6 +51,7 @@ export interface GenConfig {
 	nested: AnotherConfig;
 	number: number;
 	path: string;
+	regex: string;
 	relPath: string;
 	string: string;
 	time: string;
@@ -100,6 +101,7 @@ export interface PartialGenConfig {
 	nested?: PartialAnotherConfig | null;
 	number?: number | null;
 	path?: string | null;
+	regex?: string | null;
 	relPath?: string | null;
 	string?: string | null;
 	time?: string | null;

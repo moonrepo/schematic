@@ -23,6 +23,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "nested",
     "number",
     "path",
+    "regex",
     "relPath",
     "string",
     "time",
@@ -130,6 +131,10 @@ expression: "fs::read_to_string(file).unwrap()"
     "path": {
       "type": "string",
       "format": "path"
+    },
+    "regex": {
+      "type": "string",
+      "format": "regex"
     },
     "relPath": {
       "type": "string",
