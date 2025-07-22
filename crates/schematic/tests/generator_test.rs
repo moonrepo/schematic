@@ -64,6 +64,7 @@ struct GenConfig {
     decimal: rust_decimal::Decimal,
     time: chrono::NaiveTime,
     path: PathBuf,
+    regex: RegexSetting,
     rel_path: relative_path::RelativePathBuf,
     url: Option<url::Url>,
     uuid: uuid::Uuid,

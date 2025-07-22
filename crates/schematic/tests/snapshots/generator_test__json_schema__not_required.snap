@@ -102,6 +102,10 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "path"
     },
+    "regex": {
+      "type": "string",
+      "format": "regex"
+    },
     "relPath": {
       "type": "string",
       "format": "path"

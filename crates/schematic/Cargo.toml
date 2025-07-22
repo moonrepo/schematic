@@ -28,6 +28,7 @@ tracing = { workspace = true }
 garde = { version = "0.22.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
+regex = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.17", optional = true }
 starbase_styles = { version = "0.6.3", optional = true }
@@ -93,7 +94,7 @@ renderer_typescript = ["schema"]
 # Types
 type_chrono = ["schematic_types/chrono"]
 type_indexmap = ["schematic_types/indexmap"]
-type_regex = ["schematic_types/regex"]
+type_regex = ["schematic_types/regex", "dep:regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal", "garde?/rust_decimal"]
 type_semver = ["schematic_types/semver"]
@@ -145,7 +146,6 @@ derive_more = { version = "2.0.1", features = ["try_into", "as_ref"] }
 # Types
 chrono = { workspace = true, features = ["serde"] }
 indexmap = { workspace = true }
-regex = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
