@@ -881,6 +881,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "properties": {
         "renamed": {
           "type": "string"
+        },
+        "test": {
+          "type": "string"
         }
       },
       "additionalProperties": false

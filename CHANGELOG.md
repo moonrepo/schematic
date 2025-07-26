@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added `SchemaField.aliases` property.
 - Added aliases support to JSONSchema and TypeScript renderers.
   - Added an `exclude_aliases` option to disable inclusion.
 
