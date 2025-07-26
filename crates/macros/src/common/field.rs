@@ -141,7 +141,6 @@ impl Field<'_> {
         self.args.skip || self.serde_args.skip
     }
 
-    #[cfg(feature = "schema")]
     pub fn get_name_raw(&self) -> &Ident {
         self.name.as_ref().expect("Missing name for field")
     }
