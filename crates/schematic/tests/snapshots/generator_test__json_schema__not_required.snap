@@ -166,6 +166,9 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "version2": {
+      "type": "string"
+    },
     "versionReq": {
       "type": "string"
     },

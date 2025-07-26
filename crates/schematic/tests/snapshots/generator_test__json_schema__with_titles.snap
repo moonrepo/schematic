@@ -31,6 +31,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "uuid",
     "vector",
     "version",
+    "version2",
     "versionReq",
     "yamlValue"
   ],
@@ -216,6 +217,10 @@ expression: "fs::read_to_string(file).unwrap()"
           "type": "null"
         }
       ]
+    },
+    "version2": {
+      "title": "version2",
+      "type": "string"
     },
     "versionReq": {
       "title": "versionReq",

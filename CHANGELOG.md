@@ -7,6 +7,10 @@
 - Added `SchemaField.aliases` property.
 - Added aliases support to JSONSchema and TypeScript renderers.
   - Added an `exclude_aliases` option to disable inclusion.
+- Added a `VersionSetting` type that wraps `semver::Version` and implements additional traits so
+  that it can be used in configs.
+  - Requires the `type_semver` feature.
+  - Default implementation uses `0.0.0`.
 
 #### ⚙️ Internal
 
