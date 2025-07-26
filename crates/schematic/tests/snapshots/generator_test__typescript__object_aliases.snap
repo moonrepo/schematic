@@ -61,6 +61,7 @@ export type GenConfig = {
 	/** This is a list of strings. */
 	vector: string[],
 	version: string | null,
+	version2: string,
 	versionReq: string,
 	yamlValue: unknown,
 };

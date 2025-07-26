@@ -72,6 +72,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "field": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -131,6 +132,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,

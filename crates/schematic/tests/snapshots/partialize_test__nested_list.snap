@@ -14,6 +14,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "field": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -34,6 +35,7 @@ expression: "create_diff::<NestedList>()"
 🟥                                        StructType {
 🟥                                            fields: {
 🟥                                                "field": SchemaField {
+🟥                                                    aliases: [],
 🟥                                                    comment: None,
 🟥                                                    schema: Schema {
 🟥                                                        deprecated: None,
@@ -82,6 +84,7 @@ expression: "create_diff::<NestedList>()"
 🟩                                                        StructType {
 🟩                                                            fields: {
 🟩                                                                "field": SchemaField {
+🟩                                                                    aliases: [],
 🟩                                                                    comment: None,
 🟩                                                                    schema: Schema {
 🟩                                                                        deprecated: None,
@@ -175,6 +178,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fieldOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -208,6 +212,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                                                        StructType {
 ⬛️                                                            fields: {
 ⬛️                                                                "field": SchemaField {
+⬛️                                                                    aliases: [],
 ⬛️                                                                    comment: None,
 ⬛️                                                                    schema: Schema {
 ⬛️                                                                        deprecated: None,

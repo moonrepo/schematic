@@ -28,10 +28,13 @@ tracing = { workspace = true }
 garde = { version = "0.22.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
-regex = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.17", optional = true }
 starbase_styles = { version = "0.6.3", optional = true }
+
+# settings
+regex = { workspace = true, optional = true }
+semver = { workspace = true, optional = true }
 
 # schema
 indexmap = { workspace = true, optional = true, features = ["serde"] }
@@ -97,7 +100,7 @@ type_indexmap = ["schematic_types/indexmap"]
 type_regex = ["schematic_types/regex", "dep:regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal", "garde?/rust_decimal"]
-type_semver = ["schematic_types/semver"]
+type_semver = ["schematic_types/semver", "dep:semver"]
 type_url = ["schematic_types/url"]
 type_uuid = ["schematic_types/uuid"]
 

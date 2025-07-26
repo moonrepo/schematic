@@ -14,10 +14,16 @@ use std::mem;
 pub struct JsonSchemaOptions {
     /// Allows newlines in descriptions, otherwise strips them.
     pub allow_newlines_in_description: bool,
+
+    /// Exclude field aliases from being rendered.
+    pub exclude_aliases: bool,
+
     /// Includes a `markdownDescription` field in the JSON file. This is non-standard.
     pub markdown_description: bool,
+
     /// Marks all non-option struct fields as required.
     pub mark_struct_fields_required: bool,
+
     /// Sets the field's name as the `title` of each schema entry.
     /// This overrides any `title` manually defined by a type.
     pub set_field_name_as_title: bool,
@@ -37,6 +43,7 @@ impl Default for JsonSchemaOptions {
 
         Self {
             allow_newlines_in_description: false,
+            exclude_aliases: false,
             markdown_description: false,
             mark_struct_fields_required: true,
             set_field_name_as_title: false,
@@ -431,6 +438,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
+        let exclude_aliases = self.options.exclude_aliases;
 
         for (name, field) in &structure.fields {
             if field.hidden {
@@ -439,6 +447,15 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
 
             if !field.optional && self.options.mark_struct_fields_required {
                 required.insert(name.to_owned());
+            }
+
+            if !exclude_aliases {
+                for alias in &field.aliases {
+                    properties.insert(
+                        alias.to_owned(),
+                        self.create_field_from_schema(alias, field)?,
+                    );
+                }
             }
 
             properties.insert(name.to_owned(), self.create_field_from_schema(name, field)?);

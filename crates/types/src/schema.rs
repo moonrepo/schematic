@@ -212,6 +212,12 @@ fn is_false(value: &bool) -> bool {
 pub struct SchemaField {
     #[cfg_attr(
         feature = "serde",
+        serde(default, skip_serializing_if = "Vec::is_empty")
+    )]
+    pub aliases: Vec<String>,
+
+    #[cfg_attr(
+        feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub comment: Option<String>,

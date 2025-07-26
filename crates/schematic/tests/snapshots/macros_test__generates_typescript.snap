@@ -73,6 +73,7 @@ export interface Serde {
 }
 
 export interface SerdeNativeRenamed {
+	test?: string;
 	renamed: string;
 }
 

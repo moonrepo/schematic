@@ -51,7 +51,7 @@ where
     // Based on `rpkl::from_config`
     let ast = rpkl::api::Evaluator::new()
         .map_err(handle_error)?
-        .evaluate_module(file_path.to_path_buf())
+        .evaluate_module(file_path)
         .map_err(handle_error)?
         .serialize_pkl_ast()
         .map_err(handle_error)?;

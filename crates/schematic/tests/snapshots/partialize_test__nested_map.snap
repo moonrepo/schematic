@@ -14,6 +14,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "field": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -52,6 +53,7 @@ expression: "create_diff::<NestedMap>()"
 🟥                                        StructType {
 🟥                                            fields: {
 🟥                                                "field": SchemaField {
+🟥                                                    aliases: [],
 🟥                                                    comment: None,
 🟥                                                    schema: Schema {
 🟥                                                        deprecated: None,
@@ -84,10 +86,15 @@ expression: "create_diff::<NestedMap>()"
 🟩                                        ty: Object(
 🟩                                            ObjectType {
 🟩                                                key_type: Schema {
-🟩                                                    deprecated: None,
+⬛️                                                    deprecated: None,
+🟥                                                    env_var: None,
+🟥                                                    hidden: false,
 🟩                                                    description: None,
 🟩                                                    name: None,
-🟩                                                    nullable: false,
+⬛️                                                    nullable: false,
+🟥                                                    optional: false,
+🟥                                                    read_only: false,
+🟥                                                    write_only: false,
 🟩                                                    ty: String(
 🟩                                                        StringType {
 🟩                                                            default: None,
@@ -103,21 +110,17 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                min_length: None,
 🟩                                                required: None,
 🟩                                                value_type: Schema {
-⬛️                                                    deprecated: None,
-🟥                                                    env_var: None,
-🟥                                                    hidden: false,
+🟩                                                    deprecated: None,
 🟩                                                    description: None,
 🟩                                                    name: Some(
 🟩                                                        "PartialBasic",
 🟩                                                    ),
-⬛️                                                    nullable: false,
-🟥                                                    optional: false,
-🟥                                                    read_only: false,
-🟥                                                    write_only: false,
+🟩                                                    nullable: false,
 🟩                                                    ty: Struct(
 🟩                                                        StructType {
 🟩                                                            fields: {
 🟩                                                                "field": SchemaField {
+🟩                                                                    aliases: [],
 🟩                                                                    comment: None,
 🟩                                                                    schema: Schema {
 🟩                                                                        deprecated: None,
@@ -201,6 +204,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fieldOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -255,6 +259,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                                                        StructType {
 ⬛️                                                            fields: {
 ⬛️                                                                "field": SchemaField {
+⬛️                                                                    aliases: [],
 ⬛️                                                                    comment: None,
 ⬛️                                                                    schema: Schema {
 ⬛️                                                                        deprecated: None,

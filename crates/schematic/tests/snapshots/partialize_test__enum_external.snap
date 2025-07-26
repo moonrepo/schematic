@@ -25,6 +25,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "foo": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -63,6 +64,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "bar": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -98,6 +100,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "baz": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -141,6 +144,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "qux": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -153,6 +157,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟥                                            StructType {
 🟥                                                fields: {
 🟥                                                    "field": SchemaField {
+🟥                                                        aliases: [],
 🟥                                                        comment: None,
 🟥                                                        schema: Schema {
 🟥                                                            deprecated: None,
@@ -186,6 +191,7 @@ expression: "create_diff::<ExternalTagged>()"
 🟩                                                            StructType {
 🟩                                                                fields: {
 🟩                                                                    "field": SchemaField {
+🟩                                                                        aliases: [],
 🟩                                                                        comment: None,
 🟩                                                                        schema: Schema {
 🟩                                                                            deprecated: None,

@@ -49,6 +49,9 @@ pub struct TypeScriptOptions {
     /// Format to render enums, either an `enum` or a `type` union.
     pub enum_format: EnumFormat,
 
+    /// Exclude field aliases from being rendered.
+    pub exclude_aliases: bool,
+
     /// List of references to exclude from exporting as a type.
     pub exclude_references: Vec<String>,
 
@@ -399,17 +402,19 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult {
         self.depth += 1;
 
+        let exclude_aliases = self.options.exclude_aliases;
         let mut out = vec![];
         let indent = self.indent();
 
-        for (name, field) in &structure.fields {
+        let mut create_row = |name: &str, field: &SchemaField| -> miette::Result<()> {
             if field.hidden {
-                continue;
+                return Ok(());
             }
 
             let mut row = format!("{indent}{name}");
 
             if field.optional
+                || field.aliases.iter().any(|alias| name == alias)
                 || matches!(
                     self.options.property_format,
                     PropertyFormat::Optional | PropertyFormat::OptionalUndefined
@@ -461,6 +466,18 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             }
 
             out.push(self.wrap_in_comment(field.comment.as_ref(), tags, row));
+
+            Ok(())
+        };
+
+        for (name, field) in &structure.fields {
+            if !exclude_aliases {
+                for alias in &field.aliases {
+                    create_row(alias, field)?;
+                }
+            }
+
+            create_row(name, field)?;
         }
 
         self.depth -= 1;

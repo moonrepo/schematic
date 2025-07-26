@@ -137,6 +137,22 @@ pub fn map_bool_field_quote(name: &str, value: bool) -> Option<proc_macro2::Toke
     }
 }
 
+#[cfg(feature = "schema")]
+pub fn map_vec_field_quote(name: &str, value: Vec<String>) -> Option<proc_macro2::TokenStream> {
+    if !value.is_empty() {
+        let id = format_ident!("{}", name);
+
+        Some(quote! {
+            field.#id = [
+                #(#value),*
+            ].into_iter().map(|v| v.to_string()).collect::<Vec<_>>();
+
+        })
+    } else {
+        None
+    }
+}
+
 pub fn map_option_field_quote<T: ToTokens>(
     name: &str,
     value: Option<T>,

@@ -61,6 +61,7 @@ export interface GenConfig {
 	/** This is a list of strings. */
 	vector?: string[] | undefined;
 	version?: string | null | undefined;
+	version2?: string | undefined;
 	versionReq?: string | undefined;
 	yamlValue?: unknown | undefined;
 }

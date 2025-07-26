@@ -90,6 +90,7 @@ export type Serde = {
 };
 
 export type SerdeNativeRenamed = {
+	test?: string,
 	renamed: string,
 };
 

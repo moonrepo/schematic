@@ -69,6 +69,7 @@ struct GenConfig {
     url: Option<url::Url>,
     uuid: uuid::Uuid,
     version: Option<semver::Version>,
+    version2: VersionSetting,
     version_req: semver::VersionReq,
     json_value: serde_json::Value,
     toml_value: Option<toml::Value>,
