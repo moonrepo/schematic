@@ -25,6 +25,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -49,6 +50,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -87,6 +89,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -108,6 +111,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -146,6 +150,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -175,6 +180,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -213,6 +219,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "content": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
@@ -226,6 +233,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                            StructType {
 ⬛️                                                fields: {
 ⬛️                                                    "field": SchemaField {
+⬛️                                                        aliases: [],
 ⬛️                                                        comment: None,
 ⬛️                                                        schema: Schema {
 ⬛️                                                            deprecated: None,
@@ -299,6 +307,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,

@@ -14,6 +14,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "list": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -105,6 +106,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "listOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -174,6 +176,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "map": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -281,6 +284,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "mapOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,

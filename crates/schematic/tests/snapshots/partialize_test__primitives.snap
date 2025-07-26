@@ -14,6 +14,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "boolean": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -63,6 +64,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "booleanOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -108,6 +110,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "float": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -175,6 +178,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "floatOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -229,6 +233,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "number": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -294,6 +299,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "numberOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -347,6 +353,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "string": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -406,6 +413,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "stringOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,

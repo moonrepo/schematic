@@ -93,6 +93,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                        StructType {
 ⬛️                            fields: {
 ⬛️                                "field": SchemaField {
+⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,

@@ -14,6 +14,7 @@ expression: "create_diff::<Nested>()"
 ⬛️        StructType {
 ⬛️            fields: {
 ⬛️                "field": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -26,6 +27,7 @@ expression: "create_diff::<Nested>()"
 🟥                            StructType {
 🟥                                fields: {
 🟥                                    "field": SchemaField {
+🟥                                        aliases: [],
 🟥                                        comment: None,
 🟥                                        schema: Schema {
 🟥                                            deprecated: None,
@@ -59,6 +61,7 @@ expression: "create_diff::<Nested>()"
 🟩                                            StructType {
 🟩                                                fields: {
 🟩                                                    "field": SchemaField {
+🟩                                                        aliases: [],
 🟩                                                        comment: None,
 🟩                                                        schema: Schema {
 🟩                                                            deprecated: None,
@@ -144,6 +147,7 @@ expression: "create_diff::<Nested>()"
 ⬛️                    write_only: false,
 ⬛️                },
 ⬛️                "fieldOpt": SchemaField {
+⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
@@ -169,6 +173,7 @@ expression: "create_diff::<Nested>()"
 ⬛️                                            StructType {
 ⬛️                                                fields: {
 ⬛️                                                    "field": SchemaField {
+⬛️                                                        aliases: [],
 ⬛️                                                        comment: None,
 ⬛️                                                        schema: Schema {
 ⬛️                                                            deprecated: None,

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added aliases support to JSONSchema and TypeScript renderers.
+  - Added an `exclude_aliases` option to disable inclusion.
+
 ## 0.18.11
 
 #### 🚀 Updates
