@@ -8,6 +8,10 @@
 - Added aliases support to JSONSchema and TypeScript renderers.
   - Added an `exclude_aliases` option to disable inclusion.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 0.18.11
 
 #### 🚀 Updates
