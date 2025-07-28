@@ -32,6 +32,9 @@ pub use starbase_styles::color;
 #[cfg(feature = "config")]
 pub use config::*;
 
+#[doc(hidden)]
+pub use ::serde;
+
 pub use format::*;
 pub use schematic_macros::*;
 pub use schematic_types::{Schema, SchemaBuilder, SchemaType, Schematic};
