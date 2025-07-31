@@ -328,9 +328,9 @@ impl Container<'_> {
                 }
 
                 quote! {
-                    Self {
+                    Ok(Self {
                         #(#setting_names: #from_partial_values),*
-                    }
+                    })
                 }
             }
             Self::UnnamedStruct {
@@ -343,9 +343,9 @@ impl Container<'_> {
                 }
 
                 quote! {
-                    Self(
+                    Ok(Self(
                         #(#from_partial_values),*
-                    )
+                    ))
                 }
             }
             Self::Enum { variants } => {
@@ -355,9 +355,9 @@ impl Container<'_> {
                     .collect::<Vec<_>>();
 
                 quote! {
-                    match partial {
+                    Ok(match partial {
                         #(#from_partial_values)*
-                    }
+                    })
                 }
             }
         }

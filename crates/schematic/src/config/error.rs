@@ -49,6 +49,10 @@ pub enum ConfigError {
     #[error("Invalid default value. {0}")]
     InvalidDefaultValue(String),
 
+    #[diagnostic(code(config::required))]
+    #[error("Missing required value. {0}")]
+    MissingRequired(String),
+
     #[diagnostic(code(config::file::invalid))]
     #[error("Invalid file path used as a source.")]
     InvalidFile,

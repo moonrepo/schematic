@@ -102,10 +102,6 @@ impl Field<'_> {
             panic!("Cannot use defaults with `nested` configs.");
         }
 
-        if field.is_required() && !field.is_nullable() {
-            panic!("Cannot use required with non-optional settings.");
-        }
-
         field
     }
 

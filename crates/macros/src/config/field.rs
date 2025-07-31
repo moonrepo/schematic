@@ -5,7 +5,7 @@ use quote::{ToTokens, TokenStreamExt, quote};
 impl Field<'_> {
     pub fn generate_default_value(&self) -> TokenStream {
         self.value_type
-            .generate_default_value(&self.args, self.is_nullable())
+            .generate_default_value(&self.args, self.is_nullable(), self.is_required())
     }
 
     #[cfg(not(feature = "env"))]
@@ -68,6 +68,7 @@ impl Field<'_> {
 
     pub fn generate_from_partial_value(&self) -> TokenStream {
         let key = self.get_field_key();
+        let key_quoted = self.get_field_key_string();
 
         #[allow(clippy::collapsible_else_if)]
         if matches!(self.value_type, FieldValue::Value { .. }) {
@@ -89,6 +90,9 @@ impl Field<'_> {
                 if self.is_nullable() {
                     // Use optional values as-is as they're already wrapped in `Option`
                     quote! { partial.#key }
+                } else if self.is_required() {
+                    // Trigger a validation error if the value is missing
+                    quote! { partial.#key.ok_or(schematic::ConfigError::MissingRequired(#key_quoted.into()))? }
                 } else {
                     // Otherwise unwrap the resolved value or use the type default
                     quote! { partial.#key.unwrap_or_default() }

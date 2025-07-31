@@ -112,7 +112,7 @@ impl<T: Config> ConfigLoader<T> {
         }
 
         Ok(ConfigLoadResult {
-            config: T::from_partial(partial),
+            config: T::from_partial(partial)?,
             layers,
         })
     }
