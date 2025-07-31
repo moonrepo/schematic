@@ -143,10 +143,9 @@ impl Container<'_> {
                     let single_type = &schema_types[0];
 
                     quote! {
-                        let mut schema = #single_type;
                         #deprecated
                         #description
-                        schema
+                        #single_type
                     }
                 } else {
                     quote! {

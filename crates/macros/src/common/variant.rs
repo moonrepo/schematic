@@ -51,7 +51,7 @@ pub struct Variant<'l> {
 }
 
 impl Variant<'_> {
-    pub fn from(var: &NativeVariant) -> Variant {
+    pub fn from(var: &NativeVariant) -> Variant<'_> {
         Variant {
             args: VariantArgs::from_attributes(&var.attrs).unwrap_or_default(),
             serde_args: FieldSerdeArgs::from_attributes(&var.attrs).unwrap_or_default(),

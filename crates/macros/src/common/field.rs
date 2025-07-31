@@ -78,7 +78,7 @@ pub struct Field<'l> {
 }
 
 impl Field<'_> {
-    pub fn from(field: &NativeField) -> Field {
+    pub fn from(field: &NativeField) -> Field<'_> {
         let args = FieldArgs::from_attributes(&field.attrs).unwrap_or_default();
         let serde_args = FieldSerdeArgs::from_attributes(&field.attrs).unwrap_or_default();
 
@@ -340,9 +340,8 @@ impl Field<'_> {
             } else {
                 quote! {
                     {
-                        let mut schema = #inner_schema;
                         #description
-                        schema
+                        #inner_schema
                     }
                 }
             }
