@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
-use schematic_core::container::Container;
-use schematic_core::field::Field;
+// use schematic_core::container::Container;
+// use schematic_core::field::Field;
 
 pub fn pretty(tokens: TokenStream) -> String {
     prettyplease::unparse(&syn::parse_file(&tokens.to_string()).unwrap())
