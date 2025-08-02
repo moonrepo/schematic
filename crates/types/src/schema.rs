@@ -113,7 +113,7 @@ impl Schema {
     /// do nothing, otherwise convert to a union.
     pub fn nullify(&mut self) {
         if self.nullable {
-            // May already be a null union through inferrence
+            // May already be a null union through inference
             return;
         }
 
@@ -166,6 +166,28 @@ impl Schema {
             }
             _ => {}
         };
+    }
+
+    /// Mark this schema as deprecated.
+    pub fn set_deprecated(&mut self, value: impl AsRef<str>) {
+        self.deprecated = Some(value.as_ref().to_owned());
+    }
+
+    /// Add a description for this schema.
+    pub fn set_description(&mut self, value: impl AsRef<str>) {
+        self.description = Some(value.as_ref().to_owned());
+    }
+
+    /// Add a name for this schema.
+    pub fn set_name(&mut self, value: impl AsRef<str>) {
+        let name = value.as_ref();
+
+        self.name = Some(name.to_owned());
+    }
+
+    /// Set the type of schema.
+    pub fn set_type(&mut self, value: SchemaType) {
+        self.ty = value;
     }
 }
 
