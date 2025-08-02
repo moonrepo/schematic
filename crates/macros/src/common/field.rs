@@ -340,8 +340,9 @@ impl Field<'_> {
             } else {
                 quote! {
                     {
+                        let mut schema = #inner_schema;
                         #description
-                        #inner_schema
+                        schema
                     }
                 }
             }
