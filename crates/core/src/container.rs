@@ -89,15 +89,19 @@ impl Container {
             }
         };
 
-        Self {
+        let container = Self {
             args,
             attrs: input.attrs,
             ident: input.ident,
             inner,
             serde_args,
             vis: input.vis,
-        }
+        };
+        container.validate_args();
+        container
     }
+
+    fn validate_args(&self) {}
 
     pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
         let serde_args = self.get_partial_serde_attribute_args();
@@ -179,6 +183,7 @@ impl Container {
 
         let default_values_method = self.impl_partial_default_values();
         let env_values_method = self.impl_partial_env_values();
+        let extends_from_method = self.impl_partial_extends_from();
 
         quote! {
             #[automatically_derived]
@@ -187,6 +192,7 @@ impl Container {
 
                 #default_values_method
                 #env_values_method
+                #extends_from_method
             }
 
             #[automatically_derived]
@@ -389,6 +395,46 @@ impl Container {
                     Some(partial)
                 })
             }
+        }
+    }
+
+    #[cfg(not(feature = "extends"))]
+    pub fn impl_partial_extends_from(&self) -> TokenStream {
+        quote! {}
+    }
+
+    #[cfg(feature = "extends")]
+    pub fn impl_partial_extends_from(&self) -> TokenStream {
+        if let ContainerInner::NamedStruct { fields } = &self.inner {
+            let mut names = vec![];
+            let mut inner = quote! { None };
+
+            for field in fields {
+                if field.is_extendable() {
+                    names.push(field.get_name_original().to_string());
+
+                    let res = field.impl_partial_extends_from();
+
+                    if !res.no_value {
+                        inner = res.value;
+                    }
+                }
+            }
+
+            if names.len() > 1 {
+                panic!(
+                    "Only 1 setting may use `extend`, found: {}",
+                    names.join(", ")
+                );
+            }
+
+            quote! {
+                fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+                    #inner
+                }
+            }
+        } else {
+            panic!("Only named structs can use `extend` settings.");
         }
     }
 }
