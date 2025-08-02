@@ -194,6 +194,12 @@ impl FieldValue {
         res
     }
 
+    #[cfg(not(feature = "env"))]
+    pub fn impl_partial_env_value(&self, _field_args: &FieldArgs, _env_key: &str) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "env")]
     pub fn impl_partial_env_value(&self, field_args: &FieldArgs, env_key: &str) -> ImplResult {
         let mut res = ImplResult::default();
 
@@ -226,6 +232,48 @@ impl FieldValue {
         } else {
             quote! {
                 env.get(#env_key)?
+            }
+        };
+
+        res
+    }
+
+    #[cfg(not(feature = "extends"))]
+    pub fn impl_partial_extends_from(&self) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "extends")]
+    pub fn impl_partial_extends_from(&self, field_name: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        res.value = match self.ty_string.as_str() {
+            "String" | "Option<String>" => {
+                quote! {
+                    self.#field_name
+                        .as_ref()
+                        .map(|inner| schematic::ExtendsFrom::String(inner.to_owned()))
+                }
+            }
+            "Vec<String>" | "Option<Vec<String>>" => {
+                quote! {
+                    self.#field_name
+                        .as_ref()
+                        .map(|inner| schematic::ExtendsFrom::List(inner.to_owned()))
+                }
+            }
+            "ExtendsFrom"
+            | "schematic::ExtendsFrom"
+            | "Option<ExtendsFrom>"
+            | "Option<schematic::ExtendsFrom>" => {
+                quote! {
+                    self.#field_name.clone()
+                }
+            }
+            inner => {
+                panic!(
+                    "Only `String`, `Vec<String>`, or `schematic::ExtendsFrom` are supported when using `extend` for {field_name}. Received `{inner}`."
+                );
             }
         };
 
