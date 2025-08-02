@@ -91,7 +91,7 @@ pub struct FieldArgs {
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub partial: Option<PartialArg>,
-    pub required: bool,
+    pub required: bool, // TODO
     pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<FieldValidateArg>,
@@ -232,10 +232,25 @@ impl Field {
             return name.into();
         }
 
+        self.get_name_original().to_string()
+    }
+
+    pub fn get_name_original(&self) -> &Ident {
         self.ident
             .as_ref()
             .expect("Name only usable on named fields!")
-            .to_string()
+    }
+
+    pub fn is_extendable(&self) -> bool {
+        #[cfg(feature = "extends")]
+        {
+            self.args.extend
+        }
+
+        #[cfg(not(feature = "extends"))]
+        {
+            false
+        }
     }
 
     pub fn is_nested(&self) -> bool {
@@ -277,12 +292,6 @@ impl Field {
         self.value.impl_partial_default_value(&self.args)
     }
 
-    #[cfg(not(feature = "env"))]
-    pub fn impl_partial_env_value(&self) -> ImplResult {
-        ImplResult::skipped()
-    }
-
-    #[cfg(feature = "env")]
     pub fn impl_partial_env_value(&self) -> ImplResult {
         if self.is_nested() {
             return self.value.impl_partial_env_value(&self.args, "");
@@ -297,6 +306,15 @@ impl Field {
         };
 
         self.value.impl_partial_env_value(&self.args, &env_key)
+    }
+
+    pub fn impl_partial_extends_from(&self) -> ImplResult {
+        if self.is_extendable() {
+            self.value
+                .impl_partial_extends_from(self.get_name_original())
+        } else {
+            ImplResult::skipped()
+        }
     }
 }
 
