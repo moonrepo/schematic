@@ -293,7 +293,7 @@ impl Container {
                     panic!("Only 1 variant may be marked as default.");
                 }
 
-                match default_variants.get(0) {
+                match default_variants.first() {
                     Some(default_variant) => {
                         let res = default_variant.impl_partial_default_value();
 

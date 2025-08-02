@@ -239,15 +239,13 @@ impl FieldValue {
     }
 
     #[cfg(not(feature = "extends"))]
-    pub fn impl_partial_extends_from(&self) -> ImplResult {
+    pub fn impl_partial_extends_from(&self, _field_name: &Ident) -> ImplResult {
         ImplResult::skipped()
     }
 
     #[cfg(feature = "extends")]
     pub fn impl_partial_extends_from(&self, field_name: &Ident) -> ImplResult {
-        let mut res = ImplResult::default();
-
-        res.value = match self.ty_string.as_str() {
+        let value = match self.ty_string.as_str() {
             "String" | "Option<String>" => {
                 quote! {
                     self.#field_name
@@ -277,7 +275,10 @@ impl FieldValue {
             }
         };
 
-        res
+        ImplResult {
+            value,
+            ..Default::default()
+        }
     }
 }
 
@@ -307,7 +308,6 @@ fn extract_type_information(
 
             if let Some(GenericArgument::Type(inner_ty)) = args.args.last() {
                 extract_type_information(inner_ty, layers, on_last);
-                return;
             }
         }
 

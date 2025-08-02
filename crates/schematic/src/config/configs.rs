@@ -102,11 +102,10 @@ pub trait Config: Sized + Schematic {
     /// Return default values for the partial configuration.
     fn default_partial() -> Self::Partial {
         let context = <<Self as Config>::Partial as PartialConfig>::Context::default();
-        let defaults = <<Self as Config>::Partial as PartialConfig>::default_values(&context)
-            .unwrap()
-            .unwrap_or_default();
 
-        defaults
+        <<Self as Config>::Partial as PartialConfig>::default_values(&context)
+            .unwrap()
+            .unwrap_or_default()
     }
 
     /// Convert a partial configuration into a full configuration, with all values populated.
