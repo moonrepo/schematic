@@ -202,6 +202,10 @@ impl Field {
             return Some(self.get_name().to_uppercase());
         }
 
+        if self.args.parse_env.is_some() {
+            panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
+        }
+
         None
     }
 
@@ -297,15 +301,10 @@ impl Field {
             return self.value.impl_partial_env_value(&self.args, "");
         }
 
-        let Some(env_key) = self.get_env_var() else {
-            if self.args.parse_env.is_some() {
-                panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
-            }
-
-            return ImplResult::skipped();
-        };
-
-        self.value.impl_partial_env_value(&self.args, &env_key)
+        match self.get_env_var() {
+            Some(env_key) => self.value.impl_partial_env_value(&self.args, &env_key),
+            None => ImplResult::skipped(),
+        }
     }
 
     pub fn impl_partial_extends_from(&self) -> ImplResult {

@@ -1,0 +1,54 @@
+---
+source: crates/core/tests/field_partial_test.rs
+expression: field.args.partial.as_ref().unwrap()
+---
+PartialArg {
+    meta: [
+        Meta(
+            Meta::List {
+                path: Path {
+                    leading_colon: None,
+                    segments: [
+                        PathSegment {
+                            ident: Ident(
+                                other,
+                            ),
+                            arguments: PathArguments::None,
+                        },
+                    ],
+                },
+                delimiter: MacroDelimiter::Paren(
+                    Paren,
+                ),
+                tokens: TokenStream [
+                    Ident {
+                        sym: attribute,
+                    },
+                ],
+            },
+        ),
+        Meta(
+            Meta::List {
+                path: Path {
+                    leading_colon: None,
+                    segments: [
+                        PathSegment {
+                            ident: Ident(
+                                and,
+                            ),
+                            arguments: PathArguments::None,
+                        },
+                    ],
+                },
+                delimiter: MacroDelimiter::Paren(
+                    Paren,
+                ),
+                tokens: TokenStream [
+                    Ident {
+                        sym: another,
+                    },
+                ],
+            },
+        ),
+    ],
+}
