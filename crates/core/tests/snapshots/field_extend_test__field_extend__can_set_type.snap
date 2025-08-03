@@ -1,7 +1,0 @@
----
-source: crates/core/tests/field_extend_test.rs
-expression: pretty(container.impl_partial_extends_from())
----
-fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
-    self.a.clone()
-}
