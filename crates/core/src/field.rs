@@ -1,77 +1,14 @@
 use crate::args::{
-    PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
+    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
 };
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
-use crate::utils::{ImplResult, preserve_str_literal, to_type_string};
-use darling::{FromAttributes, FromMeta};
+use crate::utils::{ImplResult, preserve_str_literal};
+use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, quote};
-use std::ops::Deref;
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
-
-// #[setting(nested)]
-#[derive(Debug)]
-pub enum FieldNestedArg {
-    Detect(bool),
-    Ident(Ident),
-}
-
-impl FromMeta for FieldNestedArg {
-    // #[setting(nested)]
-    fn from_word() -> darling::Result<Self> {
-        Ok(Self::Detect(true))
-    }
-
-    // #[setting(nested = true)]
-    fn from_bool(value: bool) -> darling::Result<Self> {
-        Ok(Self::Detect(value))
-    }
-
-    // #[setting(nested = NestedConfig)]
-    fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        match expr {
-            Expr::Lit(lit) => Self::from_value(&lit.lit),
-            Expr::Path(path) => {
-                if path.path.segments.len() > 1 {
-                    Err(darling::Error::custom(format!(
-                        "Too many segments for `{}`, only a single identifier is allowed.",
-                        to_type_string(path.to_token_stream())
-                    )))
-                } else {
-                    Ok(Self::Ident(
-                        path.path.segments.last().unwrap().ident.to_owned(),
-                    ))
-                }
-            }
-            _ => Err(darling::Error::unexpected_expr_type(expr)),
-        }
-        .map_err(|e| e.with_span(expr))
-    }
-}
-
-// #[setting(validate)]
-#[derive(Debug)]
-pub struct FieldValidateArg(Expr);
-
-impl FromMeta for FieldValidateArg {
-    fn from_expr(expr: &Expr) -> darling::Result<Self> {
-        match expr {
-            Expr::Call(_) | Expr::Path(_) => Ok(Self(expr.to_owned())),
-            _ => Err(darling::Error::unexpected_expr_type(expr)),
-        }
-        .map_err(|e| e.with_span(expr))
-    }
-}
-
-impl Deref for FieldValidateArg {
-    type Target = Expr;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
@@ -87,14 +24,14 @@ pub struct FieldArgs {
     #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
-    pub nested: Option<FieldNestedArg>,
+    pub nested: Option<NestedArg>,
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub partial: Option<PartialArg>,
     pub required: bool, // TODO
     pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
-    pub validate: Option<FieldValidateArg>,
+    pub validate: Option<crate::args::ValidateArg>,
 
     // serde
     #[darling(multiple)]
@@ -261,10 +198,7 @@ impl Field {
         self.args
             .nested
             .as_ref()
-            .is_some_and(|nested| match nested {
-                FieldNestedArg::Detect(inner) => *inner,
-                FieldNestedArg::Ident(_) => true,
-            })
+            .is_some_and(|nested| nested.is_nested())
     }
 }
 

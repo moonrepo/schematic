@@ -1,7 +1,10 @@
+use crate::utils::to_type_string;
 use darling::ast::NestedMeta;
 use darling::{FromAttributes, FromDeriveInput, FromMeta};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
+use std::ops::Deref;
+use syn::{Expr, Ident};
 
 #[derive(Clone, Copy, Debug)]
 pub enum SerdeIoDirection {
@@ -119,6 +122,7 @@ pub struct SerdeFieldArgs {
     pub untagged: bool,
 }
 
+// #[setting(partial)]
 #[derive(Debug, Default)]
 pub struct PartialArg {
     meta: Vec<NestedMeta>,
@@ -142,24 +146,73 @@ impl FromMeta for PartialArg {
     }
 }
 
-// // #[config()], #[schematic()]
-// #[derive(FromDeriveInput, Default)]
-// #[darling(
-//     default,
-//     attributes(config, schematic),
-//     supports(struct_named, enum_any)
-// )]
-// pub struct MacroArgs {
-//     // config
-//     pub allow_unknown_fields: bool,
-//     pub context: Option<ExprPath>,
-//     pub partial: PartialAttr,
-//     #[cfg(feature = "env")]
-//     pub env_prefix: Option<String>,
+// #[setting(nested)]
+#[derive(Debug)]
+pub enum NestedArg {
+    Detect(bool),
+    Ident(Ident),
+}
 
-//     // serde
-//     pub rename: Option<String>,
-//     pub rename_all: Option<String>,
-//     pub rename_all_fields: Option<String>,
-//     pub serde: SerdeMeta,
-// }
+impl NestedArg {
+    pub fn is_nested(&self) -> bool {
+        match self {
+            NestedArg::Detect(inner) => *inner,
+            NestedArg::Ident(_) => true,
+        }
+    }
+}
+
+impl FromMeta for NestedArg {
+    // #[setting(nested)]
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self::Detect(true))
+    }
+
+    // #[setting(nested = true)]
+    fn from_bool(value: bool) -> darling::Result<Self> {
+        Ok(Self::Detect(value))
+    }
+
+    // #[setting(nested = NestedConfig)]
+    fn from_expr(expr: &Expr) -> darling::Result<Self> {
+        match expr {
+            Expr::Lit(lit) => Self::from_value(&lit.lit),
+            Expr::Path(path) => {
+                if path.path.segments.len() > 1 {
+                    Err(darling::Error::custom(format!(
+                        "Too many segments for `{}`, only a single identifier is allowed.",
+                        to_type_string(path.to_token_stream())
+                    )))
+                } else {
+                    Ok(Self::Ident(
+                        path.path.segments.last().unwrap().ident.to_owned(),
+                    ))
+                }
+            }
+            _ => Err(darling::Error::unexpected_expr_type(expr)),
+        }
+        .map_err(|e| e.with_span(expr))
+    }
+}
+
+// #[setting(validate)]
+#[derive(Debug)]
+pub struct ValidateArg(Expr);
+
+impl FromMeta for ValidateArg {
+    fn from_expr(expr: &Expr) -> darling::Result<Self> {
+        match expr {
+            Expr::Call(_) | Expr::Path(_) => Ok(Self(expr.to_owned())),
+            _ => Err(darling::Error::unexpected_expr_type(expr)),
+        }
+        .map_err(|e| e.with_span(expr))
+    }
+}
+
+impl Deref for ValidateArg {
+    type Target = Expr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
