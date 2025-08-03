@@ -184,6 +184,7 @@ impl Container {
         let default_values_method = self.impl_partial_default_values();
         let env_values_method = self.impl_partial_env_values();
         let extends_from_method = self.impl_partial_extends_from();
+        let merge_method = self.impl_partial_merge();
 
         quote! {
             #[automatically_derived]
@@ -193,6 +194,7 @@ impl Container {
                 #default_values_method
                 #env_values_method
                 #extends_from_method
+                #merge_method
             }
 
             #[automatically_derived]
@@ -435,6 +437,71 @@ impl Container {
             }
         } else {
             panic!("Only named structs can use `extend` settings.");
+        }
+    }
+
+    pub fn impl_partial_merge(&self) -> TokenStream {
+        let mut statements = vec![];
+
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                for field in fields {
+                    let res = field.impl_partial_merge();
+
+                    if !res.no_value {
+                        statements.push(res.value);
+                    }
+                }
+
+                if statements.is_empty() {
+                    return quote! {};
+                }
+
+                quote! {
+                    #(#statements)*
+                }
+            }
+            ContainerInner::Enum { variants } | ContainerInner::UnitEnum { variants } => {
+                for variant in variants {
+                    let res = variant.impl_partial_merge();
+
+                    if !res.no_value {
+                        statements.push(res.value);
+                    }
+                }
+
+                if statements.is_empty() {
+                    quote! {
+                        *self = next;
+                    }
+                } else {
+                    quote! {
+                        match self {
+                            #(#statements)*
+                            _ => {
+                                *self = next;
+                            }
+                        };
+                    }
+                }
+            }
+        };
+
+        let internal = ImplResult::impl_use_internal(true);
+
+        quote! {
+            fn merge(
+                &mut self,
+                context: &Self::Context,
+                mut next: Self,
+            ) -> std::result::Result<(), schematic::ConfigError> {
+                #internal
+
+                MergeManager::new(context)
+                #inner;
+
+                Ok(())
+            }
         }
     }
 }
