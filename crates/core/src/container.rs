@@ -441,10 +441,10 @@ impl Container {
     }
 
     pub fn impl_partial_merge(&self) -> TokenStream {
-        let mut statements = vec![];
-
-        let inner = match &self.inner {
+        match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                let mut statements = vec![];
+
                 for field in fields {
                     let res = field.impl_partial_merge();
 
@@ -457,11 +457,26 @@ impl Container {
                     return quote! {};
                 }
 
+                let internal = ImplResult::impl_use_internal(true);
+
                 quote! {
-                    #(#statements)*
+                    fn merge(
+                        &mut self,
+                        context: &Self::Context,
+                        mut next: Self,
+                    ) -> std::result::Result<(), schematic::ConfigError> {
+                        #internal
+
+                        MergeManager::new(context)
+                        #(#statements)*;
+
+                        Ok(())
+                    }
                 }
             }
             ContainerInner::Enum { variants } | ContainerInner::UnitEnum { variants } => {
+                let mut statements = vec![];
+
                 for variant in variants {
                     let res = variant.impl_partial_merge();
 
@@ -470,7 +485,7 @@ impl Container {
                     }
                 }
 
-                if statements.is_empty() {
+                let inner = if statements.is_empty() {
                     quote! {
                         *self = next;
                     }
@@ -483,24 +498,18 @@ impl Container {
                             }
                         };
                     }
+                };
+
+                quote! {
+                    fn merge(
+                        &mut self,
+                        context: &Self::Context,
+                        mut next: Self,
+                    ) -> std::result::Result<(), schematic::ConfigError> {
+                        #inner
+                        Ok(())
+                    }
                 }
-            }
-        };
-
-        let internal = ImplResult::impl_use_internal(true);
-
-        quote! {
-            fn merge(
-                &mut self,
-                context: &Self::Context,
-                mut next: Self,
-            ) -> std::result::Result<(), schematic::ConfigError> {
-                #internal
-
-                MergeManager::new(context)
-                #inner;
-
-                Ok(())
             }
         }
     }

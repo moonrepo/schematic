@@ -1,4 +1,5 @@
-use crate::field::{FieldArgs, FieldNestedArg};
+use crate::args::NestedArg;
+use crate::field::FieldArgs;
 use crate::utils::{ImplResult, to_type_string};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
@@ -28,7 +29,7 @@ pub struct FieldValue {
 }
 
 impl FieldValue {
-    pub fn new(ty: Type, nested_arg: Option<&FieldNestedArg>) -> Self {
+    pub fn new(ty: Type, nested_arg: Option<&NestedArg>) -> Self {
         let mut nested = false;
         let mut nested_ident = None;
         let ty_string = to_type_string(ty.to_token_stream());
@@ -36,10 +37,10 @@ impl FieldValue {
         // Determine nested state
         if let Some(nested_arg) = nested_arg {
             match nested_arg {
-                FieldNestedArg::Detect(state) => {
+                NestedArg::Detect(state) => {
                     nested = *state;
                 }
-                FieldNestedArg::Ident(ident) => {
+                NestedArg::Ident(ident) => {
                     nested = true;
                     nested_ident = Some(ident.to_owned());
 

@@ -303,4 +303,93 @@ mod setting_merge {
             .impl_partial_merge();
         }
     }
+
+    mod named_enum {
+        // N/A
+    }
+
+    mod unnamed_enum {
+        use super::*;
+
+        #[test]
+        fn accepts_func_ref() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = func_ref)]
+                    A(String),
+                }
+            });
+            let variant = container.inner.get_variants()[0];
+
+            assert!(variant.args.merge.is_some());
+        }
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = "func_ref")]
+                    A(String),
+                }
+            });
+            let variant = container.inner.get_variants()[0];
+
+            assert!(variant.args.merge.is_some());
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = 123)]
+                    A(String),
+                }
+            });
+        }
+
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A(bool),
+                    B(usize),
+                    C(String, i16),
+                    D(Option<String>, Vec<String>),
+                    E(Option<HashMap<u8, String>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_func() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = a)]
+                    A(bool),
+                    #[setting(merge = b)]
+                    B(usize),
+                    #[setting(merge = c)]
+                    C(String, i16),
+                    #[setting(merge = d)]
+                    D(Option<String>, Vec<String>),
+                    #[setting(merge = e)]
+                    E(Option<HashMap<u8, String>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+    }
+
+    mod unit_enum {
+        // N/A
+    }
 }
