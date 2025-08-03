@@ -1,6 +1,6 @@
 use schematic_core::container::Container;
 use schematic_core::field::Field;
-use schematic_core::field_value::Layer;
+use schematic_core::value::Layer;
 use syn::{Ident, parse_quote};
 
 fn get_field<'a>(fields: &'a [&'a Field], key: &str) -> &'a Field {
