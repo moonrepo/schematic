@@ -1,5 +1,6 @@
 use crate::field::{FieldArgs, FieldNestedArg};
 use crate::utils::{ImplResult, to_type_string};
+use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::{Expr, GenericArgument, Ident, Lit, PathArguments, PathSegment, Type};
 
@@ -239,12 +240,20 @@ impl FieldValue {
     }
 
     #[cfg(not(feature = "extends"))]
-    pub fn impl_partial_extends_from(&self, _field_name: &Ident) -> ImplResult {
+    pub fn impl_partial_extends_from(
+        &self,
+        _field_args: &FieldArgs,
+        _field_name: TokenStream,
+    ) -> ImplResult {
         ImplResult::skipped()
     }
 
     #[cfg(feature = "extends")]
-    pub fn impl_partial_extends_from(&self, field_name: &Ident) -> ImplResult {
+    pub fn impl_partial_extends_from(
+        &self,
+        _field_args: &FieldArgs,
+        field_name: TokenStream,
+    ) -> ImplResult {
         let value = match self.ty_string.as_str() {
             "String" | "Option<String>" => {
                 quote! {
@@ -272,6 +281,54 @@ impl FieldValue {
                 panic!(
                     "Only `String`, `Vec<String>`, or `schematic::ExtendsFrom` are supported when using `extend` for {field_name}. Received `{inner}`."
                 );
+            }
+        };
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
+    }
+
+    pub fn impl_partial_merge(
+        &self,
+        field_args: &FieldArgs,
+        field_name: TokenStream,
+    ) -> ImplResult {
+        let value = match field_args.merge.as_ref() {
+            Some(func) => {
+                if self.nested && !self.is_collection() {
+                    panic!("Nested configs do not support `merge` unless wrapped in a collection.");
+                }
+
+                quote! {
+                    .apply_with(
+                        &mut self.#field_name,
+                        next.#field_name,
+                        #func,
+                    )?
+                }
+            }
+            _ => {
+                if self.nested {
+                    if self.is_collection() {
+                        panic!("Collections with nested configs must manually define `merge`.");
+                    }
+
+                    quote! {
+                        .nested(
+                            &mut self.#field_name,
+                            next.#field_name,
+                        )?
+                    }
+                } else {
+                    quote! {
+                        .apply(
+                            &mut self.#field_name,
+                            next.#field_name,
+                        )?
+                    }
+                }
             }
         };
 

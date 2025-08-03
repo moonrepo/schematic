@@ -82,4 +82,8 @@ impl Variant {
 
         res
     }
+
+    pub fn impl_partial_merge(&self) -> ImplResult {
+        ImplResult::default()
+    }
 }

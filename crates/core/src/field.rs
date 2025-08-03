@@ -310,10 +310,14 @@ impl Field {
     pub fn impl_partial_extends_from(&self) -> ImplResult {
         if self.is_extendable() {
             self.value
-                .impl_partial_extends_from(self.get_name_original())
+                .impl_partial_extends_from(&self.args, self.get_key())
         } else {
             ImplResult::skipped()
         }
+    }
+
+    pub fn impl_partial_merge(&self) -> ImplResult {
+        self.value.impl_partial_merge(&self.args, self.get_key())
     }
 }
 

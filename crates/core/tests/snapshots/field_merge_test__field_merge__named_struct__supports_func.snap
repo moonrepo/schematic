@@ -1,0 +1,20 @@
+---
+source: crates/core/tests/field_merge_test.rs
+expression: pretty(container.impl_partial_merge())
+---
+fn merge(
+    &mut self,
+    context: &Self::Context,
+    mut next: Self,
+) -> std::result::Result<(), schematic::ConfigError> {
+    use schematic::internal::*;
+    MergeManager::new(context)
+        .apply(&mut self.a, next.a)?
+        .apply(&mut self.b, next.b)?
+        .apply_with(&mut self.c, next.c, discard)?
+        .apply_with(&mut self.d, next.d, preserve)?
+        .apply(&mut self.e, next.e)?
+        .apply_with(&mut self.f, next.f, append_vec)?
+        .apply_with(&mut self.g, next.g, merge_hashmap)?;
+    Ok(())
+}
