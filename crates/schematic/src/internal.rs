@@ -1,4 +1,6 @@
-use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialConfig};
+use crate::config::{
+    ConfigError, HandlerError, MergeError, MergeResult, ParseEnvResult, PartialConfig,
+};
 use schematic_types::Schema;
 use std::str::FromStr;
 
@@ -12,68 +14,109 @@ pub fn handle_default_result<T, E: std::error::Error>(
 
 // ENV VARS
 
-#[cfg(feature = "env")]
-mod env {
-    use super::*;
-    use crate::config::ParseEnvResult;
+pub struct EnvManager {
+    count: u8,
+    prefix: String,
+}
 
-    pub struct EnvManager {
-        count: u8,
-        prefix: String,
+impl EnvManager {
+    pub fn new<T: AsRef<str>>(prefix: Option<T>) -> Self {
+        Self {
+            count: 0,
+            prefix: prefix
+                .map(|pre| pre.as_ref().to_string())
+                .unwrap_or_default(),
+        }
     }
 
-    impl EnvManager {
-        pub fn new<T: AsRef<str>>(prefix: Option<T>) -> Self {
-            Self {
-                count: 0,
-                prefix: prefix
-                    .map(|pre| pre.as_ref().to_string())
-                    .unwrap_or_default(),
-            }
+    pub fn is_empty(&self) -> bool {
+        self.count == 0
+    }
+
+    pub fn get<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
+        self.get_and_parse(key, |value| parse_value(value).map(|v| Some(v)))
+    }
+
+    pub fn get_and_parse<T>(
+        &mut self,
+        key: &str,
+        parser: impl Fn(String) -> ParseEnvResult<T>,
+    ) -> ParseEnvResult<T> {
+        let key = format!("{}{key}", self.prefix);
+
+        if let Ok(value) = std::env::var(&key) {
+            return parser(value)
+                .inspect(|inner| {
+                    if inner.is_some() {
+                        self.count += 1;
+                    }
+                })
+                .map_err(|error| {
+                    HandlerError(format!("Invalid environment variable {key}: {error}"))
+                });
         }
 
-        pub fn is_empty(&self) -> bool {
-            self.count == 0
+        Ok(None)
+    }
+
+    pub fn nested<T>(&mut self, partial: Option<T>) -> ParseEnvResult<T> {
+        if partial.is_some() {
+            self.count += 1;
         }
 
-        pub fn get<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
-            self.get_and_parse(key, |value| parse_value(value).map(|v| Some(v)))
-        }
-
-        pub fn get_and_parse<T>(
-            &mut self,
-            key: &str,
-            parser: impl Fn(String) -> ParseEnvResult<T>,
-        ) -> ParseEnvResult<T> {
-            let key = format!("{}{key}", self.prefix);
-
-            if let Ok(value) = std::env::var(&key) {
-                return parser(value)
-                    .inspect(|inner| {
-                        if inner.is_some() {
-                            self.count += 1;
-                        }
-                    })
-                    .map_err(|error| {
-                        HandlerError(format!("Invalid environment variable {key}: {error}"))
-                    });
-            }
-
-            Ok(None)
-        }
-
-        pub fn nested<T>(&mut self, partial: Option<T>) -> ParseEnvResult<T> {
-            if partial.is_some() {
-                self.count += 1;
-            }
-
-            Ok(partial)
-        }
+        Ok(partial)
     }
 }
 
-#[cfg(feature = "env")]
-pub use env::*;
+// MERGING
+
+pub struct MergeManager<'a, Ctx> {
+    context: &'a Ctx,
+}
+
+impl<'a, Ctx> MergeManager<'a, Ctx> {
+    pub fn new(context: &'a Ctx) -> Self {
+        Self { context }
+    }
+
+    pub fn apply<T>(self, prev: &mut Option<T>, next: Option<T>) -> Result<Self, MergeError> {
+        self.apply_with(prev, next, super::merge::replace)
+    }
+
+    pub fn apply_with<T>(
+        self,
+        prev: &mut Option<T>,
+        next: Option<T>,
+        merger: impl Fn(T, T, &Ctx) -> MergeResult<T>,
+    ) -> Result<Self, MergeError> {
+        let value = match (prev.take(), next) {
+            (Some(prev), Some(next)) => merger(prev, next, self.context)?,
+            (None, Some(next)) => Some(next),
+            (other, None) => other,
+        };
+
+        if let Some(value) = value {
+            prev.replace(value);
+        }
+
+        Ok(self)
+    }
+
+    pub fn nested<T: PartialConfig<Context = Ctx>>(
+        self,
+        prev: &mut Option<T>,
+        next: Option<T>,
+    ) -> Result<Self, MergeError> {
+        self.apply_with(prev, next, |mut p, n, ctx| {
+            p.merge(ctx, n)
+                .map_err(|error| MergeError(error.to_string()))?;
+
+            Ok(Some(p))
+        })
+    }
+}
+
+// LEGACY
 
 #[cfg(feature = "env")]
 pub fn track_env<T>(value: Option<T>, tracker: &mut std::collections::HashSet<bool>) -> Option<T> {
@@ -110,40 +153,33 @@ pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, HandlerErro
     })
 }
 
-#[allow(clippy::unnecessary_unwrap)]
 pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
     merger: impl Fn(T, T, &C) -> MergeResult<T>,
 ) -> MergeResult<T> {
-    if prev.is_some() && next.is_some() {
-        merger(prev.unwrap(), next.unwrap(), context)
-    } else if next.is_some() {
-        Ok(next)
-    } else {
-        Ok(prev)
+    match (prev, next) {
+        (Some(prev), Some(next)) => merger(prev, next, context),
+        (None, Some(next)) => Ok(Some(next)),
+        (other, _) => Ok(other),
     }
 }
 
-#[allow(clippy::unnecessary_unwrap)]
 pub fn merge_nested_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
 ) -> MergeResult<T> {
-    if prev.is_some() && next.is_some() {
-        let mut nested = prev.unwrap();
+    match (prev, next) {
+        (Some(mut prev), Some(next)) => {
+            prev.merge(context, next)
+                .map_err(|error| MergeError(error.to_string()))?;
 
-        nested
-            .merge(context, next.unwrap())
-            .map_err(|error| MergeError(error.to_string()))?;
-
-        Ok(Some(nested))
-    } else if next.is_some() {
-        Ok(next)
-    } else {
-        Ok(prev)
+            Ok(Some(prev))
+        }
+        (None, Some(next)) => Ok(Some(next)),
+        (other, _) => Ok(other),
     }
 }
 
