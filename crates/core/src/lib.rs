@@ -3,6 +3,7 @@ pub mod container;
 pub mod field;
 pub mod field_value;
 pub mod utils;
+pub mod value;
 pub mod variant;
 
 // #[cfg(feature = "config")]
