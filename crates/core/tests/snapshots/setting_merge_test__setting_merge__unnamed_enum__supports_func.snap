@@ -8,28 +8,28 @@ fn merge(
     mut next: Self,
 ) -> std::result::Result<(), schematic::ConfigError> {
     match self {
-        Self::A(ao) => {
-            if let Self::A(ai) = next {
-                *self = Self::A(a(ao.to_owned(), ai, context)?.unwrap_or_default());
+        Self::A(pa) => {
+            if let Self::A(na) = next {
+                *self = Self::A(a(pa.to_owned(), na, context)?.unwrap_or_default());
             } else {
                 *self = next;
             }
         }
-        Self::B(ao) => {
-            if let Self::B(ai) = next {
-                *self = Self::B(b(ao.to_owned(), ai, context)?.unwrap_or_default());
+        Self::B(pa) => {
+            if let Self::B(na) = next {
+                *self = Self::B(b(pa.to_owned(), na, context)?.unwrap_or_default());
             } else {
                 *self = next;
             }
         }
-        Self::C(ao, bo) => {
-            if let Self::C(ai, bi) = next {
-                if let Some((ao, bo)) = c(
-                    (ao.to_owned(), bo.to_owned()),
-                    (ai, bi),
+        Self::C(pa, pb) => {
+            if let Self::C(na, nb) = next {
+                if let Some((pa, pb)) = c(
+                    (pa.to_owned(), pb.to_owned()),
+                    (na, nb),
                     context,
                 )? {
-                    *self = Self::C(ao, bo);
+                    *self = Self::C(pa, pb);
                 } else {
                     *self = Self::C(Default::default(), Default::default());
                 }
@@ -37,14 +37,14 @@ fn merge(
                 *self = next;
             }
         }
-        Self::D(ao, bo) => {
-            if let Self::D(ai, bi) = next {
-                if let Some((ao, bo)) = d(
-                    (ao.to_owned(), bo.to_owned()),
-                    (ai, bi),
+        Self::D(pa, pb) => {
+            if let Self::D(na, nb) = next {
+                if let Some((pa, pb)) = d(
+                    (pa.to_owned(), pb.to_owned()),
+                    (na, nb),
                     context,
                 )? {
-                    *self = Self::D(ao, bo);
+                    *self = Self::D(pa, pb);
                 } else {
                     *self = Self::D(Default::default(), Default::default());
                 }
@@ -52,9 +52,9 @@ fn merge(
                 *self = next;
             }
         }
-        Self::E(ao) => {
-            if let Self::E(ai) = next {
-                *self = Self::E(e(ao.to_owned(), ai, context)?.unwrap_or_default());
+        Self::E(pa) => {
+            if let Self::E(na) = next {
+                *self = Self::E(e(pa.to_owned(), na, context)?.unwrap_or_default());
             } else {
                 *self = next;
             }

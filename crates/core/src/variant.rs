@@ -1,6 +1,7 @@
 use crate::args::{NestedArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::utils::ImplResult;
+use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -27,6 +28,8 @@ pub struct VariantArgs {
 
 #[derive(Debug)]
 pub struct Variant {
+    pub values: Vec<VariantValue>,
+
     // args
     pub args: VariantArgs,
     pub container_args: Rc<ContainerArgs>,
@@ -36,7 +39,7 @@ pub struct Variant {
     // inherited
     pub attrs: Vec<Attribute>,
     pub ident: Ident,
-    pub value: Fields,
+    pub fields: Fields,
 }
 
 impl Variant {
@@ -48,14 +51,35 @@ impl Variant {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap();
         let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap();
 
-        Variant {
-            args,
+        let variant = Self {
             attrs: variant.attrs,
             container_args,
             ident: variant.ident,
             serde_args,
             serde_container_args,
-            value: variant.fields,
+            values: match &variant.fields {
+                Fields::Named(fields) => fields
+                    .named
+                    .iter()
+                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref()))
+                    .collect(),
+                Fields::Unnamed(fields) => fields
+                    .unnamed
+                    .iter()
+                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref()))
+                    .collect(),
+                Fields::Unit => vec![],
+            },
+            fields: variant.fields,
+            args,
+        };
+        variant.validate_args();
+        variant
+    }
+
+    fn validate_args(&self) {
+        if self.is_nested() && self.values.len() > 1 {
+            panic!("Only 1 item is supported when using `nested` in a tuple variant.")
         }
     }
 
@@ -74,7 +98,7 @@ impl Variant {
         let mut res = ImplResult::default();
         let name = &self.ident;
 
-        res.value = match &self.value {
+        res.value = match &self.fields {
             Fields::Named(_) => panic!("Enums with named fields are not supported!"),
             Fields::Unnamed(fields) => {
                 let fields = fields
@@ -96,45 +120,32 @@ impl Variant {
     pub fn impl_partial_merge(&self) -> ImplResult {
         let mut res = ImplResult::default();
 
-        match &self.value {
+        match &self.fields {
             Fields::Named(_) => {
                 res.no_value = true;
             }
             Fields::Unnamed(fields) => {
                 let name = &self.ident;
 
-                if self.is_nested() {
-                    if self.args.merge.is_some() {
-                        panic!("Nested variants do not support `merge`.");
-                    }
+                match &self.args.merge {
+                    Some(func) => {
+                        if self.is_nested()
+                            && self
+                                .values
+                                .first()
+                                .is_none_or(|value| !value.is_collection())
+                        {
+                            panic!(
+                                "Nested configs do not support `merge` unless wrapped in a collection."
+                            );
+                        }
 
-                    res.value =
-                        self.map_unnamed_match(&self.ident, fields, |outer_names, inner_names| {
-                            let statements = outer_names
-                                .iter()
-                                .enumerate()
-                                .map(|(index, o)| {
-                                    let i = &inner_names[index];
-                                    quote! { #o.merge(context, #i)?; }
-                                })
-                                .collect::<Vec<_>>();
-
-                            quote! {
-                                if let Self::#name(#(#inner_names),*) = next {
-                                    #(#statements)*
-                                } else {
-                                    *self = next;
-                                }
-                            }
-                        });
-                } else if let Some(func) = &self.args.merge {
-                    res.value =
-                        self.map_unnamed_match(&self.ident, fields, |outer_names, inner_names| {
+                        res.value = self.map_unnamed_match(&self.ident, fields, |outer_names, inner_names| {
                             if outer_names.len() == 1 {
                                 quote! {
-                                    if let Self::#name(ai) = next {
+                                    if let Self::#name(na) = next {
                                         *self = Self::#name(
-                                            #func(ao.to_owned(), ai, context)?.unwrap_or_default(),
+                                            #func(pa.to_owned(), na, context)?.unwrap_or_default(),
                                         );
                                     } else {
                                         *self = next;
@@ -165,9 +176,46 @@ impl Variant {
                                 }
                             }
                         });
-                } else {
-                    res.no_value = true;
-                }
+                    }
+                    None => {
+                        if self.is_nested() {
+                            if self
+                                .values
+                                .first()
+                                .is_some_and(|value| value.is_collection())
+                            {
+                                panic!(
+                                    "Collections with nested configs must manually define `merge`."
+                                );
+                            }
+
+                            res.value = self.map_unnamed_match(
+                                &self.ident,
+                                fields,
+                                |outer_names, inner_names| {
+                                    let statements = outer_names
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(index, o)| {
+                                            let i = &inner_names[index];
+                                            quote! { #o.merge(context, #i)?; }
+                                        })
+                                        .collect::<Vec<_>>();
+
+                                    quote! {
+                                        if let Self::#name(#(#inner_names),*) = next {
+                                            #(#statements)*
+                                        } else {
+                                            *self = next;
+                                        }
+                                    }
+                                },
+                            );
+                        } else {
+                            res.no_value = true;
+                        }
+                    }
+                };
             }
             Fields::Unit => {
                 res.no_value = true;
@@ -201,8 +249,8 @@ impl Variant {
         let mut inner_names = vec![];
 
         for _ in &fields.unnamed {
-            let outer_name = format_ident!("{}o", count as char);
-            let inner_name = format_ident!("{}i", count as char);
+            let outer_name = format_ident!("p{}", count as char);
+            let inner_name = format_ident!("n{}", count as char);
 
             outer_names.push(outer_name);
             inner_names.push(inner_name);
