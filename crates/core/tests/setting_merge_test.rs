@@ -387,6 +387,70 @@ mod setting_merge {
 
             assert_snapshot!(pretty(container.impl_partial_merge()));
         }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig),
+                    #[setting(nested = CustomConfig)]
+                    B(CustomConfig),
+                    #[setting(nested)]
+                    C(Option<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    D(Arc<CustomConfig>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested, merge = append_vec)]
+                    A(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig, merge = merge_hashmap)]
+                    B(HashMap<String, CustomConfig>),
+                    #[setting(nested, merge = merge_btreeset)]
+                    C(Option<BTreeSet<NestedConfig>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Nested configs do not support `merge` unless wrapped in a collection."
+        )]
+        fn errors_if_nested_has_merge_attr() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested, merge = append_vec)]
+                    A(NestedConfig),
+                }
+            })
+            .impl_partial_merge();
+        }
+
+        #[test]
+        #[should_panic(expected = "Collections with nested configs must manually define `merge`.")]
+        fn errors_if_collection_doesnt_have_merge_attr() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(Vec<NestedConfig>),
+                }
+            })
+            .impl_partial_merge();
+        }
     }
 
     mod unit_enum {

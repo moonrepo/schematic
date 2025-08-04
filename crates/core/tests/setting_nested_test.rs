@@ -294,4 +294,129 @@ mod setting_nested {
             });
         }
     }
+
+    mod named_enum {
+        // TODO
+    }
+
+    mod unnamed_enum {
+        use super::*;
+
+        #[test]
+        fn word() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig),
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(variants[0].values[0].nested);
+            assert_eq!(
+                variants[0].values[0].nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn bool_true() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested = true)]
+                    A(NestedConfig),
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(variants[0].values[0].nested);
+            assert_eq!(
+                variants[0].values[0].nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn bool_false() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested = false)]
+                    A(NestedConfig),
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(!variants[0].values[0].nested);
+            assert!(variants[0].values[0].nested_ident.is_none());
+        }
+
+        #[test]
+        fn explicit_ident() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested = NestedConfig)]
+                    A(NestedConfig),
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(variants[0].values[0].nested);
+            assert_eq!(
+                variants[0].values[0].nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn detect_in_vec() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(Vec<NestedConfig>),
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(variants[0].values[0].nested);
+            assert_eq!(
+                variants[0].values[0].nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        fn panics_invalid_expr() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested = (1 + 1))]
+                    A(NestedConfig),
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Only 1 item is supported when using `nested` in a tuple variant."
+        )]
+        fn panics_multiple_items() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig, bool),
+                }
+            });
+        }
+    }
+
+    mod unit_enum {
+        // N/A
+    }
 }

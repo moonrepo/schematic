@@ -5,6 +5,7 @@ pub mod field_value;
 pub mod utils;
 pub mod value;
 pub mod variant;
+pub mod variant_value;
 
 // #[cfg(feature = "config")]
 // pub mod config;
