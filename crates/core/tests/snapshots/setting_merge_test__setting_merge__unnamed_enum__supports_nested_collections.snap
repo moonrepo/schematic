@@ -1,0 +1,43 @@
+---
+source: crates/core/tests/setting_merge_test.rs
+expression: pretty(container.impl_partial_merge())
+---
+fn merge(
+    &mut self,
+    context: &Self::Context,
+    mut next: Self,
+) -> std::result::Result<(), schematic::ConfigError> {
+    match self {
+        Self::A(pa) => {
+            if let Self::A(na) = next {
+                *self = Self::A(
+                    append_vec(pa.to_owned(), na, context)?.unwrap_or_default(),
+                );
+            } else {
+                *self = next;
+            }
+        }
+        Self::B(pa) => {
+            if let Self::B(na) = next {
+                *self = Self::B(
+                    merge_hashmap(pa.to_owned(), na, context)?.unwrap_or_default(),
+                );
+            } else {
+                *self = next;
+            }
+        }
+        Self::C(pa) => {
+            if let Self::C(na) = next {
+                *self = Self::C(
+                    merge_btreeset(pa.to_owned(), na, context)?.unwrap_or_default(),
+                );
+            } else {
+                *self = next;
+            }
+        }
+        _ => {
+            *self = next;
+        }
+    };
+    Ok(())
+}
