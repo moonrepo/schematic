@@ -1,0 +1,16 @@
+---
+source: crates/core/tests/setting_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values_with_prefix(
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::new(prefix);
+    let mut partial = Self::default();
+    partial.0 = env.nested(PartialNestedConfig::env_values()?)?;
+    partial.1 = env.nested(PartialCustomConfig::env_values()?)?;
+    partial.2 = env.nested(PartialNestedConfig::env_values_with_prefix(Some("PRE_"))?)?;
+    partial.3 = env.nested(PartialCustomConfig::env_values_with_prefix(Some("PRE_"))?)?;
+    Ok(if env.is_empty() { None } else { Some(partial) })
+}
