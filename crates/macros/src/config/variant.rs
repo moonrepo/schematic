@@ -222,7 +222,7 @@ impl Variant<'_> {
                             if self.is_nested() {
                                 let ty = &fields.unnamed[index].ty;
 
-                                quote! { #ty::from_partial(#o) }
+                                quote! { #ty::from_partial(#o)? }
                             } else {
                                 quote! { #o }
                             }

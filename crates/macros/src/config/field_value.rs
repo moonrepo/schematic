@@ -4,10 +4,15 @@ use quote::{format_ident, quote};
 use syn::{Expr, Lit};
 
 impl FieldValue<'_> {
-    pub fn generate_default_value(&self, args: &FieldArgs, nullable: bool) -> TokenStream {
+    pub fn generate_default_value(
+        &self,
+        args: &FieldArgs,
+        nullable: bool,
+        required: bool,
+    ) -> TokenStream {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {
-                if nullable {
+                if nullable || required {
                     quote! { None }
                 } else {
                     quote! { Some(Default::default()) }
@@ -45,7 +50,7 @@ impl FieldValue<'_> {
                     }
                 },
                 _ => {
-                    if nullable {
+                    if nullable || required {
                         quote! { None }
                     } else {
                         quote! { Some(Default::default()) }
@@ -93,7 +98,7 @@ impl FieldValue<'_> {
                 item, item_info, ..
             } => self.map_data_with_info(
                 quote! {
-                    #item::from_partial(value)
+                    #item::from_partial(value)?
                 },
                 item_info,
             ),
@@ -101,7 +106,7 @@ impl FieldValue<'_> {
                 value, value_info, ..
             } => self.map_data_with_info(
                 quote! {
-                    #value::from_partial(value)
+                    #value::from_partial(value)?
                 },
                 value_info,
             ),
@@ -109,7 +114,7 @@ impl FieldValue<'_> {
                 let config = info.config.as_ref();
 
                 quote! {
-                    #config::from_partial(data)
+                    #config::from_partial(data)?
                 }
             }
             Self::Value { .. } => quote! { data },
