@@ -21,7 +21,6 @@ serde = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
-serde_yml = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -39,7 +38,6 @@ schematic_types = { path = ".", features = [
 	"serde_rpkl",
 	"serde_toml",
 	"serde_yaml",
-	"serde_yml",
 	"url",
 ] }
 starbase_sandbox = { workspace = true }
@@ -59,5 +57,5 @@ serde_ron = ["dep:ron"]
 serde_rpkl = ["dep:rpkl"]
 serde_toml = ["dep:toml"]
 serde_yaml = ["dep:serde_yaml"]
-serde_yml = ["dep:serde_yml"]
+serde_yml = ["serde_yaml"]
 url = ["dep:url"]
