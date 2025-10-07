@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a description issue when building the schema.
+- Fixed `extends` validation not supporting query strings in the a URL.
+
 ## 0.18.12
 
 #### 🚀 Updates

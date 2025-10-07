@@ -19,10 +19,18 @@ pub fn extends_string<D, C>(
         ));
     }
 
-    if !value.is_empty() && !is_source_format(value) {
-        return Err(ValidateError::new(
-            "invalid format, try a supported extension",
-        ));
+    if !value.is_empty() {
+        let value = if is_url && let Some(index) = value.rfind('?') {
+            &value[0..index]
+        } else {
+            value
+        };
+
+        if !is_source_format(value) {
+            return Err(ValidateError::new(
+                "invalid file format, try a supported extension",
+            ));
+        }
     }
 
     if is_url && !is_secure_url(value) {
@@ -63,4 +71,47 @@ pub fn extends_from<D, C>(
     };
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn string_valid() {
+        assert!(extends_string("file.yml", &(), &(), false).is_ok());
+        assert!(extends_string("./file.json", &(), &(), false).is_ok());
+        assert!(extends_string("../file.yaml", &(), &(), false).is_ok());
+        assert!(extends_string("/nested/file.toml", &(), &(), false).is_ok());
+        assert!(extends_string("https://domain.com/file.yml", &(), &(), false).is_ok());
+        assert!(extends_string("https://domain.com/nested/file.toml", &(), &(), false).is_ok());
+        assert!(
+            extends_string(
+                "https://domain.com/nested/file.toml?query=string",
+                &(),
+                &(),
+                false
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn string_invalid() {
+        // invalid ext
+        assert!(extends_string("file.exe", &(), &(), false).is_err());
+        assert!(extends_string("https://domain.com/nested/file.exe", &(), &(), false).is_err());
+        assert!(
+            extends_string(
+                "https://domain.com/nested/file.exe?query=string",
+                &(),
+                &(),
+                false
+            )
+            .is_err()
+        );
+
+        // no http
+        assert!(extends_string("http://domain.com/nested/file.json", &(), &(), false).is_err());
+    }
 }
