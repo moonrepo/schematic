@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where source URLs that contain a query string would not be parsed.
+
 ## 0.18.13
 
 #### 🐞 Fixes

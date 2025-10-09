@@ -1,5 +1,5 @@
 use super::{ValidateError, ValidateResult, map_err};
-use crate::config::is_secure_url;
+use crate::helpers::is_secure_url;
 pub use garde::rules::url::Url;
 
 /// Validate a string matches a URL.

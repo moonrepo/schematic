@@ -1,7 +1,5 @@
-use crate::config::{
-    ExtendsFrom, Path, PathSegment, ValidateError, ValidateResult, is_file_like, is_secure_url,
-    is_source_format, is_url_like,
-};
+use crate::config::{ExtendsFrom, Path, PathSegment, ValidateError, ValidateResult};
+use crate::helpers::*;
 
 /// Validate an `extend` value is either a file path or secure URL.
 pub fn extends_string<D, C>(
@@ -19,18 +17,10 @@ pub fn extends_string<D, C>(
         ));
     }
 
-    if !value.is_empty() {
-        let value = if is_url && let Some(index) = value.rfind('?') {
-            &value[0..index]
-        } else {
-            value
-        };
-
-        if !is_source_format(value) {
-            return Err(ValidateError::new(
-                "invalid file format, try a supported extension",
-            ));
-        }
+    if !value.is_empty() && !is_source_format(value) {
+        return Err(ValidateError::new(
+            "invalid file format, try a supported extension",
+        ));
     }
 
     if is_url && !is_secure_url(value) {
