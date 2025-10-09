@@ -39,10 +39,16 @@ pub fn strip_bom(content: &str) -> &str {
 
 /// Extract a file extension from the provided file path or URL.
 pub fn extract_ext(value: &str) -> Option<&str> {
-    let value = if is_url_like(value)
-        && let Some(index) = value.rfind('?')
-    {
+    // Remove any query string
+    let value = if let Some(index) = value.rfind('?') {
         &value[0..index]
+    } else {
+        value
+    };
+
+    // And only check the last segment
+    let value = if let Some(index) = value.rfind('/') {
+        &value[index + 1..]
     } else {
         value
     };
