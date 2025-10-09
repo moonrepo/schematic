@@ -1832,7 +1832,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.18.13"
+version = "0.18.14"
 dependencies = [
  "chrono",
  "derive_more",
