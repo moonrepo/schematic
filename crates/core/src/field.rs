@@ -20,13 +20,16 @@ pub struct FieldArgs {
     pub env: Option<String>,
     #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
+    // TODO test
     pub exclude: bool,
     #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
+    // TODO test
     pub nested: Option<NestedArg>,
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
+    // TODO test
     pub partial: Option<PartialArg>,
     pub required: bool, // TODO
     pub transform: Option<ExprPath>,
@@ -98,12 +101,7 @@ impl Field {
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {
                 panic!("Cannot use `env_prefix` without `nested`.");
             }
-        }
 
-        // nested
-
-        #[cfg(feature = "env")]
-        {
             // parse_env
             if self.args.parse_env.is_some() && self.args.env.is_none() {
                 panic!("Cannot use `parse_env` without `env`.");

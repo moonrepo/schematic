@@ -8,6 +8,8 @@ use quote::{format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
 
+// TODO test all
+
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema))]
