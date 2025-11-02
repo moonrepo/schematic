@@ -13,13 +13,15 @@ use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVa
 #[darling(default, attributes(setting, schema))]
 pub struct VariantArgs {
     pub default: bool,
+    #[cfg(feature = "schema")]
+    pub exclude: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
+    pub null: bool,
     pub partial: Option<PartialArg>,
     pub required: bool,
     #[cfg(feature = "validate")]
     pub validate: Option<crate::args::ValidateArg>,
-    // TODO exclude, null
 
     // serde
     #[darling(multiple)]
@@ -113,11 +115,27 @@ impl Variant {
             if self.args.validate.is_some() {
                 panic!("Cannot use `validate` with unit variants.");
             }
+        } else {
+            if self.args.null {
+                panic!("Can only use `null` with unit variants.");
+            }
         }
     }
 
     pub fn is_default(&self) -> bool {
         self.args.default
+    }
+
+    pub fn is_excluded(&self) -> bool {
+        #[cfg(feature = "schema")]
+        {
+            self.args.exclude
+        }
+
+        #[cfg(not(feature = "schema"))]
+        {
+            false
+        }
     }
 
     pub fn is_nested(&self) -> bool {

@@ -22,7 +22,7 @@ pub struct FieldArgs {
     pub env: Option<String>,
     #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
-    // TODO test
+    #[cfg(feature = "schema")]
     pub exclude: bool,
     #[cfg(feature = "extends")]
     pub extend: bool,
@@ -97,12 +97,10 @@ impl Field {
     fn validate_args(&self) {
         #[cfg(feature = "env")]
         {
-            // env_prefix
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {
                 panic!("Cannot use `env_prefix` without `nested`.");
             }
 
-            // parse_env
             if self.args.parse_env.is_some() && self.args.env.is_none() {
                 panic!("Cannot use `parse_env` without `env`.");
             }
@@ -182,6 +180,18 @@ impl Field {
         self.ident
             .as_ref()
             .expect("Name only usable on named fields!")
+    }
+
+    pub fn is_excluded(&self) -> bool {
+        #[cfg(feature = "schema")]
+        {
+            self.args.exclude
+        }
+
+        #[cfg(not(feature = "schema"))]
+        {
+            false
+        }
     }
 
     pub fn is_extendable(&self) -> bool {
