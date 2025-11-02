@@ -454,6 +454,18 @@ mod setting_merge {
     }
 
     mod unit_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        #[should_panic(expected = "Cannot use `merge` with unit variants.")]
+        fn errors_for_unit() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = func_ref)]
+                    A,
+                }
+            });
+        }
     }
 }

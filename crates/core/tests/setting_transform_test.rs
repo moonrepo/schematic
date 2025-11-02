@@ -91,4 +91,16 @@ mod setting_transform {
             });
         }
     }
+
+    mod named_enum {
+        // N/A
+    }
+
+    mod unnamed_enum {
+        // N/A
+    }
+
+    mod unit_enum {
+        // N/A
+    }
 }

@@ -1,38 +1,24 @@
 use schematic_core::container::Container;
 use syn::parse_quote;
 
-mod setting_validate {
+mod setting_required {
     use super::*;
 
     mod named_struct {
         use super::*;
 
         #[test]
-        fn accepts_func_ref() {
+        fn accepts_bool() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
-                    #[setting(validate = func_ref)]
-                    a: String,
+                    #[setting(required)]
+                    a: Option<String>,
                 }
             });
             let field = container.inner.get_fields()[0];
 
-            assert!(field.args.validate.is_some());
-        }
-
-        #[test]
-        fn accepts_curried_func() {
-            let container = Container::from(parse_quote! {
-                #[derive(Config)]
-                struct Example {
-                    #[setting(validate = func_call())]
-                    a: String,
-                }
-            });
-            let field = container.inner.get_fields()[0];
-
-            assert!(field.args.validate.is_some());
+            assert!(field.args.required);
         }
 
         #[test]
@@ -41,7 +27,19 @@ mod setting_validate {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
-                    #[setting(validate = 123)]
+                    #[setting(required = 123)]
+                    a: Option<String>,
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` with non-optional settings.")]
+        fn errors_no_option() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(required)]
                     a: String,
                 }
             });
@@ -52,31 +50,17 @@ mod setting_validate {
         use super::*;
 
         #[test]
-        fn accepts_func_ref() {
+        fn accepts_bool() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example(
-                    #[setting(validate = func_ref)]
-                    String,
+                    #[setting(required)]
+                    Option<String>,
                 );
             });
             let field = container.inner.get_fields()[0];
 
-            assert!(field.args.validate.is_some());
-        }
-
-        #[test]
-        fn accepts_curried_func() {
-            let container = Container::from(parse_quote! {
-                #[derive(Config)]
-                struct Example(
-                    #[setting(validate = func_call())]
-                    String,
-                );
-            });
-            let field = container.inner.get_fields()[0];
-
-            assert!(field.args.validate.is_some());
+            assert!(field.args.required);
         }
 
         #[test]
@@ -85,7 +69,19 @@ mod setting_validate {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example(
-                    #[setting(validate = 123)]
+                    #[setting(required = 123)]
+                    Option<String>,
+                );
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` with non-optional settings.")]
+        fn errors_no_option() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(required)]
                     String,
                 );
             });
@@ -100,31 +96,17 @@ mod setting_validate {
         use super::*;
 
         #[test]
-        fn accepts_func_ref() {
+        fn accepts_bool() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
-                    #[setting(validate = func_ref)]
-                    A(String),
+                    #[setting(required)]
+                    A(Option<String>),
                 }
             });
             let field = container.inner.get_variants()[0];
 
-            assert!(field.args.validate.is_some());
-        }
-
-        #[test]
-        fn accepts_curried_func() {
-            let container = Container::from(parse_quote! {
-                #[derive(Config)]
-                enum Example {
-                    #[setting(validate = func_call())]
-                    A(String),
-                }
-            });
-            let field = container.inner.get_variants()[0];
-
-            assert!(field.args.validate.is_some());
+            assert!(field.args.required);
         }
 
         #[test]
@@ -133,7 +115,18 @@ mod setting_validate {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
-                    #[setting(validate = 123)]
+                    #[setting(required = 123)]
+                    A(Option<String>),
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` with non-optional settings.")]
+        fn errors_no_option() {
+            Container::from(parse_quote! {
+                enum Example {
+                    #[setting(required)]
                     A(String),
                 }
             });
@@ -144,12 +137,12 @@ mod setting_validate {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Cannot use `validate` with unit variants.")]
+        #[should_panic(expected = "Cannot use `required` with unit variants.")]
         fn errors_for_unit() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
-                    #[setting(validate = func_ref)]
+                    #[setting(required)]
                     A,
                 }
             });
