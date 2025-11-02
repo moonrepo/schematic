@@ -10,6 +10,8 @@ use quote::{ToTokens, TokenStreamExt, quote};
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
 
+// TODO: finalize, validate
+
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
@@ -25,13 +27,11 @@ pub struct FieldArgs {
     #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
-    // TODO test
     pub nested: Option<NestedArg>,
     #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
-    // TODO test
     pub partial: Option<PartialArg>,
-    pub required: bool, // TODO
+    pub required: bool,
     pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<crate::args::ValidateArg>,
@@ -106,6 +106,10 @@ impl Field {
             if self.args.parse_env.is_some() && self.args.env.is_none() {
                 panic!("Cannot use `parse_env` without `env`.");
             }
+        }
+
+        if self.is_required() && !self.value.is_outer_option_wrapped() {
+            panic!("Cannot use `required` with non-optional settings.");
         }
     }
 
@@ -197,6 +201,10 @@ impl Field {
             .nested
             .as_ref()
             .is_some_and(|nested| nested.is_nested())
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
     }
 }
 

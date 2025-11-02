@@ -191,6 +191,18 @@ mod setting_env {
             assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
     }
+
+    mod named_enum {
+        // N/A
+    }
+
+    mod unnamed_enum {
+        // N/A
+    }
+
+    mod unit_enum {
+        // N/A
+    }
 }
 
 mod setting_env_prefix {
@@ -450,5 +462,17 @@ mod setting_parse_env {
                 );
             });
         }
+    }
+
+    mod named_enum {
+        // N/A
+    }
+
+    mod unnamed_enum {
+        // N/A
+    }
+
+    mod unit_enum {
+        // N/A
     }
 }

@@ -22,15 +22,17 @@ mod setting_field {
         let container = Container::from(parse_quote! {
             #[derive(Config)]
             struct Example {
-                #[setting(exclude, extend, required)]
+                #[setting(exclude, extend)]
                 a: String,
+                #[setting(required)]
+                b: Option<String>,
             }
         });
-        let field = container.inner.get_fields()[0];
+        let fields = container.inner.get_fields();
 
-        assert!(field.args.exclude);
-        assert!(field.args.extend);
-        assert!(field.args.required);
+        assert!(fields[0].args.exclude);
+        assert!(fields[0].args.extend);
+        assert!(fields[1].args.required);
     }
 
     #[test]

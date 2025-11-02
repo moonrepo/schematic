@@ -1,4 +1,4 @@
-use crate::args::{NestedArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::utils::ImplResult;
 use crate::variant_value::VariantValue;
@@ -8,8 +8,6 @@ use quote::{format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
 
-// TODO test all
-
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema))]
@@ -17,6 +15,11 @@ pub struct VariantArgs {
     pub default: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
+    pub partial: Option<PartialArg>,
+    pub required: bool,
+    #[cfg(feature = "validate")]
+    pub validate: Option<crate::args::ValidateArg>,
+    // TODO exclude, null
 
     // serde
     #[darling(multiple)]
@@ -83,6 +86,34 @@ impl Variant {
         if self.is_nested() && self.values.len() > 1 {
             panic!("Only 1 item is supported when using `nested` in a tuple variant.")
         }
+
+        if self.is_required()
+            && self
+                .values
+                .iter()
+                .any(|value| !value.is_outer_option_wrapped())
+        {
+            panic!("Cannot use `required` with non-optional settings.");
+        }
+
+        if self.is_unit_variant() {
+            if self.args.merge.is_some() {
+                panic!("Cannot use `merge` with unit variants.");
+            }
+
+            if self.args.nested.is_some() {
+                panic!("Cannot use `nested` with unit variants.");
+            }
+
+            if self.args.required {
+                panic!("Cannot use `required` with unit variants.");
+            }
+
+            #[cfg(feature = "validate")]
+            if self.args.validate.is_some() {
+                panic!("Cannot use `validate` with unit variants.");
+            }
+        }
     }
 
     pub fn is_default(&self) -> bool {
@@ -94,6 +125,14 @@ impl Variant {
             .nested
             .as_ref()
             .is_some_and(|nested| nested.is_nested())
+    }
+
+    pub fn is_required(&self) -> bool {
+        self.args.required
+    }
+
+    pub fn is_unit_variant(&self) -> bool {
+        self.values.is_empty()
     }
 
     pub fn impl_partial_default_value(&self) -> ImplResult {
