@@ -282,6 +282,94 @@ mod setting_validate {
                 }
             });
         }
+
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(validate = func_ref)]
+                    A(bool),
+                    #[setting(validate = func_ref)]
+                    B(Option<bool>),
+                    #[setting(validate = func_ref)]
+                    C(Vec<String>),
+                    #[setting(validate = func_ref)]
+                    D(Vec<HashMap<String, usize>>),
+                    #[setting(validate = func_ref)]
+                    E(Option<Vec<HashMap<String, usize>>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested, validate = func_ref)]
+                    A(NestedConfig),
+                    #[setting(nested = CustomConfig, validate = func_ref)]
+                    B(CustomConfig),
+                    #[setting(nested, validate = func_ref)]
+                    C(Option<NestedConfig>),
+                    #[setting(nested = CustomConfig, validate = func_ref)]
+                    D(Arc<CustomConfig>),
+                    #[setting(nested)]
+                    E(NestedConfig),
+                    #[setting(nested = CustomConfig)]
+                    F(CustomConfig),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested, validate = func_ref)]
+                    A(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig, validate = func_ref)]
+                    B(HashMap<String, CustomConfig>),
+                    #[setting(nested, validate = func_ref)]
+                    C(Option<BTreeSet<NestedConfig>>),
+                    #[setting(nested)]
+                    D(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    E(HashMap<String, CustomConfig>),
+                    #[setting(nested)]
+                    F(Option<BTreeSet<NestedConfig>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_many_values() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(validate = func_ref)]
+                    A(bool),
+                    #[setting(validate = func_ref)]
+                    B(bool, usize),
+                    #[setting(validate = func_ref)]
+                    C(bool, usize, String),
+                    #[setting(required, validate = func_ref)]
+                    A(Option<bool>),
+                    #[setting(required, validate = func_ref)]
+                    B(Option<bool>, Option<usize>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
     }
 
     mod unit_enum {

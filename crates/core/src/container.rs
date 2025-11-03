@@ -81,7 +81,7 @@ impl Container {
                 if all_unit {
                     ContainerInner::UnitEnum { variants }
                 } else {
-                    ContainerInner::Enum { variants }
+                    ContainerInner::UnnamedEnum { variants }
                 }
             }
             Data::Union(_) => {
@@ -134,7 +134,7 @@ impl Container {
             ContainerInner::UnnamedStruct { .. } => {
                 meta.push(quote! { default });
             }
-            ContainerInner::Enum { .. } => {
+            ContainerInner::UnnamedEnum { .. } => {
                 if let Some(tag) = &self.serde_args.tag {
                     meta.push(quote! { tag = #tag });
                 }
@@ -287,7 +287,7 @@ impl Container {
                     )))
                 }
             }
-            ContainerInner::Enum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
                 let default_variants = variants
                     .iter()
                     .filter(|v| v.is_default())
@@ -476,7 +476,7 @@ impl Container {
                     }
                 }
             }
-            ContainerInner::Enum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
                 let mut statements = vec![];
 
                 for variant in variants {
@@ -523,10 +523,10 @@ impl Container {
 
     #[cfg(feature = "validate")]
     pub fn impl_partial_validate(&self) -> TokenStream {
-        let mut statements = vec![];
-
-        match &self.inner {
+        let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                let mut statements = vec![];
+
                 for field in fields {
                     let res = field.impl_partial_validate();
 
@@ -534,8 +534,18 @@ impl Container {
                         statements.push(res.value);
                     }
                 }
+
+                if statements.is_empty() {
+                    return quote! {};
+                }
+
+                quote! {
+                     #(#statements)*
+                }
             }
-            ContainerInner::Enum { variants } => {
+            ContainerInner::UnnamedEnum { variants } => {
+                let mut statements = vec![];
+
                 for variant in variants {
                     let res = variant.impl_partial_validate();
 
@@ -543,13 +553,22 @@ impl Container {
                         statements.push(res.value);
                     }
                 }
-            }
-            ContainerInner::UnitEnum { .. } => {}
-        };
 
-        if statements.is_empty() {
-            return quote! {};
-        }
+                if statements.is_empty() {
+                    return quote! {};
+                }
+
+                quote! {
+                    match self {
+                        #(#statements)*
+                        _ => {}
+                    };
+                }
+            }
+            ContainerInner::UnitEnum { .. } => {
+                return quote! {};
+            }
+        };
 
         let internal = ImplResult::impl_use_internal(true);
 
@@ -563,7 +582,7 @@ impl Container {
                 #internal
 
                 let mut validate = ValidateManager::new(context, finalize, path);
-                #(#statements)*
+                #inner
 
                 if !validate.errors.is_empty() {
                     return Err(validate.errors);
@@ -585,7 +604,8 @@ impl ToTokens for Container {
 pub enum ContainerInner {
     NamedStruct { fields: Vec<Field> },
     UnnamedStruct { fields: Vec<Field> },
-    Enum { variants: Vec<Variant> },
+    // TODO: NamedEnum
+    UnnamedEnum { variants: Vec<Variant> },
     UnitEnum { variants: Vec<Variant> },
 }
 
@@ -601,7 +621,9 @@ impl ContainerInner {
 
     pub fn get_variants(&self) -> Vec<&Variant> {
         match self {
-            Self::Enum { variants } | Self::UnitEnum { variants } => variants.iter().collect(),
+            Self::UnnamedEnum { variants } | Self::UnitEnum { variants } => {
+                variants.iter().collect()
+            }
             _ => vec![],
         }
     }

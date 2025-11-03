@@ -12,7 +12,19 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalize, path);
     match self {
         Self::A(pa) => {
-            validate.check("A", (pa), self, func_call());
+            validate.check("A", (pa), self, func_ref);
+        }
+        Self::B(pa) => {
+            validate.check("B", (pa), self, func_ref);
+        }
+        Self::C(pa) => {
+            validate.check("C", (pa), self, func_ref);
+        }
+        Self::D(pa) => {
+            validate.check("D", (pa), self, func_ref);
+        }
+        Self::E(pa) => {
+            validate.check("E", (pa), self, func_ref);
         }
         _ => {}
     };
