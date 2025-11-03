@@ -260,14 +260,64 @@ impl Field {
     pub fn impl_partial_extends_from(&self) -> ImplResult {
         if self.is_extendable() {
             self.value
-                .impl_partial_extends_from(&self.args, self.get_key())
+                .impl_partial_extends_from(&self.args, &self.get_key())
         } else {
             ImplResult::skipped()
         }
     }
 
     pub fn impl_partial_merge(&self) -> ImplResult {
-        self.value.impl_partial_merge(&self.args, self.get_key())
+        self.value.impl_partial_merge(&self.args, &self.get_key())
+    }
+
+    pub fn impl_partial_validate(&self) -> ImplResult {
+        let key = self.get_key();
+        let res = self.value.impl_partial_validate(&self.args, &key);
+        let mut inner = res.value;
+        let mut has_inner = !res.no_value;
+
+        if self.is_nested() {
+            let nested_value = self.value.impl_partial_validate_nested(&key).value;
+
+            has_inner = true;
+            inner = quote! {
+                #inner
+                #nested_value
+            };
+        }
+
+        let mut has_outer = has_inner;
+        let mut outer = if has_inner {
+            quote! {
+                if let Some(setting) = &self.#key {
+                    #inner
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        if self.is_required() {
+            has_outer = true;
+            outer = quote! {
+                #outer
+
+                if finalize && self.#key.is_none() {
+                    errors.push(schematic::ValidateError::required().prepend_path(
+                        path.join_key(#key)
+                    ));
+                }
+            };
+        }
+
+        if has_outer {
+            ImplResult {
+                value: outer,
+                ..Default::default()
+            }
+        } else {
+            ImplResult::skipped()
+        }
     }
 }
 
