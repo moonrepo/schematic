@@ -11,7 +11,7 @@ fn merge(
     MergeManager::new(context)
         .nested(&mut self.a, next.a)?
         .nested(&mut self.b, next.b)?
-        .nested(&mut self.a, next.a)?
-        .nested(&mut self.b, next.b)?;
+        .nested(&mut self.c, next.c)?
+        .nested(&mut self.d, next.d)?;
     Ok(())
 }

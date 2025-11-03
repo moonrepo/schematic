@@ -11,6 +11,6 @@ fn merge(
     MergeManager::new(context)
         .apply_with(&mut self.a, next.a, append_vec)?
         .apply_with(&mut self.b, next.b, merge_hashmap)?
-        .apply_with(&mut self.a, next.a, merge_btreeset)?;
+        .apply_with(&mut self.c, next.c, merge_btreeset)?;
     Ok(())
 }

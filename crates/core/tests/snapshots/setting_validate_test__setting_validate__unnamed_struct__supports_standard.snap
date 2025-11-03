@@ -1,0 +1,32 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalize: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalize, path);
+    if let Some(setting) = &self.0 {
+        validate.check("0", setting, self, func_ref);
+    }
+    if let Some(setting) = &self.1 {
+        validate.check("1", setting, self, func_ref);
+    }
+    if let Some(setting) = &self.2 {
+        validate.check("2", setting, self, func_ref);
+    }
+    if let Some(setting) = &self.3 {
+        validate.check("3", setting, self, func_ref);
+    }
+    if let Some(setting) = &self.4 {
+        validate.check("4", setting, self, func_ref);
+    }
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

@@ -111,6 +111,7 @@ impl Variant {
                 panic!("Cannot use `required` with unit variants.");
             }
 
+            #[cfg(feature = "validate")]
             if self.args.validate.is_some() {
                 panic!("Cannot use `validate` with unit variants.");
             }
@@ -281,6 +282,11 @@ impl Variant {
         };
 
         res
+    }
+
+    pub fn impl_partial_validate(&self) -> ImplResult {
+        // TODO
+        ImplResult::skipped()
     }
 
     fn map_unnamed_match<F>(&self, name: &Ident, fields: &FieldsUnnamed, factory: F) -> TokenStream
