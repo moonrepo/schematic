@@ -1,6 +1,14 @@
-use crate::config::{
-    ConfigError, HandlerError, MergeError, MergeResult, ParseEnvResult, PartialConfig,
-};
+mod env;
+mod merge;
+#[cfg(feature = "validate")]
+mod validate;
+
+pub use env::*;
+pub use merge::*;
+#[cfg(feature = "validate")]
+pub use validate::*;
+
+use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialConfig};
 use schematic_types::Schema;
 use std::str::FromStr;
 
@@ -10,110 +18,6 @@ pub fn handle_default_result<T, E: std::error::Error>(
     result: Result<T, E>,
 ) -> Result<T, ConfigError> {
     result.map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
-}
-
-// ENV VARS
-
-pub struct EnvManager {
-    count: u8,
-    prefix: String,
-}
-
-impl EnvManager {
-    pub fn new<T: AsRef<str>>(prefix: Option<T>) -> Self {
-        Self {
-            count: 0,
-            prefix: prefix
-                .map(|pre| pre.as_ref().to_string())
-                .unwrap_or_default(),
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.count == 0
-    }
-
-    pub fn get<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
-        self.get_and_parse(key, |value| parse_value(value).map(|v| Some(v)))
-    }
-
-    pub fn get_and_parse<T>(
-        &mut self,
-        key: &str,
-        parser: impl Fn(String) -> ParseEnvResult<T>,
-    ) -> ParseEnvResult<T> {
-        let key = format!("{}{key}", self.prefix);
-
-        if let Ok(value) = std::env::var(&key) {
-            return parser(value)
-                .inspect(|inner| {
-                    if inner.is_some() {
-                        self.count += 1;
-                    }
-                })
-                .map_err(|error| {
-                    HandlerError(format!("Invalid environment variable {key}: {error}"))
-                });
-        }
-
-        Ok(None)
-    }
-
-    pub fn nested<T>(&mut self, partial: Option<T>) -> ParseEnvResult<T> {
-        if partial.is_some() {
-            self.count += 1;
-        }
-
-        Ok(partial)
-    }
-}
-
-// MERGING
-
-pub struct MergeManager<'a, Ctx> {
-    context: &'a Ctx,
-}
-
-impl<'a, Ctx> MergeManager<'a, Ctx> {
-    pub fn new(context: &'a Ctx) -> Self {
-        Self { context }
-    }
-
-    pub fn apply<T>(self, prev: &mut Option<T>, next: Option<T>) -> Result<Self, MergeError> {
-        self.apply_with(prev, next, super::merge::replace)
-    }
-
-    pub fn apply_with<T>(
-        self,
-        prev: &mut Option<T>,
-        next: Option<T>,
-        merger: impl Fn(T, T, &Ctx) -> MergeResult<T>,
-    ) -> Result<Self, MergeError> {
-        let value = match (prev.take(), next) {
-            (Some(prev), Some(next)) => merger(prev, next, self.context)?,
-            (None, Some(next)) => Some(next),
-            (other, None) => other,
-        };
-
-        if let Some(value) = value {
-            prev.replace(value);
-        }
-
-        Ok(self)
-    }
-
-    pub fn nested<T: PartialConfig<Context = Ctx>>(
-        self,
-        prev: &mut Option<T>,
-        next: Option<T>,
-    ) -> Result<Self, MergeError> {
-        self.apply_with(prev, next, |mut p, n, ctx| {
-            p.merge(ctx, n)
-                .map_err(|error| MergeError(error.to_string()))?;
-
-            Ok(Some(p))
-        })
-    }
 }
 
 // LEGACY

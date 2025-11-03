@@ -284,6 +284,11 @@ impl Variant {
         res
     }
 
+    pub fn impl_partial_validate(&self) -> ImplResult {
+        // TODO
+        ImplResult::skipped()
+    }
+
     fn map_unnamed_match<F>(&self, name: &Ident, fields: &FieldsUnnamed, factory: F) -> TokenStream
     where
         F: FnOnce(&[Ident], &[Ident]) -> TokenStream,

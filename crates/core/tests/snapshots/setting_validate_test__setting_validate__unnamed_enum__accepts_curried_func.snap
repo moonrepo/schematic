@@ -1,0 +1,5 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+

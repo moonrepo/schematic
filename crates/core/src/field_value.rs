@@ -166,7 +166,7 @@ impl FieldValue {
     pub fn impl_partial_extends_from(
         &self,
         _field_args: &FieldArgs,
-        _field_name: TokenStream,
+        _field_name: &TokenStream,
     ) -> ImplResult {
         ImplResult::skipped()
     }
@@ -175,7 +175,7 @@ impl FieldValue {
     pub fn impl_partial_extends_from(
         &self,
         _field_args: &FieldArgs,
-        field_name: TokenStream,
+        field_name: &TokenStream,
     ) -> ImplResult {
         let value = match self.ty_string.as_str() {
             "String" | "Option<String>" => {
@@ -216,7 +216,7 @@ impl FieldValue {
     pub fn impl_partial_merge(
         &self,
         field_args: &FieldArgs,
-        field_name: TokenStream,
+        field_name: &TokenStream,
     ) -> ImplResult {
         let value = match field_args.merge.as_ref() {
             Some(func) => {
@@ -254,6 +254,93 @@ impl FieldValue {
                 }
             }
         };
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
+    }
+
+    #[cfg(not(feature = "validate"))]
+    pub fn impl_partial_validate(
+        &self,
+        _field_args: &FieldArgs,
+        _field_name: &TokenStream,
+    ) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "validate")]
+    pub fn impl_partial_validate(
+        &self,
+        field_args: &FieldArgs,
+        field_name: &TokenStream,
+    ) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        if let Some(expr) = field_args.validate.as_deref() {
+            let field_name_string = field_name.to_string();
+            let func = match expr {
+                // func(arg)()
+                Expr::Call(func) => quote! { #func },
+                // func()
+                Expr::Path(func) => quote! { #func },
+                _ => {
+                    panic!("Unsupported `validate` syntax.");
+                }
+            };
+
+            res.value = quote! {
+                validate.check(#field_name_string, setting, self, #func);
+            };
+        } else {
+            res.no_value = true;
+        }
+
+        res
+    }
+
+    #[cfg(not(feature = "validate"))]
+    pub fn impl_partial_validate_nested(&self, _field_name: &TokenStream) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "validate")]
+    pub fn impl_partial_validate_nested(&self, field_name: &TokenStream) -> ImplResult {
+        if self.layers.len() >= 2
+            && self
+                .layers
+                .get(1)
+                .is_some_and(|layer| matches!(layer, Layer::Option))
+        {
+            return ImplResult::skipped();
+        }
+
+        let field_name_string = field_name.to_string();
+        let mut value = quote! {
+            validate.nested(#field_name_string, setting);
+        };
+
+        for layer in self.layers.iter().rev() {
+            match layer {
+                Layer::Arc | Layer::Box | Layer::Option | Layer::Rc => {
+                    // Nothing?
+                }
+                Layer::Map(_) => {
+                    value = quote! {
+                        validate.nested_map(#field_name_string, setting.iter());
+                    };
+                }
+                Layer::Set(_) | Layer::Vec(_) => {
+                    value = quote! {
+                        validate.nested_list(#field_name_string, setting.iter());
+                    };
+                }
+                Layer::Unknown(_) => {
+                    return ImplResult::skipped();
+                }
+            };
+        }
 
         ImplResult {
             value,

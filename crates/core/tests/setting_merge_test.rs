@@ -79,9 +79,9 @@ mod setting_merge {
                     #[setting(nested = CustomConfig)]
                     b: CustomConfig,
                     #[setting(nested)]
-                    a: Option<NestedConfig>,
+                    c: Option<NestedConfig>,
                     #[setting(nested = CustomConfig)]
-                    b: Arc<CustomConfig>,
+                    d: Arc<CustomConfig>,
                 }
             });
 
@@ -98,7 +98,7 @@ mod setting_merge {
                     #[setting(nested = CustomConfig, merge = merge_hashmap)]
                     b: HashMap<String, CustomConfig>,
                     #[setting(nested, merge = merge_btreeset)]
-                    a: Option<BTreeSet<NestedConfig>>,
+                    c: Option<BTreeSet<NestedConfig>>,
                 }
             });
 
