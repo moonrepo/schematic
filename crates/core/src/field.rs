@@ -6,7 +6,7 @@ use crate::field_value::FieldValue;
 use crate::utils::{ImplResult, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
-use quote::{ToTokens, TokenStreamExt, quote};
+use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
 
@@ -272,12 +272,17 @@ impl Field {
 
     pub fn impl_partial_validate(&self) -> ImplResult {
         let key = self.get_key();
+        let key_string = key.to_string();
         let res = self.value.impl_partial_validate(&self.args, &key);
         let mut inner = res.value;
         let mut has_inner = !res.no_value;
 
         if self.is_nested() {
-            let nested_value = self.value.impl_partial_validate_nested(&key).value;
+            let setting_var = format_ident!("setting");
+            let nested_value = self
+                .value
+                .impl_partial_validate_nested(&key_string, &setting_var)
+                .value;
 
             has_inner = true;
             inner = quote! {
@@ -302,10 +307,8 @@ impl Field {
             outer = quote! {
                 #outer
 
-                if finalize && self.#key.is_none() {
-                    errors.push(schematic::ValidateError::required().prepend_path(
-                        path.join_key(#key)
-                    ));
+                if self.#key.is_none() {
+                    validate.required(#key);
                 }
             };
         }
