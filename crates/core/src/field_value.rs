@@ -39,10 +39,6 @@ impl FieldValue {
 
             let ident = format_ident!("Partial{}", nested_ident);
 
-            // quote! {
-            //     <#nested_ident as schematic::PartialConfig>::default_values(context)?
-            // }
-
             quote! {
                 #ident::default_values(context)?
             }
@@ -298,53 +294,5 @@ impl FieldValue {
         }
 
         res
-    }
-
-    #[cfg(not(feature = "validate"))]
-    pub fn impl_partial_validate_nested(&self, _field_name: &TokenStream) -> ImplResult {
-        ImplResult::skipped()
-    }
-
-    #[cfg(feature = "validate")]
-    pub fn impl_partial_validate_nested(&self, field_name: &TokenStream) -> ImplResult {
-        if self.layers.len() >= 2
-            && self
-                .layers
-                .get(1)
-                .is_some_and(|layer| matches!(layer, Layer::Option))
-        {
-            return ImplResult::skipped();
-        }
-
-        let field_name_string = field_name.to_string();
-        let mut value = quote! {
-            validate.nested(#field_name_string, setting);
-        };
-
-        for layer in self.layers.iter().rev() {
-            match layer {
-                Layer::Arc | Layer::Box | Layer::Option | Layer::Rc => {
-                    // Nothing?
-                }
-                Layer::Map(_) => {
-                    value = quote! {
-                        validate.nested_map(#field_name_string, setting.iter());
-                    };
-                }
-                Layer::Set(_) | Layer::Vec(_) => {
-                    value = quote! {
-                        validate.nested_list(#field_name_string, setting.iter());
-                    };
-                }
-                Layer::Unknown(_) => {
-                    return ImplResult::skipped();
-                }
-            };
-        }
-
-        ImplResult {
-            value,
-            ..Default::default()
-        }
     }
 }

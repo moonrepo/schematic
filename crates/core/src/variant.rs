@@ -6,7 +6,7 @@ use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
+use syn::{Attribute, Expr, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
 
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
@@ -285,8 +285,64 @@ impl Variant {
     }
 
     pub fn impl_partial_validate(&self) -> ImplResult {
-        // TODO
-        ImplResult::skipped()
+        let Fields::Unnamed(fields) = &self.fields else {
+            return ImplResult::skipped();
+        };
+
+        let value = self.map_unnamed_match(&self.ident, fields, |outer_names, _| {
+            let mut statements = vec![];
+            let name_string = self.ident.to_string();
+
+            #[cfg(feature = "validate")]
+            if let Some(expr) = self.args.validate.as_deref() {
+                let func = match expr {
+                    // func(arg)()
+                    Expr::Call(func) => quote! { #func },
+                    // func()
+                    Expr::Path(func) => quote! { #func },
+                    _ => {
+                        panic!("Unsupported `validate` syntax.");
+                    }
+                };
+
+                statements.push(quote! {
+                    validate.check(#name_string, (#(#outer_names),*), self, #func);
+                });
+            }
+
+            if self.is_required() {
+                statements.push(quote! {
+                    if [#(#outer_names),*].iter().any(|v| v.is_none()) {
+                        validate.required(#name_string);
+                    }
+                });
+            }
+
+            if self.is_nested() {
+                statements.extend(
+                    outer_names
+                        .iter()
+                        .enumerate()
+                        .map(|(index, o)| {
+                            let name_index = format!("{name_string}.{index}");
+
+                            self.values[index]
+                                .impl_partial_validate_nested(&name_index, o)
+                                .value
+                        })
+                        .collect::<Vec<_>>(),
+                );
+            }
+
+            quote! {
+                #(#statements)*
+            }
+        });
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
     }
 
     fn map_unnamed_match<F>(&self, name: &Ident, fields: &FieldsUnnamed, factory: F) -> TokenStream

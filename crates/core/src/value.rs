@@ -1,6 +1,6 @@
 use crate::args::NestedArg;
-use crate::utils::to_type_string;
-use quote::ToTokens;
+use crate::utils::{ImplResult, to_type_string};
+use quote::{ToTokens, quote};
 use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type};
 
 #[derive(Debug, PartialEq)]
@@ -97,6 +97,57 @@ impl Value {
         self.layers
             .first()
             .is_some_and(|layer| *layer == Layer::Option)
+    }
+
+    #[cfg(not(feature = "validate"))]
+    pub fn impl_partial_validate_nested(
+        &self,
+        _path_key: &str,
+        _setting_var: &Ident,
+    ) -> ImplResult {
+        ImplResult::skipped()
+    }
+
+    #[cfg(feature = "validate")]
+    pub fn impl_partial_validate_nested(&self, path_key: &str, setting_var: &Ident) -> ImplResult {
+        if self.layers.len() >= 2
+            && self
+                .layers
+                .get(1)
+                .is_some_and(|layer| matches!(layer, Layer::Option))
+        {
+            return ImplResult::skipped();
+        }
+
+        let mut value = quote! {
+            validate.nested(#path_key, #setting_var);
+        };
+
+        for layer in self.layers.iter().rev() {
+            match layer {
+                Layer::Arc | Layer::Box | Layer::Option | Layer::Rc => {
+                    // Nothing?
+                }
+                Layer::Map(_) => {
+                    value = quote! {
+                        validate.nested_map(#path_key, #setting_var.iter());
+                    };
+                }
+                Layer::Set(_) | Layer::Vec(_) => {
+                    value = quote! {
+                        validate.nested_list(#path_key, #setting_var.iter());
+                    };
+                }
+                Layer::Unknown(_) => {
+                    return ImplResult::skipped();
+                }
+            };
+        }
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
     }
 }
 

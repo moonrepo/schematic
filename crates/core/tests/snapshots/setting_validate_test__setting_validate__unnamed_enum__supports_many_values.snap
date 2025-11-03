@@ -14,6 +14,24 @@ fn validate_with_path(
         Self::A(pa) => {
             validate.check("A", (pa), self, func_ref);
         }
+        Self::B(pa, pb) => {
+            validate.check("B", (pa, pb), self, func_ref);
+        }
+        Self::C(pa, pb, pc) => {
+            validate.check("C", (pa, pb, pc), self, func_ref);
+        }
+        Self::A(pa) => {
+            validate.check("A", (pa), self, func_ref);
+            if [pa].iter().any(|v| v.is_none()) {
+                validate.required("A");
+            }
+        }
+        Self::B(pa, pb) => {
+            validate.check("B", (pa, pb), self, func_ref);
+            if [pa, pb].iter().any(|v| v.is_none()) {
+                validate.required("B");
+            }
+        }
         _ => {}
     };
     if !validate.errors.is_empty() {

@@ -25,6 +25,13 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         }
     }
 
+    pub fn required(&mut self, key: &str) {
+        if self.finalize {
+            self.errors
+                .push(ValidateError::required().prepend_path(self.path.join_key(key)));
+        }
+    }
+
     pub fn nested<S: PartialConfig<Context = Ctx>>(&mut self, key: &str, value: &S) {
         if let Err(errors) =
             value.validate_with_path(self.context, self.finalize, self.path.join_key(key))
