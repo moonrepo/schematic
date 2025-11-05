@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `@values` tag to YAML renderer showing all possible enum values.
+
 ## 0.18.14
 
 #### 🐞 Fixes
