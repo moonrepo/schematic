@@ -80,7 +80,7 @@ impl Variant<'_> {
 
         if self.args.fallback {
             quote! {
-                Self::#name(fallback) => fallback,
+                Self::#name(fallback) => return std::write!(f, "{fallback}"),
             }
         } else {
             quote! {
