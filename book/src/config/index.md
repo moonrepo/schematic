@@ -130,8 +130,7 @@ Schematic is powered entirely by [serde](https://serde.rs), and supports the fol
 - Pkl (experimental) - Uses `rpkl` and requires the `pkl` Cargo feature.
 - RON - Uses `ron` and requires the `ron` Cargo feature.
 - TOML - Uses `toml` and requires the `toml` Cargo feature.
-- YAML - Uses `serde_yml` and requires the `yml` Cargo feature.
-- YAML (deprecated) - Uses `serde_yaml` and requires the `yaml` Cargo feature.
+- YAML - Uses `serde_yaml` and requires the `yaml` Cargo feature.
 
 ## Cargo features
 
