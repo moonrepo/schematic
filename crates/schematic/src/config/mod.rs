@@ -24,6 +24,7 @@ pub use loader::*;
 pub use merger::*;
 pub use parser::*;
 pub use path::*;
+#[cfg(any(feature = "type_regex", feature = "type_semver"))]
 pub use settings::*;
 pub use source::*;
 #[cfg(feature = "validate")]
