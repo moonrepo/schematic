@@ -12,9 +12,10 @@
 
 - Added support for unnamed tuple and newtype structs. Unnamed fields within the struct support
   `#[setting]`.
-- Added support for `#[setting(nested = NestedConfig)]` on fields, where the nested config name can
-  be explicitly defined if we fail to detect it. This is useful for extremely complex/composed
-  types.
+- Added support for `#[setting(nested = NestedConfig)]` on struct fields and enum variants, where
+  the nested config name can be explicitly defined if we fail to detect it. This is useful for
+  extremely complex/composed types.
+- Added support for `#[setting(transform)]` on enum variants.
 - Added support for env prefixes at the field level when the field is also nested. This will
   override the env prefix defined on the nested container:
   `#[setting(nested, env_prefix = "OVERRIDE_")]`.

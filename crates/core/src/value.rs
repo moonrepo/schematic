@@ -1,6 +1,6 @@
 use crate::args::NestedArg;
 use crate::utils::{ImplResult, to_type_string};
-use quote::{ToTokens, quote};
+use quote::{ToTokens, format_ident, quote};
 use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type};
 
 #[derive(Debug, PartialEq)]
@@ -97,6 +97,75 @@ impl Value {
         self.layers
             .first()
             .is_some_and(|layer| *layer == Layer::Option)
+    }
+
+    pub fn impl_partial_finalize_nested(&self, layer_var: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+        let mut value = quote! { #layer_var.finalize(context)? };
+
+        // Then wrap with each layer
+        if !self.layers.is_empty() {
+            for layer in self.layers.iter().rev() {
+                value = match layer {
+                    Layer::Arc => quote! { Arc::new(#value) },
+                    Layer::Rc => quote! { Rc::new(#value) },
+                    Layer::Box => quote! { Box::new(#value) },
+                    Layer::Option => quote! {
+                       match #layer_var {
+                           Some(#layer_var) => #value,
+                           None => None
+                       }
+                    },
+                    Layer::Map(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut map = #collection::default();
+                                for (key, value) in #layer_var {
+                                    map.insert(key, value.finalize(context)?);
+                                }
+                                map
+                            }
+                        }
+                    }
+                    Layer::Set(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut set = #collection::default();
+                                for item in #layer_var {
+                                    set.insert(item.finalize(context)?);
+                                }
+                                set
+                            }
+                        }
+                    }
+                    Layer::Vec(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut list = #collection::default();
+                                for item in #layer_var {
+                                    list.push(item.finalize(context)?);
+                                }
+                                list
+                            }
+                        }
+                    }
+                    Layer::Unknown(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! { #collection::default() }
+                    }
+                };
+            }
+        }
+
+        res.value = value;
+        res
     }
 
     #[cfg(not(feature = "validate"))]

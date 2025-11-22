@@ -184,6 +184,7 @@ impl Container {
         let default_values_method = self.impl_partial_default_values();
         let env_values_method = self.impl_partial_env_values();
         let extends_from_method = self.impl_partial_extends_from();
+        let finalize_method = self.impl_partial_finalize();
         let merge_method = self.impl_partial_merge();
         let validate_method = self.impl_partial_validate();
 
@@ -195,6 +196,7 @@ impl Container {
                 #default_values_method
                 #env_values_method
                 #extends_from_method
+                #finalize_method
                 #merge_method
                 #validate_method
             }
@@ -439,6 +441,78 @@ impl Container {
             }
         } else {
             panic!("Only named structs can use `extend` settings.");
+        }
+    }
+
+    pub fn impl_partial_finalize(&self) -> TokenStream {
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                let mut statements = vec![];
+
+                #[cfg(feature = "env")]
+                {
+                    statements.push(quote! {
+                        if let Some(layer) = Self::env_values()? {
+                            partial.merge(context, layer)?;
+                        }
+                    });
+                }
+
+                for field in fields {
+                    let res = field.impl_partial_finalize();
+
+                    if !res.no_value {
+                        statements.push(res.value);
+                    }
+                }
+
+                quote! {
+                    let mut partial = Self::default();
+
+                    if let Some(layer) = Self::default_values(context)? {
+                        partial.merge(context, layer)?;
+                    }
+
+                    partial.merge(context, self)?;
+
+                    #(#statements)*
+
+                    Ok(partial)
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } => {
+                let mut statements = vec![];
+
+                for variant in variants {
+                    let res = variant.impl_partial_finalize();
+
+                    if !res.no_value {
+                        statements.push(res.value);
+                    }
+                }
+
+                if statements.is_empty() {
+                    quote! {
+                        Ok(self)
+                    }
+                } else {
+                    quote! {
+                        Ok(match self {
+                            #(#statements)*
+                            _ => self
+                        })
+                    }
+                }
+            }
+            ContainerInner::UnitEnum { .. } => {
+                return quote! {};
+            }
+        };
+
+        quote! {
+            fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
+                #inner
+            }
         }
     }
 
