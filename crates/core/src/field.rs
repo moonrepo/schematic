@@ -10,7 +10,7 @@ use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
 
-// TODO: finalize, validate
+// TODO: finalize
 
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]

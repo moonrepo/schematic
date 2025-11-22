@@ -68,9 +68,9 @@ pub trait PartialConfig:
     /// Recursively validate the configuration with the provided context.
     /// Validation should be done on the final state, after merging partials.
     #[cfg(feature = "validate")]
-    fn validate(&self, context: &Self::Context, finalize: bool) -> Result<(), ConfigError> {
+    fn validate(&self, context: &Self::Context, finalizing: bool) -> Result<(), ConfigError> {
         if let Err(errors) =
-            self.validate_with_path(context, finalize, super::path::Path::default())
+            self.validate_with_path(context, finalizing, super::path::Path::default())
         {
             return Err(ConfigError::Validator {
                 location: String::new(),
@@ -88,7 +88,7 @@ pub trait PartialConfig:
     fn validate_with_path(
         &self,
         _context: &Self::Context,
-        _finalize: bool,
+        _finalizing: bool,
         _path: super::path::Path,
     ) -> Result<(), Vec<ValidateError>> {
         Ok(())
