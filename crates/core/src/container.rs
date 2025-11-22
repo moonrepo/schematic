@@ -576,12 +576,12 @@ impl Container {
             fn validate_with_path(
                 &self,
                 context: &Self::Context,
-                finalize: bool,
+                finalizing: bool,
                 path: schematic::Path
             ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
                 #internal
 
-                let mut validate = ValidateManager::new(context, finalize, path);
+                let mut validate = ValidateManager::new(context, finalizing, path);
                 #inner
 
                 if !validate.errors.is_empty() {

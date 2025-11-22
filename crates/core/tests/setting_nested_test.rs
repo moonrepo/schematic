@@ -296,7 +296,7 @@ mod setting_nested {
     }
 
     mod named_enum {
-        // TODO
+        // N/A
     }
 
     mod unnamed_enum {
