@@ -10,8 +10,6 @@ use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
 
-// TODO: finalize
-
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
@@ -263,6 +261,35 @@ impl Field {
                 .impl_partial_extends_from(&self.args, &self.get_key())
         } else {
             ImplResult::skipped()
+        }
+    }
+
+    pub fn impl_partial_finalize(&self) -> ImplResult {
+        if !self.is_nested() && self.args.transform.is_none() {
+            return ImplResult::skipped();
+        }
+
+        let key = self.get_key();
+
+        let mut value = if self.is_nested() {
+            self.value
+                .impl_partial_finalize_nested(&format_ident!("layer"))
+                .value
+        } else {
+            quote! { layer }
+        };
+
+        if let Some(func) = &self.args.transform {
+            value = quote! { #func(#value, context)? };
+        };
+
+        ImplResult {
+            value: quote! {
+                if let Some(layer) = partial.#key {
+                    partial.#key = Some(#value);
+                }
+            },
+            ..Default::default()
         }
     }
 

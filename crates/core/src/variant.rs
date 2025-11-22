@@ -20,6 +20,7 @@ pub struct VariantArgs {
     pub null: bool,
     pub partial: Option<PartialArg>,
     pub required: bool,
+    pub transform: Option<ExprPath>,
     #[cfg(feature = "validate")]
     pub validate: Option<crate::args::ValidateArg>,
 
@@ -172,6 +173,49 @@ impl Variant {
             }
             Fields::Unit => quote! { #name },
         };
+
+        res
+    }
+
+    pub fn impl_partial_finalize(&self) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        match &self.fields {
+            Fields::Named(_) | Fields::Unit => {
+                res.no_value = true;
+            }
+            Fields::Unnamed(fields) => {
+                if !self.is_nested() && self.args.transform.is_none() {
+                    res.no_value = true;
+                } else {
+                    let name = &self.ident;
+
+                    res.value = self.map_unnamed_match(name, fields, |outer_names, _| {
+                        let items = outer_names
+                            .iter()
+                            .enumerate()
+                            .map(|(i, o)| {
+                                let value = if self.is_nested() {
+                                    self.values[i].impl_partial_finalize_nested(o).value
+                                } else {
+                                    quote! { #o }
+                                };
+
+                                if let Some(func) = &self.args.transform {
+                                    quote! { #func(#value, context)? }
+                                } else {
+                                    value
+                                }
+                            })
+                            .collect::<Vec<_>>();
+
+                        quote! {
+                            Self::#name(#(#items),*)
+                        }
+                    });
+                }
+            }
+        }
 
         res
     }
