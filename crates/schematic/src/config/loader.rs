@@ -69,7 +69,7 @@ impl<T: Config> ConfigLoader<T> {
         #[cfg(feature = "toml")]
         loader.add_format(super::formats::toml::TomlFormat::default());
 
-        #[cfg(any(feature = "yaml", feature = "yml"))]
+        #[cfg(feature = "yaml")]
         loader.add_format(super::formats::yaml::YamlFormat::default());
 
         loader

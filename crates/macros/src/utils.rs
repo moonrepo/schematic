@@ -24,7 +24,7 @@ pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
         } else {
             Case::Snake
         })
-        .without_boundaries(&[Boundary::UPPER_DIGIT, Boundary::LOWER_DIGIT])
+        .remove_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
         .to_case(case)
 }
 
