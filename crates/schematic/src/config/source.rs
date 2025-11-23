@@ -1,7 +1,7 @@
 use super::error::ConfigError;
 use crate::helpers::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Source from which to load a configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -128,5 +128,10 @@ pub trait SourceFormat<T: DeserializeOwned> {
     fn should_parse(&self, source: &Source) -> bool;
 
     /// Parse the source contents and return the deserialized value.
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError>;
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError>;
 }

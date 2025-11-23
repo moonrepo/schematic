@@ -4,9 +4,10 @@ use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::DeserializeOwned;
+use std::path::Path;
 
 #[derive(Default)]
-pub struct JsonFormat;
+pub struct JsonFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
     fn should_parse(&self, source: &Source) -> bool {
@@ -15,7 +16,12 @@ impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
             .is_some_and(|ext| ext == "json" || ext == "jsonc")
     }
 
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        _cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError> {
         let mut content = String::from(if content.is_empty() { "{}" } else { content });
 
         json_strip_comments::strip(&mut content).map_err(|error| {

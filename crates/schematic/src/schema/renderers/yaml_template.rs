@@ -1,5 +1,4 @@
 use super::template::*;
-use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
@@ -18,7 +17,7 @@ impl YamlTemplateRenderer {
 
     pub fn new(options: TemplateOptions) -> Self {
         YamlTemplateRenderer {
-            ctx: TemplateContext::new(Format::Yaml, options),
+            ctx: TemplateContext::new(options),
             schemas: IndexMap::default(),
         }
     }

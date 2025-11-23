@@ -1,10 +1,3 @@
-/// Returns true if the value ends in a supported file extension.
-pub fn is_source_format(value: &str) -> bool {
-    extract_file_ext(value).is_some_and(|ext| {
-        ext == "json" || ext == "pkl" || ext == "toml" || ext == "yaml" || ext == "yml"
-    })
-}
-
 /// Returns true if the value looks like a file, by checking for `file://`,
 /// path separators, or supported file extensions.
 pub fn is_file_like(value: &str) -> bool {

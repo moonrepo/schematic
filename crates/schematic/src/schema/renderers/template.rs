@@ -1,4 +1,3 @@
-use crate::format::Format;
 use crate::schema::RenderResult;
 use indexmap::IndexMap;
 use miette::miette;
@@ -12,6 +11,9 @@ pub struct TemplateOptions {
 
     /// List of field names to render but comment out.
     pub comment_fields: Vec<String>,
+
+    /// Characters to prefix a comment line.
+    pub comment_prefix: String,
 
     /// Default values for each field within the root struct.
     pub default_values: HashMap<String, SchemaType>,
@@ -40,6 +42,7 @@ impl Default for TemplateOptions {
         Self {
             comments: true,
             comment_fields: vec![],
+            comment_prefix: "# ".into(),
             default_values: HashMap::new(),
             expand_fields: vec![],
             footer: String::new(),
@@ -83,15 +86,13 @@ pub struct TemplateContext {
     pub depth: usize,
     pub options: TemplateOptions,
 
-    format: Format,
     stack: VecDeque<String>,
 }
 
 impl TemplateContext {
-    pub fn new(format: Format, options: TemplateOptions) -> Self {
+    pub fn new(options: TemplateOptions) -> Self {
         Self {
             depth: 0,
-            format,
             options,
             stack: VecDeque::new(),
         }
@@ -170,13 +171,7 @@ impl TemplateContext {
     }
 
     pub fn get_comment_prefix(&self) -> &str {
-        if self.format.is_pkl() {
-            "/// "
-        } else if self.format.is_json() {
-            "// "
-        } else {
-            "# "
-        }
+        &self.options.comment_prefix
     }
 
     pub fn get_stack_key(&self) -> String {

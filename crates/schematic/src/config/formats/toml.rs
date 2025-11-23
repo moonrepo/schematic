@@ -3,16 +3,22 @@ use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::DeserializeOwned;
+use std::path::Path;
 
 #[derive(Default)]
-pub struct TomlFormat;
+pub struct TomlFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for TomlFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source.get_file_ext() == Some("toml")
     }
 
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        _cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError> {
         let de = toml::Deserializer::parse(content).map_err(|error| {
             ConfigError::Handler(Box::new(HandlerError::new(error.to_string())))
         })?;

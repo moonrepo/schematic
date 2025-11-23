@@ -2,7 +2,6 @@ use super::merger::MergeError;
 use super::parser::ParserError;
 #[cfg(feature = "validate")]
 use super::validator::ValidatorError;
-use crate::format::UnsupportedFormatError;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
 use std::fmt::Display;
@@ -17,9 +16,6 @@ pub enum ConfigError {
 
     #[error(transparent)]
     Merge(#[from] Box<MergeError>),
-
-    #[error(transparent)]
-    UnsupportedFormat(#[from] Box<UnsupportedFormatError>),
 
     #[diagnostic(code(config::enums::invalid_fallback))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
@@ -63,9 +59,9 @@ pub enum ConfigError {
 
     #[diagnostic(
         code(config::format::no_matching),
-        help("Is there a format registered for the extension?")
+        help("Is there a format registered for the file extension?")
     )]
-    #[error("Unable to parse {} as there's no matching format.", .src.style(Style::Path))]
+    #[error("Unable to parse {} as there's no matching source format.", .src.style(Style::Path))]
     NoMatchingFormat { src: String },
 
     #[diagnostic(code(config::file::read_failed))]
@@ -214,12 +210,6 @@ impl From<ParserError> for ConfigError {
             error: Box::new(error),
             help: None,
         }
-    }
-}
-
-impl From<UnsupportedFormatError> for ConfigError {
-    fn from(error: UnsupportedFormatError) -> ConfigError {
-        ConfigError::UnsupportedFormat(Box::new(error))
     }
 }
 

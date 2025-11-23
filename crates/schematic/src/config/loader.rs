@@ -312,8 +312,8 @@ impl<T: Config> ConfigLoader<T> {
 
     #[instrument(skip_all)]
     fn parse_source(&self, source: &Source) -> Result<T::Partial, ConfigError> {
-        let content = match source {
-            Source::Code { code, .. } => Cow::Borrowed(strip_bom(code)),
+        let (content, cache_path): (Cow<'_, str>, Option<PathBuf>) = match source {
+            Source::Code { code, .. } => (Cow::Borrowed(strip_bom(code)), None),
             Source::File { path, required } => {
                 let content = if path.exists() {
                     fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
@@ -328,7 +328,7 @@ impl<T: Config> ConfigLoader<T> {
                     return Ok(T::Partial::default());
                 };
 
-                Cow::Owned(strip_bom(&content).to_owned())
+                (Cow::Owned(strip_bom(&content).to_owned()), None)
             }
             #[cfg(feature = "url")]
             Source::Url { url } => {
@@ -358,13 +358,16 @@ impl<T: Config> ConfigLoader<T> {
                     body
                 };
 
-                Cow::Owned(strip_bom(&content).to_owned())
+                (
+                    Cow::Owned(strip_bom(&content).to_owned()),
+                    cacher.get_file_path(url)?,
+                )
             }
         };
 
         for format in &self.formats {
             if format.should_parse(source) {
-                return format.parse(source, &content);
+                return format.parse(source, &content, cache_path.as_deref());
             }
         }
 

@@ -5,6 +5,7 @@ use miette::NamedSource;
 use rpkl::pkl::PklSerialize;
 use serde::de::DeserializeOwned;
 use std::env;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static PKL_CHECKED: AtomicBool = AtomicBool::new(false);
@@ -34,20 +35,25 @@ fn check_pkl_installed() -> Result<(), ConfigError> {
 }
 
 #[derive(Default)]
-pub struct PklFormat;
+pub struct PklFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source.get_file_ext() == Some("pkl")
     }
 
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError> {
         check_pkl_installed()?;
 
-        let Source::File {
-            path: file_path, ..
-        } = source
-        else {
+        let Some(file_path) = cache_path.or_else(|| match source {
+            Source::File { path, .. } => Some(path),
+            _ => None,
+        }) else {
             return Err(ConfigError::PklFileRequired);
         };
 

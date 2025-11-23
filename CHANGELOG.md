@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+This release changes how formats work. Instead of using the `Format` enum, formats now implement the
+`SourceFormat` trait. This allows for custom formats to be created and used with the `ConfigLoader`.
+
+- Updated `ConfigLoader::new()` to auto-register formats based on enabled features. Use
+  `ConfigLoader::default()` to create a loader without formats.
+- Updated `ConfigLoader#code()` to require a file name/path as the 2nd argument, instead of the
+  `Format` enum. The file extension will be used to determine the format.
+- Reworked the `Source` enum heavily.
+- Renamed the `extract_ext` function to `extract_file_ext`, and updated it to not include the
+  leading `.`.
+- Removed the `Format` enum.
+- Removed the `is_source_format` function.
+
+#### 🚀 Updates
+
+- Added a `SourceFormat` trait, with built-in formats available at `schematic::config::formats`.
+- Added a `ConfigLoader#add_format()` method.
+- Added a `extract_file_name` function.
+- Added `.jsonc` support.
+
 ## 0.18.15
 
 #### 🚀 Updates

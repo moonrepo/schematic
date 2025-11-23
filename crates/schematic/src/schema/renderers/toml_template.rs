@@ -1,5 +1,4 @@
 use super::template::*;
-use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
@@ -28,7 +27,7 @@ impl TomlTemplateRenderer {
 
     pub fn new(options: TemplateOptions) -> Self {
         TomlTemplateRenderer {
-            ctx: TemplateContext::new(Format::Toml, options),
+            ctx: TemplateContext::new(options),
             schemas: IndexMap::default(),
             arrays: BTreeMap::new(),
             tables: BTreeMap::new(),

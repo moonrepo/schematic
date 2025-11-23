@@ -4,16 +4,22 @@ use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::DeserializeOwned;
+use std::path::Path;
 
 #[derive(Default)]
-pub struct RonFormat;
+pub struct RonFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source.get_file_ext() == Some("ron")
     }
 
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        _cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError> {
         let de = &mut ron::Deserializer::from_str(content).map_err(|error| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),
             path: String::new(),

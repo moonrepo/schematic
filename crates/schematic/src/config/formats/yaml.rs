@@ -4,6 +4,7 @@ use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::{DeserializeOwned, IntoDeserializer};
+use std::path::Path;
 
 #[allow(unreachable_code)]
 pub fn parse<D>(name: &str, content: &str) -> Result<D, ConfigError>
@@ -96,7 +97,7 @@ where
 }
 
 #[derive(Default)]
-pub struct YamlFormat;
+pub struct YamlFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for YamlFormat {
     fn should_parse(&self, source: &Source) -> bool {
@@ -105,7 +106,12 @@ impl<T: DeserializeOwned> SourceFormat<T> for YamlFormat {
             .is_some_and(|ext| ext == "yml" || ext == "yaml")
     }
 
-    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        _cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError> {
         parse(source.get_file_name(), content)
     }
 }
