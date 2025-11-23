@@ -29,14 +29,14 @@ where
 #[derive(Default)]
 pub struct JsonFormat;
 
-impl SourceFormat for JsonFormat {
+impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source
             .get_file_ext()
             .map_or(false, |ext| ext == "json" || ext == "jsonc")
     }
 
-    fn parse<D: DeserializeOwned>(&self, source: &Source, content: &str) -> Result<D, ConfigError> {
+    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
         let mut content = String::from(if content.is_empty() { "{}" } else { content });
 
         json_strip_comments::strip(&mut content).map_err(|error| {
@@ -48,7 +48,7 @@ impl SourceFormat for JsonFormat {
 
         let de = &mut serde_json::Deserializer::from_str(&content);
 
-        let result: D = serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+        let result: T = serde_path_to_error::deserialize(de).map_err(|error| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),
             path: error.path().to_string(),
             span: Some(create_span(

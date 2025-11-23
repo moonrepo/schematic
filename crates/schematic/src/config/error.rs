@@ -61,6 +61,13 @@ pub enum ConfigError {
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
+    #[diagnostic(
+        code(config::format::no_matching),
+        help("Is there a format registered for the extension?")
+    )]
+    #[error("Unable to parse {} as there's no matching format.", .src.style(Style::Path))]
+    NoMatchingFormat { src: String },
+
     #[diagnostic(code(config::file::read_failed))]
     #[error("Failed to read file {}.", .path.style(Style::Path))]
     ReadFileFailed {
