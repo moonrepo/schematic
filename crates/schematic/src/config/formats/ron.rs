@@ -25,8 +25,8 @@ impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
             path: String::new(),
             span: Some(create_span(
                 content,
-                error.position.line,
-                error.position.col,
+                error.span.start.line,
+                error.span.start.col,
             )),
             message: error.to_string(),
         })?;

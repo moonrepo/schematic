@@ -11,18 +11,18 @@ repository = "https://github.com/moonrepo/schematic"
 chrono = { workspace = true, optional = true }
 indexmap = { workspace = true }
 regex = { workspace = true, optional = true }
-rust_decimal = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
 ron = { workspace = true, optional = true }
-url = { workspace = true, optional = true }
 rpkl = { workspace = true, optional = true }
+rust_decimal = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
-uuid = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-serde_yaml = { workspace = true, optional = true }
 serde_norway = { workspace = true, optional = true }
+serde_yaml = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
+url = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
 schematic_types = { path = ".", features = [

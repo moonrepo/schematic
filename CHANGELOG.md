@@ -30,6 +30,8 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 #### ⚙️ Internal
 
 - Updated to Rust v1.91.
+- Updated `rpkl` to v0.6.
+- Updated `ron` to v0.12.
 - Updated dependencies.
 
 ## 0.18.15
