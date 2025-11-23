@@ -62,9 +62,9 @@ impl Source {
     }
 
     /// Create a new code snippet source.
-    pub fn code<P: TryInto<PathBuf>, T: TryInto<String>>(
-        path: P,
+    pub fn code<T: TryInto<String>, P: TryInto<PathBuf>>(
         code: T,
+        path: P,
     ) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;

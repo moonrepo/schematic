@@ -1,13 +1,13 @@
 #[cfg(feature = "json")]
-mod json;
+pub mod json;
 #[cfg(feature = "pkl")]
-mod pkl;
+pub mod pkl;
 #[cfg(feature = "ron")]
-mod ron;
+pub mod ron;
 #[cfg(feature = "toml")]
-mod toml;
+pub mod toml;
 #[cfg(any(feature = "yaml", feature = "yml"))]
-mod yaml;
+pub mod yaml;
 
 use miette::{SourceOffset, SourceSpan};
 

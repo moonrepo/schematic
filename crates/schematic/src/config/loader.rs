@@ -38,10 +38,8 @@ pub struct ConfigLoader<T: Config> {
     root: Option<PathBuf>,
 }
 
-impl<T: Config> ConfigLoader<T> {
-    /// Create a new config loader.
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+impl<T: Config> Default for ConfigLoader<T> {
+    fn default() -> Self {
         ConfigLoader {
             _config: PhantomData,
             cacher: Mutex::new(Box::<MemoryCache>::default()),
@@ -52,6 +50,30 @@ impl<T: Config> ConfigLoader<T> {
             root: None,
         }
     }
+}
+
+impl<T: Config> ConfigLoader<T> {
+    /// Create a new config loader and auto-register formats based on enables features.
+    pub fn new() -> Self {
+        let mut loader = ConfigLoader::default();
+
+        #[cfg(feature = "json")]
+        loader.add_format(super::formats::json::JsonFormat::default());
+
+        #[cfg(feature = "pkl")]
+        loader.add_format(super::formats::pkl::PklFormat::default());
+
+        #[cfg(feature = "ron")]
+        loader.add_format(super::formats::ron::RonFormat::default());
+
+        #[cfg(feature = "toml")]
+        loader.add_format(super::formats::toml::TomlFormat::default());
+
+        #[cfg(any(feature = "yaml", feature = "yml"))]
+        loader.add_format(super::formats::yaml::YamlFormat::default());
+
+        loader
+    }
 
     /// Add a format to parse sources based on file name/extension detection.
     pub fn add_format(&mut self, format: impl SourceFormat<T::Partial> + 'static) -> &mut Self {
@@ -60,12 +82,12 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     /// Add a code snippet source to load, with a required file name.
-    pub fn code<P: TryInto<PathBuf>, S: TryInto<String>>(
+    pub fn code<S: TryInto<String>, P: TryInto<PathBuf>>(
         &mut self,
-        path: P,
         code: S,
+        path: P,
     ) -> Result<&mut Self, ConfigError> {
-        self.source(Source::code(path, code)?)
+        self.source(Source::code(code, path)?)
     }
 
     /// Add a file source to load.
@@ -288,7 +310,6 @@ impl<T: Config> ConfigLoader<T> {
         Ok(layers)
     }
 
-    /// Parse the source contents with a matching format based on file extension.
     #[instrument(skip_all)]
     fn parse_source(&self, source: &Source) -> Result<T::Partial, ConfigError> {
         let content = match source {
