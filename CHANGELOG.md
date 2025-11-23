@@ -24,6 +24,11 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 - Added a `extract_file_name` function.
 - Added `.jsonc` support.
 
+#### ⚙️ Internal
+
+- Updated to Rust v1.91.
+- Updated dependencies.
+
 ## 0.18.15
 
 #### 🚀 Updates

@@ -40,10 +40,10 @@ impl SchemaType {
         match self {
             SchemaType::Boolean(inner) => inner.default.as_ref(),
             SchemaType::Enum(inner) => {
-                if let Some(index) = &inner.default_index {
-                    if let Some(value) = inner.values.get(*index) {
-                        return Some(value);
-                    }
+                if let Some(index) = &inner.default_index
+                    && let Some(value) = inner.values.get(*index)
+                {
+                    return Some(value);
                 }
 
                 None
@@ -52,10 +52,10 @@ impl SchemaType {
             SchemaType::Integer(inner) => inner.default.as_ref(),
             SchemaType::String(inner) => inner.default.as_ref(),
             SchemaType::Union(inner) => {
-                if let Some(index) = &inner.default_index {
-                    if let Some(value) = inner.variants_types.get(*index) {
-                        return value.get_default();
-                    }
+                if let Some(index) = &inner.default_index
+                    && let Some(value) = inner.variants_types.get(*index)
+                {
+                    return value.get_default();
                 }
 
                 for variant in &inner.variants_types {

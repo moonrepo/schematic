@@ -61,25 +61,23 @@ pub fn extract_comment(attrs: &[&Attribute]) -> Option<String> {
     let mut lines = vec![];
 
     for attr in attrs {
-        if let Meta::NameValue(meta) = &attr.meta {
-            if meta.path.is_ident("doc") {
-                if let Expr::Lit(ExprLit {
-                    lit: Lit::Str(value),
-                    ..
-                }) = &meta.value
-                {
-                    for mut line in value.value().split('\n') {
-                        line = line.trim();
+        if let Meta::NameValue(meta) = &attr.meta
+            && meta.path.is_ident("doc")
+            && let Expr::Lit(ExprLit {
+                lit: Lit::Str(value),
+                ..
+            }) = &meta.value
+        {
+            for mut line in value.value().split('\n') {
+                line = line.trim();
 
-                        if line.starts_with("* ") {
-                            line = &line[2..];
-                        } else if line.starts_with(" * ") {
-                            line = &line[3..];
-                        }
-
-                        lines.push(line.to_owned());
-                    }
+                if line.starts_with("* ") {
+                    line = &line[2..];
+                } else if line.starts_with(" * ") {
+                    line = &line[3..];
                 }
+
+                lines.push(line.to_owned());
             }
         }
     }
@@ -95,20 +93,20 @@ pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
     for attr in attrs {
         match &attr.meta {
             Meta::NameValue(meta) => {
-                if meta.path.is_ident("deprecated") {
-                    if let Expr::Lit(lit) = &meta.value {
-                        match &lit.lit {
-                            Lit::Bool(value) => {
-                                if value.value() {
-                                    return Some(String::new()); // No message, handle in renderer
-                                }
+                if meta.path.is_ident("deprecated")
+                    && let Expr::Lit(lit) = &meta.value
+                {
+                    match &lit.lit {
+                        Lit::Bool(value) => {
+                            if value.value() {
+                                return Some(String::new()); // No message, handle in renderer
                             }
-                            Lit::Str(value) => {
-                                return Some(value.value().trim().to_owned());
-                            }
-                            _ => {}
-                        };
-                    }
+                        }
+                        Lit::Str(value) => {
+                            return Some(value.value().trim().to_owned());
+                        }
+                        _ => {}
+                    };
                 }
             }
             Meta::Path(_) => {
