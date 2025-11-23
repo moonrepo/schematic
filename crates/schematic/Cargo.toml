@@ -21,7 +21,7 @@ all-features = true
 schematic_macros = { version = "0.18.12", path = "../macros" }
 schematic_types = { version = "0.10.7", path = "../types" }
 miette = { workspace = true }
-thiserror = "2.0.12"
+thiserror = "2.0.17"
 tracing = { workspace = true }
 
 # config
@@ -29,8 +29,8 @@ garde = { version = "0.22.0", default-features = false, optional = true, feature
 	"regex",
 ] }
 serde = { workspace = true }
-serde_path_to_error = { version = "0.1.17", optional = true }
-starbase_styles = { version = "0.6.3", optional = true }
+serde_path_to_error = { version = "0.1.20", optional = true }
+starbase_styles = { version = "0.6.4", optional = true }
 
 # settings
 regex = { workspace = true, optional = true }
