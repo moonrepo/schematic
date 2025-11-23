@@ -1,6 +1,7 @@
 use super::create_span;
 use crate::config::error::ConfigError;
 use crate::config::parser::ParserError;
+use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::{DeserializeOwned, IntoDeserializer};
 
@@ -92,4 +93,19 @@ where
     }
 
     panic!("Please enable the `yaml` or `yml` feature.");
+}
+
+#[derive(Default)]
+pub struct YamlFormat;
+
+impl<T: DeserializeOwned> SourceFormat<T> for YamlFormat {
+    fn should_parse(&self, source: &Source) -> bool {
+        source
+            .get_file_ext()
+            .map_or(false, |ext| ext == "yml" || ext == "yaml")
+    }
+
+    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+        parse(source.get_file_name(), content)
+    }
 }

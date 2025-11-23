@@ -17,7 +17,7 @@ pub struct Config {
 //         source,
 //         Source::Code {
 //             code: "string: foo".to_owned(),
-//             format: Format::Yaml,
+//             format: "code.yaml",
 //         }
 //     );
 // }
@@ -27,7 +27,7 @@ fn supports_bom() {
     let a = "\u{feff}---\nstring: foo";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, Format::Yaml)
+        .code(a, "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -43,7 +43,7 @@ float: 1.23
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, Format::Yaml)
+        .code(a, "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -65,9 +65,9 @@ vector: [a, b, c]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, Format::Yaml)
+        .code(a, "code.yaml")
         .unwrap()
-        .code(b, Format::Yaml)
+        .code(b, "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -99,15 +99,15 @@ vector: [x, y, z]
 ";
 
     let result = ConfigLoader::<Config>::new()
-        .code(a, Format::Yaml)
+        .code(a, "code.yaml")
         .unwrap()
-        .code(b, Format::Yaml)
+        .code(b, "code.yaml")
         .unwrap()
-        .code(c, Format::Yaml)
+        .code(c, "code.yaml")
         .unwrap()
-        .code(d, Format::Yaml)
+        .code(d, "code.yaml")
         .unwrap()
-        .code(e, Format::Yaml)
+        .code(e, "code.yaml")
         .unwrap()
         .load()
         .unwrap();

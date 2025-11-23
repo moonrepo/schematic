@@ -37,9 +37,9 @@ pub struct Transforms {
 #[test]
 fn transforms_values() {
     let result = ConfigLoader::<Transforms>::new()
-        .code("string: abc", Format::Yaml)
+        .code("string: abc", "code.yaml")
         .unwrap()
-        .code("number: 123", Format::Yaml)
+        .code("number: 123", "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -52,7 +52,7 @@ fn transforms_values() {
 #[test]
 fn errors_for_invalid_transformed_field() {
     let error = ConfigLoader::<Transforms>::new()
-        .code("string: foo", Format::Yaml)
+        .code("string: foo", "code.yaml")
         .unwrap()
         .load()
         .err()
@@ -77,7 +77,7 @@ pub struct TransformsOptional {
 #[test]
 fn transforms_optional_values() {
     let result = ConfigLoader::<TransformsOptional>::new()
-        .code("string: abc", Format::Yaml)
+        .code("string: abc", "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -120,7 +120,7 @@ fn transforms_nested_values() {
             r#"
 list:
   - string: xyz"#,
-            Format::Yaml,
+            "code.yaml",
         )
         .unwrap()
         .load()

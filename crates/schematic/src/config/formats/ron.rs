@@ -1,25 +1,37 @@
+use super::create_span;
 use crate::config::error::ConfigError;
 use crate::config::parser::ParserError;
+use crate::config::source::*;
 use miette::NamedSource;
 use serde::de::DeserializeOwned;
 
-pub fn parse<D>(name: &str, content: &str) -> Result<D, ConfigError>
-where
-    D: DeserializeOwned,
-{
-    let result: D = ron::from_str(content).map_err(|error| {
-        // Extract position from error
-        let position = error.position;
-        let line = position.line;
-        let column = position.col;
+#[derive(Default)]
+pub struct RonFormat;
 
-        ParserError {
-            content: NamedSource::new(name, content.to_owned()),
-            path: String::new(), // RON doesn't provide field path info
-            span: Some(super::create_span(content, line, column)),
-            message: error.code.to_string(),
-        }
-    })?;
+impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
+    fn should_parse(&self, source: &Source) -> bool {
+        source.get_file_ext().map_or(false, |ext| ext == "ron")
+    }
 
-    Ok(result)
+    fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {
+        let de = &mut ron::Deserializer::from_str(content).map_err(|error| ParserError {
+            content: NamedSource::new(source.get_file_name(), content.to_owned()),
+            path: String::new(),
+            span: Some(create_span(
+                content,
+                error.position.line,
+                error.position.col,
+            )),
+            message: error.to_string(),
+        })?;
+
+        let result: T = serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+            content: NamedSource::new(source.get_file_name(), content.to_owned()),
+            path: error.path().to_string(),
+            span: None,
+            message: error.inner().to_string(),
+        })?;
+
+        Ok(result)
+    }
 }

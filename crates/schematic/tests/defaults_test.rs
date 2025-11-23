@@ -87,7 +87,7 @@ fn handles_required_optional_defaults() {
 #[test]
 fn can_overwrite_optional_fields() {
     let result = ConfigLoader::<ReqOptDefaults>::new()
-        .code("required: 789\noptional: 456", Format::Yaml)
+        .code("required: 789\noptional: 456", "code.yaml")
         .unwrap()
         .load()
         .unwrap();

@@ -110,7 +110,7 @@ fn env_var_takes_precedence() {
     unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVars>::new()
-        .code("string: bar", Format::Yaml)
+        .code("string: bar", "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -126,7 +126,7 @@ fn can_ignore_empty_values() {
     unsafe { env::set_var("ENV_STRING", "") };
 
     let result = ConfigLoader::<EnvVars>::new()
-        .code("string: bar", Format::Yaml)
+        .code("string: bar", "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -157,7 +157,7 @@ fn loads_env_vars_for_nested() {
     unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVarsBase>::new()
-        .code("{}", Format::Yaml)
+        .code("{}", "code.yaml")
         .unwrap()
         .load()
         .unwrap();
@@ -174,7 +174,7 @@ fn loads_env_vars_for_optional_nested_when_valued() {
     unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVarsBase>::new()
-        .code("optNested:\n  string: bar", Format::Yaml)
+        .code("optNested:\n  string: bar", "code.yaml")
         .unwrap()
         .load()
         .unwrap();

@@ -21,7 +21,7 @@ mod json {
     #[test]
     fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code(r#"{ "setting": 123 }"#, Format::Json)
+            .code(r#"{ "setting": 123 }"#, "code.json")
             .unwrap()
             .load()
             .err()
@@ -36,7 +36,7 @@ mod json {
     #[test]
     fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code(r#"{ "nested": { "setting": 123 } }"#, Format::Json)
+            .code(r#"{ "nested": { "setting": 123 } }"#, "code.json")
             .unwrap()
             .load()
             .err()
@@ -98,7 +98,7 @@ mod toml {
     #[test]
     fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code("setting = 123", Format::Toml)
+            .code("setting = 123", "code.toml")
             .unwrap()
             .load()
             .err()
@@ -113,7 +113,7 @@ mod toml {
     #[test]
     fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code("[nested]\nsetting = 123", Format::Toml)
+            .code("[nested]\nsetting = 123", "code.toml")
             .unwrap()
             .load()
             .err()
@@ -133,7 +133,7 @@ mod yaml {
     #[test]
     fn invalid_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code("---\nsetting: 123", Format::Yaml)
+            .code("---\nsetting: 123", "code.yaml")
             .unwrap()
             .load()
             .err()
@@ -148,7 +148,7 @@ mod yaml {
     #[test]
     fn invalid_nested_type() {
         let error = ConfigLoader::<BaseConfig>::new()
-            .code("---\nnested:\n  setting: 123", Format::Yaml)
+            .code("---\nnested:\n  setting: 123", "code.yaml")
             .unwrap()
             .load()
             .err()

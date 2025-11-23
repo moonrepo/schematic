@@ -92,7 +92,7 @@ mod loading {
 {
 	"projects": ["foo", "bar", "baz"]
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -115,7 +115,7 @@ mod loading {
 		"foo": "bar"
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -141,7 +141,7 @@ mod loading {
 		}
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -169,7 +169,7 @@ mod merging {
 {
 	"projects": ["foo", "bar"]
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .code(
@@ -177,7 +177,7 @@ mod merging {
 {
 	"projects": ["baz", "qux"]
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -200,7 +200,7 @@ mod merging {
 		"foo": "bar"
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .code(
@@ -210,7 +210,7 @@ mod merging {
 		"baz": "qux"
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -239,7 +239,7 @@ mod merging {
 		}
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load()
@@ -267,7 +267,7 @@ mod validating {
 {
 	"projects": ["foo", "bar", "baz"]
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
@@ -287,7 +287,7 @@ mod validating {
 		"foo": "bar"
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
@@ -310,7 +310,7 @@ mod validating {
 		}
 	}
 }"#,
-                Format::Json,
+                "code.json",
             )
             .unwrap()
             .load_with_context(&Context { fail: true })
