@@ -9,7 +9,7 @@ pub struct TomlFormat;
 
 impl<T: DeserializeOwned> SourceFormat<T> for TomlFormat {
     fn should_parse(&self, source: &Source) -> bool {
-        source.get_file_ext().map_or(false, |ext| ext == "toml")
+        source.get_file_ext() == Some("toml")
     }
 
     fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {

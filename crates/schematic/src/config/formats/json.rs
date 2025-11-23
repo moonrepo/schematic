@@ -12,7 +12,7 @@ impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source
             .get_file_ext()
-            .map_or(false, |ext| ext == "json" || ext == "jsonc")
+            .is_some_and(|ext| ext == "json" || ext == "jsonc")
     }
 
     fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {

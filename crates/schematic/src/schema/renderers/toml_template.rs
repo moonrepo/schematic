@@ -42,16 +42,14 @@ impl TomlTemplateRenderer {
                 .filter_map(|(_, variant)| {
                     if variant.hidden {
                         None
+                    } else if let SchemaType::Literal(lit) = &variant.schema.ty {
+                        Some(lit_to_string(&lit.value))
                     } else {
-                        if let SchemaType::Literal(lit) = &variant.schema.ty {
-                            Some(lit_to_string(&lit.value))
-                        } else {
-                            None
-                        }
+                        None
                     }
                 })
                 .collect(),
-            None => enu.values.iter().map(|v| lit_to_string(v)).collect(),
+            None => enu.values.iter().map(lit_to_string).collect(),
         };
 
         values.join(" | ")

@@ -10,7 +10,7 @@ pub struct RonFormat;
 
 impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
     fn should_parse(&self, source: &Source) -> bool {
-        source.get_file_ext().map_or(false, |ext| ext == "ron")
+        source.get_file_ext() == Some("ron")
     }
 
     fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {

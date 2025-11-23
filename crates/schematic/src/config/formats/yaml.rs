@@ -102,7 +102,7 @@ impl<T: DeserializeOwned> SourceFormat<T> for YamlFormat {
     fn should_parse(&self, source: &Source) -> bool {
         source
             .get_file_ext()
-            .map_or(false, |ext| ext == "yml" || ext == "yaml")
+            .is_some_and(|ext| ext == "yml" || ext == "yaml")
     }
 
     fn parse(&self, source: &Source, content: &str) -> Result<T, ConfigError> {

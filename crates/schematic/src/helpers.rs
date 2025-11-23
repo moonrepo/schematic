@@ -47,13 +47,11 @@ pub fn extract_file_name(value: &str) -> &str {
     };
 
     // And only check the last segment
-    let value = if let Some(index) = value.rfind('/') {
+    if let Some(index) = value.rfind('/') {
         &value[index + 1..]
     } else {
         value
-    };
-
-    value
+    }
 }
 
 /// Extract a file extension (without period) from the provided file path or URL.
