@@ -17,12 +17,6 @@ pub fn extends_string<D, C>(
         ));
     }
 
-    if !value.is_empty() && !is_source_format(value) {
-        return Err(ValidateError::new(
-            "invalid file format, try a supported extension",
-        ));
-    }
-
     if is_url && !is_secure_url(value) {
         return Err(ValidateError::new("only secure URLs can be extended"));
     }
@@ -88,19 +82,6 @@ mod tests {
 
     #[test]
     fn string_invalid() {
-        // invalid ext
-        assert!(extends_string("file.exe", &(), &(), false).is_err());
-        assert!(extends_string("https://domain.com/nested/file.exe", &(), &(), false).is_err());
-        assert!(
-            extends_string(
-                "https://domain.com/nested/file.exe?query=string",
-                &(),
-                &(),
-                false
-            )
-            .is_err()
-        );
-
         // no http
         assert!(extends_string("http://domain.com/nested/file.json", &(), &(), false).is_err());
     }

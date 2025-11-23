@@ -40,6 +40,7 @@ semver = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
+json-strip-comments = { version = "3.1.0", optional = true }
 serde_json = { workspace = true, optional = true, features = [
 	"preserve_order",
 ] }
@@ -82,7 +83,11 @@ url = ["dep:reqwest"]
 validate = ["dep:garde", "schematic_macros/validate"]
 
 # Formats
-json = ["dep:serde_json", "schematic_types/serde_json"]
+json = [
+	"dep:json-strip-comments",
+	"dep:serde_json",
+	"schematic_types/serde_json",
+]
 pkl = ["dep:rpkl", "schematic_types/serde_rpkl"]
 ron = ["dep:ron", "schematic_types/serde_ron"]
 toml = ["dep:toml", "schematic_types/serde_toml"]
@@ -118,6 +123,7 @@ schematic = { path = ".", features = [
 	"renderer_json_schema",
 	"renderer_template",
 	"renderer_typescript",
+	"ron",
 	"schema",
 	"schema_serde",
 	"toml",

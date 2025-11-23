@@ -1,6 +1,5 @@
 #![allow(clippy::result_large_err)]
 
-mod format;
 pub mod helpers;
 
 #[cfg(feature = "config")]
@@ -33,6 +32,5 @@ pub use starbase_styles::color;
 #[cfg(feature = "config")]
 pub use config::*;
 
-pub use format::*;
 pub use schematic_macros::*;
 pub use schematic_types::{Schema, SchemaBuilder, SchemaType, Schematic};

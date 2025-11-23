@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use miette::Result;
 use rust_decimal::Decimal;
-use schematic::{Config, ConfigLoader, Format, ValidateError};
+use schematic::{Config, ConfigLoader, ValidateError};
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -47,7 +47,7 @@ fn main() -> Result<()> {
     let config = ConfigLoader::<TestConfig>::new()
         // .code(r#"{ "string": "abc", "other": 123 }"#, Format::Json)? // parse error
         // .code("{\n  \"string\": 123\n}", Format::Json)? // parse error
-        .code("{\n  \"string\": \"\", \"number\": 1 \n}", Format::Json)? // validate error
+        .code("{\n  \"string\": \"\", \"number\": 1 \n}", "test.json")? // validate error
         .set_help("let's go!")
         .load()?;
 

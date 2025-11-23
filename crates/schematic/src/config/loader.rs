@@ -1,15 +1,18 @@
+use crate::helpers::strip_bom;
+
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
 use super::configs::{Config, PartialConfig};
 use super::error::ConfigError;
 #[cfg(feature = "extends")]
 use super::extender::ExtendsFrom;
 use super::layer::Layer;
-use super::source::Source;
-use crate::format::Format;
+use super::source::{Source, SourceFormat};
 use serde::Serialize;
+use std::borrow::Cow;
+use std::fs;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tracing::{instrument, trace};
 
 /// The result of loading a configuration. Includes the final configuration,
@@ -28,37 +31,67 @@ pub struct ConfigLoadResult<T: Config> {
 pub struct ConfigLoader<T: Config> {
     _config: PhantomData<T>,
     cacher: Mutex<BoxedCacher>,
+    formats: Vec<Arc<dyn SourceFormat<T::Partial>>>,
     help: Option<String>,
     name: String,
     sources: Vec<Source>,
     root: Option<PathBuf>,
 }
 
-impl<T: Config> ConfigLoader<T> {
-    /// Create a new config loader.
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
+impl<T: Config> Default for ConfigLoader<T> {
+    fn default() -> Self {
         ConfigLoader {
             _config: PhantomData,
             cacher: Mutex::new(Box::<MemoryCache>::default()),
+            formats: vec![],
             help: None,
             name: T::schema_name().unwrap_or_else(|| "<unknown>".into()),
             sources: vec![],
             root: None,
         }
     }
+}
 
-    /// Add explicit source code to load.
-    pub fn code<S: TryInto<String>>(
+impl<T: Config> ConfigLoader<T> {
+    /// Create a new config loader and auto-register formats based on enables features.
+    pub fn new() -> Self {
+        let mut loader = ConfigLoader::default();
+
+        #[cfg(feature = "json")]
+        loader.add_format(super::formats::json::JsonFormat::default());
+
+        #[cfg(feature = "pkl")]
+        loader.add_format(super::formats::pkl::PklFormat::default());
+
+        #[cfg(feature = "ron")]
+        loader.add_format(super::formats::ron::RonFormat::default());
+
+        #[cfg(feature = "toml")]
+        loader.add_format(super::formats::toml::TomlFormat::default());
+
+        #[cfg(any(feature = "yaml", feature = "yml"))]
+        loader.add_format(super::formats::yaml::YamlFormat::default());
+
+        loader
+    }
+
+    /// Add a format to parse sources based on file name/extension detection.
+    pub fn add_format(&mut self, format: impl SourceFormat<T::Partial> + 'static) -> &mut Self {
+        self.formats.push(Arc::new(format));
+        self
+    }
+
+    /// Add a code snippet source to load, with a required file name.
+    pub fn code<S: TryInto<String>, P: TryInto<PathBuf>>(
         &mut self,
         code: S,
-        format: Format,
+        path: P,
     ) -> Result<&mut Self, ConfigError> {
-        self.source(Source::code(code, format)?)
+        self.source(Source::code(code, path)?)
     }
 
     /// Add a file source to load.
-    pub fn file<S: TryInto<PathBuf>>(&mut self, path: S) -> Result<&mut Self, ConfigError> {
+    pub fn file<P: TryInto<PathBuf>>(&mut self, path: P) -> Result<&mut Self, ConfigError> {
         self.source(Source::file(path, true)?)
     }
 
@@ -239,8 +272,7 @@ impl<T: Config> ConfigLoader<T> {
     fn parse_into_layers(
         &self,
         sources_to_parse: &[Source],
-        #[cfg_attr(not(feature = "schema"), allow(unused_variables))]
-        context: &<T::Partial as PartialConfig>::Context,
+        #[allow(unused_variables)] context: &<T::Partial as PartialConfig>::Context,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
 
@@ -252,13 +284,9 @@ impl<T: Config> ConfigLoader<T> {
             );
 
             // Parse the source into a partial
-            let partial: T::Partial = {
-                let mut cacher = self.cacher.lock().unwrap();
-
-                source
-                    .parse(&self.name, &mut cacher)
-                    .map_err(|error| self.map_parser_error(error, source))?
-            };
+            let partial: T::Partial = self
+                .parse_source(source)
+                .map_err(|error| self.map_parser_error(error, source))?;
 
             // Validate before continuing so we ensure the values are correct
             #[cfg(feature = "validate")]
@@ -280,6 +308,73 @@ impl<T: Config> ConfigLoader<T> {
         }
 
         Ok(layers)
+    }
+
+    #[instrument(skip_all)]
+    fn parse_source(&self, source: &Source) -> Result<T::Partial, ConfigError> {
+        let (content, cache_path): (Cow<'_, str>, Option<PathBuf>) = match source {
+            Source::Code { code, .. } => (Cow::Borrowed(strip_bom(code)), None),
+            Source::File { path, required } => {
+                let content = if path.exists() {
+                    fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
+                        path: path.to_path_buf(),
+                        error: Box::new(error),
+                    })?
+                } else {
+                    if *required {
+                        return Err(ConfigError::MissingFile(path.to_path_buf()));
+                    }
+
+                    return Ok(T::Partial::default());
+                };
+
+                (Cow::Owned(strip_bom(&content).to_owned()), None)
+            }
+            #[cfg(feature = "url")]
+            Source::Url { url } => {
+                use crate::helpers::is_secure_url;
+
+                if !is_secure_url(url) {
+                    return Err(ConfigError::HttpsOnly(url.to_owned()));
+                }
+
+                let mut cacher = self.cacher.lock().unwrap();
+
+                let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    url: url.to_owned(),
+                    error: Box::new(error),
+                };
+
+                let content = if let Some(cache) = cacher.read(url)? {
+                    cache
+                } else {
+                    let body = reqwest::blocking::get(url)
+                        .map_err(handle_reqwest_error)?
+                        .text()
+                        .map_err(handle_reqwest_error)?;
+
+                    cacher.write(url, &body)?;
+
+                    body
+                };
+
+                (
+                    Cow::Owned(strip_bom(&content).to_owned()),
+                    cacher.get_file_path(url)?,
+                )
+            }
+        };
+
+        for format in &self.formats {
+            if format.should_parse(source) {
+                return format.parse(source, &content, cache_path.as_deref());
+            }
+        }
+
+        Err(ConfigError::NoMatchingFormat {
+            src: source.as_str().to_owned(),
+            ext: source.get_file_ext().unwrap_or("(none)").into(),
+        })
     }
 
     fn map_parser_error(&self, outer: ConfigError, source: &Source) -> ConfigError {

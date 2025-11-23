@@ -1,5 +1,4 @@
 use super::template::*;
-use crate::format::Format;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use schematic_types::*;
@@ -16,9 +15,11 @@ impl PklTemplateRenderer {
         PklTemplateRenderer::new(TemplateOptions::default())
     }
 
-    pub fn new(options: TemplateOptions) -> Self {
+    pub fn new(mut options: TemplateOptions) -> Self {
+        options.comment_prefix = "/// ".into();
+
         PklTemplateRenderer {
-            ctx: TemplateContext::new(Format::Pkl, options),
+            ctx: TemplateContext::new(options),
             schemas: IndexMap::default(),
         }
     }

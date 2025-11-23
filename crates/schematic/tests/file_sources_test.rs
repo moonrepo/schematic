@@ -20,7 +20,6 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -31,7 +30,6 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("./some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -42,7 +40,6 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yaml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -53,7 +50,6 @@ fn can_create_file_source() {
         source,
         Source::File {
             path: PathBuf::from("some/path/config.yaml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -63,7 +59,6 @@ fn can_create_file_source() {
 fn can_create_file_source_with_parent() {
     let parent = Source::File {
         path: PathBuf::from("/root/config.yml"),
-        format: Format::Yaml,
         required: true,
     };
 
@@ -73,7 +68,6 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -84,7 +78,6 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -95,7 +88,6 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -106,7 +98,6 @@ fn can_create_file_source_with_parent() {
         source,
         Source::File {
             path: PathBuf::from("/root/some/path/config.yml"),
-            format: Format::Yaml,
             required: true,
         }
     );
@@ -283,7 +274,7 @@ fn can_use_multiple_formats() {
 string: foo
 number: 123
 ",
-            Format::Yaml,
+            "code.yaml",
         )
         .unwrap()
         .code(
@@ -291,7 +282,7 @@ number: 123
   "boolean": true,
   "vector": ["x", "y", "z"]
 }"#,
-            Format::Json,
+            "code.json",
         )
         .unwrap()
         .code(
@@ -299,7 +290,7 @@ number: 123
 boolean = false
 string = \"bar\"
 ",
-            Format::Toml,
+            "code.toml",
         )
         .unwrap()
         .load()

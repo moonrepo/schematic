@@ -2,7 +2,6 @@ use super::merger::MergeError;
 use super::parser::ParserError;
 #[cfg(feature = "validate")]
 use super::validator::ValidatorError;
-use crate::format::UnsupportedFormatError;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};
 use std::fmt::Display;
@@ -17,9 +16,6 @@ pub enum ConfigError {
 
     #[error(transparent)]
     Merge(#[from] Box<MergeError>),
-
-    #[error(transparent)]
-    UnsupportedFormat(#[from] Box<UnsupportedFormatError>),
 
     #[diagnostic(code(config::enums::invalid_fallback))]
     #[error("Invalid fallback variant {}, unable to parse type.", .0.style(Style::Symbol))]
@@ -61,6 +57,17 @@ pub enum ConfigError {
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
+    #[diagnostic(
+        code(config::format::no_matching),
+        help("Is there a format registered for the file extension?")
+    )]
+    #[error(
+        "Unable to parse {} as there's no matching source format for extension {}.",
+        .src.style(Style::Path),
+        .ext.style(Style::File)
+    )]
+    NoMatchingFormat { src: String, ext: String },
+
     #[diagnostic(code(config::file::read_failed))]
     #[error("Failed to read file {}.", .path.style(Style::Path))]
     ReadFileFailed {
@@ -76,6 +83,15 @@ pub enum ConfigError {
         url: String,
         #[source]
         error: Box<reqwest::Error>,
+    },
+
+    #[cfg(feature = "json")]
+    #[diagnostic(code(config::json::failed))]
+    #[error("Failed to strip comments from {}.", .file.style(Style::File))]
+    JsonStripCommentsFailed {
+        file: String,
+        #[source]
+        error: Box<std::io::Error>,
     },
 
     #[cfg(feature = "pkl")]
@@ -198,12 +214,6 @@ impl From<ParserError> for ConfigError {
             error: Box::new(error),
             help: None,
         }
-    }
-}
-
-impl From<UnsupportedFormatError> for ConfigError {
-    fn from(error: UnsupportedFormatError) -> ConfigError {
-        ConfigError::UnsupportedFormat(Box::new(error))
     }
 }
 

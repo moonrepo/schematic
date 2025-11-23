@@ -1,30 +1,21 @@
-use super::cacher::BoxedCacher;
 use super::error::ConfigError;
-use crate::format::Format;
 use crate::helpers::*;
-use serde::Deserialize;
-use serde::{Serialize, de::DeserializeOwned};
-use std::fs;
-use std::path::PathBuf;
-use tracing::instrument;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::path::{Path, PathBuf};
 
 /// Source from which to load a configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
-    Code { code: String, format: Format },
+    Code { path: PathBuf, code: String },
 
     /// File system path to the configuration.
-    File {
-        path: PathBuf,
-        format: Format,
-        required: bool,
-    },
+    File { path: PathBuf, required: bool },
 
     /// Secure URL to the configuration.
     #[cfg(feature = "url")]
-    Url { url: String, format: Format },
+    Url { url: String },
 }
 
 impl Source {
@@ -71,21 +62,21 @@ impl Source {
     }
 
     /// Create a new code snippet source.
-    pub fn code<T: TryInto<String>>(code: T, format: Format) -> Result<Source, ConfigError> {
+    pub fn code<T: TryInto<String>, P: TryInto<PathBuf>>(
+        code: T,
+        path: P,
+    ) -> Result<Source, ConfigError> {
+        let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
-        Ok(Source::Code { code, format })
+        Ok(Source::Code { path, code })
     }
 
     /// Create a new file source with the provided path.
-    pub fn file<T: TryInto<PathBuf>>(path: T, required: bool) -> Result<Source, ConfigError> {
+    pub fn file<P: TryInto<PathBuf>>(path: P, required: bool) -> Result<Source, ConfigError> {
         let path: PathBuf = path.try_into().map_err(|_| ConfigError::InvalidFile)?;
 
-        Ok(Source::File {
-            format: Format::detect(path.to_str().unwrap_or_default())?,
-            path,
-            required,
-        })
+        Ok(Source::File { path, required })
     }
 
     /// Create a new URL source with the provided URL.
@@ -93,80 +84,54 @@ impl Source {
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
-        Ok(Source::Url {
-            format: Format::detect(&url)?,
-            url,
-        })
+        Ok(Source::Url { url })
     }
 
-    /// Parse the source contents according to the required format.
-    #[allow(unused_variables)]
-    #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
-    pub fn parse<D>(&self, name: &str, cacher: &mut BoxedCacher) -> Result<D, ConfigError>
-    where
-        D: DeserializeOwned + Default,
-    {
+    /// Return a file extension (without period) for the source if one is available.
+    pub fn get_file_ext(&self) -> Option<&str> {
         match self {
-            Source::Code { code, format } => format.parse(name, strip_bom(code), None),
-            Source::File {
-                path,
-                format,
-                required,
-            } => {
-                let content = if path.exists() {
-                    fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {
-                        path: path.to_path_buf(),
-                        error: Box::new(error),
-                    })?
-                } else {
-                    if *required {
-                        return Err(ConfigError::MissingFile(path.to_path_buf()));
-                    }
-
-                    return Ok(D::default());
-                };
-
-                format.parse(name, strip_bom(&content), Some(path))
+            Self::Code { path, .. } | Self::File { path, .. } => {
+                path.extension().and_then(|name| name.to_str())
             }
             #[cfg(feature = "url")]
-            Source::Url { url, format } => {
-                if !is_secure_url(url) {
-                    return Err(ConfigError::HttpsOnly(url.to_owned()));
-                }
-
-                let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-                    url: url.to_owned(),
-                    error: Box::new(error),
-                };
-
-                let content = if let Some(cache) = cacher.read(url)? {
-                    cache
-                } else {
-                    let body = reqwest::blocking::get(url)
-                        .map_err(handle_reqwest_error)?
-                        .text()
-                        .map_err(handle_reqwest_error)?;
-
-                    cacher.write(url, &body)?;
-
-                    body
-                };
-
-                format.parse(
-                    name,
-                    strip_bom(&content),
-                    cacher.get_file_path(url)?.as_deref(),
-                )
-            }
+            Self::Url { url, .. } => extract_file_ext(url),
         }
     }
 
+    /// Return a file name for the source.
+    pub fn get_file_name(&self) -> &str {
+        match self {
+            Self::Code { path, .. } | Self::File { path, .. } => path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("unknown"),
+            #[cfg(feature = "url")]
+            Self::Url { url, .. } => extract_file_name(url),
+        }
+    }
+
+    /// Return the source as a string, either as a file path or URL.
     pub fn as_str(&self) -> &str {
         match self {
-            Source::Code { .. } => "<code>",
-            Source::File { path, .. } => path.to_str().unwrap_or_default(),
+            Source::Code { path, .. } | Source::File { path, .. } => {
+                path.to_str().unwrap_or_default()
+            }
             #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
         }
     }
+}
+
+/// Parses a source into a specific format.
+pub trait SourceFormat<T: DeserializeOwned> {
+    /// Should this instance parse the provided source?
+    fn should_parse(&self, source: &Source) -> bool;
+
+    /// Parse the source contents and return the deserialized value.
+    fn parse(
+        &self,
+        source: &Source,
+        content: &str,
+        cache_path: Option<&Path>,
+    ) -> Result<T, ConfigError>;
 }
