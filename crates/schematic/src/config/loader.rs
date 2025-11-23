@@ -373,6 +373,7 @@ impl<T: Config> ConfigLoader<T> {
 
         Err(ConfigError::NoMatchingFormat {
             src: source.as_str().to_owned(),
+            ext: source.get_file_ext().unwrap_or("(none)").into(),
         })
     }
 

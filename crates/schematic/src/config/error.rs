@@ -61,8 +61,12 @@ pub enum ConfigError {
         code(config::format::no_matching),
         help("Is there a format registered for the file extension?")
     )]
-    #[error("Unable to parse {} as there's no matching source format.", .src.style(Style::Path))]
-    NoMatchingFormat { src: String },
+    #[error(
+        "Unable to parse {} as there's no matching source format for extension {}.",
+        .src.style(Style::Path),
+        .ext.style(Style::File)
+    )]
+    NoMatchingFormat { src: String, ext: String },
 
     #[diagnostic(code(config::file::read_failed))]
     #[error("Failed to read file {}.", .path.style(Style::Path))]
