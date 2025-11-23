@@ -78,6 +78,15 @@ pub enum ConfigError {
         error: Box<reqwest::Error>,
     },
 
+    #[cfg(feature = "json")]
+    #[diagnostic(code(config::json::failed))]
+    #[error("Failed to strip comments from {}.", .file.style(Style::File))]
+    JsonStripCommentsFailed {
+        file: String,
+        #[source]
+        error: Box<std::io::Error>,
+    },
+
     #[cfg(feature = "pkl")]
     #[diagnostic(code(config::pkl::failed))]
     #[error("Failed to evaluate Pkl file {}.", .path.style(Style::Path))]

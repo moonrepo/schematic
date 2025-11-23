@@ -1,7 +1,7 @@
 /// Returns true if the value ends in a supported file extension.
 pub fn is_source_format(value: &str) -> bool {
-    extract_ext(value).is_some_and(|ext| {
-        ext == ".json" || ext == ".pkl" || ext == ".toml" || ext == ".yaml" || ext == ".yml"
+    extract_file_ext(value).is_some_and(|ext| {
+        ext == "json" || ext == "pkl" || ext == "toml" || ext == "yaml" || ext == "yml"
     })
 }
 
@@ -37,8 +37,8 @@ pub fn strip_bom(content: &str) -> &str {
     content.trim_start_matches("\u{feff}")
 }
 
-/// Extract a file extension from the provided file path or URL.
-pub fn extract_ext(value: &str) -> Option<&str> {
+/// Extract a file name from the provided file path or URL.
+pub fn extract_file_name(value: &str) -> &str {
     // Remove any query string
     let value = if let Some(index) = value.rfind('?') {
         &value[0..index]
@@ -53,5 +53,12 @@ pub fn extract_ext(value: &str) -> Option<&str> {
         value
     };
 
-    value.rfind('.').map(|index| &value[index..])
+    value
+}
+
+/// Extract a file extension (without period) from the provided file path or URL.
+pub fn extract_file_ext(value: &str) -> Option<&str> {
+    let name = extract_file_name(value);
+
+    name.rfind('.').map(|index| &name[index + 1..])
 }

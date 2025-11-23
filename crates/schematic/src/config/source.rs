@@ -13,7 +13,11 @@ use tracing::instrument;
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Source {
     /// Inline code snippet of the configuration.
-    Code { code: String, format: Format },
+    Code {
+        path: PathBuf,
+        code: String,
+        format: Format,
+    },
 
     /// File system path to the configuration.
     File {
@@ -74,7 +78,11 @@ impl Source {
     pub fn code<T: TryInto<String>>(code: T, format: Format) -> Result<Source, ConfigError> {
         let code: String = code.try_into().map_err(|_| ConfigError::InvalidCode)?;
 
-        Ok(Source::Code { code, format })
+        Ok(Source::Code {
+            path: PathBuf::new(),
+            code,
+            format,
+        })
     }
 
     /// Create a new file source with the provided path.
@@ -99,6 +107,29 @@ impl Source {
         })
     }
 
+    /// Return a file extension (without period) for the source if one is available.
+    pub fn get_file_ext(&self) -> Option<&str> {
+        match self {
+            Self::Code { path, .. } | Self::File { path, .. } => {
+                path.extension().and_then(|name| name.to_str())
+            }
+            #[cfg(feature = "url")]
+            Self::Url { url, .. } => extract_file_ext(url),
+        }
+    }
+
+    /// Return a file name for the source.
+    pub fn get_file_name(&self) -> &str {
+        match self {
+            Self::Code { path, .. } | Self::File { path, .. } => path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("unknown"),
+            #[cfg(feature = "url")]
+            Self::Url { url, .. } => extract_file_name(url),
+        }
+    }
+
     /// Parse the source contents according to the required format.
     #[allow(unused_variables)]
     #[instrument(name = "parse_config_source", skip(cacher), fields(source = ?self))]
@@ -107,7 +138,7 @@ impl Source {
         D: DeserializeOwned + Default,
     {
         match self {
-            Source::Code { code, format } => format.parse(name, strip_bom(code), None),
+            Source::Code { code, format, .. } => format.parse(name, strip_bom(code), None),
             Source::File {
                 path,
                 format,
@@ -169,4 +200,9 @@ impl Source {
             Source::Url { url, .. } => url,
         }
     }
+}
+
+pub trait SourceFormat {
+    fn should_parse(&self, source: &Source) -> bool;
+    fn parse<D: DeserializeOwned>(&self, source: &Source, content: &str) -> Result<D, ConfigError>;
 }

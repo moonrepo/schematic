@@ -1,4 +1,4 @@
-use crate::helpers::extract_ext;
+use crate::helpers::extract_file_ext;
 use miette::Diagnostic;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -34,13 +34,13 @@ impl Format {
     /// checking for a supported file extension.
     pub fn detect(value: &str) -> Result<Format, UnsupportedFormatError> {
         let mut available: Vec<&str> = vec![];
-        let ext = extract_ext(value).unwrap_or_default();
+        let ext = extract_file_ext(value).unwrap_or_default();
 
         #[cfg(feature = "json")]
         {
             available.push("JSON");
 
-            if ext == ".json" {
+            if ext == "json" {
                 return Ok(Format::Json);
             }
         }
@@ -49,7 +49,7 @@ impl Format {
         {
             available.push("Pkl");
 
-            if ext == ".pkl" {
+            if ext == "pkl" {
                 return Ok(Format::Pkl);
             }
         }
@@ -58,7 +58,7 @@ impl Format {
         {
             available.push("RON");
 
-            if ext == ".ron" {
+            if ext == "ron" {
                 return Ok(Format::Ron);
             }
         }
@@ -67,7 +67,7 @@ impl Format {
         {
             available.push("TOML");
 
-            if ext == ".toml" {
+            if ext == "toml" {
                 return Ok(Format::Toml);
             }
         }
@@ -76,7 +76,7 @@ impl Format {
         {
             available.push("YAML");
 
-            if ext == ".yaml" || ext == ".yml" {
+            if ext == "yaml" || ext == "yml" {
                 return Ok(Format::Yaml);
             }
         }

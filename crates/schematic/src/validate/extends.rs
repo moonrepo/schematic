@@ -69,6 +69,7 @@ mod tests {
 
     #[test]
     fn string_valid() {
+        extends_string("./file.json", &(), &(), false).unwrap();
         assert!(extends_string("file.yml", &(), &(), false).is_ok());
         assert!(extends_string("./file.json", &(), &(), false).is_ok());
         assert!(extends_string("../file.yaml", &(), &(), false).is_ok());
