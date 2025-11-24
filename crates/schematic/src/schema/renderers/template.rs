@@ -16,8 +16,8 @@ pub struct TemplateOptions {
     /// Characters to prefix a comment line.
     pub comment_prefix: String,
 
-    /// Default values for each field within the root struct.
-    pub default_values: HashMap<String, Schema>,
+    /// Custom values for each field. Supports dot notation.
+    pub custom_values: HashMap<String, Schema>,
 
     /// List of array and object field names to expand and render a fake item.
     pub expand_fields: Vec<String>,
@@ -47,7 +47,7 @@ impl Default for TemplateOptions {
             comments: true,
             comment_fields: vec![],
             comment_prefix: "# ".into(),
-            default_values: HashMap::new(),
+            custom_values: HashMap::new(),
             expand_fields: vec![],
             footer: String::new(),
             header: String::new(),
@@ -206,7 +206,7 @@ impl TemplateContext {
     pub fn get_stack_value(&self) -> Option<Schema> {
         let key = self.get_stack_key();
 
-        self.options.default_values.get(&key).cloned()
+        self.options.custom_values.get(&key).cloned()
     }
 
     pub fn is_expanded(&self, key: &String) -> bool {
@@ -241,16 +241,18 @@ impl TemplateContext {
 
     pub fn validate_schema_variant<'a>(
         &self,
-        default: Option<&'a Schema>,
+        custom: Option<&'a Schema>,
         fallback: &'a Schema,
     ) -> &'a Schema {
-        if let Some(default) = default {
-            if mem::discriminant(&default.ty) == mem::discriminant(&fallback.ty) {
-                return default;
+        if let Some(custom) = custom {
+            if mem::discriminant(&custom.ty) == mem::discriminant(&fallback.ty) {
+                return custom;
             } else {
                 panic!(
-                    "Received an invalid default value for {}, mismatched schema types.",
-                    self.get_stack_key()
+                    "Received an invalid custom value for `{}`, mismatched schema types.\n\nExpected: {:#?}\n\nReceived: {:#?}",
+                    self.get_stack_key(),
+                    fallback,
+                    custom
                 );
             }
         }

@@ -303,6 +303,42 @@ mod template_json {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    #[test]
+    fn custom_values() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_template_generator()
+            .generate(
+                &file,
+                JsoncTemplateRenderer::new({
+                    let mut options = create_template_options();
+                    options.custom_values.insert(
+                        "expandArrayPrimitive".into(),
+                        Schema::array(ArrayType::new(Schema::integer(IntegerType::new_unsigned(
+                            IntegerKind::Usize,
+                            123456,
+                        )))),
+                    );
+                    options.custom_values.insert(
+                        "nested.opt".into(),
+                        Schema::union(UnionType::new_any([
+                            Schema::string(StringType::new("custom nested value")),
+                            Schema::null(),
+                        ])),
+                    );
+                    options.custom_values.insert(
+                        "string".into(),
+                        Schema::string(StringType::new("custom value")),
+                    );
+                    options
+                }),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(all(feature = "renderer_template", feature = "pkl"))]
