@@ -14,11 +14,11 @@ all-features = true
 proc-macro = true
 
 [dependencies]
-convert_case = "0.8.0"
-darling = "0.21.0"
-proc-macro2 = "1.0.95"
-quote = "1.0.40"
-syn = { version = "2.0.104", features = ["full"] }
+convert_case = "0.10.0"
+darling = "0.21.3"
+proc-macro2 = "1.0.103"
+quote = "1.0.42"
+syn = { version = "2.0.111", features = ["full"] }
 
 [features]
 default = []

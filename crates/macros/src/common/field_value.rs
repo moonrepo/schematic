@@ -44,10 +44,10 @@ fn extract_inner_type<'a>(ty: &'a Type, info: &mut TypeInfo) -> &'a Type {
 
     // If a nested type, drill down deeper to find the inner type
     if nested {
-        if let PathArguments::AngleBracketed(args) = &last_segment.arguments {
-            if let GenericArgument::Type(inner_ty) = args.args.last().unwrap() {
-                return extract_inner_type(inner_ty, info);
-            }
+        if let PathArguments::AngleBracketed(args) = &last_segment.arguments
+            && let GenericArgument::Type(inner_ty) = args.args.last().unwrap()
+        {
+            return extract_inner_type(inner_ty, info);
         }
     }
     // Otherwise we found the inner type, so extract the ident name

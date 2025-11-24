@@ -14,7 +14,10 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 - Reworked the `Source` enum heavily.
 - Renamed the `extract_ext` function to `extract_file_ext`, and updated it to not include the
   leading `.`.
+- Replaced `serde_yaml` with `serde_norway` for YAML parsing. This is due to `serde_yaml` being
+  unmaintained.
 - Removed the `Format` enum.
+- Removed the `yml` feature, use `yaml` instead.
 - Removed the `is_source_format` function.
 
 #### 🚀 Updates
@@ -23,6 +26,13 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 - Added a `ConfigLoader#add_format()` method.
 - Added a `extract_file_name` function.
 - Added `.jsonc` support.
+
+#### ⚙️ Internal
+
+- Updated to Rust v1.91.
+- Updated `rpkl` to v0.6.
+- Updated `ron` to v0.12.
+- Updated dependencies.
 
 ## 0.18.15
 

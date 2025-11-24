@@ -8,6 +8,10 @@ use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+// #[allow(unused_imports)]
+// pub use rpkl::{EvaluatorOptions, api::external_reader::*, api::reader::*};
+// pub type PklFormatOptions = EvaluatorOptions;
+
 static PKL_CHECKED: AtomicBool = AtomicBool::new(false);
 
 fn check_pkl_installed() -> Result<(), ConfigError> {
@@ -35,7 +39,15 @@ fn check_pkl_installed() -> Result<(), ConfigError> {
 }
 
 #[derive(Default)]
-pub struct PklFormat {}
+pub struct PklFormat {
+    //     options: PklFormatOptions,
+}
+
+// impl PklFormat {
+//     pub fn new(options: PklFormatOptions) -> Self {
+//         Self { options }
+//     }
+// }
 
 impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
     fn should_parse(&self, source: &Source) -> bool {
@@ -75,7 +87,7 @@ impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
         let result: T = serde_path_to_error::deserialize(&mut de).map_err(|error| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),
             path: error.path().to_string(),
-            span: None, // TODO
+            span: None,
             message: error.inner().to_string(),
         })?;
 

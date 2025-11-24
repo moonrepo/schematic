@@ -126,7 +126,7 @@ mod toml {
     }
 }
 
-#[cfg(feature = "yml")]
+#[cfg(feature = "yaml")]
 mod yaml {
     use super::*;
 

@@ -6,7 +6,7 @@ pub mod pkl;
 pub mod ron;
 #[cfg(feature = "toml")]
 pub mod toml;
-#[cfg(any(feature = "yaml", feature = "yml"))]
+#[cfg(feature = "yaml")]
 pub mod yaml;
 
 use miette::{SourceOffset, SourceSpan};
