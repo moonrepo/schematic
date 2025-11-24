@@ -283,6 +283,26 @@ mod template_json {
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
     }
+
+    #[test]
+    fn only_fields() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("schema.json");
+
+        create_template_generator()
+            .generate(
+                &file,
+                JsoncTemplateRenderer::new({
+                    let mut options = create_template_options();
+                    options.only_fields.push("float32".into());
+                    options.only_fields.push("string".into());
+                    options
+                }),
+            )
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(all(feature = "renderer_template", feature = "pkl"))]

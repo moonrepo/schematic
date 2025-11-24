@@ -35,6 +35,9 @@ pub struct TemplateOptions {
 
     /// Insert an extra newline between fields.
     pub newline_between_fields: bool,
+
+    /// List of field names to only render.
+    pub only_fields: Vec<String>,
 }
 
 impl Default for TemplateOptions {
@@ -50,6 +53,7 @@ impl Default for TemplateOptions {
             hide_fields: vec![],
             indent_char: "  ".into(),
             newline_between_fields: true,
+            only_fields: vec![],
         }
     }
 }
@@ -196,7 +200,9 @@ impl TemplateContext {
     pub fn is_hidden(&self, field: &SchemaField) -> bool {
         let key = self.get_stack_key();
 
-        field.hidden || self.options.hide_fields.contains(&key)
+        field.hidden
+            || self.options.hide_fields.contains(&key)
+            || !self.options.only_fields.is_empty() && !self.options.only_fields.contains(&key)
     }
 
     pub fn push_stack(&mut self, name: &str) {
