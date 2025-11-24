@@ -65,12 +65,12 @@ Implements schemas for `Value`, `Number`, and `Map` from the
 Implements schemas for `Value`, `Number`, and `Mapping` from the
 [serde_yaml](https://crates.io/crates/serde_yaml) crate.
 
-## serde_yml
+## serde_yaml_norway
 
-> Requires the `type_serde_yml` Cargo feature.
+> Requires the `serde_yaml_norway` Cargo feature.
 
 Implements schemas for `Value`, `Number`, and `Mapping` from the
-[serde_yml](https://crates.io/crates/serde_yml) crate.
+[serde_norway](https://crates.io/crates/serde_norway) crate.
 
 ## toml
 

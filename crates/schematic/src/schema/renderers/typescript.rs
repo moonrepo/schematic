@@ -455,7 +455,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             }
 
             if let Some(env_var) = &field.env_var {
-                tags.push(format!("@envvar {env_var}"));
+                tags.push(format!("@env {env_var}"));
             }
 
             if let SchemaType::Enum(inner) = &field.schema.ty {

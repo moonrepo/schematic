@@ -58,19 +58,19 @@ impl<T: Config> ConfigLoader<T> {
         let mut loader = ConfigLoader::default();
 
         #[cfg(feature = "json")]
-        loader.add_format(super::formats::json::JsonFormat::default());
+        loader.add_format(super::formats::JsonFormat::default());
 
         #[cfg(feature = "pkl")]
-        loader.add_format(super::formats::pkl::PklFormat::default());
+        loader.add_format(super::formats::PklFormat::default());
 
         #[cfg(feature = "ron")]
-        loader.add_format(super::formats::ron::RonFormat::default());
+        loader.add_format(super::formats::RonFormat::default());
 
         #[cfg(feature = "toml")]
-        loader.add_format(super::formats::toml::TomlFormat::default());
+        loader.add_format(super::formats::TomlFormat::default());
 
         #[cfg(feature = "yaml")]
-        loader.add_format(super::formats::yaml::YamlFormat::default());
+        loader.add_format(super::formats::YamlFormat::default());
 
         loader
     }

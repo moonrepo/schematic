@@ -117,9 +117,9 @@ export type ExtendsOptional = {
 };
 
 export type EnvVars = {
-	/** @envvar BAR */
+	/** @env BAR */
 	advanced: string[],
-	/** @envvar FOO */
+	/** @env FOO */
 	basic: string,
 };
 

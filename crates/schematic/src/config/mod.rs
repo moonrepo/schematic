@@ -19,6 +19,7 @@ pub use configs::*;
 pub use error::*;
 #[cfg(feature = "extends")]
 pub use extender::*;
+pub use formats::*;
 pub use layer::*;
 pub use loader::*;
 pub use merger::*;

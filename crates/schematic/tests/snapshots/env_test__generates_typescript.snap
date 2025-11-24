@@ -7,23 +7,23 @@ expression: "std::fs::read_to_string(file).unwrap()"
 /* eslint-disable */
 
 export interface EnvVarsNested {
-	/** @envvar ENV_STRING */
+	/** @env ENV_STRING */
 	string: string;
 }
 
 export interface EnvVarsPrefixed {
-	/** @envvar ENV_BOOL */
+	/** @env ENV_BOOL */
 	bool: boolean;
-	/** @envvar ENV_LIST1 */
+	/** @env ENV_LIST1 */
 	list1: string[];
-	/** @envvar ENV_LIST2 */
+	/** @env ENV_LIST2 */
 	list2: number[];
 	nested: EnvVarsNested;
-	/** @envvar ENV_NUMBER */
+	/** @env ENV_NUMBER */
 	number: number;
-	/** @envvar ENV_PATH */
+	/** @env ENV_PATH */
 	path: string;
-	/** @envvar ENV_STRING */
+	/** @env ENV_STRING */
 	string: string;
 }
 

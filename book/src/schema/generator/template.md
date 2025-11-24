@@ -147,7 +147,7 @@ Would render the following formats:
 	"base_url": "/",
 
 	// The default port to listen on.
-	// @envvar PORT
+	// @env PORT
 	"port": 8080
 }
 ```
@@ -160,7 +160,7 @@ Would render the following formats:
 base_url = "/"
 
 # The default port to listen on.
-# @envvar PORT
+# @env PORT
 port = 8080
 ```
 
@@ -183,7 +183,7 @@ port = 8080
 base_url = "/"
 
 # The default port to listen on.
-# @envvar PORT
+# @env PORT
 port = 8080
 ```
 
@@ -195,7 +195,7 @@ port = 8080
 base_url: "/"
 
 # The default port to listen on.
-# @envvar PORT
+# @env PORT
 port: 8080
 ```
 
@@ -282,7 +282,16 @@ TemplateOptions {
 }
 ```
 
-Additionally, if you'd like to render a field but have it commented out by default, use the
+Alternatively, you can choose to _only_ render specific fields with `only_fields`.
+
+```rust
+TemplateOptions {
+	// ...
+	only_fields: vec!["key".into(), "nested.key".into()],
+}
+```
+
+And lastly, if you'd like to render a field but have it commented out by default, use the
 `comment_fields` option instead. This also supports dot-notation for nested fields.
 
 ```rust
@@ -341,3 +350,23 @@ Here's an example of how this works:
 </td>
 </tr>
 </table>
+
+### Custom values
+
+If you need more control of what gets rendered for a specific field, you can use the `custom_values`
+option. This option accepts a map of field names to custom values (schemas), and will take priority
+over default and empty values. Dot-notation for nested fields is also supported.
+
+Using the example output above, we can override the `port` field to render `3000` instead of `8080`
+like so:
+
+```rust
+TemplateOptions {
+	// ...
+	custom_values: HashMap::from_iter([
+		("port".into(), Schema::integer(IntegerType::new_unsigned(IntegerKind::Usize, 3000)))
+	]),
+}
+```
+
+> If the custom schema type does not match the field type, it will trigger a panic.

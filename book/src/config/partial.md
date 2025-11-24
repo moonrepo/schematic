@@ -48,13 +48,14 @@ As stated above, partials also handle the following:
 - Validating current values with [validate functions](./struct/validate.md).
 - Declaring [extendable sources](./struct/extend.md).
 
-## Partial Attribute Forwarding
+## Partial attribute forwarding
 
-Attributes can be forwarded to the generated partial struct using the `#[config(partial())]` attribute on structs and enums.
+Attributes can be forwarded to the generated partial struct using the `#[config(partial())]`
+attribute on structs and enums.
 
 ```rust
 #[derive(Config)]
-#[config(partial(derive(derive_more::AsRef))]
+#[config(partial(derive(derive_more::AsRef)))]
 struct ExampleConfig {
 	//
 }
@@ -64,7 +65,7 @@ Fields attributes can be forwarded using `#[setting(partial())]`.
 
 ```rust
 #[derive(Config)]
-#[config(partial(derive(derive_more::AsRef))]
+#[config(partial(derive(derive_more::AsRef)))]
 struct ExampleConfig {
 	#[setting(partial(as_ref))]
 	port: usize

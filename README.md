@@ -16,7 +16,7 @@ Get started: https://moonrepo.github.io/schematic
 
 ## Configuration
 
-- Supports JSON, TOML, and YAML based configs via serde.
+- Supports JSON, TOML, YAML, Pkl, RON, and more formats via serde.
 - Load sources from the file system or secure URLs.
 - Source layering that merge into a final configuration.
 - Extend additional files through an annotated setting.
@@ -49,10 +49,10 @@ Then load, parse, merge, and validate the configuration from one or many sources
 a file path, secure URL, or code block.
 
 ```rust
-use schematic::{ConfigLoader, Format};
+use schematic::ConfigLoader;
 
 let result = ConfigLoader::<AppConfig>::new()
-	.code("secure: false", Format::Yaml)?
+	.code("secure: false", "config.yml")?
 	.file("path/to/config.yml")?
 	.url("https://ordomain.com/to/config.yaml")?
 	.load()?;

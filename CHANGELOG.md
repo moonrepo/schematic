@@ -29,6 +29,7 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 - Added `TemplateOptions.custom_values` for specifying custom values for specific fields in a
   template.
 - Added `TemplateOptions.only_fields` to only render specific fields in a template.
+- Added options to `PklFormat`, allowing custom readers to be defined.
 
 #### ⚙️ Internal
 

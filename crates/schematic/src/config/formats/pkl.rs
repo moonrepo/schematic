@@ -2,15 +2,14 @@ use crate::config::error::ConfigError;
 use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
-use rpkl::pkl::PklSerialize;
+use rpkl::{EvaluatorOptions, pkl::PklSerialize};
 use serde::de::DeserializeOwned;
 use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-// #[allow(unused_imports)]
-// pub use rpkl::{EvaluatorOptions, api::external_reader::*, api::reader::*};
-// pub type PklFormatOptions = EvaluatorOptions;
+#[allow(unused_imports)]
+pub use rpkl::{api::external_reader::*, api::reader::*};
 
 static PKL_CHECKED: AtomicBool = AtomicBool::new(false);
 
@@ -38,16 +37,18 @@ fn check_pkl_installed() -> Result<(), ConfigError> {
     Ok(())
 }
 
+pub type PklFormatOptions = EvaluatorOptions;
+
 #[derive(Default)]
 pub struct PklFormat {
-    //     options: PklFormatOptions,
+    options: PklFormatOptions,
 }
 
-// impl PklFormat {
-//     pub fn new(options: PklFormatOptions) -> Self {
-//         Self { options }
-//     }
-// }
+impl PklFormat {
+    pub fn new(options: PklFormatOptions) -> Self {
+        Self { options }
+    }
+}
 
 impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
     fn should_parse(&self, source: &Source) -> bool {
@@ -75,7 +76,7 @@ impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
         };
 
         // Based on `rpkl::from_config`
-        let ast = rpkl::api::Evaluator::new()
+        let ast = rpkl::api::Evaluator::new_from_options(self.options.clone())
             .map_err(handle_error)?
             .evaluate_module(file_path)
             .map_err(handle_error)?
