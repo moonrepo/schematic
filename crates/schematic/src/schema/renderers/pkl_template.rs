@@ -132,7 +132,10 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
                     "{}{}{}",
                     name,
                     if field.schema.is_struct() { " " } else { " = " },
-                    self.render_schema(&field.schema)?,
+                    self.render_schema(self.ctx.validate_schema_variant(
+                        self.ctx.get_stack_value().as_ref(),
+                        &field.schema
+                    ))?,
                 );
 
                 out.push(self.ctx.create_field(field, prop));

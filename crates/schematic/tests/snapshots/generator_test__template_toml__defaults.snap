@@ -3,7 +3,7 @@ source: crates/schematic/tests/generator_test.rs
 expression: "fs::read_to_string(file).unwrap()"
 ---
 # This is a boolean with a medium length description.
-# @envvar TEMPLATE_BOOLEAN
+# @env TEMPLATE_BOOLEAN
 boolean = false
 
 emptyArray = []
@@ -64,5 +64,5 @@ opt = ""
 # This is another nested field.
 [one.two]
 # An optional string.
-# @envvar ENV_PREFIX_OPT
+# @env ENV_PREFIX_OPT
 opt = ""

@@ -3,6 +3,7 @@ use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
 use std::collections::{HashMap, VecDeque};
+use std::mem;
 
 /// Options to control the rendered template.
 pub struct TemplateOptions {
@@ -16,7 +17,7 @@ pub struct TemplateOptions {
     pub comment_prefix: String,
 
     /// Default values for each field within the root struct.
-    pub default_values: HashMap<String, SchemaType>,
+    pub default_values: HashMap<String, Schema>,
 
     /// List of array and object field names to expand and render a fake item.
     pub expand_fields: Vec<String>,
@@ -146,8 +147,17 @@ impl TemplateContext {
             });
         }
 
-        if let Some(env_var) = &field.env_var {
-            push(format!("@envvar {env_var}"));
+        if let Some(env_var) = &field.env_var
+            && !env_var.is_empty()
+        {
+            push(format!("@env {env_var}"));
+        }
+
+        if let SchemaType::Enum(enu) = &field.schema.ty
+            && let Ok(enum_values) = render_enum_values(enu)
+            && !enum_values.is_empty()
+        {
+            push(format!("@values {enum_values}"));
         }
 
         if lines.is_empty() {
@@ -193,6 +203,12 @@ impl TemplateContext {
         key
     }
 
+    pub fn get_stack_value(&self) -> Option<Schema> {
+        let key = self.get_stack_key();
+
+        self.options.default_values.get(&key).cloned()
+    }
+
     pub fn is_expanded(&self, key: &String) -> bool {
         self.options.expand_fields.contains(key)
     }
@@ -222,6 +238,25 @@ impl TemplateContext {
 
         initial.to_owned()
     }
+
+    pub fn validate_schema_variant<'a>(
+        &self,
+        default: Option<&'a Schema>,
+        fallback: &'a Schema,
+    ) -> &'a Schema {
+        if let Some(default) = default {
+            if mem::discriminant(&default.ty) == mem::discriminant(&fallback.ty) {
+                return default;
+            } else {
+                panic!(
+                    "Received an invalid default value for {}, mismatched schema types.",
+                    self.get_stack_key()
+                );
+            }
+        }
+
+        fallback
+    }
 }
 
 pub fn render_array(_array: &ArrayType) -> RenderResult {
@@ -244,6 +279,26 @@ pub fn render_enum(enu: &EnumType) -> RenderResult {
     }
 
     render_null()
+}
+
+pub fn render_enum_values(enu: &EnumType) -> RenderResult {
+    let values: Vec<String> = match &enu.variants {
+        Some(variants) => variants
+            .iter()
+            .filter_map(|(_, variant)| {
+                if variant.hidden {
+                    None
+                } else if let SchemaType::Literal(lit) = &variant.schema.ty {
+                    Some(lit_to_string(&lit.value))
+                } else {
+                    None
+                }
+            })
+            .collect(),
+        None => enu.values.iter().map(lit_to_string).collect(),
+    };
+
+    Ok(values.join(" | "))
 }
 
 pub fn render_float(float: &FloatType) -> RenderResult {
