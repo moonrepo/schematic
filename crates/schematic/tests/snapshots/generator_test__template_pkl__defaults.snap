@@ -4,7 +4,7 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   /// This is a boolean with a medium length description.
-  /// @envvar TEMPLATE_BOOLEAN
+  /// @env TEMPLATE_BOOLEAN
   boolean = false
 
   emptyArray = List()
@@ -13,6 +13,7 @@ expression: "fs::read_to_string(file).unwrap()"
 
   /// This is an enum with a medium length description and deprecated.
   /// @deprecated Dont use enums!
+  /// @values "foo" | "bar" | "baz"
   enums = "foo"
 
   /// This field is testing array expansion.
@@ -45,6 +46,7 @@ expression: "fs::read_to_string(file).unwrap()"
     ["example"] = 0
   }
 
+  /// @values "foo" | "bar" | "baz"
   fallbackEnum = "foo"
 
   /// This is a float thats deprecated.
@@ -75,7 +77,7 @@ expression: "fs::read_to_string(file).unwrap()"
     /// This is another nested field.
     two {
       /// An optional string.
-      /// @envvar ENV_PREFIX_OPT
+      /// @env ENV_PREFIX_OPT
       opt = ""
     }
   }

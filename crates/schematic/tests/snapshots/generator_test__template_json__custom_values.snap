@@ -28,7 +28,7 @@ expression: "fs::read_to_string(file).unwrap()"
   ],
 
   "expandArrayPrimitive": [
-    0
+    123456
   ],
 
   // This field is testing object expansion.
@@ -65,7 +65,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "enums": "foo",
 
     // An optional string.
-    "opt": ""
+    "opt": "custom nested value"
   },
 
   // This is a number with a long description.
@@ -83,7 +83,7 @@ expression: "fs::read_to_string(file).unwrap()"
   },
 
   // This is a string.
-  "string": "abc",
+  "string": "custom value",
 
   // This is a list of strings.
   "vector": []

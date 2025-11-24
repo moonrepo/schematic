@@ -22,10 +22,13 @@ This release changes how formats work. Instead of using the `Format` enum, forma
 
 #### 🚀 Updates
 
+- Added `.jsonc` support.
 - Added a `SourceFormat` trait, with built-in formats available at `schematic::config::formats`.
 - Added a `ConfigLoader#add_format()` method.
 - Added a `extract_file_name` function.
-- Added `.jsonc` support.
+- Added `TemplateOptions.custom_values` for specifying custom values for specific fields in a
+  template.
+- Added `TemplateOptions.only_fields` to only render specific fields in a template.
 
 #### ⚙️ Internal
 

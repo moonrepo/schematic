@@ -34,26 +34,6 @@ impl TomlTemplateRenderer {
         }
     }
 
-    fn format_enum_values(&self, enu: &EnumType) -> String {
-        let values: Vec<String> = match &enu.variants {
-            Some(variants) => variants
-                .iter()
-                .filter_map(|(_, variant)| {
-                    if variant.hidden {
-                        None
-                    } else if let SchemaType::Literal(lit) = &variant.schema.ty {
-                        Some(lit_to_string(&lit.value))
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            None => enu.values.iter().map(lit_to_string).collect(),
-        };
-
-        values.join(" | ")
-    }
-
     fn extract_sections(&mut self, doc: &mut StructType) {
         for (name, field) in &mut doc.fields {
             self.ctx.push_stack(name);
@@ -195,36 +175,16 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!("{} = {}", name, self.render_schema(&field.schema)?);
+                let prop = format!(
+                    "{} = {}",
+                    name,
+                    self.render_schema(self.ctx.validate_schema_variant(
+                        self.ctx.get_stack_value().as_ref(),
+                        &field.schema
+                    ))?
+                );
 
-                let field_output = if let SchemaType::Enum(enu) = &field.schema.ty {
-                    let mut comment = self.ctx.create_field_comment(field);
-
-                    if self.ctx.options.comments {
-                        let enum_values = self.format_enum_values(enu);
-                        if !enum_values.is_empty() {
-                            let indent = self.ctx.indent();
-                            let prefix = self.ctx.get_comment_prefix();
-                            comment.push_str(&format!("{indent}{prefix}@values {enum_values}\n"));
-                        }
-                    }
-
-                    let key = self.ctx.get_stack_key();
-                    format!(
-                        "{comment}{}{}{}",
-                        self.ctx.indent(),
-                        if self.ctx.options.comment_fields.contains(&key) {
-                            self.ctx.get_comment_prefix()
-                        } else {
-                            ""
-                        },
-                        prop
-                    )
-                } else {
-                    self.ctx.create_field(field, prop)
-                };
-
-                out.push(field_output);
+                out.push(self.ctx.create_field(field, prop));
             }
 
             self.ctx.pop_stack();

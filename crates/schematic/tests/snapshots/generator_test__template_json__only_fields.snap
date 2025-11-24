@@ -1,0 +1,12 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "fs::read_to_string(file).unwrap()"
+---
+{
+  // This is a float thats deprecated.
+  // @deprecated
+  // "float32": 0.0,
+
+  // This is a string.
+  "string": "abc",
+}
