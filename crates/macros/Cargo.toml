@@ -1,6 +1,6 @@
 [package]
 name = "schematic_macros"
-version = "0.18.12"
+version = "0.19.0"
 edition = "2024"
 license = "MIT"
 description = "Macros for the schematic crate."
