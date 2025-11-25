@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated enums/unions in templates to render the first item by default, instead of null.
+
 ## 0.19.0
 
 #### 💥 Breaking

@@ -274,10 +274,10 @@ pub fn render_boolean(boolean: &BooleanType) -> RenderResult {
 }
 
 pub fn render_enum(enu: &EnumType) -> RenderResult {
-    if let Some(index) = &enu.default_index {
-        if let Some(value) = enu.values.get(*index) {
-            return Ok(lit_to_string(value));
-        }
+    let index = enu.default_index.unwrap_or(0);
+
+    if let Some(value) = enu.values.get(index) {
+        return Ok(lit_to_string(value));
     }
 
     render_null()
@@ -373,6 +373,10 @@ pub fn render_union(
         if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
             return render(variant);
         }
+    }
+
+    if let Some(variant) = uni.variants_types.first() {
+        return render(variant);
     }
 
     render_null()
