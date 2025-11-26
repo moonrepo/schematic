@@ -1,5 +1,36 @@
 # Changelog
 
+## Next
+
+#### 💥 Breaking
+
+- Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+
+#### 🚀 Updates
+
+##### Config
+
+- Added support for unnamed tuple and newtype structs. Unnamed fields within the struct support
+  `#[setting]`.
+- Added support for `#[setting(nested = NestedConfig)]` on struct fields and enum variants, where
+  the nested config name can be explicitly defined if we fail to detect it. This is useful for
+  extremely complex/composed types.
+- Added support for `#[setting(transform)]` on enum variants.
+- Added support for env prefixes at the field level when the field is also nested. This will
+  override the env prefix defined on the nested container:
+  `#[setting(nested, env_prefix = "OVERRIDE_")]`.
+- Updated `#[setting(extend)]` settings to support `Option` wrapped values.
+- Updated the methods of `PartialConfig` to all have a default implementation. This helps to greatly
+  reduce the amount of macro generated code.
+- Improved the parse, handling, and validation of container and field attributes.
+
+##### Serde
+
+- Added support for explicit deserialize and serialize renaming on containers and fields:
+  `#[serde(rename(deserialize = "de_name", serialize = "ser_name"))]`.
+- Added support for `skip_deserializing_if` and `skip_serializing_if` on fields.
+- Updated `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
+
 ## 0.19.1
 
 #### 🚀 Updates

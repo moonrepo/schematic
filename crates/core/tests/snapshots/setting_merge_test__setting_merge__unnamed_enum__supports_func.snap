@@ -1,0 +1,67 @@
+---
+source: crates/core/tests/setting_merge_test.rs
+expression: pretty(container.impl_partial_merge())
+---
+fn merge(
+    &mut self,
+    context: &Self::Context,
+    mut next: Self,
+) -> std::result::Result<(), schematic::ConfigError> {
+    match self {
+        Self::A(pa) => {
+            if let Self::A(na) = next {
+                *self = Self::A(a(pa.to_owned(), na, context)?.unwrap_or_default());
+            } else {
+                *self = next;
+            }
+        }
+        Self::B(pa) => {
+            if let Self::B(na) = next {
+                *self = Self::B(b(pa.to_owned(), na, context)?.unwrap_or_default());
+            } else {
+                *self = next;
+            }
+        }
+        Self::C(pa, pb) => {
+            if let Self::C(na, nb) = next {
+                if let Some((pa, pb)) = c(
+                    (pa.to_owned(), pb.to_owned()),
+                    (na, nb),
+                    context,
+                )? {
+                    *self = Self::C(pa, pb);
+                } else {
+                    *self = Self::C(Default::default(), Default::default());
+                }
+            } else {
+                *self = next;
+            }
+        }
+        Self::D(pa, pb) => {
+            if let Self::D(na, nb) = next {
+                if let Some((pa, pb)) = d(
+                    (pa.to_owned(), pb.to_owned()),
+                    (na, nb),
+                    context,
+                )? {
+                    *self = Self::D(pa, pb);
+                } else {
+                    *self = Self::D(Default::default(), Default::default());
+                }
+            } else {
+                *self = next;
+            }
+        }
+        Self::E(pa) => {
+            if let Self::E(na) = next {
+                *self = Self::E(e(pa.to_owned(), na, context)?.unwrap_or_default());
+            } else {
+                *self = next;
+            }
+        }
+        _ => {
+            *self = next;
+        }
+    };
+    Ok(())
+}

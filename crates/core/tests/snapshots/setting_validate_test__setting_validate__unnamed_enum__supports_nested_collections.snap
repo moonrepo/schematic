@@ -1,0 +1,41 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalizing: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalizing, path);
+    match self {
+        Self::A(pa) => {
+            validate.check("A", (pa), self, func_ref);
+            validate.nested_list("A.0", pa.iter());
+        }
+        Self::B(pa) => {
+            validate.check("B", (pa), self, func_ref);
+            validate.nested_map("B.0", pa.iter());
+        }
+        Self::C(pa) => {
+            validate.check("C", (pa), self, func_ref);
+            validate.nested_list("C.0", pa.iter());
+        }
+        Self::D(pa) => {
+            validate.nested_list("D.0", pa.iter());
+        }
+        Self::E(pa) => {
+            validate.nested_map("E.0", pa.iter());
+        }
+        Self::F(pa) => {
+            validate.nested_list("F.0", pa.iter());
+        }
+        _ => {}
+    };
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

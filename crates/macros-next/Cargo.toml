@@ -1,6 +1,6 @@
 [package]
-name = "schematic_macros"
-version = "0.19.0"
+name = "schematic_macros_next"
+version = "0.18.7"
 edition = "2024"
 license = "MIT"
 description = "Macros for the schematic crate."
@@ -14,14 +14,12 @@ all-features = true
 proc-macro = true
 
 [dependencies]
-convert_case = { workspace = true }
-darling = { workspace = true }
-proc-macro2 = { workspace = true }
+schematic_core = { version = "0.18.7", path = "../core" }
 quote = { workspace = true }
-syn = { workspace = true, features = ["full"] }
+syn = { workspace = true }
 
 [features]
-default = []
+default = ["schema"]
 config = []
 env = []
 extends = []
