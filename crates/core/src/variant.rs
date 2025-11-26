@@ -99,6 +99,7 @@ impl Variant {
             panic!("Cannot use `required` with non-optional settings.");
         }
 
+        #[allow(clippy::collapsible_else_if)]
         if self.is_unit_variant() {
             if self.args.merge.is_some() {
                 panic!("Cannot use `merge` with unit variants.");
