@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated `reqwest` to v0.13.
+- Updated `rpkl` to v0.7.
+- Updated dependencies.
+
 ## 0.19.1
 
 #### 🚀 Updates
