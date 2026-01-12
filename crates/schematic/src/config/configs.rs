@@ -104,7 +104,7 @@ pub trait Config: Sized + Schematic {
         let context = <<Self as Config>::Partial as PartialConfig>::Context::default();
 
         <<Self as Config>::Partial as PartialConfig>::default_values(&context)
-            .unwrap()
+            .unwrap_or_default()
             .unwrap_or_default()
     }
 

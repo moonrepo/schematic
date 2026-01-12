@@ -173,6 +173,70 @@ impl Container {
         }
     }
 
+    pub fn impl_full(&self) -> TokenStream {
+        let base_name = &self.ident;
+        let partial_name = format_ident!("Partial{base_name}");
+
+        let from_partial_method = self.impl_full_from_partial();
+        let settings_method = self.impl_full_settings();
+
+        quote! {
+            #[automatically_derived]
+            impl schematic::Config for #base_name {
+                type Partial = #partial_name;
+
+                #from_partial_method
+                #settings_method
+            }
+
+            #[automatically_derived]
+            impl Default for #base_name {
+                fn default() -> Self {
+                    <Self as schematic::Config>::from_partial(
+                        <Self as schematic::Config>::default_partial()
+                    )
+                }
+            }
+        }
+    }
+
+    // TODO
+    pub fn impl_full_from_partial(&self) -> TokenStream {
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } => {
+                let mut statements = vec![];
+
+                for field in fields {
+                    let res = field.impl_partial_merge();
+
+                    if !res.no_value {
+                        statements.push(res.value);
+                    }
+                }
+
+                quote! {
+                    Self {
+                        #(#setting_names: #from_partial_values),*
+                    }
+                }
+            }
+            ContainerInner::UnnamedStruct { fields } => {}
+            ContainerInner::UnnamedEnum { variants } => {}
+            ContainerInner::UnitEnum { variants } => todo!(),
+        };
+
+        quote! {
+            fn from_partial(partial: Self::Partial) -> Self {}
+        }
+    }
+
+    // TODO
+    pub fn impl_full_settings(&self) -> TokenStream {
+        quote! {
+            fn settings() -> schematic::ConfigSettingMap {}
+        }
+    }
+
     pub fn impl_partial(&self) -> TokenStream {
         let base_name = &self.ident;
         let partial_name = format_ident!("Partial{base_name}");
@@ -199,20 +263,6 @@ impl Container {
                 #finalize_method
                 #merge_method
                 #validate_method
-            }
-
-            #[automatically_derived]
-            impl schematic::Config for #base_name {
-                // TODO
-            }
-
-            #[automatically_derived]
-            impl Default for #base_name {
-                fn default() -> Self {
-                    <Self as schematic::Config>::from_partial(
-                        <Self as schematic::Config>::default_partial()
-                    )
-                }
             }
         }
     }
