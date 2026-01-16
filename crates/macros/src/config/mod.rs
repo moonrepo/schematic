@@ -18,7 +18,10 @@ impl ToTokens for ConfigMacro<'_> {
         // Generate the partial implementation
         let partial_name = format_ident!("Partial{}", cfg.name);
         let partial_attrs = cfg.get_partial_attrs();
-        let partial = cfg.type_of.generate_partial(&partial_name, &partial_attrs);
+        let is_untagged = cfg.is_untagged();
+        let partial = cfg
+            .type_of
+            .generate_partial(&partial_name, &partial_attrs, is_untagged);
 
         tokens.extend(quote! {
             #partial

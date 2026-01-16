@@ -154,7 +154,32 @@ impl Variant<'_> {
         let partial = self.is_nested();
 
         let inner = match &self.value.fields {
-            Fields::Named(_) => unreachable!(),
+            Fields::Named(fields) => {
+                if self.args.null {
+                    panic!("Only unit variants can be marked as `null`.");
+                }
+
+                let fields = fields
+                    .named
+                    .iter()
+                    .map(|field| {
+                        let field_name = field.ident.as_ref().unwrap().to_string();
+                        let ty = &field.ty;
+
+                        if partial {
+                            quote! { (#field_name.into(), schema.infer_as_nested::<#ty>()) }
+                        } else {
+                            quote! { (#field_name.into(), schema.infer::<#ty>()) }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    Schema::structure(StructType::new([
+                        #(#fields),*
+                    ]))
+                }
+            }
             Fields::Unnamed(fields) => {
                 if self.args.null {
                     panic!("Only unit variants can be marked as `null`.");
@@ -276,7 +301,28 @@ impl ToTokens for Variant<'_> {
         }
 
         tokens.extend(match &self.value.fields {
-            Fields::Named(_) => unreachable!(),
+            Fields::Named(fields) => {
+                let fields = fields
+                    .named
+                    .iter()
+                    .map(|field| {
+                        let vis = &field.vis;
+                        let field_name = &field.ident;
+                        let ty = &field.ty;
+
+                        if self.is_nested() {
+                            quote! { #vis #field_name: <#ty as schematic::Config>::Partial }
+                        } else {
+                            quote! { #vis #field_name: #ty }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #(#attrs)*
+                    #name { #(#fields),* },
+                }
+            }
             Fields::Unnamed(fields) => {
                 let fields = fields
                     .unnamed

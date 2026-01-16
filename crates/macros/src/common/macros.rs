@@ -169,10 +169,6 @@ impl<'l> Macro<'l> {
                         .variants
                         .iter()
                         .map(|variant| {
-                            if matches!(variant.fields, Fields::Named(_)) {
-                                panic!("Named enum variants are not supported.");
-                            }
-
                             let mut field = Variant::from(variant);
                             field.casing_format.clone_from(&casing_format);
                             field.tagged_format.clone_from(&tagged_format);
@@ -295,5 +291,9 @@ impl<'l> Macro<'l> {
         attrs.push(quote! { #partial });
 
         attrs
+    }
+
+    pub fn is_untagged(&self) -> bool {
+        self.args.serde.untagged || self.serde_args.untagged
     }
 }
