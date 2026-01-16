@@ -493,7 +493,7 @@ impl Container<'_> {
                                 #(#field_names: #inner_types),*
                             }
 
-                            let deserializer = serde_content::Deserializer::new(content.clone())
+                            let deserializer = schematic::serde_content::Deserializer::new(content.clone())
                                 .coerce_numbers()
                                 .human_readable();
                             match <#helper_struct_name as serde::Deserialize>::deserialize(deserializer) {
@@ -519,7 +519,7 @@ impl Container<'_> {
 
                         variant_attempts.push(quote! {
                             {
-                                let deserializer = serde_content::Deserializer::new(content.clone())
+                                let deserializer = schematic::serde_content::Deserializer::new(content.clone())
                                     .coerce_numbers()
                                     .human_readable();
                                 match <#inner_ty as serde::Deserialize>::deserialize(deserializer) {
@@ -551,7 +551,7 @@ impl Container<'_> {
 
                         variant_attempts.push(quote! {
                             {
-                                let deserializer = serde_content::Deserializer::new(content.clone())
+                                let deserializer = schematic::serde_content::Deserializer::new(content.clone())
                                     .coerce_numbers()
                                     .human_readable();
                                 match <(#(#inner_types),*) as serde::Deserialize>::deserialize(deserializer) {
@@ -566,7 +566,7 @@ impl Container<'_> {
                     // Unit variants in untagged enums are serialized as null
                     variant_attempts.push(quote! {
                         {
-                            let deserializer = serde_content::Deserializer::new(content.clone())
+                            let deserializer = schematic::serde_content::Deserializer::new(content.clone())
                                 .coerce_numbers()
                                 .human_readable();
                             match <() as serde::Deserialize>::deserialize(deserializer) {

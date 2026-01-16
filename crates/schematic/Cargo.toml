@@ -21,6 +21,7 @@ all-features = true
 schematic_macros = { version = "0.19.1", path = "../macros" }
 schematic_types = { version = "0.11.1", path = "../types" }
 miette = { workspace = true }
+# Loose version to allow macro users to use latest, since every pre-1.0 release is a breaking change
 serde-content = "0.1.2"
 thiserror = "2.0.17"
 tracing = { workspace = true }
