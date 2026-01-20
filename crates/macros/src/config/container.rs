@@ -544,7 +544,7 @@ impl Container<'_> {
                     use serde::de::Error as _;
 
                     // Buffer the content so we can try deserializing it multiple ways
-                    let content = deserializer.deserialize_any(serde_content::ValueVisitor)?;
+                    let content = deserializer.deserialize_any(schematic::serde_content::ValueVisitor)?;
 
                     let mut errors: Vec<(&str, String)> = Vec::new();
 
