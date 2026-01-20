@@ -74,30 +74,6 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "flattened": {
-      "description": "Flattened field...",
-      "anyOf": [
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "float32": {
       "anyOf": [
         {
@@ -356,7 +332,29 @@ expression: "fs::read_to_string(file).unwrap()"
       ]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": {
+    "anyOf": [
+      {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        "propertyNames": {
+          "type": "string"
+        }
+      },
+      {
+        "type": "null"
+      }
+    ]
+  },
   "definitions": {
     "AnotherConfig": {
       "title": "AnotherConfig",
@@ -431,7 +429,6 @@ expression: "fs::read_to_string(file).unwrap()"
         "decimal",
         "enums",
         "fallbackEnum",
-        "flattened",
         "float32",
         "float64",
         "indexmap",
@@ -486,23 +483,6 @@ expression: "fs::read_to_string(file).unwrap()"
               "$ref": "#/definitions/FallbackEnum"
             }
           ]
-        },
-        "flattened": {
-          "description": "Flattened field...",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
         },
         "float32": {
           "type": "number"
@@ -647,7 +627,22 @@ expression: "fs::read_to_string(file).unwrap()"
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        "propertyNames": {
+          "type": "string"
+        }
+      }
     },
     "PartialAnotherConfig": {
       "title": "PartialAnotherConfig",

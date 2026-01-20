@@ -4,7 +4,10 @@
 
 #### 🚀 Updates
 
-- Added `SchemaField.flatten` field.
+- Added `#[serde(flatten)]` support to schema generation.
+  - Added `SchemaField.flatten` field.
+  - Updated `JsonSchemaRenderer` to render flattened fields as `additionalProperties`.
+  - Updated `TemplateRenderer`s to skip rendering flattened fields.
 
 ## 0.19.2
 
