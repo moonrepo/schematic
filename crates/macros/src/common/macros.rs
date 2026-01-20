@@ -3,7 +3,7 @@ use crate::utils::extract_common_attrs;
 use darling::ast::NestedMeta;
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 
 // #[serde()]
