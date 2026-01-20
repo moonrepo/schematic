@@ -3,7 +3,7 @@ use crate::utils::extract_common_attrs;
 use darling::ast::NestedMeta;
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro2::{Ident, TokenStream};
-use quote::{ToTokens, quote};
+use quote::{quote, ToTokens};
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
 
 // #[serde()]
@@ -169,6 +169,10 @@ impl<'l> Macro<'l> {
                         .variants
                         .iter()
                         .map(|variant| {
+                            if matches!(variant.fields, Fields::Named(_)) {
+                                panic!("Named enum variants are not supported.");
+                            }
+
                             let mut field = Variant::from(variant);
                             field.casing_format.clone_from(&casing_format);
                             field.tagged_format.clone_from(&tagged_format);

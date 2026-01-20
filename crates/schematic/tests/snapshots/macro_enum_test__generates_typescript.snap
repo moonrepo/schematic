@@ -40,10 +40,7 @@ export type WithSerde = string | boolean | number;
 /** Container */
 export type WithComments = 'foo' | 'bar' | 'baz';
 
-export type Untagged = null | boolean | [number, string] | SomeConfig | {
-	a: string;
-	b: string;
-};
+export type Untagged = null | boolean | [number, string] | SomeConfig;
 
 export type ExternalTagged = {
 	foo: 'foo';
@@ -105,10 +102,7 @@ export type PartialWithSerde = string | boolean | number;
 /** Container */
 export type PartialWithComments = 'foo' | 'bar' | 'baz';
 
-export type PartialUntagged = null | boolean | [number, string] | PartialSomeConfig | {
-	a: string;
-	b: string;
-};
+export type PartialUntagged = null | boolean | [number, string] | PartialSomeConfig;
 
 export type PartialExternalTagged = {
 	foo: 'foo';

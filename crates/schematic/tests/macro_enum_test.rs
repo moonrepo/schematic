@@ -115,10 +115,6 @@ enum Untagged {
     TwoTuple(usize, String),
     #[setting(nested)]
     TupleOfStruct(SomeConfig),
-    StructuredEnumVariant {
-        a: String,
-        b: String,
-    },
 }
 
 #[derive(Config)]
@@ -250,11 +246,6 @@ fn untagged_enum_deserialize_error_shows_all_variants() {
         "Error should mention 'tuple-of-struct' variant, got: {}",
         error
     );
-    assert!(
-        error.contains("structured-enum-variant"),
-        "Error should mention 'structured-enum-variant' variant, got: {}",
-        error
-    );
 }
 
 #[test]
@@ -285,14 +276,4 @@ fn untagged_enum_deserialize_success() {
     let json = r#"null"#;
     let result: PartialUntagged = serde_json::from_str(json).unwrap();
     assert!(matches!(result, PartialUntagged::Unit));
-
-    // Structured enum variant
-    let json = r#"{"a": "value_a", "b": "value_b"}"#;
-    let result: PartialUntagged = serde_json::from_str(json).unwrap();
-    if let PartialUntagged::StructuredEnumVariant { a, b } = result {
-        assert_eq!(a, "value_a".to_string());
-        assert_eq!(b, "value_b".to_string());
-    } else {
-        panic!("Expected StructuredEnumVariant variant");
-    }
 }

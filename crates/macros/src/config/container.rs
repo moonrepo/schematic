@@ -460,51 +460,7 @@ impl Container<'_> {
             let variant_name_str = variant.get_name(Some(&variant.casing_format));
 
             match &variant.value.fields {
-                Fields::Named(fields) => {
-                    // Struct-like variant with named fields: Variant { a: Type, b: Type }
-                    // We need to generate a helper struct to deserialize and then convert to the variant
-                    let field_names: Vec<_> = fields
-                        .named
-                        .iter()
-                        .map(|f| f.ident.as_ref().unwrap())
-                        .collect();
-                    let field_types: Vec<_> = fields.named.iter().map(|f| &f.ty).collect();
-
-                    let inner_types: Vec<_> = field_types
-                        .iter()
-                        .map(|ty| {
-                            if variant.is_nested() {
-                                quote! { <#ty as schematic::Config>::Partial }
-                            } else {
-                                quote! { #ty }
-                            }
-                        })
-                        .collect();
-
-                    // Create a temporary struct type name for deserialization
-                    let helper_struct_name =
-                        quote::format_ident!("__{}{}Helper", partial_name, name);
-
-                    variant_attempts.push(quote! {
-                        {
-                            // Define a helper struct that matches the variant's fields
-                            #[derive(serde::Deserialize)]
-                            struct #helper_struct_name {
-                                #(#field_names: #inner_types),*
-                            }
-
-                            let deserializer = schematic::serde_content::Deserializer::new(content.clone())
-                                .coerce_numbers()
-                                .human_readable();
-                            match <#helper_struct_name as serde::Deserialize>::deserialize(deserializer) {
-                                Ok(value) => return Ok(#partial_name::#name {
-                                    #(#field_names: value.#field_names),*
-                                }),
-                                Err(e) => errors.push((#variant_name_str, e.to_string())),
-                            }
-                        }
-                    });
-                }
+                Fields::Named(_) => unreachable!(),
                 Fields::Unnamed(fields) => {
                     let field_types: Vec<_> = fields.unnamed.iter().map(|f| &f.ty).collect();
 

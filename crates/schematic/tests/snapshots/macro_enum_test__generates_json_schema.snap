@@ -640,22 +640,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "$ref": "#/definitions/PartialSomeConfig"
-        },
-        {
-          "type": "object",
-          "required": [
-            "a",
-            "b"
-          ],
-          "properties": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
         }
       ]
     },
@@ -724,22 +708,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "$ref": "#/definitions/SomeConfig"
-        },
-        {
-          "type": "object",
-          "required": [
-            "a",
-            "b"
-          ],
-          "properties": {
-            "a": {
-              "type": "string"
-            },
-            "b": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
         }
       ]
     },

@@ -1,25 +1,14 @@
 use crate::common::Variant;
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
-use syn::{Fields, FieldsNamed, FieldsUnnamed};
+use syn::{Fields, FieldsUnnamed};
 
 impl Variant<'_> {
     pub fn generate_default_value(&self) -> TokenStream {
         let name = &self.name;
 
         match &self.value.fields {
-            Fields::Named(fields) => {
-                let field_defaults = fields
-                    .named
-                    .iter()
-                    .map(|f| {
-                        let field_name = f.ident.as_ref().unwrap();
-                        quote! { #field_name: Default::default() }
-                    })
-                    .collect::<Vec<_>>();
-
-                quote! { #name { #(#field_defaults),* } }
-            }
+            Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
                 let fields = fields
                     .unnamed
@@ -39,24 +28,7 @@ impl Variant<'_> {
         let name = &self.name;
 
         match &self.value.fields {
-            Fields::Named(fields) => {
-                if !self.is_nested() {
-                    return None;
-                }
-
-                Some(self.map_named_match(self.name, fields, |field_names| {
-                    let stmts = field_names
-                        .iter()
-                        .map(|f| {
-                            quote! { #f: #f.finalize(context)? }
-                        })
-                        .collect::<Vec<_>>();
-
-                    quote! {
-                        Self::#name { #(#stmts),* }
-                    }
-                }))
-            }
+            Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
                 if !self.is_nested() {
                     return None;
@@ -84,43 +56,7 @@ impl Variant<'_> {
         let args = &self.args;
 
         match &self.value.fields {
-            Fields::Named(fields) => {
-                if self.is_nested() {
-                    if args.merge.is_some() {
-                        panic!("Nested variants do not support `merge`.");
-                    }
-
-                    return Some(self.map_named_match(self.name, fields, |field_names| {
-                        let inner_names: Vec<_> = field_names
-                            .iter()
-                            .map(|f| format_ident!("{}_inner", f))
-                            .collect();
-
-                        let merge_stmts = field_names
-                            .iter()
-                            .zip(inner_names.iter())
-                            .map(|(outer, inner)| {
-                                quote! { #outer.merge(context, #inner)?; }
-                            })
-                            .collect::<Vec<_>>();
-
-                        quote! {
-                            if let Self::#name { #(#field_names: #inner_names),* } = next {
-                                #(#merge_stmts)*
-                            } else {
-                                *self = next;
-                            }
-                        }
-                    }));
-                }
-
-                // Named fields don't support custom merge functions
-                if args.merge.is_some() {
-                    panic!("Named field variants do not support custom `merge` functions.");
-                }
-
-                None
-            }
+            Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
                 if self.is_nested() {
                     if args.merge.is_some() {
@@ -276,31 +212,7 @@ impl Variant<'_> {
         let name = &self.name;
 
         match &self.value.fields {
-            Fields::Named(fields) => {
-                let field_names: Vec<_> = fields
-                    .named
-                    .iter()
-                    .map(|f| f.ident.as_ref().unwrap())
-                    .collect();
-
-                let stmts: Vec<_> = fields
-                    .named
-                    .iter()
-                    .map(|f| {
-                        let field_name = f.ident.as_ref().unwrap();
-                        let ty = &f.ty;
-                        if self.is_nested() {
-                            quote! { #field_name: #ty::from_partial(#field_name) }
-                        } else {
-                            quote! { #field_name }
-                        }
-                    })
-                    .collect();
-
-                quote! {
-                    #partial_name::#name { #(#field_names),* } => Self::#name { #(#stmts),* },
-                }
-            }
+            Fields::Named(_) => unreachable!(),
             Fields::Unnamed(fields) => {
                 self.map_unnamed_match_custom(self.name, partial_name, fields, |outer_names, _| {
                     let stmts = outer_names
@@ -327,25 +239,6 @@ impl Variant<'_> {
                     #partial_name::#name => Self::#name,
                 }
             }
-        }
-    }
-
-    fn map_named_match<F>(&self, name: &Ident, fields: &FieldsNamed, factory: F) -> TokenStream
-    where
-        F: FnOnce(&[&Ident]) -> TokenStream,
-    {
-        let field_names: Vec<_> = fields
-            .named
-            .iter()
-            .map(|f| f.ident.as_ref().unwrap())
-            .collect();
-
-        let inner = factory(&field_names);
-
-        quote! {
-            Self::#name { #(#field_names),* } => {
-                #inner
-            },
         }
     }
 
