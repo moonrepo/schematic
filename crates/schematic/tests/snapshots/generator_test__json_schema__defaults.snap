@@ -14,6 +14,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "decimal",
     "enums",
     "fallbackEnum",
+    "flattened",
     "float32",
     "float64",
     "indexmap",
@@ -68,6 +69,23 @@ expression: "fs::read_to_string(file).unwrap()"
           "$ref": "#/definitions/FallbackEnum"
         }
       ]
+    },
+    "flattened": {
+      "description": "Flattened field...",
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      },
+      "propertyNames": {
+        "type": "string"
+      }
     },
     "float32": {
       "type": "number"

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `SchemaField.flatten` field.
+
 ## 0.19.2
 
 #### ⚙️ Internal

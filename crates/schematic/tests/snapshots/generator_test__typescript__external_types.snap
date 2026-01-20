@@ -43,6 +43,8 @@ export interface GenConfig {
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
 	fallbackEnum: FallbackEnum;
+	/** Flattened field... */
+	flattened: Record<string, unknown>;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;

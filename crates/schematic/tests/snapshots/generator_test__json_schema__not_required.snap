@@ -40,6 +40,23 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
+    "flattened": {
+      "description": "Flattened field...",
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      },
+      "propertyNames": {
+        "type": "string"
+      }
+    },
     "float32": {
       "type": "number"
     },

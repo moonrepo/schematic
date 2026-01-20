@@ -144,6 +144,7 @@ expression: "create_diff::<Untagged>()"
 ⬛️                                    },
 ⬛️                                    deprecated: None,
 ⬛️                                    env_var: None,
+⬛️                                    flatten: false,
 ⬛️                                    hidden: false,
 🟥                                    nullable: false,
 🟥                                    optional: false,
