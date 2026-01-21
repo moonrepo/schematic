@@ -27,8 +27,10 @@ export interface AnotherConfig {
 	opt: string | null;
 }
 
+export interface GenConfigFlattened { [key: string]: Record<string, unknown> }
+
 /** @deprecated */
-export interface GenConfig {
+export interface GenConfigBase {
 	boolean: boolean;
 	date: string;
 	datetime: string;
@@ -45,8 +47,6 @@ export interface GenConfig {
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
 	fallbackEnum: FallbackEnum;
-	/** Flattened field... */
-	flattened: Record<string, unknown>;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
@@ -71,3 +71,5 @@ export interface GenConfig {
 	versionReq: string;
 	yamlValue: unknown;
 }
+
+export type GenConfig = GenConfigBase & GenConfigFlattened;

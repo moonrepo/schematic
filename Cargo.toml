@@ -4,6 +4,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 chrono = "0.4.42"
+convert_case = "0.10.0"
 indexmap = "2.13.0"
 miette = "7.6.0"
 regex = "1.12.2"

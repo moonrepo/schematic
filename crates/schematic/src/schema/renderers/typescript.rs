@@ -1,4 +1,5 @@
 use crate::schema::{RenderResult, SchemaRenderer};
+use convert_case::{Case, Casing};
 use indexmap::IndexMap;
 use schematic_types::*;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -154,13 +155,7 @@ impl TypeScriptRenderer {
         Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
     }
 
-    fn export_object_type(
-        &mut self,
-        name: &str,
-        structure: &StructType,
-        schema: &Schema,
-    ) -> RenderResult {
-        let value = self.render_struct(structure, schema)?;
+    fn export_object_type(&mut self, name: &str, schema: &Schema, value: String) -> RenderResult {
         let mut tags = vec![];
 
         let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
@@ -178,6 +173,58 @@ impl TypeScriptRenderer {
         }
 
         Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
+    }
+
+    fn export_object_types(
+        &mut self,
+        name: &str,
+        structure: &StructType,
+        schema: &Schema,
+    ) -> RenderResult<Vec<String>> {
+        let mut outputs = vec![];
+        let mut extends = vec![];
+
+        // Extract flattened fields first as we'll need to use intersections
+        // to support them correctly in TypeScript
+        for (field_name, field) in &structure.fields {
+            if field.flatten {
+                let name = format!(
+                    "{name}{}",
+                    field_name.from_case(Case::Snake).to_case(Case::Pascal)
+                );
+                let value = self.render_schema(&field.schema)?;
+
+                outputs.push(self.export_object_type(
+                    &name,
+                    &field.schema,
+                    format!("{{ [key: string]: {value} }}"),
+                )?);
+                extends.push(name);
+            }
+        }
+
+        let value = self.render_struct(structure, schema)?;
+
+        // If nothing to extend then we can render this as either an
+        // interface or a type alias, depending on the option
+        if extends.is_empty() {
+            outputs.push(self.export_object_type(name, schema, value)?);
+        }
+        // Otherwise we need to render the struct as a "base" type
+        // and then create a parent type alias thats an intersection
+        // of all the extended types
+        else {
+            let base_name = format!("{name}Base");
+
+            outputs.push(self.export_object_type(&base_name, schema, value)?);
+
+            extends.push(base_name);
+            extends.reverse();
+
+            outputs.push(self.export_type_alias(name, extends.join(" & "))?)
+        }
+
+        Ok(outputs)
     }
 
     fn render_enum_as_string_union(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult {
@@ -471,6 +518,11 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         };
 
         for (name, field) in &structure.fields {
+            // Handle in `export_object_types`
+            if field.flatten {
+                continue;
+            }
+
             if !exclude_aliases {
                 for alias in &field.aliases {
                     create_row(alias, field)?;
@@ -538,14 +590,18 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 continue;
             }
 
-            outputs.push(match &schema.ty {
-                SchemaType::Enum(inner) => self.export_enum_type(name, inner, schema)?,
-                SchemaType::Struct(inner) => self.export_object_type(name, inner, schema)?,
+            match &schema.ty {
+                SchemaType::Enum(inner) => {
+                    outputs.push(self.export_enum_type(name, inner, schema)?)
+                }
+                SchemaType::Struct(inner) => {
+                    outputs.extend(self.export_object_types(name, inner, schema)?);
+                }
                 _ => {
                     let out = self.render_schema_without_reference(schema)?;
-                    self.export_type_alias(name, out)?
+                    outputs.push(self.export_type_alias(name, out)?);
                 }
-            });
+            };
         }
 
         Ok(outputs.join("\n\n"))

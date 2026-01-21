@@ -33,7 +33,9 @@ export const enum Aliased {
 	Baz,
 }
 
-export type ValueTypes = {
+export type ValueTypesRest = { [key: string]: Record<string, unknown> };
+
+export type ValueTypesBase = {
 	boolean: boolean,
 	/**
 	 * @default 'a'
@@ -42,11 +44,12 @@ export type ValueTypes = {
 	enums: SomeEnum,
 	map: Record<string, number>,
 	number: number,
-	rest: Record<string, unknown>,
 	s3_value: string,
 	string: string,
 	vector: string[],
 };
+
+export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
 export type OptionalValues = {
 	optional: string | null,
@@ -194,17 +197,20 @@ export type PartialDefaultValues = {
 	vector?: number[] | null,
 };
 
-export type PartialValueTypes = {
+export type PartialValueTypesRest = { [key: string]: Record<string, unknown> | null };
+
+export type PartialValueTypesBase = {
 	boolean?: boolean | null,
 	/** @default 'a' */
 	enums?: SomeEnum | null,
 	map?: Record<string, number> | null,
 	number?: number | null,
-	rest?: Record<string, unknown> | null,
 	s3_value?: string | null,
 	string?: string | null,
 	vector?: string[] | null,
 };
+
+export type PartialValueTypes = PartialValueTypesBase & PartialValueTypesRest;
 
 export type PartialNested = {
 	list?: PartialValueTypes[] | null,

@@ -1897,6 +1897,7 @@ name = "schematic"
 version = "0.19.2"
 dependencies = [
  "chrono",
+ "convert_case",
  "derive_more",
  "garde",
  "indexmap",

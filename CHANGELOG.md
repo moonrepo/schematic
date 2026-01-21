@@ -7,7 +7,10 @@
 - Added `#[serde(flatten)]` support to schema generation.
   - Added `SchemaField.flatten` field.
   - Updated `JsonSchemaRenderer` to render flattened fields as `additionalProperties`.
+  - Updated `TypeScriptRenderer` to render flattened fields as index signatures & intersection
+    types.
   - Updated `TemplateRenderer`s to skip rendering flattened fields.
+- Updated `#[serde(untagged)]` enums to render better error messages based on the variant types.
 
 ## 0.19.2
 
