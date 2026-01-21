@@ -109,12 +109,12 @@ enum WithComments {
 #[derive(Config)]
 #[config(serde(untagged, expecting = "something"))]
 enum Untagged {
-    Foo,
-    Bar(bool),
+    Unit,
+    OneTuple(bool),
     #[setting(rename = "bazzer")]
-    Baz(usize, String),
+    TwoTuple(usize, String),
     #[setting(nested)]
-    Qux(SomeConfig),
+    TupleOfStruct(SomeConfig),
 }
 
 #[derive(Config)]
@@ -206,4 +206,74 @@ fn generates_typescript() {
 
     assert!(file.exists());
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
+}
+
+#[test]
+fn untagged_enum_deserialize_error_shows_all_variants() {
+    // Try to deserialize a value that doesn't match any variant of the untagged enum
+    // The error message should list all variant errors
+    let json = r#""invalid_string_value""#;
+    let result: Result<PartialUntagged, _> = serde_json::from_str(json);
+
+    assert!(result.is_err());
+    let error = result.unwrap_err().to_string();
+
+    // Verify the error message contains the expected format
+    assert!(
+        error.contains("failed to parse as any variant of PartialUntagged"),
+        "Error should contain 'failed to parse as any variant of PartialUntagged', got: {}",
+        error
+    );
+
+    // Verify that variant names are listed in the error
+    assert!(
+        error.contains("unit"),
+        "Error should mention 'unit' variant, got: {}",
+        error
+    );
+    assert!(
+        error.contains("one-tuple"),
+        "Error should mention 'one-tuple' variant, got: {}",
+        error
+    );
+    assert!(
+        error.contains("bazzer"),
+        "Error should mention 'bazzer' variant (renamed), got: {}",
+        error
+    );
+    assert!(
+        error.contains("tuple-of-struct"),
+        "Error should mention 'tuple-of-struct' variant, got: {}",
+        error
+    );
+}
+
+#[test]
+fn untagged_enum_deserialize_success() {
+    // Test successful deserialization of each variant type
+
+    // Boolean variant
+    let json = r#"true"#;
+    let result: PartialUntagged = serde_json::from_str(json).unwrap();
+    assert!(matches!(result, PartialUntagged::OneTuple(true)));
+
+    // Tuple variant (usize, String)
+    let json = r#"[42, "hello"]"#;
+    let result: PartialUntagged = serde_json::from_str(json).unwrap();
+    assert!(matches!(result, PartialUntagged::TwoTuple(42, ref s) if s == "hello"));
+
+    // Nested config variant
+    let json = r#"{"foo": "test", "bar": 123}"#;
+    let result: PartialUntagged = serde_json::from_str(json).unwrap();
+    if let PartialUntagged::TupleOfStruct(config) = result {
+        assert_eq!(config.foo, Some("test".to_string()));
+        assert_eq!(config.bar, Some(123));
+    } else {
+        panic!("Expected Qux variant");
+    }
+
+    // Unit variant
+    let json = r#"null"#;
+    let result: PartialUntagged = serde_json::from_str(json).unwrap();
+    assert!(matches!(result, PartialUntagged::Unit));
 }

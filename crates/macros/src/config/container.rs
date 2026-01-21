@@ -367,6 +367,7 @@ impl Container<'_> {
         &self,
         partial_name: &Ident,
         partial_attrs: &[TokenStream],
+        is_untagged: bool,
     ) -> TokenStream {
         match self {
             Self::NamedStruct {
@@ -405,18 +406,157 @@ impl Container<'_> {
                     quote! { panic!("No variant has been marked as default!"); }
                 };
 
-                quote! {
-                    #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
-                    #(#partial_attrs)*
-                    pub enum #partial_name {
-                        #(#variants)*
-                    }
+                if is_untagged {
+                    // For untagged enums, generate custom Deserialize that collects all errors
+                    let deserialize_impl =
+                        self.generate_untagged_deserialize(partial_name, variants);
 
-                    impl Default for #partial_name {
-                        fn default() -> Self {
-                            #default_impl
+                    quote! {
+                        #[derive(Clone, Debug, PartialEq, serde::Serialize)]
+                        #(#partial_attrs)*
+                        pub enum #partial_name {
+                            #(#variants)*
+                        }
+
+                        impl Default for #partial_name {
+                            fn default() -> Self {
+                                #default_impl
+                            }
+                        }
+
+                        #deserialize_impl
+                    }
+                } else {
+                    quote! {
+                        #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+                        #(#partial_attrs)*
+                        pub enum #partial_name {
+                            #(#variants)*
+                        }
+
+                        impl Default for #partial_name {
+                            fn default() -> Self {
+                                #default_impl
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    fn generate_untagged_deserialize(
+        &self,
+        partial_name: &Ident,
+        variants: &[crate::common::Variant<'_>],
+    ) -> TokenStream {
+        use syn::Fields;
+
+        // Generate a deserialize attempt for each variant
+        let mut variant_attempts = vec![];
+
+        for variant in variants {
+            let name = &variant.name;
+            let variant_name_str = variant.get_name(Some(&variant.casing_format));
+
+            match &variant.value.fields {
+                Fields::Named(_) => unreachable!(),
+                Fields::Unnamed(fields) => {
+                    let field_types: Vec<_> = fields.unnamed.iter().map(|f| &f.ty).collect();
+
+                    if field_types.len() == 1 {
+                        let ty = &field_types[0];
+                        // Check if this is a nested variant
+                        let inner_ty = if variant.is_nested() {
+                            quote! { <#ty as schematic::Config>::Partial }
+                        } else {
+                            quote! { #ty }
+                        };
+
+                        variant_attempts.push(quote! {
+                            {
+                                let deserializer = schematic::serde_content::Deserializer::new(content.clone())
+                                    .coerce_numbers()
+                                    .human_readable();
+                                match <#inner_ty as serde::Deserialize>::deserialize(deserializer) {
+                                    Ok(value) => return Ok(#partial_name::#name(value)),
+                                    Err(e) => errors.push((#variant_name_str, e.to_string())),
+                                }
+                            }
+                        });
+                    } else {
+                        // Tuple variant with multiple fields
+                        let inner_types: Vec<_> = field_types
+                            .iter()
+                            .map(|ty| {
+                                if variant.is_nested() {
+                                    quote! { <#ty as schematic::Config>::Partial }
+                                } else {
+                                    quote! { #ty }
+                                }
+                            })
+                            .collect();
+
+                        // Generate field accessors: value.0, value.1, value.2, etc.
+                        let field_accessors: Vec<_> = (0..field_types.len())
+                            .map(|i| {
+                                let idx = syn::Index::from(i);
+                                quote! { value.#idx }
+                            })
+                            .collect();
+
+                        variant_attempts.push(quote! {
+                            {
+                                let deserializer = schematic::serde_content::Deserializer::new(content.clone())
+                                    .coerce_numbers()
+                                    .human_readable();
+                                match <(#(#inner_types),*) as serde::Deserialize>::deserialize(deserializer) {
+                                    Ok(value) => return Ok(#partial_name::#name(#(#field_accessors),*)),
+                                    Err(e) => errors.push((#variant_name_str, e.to_string())),
+                                }
+                            }
+                        });
+                    }
+                }
+                Fields::Unit => {
+                    // Unit variants in untagged enums are serialized as null
+                    variant_attempts.push(quote! {
+                        {
+                            let deserializer = schematic::serde_content::Deserializer::new(content.clone())
+                                .coerce_numbers()
+                                .human_readable();
+                            match <() as serde::Deserialize>::deserialize(deserializer) {
+                                Ok(_) => return Ok(#partial_name::#name),
+                                Err(e) => errors.push((#variant_name_str, e.to_string())),
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        quote! {
+            impl<'de> serde::Deserialize<'de> for #partial_name {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: serde::Deserializer<'de>,
+                {
+                    use serde::de::Error as _;
+
+                    // Buffer the content so we can try deserializing it multiple ways
+                    let content = deserializer.deserialize_any(schematic::serde_content::ValueVisitor)?;
+
+                    let mut errors: Vec<(&str, String)> = Vec::new();
+
+                    #(#variant_attempts)*
+
+                    // All variants failed, build the combined error message
+                    let mut error_msg = format!("failed to parse as any variant of {}:", stringify!(#partial_name));
+                    for (variant_name, error) in &errors {
+                        error_msg.push_str(&format!("\n- {}: {}", variant_name, error));
+                    }
+
+                    Err(D::Error::custom(error_msg))
                 }
             }
         }

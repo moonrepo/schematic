@@ -296,4 +296,8 @@ impl<'l> Macro<'l> {
 
         attrs
     }
+
+    pub fn is_untagged(&self) -> bool {
+        self.args.serde.untagged || self.serde_args.untagged
+    }
 }
