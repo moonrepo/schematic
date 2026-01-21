@@ -17,6 +17,18 @@ impl Container<'_> {
         }
     }
 
+    pub fn has_non_nullable_required(&self) -> bool {
+        match self {
+            Self::NamedStruct { fields } => {
+                fields.iter().any(|v| !v.is_nullable() && v.is_required())
+            }
+            Self::UnnamedStruct { fields } => {
+                fields.iter().any(|v| !v.is_nullable() && v.is_required())
+            }
+            Self::Enum { variants } => variants.iter().any(|v| v.is_required()),
+        }
+    }
+
     pub fn generate_settings_metadata(&self) -> TokenStream {
         let mut settings = vec![];
 

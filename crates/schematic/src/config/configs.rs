@@ -83,7 +83,12 @@ pub trait Config: Sized + Schematic {
     type Partial: PartialConfig;
 
     /// Convert a partial configuration into a full configuration, with all values populated.
-    fn from_partial(partial: Self::Partial) -> Self;
+    ///
+    /// # Errors
+    ///
+    /// If the partial configuration is missing required values, an error is
+    /// returned.
+    fn from_partial(partial: Self::Partial) -> Result<Self, ConfigError>;
 
     /// Return a map of all settings and their metadata for the configuration.
     fn settings() -> ConfigSettingMap {
