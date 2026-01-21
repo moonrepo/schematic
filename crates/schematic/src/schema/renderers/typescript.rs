@@ -158,8 +158,9 @@ impl TypeScriptRenderer {
     fn export_object_type(&mut self, name: &str, schema: &Schema, value: String) -> RenderResult {
         let mut tags = vec![];
 
-        let output = if !value.contains(" & ")
-            && matches!(self.options.object_format, ObjectFormat::Interface)
+        let output = if matches!(self.options.object_format, ObjectFormat::Interface)
+            && value.starts_with('{')
+            && value.ends_with('}')
         {
             format!("export interface {name} {value}")
         } else {
@@ -189,18 +190,16 @@ impl TypeScriptRenderer {
         // Extract flattened fields first as we'll need to use intersections
         // to support them correctly in TypeScript
         for (field_name, field) in &structure.fields {
-            if field.flatten {
+            if field.flatten
+                && let Some(schema) = field.schema.get_nonnull_schema()
+            {
                 let name = format!(
                     "{name}{}",
                     field_name.from_case(Case::Snake).to_case(Case::Pascal)
                 );
-                let value = self.render_schema(&field.schema)?;
+                let value = self.render_schema(schema)?;
 
-                outputs.push(self.export_object_type(
-                    &name,
-                    &field.schema,
-                    format!("{{ [key: string]: {value} }}"),
-                )?);
+                outputs.push(self.export_object_type(&name, &field.schema, value)?);
                 extends.push(name);
             }
         }

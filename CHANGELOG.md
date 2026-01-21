@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an incorrect double nested object for flattened fields.
+
 ## 0.19.3
 
 #### 🚀 Updates

@@ -23,7 +23,7 @@ export interface AnotherConfig {
 	opt: string | null;
 }
 
-export interface GenConfigFlattened { [key: string]: Record<string, unknown> }
+export type GenConfigFlattened = Record<string, unknown>;
 
 /** @deprecated */
 export interface GenConfigBase {
@@ -83,7 +83,7 @@ export interface PartialAnotherConfig {
 	opt?: string | null;
 }
 
-export interface PartialGenConfigFlattened { [key: string]: Record<string, unknown> | null }
+export type PartialGenConfigFlattened = Record<string, unknown>;
 
 /** @deprecated */
 export interface PartialGenConfigBase {

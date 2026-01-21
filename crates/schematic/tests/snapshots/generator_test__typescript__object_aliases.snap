@@ -23,7 +23,7 @@ export type AnotherConfig = {
 	opt: string | null,
 };
 
-export type GenConfigFlattened = { [key: string]: Record<string, unknown> };
+export type GenConfigFlattened = Record<string, unknown>;
 
 /** @deprecated */
 export type GenConfigBase = {

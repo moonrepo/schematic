@@ -33,7 +33,7 @@ export const enum Aliased {
 	Baz,
 }
 
-export type ValueTypesRest = { [key: string]: Record<string, unknown> };
+export type ValueTypesRest = Record<string, unknown>;
 
 export type ValueTypesBase = {
 	boolean: boolean,
@@ -197,7 +197,7 @@ export type PartialDefaultValues = {
 	vector?: number[] | null,
 };
 
-export type PartialValueTypesRest = { [key: string]: Record<string, unknown> | null };
+export type PartialValueTypesRest = Record<string, unknown>;
 
 export type PartialValueTypesBase = {
 	boolean?: boolean | null,
