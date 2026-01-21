@@ -184,20 +184,14 @@ expression: "fs::read_to_string(file).unwrap()"
     }
   },
   "additionalProperties": {
-    "type": "object",
-    "additionalProperties": {
-      "type": [
-        "boolean",
-        "object",
-        "array",
-        "number",
-        "string",
-        "integer"
-      ]
-    },
-    "propertyNames": {
-      "type": "string"
-    }
+    "type": [
+      "boolean",
+      "object",
+      "array",
+      "number",
+      "string",
+      "integer"
+    ]
   },
   "definitions": {
     "AnotherConfig": {

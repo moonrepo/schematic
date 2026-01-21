@@ -438,7 +438,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
-        let mut additional_properties = JsonSchema::Bool(false);
+        let mut additional_properties = Some(Box::new(JsonSchema::Bool(false)));
         let exclude_aliases = self.options.exclude_aliases;
 
         for (name, field) in &structure.fields {
@@ -448,7 +448,16 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
 
             if field.flatten {
                 if let Some(schema) = field.schema.get_nonnull_schema() {
-                    additional_properties = self.render_schema_without_reference(schema)?;
+                    let flattened = self.render_schema_without_reference(schema)?;
+
+                    if matches!(schema.ty, SchemaType::Object(_))
+                        && let JsonSchema::Object(inner) = flattened.clone()
+                        && let Some(object) = inner.object
+                    {
+                        additional_properties = object.additional_properties;
+                    } else {
+                        additional_properties = Some(Box::new(flattened));
+                    }
                 }
 
                 continue;
@@ -474,7 +483,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             object: Some(Box::new(ObjectValidation {
-                additional_properties: Some(Box::new(additional_properties)),
+                additional_properties,
                 required,
                 properties,
                 ..Default::default()
