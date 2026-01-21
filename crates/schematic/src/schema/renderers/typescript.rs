@@ -158,7 +158,9 @@ impl TypeScriptRenderer {
     fn export_object_type(&mut self, name: &str, schema: &Schema, value: String) -> RenderResult {
         let mut tags = vec![];
 
-        let output = if matches!(self.options.object_format, ObjectFormat::Interface) {
+        let output = if !value.contains(" & ")
+            && matches!(self.options.object_format, ObjectFormat::Interface)
+        {
             format!("export interface {name} {value}")
         } else {
             self.export_type_alias(name, value)?
@@ -221,7 +223,7 @@ impl TypeScriptRenderer {
             extends.push(base_name);
             extends.reverse();
 
-            outputs.push(self.export_type_alias(name, extends.join(" & "))?)
+            outputs.push(self.export_object_type(name, schema, extends.join(" & "))?)
         }
 
         Ok(outputs)

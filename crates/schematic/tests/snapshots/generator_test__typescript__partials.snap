@@ -68,6 +68,7 @@ export interface GenConfigBase {
 	yamlValue: unknown;
 }
 
+/** @deprecated */
 export type GenConfig = GenConfigBase & GenConfigFlattened;
 
 /** Some comment. */
@@ -123,4 +124,5 @@ export interface PartialGenConfigBase {
 	yamlValue?: unknown | null;
 }
 
+/** @deprecated */
 export type PartialGenConfig = PartialGenConfigBase & PartialGenConfigFlattened;
