@@ -25,7 +25,7 @@ export interface AnotherConfig {
 	opt: string | null;
 }
 
-export interface GenConfigFlattened { [key: string]: Record<string, unknown> }
+export type GenConfigFlattened = Record<string, unknown>;
 
 /** @deprecated */
 export interface GenConfigBase {

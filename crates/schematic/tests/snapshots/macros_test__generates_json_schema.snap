@@ -835,27 +835,20 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       },
       "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "object",
-            "additionalProperties": {
-              "type": [
-                "boolean",
-                "object",
-                "array",
-                "number",
-                "string",
-                "integer"
-              ]
-            },
-            "propertyNames": {
-              "type": "string"
-            }
-          },
-          {
-            "type": "null"
-          }
-        ]
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        "propertyNames": {
+          "type": "string"
+        }
       }
     },
     "Serde": {

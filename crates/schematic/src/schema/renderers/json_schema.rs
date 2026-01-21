@@ -447,7 +447,10 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             }
 
             if field.flatten {
-                additional_properties = self.render_schema_without_reference(&field.schema)?;
+                if let Some(schema) = field.schema.get_nonnull_schema() {
+                    additional_properties = self.render_schema_without_reference(schema)?;
+                }
+
                 continue;
             }
 

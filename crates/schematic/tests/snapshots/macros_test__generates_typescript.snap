@@ -16,7 +16,7 @@ export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
 
 export type Aliased = 'foo' | 'bar' | 'baz';
 
-export interface ValueTypesRest { [key: string]: Record<string, unknown> }
+export type ValueTypesRest = Record<string, unknown>;
 
 export interface ValueTypesBase {
 	boolean: boolean;
@@ -180,7 +180,7 @@ export interface PartialDefaultValues {
 	vector?: number[] | null;
 }
 
-export interface PartialValueTypesRest { [key: string]: Record<string, unknown> | null }
+export type PartialValueTypesRest = Record<string, unknown>;
 
 export interface PartialValueTypesBase {
 	boolean?: boolean | null;
