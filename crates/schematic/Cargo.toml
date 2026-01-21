@@ -38,6 +38,7 @@ regex = { workspace = true, optional = true }
 semver = { workspace = true, optional = true }
 
 # schema
+convert_case = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
@@ -72,7 +73,7 @@ config = [
 	"dep:starbase_styles",
 	"schematic_macros/config",
 ]
-schema = ["dep:indexmap", "schematic_macros/schema"]
+schema = ["dep:convert_case", "dep:indexmap", "schematic_macros/schema"]
 schema_serde = ["schema", "schematic_types/serde"]
 tracing = ["schematic_macros/tracing"]
 

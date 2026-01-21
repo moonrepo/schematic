@@ -86,15 +86,10 @@ expression: "create_diff::<NestedMap>()"
 🟩                                        ty: Object(
 🟩                                            ObjectType {
 🟩                                                key_type: Schema {
-⬛️                                                    deprecated: None,
-🟥                                                    env_var: None,
-🟥                                                    hidden: false,
+🟩                                                    deprecated: None,
 🟩                                                    description: None,
 🟩                                                    name: None,
-⬛️                                                    nullable: false,
-🟥                                                    optional: false,
-🟥                                                    read_only: false,
-🟥                                                    write_only: false,
+🟩                                                    nullable: false,
 🟩                                                    ty: String(
 🟩                                                        StringType {
 🟩                                                            default: None,
@@ -110,12 +105,18 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                min_length: None,
 🟩                                                required: None,
 🟩                                                value_type: Schema {
-🟩                                                    deprecated: None,
+⬛️                                                    deprecated: None,
+🟥                                                    env_var: None,
+🟥                                                    flatten: false,
+🟥                                                    hidden: false,
 🟩                                                    description: None,
 🟩                                                    name: Some(
 🟩                                                        "PartialBasic",
 🟩                                                    ),
-🟩                                                    nullable: false,
+⬛️                                                    nullable: false,
+🟥                                                    optional: false,
+🟥                                                    read_only: false,
+🟥                                                    write_only: false,
 🟩                                                    ty: Struct(
 🟩                                                        StructType {
 🟩                                                            fields: {
@@ -162,6 +163,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                                    },
 🟩                                                                    deprecated: None,
 🟩                                                                    env_var: None,
+🟩                                                                    flatten: false,
 🟩                                                                    hidden: false,
 🟩                                                                    nullable: true,
 🟩                                                                    optional: true,
@@ -195,6 +197,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
+⬛️                    flatten: false,
 ⬛️                    hidden: false,
 🟥                    nullable: false,
 🟥                    optional: false,
@@ -310,6 +313,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                                                                    },
 ⬛️                                                                    deprecated: None,
 ⬛️                                                                    env_var: None,
+⬛️                                                                    flatten: false,
 ⬛️                                                                    hidden: false,
 🟥                                                                    nullable: false,
 🟥                                                                    optional: false,
@@ -340,6 +344,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                    },
 ⬛️                    deprecated: None,
 ⬛️                    env_var: None,
+⬛️                    flatten: false,
 ⬛️                    hidden: false,
 ⬛️                    nullable: true,
 🟥                    optional: false,

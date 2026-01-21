@@ -438,10 +438,16 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
+        let mut additional_properties = JsonSchema::Bool(false);
         let exclude_aliases = self.options.exclude_aliases;
 
         for (name, field) in &structure.fields {
             if field.hidden {
+                continue;
+            }
+
+            if field.flatten {
+                additional_properties = self.render_schema_without_reference(&field.schema)?;
                 continue;
             }
 
@@ -465,7 +471,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
             object: Some(Box::new(ObjectValidation {
-                additional_properties: Some(Box::new(JsonSchema::Bool(false))),
+                additional_properties: Some(Box::new(additional_properties)),
                 required,
                 properties,
                 ..Default::default()

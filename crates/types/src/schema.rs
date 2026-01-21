@@ -259,6 +259,9 @@ pub struct SchemaField {
     pub env_var: Option<String>,
 
     #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    pub flatten: bool,
+
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub hidden: bool,
 
     #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]

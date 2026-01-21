@@ -16,7 +16,9 @@ export type OtherEnum = 'foo' | 'bar' | 'baz' | string;
 
 export type Aliased = 'foo' | 'bar' | 'baz';
 
-export interface ValueTypes {
+export interface ValueTypesRest { [key: string]: Record<string, unknown> }
+
+export interface ValueTypesBase {
 	boolean: boolean;
 	/**
 	 * @default 'a'
@@ -25,11 +27,12 @@ export interface ValueTypes {
 	enums: SomeEnum;
 	map: Record<string, number>;
 	number: number;
-	rest: Record<string, unknown>;
 	s3_value: string;
 	string: string;
 	vector: string[];
 }
+
+export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
 export interface OptionalValues {
 	optional: string | null;
@@ -177,17 +180,20 @@ export interface PartialDefaultValues {
 	vector?: number[] | null;
 }
 
-export interface PartialValueTypes {
+export interface PartialValueTypesRest { [key: string]: Record<string, unknown> | null }
+
+export interface PartialValueTypesBase {
 	boolean?: boolean | null;
 	/** @default 'a' */
 	enums?: SomeEnum | null;
 	map?: Record<string, number> | null;
 	number?: number | null;
-	rest?: Record<string, unknown> | null;
 	s3_value?: string | null;
 	string?: string | null;
 	vector?: string[] | null;
 }
+
+export type PartialValueTypes = PartialValueTypesBase & PartialValueTypesRest;
 
 export interface PartialNested {
 	list?: PartialValueTypes[] | null;

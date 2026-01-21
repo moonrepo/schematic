@@ -23,8 +23,10 @@ export interface AnotherConfig {
 	opt: string | null;
 }
 
+export interface GenConfigFlattened { [key: string]: Record<string, unknown> }
+
 /** @deprecated */
-export interface GenConfig {
+export interface GenConfigBase {
 	boolean: boolean;
 	date: string;
 	datetime: string;
@@ -65,3 +67,6 @@ export interface GenConfig {
 	versionReq: string;
 	yamlValue: unknown;
 }
+
+/** @deprecated */
+export type GenConfig = GenConfigBase & GenConfigFlattened;

@@ -57,6 +57,9 @@ struct GenConfig {
     /// **Nested** field.
     #[setting(nested)]
     nested: AnotherConfig,
+    /// Flattened field...
+    #[setting(flatten)]
+    flattened: HashMap<String, serde_json::Value>,
 
     // Types
     date: chrono::NaiveDate,

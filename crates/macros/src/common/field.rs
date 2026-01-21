@@ -119,6 +119,11 @@ impl Field<'_> {
         self.args.extend
     }
 
+    #[cfg(feature = "schema")]
+    pub fn is_flatten(&self) -> bool {
+        self.serde_args.flatten || self.args.flatten
+    }
+
     pub fn is_nested(&self) -> bool {
         self.args.nested
     }
@@ -260,6 +265,7 @@ impl Field<'_> {
 
         let aliases = map_vec_field_quote("aliases", self.get_aliases());
         let hidden = map_bool_field_quote("hidden", self.is_skipped());
+        let flatten = map_bool_field_quote("flatten", self.is_flatten());
         let nullable = map_bool_field_quote("nullable", self.is_nullable());
         let optional = map_bool_field_quote("optional", self.is_optional());
         let comment = map_option_field_quote("comment", extract_comment(&self.attrs));
@@ -305,6 +311,7 @@ impl Field<'_> {
                 && comment.is_none()
                 && deprecated.is_none()
                 && env_var.is_none()
+                && flatten.is_none()
                 && hidden.is_none()
                 && nullable.is_none()
                 && optional.is_none()
@@ -320,6 +327,7 @@ impl Field<'_> {
                         #comment
                         #deprecated
                         #env_var
+                        #flatten
                         #hidden
                         #nullable
                         #optional

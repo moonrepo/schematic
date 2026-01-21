@@ -125,6 +125,10 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
         self.ctx.depth += 1;
 
         for (name, field) in &structure.fields {
+            if field.flatten {
+                continue;
+            }
+
             self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
