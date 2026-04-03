@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Implement `Schematic` for `Cow`.
+
 ## 0.19.5
 
 #### 🚀 Updates

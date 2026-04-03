@@ -27,6 +27,7 @@ pub use structs::*;
 pub use tuples::*;
 pub use unions::*;
 
+use std::borrow::Cow;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -78,6 +79,12 @@ impl<T: Schematic> Schematic for Rc<T> {
 }
 
 impl<T: Schematic> Schematic for Arc<T> {
+    fn build_schema(schema: SchemaBuilder) -> Schema {
+        T::build_schema(schema)
+    }
+}
+
+impl<T: Schematic + ToOwned + ?Sized> Schematic for Cow<'_, T> {
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }

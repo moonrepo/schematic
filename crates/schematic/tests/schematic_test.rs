@@ -1,6 +1,7 @@
 #![allow(dead_code, deprecated)]
 
 use schematic::Schematic;
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 #[derive(Schematic)]
@@ -12,6 +13,7 @@ struct Basic<'a> {
 struct Multiple<'a, 'b> {
     pub name: &'a str,
     pub age: &'b u32,
+    pub other: Cow<'a, str>,
 }
 
 #[derive(Schematic)]
