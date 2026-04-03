@@ -1894,7 +1894,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.19.4"
+version = "0.19.5"
 dependencies = [
  "chrono",
  "convert_case",
@@ -1934,7 +1934,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.19.3"
+version = "0.19.4"
 dependencies = [
  "convert_case",
  "darling",
