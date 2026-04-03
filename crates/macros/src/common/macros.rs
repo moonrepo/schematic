@@ -4,7 +4,7 @@ use darling::ast::NestedMeta;
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro2::{Ident, TokenStream};
 use quote::{ToTokens, quote};
-use syn::{Attribute, Data, DeriveInput, ExprPath, Fields};
+use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics};
 
 // #[serde()]
 #[derive(FromDeriveInput, Default)]
@@ -76,6 +76,7 @@ pub struct Macro<'l> {
     pub casing_format: String,
     pub name: &'l Ident,
     pub type_of: Container<'l>,
+    pub generics: &'l Generics,
 }
 
 impl<'l> Macro<'l> {
@@ -193,6 +194,7 @@ impl<'l> Macro<'l> {
             name: &input.ident,
             type_of: config_type,
             casing_format,
+            generics: &input.generics,
         }
     }
 

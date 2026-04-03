@@ -13,10 +13,11 @@ impl ToTokens for SchematicMacro<'_> {
         let schema_name = cfg.get_name();
         let schema_impl = cfg.type_of.generate_schema(&cfg.attrs);
         let instrument = instrument_quote();
+        let (impl_generics, ty_generics, where_clause) = cfg.generics.split_for_impl();
 
         tokens.extend(quote! {
             #[automatically_derived]
-            impl schematic::Schematic for #name {
+            impl #impl_generics schematic::Schematic for #name #ty_generics #where_clause {
                 fn schema_name() -> Option<String> {
                     Some(#schema_name.into())
                 }

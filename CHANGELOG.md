@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added simple generics support to `#[derive(Schematic)]`.
+
 ## 0.19.4
 
 #### 🐞 Fixes
