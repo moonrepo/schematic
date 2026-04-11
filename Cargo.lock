@@ -1893,7 +1893,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.19.6"
+version = "0.19.7"
 dependencies = [
  "chrono",
  "convert_case",
@@ -1944,7 +1944,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.11.4"
+version = "0.11.5"
 dependencies = [
  "chrono",
  "indexmap",
