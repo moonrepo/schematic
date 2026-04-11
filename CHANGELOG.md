@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated `toml` to v1.
+
 ## 0.19.6
 
 #### 🚀 Updates
