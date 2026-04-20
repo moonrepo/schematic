@@ -35,6 +35,8 @@ impl ToTokens for ConfigMacro<'_> {
         let settings_metadata = cfg.type_of.generate_settings_metadata();
         let instrument = instrument_quote();
 
+        let is_any_required_and_non_nullable = cfg.type_of.has_non_nullable_required();
+
         let context = match cfg.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },
             None => quote! { () },
@@ -127,23 +129,11 @@ impl ToTokens for ConfigMacro<'_> {
             }
 
             #[automatically_derived]
-            impl Default for #name {
-                #instrument
-                fn default() -> Self {
-                    let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
-
-                    let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap().unwrap_or_default();
-
-                    <Self as schematic::Config>::from_partial(defaults)
-                }
-            }
-
-            #[automatically_derived]
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 
                 #instrument
-                fn from_partial(partial: Self::Partial) -> Self {
+                fn from_partial(partial: Self::Partial) -> std::result::Result<Self, schematic::ConfigError> {
                     #from_partial
                 }
 
@@ -153,6 +143,23 @@ impl ToTokens for ConfigMacro<'_> {
                 }
             }
         });
+
+        if !is_any_required_and_non_nullable {
+            tokens.extend(quote! {
+                #[automatically_derived]
+                impl Default for #name {
+                    #instrument
+                    fn default() -> Self {
+                        let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
+
+                        let defaults = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::default_values(&context).unwrap().unwrap_or_default();
+
+                        <Self as schematic::Config>::from_partial(defaults)
+                            .expect("any partial with missing required values will not derive Default")
+                    }
+                }
+            });
+        }
 
         #[cfg(feature = "schema")]
         {
