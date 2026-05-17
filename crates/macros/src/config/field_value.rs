@@ -77,6 +77,7 @@ impl FieldValue<'_> {
             _ => None,
         }
     }
+
     pub fn get_finalize_value(&self) -> Option<TokenStream> {
         match self {
             Self::NestedList { .. } | Self::NestedMap { .. } => {

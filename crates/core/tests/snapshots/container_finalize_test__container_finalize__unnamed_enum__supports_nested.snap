@@ -1,0 +1,27 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    Ok(
+        match self {
+            Self::A(pa) => Self::A(pa.finalize(context)?),
+            Self::B(pa) => Self::B(transform_config(pa.finalize(context)?, context)?),
+            Self::C(pa) => {
+                Self::C(
+                    match pa {
+                        Some(pa) => pa.finalize(context)?,
+                        None => None,
+                    },
+                )
+            }
+            Self::D(pa) => {
+                Self::D(transform_config(Arc::new(pa.finalize(context)?), context)?)
+            }
+            _ => self,
+        },
+    )
+}

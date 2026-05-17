@@ -1,0 +1,58 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    let mut partial = Self::default();
+    if let Some(layer) = Self::default_values(context)? {
+        partial.merge(context, layer)?;
+    }
+    partial.merge(context, self)?;
+    if let Some(layer) = Self::env_values()? {
+        partial.merge(context, layer)?;
+    }
+    if let Some(layer) = partial.a {
+        partial.a = Some({
+            let mut list = Vec::default();
+            for item in layer {
+                list.push(item.finalize(context)?);
+            }
+            list
+        });
+    }
+    if let Some(layer) = partial.b {
+        partial.b = Some(
+            transform_config(
+                {
+                    let mut map = HashMap::default();
+                    for (key, value) in layer {
+                        map.insert(key, value.finalize(context)?);
+                    }
+                    map
+                },
+                context,
+            )?,
+        );
+    }
+    if let Some(layer) = partial.c {
+        partial.c = Some(
+            transform_config(
+                match layer {
+                    Some(layer) => {
+                        let mut set = BTreeSet::default();
+                        for item in layer {
+                            set.insert(item.finalize(context)?);
+                        }
+                        set
+                    }
+                    None => None,
+                },
+                context,
+            )?,
+        );
+    }
+    Ok(partial)
+}
