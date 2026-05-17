@@ -202,28 +202,24 @@ impl Container {
 
     // TODO
     pub fn impl_full_from_partial(&self) -> TokenStream {
-        let inner = match &self.inner {
-            ContainerInner::NamedStruct { fields } => {
-                let mut statements = vec![];
+        // let inner = match &self.inner {
+        //     ContainerInner::NamedStruct { fields } => {
+        //         let mut statements = vec![];
 
-                for field in fields {
-                    let res = field.impl_partial_merge();
+        //         for field in fields {
+        //             let res = field.impl_partial_merge();
 
-                    if !res.no_value {
-                        statements.push(res.value);
-                    }
-                }
+        //             if !res.no_value {
+        //                 statements.push(res.value);
+        //             }
+        //         }
 
-                quote! {
-                    Self {
-                        #(#setting_names: #from_partial_values),*
-                    }
-                }
-            }
-            ContainerInner::UnnamedStruct { fields } => {}
-            ContainerInner::UnnamedEnum { variants } => {}
-            ContainerInner::UnitEnum { variants } => todo!(),
-        };
+        //         todo!();
+        //     }
+        //     ContainerInner::UnnamedStruct { fields } => {}
+        //     ContainerInner::UnnamedEnum { variants } => {}
+        //     ContainerInner::UnitEnum { variants } => todo!(),
+        // };
 
         quote! {
             fn from_partial(partial: Self::Partial) -> Self {}
