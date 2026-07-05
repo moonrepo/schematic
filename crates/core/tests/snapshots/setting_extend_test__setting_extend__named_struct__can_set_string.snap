@@ -1,0 +1,7 @@
+---
+source: crates/core/tests/setting_extend_test.rs
+expression: pretty(container.impl_partial_extends_from())
+---
+fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+    self.a.as_ref().map(|inner| schematic::ExtendsFrom::String(inner.to_owned()))
+}

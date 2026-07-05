@@ -1,0 +1,16 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    Ok(
+        match self {
+            Self::C(pa) => Self::C(transform_string(pa, context)?),
+            Self::F(pa) => Self::F(transform_vec(pa, context)?),
+            _ => self,
+        },
+    )
+}

@@ -1,13 +1,26 @@
+mod env;
+mod merge;
+#[cfg(feature = "validate")]
+mod validate;
+
+pub use env::*;
+pub use merge::*;
+#[cfg(feature = "validate")]
+pub use validate::*;
+
 use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialConfig};
 use schematic_types::Schema;
 use std::str::FromStr;
 
-// Handles T and Option<T> values
+// DEFAULT VALUES
+
 pub fn handle_default_result<T, E: std::error::Error>(
     result: Result<T, E>,
 ) -> Result<T, ConfigError> {
     result.map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
 }
+
+// LEGACY
 
 #[cfg(feature = "env")]
 pub fn track_env<T>(value: Option<T>, tracker: &mut std::collections::HashSet<bool>) -> Option<T> {
@@ -44,40 +57,33 @@ pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, HandlerErro
     })
 }
 
-#[allow(clippy::unnecessary_unwrap)]
 pub fn merge_setting<T, C>(
     prev: Option<T>,
     next: Option<T>,
     context: &C,
     merger: impl Fn(T, T, &C) -> MergeResult<T>,
 ) -> MergeResult<T> {
-    if prev.is_some() && next.is_some() {
-        merger(prev.unwrap(), next.unwrap(), context)
-    } else if next.is_some() {
-        Ok(next)
-    } else {
-        Ok(prev)
+    match (prev, next) {
+        (Some(prev), Some(next)) => merger(prev, next, context),
+        (None, Some(next)) => Ok(Some(next)),
+        (other, _) => Ok(other),
     }
 }
 
-#[allow(clippy::unnecessary_unwrap)]
 pub fn merge_nested_setting<T: PartialConfig>(
     prev: Option<T>,
     next: Option<T>,
     context: &T::Context,
 ) -> MergeResult<T> {
-    if prev.is_some() && next.is_some() {
-        let mut nested = prev.unwrap();
+    match (prev, next) {
+        (Some(mut prev), Some(next)) => {
+            prev.merge(context, next)
+                .map_err(|error| MergeError(error.to_string()))?;
 
-        nested
-            .merge(context, next.unwrap())
-            .map_err(|error| MergeError(error.to_string()))?;
-
-        Ok(Some(nested))
-    } else if next.is_some() {
-        Ok(next)
-    } else {
-        Ok(prev)
+            Ok(Some(prev))
+        }
+        (None, Some(next)) => Ok(Some(next)),
+        (other, _) => Ok(other),
     }
 }
 
