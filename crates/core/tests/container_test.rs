@@ -1,6 +1,10 @@
+mod utils;
+
 use schematic_core::args::*;
 use schematic_core::container::Container;
+use starbase_sandbox::assert_snapshot;
 use syn::parse_quote;
+use utils::pretty;
 
 mod container {
     use super::*;
@@ -131,5 +135,100 @@ mod container {
                 serialize: Some("ser_name".into()),
             }
         );
+    }
+}
+
+mod settings {
+    use super::*;
+
+    mod named_struct {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: String,
+                    b: i32,
+                    #[setting(env = "C_VAR")]
+                    c: bool,
+                    d: Option<String>,
+                    e: Vec<u8>,
+                    f: std::collections::HashMap<String, String>,
+                    #[setting(nested)]
+                    g: NestedExample,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
+    }
+
+    mod unnamed_struct {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    String,
+                    i32,
+                    #[setting(env = "C_VAR")]
+                    bool,
+                    Option<String>,
+                    Vec<u8>,
+                    std::collections::HashMap<String, String>,
+                    #[setting(nested)]
+                    NestedExample,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
+    }
+
+    mod named_enum {
+        // N/A
+    }
+
+    mod unnamed_enum {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A(String),
+                    B(i32),
+                    C(bool),
+                    D(Option<String>),
+                    E(Vec<u8>),
+                    F(std::collections::HashMap<String, String>),
+                    #[setting(nested)]
+                    G(NestedExample),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
+    }
+
+    mod unit_enum {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A, B, C
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
     }
 }

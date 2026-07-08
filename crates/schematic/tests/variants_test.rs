@@ -1,7 +1,6 @@
 use schematic::*;
 use serial_test::serial;
 use std::collections::HashMap;
-use std::env;
 
 fn test_list<T>(_: &[String], _: &T, context: &Context, _: bool) -> ValidateResult {
     if context.fail {
