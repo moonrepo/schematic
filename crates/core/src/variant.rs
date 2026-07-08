@@ -1,4 +1,6 @@
-use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{
+    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
+};
 use crate::container::ContainerArgs;
 use crate::utils::ImplResult;
 use crate::variant_value::VariantValue;
@@ -122,6 +124,25 @@ impl Variant {
                 panic!("Can only use `null` with unit variants.");
             }
         }
+    }
+
+    pub fn get_name(&self) -> String {
+        let dir = SerdeIoDirection::From;
+
+        if let Some(name) = self.args.rename.as_ref().and_then(|rn| rn.get_name(dir)) {
+            return name.into();
+        }
+
+        if let Some(name) = self
+            .serde_args
+            .rename
+            .as_ref()
+            .and_then(|rn| rn.get_name(dir))
+        {
+            return name.into();
+        }
+
+        self.ident.to_string()
     }
 
     pub fn is_default(&self) -> bool {

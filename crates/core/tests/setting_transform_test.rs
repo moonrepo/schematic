@@ -97,7 +97,47 @@ mod setting_transform {
     }
 
     mod unnamed_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn accepts_func_ref() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(transform = func_ref)]
+                    A(String)
+                }
+            });
+            let field = container.inner.get_variants()[0];
+
+            assert!(field.args.transform.is_some());
+        }
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(transform = "func_ref")]
+                    A(String)
+                }
+            });
+            let field = container.inner.get_variants()[0];
+
+            assert!(field.args.transform.is_some());
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(transform = 123)]
+                    A(String)
+                }
+            });
+        }
     }
 
     mod unit_enum {

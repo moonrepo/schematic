@@ -1,6 +1,6 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
 use crate::field::Field;
-use crate::utils::{ImplResult, is_inheritable_attribute};
+use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
@@ -226,10 +226,75 @@ impl Container {
         }
     }
 
-    // TODO
     pub fn impl_full_settings(&self) -> TokenStream {
+        let mut settings = vec![];
+
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                for field in fields {
+                    let name = if field.ident.is_some() {
+                        field.get_name()
+                    } else {
+                        field.index.to_string()
+                    };
+                    let env_key = if let Some(value) = field.get_env_var() {
+                        quote! { .env(#value) }
+                    } else {
+                        quote! {}
+                    };
+                    let nested = if field.is_nested() {
+                        let value = field.value.get_inner_type();
+                        quote! { .nested(#value::settings()) }
+                    } else {
+                        quote! {}
+                    };
+                    let type_alias = to_type_string(field.value.ty.to_token_stream());
+
+                    settings.push(quote! {
+                        (#name.into(), ConfigSetting::new(#type_alias)
+                            #env_key
+                            #nested
+                        ),
+                    });
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } => {
+                for variant in variants {
+                    let name = variant.get_name();
+                    let type_alias = to_type_string(
+                        variant
+                            .values
+                            .iter()
+                            .map(|v| v.ty.to_token_stream())
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .collect::<TokenStream>(),
+                    );
+
+                    settings.push(quote! {
+                        (#name.into(), ConfigSetting::new(#type_alias)),
+                    });
+                }
+            }
+            ContainerInner::UnitEnum { variants } => {
+                for variant in variants {
+                    let name = variant.get_name();
+
+                    settings.push(quote! {
+                        (#name.into(), ConfigSetting::new(#name)),
+                    });
+                }
+            }
+        };
+
         quote! {
-            fn settings() -> schematic::ConfigSettingMap {}
+            fn settings() -> schematic::ConfigSettingMap {
+                use schematic::ConfigSetting;
+
+                std::collections::BTreeMap::from_iter([
+                    #(#settings)*
+                ])
+            }
         }
     }
 

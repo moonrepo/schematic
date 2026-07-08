@@ -131,4 +131,24 @@ pub struct ConfigSetting {
     pub type_alias: String,
 }
 
+impl ConfigSetting {
+    pub fn new(type_alias: impl AsRef<str>) -> Self {
+        Self {
+            env_key: None,
+            nested: None,
+            type_alias: type_alias.as_ref().to_string(),
+        }
+    }
+
+    pub fn env(mut self, env_key: impl AsRef<str>) -> Self {
+        self.env_key = Some(env_key.as_ref().to_string());
+        self
+    }
+
+    pub fn nested(mut self, nested: ConfigSettingMap) -> Self {
+        self.nested = Some(nested);
+        self
+    }
+}
+
 pub type ConfigSettingMap = BTreeMap<String, ConfigSetting>;
