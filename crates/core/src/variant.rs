@@ -8,7 +8,7 @@ use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Expr, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
+use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
 
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
@@ -361,6 +361,8 @@ impl Variant {
 
             #[cfg(feature = "validate")]
             if let Some(expr) = self.args.validate.as_deref() {
+                use syn::Expr;
+
                 let func = match expr {
                     // func(arg)()
                     Expr::Call(func) => quote! { #func },

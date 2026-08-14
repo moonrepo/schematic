@@ -48,7 +48,7 @@ expression: defaults
                             token: "a",
                         },
                     },
-                    dot_token: Dot,
+                    dot_token: Token![.],
                     method: Ident(
                         into,
                     ),
@@ -56,7 +56,7 @@ expression: defaults
                     paren_token: Paren,
                     args: [],
                 },
-                Comma,
+                Token![,],
                 Expr::MethodCall {
                     attrs: [],
                     receiver: Expr::Lit {
@@ -65,7 +65,7 @@ expression: defaults
                             token: "b",
                         },
                     },
-                    dot_token: Dot,
+                    dot_token: Token![.],
                     method: Ident(
                         into,
                     ),
@@ -73,7 +73,7 @@ expression: defaults
                     paren_token: Paren,
                     args: [],
                 },
-                Comma,
+                Token![,],
                 Expr::MethodCall {
                     attrs: [],
                     receiver: Expr::Lit {
@@ -82,7 +82,7 @@ expression: defaults
                             token: "c",
                         },
                     },
-                    dot_token: Dot,
+                    dot_token: Token![.],
                     method: Ident(
                         into,
                     ),
@@ -110,7 +110,7 @@ expression: defaults
                         },
                     ],
                 },
-                bang_token: Not,
+                bang_token: Token![!],
                 delimiter: MacroDelimiter::Bracket(
                     Bracket,
                 ),
@@ -149,11 +149,11 @@ expression: defaults
                         token: 10,
                     },
                 },
-                Comma,
+                Token![,],
                 Expr::Unary {
                     attrs: [],
                     op: UnOp::Neg(
-                        Minus,
+                        Token![-],
                     ),
                     expr: Expr::Lit {
                         attrs: [],
@@ -162,7 +162,7 @@ expression: defaults
                         },
                     },
                 },
-                Comma,
+                Token![,],
                 Expr::Lit {
                     attrs: [],
                     lit: Lit::Int {
