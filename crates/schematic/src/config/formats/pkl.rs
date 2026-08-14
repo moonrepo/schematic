@@ -2,7 +2,7 @@ use crate::config::error::ConfigError;
 use crate::config::parser::ParserError;
 use crate::config::source::*;
 use miette::NamedSource;
-use rpkl::{EvaluatorOptions, pkl::PklSerialize};
+use rpkl::{EvaluatorOptions, pkl::IntoPklMap};
 use serde::de::DeserializeOwned;
 use std::env;
 use std::path::Path;
@@ -76,14 +76,13 @@ impl<T: DeserializeOwned> SourceFormat<T> for PklFormat {
         };
 
         // Based on `rpkl::from_config`
-        let ast = rpkl::api::Evaluator::new_from_options(self.options.clone())
+        let map = rpkl::api::Evaluator::new_from_options(self.options.clone())
             .map_err(handle_error)?
             .evaluate_module(file_path)
             .map_err(handle_error)?
-            .serialize_pkl_ast()
-            .map_err(handle_error)?;
+            .into_pkl_map();
 
-        let mut de = rpkl::pkl::Deserializer::from_pkl_map(&ast);
+        let mut de = rpkl::pkl::Deserializer::from_pkl_map(&map);
 
         let result: T = serde_path_to_error::deserialize(&mut de).map_err(|error| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),

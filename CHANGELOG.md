@@ -31,6 +31,15 @@
 - Added support for `skip_deserializing_if` and `skip_serializing_if` on fields.
 - Updated `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
 
+#### ⚙️ Internal
+
+- Updated `syn` to v3.
+- Updated `darling` to v0.24.
+- Updated `pkl` to v0.8.
+- Updated `garde` (validation) to v0.23.
+- Updated Rust to v1.97.
+- Updated dependencies.
+
 ## 0.19.7
 
 #### ⚙️ Internal
