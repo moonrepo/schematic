@@ -251,7 +251,9 @@ impl Variant {
                             .enumerate()
                             .map(|(i, o)| {
                                 let value = if self.is_nested() {
-                                    self.values[i].impl_partial_finalize_nested(o).value
+                                    // Variant values have no partial `Option`
+                                    // wrapper, so walk all layers
+                                    self.values[i].impl_partial_finalize_nested(o, false).value
                                 } else {
                                     quote! { #o }
                                 };

@@ -187,22 +187,49 @@ impl Value {
         res
     }
 
-    pub fn impl_partial_finalize_nested(&self, layer_var: &Ident) -> ImplResult {
+    pub fn impl_partial_finalize_nested(
+        &self,
+        layer_var: &Ident,
+        skip_outer_option: bool,
+    ) -> ImplResult {
         let mut res = ImplResult::default();
         let mut value = quote! { #layer_var.finalize(context)? };
 
+        // The first `Option` layer is represented by the partial's own
+        // `Option`, so skip it when the caller has already unwrapped it
+        let layers = if skip_outer_option && self.is_outer_option_wrapped() {
+            &self.layers[1..]
+        } else {
+            &self.layers[..]
+        };
+
         // Then wrap with each layer
-        if !self.layers.is_empty() {
-            for layer in self.layers.iter().rev() {
+        if !layers.is_empty() {
+            for layer in layers.iter().rev() {
                 value = match layer {
-                    Layer::Arc => quote! { Arc::new(#value) },
-                    Layer::Rc => quote! { Rc::new(#value) },
-                    Layer::Box => quote! { Box::new(#value) },
+                    Layer::Arc => quote! {
+                        {
+                            let #layer_var = Arc::unwrap_or_clone(#layer_var);
+                            Arc::new(#value)
+                        }
+                    },
+                    Layer::Rc => quote! {
+                        {
+                            let #layer_var = Rc::unwrap_or_clone(#layer_var);
+                            Rc::new(#value)
+                        }
+                    },
+                    Layer::Box => quote! {
+                        {
+                            let #layer_var = *#layer_var;
+                            Box::new(#value)
+                        }
+                    },
                     Layer::Option => quote! {
-                       match #layer_var {
-                           Some(#layer_var) => #value,
-                           None => None
-                       }
+                        match #layer_var {
+                            Some(#layer_var) => Some(#value),
+                            None => None
+                        }
                     },
                     Layer::Map(name) => {
                         let collection = format_ident!("{name}");
@@ -210,8 +237,8 @@ impl Value {
                         quote! {
                             {
                                 let mut map = #collection::default();
-                                for (key, value) in #layer_var {
-                                    map.insert(key, value.finalize(context)?);
+                                for (key, #layer_var) in #layer_var {
+                                    map.insert(key, #value);
                                 }
                                 map
                             }
@@ -223,8 +250,8 @@ impl Value {
                         quote! {
                             {
                                 let mut set = #collection::default();
-                                for item in #layer_var {
-                                    set.insert(item.finalize(context)?);
+                                for #layer_var in #layer_var {
+                                    set.insert(#value);
                                 }
                                 set
                             }
@@ -236,8 +263,8 @@ impl Value {
                         quote! {
                             {
                                 let mut list = #collection::default();
-                                for item in #layer_var {
-                                    list.push(item.finalize(context)?);
+                                for #layer_var in #layer_var {
+                                    list.push(#value);
                                 }
                                 list
                             }

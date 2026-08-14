@@ -315,8 +315,10 @@ impl Field {
         let key = self.get_key();
 
         let mut value = if self.is_nested() {
+            // The `if let` below consumes the partial's `Option`, which is
+            // the first `Option` layer when the type is optional
             self.value
-                .impl_partial_finalize_nested(&format_ident!("layer"))
+                .impl_partial_finalize_nested(&format_ident!("layer"), true)
                 .value
         } else {
             quote! { layer }
