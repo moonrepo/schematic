@@ -144,7 +144,7 @@ schematic = { path = ".", features = [
 ] }
 reqwest = { workspace = true, features = ["blocking", "rustls"] }
 serial_test = "4.0.1"
-similar = "2.7.0"
+similar = "3.1.2"
 starbase_sandbox = { workspace = true }
 strip-ansi-escapes = "0.2.1"
 derive_more = { version = "2.1.1", features = ["try_into", "as_ref"] }

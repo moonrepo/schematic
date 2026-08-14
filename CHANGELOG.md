@@ -35,6 +35,8 @@
 
 - Updated `syn` to v3.
 - Updated `darling` to v0.24.
+- Updated Rust to v1.97.
+- Updated dependencies.
 
 ## 0.19.7
 
