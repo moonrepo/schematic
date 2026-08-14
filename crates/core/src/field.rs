@@ -8,7 +8,7 @@ use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldMutability, Ident, Visibility};
+use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident, Visibility};
 
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
@@ -60,7 +60,7 @@ pub struct Field {
     pub attrs: Vec<Attribute>,
     pub ident: Option<Ident>, // Named
     pub index: usize,         // Unnamed
-    pub mutability: FieldMutability,
+    pub modifiers: FieldModifiers,
     pub vis: Visibility,
 }
 
@@ -78,7 +78,7 @@ impl Field {
             container_args,
             ident: field.ident,
             index: 0,
-            mutability: field.mutability,
+            modifiers: field.modifiers,
             serde_args,
             serde_container_args,
             vis: field.vis,
