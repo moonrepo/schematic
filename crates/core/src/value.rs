@@ -99,6 +99,94 @@ impl Value {
             .is_some_and(|layer| *layer == Layer::Option)
     }
 
+    pub fn impl_full_from_partial_nested(&self, data_var: &Ident) -> ImplResult {
+        let Some(config) = &self.nested_ident else {
+            return ImplResult::skipped();
+        };
+
+        let mut res = ImplResult::default();
+        let mut value = quote! { #config::from_partial(#data_var) };
+
+        // Then wrap with each layer
+        if !self.layers.is_empty() {
+            for layer in self.layers.iter().rev() {
+                value = match layer {
+                    Layer::Arc => quote! {
+                        {
+                            let #data_var = Arc::unwrap_or_clone(#data_var);
+                            Arc::new(#value)
+                        }
+                    },
+                    Layer::Rc => quote! {
+                        {
+                            let #data_var = Rc::unwrap_or_clone(#data_var);
+                            Rc::new(#value)
+                        }
+                    },
+                    Layer::Box => quote! {
+                        {
+                            let #data_var = *#data_var;
+                            Box::new(#value)
+                        }
+                    },
+                    Layer::Option => quote! {
+                        match #data_var {
+                            Some(#data_var) => Some(#value),
+                            None => None
+                        }
+                    },
+                    Layer::Map(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut map = #collection::default();
+                                for (key, #data_var) in #data_var {
+                                    map.insert(key, #value);
+                                }
+                                map
+                            }
+                        }
+                    }
+                    Layer::Set(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut set = #collection::default();
+                                for #data_var in #data_var {
+                                    set.insert(#value);
+                                }
+                                set
+                            }
+                        }
+                    }
+                    Layer::Vec(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! {
+                            {
+                                let mut list = #collection::default();
+                                for #data_var in #data_var {
+                                    list.push(#value);
+                                }
+                                list
+                            }
+                        }
+                    }
+                    Layer::Unknown(name) => {
+                        let collection = format_ident!("{name}");
+
+                        quote! { #collection::default() }
+                    }
+                };
+            }
+        }
+
+        res.value = value;
+        res
+    }
+
     pub fn impl_partial_finalize_nested(&self, layer_var: &Ident) -> ImplResult {
         let mut res = ImplResult::default();
         let mut value = quote! { #layer_var.finalize(context)? };

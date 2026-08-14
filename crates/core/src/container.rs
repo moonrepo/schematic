@@ -200,29 +200,59 @@ impl Container {
         }
     }
 
-    // TODO
     pub fn impl_full_from_partial(&self) -> TokenStream {
-        // let inner = match &self.inner {
-        //     ContainerInner::NamedStruct { fields } => {
-        //         let mut statements = vec![];
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } => {
+                let mut rows = vec![];
 
-        //         for field in fields {
-        //             let res = field.impl_partial_merge();
+                for field in fields {
+                    let key = field.get_key();
+                    let value = field.impl_full_from_partial().value;
 
-        //             if !res.no_value {
-        //                 statements.push(res.value);
-        //             }
-        //         }
+                    rows.push(quote! {
+                        #key: #value,
+                    });
+                }
 
-        //         todo!();
-        //     }
-        //     ContainerInner::UnnamedStruct { fields } => {}
-        //     ContainerInner::UnnamedEnum { variants } => {}
-        //     ContainerInner::UnitEnum { variants } => todo!(),
-        // };
+                quote! {
+                    Self {
+                        #(#rows)*
+                    }
+                }
+            }
+            ContainerInner::UnnamedStruct { fields } => {
+                let mut rows = vec![];
+
+                for field in fields {
+                    rows.push(field.impl_full_from_partial().value);
+                }
+
+                quote! {
+                    Self(
+                        #(#rows),*
+                    )
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                let partial_name = format_ident!("Partial{}", self.ident);
+                let mut arms = vec![];
+
+                for variant in variants {
+                    arms.push(variant.impl_full_from_partial(&partial_name).value);
+                }
+
+                quote! {
+                    match partial {
+                        #(#arms)*
+                    }
+                }
+            }
+        };
 
         quote! {
-            fn from_partial(partial: Self::Partial) -> Self {}
+            fn from_partial(partial: Self::Partial) -> Self {
+                #inner
+            }
         }
     }
 

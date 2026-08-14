@@ -1,0 +1,10 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    Self {
+        a: Default::default(),
+        b: partial.b.unwrap_or_default(),
+    }
+}
