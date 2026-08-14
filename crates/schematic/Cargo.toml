@@ -22,7 +22,7 @@ schematic_macros = { version = "0.19.4", path = "../macros" }
 schematic_types = { version = "0.11.5", path = "../types" }
 miette = { workspace = true }
 serde-content = "0.1.2"
-thiserror = "2.0.17"
+thiserror = "2.0.20"
 tracing = { workspace = true }
 
 # config
@@ -31,7 +31,7 @@ garde = { version = "0.22.1", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.20", optional = true }
-starbase_styles = { version = "0.6.5", optional = true }
+starbase_styles = { version = "0.6.9", optional = true }
 
 # settings
 regex = { workspace = true, optional = true }
@@ -42,7 +42,7 @@ convert_case = { workspace = true, optional = true }
 indexmap = { workspace = true, optional = true, features = ["serde"] }
 
 # json
-json-strip-comments = { version = "3.1.0", optional = true }
+json-strip-comments = { version = "3.1.2", optional = true }
 serde_json = { workspace = true, optional = true, features = [
 	"preserve_order",
 ] }
@@ -143,10 +143,10 @@ schematic = { path = ".", features = [
 	"yaml",
 ] }
 reqwest = { workspace = true, features = ["blocking", "rustls"] }
-serial_test = "3.3.1"
+serial_test = "4.0.1"
 similar = "2.7.0"
 starbase_sandbox = { workspace = true }
-strip-ansi-escapes = "0.2"
+strip-ansi-escapes = "0.2.1"
 derive_more = { version = "2.1.1", features = ["try_into", "as_ref"] }
 
 # Types
