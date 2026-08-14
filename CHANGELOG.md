@@ -35,6 +35,7 @@
 
 - Updated `syn` to v3.
 - Updated `darling` to v0.24.
+- Updated `pkl` to v0.8.
 - Updated Rust to v1.97.
 - Updated dependencies.
 
