@@ -47,8 +47,8 @@ impl schematic::PartialConfig for PartialExample {
         let mut env = EnvManager::new(prefix.or(Some("EXAMPLE_")));
         let mut partial = Self::default();
         partial.enabled = env.get("ENABLED")?;
-        partial.name = env.get("NAME")?;
-        partial.port = env.get("PORT")?;
+        partial.name = env.get_prefixed("NAME")?;
+        partial.port = env.get_prefixed("PORT")?;
         partial.nested = env.nested(PartialNestedConfig::env_values()?)?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
@@ -156,22 +156,18 @@ impl schematic::Config for Example {
         use schematic::ConfigSetting;
         std::collections::BTreeMap::from_iter([
             ("enabled".into(), ConfigSetting::new("bool").env("ENABLED")),
-            ("name".into(), ConfigSetting::new("String").env("NAME")),
-            ("port".into(), ConfigSetting::new("Option<u16>").env("PORT")),
+            ("name".into(), ConfigSetting::new("String")),
+            ("port".into(), ConfigSetting::new("Option<u16>")),
             (
                 "nested".into(),
-                ConfigSetting::new("NestedConfig")
-                    .env("NESTED")
-                    .nested(NestedConfig::settings()),
+                ConfigSetting::new("NestedConfig").nested(NestedConfig::settings()),
             ),
             (
                 "list".into(),
-                ConfigSetting::new("Vec<NestedConfig>")
-                    .env("LIST")
-                    .nested(NestedConfig::settings()),
+                ConfigSetting::new("Vec<NestedConfig>").nested(NestedConfig::settings()),
             ),
-            ("extends".into(), ConfigSetting::new("Vec<String>").env("EXTENDS")),
-            ("map".into(), ConfigSetting::new("HashMap<String, usize>").env("MAP")),
+            ("extends".into(), ConfigSetting::new("Vec<String>")),
+            ("map".into(), ConfigSetting::new("HashMap<String, usize>")),
         ])
     }
 }

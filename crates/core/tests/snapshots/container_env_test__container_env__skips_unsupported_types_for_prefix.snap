@@ -8,7 +8,7 @@ fn env_values_with_prefix(
     use schematic::internal::*;
     let mut env = EnvManager::new(prefix.or(Some("PREFIX_")));
     let mut partial = Self::default();
-    partial.a = env.get("A")?;
-    partial.d = env.get("D")?;
+    partial.a = env.get_prefixed("A")?;
+    partial.d = env.get_prefixed("D")?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

@@ -1,5 +1,5 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
-use crate::field::Field;
+use crate::field::{EnvKey, Field};
 use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
@@ -298,10 +298,11 @@ impl Container {
                     } else {
                         field.index.to_string()
                     };
-                    let env_key = if let Some(value) = field.get_env_var() {
-                        quote! { .env(#value) }
-                    } else {
-                        quote! {}
+                    // Only explicit keys are known statically, as derived
+                    // keys depend on the prefix in effect at runtime
+                    let env_key = match field.get_env_var() {
+                        Some(EnvKey::Explicit(value)) => quote! { .env(#value) },
+                        _ => quote! {},
                     };
                     let nested = if field.is_nested() {
                         let value = field.value.get_inner_type();

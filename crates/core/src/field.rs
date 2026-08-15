@@ -46,6 +46,25 @@ pub struct FieldArgs {
     pub skip_serializing_if: Option<String>,
 }
 
+/// The environment variable key for a setting.
+#[derive(Debug, PartialEq)]
+pub enum EnvKey {
+    /// An explicit key from `#[setting(env)]`, that is used as-is
+    /// and takes precedence over any prefix.
+    Explicit(String),
+    /// A key derived from the setting name when using `env_prefix`,
+    /// that is prefixed at runtime.
+    Derived(String),
+}
+
+impl EnvKey {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Explicit(key) | Self::Derived(key) => key,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Field {
     pub value: FieldValue,
@@ -110,12 +129,12 @@ impl Field {
     }
 
     #[cfg(not(feature = "env"))]
-    pub fn get_env_var(&self) -> Option<String> {
+    pub fn get_env_var(&self) -> Option<EnvKey> {
         None
     }
 
     #[cfg(feature = "env")]
-    pub fn get_env_var(&self) -> Option<String> {
+    pub fn get_env_var(&self) -> Option<EnvKey> {
         if self.args.env.is_some() && self.args.env_prefix.is_some() {
             panic!("Cannot use `env` and `env_prefix` together.");
         }
@@ -129,12 +148,12 @@ impl Field {
                 panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
             }
 
-            return Some(env_key.to_owned());
+            return Some(EnvKey::Explicit(env_key.to_owned()));
         }
 
         // When the container has a prefix, we use the field name as a key
         if self.container_args.env_prefix.is_some() {
-            return Some(self.get_name().to_uppercase());
+            return Some(EnvKey::Derived(self.get_name().to_uppercase()));
         }
 
         if self.args.parse_env.is_some() {
@@ -386,11 +405,11 @@ impl Field {
 
     pub fn impl_partial_env_value(&self) -> ImplResult {
         if self.is_nested() {
-            return self.value.impl_partial_env_value(&self.args, "");
+            return self.value.impl_partial_env_value(&self.args, None);
         }
 
         match self.get_env_var() {
-            Some(env_key) => self.value.impl_partial_env_value(&self.args, &env_key),
+            Some(env_key) => self.value.impl_partial_env_value(&self.args, Some(&env_key)),
             None => ImplResult::skipped(),
         }
     }

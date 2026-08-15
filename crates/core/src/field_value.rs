@@ -1,5 +1,5 @@
 use crate::args::NestedArg;
-use crate::field::FieldArgs;
+use crate::field::{EnvKey, FieldArgs};
 use crate::utils::ImplResult;
 use crate::value::{Layer, Value};
 use proc_macro2::TokenStream;
@@ -145,12 +145,20 @@ impl FieldValue {
     }
 
     #[cfg(not(feature = "env"))]
-    pub fn impl_partial_env_value(&self, _field_args: &FieldArgs, _env_key: &str) -> ImplResult {
+    pub fn impl_partial_env_value(
+        &self,
+        _field_args: &FieldArgs,
+        _env_key: Option<&EnvKey>,
+    ) -> ImplResult {
         ImplResult::skipped()
     }
 
     #[cfg(feature = "env")]
-    pub fn impl_partial_env_value(&self, field_args: &FieldArgs, env_key: &str) -> ImplResult {
+    pub fn impl_partial_env_value(
+        &self,
+        field_args: &FieldArgs,
+        env_key: Option<&EnvKey>,
+    ) -> ImplResult {
         let mut res = ImplResult::default();
 
         // Values can only be sourced from the environment when the type
@@ -201,13 +209,28 @@ impl FieldValue {
             return ImplResult::skipped();
         }
 
+        let Some(env_key) = env_key else {
+            return ImplResult::skipped();
+        };
+
+        // Explicit keys are read as-is and take precedence over any prefix,
+        // while derived keys have the prefix applied at runtime
+        let (key, get, get_and_parse) = match env_key {
+            EnvKey::Explicit(key) => (key, quote! { get }, quote! { get_and_parse }),
+            EnvKey::Derived(key) => (
+                key,
+                quote! { get_prefixed },
+                quote! { get_and_parse_prefixed },
+            ),
+        };
+
         res.value = if let Some(parse_env) = &field_args.parse_env {
             quote! {
-                env.get_and_parse(#env_key, #parse_env)?
+                env.#get_and_parse(#key, #parse_env)?
             }
         } else {
             quote! {
-                env.get(#env_key)?
+                env.#get(#key)?
             }
         };
 

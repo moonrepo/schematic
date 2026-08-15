@@ -163,6 +163,23 @@ mod settings {
 
             assert_snapshot!(pretty(container.impl_full_settings()));
         }
+
+        #[test]
+        fn only_includes_explicit_env() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PREFIX_")]
+                struct Example {
+                    a: String,
+                    #[setting(env = "B_VAR")]
+                    b: i32,
+                    #[setting(nested)]
+                    c: NestedExample,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
     }
 
     mod unnamed_struct {
