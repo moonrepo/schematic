@@ -639,7 +639,6 @@ impl ToTokens for Variant {
 }
 
 impl Variant {
-
     fn map_unnamed_match_custom<F>(
         &self,
         name: &Ident,

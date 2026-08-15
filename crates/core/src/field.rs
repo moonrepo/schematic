@@ -410,7 +410,9 @@ impl Field {
         }
 
         match self.get_env_var() {
-            Some(env_key) => self.value.impl_partial_env_value(&self.args, Some(&env_key)),
+            Some(env_key) => self
+                .value
+                .impl_partial_env_value(&self.args, Some(&env_key)),
             None => ImplResult::skipped(),
         }
     }

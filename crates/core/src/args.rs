@@ -140,10 +140,7 @@ impl PartialArg {
     // Each meta item is emitted as its own attribute,
     // for example `#[derive(Other)] #[serde(another)]`
     pub fn get_attributes(&self) -> Vec<TokenStream> {
-        self.meta
-            .iter()
-            .map(|meta| quote! { #[#meta] })
-            .collect()
+        self.meta.iter().map(|meta| quote! { #[#meta] }).collect()
     }
 }
 

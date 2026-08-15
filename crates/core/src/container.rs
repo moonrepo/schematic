@@ -181,7 +181,11 @@ impl Container {
         // Config attributes take precedence over serde attributes
         let renames = [
             ("rename", &self.args.rename, &self.serde_args.rename),
-            ("rename_all", &self.args.rename_all, &self.serde_args.rename_all),
+            (
+                "rename_all",
+                &self.args.rename_all,
+                &self.serde_args.rename_all,
+            ),
             (
                 "rename_all_fields",
                 &self.args.rename_all_fields,
