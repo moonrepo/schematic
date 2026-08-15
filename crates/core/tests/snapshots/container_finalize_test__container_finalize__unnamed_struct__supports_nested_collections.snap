@@ -17,8 +17,8 @@ fn finalize(
     if let Some(layer) = partial.0 {
         partial.0 = Some({
             let mut list = Vec::default();
-            for item in layer {
-                list.push(item.finalize(context)?);
+            for layer in layer {
+                list.push(layer.finalize(context)?);
             }
             list
         });
@@ -28,8 +28,8 @@ fn finalize(
             transform_config(
                 {
                     let mut map = HashMap::default();
-                    for (key, value) in layer {
-                        map.insert(key, value.finalize(context)?);
+                    for (key, layer) in layer {
+                        map.insert(key, layer.finalize(context)?);
                     }
                     map
                 },
@@ -40,15 +40,12 @@ fn finalize(
     if let Some(layer) = partial.2 {
         partial.2 = Some(
             transform_config(
-                match layer {
-                    Some(layer) => {
-                        let mut set = BTreeSet::default();
-                        for item in layer {
-                            set.insert(item.finalize(context)?);
-                        }
-                        set
+                {
+                    let mut set = BTreeSet::default();
+                    for layer in layer {
+                        set.insert(layer.finalize(context)?);
                     }
-                    None => None,
+                    set
                 },
                 context,
             )?,

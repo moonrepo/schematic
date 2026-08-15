@@ -42,6 +42,44 @@ mod setting_default {
     }
 
     #[test]
+    fn handles_layers_with_defaults() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(default = 10)]
+                a: Box<usize>,
+                #[setting(default = 10)]
+                b: Arc<Option<usize>>,
+                #[setting(default = vec![1, 2, 3])]
+                c: Vec<usize>,
+                #[setting(default = vec![1, 2, 3])]
+                d: Arc<Vec<usize>>,
+                #[setting(default = "abc")]
+                e: Box<String>,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
+    #[test]
+    fn handles_nested_layers() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(nested)]
+                a: Box<NestedConfig>,
+                #[setting(nested = CustomConfig)]
+                b: Arc<CustomConfig>,
+                #[setting(nested)]
+                c: Vec<NestedConfig>,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
+    #[test]
     fn supports_handler_func() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]

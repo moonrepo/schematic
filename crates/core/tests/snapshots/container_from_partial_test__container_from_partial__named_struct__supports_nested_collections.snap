@@ -1,0 +1,43 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    Self {
+        a: {
+            let data = partial.a.unwrap_or_default();
+            {
+                let mut list = Vec::default();
+                for data in data {
+                    list.push(NestedConfig::from_partial(data));
+                }
+                list
+            }
+        },
+        b: {
+            let data = partial.b.unwrap_or_default();
+            {
+                let mut map = HashMap::default();
+                for (key, data) in data {
+                    map.insert(key, CustomConfig::from_partial(data));
+                }
+                map
+            }
+        },
+        c: {
+            let data = partial.c;
+            match data {
+                Some(data) => {
+                    Some({
+                        let mut set = BTreeSet::default();
+                        for data in data {
+                            set.insert(NestedConfig::from_partial(data));
+                        }
+                        set
+                    })
+                }
+                None => None,
+            }
+        },
+    }
+}

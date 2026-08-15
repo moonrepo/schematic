@@ -98,6 +98,51 @@ mod setting_env {
 
             assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
+
+        #[test]
+        fn supports_optional_types() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env = "A")]
+                    a: Option<String>,
+                    #[setting(env = "B", parse_env = parse_func)]
+                    b: Option<usize>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
+        fn supports_nested_layers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: NestedConfig,
+                    #[setting(nested)]
+                    b: Option<NestedConfig>,
+                    #[setting(nested)]
+                    c: Vec<NestedConfig>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env_prefix` with collections or wrapped types.")]
+        fn errors_if_prefix_on_nested_collection() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested, env_prefix = "X_")]
+                    a: Vec<NestedConfig>,
+                }
+            })
+            .impl_partial_env_values();
+        }
     }
 
     mod unnamed_struct {

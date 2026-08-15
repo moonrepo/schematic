@@ -11,8 +11,8 @@ fn finalize(
             Self::A(pa) => {
                 Self::A({
                     let mut list = Vec::default();
-                    for item in pa {
-                        list.push(item.finalize(context)?);
+                    for pa in pa {
+                        list.push(pa.finalize(context)?);
                     }
                     list
                 })
@@ -22,8 +22,8 @@ fn finalize(
                     transform_config(
                         {
                             let mut map = HashMap::default();
-                            for (key, value) in pa {
-                                map.insert(key, value.finalize(context)?);
+                            for (key, pa) in pa {
+                                map.insert(key, pa.finalize(context)?);
                             }
                             map
                         },
@@ -36,11 +36,13 @@ fn finalize(
                     transform_config(
                         match pa {
                             Some(pa) => {
-                                let mut set = BTreeSet::default();
-                                for item in pa {
-                                    set.insert(item.finalize(context)?);
-                                }
-                                set
+                                Some({
+                                    let mut set = BTreeSet::default();
+                                    for pa in pa {
+                                        set.insert(pa.finalize(context)?);
+                                    }
+                                    set
+                                })
                             }
                             None => None,
                         },

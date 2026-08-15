@@ -200,29 +200,59 @@ impl Container {
         }
     }
 
-    // TODO
     pub fn impl_full_from_partial(&self) -> TokenStream {
-        // let inner = match &self.inner {
-        //     ContainerInner::NamedStruct { fields } => {
-        //         let mut statements = vec![];
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } => {
+                let mut rows = vec![];
 
-        //         for field in fields {
-        //             let res = field.impl_partial_merge();
+                for field in fields {
+                    let key = field.get_key();
+                    let value = field.impl_full_from_partial().value;
 
-        //             if !res.no_value {
-        //                 statements.push(res.value);
-        //             }
-        //         }
+                    rows.push(quote! {
+                        #key: #value,
+                    });
+                }
 
-        //         todo!();
-        //     }
-        //     ContainerInner::UnnamedStruct { fields } => {}
-        //     ContainerInner::UnnamedEnum { variants } => {}
-        //     ContainerInner::UnitEnum { variants } => todo!(),
-        // };
+                quote! {
+                    Self {
+                        #(#rows)*
+                    }
+                }
+            }
+            ContainerInner::UnnamedStruct { fields } => {
+                let mut rows = vec![];
+
+                for field in fields {
+                    rows.push(field.impl_full_from_partial().value);
+                }
+
+                quote! {
+                    Self(
+                        #(#rows),*
+                    )
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                let partial_name = format_ident!("Partial{}", self.ident);
+                let mut arms = vec![];
+
+                for variant in variants {
+                    arms.push(variant.impl_full_from_partial(&partial_name).value);
+                }
+
+                quote! {
+                    match partial {
+                        #(#arms)*
+                    }
+                }
+            }
+        };
 
         quote! {
-            fn from_partial(partial: Self::Partial) -> Self {}
+            fn from_partial(partial: Self::Partial) -> Self {
+                #inner
+            }
         }
     }
 
@@ -492,7 +522,7 @@ impl Container {
                 panic!("Attribute `env_prefix` cannot be empty.");
             }
 
-            quote! { prefix.or_else(Some(#env_prefix)) }
+            quote! { prefix.or(Some(#env_prefix)) }
         } else {
             quote! { prefix }
         };
@@ -522,36 +552,45 @@ impl Container {
 
     #[cfg(feature = "extends")]
     pub fn impl_partial_extends_from(&self) -> TokenStream {
-        if let ContainerInner::NamedStruct { fields } = &self.inner {
-            let mut names = vec![];
-            let mut inner = quote! { None };
+        let extendable = self
+            .inner
+            .get_fields()
+            .into_iter()
+            .filter(|field| field.is_extendable())
+            .collect::<Vec<_>>();
 
-            for field in fields {
-                if field.is_extendable() {
-                    names.push(field.get_name_original().to_string());
+        // Do not implement method
+        if extendable.is_empty() {
+            return quote! {};
+        }
 
-                    let res = field.impl_partial_extends_from();
-
-                    if !res.no_value {
-                        inner = res.value;
-                    }
-                }
-            }
-
-            if names.len() > 1 {
-                panic!(
-                    "Only 1 setting may use `extend`, found: {}",
-                    names.join(", ")
-                );
-            }
-
-            quote! {
-                fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
-                    #inner
-                }
-            }
-        } else {
+        if !matches!(self.inner, ContainerInner::NamedStruct { .. }) {
             panic!("Only named structs can use `extend` settings.");
+        }
+
+        if extendable.len() > 1 {
+            let names = extendable
+                .iter()
+                .map(|field| field.get_name_original().to_string())
+                .collect::<Vec<_>>();
+
+            panic!(
+                "Only 1 setting may use `extend`, found: {}",
+                names.join(", ")
+            );
+        }
+
+        let res = extendable[0].impl_partial_extends_from();
+        let inner = if res.no_value {
+            quote! { None }
+        } else {
+            res.value
+        };
+
+        quote! {
+            fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+                #inner
+            }
         }
     }
 

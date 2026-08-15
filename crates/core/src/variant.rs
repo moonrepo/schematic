@@ -176,6 +176,39 @@ impl Variant {
         self.values.is_empty()
     }
 
+    pub fn impl_full_from_partial(&self, partial_name: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+        let name = &self.ident;
+
+        res.value = match &self.fields {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(fields) => {
+                self.map_unnamed_match_custom(name, partial_name, fields, |outer_names, _| {
+                    let items = outer_names
+                        .iter()
+                        .enumerate()
+                        .map(|(index, o)| {
+                            if self.is_nested() {
+                                self.values[index].impl_full_from_partial_nested(o).value
+                            } else {
+                                quote! { #o }
+                            }
+                        })
+                        .collect::<Vec<_>>();
+
+                    quote! {
+                        Self::#name(#(#items),*)
+                    }
+                })
+            }
+            Fields::Unit => quote! {
+                #partial_name::#name => Self::#name,
+            },
+        };
+
+        res
+    }
+
     pub fn impl_partial_default_value(&self) -> ImplResult {
         let mut res = ImplResult::default();
         let name = &self.ident;
@@ -218,7 +251,9 @@ impl Variant {
                             .enumerate()
                             .map(|(i, o)| {
                                 let value = if self.is_nested() {
-                                    self.values[i].impl_partial_finalize_nested(o).value
+                                    // Variant values have no partial `Option`
+                                    // wrapper, so walk all layers
+                                    self.values[i].impl_partial_finalize_nested(o, false).value
                                 } else {
                                     quote! { #o }
                                 };
