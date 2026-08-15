@@ -21,9 +21,21 @@ pub fn preserve_str_literal(meta: &Meta) -> darling::Result<Expr> {
 pub fn is_inheritable_attribute(attr: &Attribute) -> bool {
     let path = get_meta_path(&attr.meta);
 
-    ["allow", "default", "deprecated", "doc", "warn"]
-        .into_iter()
-        .any(|n| path.is_ident(n))
+    [
+        // Lints
+        "allow",
+        "expect",
+        "warn",
+        // Docs
+        "deprecated",
+        "doc",
+        // Compilation
+        "cfg",
+        "default",
+        "non_exhaustive",
+    ]
+    .into_iter()
+    .any(|n| path.is_ident(n))
 }
 
 pub fn to_type_string(ts: TokenStream) -> String {

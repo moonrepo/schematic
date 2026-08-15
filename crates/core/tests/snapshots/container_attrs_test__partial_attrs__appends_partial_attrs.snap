@@ -1,0 +1,7 @@
+---
+source: crates/core/tests/container_attrs_test.rs
+expression: pretty_attrs(container.get_partial_attributes())
+---
+# [serde (default , deny_unknown_fields)]
+# [derive (Other , Another)]
+# [serde (rename_all = "kebab-case")]

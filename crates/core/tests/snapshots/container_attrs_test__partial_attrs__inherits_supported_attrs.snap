@@ -1,0 +1,13 @@
+---
+source: crates/core/tests/container_attrs_test.rs
+expression: pretty_attrs(container.get_partial_attributes())
+---
+# [serde (default , rename = "Renamed")]
+# [doc = r" Some docs."]
+# [doc = r" More docs."]
+# [allow (dead_code)]
+# [expect (missing_docs)]
+# [warn (unused)]
+# [deprecated]
+# [cfg (feature = "example")]
+# [non_exhaustive]

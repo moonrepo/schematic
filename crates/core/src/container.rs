@@ -104,18 +104,28 @@ impl Container {
     fn validate_args(&self) {}
 
     pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
-        let serde_args = self.get_partial_serde_attribute_args();
-        let mut attrs = vec![quote! { #[serde(#serde_args) ]}];
+        let mut attrs = vec![];
 
+        // Serde attributes come first, so that they take precedence
+        // over any provided by the user via `partial(serde(...))`
+        let serde_args = self.get_partial_serde_attribute_args();
+
+        if !serde_args.is_empty() {
+            attrs.push(quote! { #[serde(#serde_args)] });
+        }
+
+        // Inherit non-schematic attributes from the container,
+        // like `doc`, `allow`, and `deprecated`
         for attr in &self.attrs {
             if is_inheritable_attribute(attr) {
                 attrs.push(quote! { #attr });
             }
         }
 
-        // TODO
-        // let partial = &self.args.partial;
-        // attrs.push(quote! { #partial });
+        // Then apply any user-provided partial attributes
+        if let Some(partial) = &self.args.partial {
+            attrs.extend(partial.get_attributes());
+        }
 
         attrs
     }
@@ -156,16 +166,25 @@ impl Container {
             meta.push(quote! { expecting = #expecting });
         }
 
-        if let Some(rename) = &self.serde_args.rename {
-            meta.push(rename.get_meta("rename"));
-        }
+        // Config attributes take precedence over serde attributes
+        let renames = [
+            ("rename", &self.args.rename, &self.serde_args.rename),
+            ("rename_all", &self.args.rename_all, &self.serde_args.rename_all),
+            (
+                "rename_all_fields",
+                &self.args.rename_all_fields,
+                &self.serde_args.rename_all_fields,
+            ),
+        ];
 
-        if let Some(rename_all) = &self.serde_args.rename_all {
-            meta.push(rename_all.get_meta("rename_all"));
-        }
-
-        if let Some(rename_all_fields) = &self.serde_args.rename_all_fields {
-            meta.push(rename_all_fields.get_meta("rename_all_fields"));
+        for (key, config_arg, serde_arg) in renames {
+            if let Some(rename) = config_arg
+                .as_ref()
+                .or(serde_arg.as_ref())
+                .filter(|rename| !rename.is_empty())
+            {
+                meta.push(rename.get_meta(key));
+            }
         }
 
         quote! {
