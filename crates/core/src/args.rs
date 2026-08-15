@@ -2,7 +2,7 @@ use crate::utils::to_type_string;
 use darling::ast::NestedMeta;
 use darling::{FromAttributes, FromDeriveInput, FromMeta};
 use proc_macro2::TokenStream;
-use quote::{ToTokens, quote};
+use quote::{ToTokens, format_ident, quote};
 use std::ops::Deref;
 use syn::{Expr, Ident};
 
@@ -68,6 +68,9 @@ impl SerdeRenameArg {
     }
 
     pub fn get_meta(&self, key: &str) -> TokenStream {
+        // Format as an identifier, otherwise it'll be quoted as a string
+        let key = format_ident!("{key}");
+
         match (self.deserialize.as_deref(), self.serialize.as_deref()) {
             (Some(de), Some(ser)) => {
                 if de == ser {
@@ -80,6 +83,10 @@ impl SerdeRenameArg {
             (Some(de), None) => quote! { #key(deserialize = #de) },
             _ => quote! {},
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.deserialize.is_none() && self.serialize.is_none()
     }
 }
 
@@ -122,18 +129,28 @@ pub struct SerdeFieldArgs {
     pub untagged: bool,
 }
 
-// #[setting(partial)]
+// #[config(partial(derive(Other), serde(another)))]
+// #[setting(partial(serde(another)))]
 #[derive(Debug, Default)]
 pub struct PartialArg {
     meta: Vec<NestedMeta>,
 }
 
+impl PartialArg {
+    // Each meta item is emitted as its own attribute,
+    // for example `#[derive(Other)] #[serde(another)]`
+    pub fn get_attributes(&self) -> Vec<TokenStream> {
+        self.meta
+            .iter()
+            .map(|meta| quote! { #[#meta] })
+            .collect()
+    }
+}
+
 impl ToTokens for PartialArg {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let attrs: Vec<_> = self.meta.iter().map(|m| m.to_token_stream()).collect();
-
-        if !attrs.is_empty() {
-            tokens.extend(quote! {#[#(#attrs),*]});
+        for attr in self.get_attributes() {
+            tokens.extend(attr);
         }
     }
 }
