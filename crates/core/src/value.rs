@@ -17,12 +17,31 @@ pub enum Layer {
     Unknown(String),
 }
 
+impl Layer {
+    /// Pointer types that only wrap a value, and are stripped from the
+    /// partial and re-applied when constructing the final configuration.
+    pub fn is_wrapper(&self) -> bool {
+        matches!(self, Self::Arc | Self::Box | Self::Rc)
+    }
+
+    pub fn is_collection(&self) -> bool {
+        matches!(
+            self,
+            Self::Map(_) | Self::Set(_) | Self::Vec(_) | Self::Unknown(_)
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct Value {
     pub inner_ty: Option<Type>,
     pub layers: Vec<Layer>,
     pub nested: bool,
     pub nested_ident: Option<Ident>,
+    /// Whether wrapper layers are stripped from the partial. Disabled when a
+    /// wrapper contains an unsized type, like `Box<str>`, as the inner value
+    /// cannot exist on its own.
+    pub strip_wrappers: bool,
     pub ty: Type,
     pub ty_string: String,
 }
@@ -57,6 +76,7 @@ impl Value {
             nested,
             nested_ident,
             layers: vec![],
+            strip_wrappers: !has_unsized_wrapper(&ty),
             ty_string,
             ty,
         };
@@ -86,113 +106,122 @@ impl Value {
     }
 
     /// Return the type to use within the partial, which replaces the nested
-    /// configuration type with its partial counterpart, while preserving all
-    /// wrapping layers. For example, `Vec<Config>` becomes
+    /// configuration type with its partial counterpart, and strips wrapper
+    /// types. For example, `Arc<Vec<Config>>` becomes
     /// `Vec<<Config as schematic::Config>::Partial>`.
     pub fn get_partial_type(&self) -> Type {
-        match &self.nested_ident {
-            Some(nested_ident) => replace_nested_type(&self.ty, nested_ident),
-            None => self.ty.clone(),
+        let mut ty = self.ty.clone();
+
+        if let Some(nested_ident) = &self.nested_ident {
+            ty = replace_nested_type(&ty, nested_ident);
         }
+
+        if self.strip_wrappers {
+            ty = strip_wrapper_types(&ty);
+        }
+
+        ty
+    }
+
+    /// Return the layers that exist within the partial, which excludes
+    /// wrappers, as those are only applied to the final configuration.
+    pub fn get_partial_layers(&self) -> Vec<&Layer> {
+        self.layers
+            .iter()
+            .filter(|layer| !self.strip_wrappers || !layer.is_wrapper())
+            .collect()
     }
 
     pub fn is_collection(&self) -> bool {
-        self.layers.iter().any(|layer| {
-            matches!(
-                layer,
-                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) | Layer::Unknown(_)
-            )
-        })
+        self.layers.iter().any(|layer| layer.is_collection())
     }
 
+    /// Whether the partial's outermost layer is an `Option`, in which case
+    /// it doubles as the partial's own optionality.
     pub fn is_outer_option_wrapped(&self) -> bool {
-        self.layers
+        self.get_partial_layers()
             .first()
-            .is_some_and(|layer| *layer == Layer::Option)
+            .is_some_and(|layer| **layer == Layer::Option)
     }
 
-    pub fn impl_full_from_partial_nested(&self, data_var: &Ident) -> ImplResult {
-        let Some(config) = &self.nested_ident else {
-            return ImplResult::skipped();
+    /// Whether converting from a partial requires rebuilding the value,
+    /// either to convert nested partials or to re-apply stripped wrappers.
+    pub fn requires_from_partial_mapping(&self) -> bool {
+        self.nested_ident.is_some()
+            || (self.strip_wrappers && self.layers.iter().any(|layer| layer.is_wrapper()))
+    }
+
+    /// Generate the value for the final configuration, by converting nested
+    /// partials and re-applying any wrappers that the partial stripped.
+    pub fn impl_full_from_partial_value(&self, data_var: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+        let mut value = match &self.nested_ident {
+            Some(config) => quote! { #config::from_partial(#data_var) },
+            None => quote! { #data_var },
         };
 
-        let mut res = ImplResult::default();
-        let mut value = quote! { #config::from_partial(#data_var) };
-
-        // Then wrap with each layer
-        if !self.layers.is_empty() {
-            for layer in self.layers.iter().rev() {
-                value = match layer {
-                    Layer::Arc => quote! {
-                        {
-                            let #data_var = Arc::unwrap_or_clone(#data_var);
-                            Arc::new(#value)
-                        }
-                    },
-                    Layer::Rc => quote! {
-                        {
-                            let #data_var = Rc::unwrap_or_clone(#data_var);
-                            Rc::new(#value)
-                        }
-                    },
-                    Layer::Box => quote! {
-                        {
-                            let #data_var = *#data_var;
-                            Box::new(#value)
-                        }
-                    },
-                    Layer::Option => quote! {
-                        match #data_var {
-                            Some(#data_var) => Some(#value),
-                            None => None
-                        }
-                    },
-                    Layer::Map(name) => {
-                        let collection = format_ident!("{name}");
-
-                        quote! {
-                            {
-                                let mut map = #collection::default();
-                                for (key, #data_var) in #data_var {
-                                    map.insert(key, #value);
-                                }
-                                map
-                            }
-                        }
-                    }
-                    Layer::Set(name) => {
-                        let collection = format_ident!("{name}");
-
-                        quote! {
-                            {
-                                let mut set = #collection::default();
-                                for #data_var in #data_var {
-                                    set.insert(#value);
-                                }
-                                set
-                            }
-                        }
-                    }
-                    Layer::Vec(name) => {
-                        let collection = format_ident!("{name}");
-
-                        quote! {
-                            {
-                                let mut list = #collection::default();
-                                for #data_var in #data_var {
-                                    list.push(#value);
-                                }
-                                list
-                            }
-                        }
-                    }
-                    Layer::Unknown(name) => {
-                        let collection = format_ident!("{name}");
-
-                        quote! { #collection::default() }
-                    }
-                };
+        // Then wrap with each layer, from the innermost to the outermost.
+        // Wrappers are constructed here, as they don't exist in the partial.
+        for layer in self.layers.iter().rev() {
+            if layer.is_wrapper() && !self.strip_wrappers {
+                continue;
             }
+
+            value = match layer {
+                Layer::Arc => quote! { Arc::new(#value) },
+                Layer::Rc => quote! { Rc::new(#value) },
+                Layer::Box => quote! { Box::new(#value) },
+                Layer::Option => quote! {
+                    match #data_var {
+                        Some(#data_var) => Some(#value),
+                        None => None
+                    }
+                },
+                Layer::Map(name) => {
+                    let collection = format_ident!("{name}");
+
+                    quote! {
+                        {
+                            let mut map = #collection::default();
+                            for (key, #data_var) in #data_var {
+                                map.insert(key, #value);
+                            }
+                            map
+                        }
+                    }
+                }
+                Layer::Set(name) => {
+                    let collection = format_ident!("{name}");
+
+                    quote! {
+                        {
+                            let mut set = #collection::default();
+                            for #data_var in #data_var {
+                                set.insert(#value);
+                            }
+                            set
+                        }
+                    }
+                }
+                Layer::Vec(name) => {
+                    let collection = format_ident!("{name}");
+
+                    quote! {
+                        {
+                            let mut list = #collection::default();
+                            for #data_var in #data_var {
+                                list.push(#value);
+                            }
+                            list
+                        }
+                    }
+                }
+                Layer::Unknown(name) => {
+                    let collection = format_ident!("{name}");
+
+                    quote! { #collection::default() }
+                }
+            };
         }
 
         res.value = value;
@@ -207,13 +236,14 @@ impl Value {
         let mut res = ImplResult::default();
         let mut value = quote! { #layer_var.finalize(context)? };
 
-        // The first `Option` layer is represented by the partial's own
-        // `Option`, so skip it when the caller has already unwrapped it
-        let layers = if skip_outer_option && self.is_outer_option_wrapped() {
-            &self.layers[1..]
-        } else {
-            &self.layers[..]
-        };
+        // Wrappers don't exist in the partial, and the first `Option` layer is
+        // represented by the partial's own `Option`, so skip it when the
+        // caller has already unwrapped it
+        let mut layers = self.get_partial_layers();
+
+        if skip_outer_option && self.is_outer_option_wrapped() {
+            layers.remove(0);
+        }
 
         // Then wrap with each layer
         if !layers.is_empty() {
@@ -295,12 +325,11 @@ impl Value {
         res
     }
 
-    /// Generate a merge for a nested configuration, unwrapping each layer of
-    /// `prev` and `next` until the inner partials can be merged.
+    /// Generate a merge for a nested configuration.
     ///
     /// When `optional` is true, `prev` and `next` are already wrapped in an
-    /// `Option` by the partial, so a `MergeManager` call is generated instead
-    /// of a statement, and the outermost `Option` layer is skipped.
+    /// `Option` by the partial, so a `MergeManager` call is generated
+    /// instead of a statement.
     pub fn impl_partial_merge_nested(
         &self,
         prev: &TokenStream,
@@ -310,78 +339,30 @@ impl Value {
         let mut res = ImplResult::default();
         let outer_option = self.is_outer_option_wrapped();
 
-        // The outermost `Option` is handled by the manager,
-        // while the remaining layers must be unwrapped manually
-        let manager = optional || outer_option;
-        let wrappers = if outer_option {
-            &self.layers[1..]
-        } else {
-            &self.layers[..]
-        };
+        // The outermost `Option` is handled by the manager. Wrappers don't
+        // exist in the partial, so anything else is unmergeable.
+        let mut layers = self.get_partial_layers();
 
-        // Nothing to unwrap, so merge directly
-        if wrappers.is_empty() {
-            res.requires_internal = manager;
-            res.value = if manager {
-                quote! { .nested(#prev, #next)? }
+        if outer_option {
+            layers.remove(0);
+        }
+
+        if let Some(layer) = layers.first() {
+            if layer.is_collection() {
+                panic!("Collections with nested configs must manually define `merge`.");
             } else {
-                quote! { #prev.merge(context, #next)?; }
-            };
-
-            return res;
+                panic!(
+                    "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
+                );
+            }
         }
 
-        // Then unwrap each layer, from the outermost to the innermost
-        let mut place = if manager {
-            quote! { prev }
-        } else {
-            quote! { *#prev }
-        };
-        let mut value = if manager {
-            quote! { next }
-        } else {
-            quote! { #next }
-        };
-
-        for layer in wrappers {
-            match layer {
-                Layer::Box => {
-                    place = quote! { *#place };
-                    value = quote! { *#value };
-                }
-                Layer::Arc => {
-                    place = quote! { *Arc::make_mut(&mut #place) };
-                    value = quote! { Arc::unwrap_or_clone(#value) };
-                }
-                Layer::Rc => {
-                    place = quote! { *Rc::make_mut(&mut #place) };
-                    value = quote! { Rc::unwrap_or_clone(#value) };
-                }
-                Layer::Option => {
-                    panic!(
-                        "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
-                    );
-                }
-                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) | Layer::Unknown(_) => {
-                    panic!("Collections with nested configs must manually define `merge`.");
-                }
-            };
-        }
-
+        let manager = optional || outer_option;
         res.requires_internal = manager;
         res.value = if manager {
-            quote! {
-                .apply_with(#prev, #next, |mut prev, next, context| {
-                    (#place).merge(context, #value)
-                        .map_err(|error| schematic::MergeError(error.to_string()))?;
-
-                    Ok(Some(prev))
-                })?
-            }
+            quote! { .nested(#prev, #next)? }
         } else {
-            quote! {
-                (#place).merge(context, #value)?;
-            }
+            quote! { #prev.merge(context, #next)?; }
         };
 
         res
@@ -409,21 +390,19 @@ impl Value {
         setting_var: &Ident,
         optional: bool,
     ) -> ImplResult {
-        if self.layers.len() >= 2
-            && self
-                .layers
-                .get(1)
-                .is_some_and(|layer| matches!(layer, Layer::Option))
-        {
-            return ImplResult::skipped();
+        // Wrappers don't exist in the partial, so only the structural
+        // layers need to be traversed
+        let mut layers = self.get_partial_layers();
+        let outer_option = self.is_outer_option_wrapped();
+
+        if outer_option {
+            layers.remove(0);
         }
 
-        let outer_option = self.is_outer_option_wrapped();
-        let layers = if outer_option {
-            &self.layers[1..]
-        } else {
-            &self.layers[..]
-        };
+        // Nested `Option`s cannot be validated, as the inner value may not exist
+        if layers.first().is_some_and(|layer| **layer == Layer::Option) {
+            return ImplResult::skipped();
+        }
 
         // Then unwrap each layer, from the outermost to the innermost,
         // stopping at the first collection
@@ -473,6 +452,85 @@ impl Value {
             ..Default::default()
         }
     }
+}
+
+fn is_wrapper_ident(ident: &Ident) -> bool {
+    ident == "Arc" || ident == "Box" || ident == "Rc"
+}
+
+/// Whether a type cannot exist without being wrapped in a pointer,
+/// like `str`, `[T]`, and `dyn Trait`.
+fn is_unsized_type(ty: &Type) -> bool {
+    match ty {
+        Type::Slice(_) | Type::TraitObject(_) => true,
+        Type::Path(ty_path) => ty_path
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "str"),
+        _ => false,
+    }
+}
+
+/// Whether any wrapper within the type contains an unsized value,
+/// in which case the wrappers cannot be stripped from the partial.
+fn has_unsized_wrapper(ty: &Type) -> bool {
+    let Type::Path(ty_path) = ty else {
+        return false;
+    };
+
+    let Some(last_segment) = ty_path.path.segments.last() else {
+        return false;
+    };
+
+    let PathArguments::AngleBracketed(args) = &last_segment.arguments else {
+        return false;
+    };
+
+    args.args.iter().any(|arg| {
+        let GenericArgument::Type(inner_ty) = arg else {
+            return false;
+        };
+
+        (is_wrapper_ident(&last_segment.ident) && is_unsized_type(inner_ty))
+            || has_unsized_wrapper(inner_ty)
+    })
+}
+
+/// Remove all wrapper types, so that `Arc<Vec<Box<T>>>` becomes `Vec<T>`.
+fn strip_wrapper_types(ty: &Type) -> Type {
+    let Type::Path(ty_path) = ty else {
+        return ty.clone();
+    };
+
+    let Some(last_segment) = ty_path.path.segments.last() else {
+        return ty.clone();
+    };
+
+    let PathArguments::AngleBracketed(args) = &last_segment.arguments else {
+        return ty.clone();
+    };
+
+    // Replace the wrapper with the type it wraps
+    if is_wrapper_ident(&last_segment.ident)
+        && let Some(GenericArgument::Type(inner_ty)) = args.args.last()
+    {
+        return strip_wrapper_types(inner_ty);
+    }
+
+    // Otherwise drill into each argument, like the value of a map
+    let mut ty_path = ty_path.clone();
+    let last_segment = ty_path.path.segments.last_mut().unwrap();
+
+    if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
+        for arg in args.args.iter_mut() {
+            if let GenericArgument::Type(inner_ty) = arg {
+                *inner_ty = strip_wrapper_types(inner_ty);
+            }
+        }
+    }
+
+    Type::Path(ty_path)
 }
 
 fn replace_nested_type(ty: &Type, nested_ident: &Ident) -> Type {

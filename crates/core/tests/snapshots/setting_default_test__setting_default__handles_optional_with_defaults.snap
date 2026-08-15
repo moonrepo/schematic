@@ -5,11 +5,14 @@ expression: pretty(container.impl_partial_default_values())
 fn default_values(
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
     Ok(
         Some(Self {
-            a: PartialNestedConfig::default_values(context)?,
-            b: PartialCustomConfig::default_values(context)?,
-            c: Some(Vec::default()),
+            a: Some(10),
+            b: Some(10),
+            c: Some(vec![1, 2]),
+            d: Some(handle_default_result(String::try_from("abc"))?),
+            ..Default::default()
         }),
     )
 }

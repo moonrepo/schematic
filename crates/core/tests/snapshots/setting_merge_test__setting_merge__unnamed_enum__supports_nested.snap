@@ -32,7 +32,7 @@ fn merge(
         }
         Self::D(pa) => {
             if let Self::D(na) = next {
-                (*Arc::make_mut(&mut *pa)).merge(context, Arc::unwrap_or_clone(na))?;
+                pa.merge(context, na)?;
             } else {
                 *self = next;
             }

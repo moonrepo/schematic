@@ -27,7 +27,7 @@ fn validate_with_path(
         }
         Self::D(pa) => {
             validate.check("D", (pa), self, Box::new(func_ref));
-            validate.nested("D.0", pa.as_ref());
+            validate.nested("D.0", pa);
         }
         Self::E(pa) => {
             validate.nested("E.0", pa);

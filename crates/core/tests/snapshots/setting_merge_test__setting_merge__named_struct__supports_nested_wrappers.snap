@@ -9,45 +9,9 @@ fn merge(
 ) -> std::result::Result<(), schematic::ConfigError> {
     use schematic::internal::*;
     MergeManager::new(context)
-        .apply_with(
-            &mut self.a,
-            next.a,
-            |mut prev, next, context| {
-                (*prev)
-                    .merge(context, *next)
-                    .map_err(|error| schematic::MergeError(error.to_string()))?;
-                Ok(Some(prev))
-            },
-        )?
-        .apply_with(
-            &mut self.b,
-            next.b,
-            |mut prev, next, context| {
-                (*Rc::make_mut(&mut prev))
-                    .merge(context, Rc::unwrap_or_clone(next))
-                    .map_err(|error| schematic::MergeError(error.to_string()))?;
-                Ok(Some(prev))
-            },
-        )?
-        .apply_with(
-            &mut self.c,
-            next.c,
-            |mut prev, next, context| {
-                (*prev)
-                    .merge(context, *next)
-                    .map_err(|error| schematic::MergeError(error.to_string()))?;
-                Ok(Some(prev))
-            },
-        )?
-        .apply_with(
-            &mut self.d,
-            next.d,
-            |mut prev, next, context| {
-                (*Arc::make_mut(&mut *prev))
-                    .merge(context, Arc::unwrap_or_clone(*next))
-                    .map_err(|error| schematic::MergeError(error.to_string()))?;
-                Ok(Some(prev))
-            },
-        )?;
+        .nested(&mut self.a, next.a)?
+        .nested(&mut self.b, next.b)?
+        .nested(&mut self.c, next.c)?
+        .nested(&mut self.d, next.d)?;
     Ok(())
 }

@@ -267,8 +267,8 @@ impl Variant {
                         .iter()
                         .enumerate()
                         .map(|(index, o)| {
-                            if self.is_nested() {
-                                self.values[index].impl_full_from_partial_nested(o).value
+                            if self.values[index].requires_from_partial_mapping() {
+                                self.values[index].impl_full_from_partial_value(o).value
                             } else {
                                 quote! { #o }
                             }

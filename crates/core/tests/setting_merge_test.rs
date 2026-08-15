@@ -452,7 +452,7 @@ mod setting_merge {
                 #[derive(Config)]
                 enum Example {
                     #[setting(nested)]
-                    A(Box<Option<NestedConfig>>),
+                    A(Option<Option<NestedConfig>>),
                 }
             })
             .impl_partial_merge();

@@ -368,9 +368,10 @@ impl Field {
             };
         }
 
-        let value = if self.is_nested() {
+        // Nested partials must be converted, and stripped wrappers reapplied
+        let value = if self.value.requires_from_partial_mapping() {
             let data_var = format_ident!("data");
-            let inner = self.value.impl_full_from_partial_nested(&data_var).value;
+            let inner = self.value.impl_full_from_partial_value(&data_var).value;
 
             // When option wrapped, the partial's `Option` is the first layer,
             // so pass the value as-is and let the layer unwrap it

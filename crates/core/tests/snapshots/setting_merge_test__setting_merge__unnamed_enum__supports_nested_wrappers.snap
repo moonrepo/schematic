@@ -11,38 +11,28 @@ fn merge(
     match self {
         Self::A(pa) => {
             if let Self::A(na) = next {
-                (**pa).merge(context, *na)?;
+                pa.merge(context, na)?;
             } else {
                 *self = next;
             }
         }
         Self::B(pa) => {
             if let Self::B(na) = next {
-                (*Rc::make_mut(&mut *pa)).merge(context, Rc::unwrap_or_clone(na))?;
+                pa.merge(context, na)?;
             } else {
                 *self = next;
             }
         }
         Self::C(pa) => {
             if let Self::C(na) = next {
-                MergeManager::new(context)
-                    .apply_with(
-                        pa,
-                        na,
-                        |mut prev, next, context| {
-                            (*prev)
-                                .merge(context, *next)
-                                .map_err(|error| schematic::MergeError(error.to_string()))?;
-                            Ok(Some(prev))
-                        },
-                    )?;
+                MergeManager::new(context).nested(pa, na)?;
             } else {
                 *self = next;
             }
         }
         Self::D(pa) => {
             if let Self::D(na) = next {
-                (*Arc::make_mut(&mut **pa)).merge(context, Arc::unwrap_or_clone(*na))?;
+                pa.merge(context, na)?;
             } else {
                 *self = next;
             }
