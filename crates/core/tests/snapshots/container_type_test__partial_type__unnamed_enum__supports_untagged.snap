@@ -1,0 +1,10 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(untagged)]
+enum PartialExample {
+    A(bool),
+    B(usize),
+}

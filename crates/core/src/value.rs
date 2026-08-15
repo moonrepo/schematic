@@ -1,7 +1,8 @@
 use crate::args::NestedArg;
 use crate::utils::{ImplResult, to_type_string};
+use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
-use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type};
+use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type, parse_quote};
 
 #[derive(Debug, PartialEq)]
 pub enum Layer {
@@ -82,6 +83,17 @@ impl Value {
 
     pub fn get_inner_type(&self) -> &Type {
         self.inner_ty.as_ref().unwrap_or(&self.ty)
+    }
+
+    /// Return the type to use within the partial, which replaces the nested
+    /// configuration type with its partial counterpart, while preserving all
+    /// wrapping layers. For example, `Vec<Config>` becomes
+    /// `Vec<<Config as schematic::Config>::Partial>`.
+    pub fn get_partial_type(&self) -> Type {
+        match &self.nested_ident {
+            Some(nested_ident) => replace_nested_type(&self.ty, nested_ident),
+            None => self.ty.clone(),
+        }
     }
 
     pub fn is_collection(&self) -> bool {
@@ -283,17 +295,120 @@ impl Value {
         res
     }
 
+    /// Generate a merge for a nested configuration, unwrapping each layer of
+    /// `prev` and `next` until the inner partials can be merged.
+    ///
+    /// When `optional` is true, `prev` and `next` are already wrapped in an
+    /// `Option` by the partial, so a `MergeManager` call is generated instead
+    /// of a statement, and the outermost `Option` layer is skipped.
+    pub fn impl_partial_merge_nested(
+        &self,
+        prev: &TokenStream,
+        next: &TokenStream,
+        optional: bool,
+    ) -> ImplResult {
+        let mut res = ImplResult::default();
+        let outer_option = self.is_outer_option_wrapped();
+
+        // The outermost `Option` is handled by the manager,
+        // while the remaining layers must be unwrapped manually
+        let manager = optional || outer_option;
+        let wrappers = if outer_option {
+            &self.layers[1..]
+        } else {
+            &self.layers[..]
+        };
+
+        // Nothing to unwrap, so merge directly
+        if wrappers.is_empty() {
+            res.requires_internal = manager;
+            res.value = if manager {
+                quote! { .nested(#prev, #next)? }
+            } else {
+                quote! { #prev.merge(context, #next)?; }
+            };
+
+            return res;
+        }
+
+        // Then unwrap each layer, from the outermost to the innermost
+        let mut place = if manager {
+            quote! { prev }
+        } else {
+            quote! { *#prev }
+        };
+        let mut value = if manager {
+            quote! { next }
+        } else {
+            quote! { #next }
+        };
+
+        for layer in wrappers {
+            match layer {
+                Layer::Box => {
+                    place = quote! { *#place };
+                    value = quote! { *#value };
+                }
+                Layer::Arc => {
+                    place = quote! { *Arc::make_mut(&mut #place) };
+                    value = quote! { Arc::unwrap_or_clone(#value) };
+                }
+                Layer::Rc => {
+                    place = quote! { *Rc::make_mut(&mut #place) };
+                    value = quote! { Rc::unwrap_or_clone(#value) };
+                }
+                Layer::Option => {
+                    panic!(
+                        "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
+                    );
+                }
+                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) | Layer::Unknown(_) => {
+                    panic!("Collections with nested configs must manually define `merge`.");
+                }
+            };
+        }
+
+        res.requires_internal = manager;
+        res.value = if manager {
+            quote! {
+                .apply_with(#prev, #next, |mut prev, next, context| {
+                    (#place).merge(context, #value)
+                        .map_err(|error| schematic::MergeError(error.to_string()))?;
+
+                    Ok(Some(prev))
+                })?
+            }
+        } else {
+            quote! {
+                (#place).merge(context, #value)?;
+            }
+        };
+
+        res
+    }
+
     #[cfg(not(feature = "validate"))]
     pub fn impl_partial_validate_nested(
         &self,
         _path_key: &str,
         _setting_var: &Ident,
+        _optional: bool,
     ) -> ImplResult {
         ImplResult::skipped()
     }
 
+    /// Generate a validation for a nested configuration, unwrapping each
+    /// layer of the setting until the inner partials can be validated.
+    ///
+    /// When `optional` is true, the setting has already been unwrapped
+    /// from the partial's `Option`, so the outermost `Option` layer is skipped.
     #[cfg(feature = "validate")]
-    pub fn impl_partial_validate_nested(&self, path_key: &str, setting_var: &Ident) -> ImplResult {
+    pub fn impl_partial_validate_nested(
+        &self,
+        path_key: &str,
+        setting_var: &Ident,
+        optional: bool,
+    ) -> ImplResult {
         if self.layers.len() >= 2
             && self
                 .layers
@@ -303,27 +418,52 @@ impl Value {
             return ImplResult::skipped();
         }
 
-        let mut value = quote! {
-            validate.nested(#path_key, #setting_var);
+        let outer_option = self.is_outer_option_wrapped();
+        let layers = if outer_option {
+            &self.layers[1..]
+        } else {
+            &self.layers[..]
         };
 
-        for layer in self.layers.iter().rev() {
+        // Then unwrap each layer, from the outermost to the innermost,
+        // stopping at the first collection
+        let mut setting = quote! { #setting_var };
+        let mut value = None;
+
+        for layer in layers {
             match layer {
-                Layer::Arc | Layer::Box | Layer::Option | Layer::Rc => {
-                    // Nothing?
+                Layer::Arc | Layer::Box | Layer::Rc => {
+                    setting = quote! { #setting.as_ref() };
                 }
                 Layer::Map(_) => {
-                    value = quote! {
-                        validate.nested_map(#path_key, #setting_var.iter());
-                    };
+                    value = Some(quote! {
+                        validate.nested_map(#path_key, #setting.iter());
+                    });
+                    break;
                 }
                 Layer::Set(_) | Layer::Vec(_) => {
-                    value = quote! {
-                        validate.nested_list(#path_key, #setting_var.iter());
-                    };
+                    value = Some(quote! {
+                        validate.nested_list(#path_key, #setting.iter());
+                    });
+                    break;
                 }
-                Layer::Unknown(_) => {
+                Layer::Option | Layer::Unknown(_) => {
                     return ImplResult::skipped();
+                }
+            };
+        }
+
+        let mut value = value.unwrap_or_else(|| {
+            quote! {
+                validate.nested(#path_key, #setting);
+            }
+        });
+
+        // The outermost `Option` is a real value, so unwrap it
+        if outer_option && !optional {
+            value = quote! {
+                if let Some(#setting_var) = #setting_var {
+                    #value
                 }
             };
         }
@@ -332,6 +472,45 @@ impl Value {
             value,
             ..Default::default()
         }
+    }
+}
+
+fn replace_nested_type(ty: &Type, nested_ident: &Ident) -> Type {
+    // We don't need to traverse other types, just paths
+    let Type::Path(ty_path) = ty else {
+        return ty.clone();
+    };
+
+    let last_segment = ty_path.path.segments.last().unwrap();
+
+    match &last_segment.arguments {
+        // We've reached the final segment, so replace it if it matches
+        PathArguments::None => {
+            if last_segment.ident == *nested_ident {
+                parse_quote! { <#ty_path as schematic::Config>::Partial }
+            } else {
+                ty.clone()
+            }
+        }
+
+        // Attempt to drill deeper down
+        PathArguments::AngleBracketed(_) => {
+            let mut ty_path = ty_path.clone();
+            let last_segment = ty_path.path.segments.last_mut().unwrap();
+
+            if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
+                for arg in args.args.iter_mut() {
+                    if let GenericArgument::Type(inner_ty) = arg {
+                        *inner_ty = replace_nested_type(inner_ty, nested_ident);
+                    }
+                }
+            }
+
+            Type::Path(ty_path)
+        }
+
+        // What to do here, anything?
+        PathArguments::Parenthesized(_) => ty.clone(),
     }
 }
 

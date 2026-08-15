@@ -3,7 +3,7 @@ use crate::args::{
 };
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
-use crate::utils::{ImplResult, preserve_str_literal};
+use crate::utils::{ImplResult, is_inheritable_attribute, preserve_str_literal};
 use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
@@ -44,6 +44,25 @@ pub struct FieldArgs {
     pub skip_deserializing_if: Option<String>,
     pub skip_serializing: bool,
     pub skip_serializing_if: Option<String>,
+}
+
+/// The environment variable key for a setting.
+#[derive(Debug, PartialEq)]
+pub enum EnvKey {
+    /// An explicit key from `#[setting(env)]`, that is used as-is
+    /// and takes precedence over any prefix.
+    Explicit(String),
+    /// A key derived from the setting name when using `env_prefix`,
+    /// that is prefixed at runtime.
+    Derived(String),
+}
+
+impl EnvKey {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Explicit(key) | Self::Derived(key) => key,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -110,12 +129,12 @@ impl Field {
     }
 
     #[cfg(not(feature = "env"))]
-    pub fn get_env_var(&self) -> Option<String> {
+    pub fn get_env_var(&self) -> Option<EnvKey> {
         None
     }
 
     #[cfg(feature = "env")]
-    pub fn get_env_var(&self) -> Option<String> {
+    pub fn get_env_var(&self) -> Option<EnvKey> {
         if self.args.env.is_some() && self.args.env_prefix.is_some() {
             panic!("Cannot use `env` and `env_prefix` together.");
         }
@@ -129,16 +148,17 @@ impl Field {
                 panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
             }
 
-            return Some(env_key.to_owned());
+            return Some(EnvKey::Explicit(env_key.to_owned()));
         }
 
-        // When the container has a prefix, we use the field name as a key
-        if self.container_args.env_prefix.is_some() {
-            return Some(self.get_name().to_uppercase());
-        }
-
-        if self.args.parse_env.is_some() {
-            panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
+        // Otherwise derive a key from the setting name, but only when this
+        // container declares a prefix, as that's how a setting opts into
+        // being sourced from the environment.
+        //
+        // Unnamed settings have no name to derive from, so they may only
+        // be sourced with an explicit `env`.
+        if self.container_args.env_prefix.is_some() && self.ident.is_some() {
+            return Some(EnvKey::Derived(self.get_name().to_uppercase()));
         }
 
         None
@@ -216,28 +236,125 @@ impl Field {
     }
 }
 
-// impl ToTokens for Field {
-//     fn to_tokens(&self, tokens: &mut TokenStream) {
-//         let mut value = self.value.ty_string.clone();
+impl Field {
+    pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
+        let mut attrs = vec![];
 
-//         if let Some(nested_ident) = &self.value.nested_ident {
-//             let ident = nested_ident.to_string();
+        // Serde attributes come first, so that they take precedence
+        // over any provided by the user via `partial(serde(...))`
+        let serde_args = self.get_partial_serde_attribute_args();
 
-//             value = value.replace(&ident, &format!("<{ident} as schematic::Config>::Partial"));
-//         }
+        if !serde_args.is_empty() {
+            attrs.push(quote! { #[serde(#serde_args)] });
+        }
 
-//         if !self.value.is_outer_option_wrapped() {
-//             value = format!("Option<{value}>");
-//         }
+        // Inherit non-schematic attributes from the field,
+        // like `doc`, `allow`, and `deprecated`
+        for attr in &self.attrs {
+            if is_inheritable_attribute(attr) {
+                attrs.push(quote! { #attr });
+            }
+        }
 
-//         let key = self.ident.as_ref().unwrap();
-//         let value: TokenStream = parse_str(&value).unwrap();
+        // Then apply any user-provided partial attributes
+        if let Some(partial) = &self.args.partial {
+            attrs.extend(partial.get_attributes());
+        }
 
-//         tokens.extend(quote! {
-//             pub #key: #value,
-//         });
-//     }
-// }
+        attrs
+    }
+
+    pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
+        let mut meta = vec![];
+
+        // Aliases can be provided by both, so combine them
+        let mut aliases: Vec<&String> = vec![];
+
+        for alias in self.args.alias.iter().chain(self.serde_args.alias.iter()) {
+            if !aliases.contains(&alias) {
+                aliases.push(alias);
+            }
+        }
+
+        for alias in aliases {
+            meta.push(quote! { alias = #alias });
+        }
+
+        if self.args.flatten || self.serde_args.flatten {
+            meta.push(quote! { flatten });
+        }
+
+        // Setting attributes take precedence over serde attributes
+        if let Some(rename) = self
+            .args
+            .rename
+            .as_ref()
+            .or(self.serde_args.rename.as_ref())
+            .filter(|rename| !rename.is_empty())
+        {
+            meta.push(rename.get_meta("rename"));
+        }
+
+        if self.args.skip || self.serde_args.skip {
+            meta.push(quote! { skip });
+        } else {
+            if self.args.skip_serializing || self.serde_args.skip_serializing {
+                meta.push(quote! { skip_serializing });
+            } else if let Some(func) = self
+                .args
+                .skip_serializing_if
+                .as_ref()
+                .or(self.serde_args.skip_serializing_if.as_ref())
+            {
+                meta.push(quote! { skip_serializing_if = #func });
+            } else {
+                // Partial values are always optional, so avoid serializing `None`
+                meta.push(quote! { skip_serializing_if = "Option::is_none" });
+            }
+
+            if self.args.skip_deserializing || self.serde_args.skip_deserializing {
+                meta.push(quote! { skip_deserializing });
+            }
+        }
+
+        quote! {
+            #(#meta),*
+        }
+    }
+
+    /// Return the type to use within the partial, which is always
+    /// wrapped in an `Option`, unless the type is already optional.
+    pub fn get_partial_type(&self) -> TokenStream {
+        let ty = self.value.get_partial_type();
+
+        if self.value.is_outer_option_wrapped() {
+            quote! { #ty }
+        } else {
+            quote! { Option<#ty> }
+        }
+    }
+}
+
+// Only used for partials!
+impl ToTokens for Field {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attrs = self.get_partial_attributes();
+        let vis = &self.vis;
+        let ty = self.get_partial_type();
+
+        if let Some(name) = &self.ident {
+            tokens.extend(quote! {
+                #(#attrs)*
+                #vis #name: #ty,
+            });
+        } else {
+            tokens.extend(quote! {
+                #(#attrs)*
+                #vis #ty,
+            });
+        }
+    }
+}
 
 impl Field {
     pub fn impl_full_from_partial(&self) -> ImplResult {
@@ -289,11 +406,13 @@ impl Field {
 
     pub fn impl_partial_env_value(&self) -> ImplResult {
         if self.is_nested() {
-            return self.value.impl_partial_env_value(&self.args, "");
+            return self.value.impl_partial_env_value(&self.args, None);
         }
 
         match self.get_env_var() {
-            Some(env_key) => self.value.impl_partial_env_value(&self.args, &env_key),
+            Some(env_key) => self
+                .value
+                .impl_partial_env_value(&self.args, Some(&env_key)),
             None => ImplResult::skipped(),
         }
     }
@@ -351,9 +470,10 @@ impl Field {
 
         if self.is_nested() {
             let setting_var = format_ident!("setting");
+            // The `if let` below consumes the partial's `Option`
             let nested_value = self
                 .value
-                .impl_partial_validate_nested(&key_string, &setting_var)
+                .impl_partial_validate_nested(&key_string, &setting_var, true)
                 .value;
 
             has_inner = true;

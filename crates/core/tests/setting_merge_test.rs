@@ -89,6 +89,25 @@ mod setting_merge {
         }
 
         #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: Box<NestedConfig>,
+                    #[setting(nested)]
+                    b: Rc<NestedConfig>,
+                    #[setting(nested)]
+                    c: Option<Box<NestedConfig>>,
+                    #[setting(nested)]
+                    d: Box<Arc<NestedConfig>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
         fn supports_nested_collections() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
@@ -405,6 +424,38 @@ mod setting_merge {
             });
 
             assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(Box<NestedConfig>),
+                    #[setting(nested)]
+                    B(Rc<NestedConfig>),
+                    #[setting(nested)]
+                    C(Option<Box<NestedConfig>>),
+                    #[setting(nested)]
+                    D(Box<Arc<NestedConfig>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(expected = "may only be wrapped in an outermost `Option`")]
+        fn errors_for_inner_option() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(Box<Option<NestedConfig>>),
+                }
+            })
+            .impl_partial_merge();
         }
 
         #[test]

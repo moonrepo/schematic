@@ -1,0 +1,113 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+pub struct PartialExample(
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub Option<<NestedConfig as schematic::Config>::Partial>,
+);
+#[automatically_derived]
+impl schematic::PartialConfig for PartialExample {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Ok(Some(Self(Some(10), None)))
+    }
+    fn env_values_with_prefix(
+        prefix: Option<&str>,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        use schematic::internal::*;
+        let mut env = EnvManager::new(prefix);
+        let mut partial = Self::default();
+        partial.1 = env.nested(PartialNestedConfig::env_values()?)?;
+        Ok(if env.is_empty() { None } else { Some(partial) })
+    }
+    fn finalize(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = Self::default();
+        if let Some(layer) = Self::default_values(context)? {
+            partial.merge(context, layer)?;
+        }
+        partial.merge(context, self)?;
+        if let Some(layer) = Self::env_values()? {
+            partial.merge(context, layer)?;
+        }
+        if let Some(layer) = partial.1 {
+            partial.1 = Some(layer.finalize(context)?);
+        }
+        Ok(partial)
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        use schematic::internal::*;
+        MergeManager::new(context)
+            .apply(&mut self.0, next.0)?
+            .nested(&mut self.1, next.1)?;
+        Ok(())
+    }
+    fn validate_with_path(
+        &self,
+        context: &Self::Context,
+        finalizing: bool,
+        path: schematic::Path,
+    ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+        use schematic::internal::*;
+        let mut validate = ValidateManager::new(context, finalizing, path);
+        if let Some(setting) = &self.1 {
+            validate.nested("1", setting);
+        }
+        if !validate.errors.is_empty() {
+            return Err(validate.errors);
+        }
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl schematic::Config for Example {
+    type Partial = PartialExample;
+    fn from_partial(partial: Self::Partial) -> Self {
+        Self(
+            partial.0.unwrap_or_default(),
+            {
+                let data = partial.1;
+                match data {
+                    Some(data) => Some(NestedConfig::from_partial(data)),
+                    None => None,
+                }
+            },
+        )
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            ("0".into(), ConfigSetting::new("usize")),
+            (
+                "1".into(),
+                ConfigSetting::new("Option<NestedConfig>")
+                    .nested(NestedConfig::settings()),
+            ),
+        ])
+    }
+}
+#[automatically_derived]
+impl Default for Example {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {}

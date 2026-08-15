@@ -2,4 +2,4 @@
 source: crates/core/tests/container_attrs_test.rs
 expression: container.get_partial_serde_attribute_args().to_string()
 ---
-untagged , rename_all = "kebab-case"
+rename_all = "kebab-case"

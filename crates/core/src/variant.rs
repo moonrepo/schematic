@@ -2,13 +2,13 @@ use crate::args::{
     NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
 };
 use crate::container::ContainerArgs;
-use crate::utils::ImplResult;
+use crate::utils::{ImplResult, is_inheritable_attribute};
 use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Variant as NativeVariant};
+use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as NativeVariant};
 
 // #[setting()], #[schema()]
 #[derive(Debug, Default, FromAttributes)]
@@ -176,6 +176,85 @@ impl Variant {
         self.values.is_empty()
     }
 
+    pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
+        let mut attrs = vec![];
+
+        // Serde attributes come first, so that they take precedence
+        // over any provided by the user via `partial(serde(...))`
+        let serde_args = self.get_partial_serde_attribute_args();
+
+        if !serde_args.is_empty() {
+            attrs.push(quote! { #[serde(#serde_args)] });
+        }
+
+        // Inherit non-schematic attributes from the variant,
+        // like `doc`, `allow`, and `deprecated`
+        for attr in &self.attrs {
+            if is_inheritable_attribute(attr) {
+                attrs.push(quote! { #attr });
+            }
+        }
+
+        // Then apply any user-provided partial attributes
+        if let Some(partial) = &self.args.partial {
+            attrs.extend(partial.get_attributes());
+        }
+
+        attrs
+    }
+
+    pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
+        let mut meta = vec![];
+
+        // Aliases can be provided by both, so combine them
+        let mut aliases: Vec<&String> = vec![];
+
+        for alias in self.args.alias.iter().chain(self.serde_args.alias.iter()) {
+            if !aliases.contains(&alias) {
+                aliases.push(alias);
+            }
+        }
+
+        for alias in aliases {
+            meta.push(quote! { alias = #alias });
+        }
+
+        // Setting attributes take precedence over serde attributes
+        if let Some(rename) = self
+            .args
+            .rename
+            .as_ref()
+            .or(self.serde_args.rename.as_ref())
+            .filter(|rename| !rename.is_empty())
+        {
+            meta.push(rename.get_meta("rename"));
+        }
+
+        if self.args.skip || self.serde_args.skip {
+            meta.push(quote! { skip });
+        } else {
+            if self.args.skip_serializing || self.serde_args.skip_serializing {
+                meta.push(quote! { skip_serializing });
+            }
+
+            if self.args.skip_deserializing || self.serde_args.skip_deserializing {
+                meta.push(quote! { skip_deserializing });
+            }
+        }
+
+        if self.args.untagged || self.serde_args.untagged {
+            meta.push(quote! { untagged });
+        }
+
+        if self.serde_args.other {
+            meta.push(quote! { other });
+        }
+
+        quote! {
+            #(#meta),*
+        }
+    }
+
     pub fn impl_full_from_partial(&self, partial_name: &Ident) -> ImplResult {
         let mut res = ImplResult::default();
         let name = &self.ident;
@@ -227,6 +306,61 @@ impl Variant {
                 quote! { #name(#(#fields),*) }
             }
             Fields::Unit => quote! { #name },
+        };
+
+        res
+    }
+
+    /// Generate a deserialization attempt for this variant, for use within
+    /// untagged enums, where each variant is tried in order.
+    pub fn impl_partial_type_deserialize(&self, partial_name: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+        let name = &self.ident;
+        let name_string = self.get_name();
+
+        let deserializer = quote! {
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable()
+        };
+
+        res.value = match &self.fields {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(_) => {
+                let types = self
+                    .values
+                    .iter()
+                    .map(|value| value.get_partial_type())
+                    .collect::<Vec<_>>();
+
+                if types.len() == 1 {
+                    let ty = &types[0];
+
+                    quote! {
+                        match <#ty as serde::Deserialize>::deserialize(#deserializer) {
+                            Ok(value) => return Ok(#partial_name::#name(value)),
+                            Err(error) => errors.push((#name_string, error.to_string())),
+                        }
+                    }
+                } else {
+                    // Deserialize multiple values as a tuple, then destructure
+                    let indexes = (0..types.len()).map(Index::from).collect::<Vec<_>>();
+
+                    quote! {
+                        match <(#(#types),*) as serde::Deserialize>::deserialize(#deserializer) {
+                            Ok(value) => return Ok(#partial_name::#name(#(value.#indexes),*)),
+                            Err(error) => errors.push((#name_string, error.to_string())),
+                        }
+                    }
+                }
+            }
+            // Unit variants in untagged enums are represented as null
+            Fields::Unit => quote! {
+                match <() as serde::Deserialize>::deserialize(#deserializer) {
+                    Ok(_) => return Ok(#partial_name::#name),
+                    Err(error) => errors.push((#name_string, error.to_string())),
+                }
+            },
         };
 
         res
@@ -339,38 +473,54 @@ impl Variant {
                     }
                     None => {
                         if self.is_nested() {
-                            if self
-                                .values
-                                .first()
-                                .is_some_and(|value| value.is_collection())
-                            {
+                            // Nested variants only support a single value
+                            let value = &self.values[0];
+
+                            if value.is_collection() {
                                 panic!(
                                     "Collections with nested configs must manually define `merge`."
                                 );
                             }
 
+                            let mut requires_internal = false;
+
                             res.value = self.map_unnamed_match(
                                 &self.ident,
                                 fields,
                                 |outer_names, inner_names| {
-                                    let statements = outer_names
-                                        .iter()
-                                        .enumerate()
-                                        .map(|(index, o)| {
-                                            let i = &inner_names[index];
-                                            quote! { #o.merge(context, #i)?; }
-                                        })
-                                        .collect::<Vec<_>>();
+                                    let o = &outer_names[0];
+                                    let i = &inner_names[0];
+
+                                    // Variant values are not wrapped by the partial,
+                                    // so all layers must be handled
+                                    let merge = value.impl_partial_merge_nested(
+                                        &quote! { #o },
+                                        &quote! { #i },
+                                        false,
+                                    );
+
+                                    // Wrap with the manager when the value is optional
+                                    let statement = if merge.requires_internal {
+                                        requires_internal = true;
+
+                                        let inner = merge.value;
+
+                                        quote! { MergeManager::new(context)#inner; }
+                                    } else {
+                                        merge.value
+                                    };
 
                                     quote! {
                                         if let Self::#name(#(#inner_names),*) = next {
-                                            #(#statements)*
+                                            #statement
                                         } else {
                                             *self = next;
                                         }
                                     }
                                 },
                             );
+
+                            res.requires_internal = requires_internal;
                         } else {
                             res.no_value = true;
                         }
@@ -399,10 +549,10 @@ impl Variant {
                 use syn::Expr;
 
                 let func = match expr {
-                    // func(arg)()
+                    // func(arg)() - already returns a boxed validator
                     Expr::Call(func) => quote! { #func },
-                    // func()
-                    Expr::Path(func) => quote! { #func },
+                    // func() - must be boxed
+                    Expr::Path(func) => quote! { Box::new(#func) },
                     _ => {
                         panic!("Unsupported `validate` syntax.");
                     }
@@ -429,8 +579,10 @@ impl Variant {
                         .map(|(index, o)| {
                             let name_index = format!("{name_string}.{index}");
 
+                            // Variant values are not wrapped by the partial,
+                            // so all layers must be handled
                             self.values[index]
-                                .impl_partial_validate_nested(&name_index, o)
+                                .impl_partial_validate_nested(&name_index, o, false)
                                 .value
                         })
                         .collect::<Vec<_>>(),
@@ -456,7 +608,37 @@ impl Variant {
 
         self.map_unnamed_match_custom(name, &self_name, fields, factory)
     }
+}
 
+// Only used for partials!
+impl ToTokens for Variant {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attrs = self.get_partial_attributes();
+        let name = &self.ident;
+
+        tokens.extend(match &self.fields {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(_) => {
+                let types = self
+                    .values
+                    .iter()
+                    .map(|value| value.get_partial_type())
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #(#attrs)*
+                    #name(#(#types),*),
+                }
+            }
+            Fields::Unit => quote! {
+                #(#attrs)*
+                #name,
+            },
+        });
+    }
+}
+
+impl Variant {
     fn map_unnamed_match_custom<F>(
         &self,
         name: &Ident,

@@ -32,6 +32,39 @@ mod container_env {
     }
 
     #[test]
+    fn skips_derived_keys_without_a_prefix() {
+        // Keys are only derived when a prefix is declared, otherwise
+        // settings must opt in with an explicit `env`
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                a: String,
+                #[setting(env = "B_VAR")]
+                b: usize,
+                #[setting(nested)]
+                c: NestedConfig,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_env_values()));
+    }
+
+    #[test]
+    fn skips_unnamed_settings_for_prefix() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(env_prefix = "PREFIX_")]
+            struct Example(
+                String,
+                #[setting(env = "B_VAR")]
+                usize,
+            );
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_env_values()));
+    }
+
+    #[test]
     fn skips_unsupported_types_for_prefix() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]

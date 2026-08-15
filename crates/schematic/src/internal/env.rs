@@ -21,18 +21,50 @@ impl EnvManager {
         self.count == 0
     }
 
+    /// Get a variable using the exact key, ignoring the prefix.
+    /// For explicit keys defined with `#[setting(env)]`.
     pub fn get<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
         self.get_and_parse(key, |value| parse_value(value).map(|v| Some(v)))
     }
 
+    /// Get and parse a variable using the exact key, ignoring the prefix.
+    /// For explicit keys defined with `#[setting(env)]`.
     pub fn get_and_parse<T>(
         &mut self,
         key: &str,
         parser: impl Fn(String) -> ParseEnvResult<T>,
     ) -> ParseEnvResult<T> {
-        let key = format!("{}{key}", self.prefix);
+        self.read(key, parser)
+    }
 
-        if let Ok(value) = std::env::var(&key) {
+    /// Get a variable using the key with the prefix applied.
+    /// For keys derived from setting names when using `env_prefix`.
+    pub fn get_prefixed<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
+        self.get_and_parse_prefixed(key, |value| parse_value(value).map(|v| Some(v)))
+    }
+
+    /// Get and parse a variable using the key with the prefix applied.
+    /// For keys derived from setting names when using `env_prefix`.
+    pub fn get_and_parse_prefixed<T>(
+        &mut self,
+        key: &str,
+        parser: impl Fn(String) -> ParseEnvResult<T>,
+    ) -> ParseEnvResult<T> {
+        // Derived keys are only applicable when a prefix is in effect,
+        // otherwise we'd be reading arbitrary variables like `PATH`
+        if self.prefix.is_empty() {
+            return Ok(None);
+        }
+
+        self.read(&format!("{}{key}", self.prefix), parser)
+    }
+
+    fn read<T>(
+        &mut self,
+        key: &str,
+        parser: impl Fn(String) -> ParseEnvResult<T>,
+    ) -> ParseEnvResult<T> {
+        if let Ok(value) = std::env::var(key) {
             return parser(value)
                 .inspect(|inner| {
                     if inner.is_some() {
