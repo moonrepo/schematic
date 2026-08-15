@@ -151,13 +151,14 @@ impl Field {
             return Some(EnvKey::Explicit(env_key.to_owned()));
         }
 
-        // When the container has a prefix, we use the field name as a key
-        if self.container_args.env_prefix.is_some() {
+        // Otherwise derive a key from the setting name, but only when this
+        // container declares a prefix, as that's how a setting opts into
+        // being sourced from the environment.
+        //
+        // Unnamed settings have no name to derive from, so they may only
+        // be sourced with an explicit `env`.
+        if self.container_args.env_prefix.is_some() && self.ident.is_some() {
             return Some(EnvKey::Derived(self.get_name().to_uppercase()));
-        }
-
-        if self.args.parse_env.is_some() {
-            panic!("Cannot use `parse_env` without `env` or a parent `env_prefix`.");
         }
 
         None

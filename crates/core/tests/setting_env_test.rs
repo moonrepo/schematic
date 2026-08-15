@@ -38,6 +38,23 @@ mod setting_env {
         }
 
         #[test]
+        fn supports_unparsable_types_with_parse_env() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env = "LIST", parse_env = schematic::env::split_comma)]
+                    a: Vec<String>,
+                    #[setting(env = "OPT_LIST", parse_env = schematic::env::split_comma)]
+                    b: Option<Vec<String>>,
+                    #[setting(env = "BOXED", parse_env = parse_func)]
+                    c: Box<String>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
         fn accepts_string() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]

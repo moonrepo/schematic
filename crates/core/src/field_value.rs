@@ -163,9 +163,11 @@ impl FieldValue {
 
         // Values can only be sourced from the environment when the type
         // is bare or wrapped in a single `Option`, as other layers and
-        // collections cannot be represented by a variable
-        let supported =
-            self.layers.is_empty() || (self.layers.len() == 1 && self.is_outer_option_wrapped());
+        // collections cannot be parsed from a string. Unless a `parse_env`
+        // function is provided, which handles the conversion itself.
+        let supported = field_args.parse_env.is_some()
+            || self.layers.is_empty()
+            || (self.layers.len() == 1 && self.is_outer_option_wrapped());
 
         if let Some(nested_ident) = &self.nested_ident {
             if !supported {
