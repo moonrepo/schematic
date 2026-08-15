@@ -1,0 +1,20 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+pub struct PartialExample(
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    Option<<NestedConfig as schematic::Config>::Partial>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    /// Docs.
+    #[serde(default)]
+    Option<Box<usize>>,
+);

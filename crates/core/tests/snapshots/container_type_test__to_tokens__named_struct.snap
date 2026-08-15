@@ -1,0 +1,189 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default, deny_unknown_fields)]
+/// Docs.
+pub struct PartialExample {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nested: Option<<NestedConfig as schematic::Config>::Partial>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub list: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extends: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub map: Option<HashMap<String, usize>>,
+}
+#[automatically_derived]
+impl schematic::PartialConfig for PartialExample {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        use schematic::internal::*;
+        Ok(
+            Some(Self {
+                enabled: Some(true),
+                name: Some(handle_default_result(String::try_from("abc"))?),
+                nested: PartialNestedConfig::default_values(context)?,
+                list: Some(Vec::default()),
+                extends: Some(Vec::default()),
+                map: Some(HashMap::default()),
+                ..Default::default()
+            }),
+        )
+    }
+    fn env_values_with_prefix(
+        prefix: Option<&str>,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        use schematic::internal::*;
+        let mut env = EnvManager::new(prefix.or(Some("EXAMPLE_")));
+        let mut partial = Self::default();
+        partial.enabled = env.get("ENABLED")?;
+        partial.name = env.get("NAME")?;
+        partial.port = env.get("PORT")?;
+        partial.nested = env.nested(PartialNestedConfig::env_values()?)?;
+        Ok(if env.is_empty() { None } else { Some(partial) })
+    }
+    fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
+        self.extends.as_ref().map(|inner| schematic::ExtendsFrom::List(inner.to_owned()))
+    }
+    fn finalize(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = Self::default();
+        if let Some(layer) = Self::default_values(context)? {
+            partial.merge(context, layer)?;
+        }
+        partial.merge(context, self)?;
+        if let Some(layer) = Self::env_values()? {
+            partial.merge(context, layer)?;
+        }
+        if let Some(layer) = partial.nested {
+            partial.nested = Some(layer.finalize(context)?);
+        }
+        if let Some(layer) = partial.list {
+            partial.list = Some({
+                let mut list = Vec::default();
+                for layer in layer {
+                    list.push(layer.finalize(context)?);
+                }
+                list
+            });
+        }
+        if let Some(layer) = partial.map {
+            partial.map = Some(transform_map(layer, context)?);
+        }
+        Ok(partial)
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        use schematic::internal::*;
+        MergeManager::new(context)
+            .apply(&mut self.enabled, next.enabled)?
+            .apply(&mut self.name, next.name)?
+            .apply(&mut self.port, next.port)?
+            .nested(&mut self.nested, next.nested)?
+            .apply_with(&mut self.list, next.list, merge::append_vec)?
+            .apply(&mut self.extends, next.extends)?
+            .apply(&mut self.map, next.map)?;
+        Ok(())
+    }
+    fn validate_with_path(
+        &self,
+        context: &Self::Context,
+        finalizing: bool,
+        path: schematic::Path,
+    ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+        use schematic::internal::*;
+        let mut validate = ValidateManager::new(context, finalizing, path);
+        if let Some(setting) = &self.name {
+            validate.check("name", setting, self, Box::new(validate_name));
+        }
+        if self.port.is_none() {
+            validate.required("port");
+        }
+        if let Some(setting) = &self.nested {
+            validate.nested("nested", setting);
+        }
+        if let Some(setting) = &self.list {
+            validate.nested_list("list", setting.iter());
+        }
+        if !validate.errors.is_empty() {
+            return Err(validate.errors);
+        }
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl schematic::Config for Example {
+    type Partial = PartialExample;
+    fn from_partial(partial: Self::Partial) -> Self {
+        Self {
+            enabled: partial.enabled.unwrap_or_default(),
+            name: partial.name.unwrap_or_default(),
+            port: partial.port,
+            nested: {
+                let data = partial.nested.unwrap_or_default();
+                NestedConfig::from_partial(data)
+            },
+            list: {
+                let data = partial.list.unwrap_or_default();
+                {
+                    let mut list = Vec::default();
+                    for data in data {
+                        list.push(NestedConfig::from_partial(data));
+                    }
+                    list
+                }
+            },
+            extends: Default::default(),
+            map: partial.map.unwrap_or_default(),
+        }
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            ("enabled".into(), ConfigSetting::new("bool").env("ENABLED")),
+            ("name".into(), ConfigSetting::new("String").env("NAME")),
+            ("port".into(), ConfigSetting::new("Option<u16>").env("PORT")),
+            (
+                "nested".into(),
+                ConfigSetting::new("NestedConfig")
+                    .env("NESTED")
+                    .nested(NestedConfig::settings()),
+            ),
+            (
+                "list".into(),
+                ConfigSetting::new("Vec<NestedConfig>")
+                    .env("LIST")
+                    .nested(NestedConfig::settings()),
+            ),
+            ("extends".into(), ConfigSetting::new("Vec<String>").env("EXTENDS")),
+            ("map".into(), ConfigSetting::new("HashMap<String, usize>").env("MAP")),
+        ])
+    }
+}
+#[automatically_derived]
+impl Default for Example {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {}

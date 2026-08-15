@@ -290,12 +290,12 @@ impl FieldValue {
                         panic!("Collections with nested configs must manually define `merge`.");
                     }
 
-                    quote! {
-                        .nested(
-                            &mut self.#field_name,
-                            next.#field_name,
-                        )?
-                    }
+                    // The partial field is always wrapped in an `Option`
+                    return self.impl_partial_merge_nested(
+                        &quote! { &mut self.#field_name },
+                        &quote! { next.#field_name },
+                        true,
+                    );
                 } else {
                     quote! {
                         .apply(
@@ -333,10 +333,10 @@ impl FieldValue {
         if let Some(expr) = field_args.validate.as_deref() {
             let field_name_string = field_name.to_string();
             let func = match expr {
-                // func(arg)()
+                // func(arg)() - already returns a boxed validator
                 Expr::Call(func) => quote! { #func },
-                // func()
-                Expr::Path(func) => quote! { #func },
+                // func() - must be boxed
+                Expr::Path(func) => quote! { Box::new(#func) },
                 _ => {
                     panic!("Unsupported `validate` syntax.");
                 }

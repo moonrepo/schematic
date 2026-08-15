@@ -1,0 +1,68 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type_deserialize())
+---
+#[automatically_derived]
+impl<'de> serde::Deserialize<'de> for PartialExample {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+        let content = deserializer
+            .deserialize_any(schematic::serde_content::ValueVisitor)?;
+        let mut errors: Vec<(&str, String)> = Vec::new();
+        match <bool as serde::Deserialize>::deserialize(
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable(),
+        ) {
+            Ok(value) => return Ok(PartialExample::A(value)),
+            Err(error) => errors.push(("A", error.to_string())),
+        }
+        match <(
+            usize,
+            String,
+        ) as serde::Deserialize>::deserialize(
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable(),
+        ) {
+            Ok(value) => return Ok(PartialExample::B(value.0, value.1)),
+            Err(error) => errors.push(("bb", error.to_string())),
+        }
+        match <<NestedConfig as schematic::Config>::Partial as serde::Deserialize>::deserialize(
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable(),
+        ) {
+            Ok(value) => return Ok(PartialExample::C(value)),
+            Err(error) => errors.push(("C", error.to_string())),
+        }
+        match <Option<
+            Vec<<NestedConfig as schematic::Config>::Partial>,
+        > as serde::Deserialize>::deserialize(
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable(),
+        ) {
+            Ok(value) => return Ok(PartialExample::D(value)),
+            Err(error) => errors.push(("D", error.to_string())),
+        }
+        match <() as serde::Deserialize>::deserialize(
+            schematic::serde_content::Deserializer::new(content.clone())
+                .coerce_numbers()
+                .human_readable(),
+        ) {
+            Ok(_) => return Ok(PartialExample::E),
+            Err(error) => errors.push(("E", error.to_string())),
+        }
+        let mut message = format!(
+            "failed to parse as any variant of {}:", stringify!(PartialExample)
+        );
+        for (variant, error) in &errors {
+            message.push_str(&format!("\n- {variant}: {error}"));
+        }
+        Err(D::Error::custom(message))
+    }
+}

@@ -98,6 +98,25 @@ mod setting_validate {
         }
 
         #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: Box<NestedConfig>,
+                    #[setting(nested)]
+                    b: Option<Box<NestedConfig>>,
+                    #[setting(nested)]
+                    c: Box<Arc<NestedConfig>>,
+                    #[setting(nested)]
+                    d: Box<Vec<NestedConfig>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
         fn supports_nested_collections() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
@@ -321,6 +340,27 @@ mod setting_validate {
                     E(NestedConfig),
                     #[setting(nested = CustomConfig)]
                     F(CustomConfig),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(Box<NestedConfig>),
+                    #[setting(nested)]
+                    B(Option<Box<NestedConfig>>),
+                    #[setting(nested)]
+                    C(Box<Arc<NestedConfig>>),
+                    #[setting(nested)]
+                    D(Option<Vec<NestedConfig>>),
+                    #[setting(nested)]
+                    E(Box<Vec<NestedConfig>>),
                 }
             });
 

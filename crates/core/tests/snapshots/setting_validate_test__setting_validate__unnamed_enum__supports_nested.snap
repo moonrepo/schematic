@@ -12,20 +12,22 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check("A", (pa), self, func_ref);
+            validate.check("A", (pa), self, Box::new(func_ref));
             validate.nested("A.0", pa);
         }
         Self::B(pa) => {
-            validate.check("B", (pa), self, func_ref);
+            validate.check("B", (pa), self, Box::new(func_ref));
             validate.nested("B.0", pa);
         }
         Self::C(pa) => {
-            validate.check("C", (pa), self, func_ref);
-            validate.nested("C.0", pa);
+            validate.check("C", (pa), self, Box::new(func_ref));
+            if let Some(pa) = pa {
+                validate.nested("C.0", pa);
+            }
         }
         Self::D(pa) => {
-            validate.check("D", (pa), self, func_ref);
-            validate.nested("D.0", pa);
+            validate.check("D", (pa), self, Box::new(func_ref));
+            validate.nested("D.0", pa.as_ref());
         }
         Self::E(pa) => {
             validate.nested("E.0", pa);
