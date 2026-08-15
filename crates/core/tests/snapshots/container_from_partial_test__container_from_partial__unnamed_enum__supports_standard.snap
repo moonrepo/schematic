@@ -1,0 +1,16 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    match partial {
+        PartialExample::A(pa) => Self::A(pa),
+        PartialExample::B(pa) => Self::B(pa),
+        PartialExample::C(pa) => Self::C(pa),
+        PartialExample::D(pa) => Self::D(pa),
+        PartialExample::E(pa) => Self::E(pa),
+        PartialExample::F(pa) => Self::F(pa),
+        PartialExample::G(pa) => Self::G(pa),
+        PartialExample::H(pa, pb) => Self::H(pa, pb),
+    }
+}

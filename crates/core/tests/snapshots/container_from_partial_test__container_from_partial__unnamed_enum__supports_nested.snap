@@ -1,0 +1,24 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    match partial {
+        PartialExample::A(pa) => Self::A(NestedConfig::from_partial(pa)),
+        PartialExample::B(pa) => Self::B(CustomConfig::from_partial(pa)),
+        PartialExample::C(pa) => {
+            Self::C(
+                match pa {
+                    Some(pa) => Some(NestedConfig::from_partial(pa)),
+                    None => None,
+                },
+            )
+        }
+        PartialExample::D(pa) => {
+            Self::D({
+                let pa = Arc::unwrap_or_clone(pa);
+                Arc::new(CustomConfig::from_partial(pa))
+            })
+        }
+    }
+}

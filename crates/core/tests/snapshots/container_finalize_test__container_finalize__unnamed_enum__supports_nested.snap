@@ -13,13 +13,21 @@ fn finalize(
             Self::C(pa) => {
                 Self::C(
                     match pa {
-                        Some(pa) => pa.finalize(context)?,
+                        Some(pa) => Some(pa.finalize(context)?),
                         None => None,
                     },
                 )
             }
             Self::D(pa) => {
-                Self::D(transform_config(Arc::new(pa.finalize(context)?), context)?)
+                Self::D(
+                    transform_config(
+                        {
+                            let pa = Arc::unwrap_or_clone(pa);
+                            Arc::new(pa.finalize(context)?)
+                        },
+                        context,
+                    )?,
+                )
             }
             _ => self,
         },

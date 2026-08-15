@@ -8,13 +8,11 @@ fn default_values(
     use schematic::internal::*;
     Ok(
         Some(Self {
-            no_default: Some(Default::default()),
-            a: Some(true),
-            b: Some(100),
-            c: Some(handle_default_result(String::try_from("abc"))?),
-            d: Some(["a".into(), "b".into(), "c".into()]),
-            e: Some(vec!["a", "b", "c"]),
-            f: Some((10, -10, 0)),
+            a: Some(Box::new(10)),
+            b: Some(Arc::new(Some(10))),
+            c: Some(vec![1, 2, 3]),
+            d: Some(Arc::new(vec![1, 2, 3])),
+            e: Some(Box::new(handle_default_result(String::try_from("abc"))?)),
         }),
     )
 }

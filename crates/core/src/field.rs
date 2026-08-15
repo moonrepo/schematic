@@ -240,6 +240,49 @@ impl Field {
 // }
 
 impl Field {
+    pub fn impl_full_from_partial(&self) -> ImplResult {
+        let key = self.get_key();
+
+        // Reset extendable values since we don't have the entire resolved list
+        if self.is_extendable() {
+            return ImplResult {
+                value: quote! { Default::default() },
+                ..Default::default()
+            };
+        }
+
+        let value = if self.is_nested() {
+            let data_var = format_ident!("data");
+            let inner = self.value.impl_full_from_partial_nested(&data_var).value;
+
+            // When option wrapped, the partial's `Option` is the first layer,
+            // so pass the value as-is and let the layer unwrap it
+            let data = if self.value.is_outer_option_wrapped() {
+                quote! { partial.#key }
+            } else {
+                quote! { partial.#key.unwrap_or_default() }
+            };
+
+            quote! {
+                {
+                    let #data_var = #data;
+                    #inner
+                }
+            }
+        } else if self.value.is_outer_option_wrapped() {
+            // Use optional values as-is as they're already wrapped in `Option`
+            quote! { partial.#key }
+        } else {
+            // Otherwise unwrap the resolved value or use the type default
+            quote! { partial.#key.unwrap_or_default() }
+        };
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
+    }
+
     pub fn impl_partial_default_value(&self) -> ImplResult {
         self.value.impl_partial_default_value(&self.args)
     }
@@ -272,8 +315,10 @@ impl Field {
         let key = self.get_key();
 
         let mut value = if self.is_nested() {
+            // The `if let` below consumes the partial's `Option`, which is
+            // the first `Option` layer when the type is optional
             self.value
-                .impl_partial_finalize_nested(&format_ident!("layer"))
+                .impl_partial_finalize_nested(&format_ident!("layer"), true)
                 .value
         } else {
             quote! { layer }
@@ -335,7 +380,7 @@ impl Field {
                 #outer
 
                 if self.#key.is_none() {
-                    validate.required(#key);
+                    validate.required(#key_string);
                 }
             };
         }

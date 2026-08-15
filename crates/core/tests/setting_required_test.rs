@@ -1,11 +1,28 @@
+mod utils;
+
 use schematic_core::container::Container;
+use starbase_sandbox::assert_snapshot;
 use syn::parse_quote;
+use utils::pretty;
 
 mod setting_required {
     use super::*;
 
     mod named_struct {
         use super::*;
+
+        #[test]
+        fn renders_validate_check() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(required)]
+                    a: Option<String>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
 
         #[test]
         fn accepts_bool() {
