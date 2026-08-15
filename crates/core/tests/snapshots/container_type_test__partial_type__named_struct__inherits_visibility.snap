@@ -1,0 +1,14 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub(crate) struct PartialExample {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub a: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) b: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    c: Option<bool>,
+}

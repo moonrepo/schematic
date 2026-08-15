@@ -12,6 +12,15 @@ fn merge(
         .nested(&mut self.0, next.0)?
         .nested(&mut self.1, next.1)?
         .nested(&mut self.2, next.2)?
-        .nested(&mut self.3, next.3)?;
+        .apply_with(
+            &mut self.3,
+            next.3,
+            |mut prev, next, context| {
+                (*Arc::make_mut(&mut prev))
+                    .merge(context, Arc::unwrap_or_clone(next))
+                    .map_err(|error| schematic::MergeError(error.to_string()))?;
+                Ok(Some(prev))
+            },
+        )?;
     Ok(())
 }

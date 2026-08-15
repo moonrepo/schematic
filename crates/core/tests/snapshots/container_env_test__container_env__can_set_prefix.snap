@@ -9,8 +9,8 @@ fn env_values_with_prefix(
     let mut env = EnvManager::new(prefix.or(Some("PREFIX_")));
     let mut partial = Self::default();
     partial.a = env.get("OVERRIDE")?;
-    partial.b = env.get("B")?;
-    partial.c = env.get("C")?;
+    partial.b = env.get_prefixed("B")?;
+    partial.c = env.get_prefixed("C")?;
     partial.d = env.nested(PartialNestedConfig::env_values()?)?;
     partial.e = env.nested(PartialCustomConfig::env_values()?)?;
     partial.f = env

@@ -1,0 +1,65 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PartialExample {
+    A,
+    B,
+    C,
+}
+#[automatically_derived]
+impl Default for PartialExample {
+    fn default() -> Self {
+        Self::B
+    }
+}
+#[automatically_derived]
+impl schematic::PartialConfig for PartialExample {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Ok(Some(Self::B))
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        *self = next;
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl schematic::Config for Example {
+    type Partial = PartialExample;
+    fn from_partial(partial: Self::Partial) -> Self {
+        match partial {
+            PartialExample::A => Self::A,
+            PartialExample::B => Self::B,
+            PartialExample::C => Self::C,
+        }
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            ("A".into(), ConfigSetting::new("A")),
+            ("B".into(), ConfigSetting::new("B")),
+            ("C".into(), ConfigSetting::new("C")),
+        ])
+    }
+}
+#[automatically_derived]
+impl Default for Example {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {}

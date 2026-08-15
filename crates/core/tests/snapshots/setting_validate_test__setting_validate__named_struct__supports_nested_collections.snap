@@ -11,15 +11,15 @@ fn validate_with_path(
     use schematic::internal::*;
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.a {
-        validate.check("a", setting, self, func_ref);
+        validate.check("a", setting, self, Box::new(func_ref));
         validate.nested_list("a", setting.iter());
     }
     if let Some(setting) = &self.b {
-        validate.check("b", setting, self, func_ref);
+        validate.check("b", setting, self, Box::new(func_ref));
         validate.nested_map("b", setting.iter());
     }
     if let Some(setting) = &self.c {
-        validate.check("c", setting, self, func_ref);
+        validate.check("c", setting, self, Box::new(func_ref));
         validate.nested_list("c", setting.iter());
     }
     if let Some(setting) = &self.d {

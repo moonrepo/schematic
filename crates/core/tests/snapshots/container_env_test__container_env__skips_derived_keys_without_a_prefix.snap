@@ -6,9 +6,9 @@ fn env_values_with_prefix(
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    let mut env = EnvManager::new(prefix.or(Some("PREFIX_")));
+    let mut env = EnvManager::new(prefix);
     let mut partial = Self::default();
-    partial.a = env.get_prefixed("A")?;
-    partial.d = env.get_prefixed("D")?;
+    partial.b = env.get("B_VAR")?;
+    partial.c = env.nested(PartialNestedConfig::env_values()?)?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

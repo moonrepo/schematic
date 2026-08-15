@@ -1,5 +1,5 @@
 use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
-use crate::field::Field;
+use crate::field::{EnvKey, Field};
 use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
@@ -103,6 +103,19 @@ impl Container {
 
     fn validate_args(&self) {}
 
+    pub fn get_partial_ident(&self) -> Ident {
+        format_ident!("Partial{}", self.ident)
+    }
+
+    /// Whether the partial enum is untagged, and requires
+    /// each variant to be attempted in order when deserializing.
+    pub fn is_untagged(&self) -> bool {
+        matches!(
+            self.inner,
+            ContainerInner::UnnamedEnum { .. } | ContainerInner::UnitEnum { .. }
+        ) && self.serde_args.untagged
+    }
+
     pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
         let mut attrs = vec![];
 
@@ -144,7 +157,9 @@ impl Container {
             ContainerInner::UnnamedStruct { .. } => {
                 meta.push(quote! { default });
             }
-            ContainerInner::UnnamedEnum { .. } => {
+            // Unit enums must remain externally tagged, otherwise
+            // variants can only be deserialized from `null`
+            ContainerInner::UnnamedEnum { .. } | ContainerInner::UnitEnum { .. } => {
                 if let Some(tag) = &self.serde_args.tag {
                     meta.push(quote! { tag = #tag });
                 }
@@ -157,9 +172,6 @@ impl Container {
                     meta.push(quote! { untagged });
                 }
             }
-            ContainerInner::UnitEnum { .. } => {
-                meta.push(quote! { untagged });
-            }
         };
 
         if let Some(expecting) = &self.serde_args.expecting {
@@ -169,7 +181,11 @@ impl Container {
         // Config attributes take precedence over serde attributes
         let renames = [
             ("rename", &self.args.rename, &self.serde_args.rename),
-            ("rename_all", &self.args.rename_all, &self.serde_args.rename_all),
+            (
+                "rename_all",
+                &self.args.rename_all,
+                &self.serde_args.rename_all,
+            ),
             (
                 "rename_all_fields",
                 &self.args.rename_all_fields,
@@ -194,7 +210,7 @@ impl Container {
 
     pub fn impl_full(&self) -> TokenStream {
         let base_name = &self.ident;
-        let partial_name = format_ident!("Partial{base_name}");
+        let partial_name = self.get_partial_ident();
 
         let from_partial_method = self.impl_full_from_partial();
         let settings_method = self.impl_full_settings();
@@ -253,7 +269,7 @@ impl Container {
                 }
             }
             ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
-                let partial_name = format_ident!("Partial{}", self.ident);
+                let partial_name = self.get_partial_ident();
                 let mut arms = vec![];
 
                 for variant in variants {
@@ -286,10 +302,11 @@ impl Container {
                     } else {
                         field.index.to_string()
                     };
-                    let env_key = if let Some(value) = field.get_env_var() {
-                        quote! { .env(#value) }
-                    } else {
-                        quote! {}
+                    // Only explicit keys are known statically, as derived
+                    // keys depend on the prefix in effect at runtime
+                    let env_key = match field.get_env_var() {
+                        Some(EnvKey::Explicit(value)) => quote! { .env(#value) },
+                        _ => quote! {},
                     };
                     let nested = if field.is_nested() {
                         let value = field.value.get_inner_type();
@@ -347,9 +364,147 @@ impl Container {
         }
     }
 
-    pub fn impl_partial(&self) -> TokenStream {
+    /// Generate the partial type declaration, in which every field
+    /// is optional and nested configurations are replaced by their partials.
+    pub fn impl_partial_type(&self) -> TokenStream {
+        let partial_name = self.get_partial_ident();
+        let attrs = self.get_partial_attributes();
+        let vis = &self.vis;
+
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } => quote! {
+                #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                #(#attrs)*
+                #vis struct #partial_name {
+                    #(#fields)*
+                }
+            },
+            ContainerInner::UnnamedStruct { fields } => quote! {
+                #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+                #(#attrs)*
+                #vis struct #partial_name(
+                    #(#fields)*
+                );
+            },
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                // Untagged enums implement `Deserialize` manually,
+                // and all enums implement `Default` manually
+                let derives = if self.is_untagged() {
+                    quote! { Clone, Debug, PartialEq, serde::Serialize }
+                } else {
+                    quote! { Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize }
+                };
+
+                quote! {
+                    #[derive(#derives)]
+                    #(#attrs)*
+                    #vis enum #partial_name {
+                        #(#variants)*
+                    }
+                }
+            }
+        }
+    }
+
+    /// Generate a `Default` implementation for partial enums, as the
+    /// derive is unable to determine the default variant. Partial structs
+    /// derive `Default` instead.
+    pub fn impl_partial_type_default(&self) -> TokenStream {
+        let variants = match &self.inner {
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                variants
+            }
+            _ => return quote! {},
+        };
+
+        // Prefer the marked variant, otherwise fallback to the first
+        let default_variant = variants
+            .iter()
+            .find(|variant| variant.is_default())
+            .or_else(|| variants.first())
+            .unwrap_or_else(|| panic!("Enums must have at least 1 variant."));
+
+        let partial_name = self.get_partial_ident();
+        let value = default_variant.impl_partial_default_value().value;
+
+        quote! {
+            #[automatically_derived]
+            impl Default for #partial_name {
+                fn default() -> Self {
+                    Self::#value
+                }
+            }
+        }
+    }
+
+    /// Generate a `Deserialize` implementation for untagged partial enums,
+    /// that attempts each variant in order, and reports all errors on failure,
+    /// as the derived implementation loses this information.
+    pub fn impl_partial_type_deserialize(&self) -> TokenStream {
+        if !self.is_untagged() {
+            return quote! {};
+        }
+
+        let partial_name = self.get_partial_ident();
+        let mut attempts = vec![];
+
+        for variant in self.inner.get_variants() {
+            let res = variant.impl_partial_type_deserialize(&partial_name);
+
+            if !res.no_value {
+                attempts.push(res.value);
+            }
+        }
+
+        quote! {
+            #[automatically_derived]
+            impl<'de> serde::Deserialize<'de> for #partial_name {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: serde::Deserializer<'de>,
+                {
+                    use serde::de::Error as _;
+
+                    // Buffer the content so that we can attempt to deserialize it multiple times
+                    let content = deserializer.deserialize_any(schematic::serde_content::ValueVisitor)?;
+                    let mut errors: Vec<(&str, String)> = Vec::new();
+
+                    #(#attempts)*
+
+                    // All variants failed, so combine the errors into a single message
+                    let mut message = format!(
+                        "failed to parse as any variant of {}:",
+                        stringify!(#partial_name)
+                    );
+
+                    for (variant, error) in &errors {
+                        message.push_str(&format!("\n- {variant}: {error}"));
+                    }
+
+                    Err(D::Error::custom(message))
+                }
+            }
+        }
+    }
+
+    /// Generate `Schematic` implementations for both types, which are
+    /// required by the `Config` and `PartialConfig` traits.
+    pub fn impl_schematic(&self) -> TokenStream {
         let base_name = &self.ident;
-        let partial_name = format_ident!("Partial{base_name}");
+        let partial_name = self.get_partial_ident();
+
+        // TODO: Generate schemas when the `schema` feature is enabled
+        quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #base_name {}
+
+            #[automatically_derived]
+            impl schematic::Schematic for #partial_name {}
+        }
+    }
+
+    pub fn impl_partial(&self) -> TokenStream {
+        let partial_name = self.get_partial_ident();
         let context = match self.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },
             None => quote! { () },
@@ -721,6 +876,7 @@ impl Container {
             }
             ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
                 let mut statements = vec![];
+                let mut requires_internal = false;
 
                 for variant in variants {
                     let res = variant.impl_partial_merge();
@@ -728,8 +884,13 @@ impl Container {
                     if !res.no_value {
                         statements.push(res.value);
                     }
+
+                    if res.requires_internal {
+                        requires_internal = true;
+                    }
                 }
 
+                let internal = ImplResult::impl_use_internal(requires_internal);
                 let inner = if statements.is_empty() {
                     quote! {
                         *self = next;
@@ -751,6 +912,7 @@ impl Container {
                         context: &Self::Context,
                         mut next: Self,
                     ) -> std::result::Result<(), schematic::ConfigError> {
+                        #internal
                         #inner
                         Ok(())
                     }
@@ -837,9 +999,20 @@ impl Container {
     }
 }
 
+// #[derive(Config)]
 impl ToTokens for Container {
-    fn to_tokens(&self, _tokens: &mut TokenStream) {
-        // TODO
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        // Partial type
+        tokens.extend(self.impl_partial_type());
+        tokens.extend(self.impl_partial_type_default());
+        tokens.extend(self.impl_partial_type_deserialize());
+        tokens.extend(self.impl_partial());
+
+        // Full type
+        tokens.extend(self.impl_full());
+
+        // Both types
+        tokens.extend(self.impl_schematic());
     }
 }
 

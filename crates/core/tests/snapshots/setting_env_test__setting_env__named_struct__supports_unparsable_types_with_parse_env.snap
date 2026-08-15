@@ -1,14 +1,15 @@
 ---
-source: crates/core/tests/container_env_test.rs
+source: crates/core/tests/setting_env_test.rs
 expression: pretty(container.impl_partial_env_values())
 ---
 fn env_values_with_prefix(
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    let mut env = EnvManager::new(prefix.or(Some("PREFIX_")));
+    let mut env = EnvManager::new(prefix);
     let mut partial = Self::default();
-    partial.a = env.get_prefixed("A")?;
-    partial.d = env.get_prefixed("D")?;
+    partial.a = env.get_and_parse("LIST", schematic::env::split_comma)?;
+    partial.b = env.get_and_parse("OPT_LIST", schematic::env::split_comma)?;
+    partial.c = env.get_and_parse("BOXED", parse_func)?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

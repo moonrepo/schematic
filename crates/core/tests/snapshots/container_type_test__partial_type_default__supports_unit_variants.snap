@@ -1,0 +1,10 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type_default())
+---
+#[automatically_derived]
+impl Default for PartialExample {
+    fn default() -> Self {
+        Self::B
+    }
+}
