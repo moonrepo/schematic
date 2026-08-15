@@ -32,6 +32,22 @@ mod container_env {
     }
 
     #[test]
+    fn skips_unsupported_types_for_prefix() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(env_prefix = "PREFIX_")]
+            struct Example {
+                a: String,
+                b: Vec<String>,
+                c: Box<String>,
+                d: Option<String>,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_env_values()));
+    }
+
+    #[test]
     fn can_set_prefix() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]

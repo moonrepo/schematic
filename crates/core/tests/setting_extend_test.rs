@@ -102,6 +102,18 @@ mod setting_extend {
         }
 
         #[test]
+        fn skips_when_unused() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: String,
+                }
+            });
+
+            assert!(container.impl_partial_extends_from().is_empty());
+        }
+
+        #[test]
         #[should_panic(expected = "Only 1 setting may use `extend`, found: a, b")]
         fn errors_multiple_extends() {
             Container::from(parse_quote! {
@@ -154,10 +166,35 @@ mod setting_extend {
     }
 
     mod unnamed_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn skips_when_unused() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A(bool),
+                    B(usize),
+                }
+            });
+
+            assert!(container.impl_partial_extends_from().is_empty());
+        }
     }
 
     mod unit_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn skips_when_unused() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A, B, C
+                }
+            });
+
+            assert!(container.impl_partial_extends_from().is_empty());
+        }
     }
 }

@@ -380,7 +380,7 @@ impl Field {
                 #outer
 
                 if self.#key.is_none() {
-                    validate.required(#key);
+                    validate.required(#key_string);
                 }
             };
         }
