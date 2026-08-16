@@ -294,7 +294,8 @@ fn supports_cycles() {
                     schema: Schema::object(ObjectType::new(
                         Schema::string(StringType::default()),
                         SchemaType::Reference {
-                            name: "Cycle".into()
+                            name: "Cycle".into(),
+                            partial: false
                         },
                     )),
                     ..Default::default()

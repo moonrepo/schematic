@@ -10,7 +10,7 @@ mod references {
     // variant. Every recursive config depends on this serializing.
     #[test]
     fn serializes_a_reference() {
-        let schema = Schema::new(SchemaType::Reference { name: "Foo".into() });
+        let schema = Schema::reference("Foo");
 
         let json = serde_json::to_string(&schema).unwrap();
 
@@ -22,9 +22,7 @@ mod references {
     fn serializes_a_nested_reference() {
         let schema = Schema::object(ObjectType::new(
             Schema::string(StringType::default()),
-            Schema::new(SchemaType::Reference {
-                name: "Cycle".into(),
-            }),
+            Schema::reference("Cycle"),
         ));
 
         let json = serde_json::to_string(&schema).unwrap();
@@ -57,13 +55,13 @@ mod references {
 
     #[test]
     fn is_reference() {
-        assert!(Schema::new(SchemaType::Reference { name: "Foo".into() }).is_reference());
+        assert!(Schema::reference("Foo").is_reference());
         assert!(!Schema::null().is_reference());
     }
 
     #[test]
     fn displays_the_name() {
-        let mut schema = Schema::new(SchemaType::Reference { name: "Foo".into() });
+        let mut schema = Schema::reference("Foo");
 
         assert_eq!(schema.to_string(), "Foo");
 
@@ -388,5 +386,202 @@ mod nullable {
 
         assert_eq!(inner.variants_types.len(), 3);
         assert!(inner.has_null());
+    }
+}
+
+mod partialize {
+    use super::*;
+
+    fn structure() -> Schema {
+        Schema::structure(StructType::default())
+    }
+
+    fn is_partial(schema: &Schema) -> bool {
+        match &schema.ty {
+            SchemaType::Struct(inner) => inner.partial,
+            SchemaType::Union(inner) => inner.partial,
+            SchemaType::Reference { partial, .. } => *partial,
+            _ => false,
+        }
+    }
+
+    #[test]
+    fn marks_a_struct() {
+        let mut schema = structure();
+        schema.partialize();
+
+        assert!(is_partial(&schema));
+    }
+
+    #[test]
+    fn recurses_into_arrays() {
+        let mut schema = Schema::array(ArrayType::new(structure()));
+        schema.partialize();
+
+        let SchemaType::Array(inner) = &schema.ty else {
+            panic!("expected an array");
+        };
+
+        assert!(is_partial(&inner.items_type));
+    }
+
+    #[test]
+    fn recurses_into_object_values() {
+        let mut schema = Schema::object(ObjectType::new(
+            Schema::string(StringType::default()),
+            structure(),
+        ));
+        schema.partialize();
+
+        let SchemaType::Object(inner) = &schema.ty else {
+            panic!("expected an object");
+        };
+
+        assert!(is_partial(&inner.value_type));
+        // Keys are always scalars, so they are left alone
+        assert!(!is_partial(&inner.key_type));
+    }
+
+    #[test]
+    fn recurses_into_tuples() {
+        let mut schema = Schema::tuple(TupleType::new([structure(), structure()]));
+        schema.partialize();
+
+        let SchemaType::Tuple(inner) = &schema.ty else {
+            panic!("expected a tuple");
+        };
+
+        assert!(inner.items_types.iter().all(|item| is_partial(item)));
+    }
+
+    // A cycle resolves to a reference, which must point at the partial type
+    // once partialized, or it names a type that was never rendered.
+    #[test]
+    fn marks_a_reference() {
+        let mut schema = Schema::reference("Nested");
+        schema.partialize();
+
+        assert!(is_partial(&schema));
+    }
+
+    #[test]
+    fn marks_a_reference_within_a_collection() {
+        let mut schema = Schema::array(ArrayType::new(Schema::reference("Nested")));
+        schema.partialize();
+
+        let SchemaType::Array(inner) = &schema.ty else {
+            panic!("expected an array");
+        };
+
+        assert!(is_partial(&inner.items_type));
+    }
+
+    #[test]
+    fn recurses_into_nullable_unions() {
+        let mut schema = Schema::union(UnionType::new_any([structure(), Schema::null()]));
+        schema.partialize();
+
+        let SchemaType::Union(inner) = &schema.ty else {
+            panic!("expected a union");
+        };
+
+        assert!(inner.partial);
+        assert!(is_partial(&inner.variants_types[0]));
+    }
+
+    #[test]
+    fn round_trips_the_reference_flag() {
+        let mut schema = Schema::reference("Nested");
+        schema.partialize();
+
+        let json = serde_json::to_string(&schema).unwrap();
+
+        assert!(json.contains(r#""partial":true"#));
+        assert_eq!(serde_json::from_str::<Schema>(&json).unwrap(), schema);
+    }
+
+    #[test]
+    fn omits_the_reference_flag_when_not_partial() {
+        let json = serde_json::to_string(&Schema::reference("Nested")).unwrap();
+
+        assert!(!json.contains("partial"));
+    }
+}
+
+mod nonnull {
+    use super::*;
+
+    #[test]
+    fn returns_itself_for_a_plain_type() {
+        let schema = Schema::string(StringType::default());
+
+        assert_eq!(schema.get_nonnull_schema(), Some(&schema));
+    }
+
+    #[test]
+    fn returns_nothing_for_a_null() {
+        assert_eq!(Schema::null().get_nonnull_schema(), None);
+    }
+
+    #[test]
+    fn finds_the_non_null_variant() {
+        let schema = SchemaBuilder::build_root::<Option<String>>();
+        let inner = schema.get_nonnull_schema().unwrap();
+
+        assert_eq!(inner.ty, SchemaType::String(Box::default()));
+    }
+
+    // A variant may itself be a union, so taking the first non-null variant
+    // is not enough — it has to resolve.
+    #[test]
+    fn resolves_through_a_nested_union() {
+        let nested = Schema::union(UnionType::new_any([Schema::null(), Schema::null()]));
+        let schema = Schema::union(UnionType::new_any([
+            nested,
+            Schema::string(StringType::default()),
+        ]));
+
+        let inner = schema.get_nonnull_schema().unwrap();
+
+        assert_eq!(inner.ty, SchemaType::String(Box::default()));
+    }
+
+    #[test]
+    fn returns_nothing_when_every_variant_is_null() {
+        let nested = Schema::union(UnionType::new_any([Schema::null(), Schema::null()]));
+        let schema = Schema::union(UnionType::new_any([nested, Schema::null()]));
+
+        assert_eq!(schema.get_nonnull_schema(), None);
+    }
+}
+
+mod reports_application {
+    use super::*;
+
+    #[test]
+    fn add_field_reports_whether_it_applied() {
+        let mut schema = Schema::structure(StructType::default());
+
+        assert!(schema.add_field("a", Schema::null()));
+
+        let mut schema = Schema::string(StringType::default());
+
+        assert!(!schema.add_field("a", Schema::null()));
+    }
+
+    #[test]
+    fn set_default_reports_whether_it_applied() {
+        let value = LiteralValue::String("abc".into());
+
+        assert!(Schema::string(StringType::default()).set_default(value.clone()));
+        assert!(SchemaBuilder::build_root::<Option<String>>().set_default(value.clone()));
+
+        // Nowhere to put a default
+        assert!(!Schema::structure(StructType::default()).set_default(value.clone()));
+        assert!(!Schema::array(ArrayType::new(Schema::null())).set_default(value.clone()));
+        assert!(!Schema::null().set_default(value.clone()));
+
+        // The enum does not declare this value
+        assert!(!Schema::enumerable(EnumType::new([LiteralValue::Bool(true)])).set_default(value));
     }
 }

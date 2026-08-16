@@ -79,6 +79,14 @@ impl Schema {
         Self::new(SchemaType::Object(Box::new(value)))
     }
 
+    /// Create a schema that references another schema by name.
+    pub fn reference(name: impl AsRef<str>) -> Self {
+        Self::new(SchemaType::Reference {
+            name: name.as_ref().to_owned(),
+            partial: false,
+        })
+    }
+
     /// Create a string schema.
     pub fn string(value: StringType) -> Self {
         Self::new(SchemaType::String(Box::new(value)))
@@ -143,12 +151,23 @@ impl Schema {
         self.ty = SchemaType::Union(Box::new(UnionType::new_any([new_schema, Schema::null()])));
     }
 
-    /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
-    /// but arrays and objects will also be recursively set to update the inner type.
+    /// Mark the inner schema type as partial. Only structs, unions, and references can be
+    /// marked partial, but arrays, objects, and tuples will also be recursively set to
+    /// update the inner types.
     pub fn partialize(&mut self) {
         match &mut self.ty {
             SchemaType::Array(inner) => inner.items_type.partialize(),
             SchemaType::Object(inner) => inner.value_type.partialize(),
+            SchemaType::Tuple(inner) => {
+                for item in inner.items_types.iter_mut() {
+                    item.partialize();
+                }
+            }
+            // A cycle resolves to a reference, so it has to point at the partial
+            // type once partialized, otherwise the reference dangles.
+            SchemaType::Reference { partial, .. } => {
+                *partial = true;
+            }
             SchemaType::Struct(inner) => {
                 inner.partial = true;
             }
@@ -194,22 +213,18 @@ impl Schema {
     }
 
     /// Return a non-null schema if available. If a null type,
-    /// returns `None`. If a union type, returns the first non-null
-    /// type or `None`. Otherwise, returns the current type.
+    /// returns `None`. If a union type, returns the first variant that
+    /// resolves to a non-null type, or `None`. Otherwise, returns the
+    /// current type.
     pub fn get_nonnull_schema(&self) -> Option<&Schema> {
         match &self.ty {
             SchemaType::Null => None,
-            SchemaType::Union(inner) => {
-                for ty in &inner.variants_types {
-                    if ty.is_null() {
-                        continue;
-                    }
-
-                    return Some(ty);
-                }
-
-                None
-            }
+            // Resolve each variant rather than taking the first non-null one,
+            // as a variant may itself be a union that holds nothing but nulls.
+            SchemaType::Union(inner) => inner
+                .variants_types
+                .iter()
+                .find_map(|variant| variant.get_nonnull_schema()),
             _ => Some(self),
         }
     }
@@ -247,7 +262,7 @@ impl From<Schema> for SchemaType {
 impl Schematic for Schema {}
 
 #[cfg(feature = "serde")]
-fn is_false(value: &bool) -> bool {
+pub(crate) fn is_false(value: &bool) -> bool {
     !value
 }
 

@@ -55,9 +55,10 @@ impl EnumType {
         }
     }
 
-    /// Point `default_index` at the entry holding this value. Does nothing
-    /// when no entry matches, rather than clearing an existing default.
-    pub fn set_default(&mut self, default: LiteralValue) {
+    /// Point `default_index` at the entry holding this value. Returns false
+    /// and keeps any existing default when no entry matches, as an enum can
+    /// only default to a value it declares.
+    pub fn set_default(&mut self, default: LiteralValue) -> bool {
         let index = match &self.variants {
             Some(variants) => variants.values().position(|variant| {
                 matches!(&variant.schema.ty, SchemaType::Literal(lit) if lit.value == default)
@@ -65,9 +66,13 @@ impl EnumType {
             None => self.values.iter().position(|value| *value == default),
         };
 
-        if index.is_some() {
-            self.default_index = index;
+        if index.is_none() {
+            return false;
         }
+
+        self.default_index = index;
+
+        true
     }
 
     #[doc(hidden)]

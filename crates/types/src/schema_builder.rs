@@ -182,7 +182,10 @@ impl SchemaBuilder {
         // If this name has already been used, create a reference
         // so that we avoid recursion!
         if self.name_stack.borrow().contains(&name) {
-            return builder.set_type_and_build(SchemaType::Reference { name });
+            return builder.set_type_and_build(SchemaType::Reference {
+                name,
+                partial: false,
+            });
         }
 
         // Otherwise generate a new schema and persist our name cache

@@ -231,8 +231,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `Schema::nullify()` moves a schema's name into the union variant it creates — surprising when
   asserting on partial schemas.
 - `SchemaType` is internally tagged, so any new variant must carry a map-shaped payload. This is why
-  `Reference { name }` is a struct variant and not a newtype — serde refuses to internally tag a
-  newtype wrapping a bare string, which silently broke every cyclic schema.
+  `Reference { name, partial }` is a struct variant and not a newtype — serde refuses to internally
+  tag a newtype wrapping a bare string, which silently broke every cyclic schema.
+- A recursive config resolves its cycle to a `Reference`, and that reference has to be renamed
+  alongside the type it points at. `Schema::partialize` sets `Reference.partial`, and
+  `partialize_schema` reads it to apply the `Partial` prefix — without both halves the partial
+  schema `$ref`s a type that was never rendered.
 - `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
   (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
   `variants`; always read it back through `EnumType::get_default`, never `values[index]`.

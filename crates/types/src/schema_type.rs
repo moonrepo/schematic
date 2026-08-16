@@ -31,6 +31,12 @@ pub enum SchemaType {
     // internally tag a newtype whose value is not a map.
     Reference {
         name: String,
+
+        // The name refers to a partial config type, like `StructType.partial`.
+        // Set by `Schema::partialize`, consumed when the schema is partialized
+        // at runtime and the name gains its `Partial` prefix.
+        #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+        partial: bool,
     },
     Struct(Box<StructType>),
     String(Box<StringType>),
@@ -93,13 +99,16 @@ impl SchemaType {
     /// Set the `default` of the inner schema type. Mirrors [`Self::get_default`],
     /// so unions delegate to the variant that would be read back, and enums
     /// record the position of the matching value.
-    pub fn set_default(&mut self, default: LiteralValue) {
+    ///
+    /// Returns false when the type holds no default, as most don't — a struct
+    /// or an array has nowhere to put one.
+    pub fn set_default(&mut self, default: LiteralValue) -> bool {
         match self {
             SchemaType::Boolean(inner) => {
                 inner.default = Some(default);
             }
             SchemaType::Enum(inner) => {
-                inner.set_default(default);
+                return inner.set_default(default);
             }
             SchemaType::Float(inner) => {
                 inner.default = Some(default);
@@ -121,19 +130,27 @@ impl SchemaType {
                         .unwrap_or(0)
                 });
 
-                if let Some(variant) = inner.variants_types.get_mut(index) {
-                    variant.set_default(default);
-                }
+                return inner
+                    .variants_types
+                    .get_mut(index)
+                    .is_some_and(|variant| variant.set_default(default));
             }
-            _ => {}
+            _ => return false,
         };
+
+        true
     }
 
-    /// Add a field to the type if it's a struct.
-    pub fn add_field(&mut self, key: &str, value: impl Into<SchemaField>) {
-        if let SchemaType::Struct(map) = self {
-            map.fields.insert(key.to_owned(), Box::new(value.into()));
-        }
+    /// Add a field to the type if it's a struct. Returns false when it isn't
+    /// one, as there is nowhere to put the field.
+    pub fn add_field(&mut self, key: &str, value: impl Into<SchemaField>) -> bool {
+        let SchemaType::Struct(map) = self else {
+            return false;
+        };
+
+        map.fields.insert(key.to_owned(), Box::new(value.into()));
+
+        true
     }
 }
 
@@ -160,7 +177,7 @@ impl fmt::Display for SchemaType {
                 Self::Integer(inner) => inner.to_string(),
                 Self::Literal(inner) => inner.to_string(),
                 Self::Object(inner) => inner.to_string(),
-                Self::Reference { name } => name.to_owned(),
+                Self::Reference { name, .. } => name.to_owned(),
                 Self::Struct(inner) => inner.to_string(),
                 Self::String(inner) => inner.to_string(),
                 Self::Tuple(inner) => inner.to_string(),
