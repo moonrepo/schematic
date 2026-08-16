@@ -349,20 +349,12 @@ impl FieldValue {
     }
 
     #[cfg(not(feature = "validate"))]
-    pub fn impl_partial_validate(
-        &self,
-        _field_args: &FieldArgs,
-        _field_name: &str,
-    ) -> ImplResult {
+    pub fn impl_partial_validate(&self, _field_args: &FieldArgs, _field_name: &str) -> ImplResult {
         ImplResult::skipped()
     }
 
     #[cfg(feature = "validate")]
-    pub fn impl_partial_validate(
-        &self,
-        field_args: &FieldArgs,
-        field_name: &str,
-    ) -> ImplResult {
+    pub fn impl_partial_validate(&self, field_args: &FieldArgs, field_name: &str) -> ImplResult {
         let mut res = ImplResult::default();
 
         if let Some(expr) = field_args.validate.as_deref() {
