@@ -381,8 +381,9 @@ impl Value {
     #[cfg(not(feature = "validate"))]
     pub fn impl_partial_validate_nested(
         &self,
-        _path_key: &str,
+        _target: &TokenStream,
         _setting_var: &Ident,
+        _variant: bool,
         _optional: bool,
     ) -> ImplResult {
         ImplResult::skipped()
@@ -391,15 +392,24 @@ impl Value {
     /// Generate a validation for a nested configuration, unwrapping each
     /// layer of the setting until the inner partials can be validated.
     ///
+    /// The `target` identifies the setting within error paths, and is either
+    /// a key, or a variant name and position when `variant` is true.
+    ///
     /// When `optional` is true, the setting has already been unwrapped
     /// from the partial's `Option`, so the outermost `Option` layer is skipped.
     #[cfg(feature = "validate")]
     pub fn impl_partial_validate_nested(
         &self,
-        path_key: &str,
+        target: &TokenStream,
         setting_var: &Ident,
+        variant: bool,
         optional: bool,
     ) -> ImplResult {
+        let prefix = if variant { "nested_variant" } else { "nested" };
+        let nested = format_ident!("{prefix}");
+        let nested_list = format_ident!("{prefix}_list");
+        let nested_map = format_ident!("{prefix}_map");
+
         // Wrappers don't exist in the partial, so only the structural
         // layers need to be traversed
         let mut layers = self.get_partial_layers();
@@ -426,13 +436,13 @@ impl Value {
                 }
                 Layer::Map(_) => {
                     value = Some(quote! {
-                        validate.nested_map(#path_key, #setting.iter());
+                        validate.#nested_map(#target, #setting.iter());
                     });
                     break;
                 }
                 Layer::Set(_) | Layer::Vec(_) => {
                     value = Some(quote! {
-                        validate.nested_list(#path_key, #setting.iter());
+                        validate.#nested_list(#target, #setting.iter());
                     });
                     break;
                 }
@@ -444,7 +454,7 @@ impl Value {
 
         let mut value = value.unwrap_or_else(|| {
             quote! {
-                validate.nested(#path_key, #setting);
+                validate.#nested(#target, #setting);
             }
         });
 

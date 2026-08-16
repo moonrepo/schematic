@@ -546,7 +546,7 @@ impl Variant {
 
         let value = self.map_unnamed_match(&self.ident, fields, |outer_names, _| {
             let mut statements = vec![];
-            let name_string = self.ident.to_string();
+            let name_string = self.get_name();
 
             #[cfg(feature = "validate")]
             if let Some(expr) = self.args.validate.as_deref() {
@@ -563,14 +563,14 @@ impl Variant {
                 };
 
                 statements.push(quote! {
-                    validate.check(#name_string, (#(#outer_names),*), self, #func);
+                    validate.check_variant(#name_string, (#(#outer_names),*), self, #func);
                 });
             }
 
             if self.is_required() {
                 statements.push(quote! {
                     if [#(#outer_names),*].iter().any(|v| v.is_none()) {
-                        validate.required(#name_string);
+                        validate.required_variant(#name_string);
                     }
                 });
             }
@@ -581,12 +581,15 @@ impl Variant {
                         .iter()
                         .enumerate()
                         .map(|(index, o)| {
-                            let name_index = format!("{name_string}.{index}");
-
                             // Variant values are not wrapped by the partial,
                             // so all layers must be handled
                             self.values[index]
-                                .impl_partial_validate_nested(&name_index, o, false)
+                                .impl_partial_validate_nested(
+                                    &quote! { #name_string, #index },
+                                    o,
+                                    true,
+                                    false,
+                                )
                                 .value
                         })
                         .collect::<Vec<_>>(),

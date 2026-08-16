@@ -10,12 +10,15 @@ fn validate_with_path(
 ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
     use schematic::internal::*;
     let mut validate = ValidateManager::new(context, finalizing, path);
-    match self {
-        Self::A(pa) => {
-            validate.check_variant("A", (pa), self, func_call());
-        }
-        _ => {}
-    };
+    if let Some(setting) = &self.a {
+        validate.check("aa", setting, self, Box::new(func_ref));
+    }
+    if self.b.is_none() {
+        validate.required("bb");
+    }
+    if let Some(setting) = &self.c {
+        validate.nested("cc", setting);
+    }
     if !validate.errors.is_empty() {
         return Err(validate.errors);
     }

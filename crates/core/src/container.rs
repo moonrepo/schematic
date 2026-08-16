@@ -297,11 +297,7 @@ impl Container {
         match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
-                    let name = if field.ident.is_some() {
-                        field.get_name()
-                    } else {
-                        field.index.to_string()
-                    };
+                    let name = field.get_name_or_index();
                     // Only explicit keys are known statically, as derived
                     // keys depend on the prefix in effect at runtime
                     let env_key = match field.get_env_var() {

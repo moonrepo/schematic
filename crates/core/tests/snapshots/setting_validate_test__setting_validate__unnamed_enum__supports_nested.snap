@@ -12,28 +12,28 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check("A", (pa), self, Box::new(func_ref));
-            validate.nested("A.0", pa);
+            validate.check_variant("A", (pa), self, Box::new(func_ref));
+            validate.nested_variant("A", 0usize, pa);
         }
         Self::B(pa) => {
-            validate.check("B", (pa), self, Box::new(func_ref));
-            validate.nested("B.0", pa);
+            validate.check_variant("B", (pa), self, Box::new(func_ref));
+            validate.nested_variant("B", 0usize, pa);
         }
         Self::C(pa) => {
-            validate.check("C", (pa), self, Box::new(func_ref));
+            validate.check_variant("C", (pa), self, Box::new(func_ref));
             if let Some(pa) = pa {
-                validate.nested("C.0", pa);
+                validate.nested_variant("C", 0usize, pa);
             }
         }
         Self::D(pa) => {
-            validate.check("D", (pa), self, Box::new(func_ref));
-            validate.nested("D.0", pa);
+            validate.check_variant("D", (pa), self, Box::new(func_ref));
+            validate.nested_variant("D", 0usize, pa);
         }
         Self::E(pa) => {
-            validate.nested("E.0", pa);
+            validate.nested_variant("E", 0usize, pa);
         }
         Self::F(pa) => {
-            validate.nested("F.0", pa);
+            validate.nested_variant("F", 0usize, pa);
         }
         _ => {}
     };

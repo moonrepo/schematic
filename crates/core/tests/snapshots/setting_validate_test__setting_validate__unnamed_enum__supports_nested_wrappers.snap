@@ -12,23 +12,23 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.nested("A.0", pa);
+            validate.nested_variant("A", 0usize, pa);
         }
         Self::B(pa) => {
             if let Some(pa) = pa {
-                validate.nested("B.0", pa);
+                validate.nested_variant("B", 0usize, pa);
             }
         }
         Self::C(pa) => {
-            validate.nested("C.0", pa);
+            validate.nested_variant("C", 0usize, pa);
         }
         Self::D(pa) => {
             if let Some(pa) = pa {
-                validate.nested_list("D.0", pa.iter());
+                validate.nested_variant_list("D", 0usize, pa.iter());
             }
         }
         Self::E(pa) => {
-            validate.nested_list("E.0", pa.iter());
+            validate.nested_variant_list("E", 0usize, pa.iter());
         }
         _ => {}
     };

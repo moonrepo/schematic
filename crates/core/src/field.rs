@@ -200,6 +200,16 @@ impl Field {
             .expect("Name only usable on named fields!")
     }
 
+    /// Return the name that identifies this setting to users, which is the
+    /// serde name for named settings, and the position for unnamed ones.
+    pub fn get_name_or_index(&self) -> String {
+        if self.ident.is_some() {
+            self.get_name()
+        } else {
+            self.index.to_string()
+        }
+    }
+
     pub fn is_excluded(&self) -> bool {
         #[cfg(feature = "schema")]
         {
@@ -464,8 +474,8 @@ impl Field {
 
     pub fn impl_partial_validate(&self) -> ImplResult {
         let key = self.get_key();
-        let key_string = key.to_string();
-        let res = self.value.impl_partial_validate(&self.args, &key);
+        let key_string = self.get_name_or_index();
+        let res = self.value.impl_partial_validate(&self.args, &key_string);
         let mut inner = res.value;
         let mut has_inner = !res.no_value;
 
@@ -474,7 +484,7 @@ impl Field {
             // The `if let` below consumes the partial's `Option`
             let nested_value = self
                 .value
-                .impl_partial_validate_nested(&key_string, &setting_var, true)
+                .impl_partial_validate_nested(&quote! { #key_string }, &setting_var, false, true)
                 .value;
 
             has_inner = true;

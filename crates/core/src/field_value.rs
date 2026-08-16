@@ -352,7 +352,7 @@ impl FieldValue {
     pub fn impl_partial_validate(
         &self,
         _field_args: &FieldArgs,
-        _field_name: &TokenStream,
+        _field_name: &str,
     ) -> ImplResult {
         ImplResult::skipped()
     }
@@ -361,12 +361,11 @@ impl FieldValue {
     pub fn impl_partial_validate(
         &self,
         field_args: &FieldArgs,
-        field_name: &TokenStream,
+        field_name: &str,
     ) -> ImplResult {
         let mut res = ImplResult::default();
 
         if let Some(expr) = field_args.validate.as_deref() {
-            let field_name_string = field_name.to_string();
             let func = match expr {
                 // func(arg)() - already returns a boxed validator
                 Expr::Call(func) => quote! { #func },
@@ -378,7 +377,7 @@ impl FieldValue {
             };
 
             res.value = quote! {
-                validate.check(#field_name_string, setting, self, #func);
+                validate.check(#field_name, setting, self, #func);
             };
         } else {
             res.no_value = true;
