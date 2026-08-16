@@ -1,0 +1,49 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_schemas(
+                [
+                    {
+                        let mut item = {
+                            let mut item = Schema::structure(
+                                StructType::new([("A".into(), schema.infer::<String>())]),
+                            );
+                            item
+                        };
+                        item.description = Some("Docs.".into());
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "B".into(),
+                                    Schema::tuple(
+                                        TupleType::new([
+                                            schema.infer::<usize>(),
+                                            schema.infer::<bool>(),
+                                        ]),
+                                    ),
+                                ),
+                            ]),
+                        );
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                ("C".into(), schema.infer_as_nested::<NestedConfig>()),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                ],
+                Some(1usize),
+            ),
+        )
+}

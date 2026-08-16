@@ -1,0 +1,13 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_schemas(
+                [schema.infer::<String>(), schema.infer_as_nested::<NestedConfig>()],
+                None,
+            ),
+        )
+}

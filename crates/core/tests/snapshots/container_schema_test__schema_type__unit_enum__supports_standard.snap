@@ -1,0 +1,34 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .enumerable(
+            EnumType::from_schemas(
+                [
+                    {
+                        let mut item = Schema {
+                            name: Some("A".into()),
+                            ty: Schema::literal_value(LiteralValue::String("A".into()))
+                                .ty,
+                            ..Default::default()
+                        };
+                        item.description = Some("Docs.".into());
+                        item
+                    },
+                    Schema {
+                        name: Some("bb".into()),
+                        ty: Schema::literal_value(LiteralValue::String("bb".into())).ty,
+                        ..Default::default()
+                    },
+                    Schema {
+                        name: Some("C".into()),
+                        ty: Schema::null().ty,
+                        ..Default::default()
+                    },
+                ],
+                Some(1usize),
+            ),
+        )
+}

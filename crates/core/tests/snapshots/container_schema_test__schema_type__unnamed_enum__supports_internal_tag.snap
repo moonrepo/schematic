@@ -1,0 +1,37 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_schemas(
+                [
+                    {
+                        let mut item = schema.infer::<String>();
+                        item.ty
+                            .add_field(
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("A".into())),
+                                ),
+                            );
+                        item
+                    },
+                    {
+                        let mut item = schema.infer_as_nested::<NestedConfig>();
+                        item.ty
+                            .add_field(
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("B".into())),
+                                ),
+                            );
+                        item.partialize();
+                        item
+                    },
+                ],
+                None,
+            ),
+        )
+}

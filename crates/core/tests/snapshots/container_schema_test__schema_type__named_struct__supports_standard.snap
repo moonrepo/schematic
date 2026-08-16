@@ -1,0 +1,74 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .structure(
+            StructType::new([
+                ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                (
+                    "b".into(),
+                    {
+                        let mut field = SchemaField::new(schema.infer::<usize>());
+                        field.comment = Some("Some docs.".into());
+                        field
+                    },
+                ),
+                (
+                    "c".into(),
+                    {
+                        let mut field = SchemaField::new(
+                            schema
+                                .infer_with_default::<
+                                    String,
+                                >(LiteralValue::String("abc".into())),
+                        );
+                        field.optional = true;
+                        field
+                    },
+                ),
+                (
+                    "d".into(),
+                    {
+                        let mut field = SchemaField::new(
+                            schema.infer_with_default::<usize>(LiteralValue::Int(10)),
+                        );
+                        field.optional = true;
+                        field
+                    },
+                ),
+                (
+                    "e".into(),
+                    {
+                        let mut field = SchemaField::new(
+                            schema.infer_with_default::<f32>(LiteralValue::F64(1.5)),
+                        );
+                        field.optional = true;
+                        field
+                    },
+                ),
+                (
+                    "f".into(),
+                    {
+                        let mut field = SchemaField::new(
+                            schema.infer_with_default::<bool>(LiteralValue::Bool(true)),
+                        );
+                        field.optional = true;
+                        field
+                    },
+                ),
+                (
+                    "g".into(),
+                    {
+                        let mut field = SchemaField::new(
+                            schema.infer::<Option<String>>(),
+                        );
+                        field.nullable = true;
+                        field
+                    },
+                ),
+                ("h".into(), SchemaField::new(schema.infer::<Vec<String>>())),
+            ]),
+        )
+}
