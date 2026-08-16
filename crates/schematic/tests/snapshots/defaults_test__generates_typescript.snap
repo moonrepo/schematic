@@ -20,6 +20,7 @@ export interface CustomDefaults {
 
 export interface ReqOptDefaults {
 	optional: number | null;
+	/** @default 123 */
 	optionalWithDefault?: number | null;
 	optionalWithDefaultFn?: number | null;
 	required: number;

@@ -71,8 +71,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -187,8 +186,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -310,8 +308,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -426,8 +423,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,

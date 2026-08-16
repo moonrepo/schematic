@@ -5,14 +5,21 @@ use std::fmt;
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct EnumType {
+    /// Position of the default entry. Indexes `variants` when variants are
+    /// present, otherwise `values`.
     #[cfg_attr(
         feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub default_index: Option<usize>,
 
+    /// The literal values of this enum. When `variants` is set, this is a
+    /// *derived subset* of it — variants that carry a non-literal schema
+    /// (a null, say) contribute no value, so the two can differ in length.
+    /// Never index this with `default_index`; use [`Self::get_default`].
     pub values: Vec<LiteralValue>,
 
+    /// Every variant, in declaration order, keyed by name.
     #[cfg_attr(
         feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
@@ -32,6 +39,37 @@ impl EnumType {
         }
     }
 
+    /// Return the default value, resolving `default_index` against whichever
+    /// list it indexes. Returns `None` when the default entry carries no
+    /// literal value.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        let index = self.default_index?;
+
+        let Some(variants) = &self.variants else {
+            return self.values.get(index);
+        };
+
+        match &variants.get_index(index)?.1.schema.ty {
+            SchemaType::Literal(lit) => Some(&lit.value),
+            _ => None,
+        }
+    }
+
+    /// Point `default_index` at the entry holding this value. Does nothing
+    /// when no entry matches, rather than clearing an existing default.
+    pub fn set_default(&mut self, default: LiteralValue) {
+        let index = match &self.variants {
+            Some(variants) => variants.values().position(|variant| {
+                matches!(&variant.schema.ty, SchemaType::Literal(lit) if lit.value == default)
+            }),
+            None => self.values.iter().position(|value| *value == default),
+        };
+
+        if index.is_some() {
+            self.default_index = index;
+        }
+    }
+
     #[doc(hidden)]
     pub fn from_schemas<I>(schemas: I, default_index: Option<usize>) -> Self
     where
@@ -45,10 +83,12 @@ impl EnumType {
                 values.push(lit.value.clone());
             }
 
-            variants.insert(
-                schema.name.take().unwrap(),
-                Box::new(SchemaField::new(schema)),
-            );
+            let name = schema
+                .name
+                .take()
+                .expect("Enum variant schemas require a name, as variants are keyed by it.");
+
+            variants.insert(name, Box::new(SchemaField::new(schema)));
         }
 
         EnumType {

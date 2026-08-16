@@ -27,7 +27,11 @@ pub enum SchemaType {
     Integer(Box<IntegerType>),
     Literal(Box<LiteralType>),
     Object(Box<ObjectType>),
-    Reference(String),
+    // A struct variant, and not a newtype, as serde is unable to
+    // internally tag a newtype whose value is not a map.
+    Reference {
+        name: String,
+    },
     Struct(Box<StructType>),
     String(Box<StringType>),
     Tuple(Box<TupleType>),
@@ -39,15 +43,7 @@ impl SchemaType {
     pub fn get_default(&self) -> Option<&LiteralValue> {
         match self {
             SchemaType::Boolean(inner) => inner.default.as_ref(),
-            SchemaType::Enum(inner) => {
-                if let Some(index) = &inner.default_index
-                    && let Some(value) = inner.values.get(*index)
-                {
-                    return Some(value);
-                }
-
-                None
-            }
+            SchemaType::Enum(inner) => inner.get_default(),
             SchemaType::Float(inner) => inner.default.as_ref(),
             SchemaType::Integer(inner) => inner.default.as_ref(),
             SchemaType::String(inner) => inner.default.as_ref(),
@@ -86,7 +82,7 @@ impl SchemaType {
 
     /// Return true if the schema is a reference.
     pub fn is_reference(&self) -> bool {
-        matches!(self, SchemaType::Reference(_))
+        matches!(self, SchemaType::Reference { .. })
     }
 
     /// Return true if the schema is a struct.
@@ -94,11 +90,16 @@ impl SchemaType {
         matches!(self, SchemaType::Struct(_))
     }
 
-    /// Set the `default` of the inner schema type.
+    /// Set the `default` of the inner schema type. Mirrors [`Self::get_default`],
+    /// so unions delegate to the variant that would be read back, and enums
+    /// record the position of the matching value.
     pub fn set_default(&mut self, default: LiteralValue) {
         match self {
             SchemaType::Boolean(inner) => {
                 inner.default = Some(default);
+            }
+            SchemaType::Enum(inner) => {
+                inner.set_default(default);
             }
             SchemaType::Float(inner) => {
                 inner.default = Some(default);
@@ -108,6 +109,21 @@ impl SchemaType {
             }
             SchemaType::String(inner) => {
                 inner.default = Some(default);
+            }
+            // A union itself holds no value, so push the default down into the
+            // variant it represents. This is how `Option<T>` keeps its default.
+            SchemaType::Union(inner) => {
+                let index = inner.default_index.unwrap_or_else(|| {
+                    inner
+                        .variants_types
+                        .iter()
+                        .position(|variant| !variant.is_null())
+                        .unwrap_or(0)
+                });
+
+                if let Some(variant) = inner.variants_types.get_mut(index) {
+                    variant.set_default(default);
+                }
             }
             _ => {}
         };
@@ -144,7 +160,7 @@ impl fmt::Display for SchemaType {
                 Self::Integer(inner) => inner.to_string(),
                 Self::Literal(inner) => inner.to_string(),
                 Self::Object(inner) => inner.to_string(),
-                Self::Reference(inner) => inner.to_string(),
+                Self::Reference { name } => name.to_owned(),
                 Self::Struct(inner) => inner.to_string(),
                 Self::String(inner) => inner.to_string(),
                 Self::Tuple(inner) => inner.to_string(),

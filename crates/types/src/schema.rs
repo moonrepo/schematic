@@ -24,7 +24,7 @@ pub struct Schema {
     )]
     pub name: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing))]
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub nullable: bool,
 
     pub ty: SchemaType,
@@ -112,12 +112,15 @@ impl Schema {
     /// Convert the current schema to a nullable type. If already nullable,
     /// do nothing, otherwise convert to a union.
     pub fn nullify(&mut self) {
-        if self.nullable {
-            // May already be a null union through inference
-            return;
-        }
+        // Inference builds a nullable union without raising the flag, so the
+        // two can disagree — check both before deciding there's work to do.
+        let already_nullable = self.nullable || self.ty.is_nullable();
 
         self.nullable = true;
+
+        if already_nullable {
+            return;
+        }
 
         if let SchemaType::Union(inner) = &mut self.ty {
             // If the union has an explicit name, then we can assume it's a distinct
@@ -214,10 +217,9 @@ impl Schema {
 
 impl fmt::Display for Schema {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.name.is_some() && (self.ty.is_struct() || self.ty.is_reference()) {
-            write!(f, "{}", self.name.as_ref().unwrap())
-        } else {
-            write!(f, "{}", self.ty)
+        match &self.name {
+            Some(name) if self.ty.is_struct() || self.ty.is_reference() => write!(f, "{name}"),
+            _ => write!(f, "{}", self.ty),
         }
     }
 }

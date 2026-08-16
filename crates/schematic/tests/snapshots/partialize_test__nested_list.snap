@@ -187,8 +187,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,

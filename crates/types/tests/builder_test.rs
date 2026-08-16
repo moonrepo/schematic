@@ -293,7 +293,9 @@ fn supports_cycles() {
                 Box::new(SchemaField {
                     schema: Schema::object(ObjectType::new(
                         Schema::string(StringType::default()),
-                        SchemaType::Reference("Cycle".into()),
+                        SchemaType::Reference {
+                            name: "Cycle".into()
+                        },
                     )),
                     ..Default::default()
                 })

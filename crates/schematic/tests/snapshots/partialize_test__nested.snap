@@ -156,8 +156,7 @@ expression: "create_diff::<Nested>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,

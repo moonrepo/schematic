@@ -56,58 +56,6 @@ expression: "create_diff::<Enums>()"
 🟥                                                            "a",
 🟥                                                        ),
 🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "B": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        format: None,
-🟥                                                        value: String(
-🟥                                                            "b",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "C": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        format: None,
-🟥                                                        value: String(
-🟥                                                            "c",
-🟥                                                        ),
-🟥                                                    },
 🟩                        name: None,
 🟩                        nullable: true,
 🟩                        ty: Union(
@@ -138,7 +86,7 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "Other": SchemaField {
+🟥                                        "B": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -146,14 +94,12 @@ expression: "create_diff::<Enums>()"
 🟥                                                description: None,
 🟥                                                name: None,
 🟥                                                nullable: false,
-🟥                                                ty: String(
-🟥                                                    StringType {
-🟥                                                        default: None,
-🟥                                                        enum_values: None,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
 🟥                                                        format: None,
-🟥                                                        max_length: None,
-🟥                                                        min_length: None,
-🟥                                                        pattern: None,
+🟥                                                        value: String(
+🟥                                                            "b",
+🟥                                                        ),
 🟩                                                values: [
 🟩                                                    String(
 🟩                                                        "a",
@@ -285,6 +231,60 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
+🟥                                        "C": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        format: None,
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "Other": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: String(
+🟥                                                    StringType {
+🟥                                                        default: None,
+🟥                                                        enum_values: None,
+🟥                                                        format: None,
+🟥                                                        max_length: None,
+🟥                                                        min_length: None,
+🟥                                                        pattern: None,
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
 🟩                                        ),
 ⬛️                                    },
 🟥                                ),
@@ -317,8 +317,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -738,8 +737,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -976,7 +974,26 @@ expression: "create_diff::<Enums>()"
 🟥                                                            "a",
 🟥                                                        ),
 🟥                                                    },
-🟥                                                ),
+🟩                        name: None,
+🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: Some(
+🟩                                            "UnitEnum",
+🟩                                        ),
+🟩                                        nullable: false,
+🟩                                        ty: Enum(
+🟩                                            EnumType {
+🟩                                                default_index: Some(
+🟩                                                    0,
+⬛️                                                ),
 🟥                                            },
 🟥                                            deprecated: None,
 🟥                                            env_var: None,
@@ -1002,26 +1019,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                            "b",
 🟥                                                        ),
 🟥                                                    },
-🟩                        name: None,
-🟩                        nullable: true,
-🟩                        ty: Union(
-🟩                            UnionType {
-🟩                                default_index: None,
-🟩                                partial: false,
-🟩                                operator: AnyOf,
-🟩                                variants_types: [
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: Some(
-🟩                                            "UnitEnum",
-🟩                                        ),
-🟩                                        nullable: false,
-🟩                                        ty: Enum(
-🟩                                            EnumType {
-🟩                                                default_index: Some(
-🟩                                                    0,
-⬛️                                                ),
+🟥                                                ),
 🟥                                            },
 🟥                                            deprecated: None,
 🟥                                            env_var: None,
@@ -1150,15 +1148,15 @@ expression: "create_diff::<Enums>()"
 🟥                                            write_only: false,
 🟥                                        },
 🟩                                        ),
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -1181,8 +1179,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,

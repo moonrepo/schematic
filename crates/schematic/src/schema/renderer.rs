@@ -80,7 +80,7 @@ pub trait SchemaRenderer<O = String> {
             SchemaType::String(string) => self.render_string(string, schema),
             SchemaType::Tuple(tuple) => self.render_tuple(tuple, schema),
             SchemaType::Union(uni) => self.render_union(uni, schema),
-            SchemaType::Reference(name) => self.render_reference(name, schema),
+            SchemaType::Reference { name } => self.render_reference(name, schema),
         }
     }
 

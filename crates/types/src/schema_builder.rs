@@ -17,12 +17,12 @@ pub struct SchemaBuilder {
 
 impl SchemaBuilder {
     /// Generate a schema from the provided type.
-    pub fn generate<T: Schematic>() -> Schema {
+    pub fn generate<T: Schematic + ?Sized>() -> Schema {
         Self::build_root::<T>()
     }
 
     /// Generate a schema from the provided type.
-    pub fn build_root<T: Schematic>() -> Schema {
+    pub fn build_root<T: Schematic + ?Sized>() -> Schema {
         let mut builder = SchemaBuilder::default();
 
         if let Some(name) = T::schema_name() {
@@ -136,6 +136,7 @@ impl SchemaBuilder {
 
     /// Build a schema that is also nullable (uses a union).
     pub fn nullable(&mut self, value: impl Into<Schema>) -> Schema {
+        self.nullable = true;
         self.union(UnionType::new_any([value.into(), Schema::null()]))
     }
 
@@ -170,7 +171,7 @@ impl SchemaBuilder {
     }
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`].
-    pub fn infer<T: Schematic>(&self) -> Schema {
+    pub fn infer<T: Schematic + ?Sized>(&self) -> Schema {
         let mut builder = self.nest();
 
         // No name, so return the schema immediately
@@ -181,7 +182,7 @@ impl SchemaBuilder {
         // If this name has already been used, create a reference
         // so that we avoid recursion!
         if self.name_stack.borrow().contains(&name) {
-            return builder.set_type_and_build(SchemaType::Reference(name));
+            return builder.set_type_and_build(SchemaType::Reference { name });
         }
 
         // Otherwise generate a new schema and persist our name cache
@@ -196,7 +197,7 @@ impl SchemaBuilder {
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`],
     /// and mark the schema is partial (is marked as `nested`).
-    pub fn infer_as_nested<T: Schematic>(&self) -> Schema {
+    pub fn infer_as_nested<T: Schematic + ?Sized>(&self) -> Schema {
         let mut schema = self.infer::<T>();
         schema.partialize();
         schema
@@ -204,7 +205,7 @@ impl SchemaBuilder {
 
     /// Infer a [`Schema`] from a type that implements [`Schematic`],
     /// and also provide a default literal value.
-    pub fn infer_with_default<T: Schematic>(&self, default: LiteralValue) -> Schema {
+    pub fn infer_with_default<T: Schematic + ?Sized>(&self, default: LiteralValue) -> Schema {
         let mut schema = self.infer::<T>();
         schema.set_default(default);
         schema

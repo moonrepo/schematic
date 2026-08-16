@@ -230,7 +230,7 @@ impl TemplateContext {
     }
 
     pub fn resolve_schema(&self, initial: &Schema, schemas: &IndexMap<String, Schema>) -> Schema {
-        if let SchemaType::Reference(name) = &initial.ty {
+        if let SchemaType::Reference { name } = &initial.ty {
             if let Some(schema) = schemas.get(name) {
                 return schema.to_owned();
             }
@@ -274,9 +274,9 @@ pub fn render_boolean(boolean: &BooleanType) -> RenderResult {
 }
 
 pub fn render_enum(enu: &EnumType) -> RenderResult {
-    let index = enu.default_index.unwrap_or(0);
-
-    if let Some(value) = enu.values.get(index) {
+    // `default_index` indexes the variants, not the values, so resolve it
+    // through the enum rather than subscripting `values` directly.
+    if let Some(value) = enu.get_default().or_else(|| enu.values.first()) {
         return Ok(lit_to_string(value));
     }
 

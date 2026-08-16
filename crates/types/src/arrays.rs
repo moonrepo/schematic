@@ -66,6 +66,12 @@ impl<T: Schematic> Schematic for Vec<T> {
     }
 }
 
+impl<T: Schematic> Schematic for [T] {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()))
+    }
+}
+
 impl<T: Schematic> Schematic for &[T] {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.array(ArrayType::new(schema.infer::<T>()))

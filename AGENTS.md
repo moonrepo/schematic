@@ -188,8 +188,12 @@ cargo fmt --all --check
 ```
 
 Known pre-existing clippy warnings (not yours): a `count` loop counter in `core/src/variant.rs` and
-`macros/src/config/variant.rs`, an `unwrap` in `types/src/schema.rs`, a collapsible `if` in
-`macros/src/utils.rs`.
+`macros/src/config/variant.rs`, and a collapsible `if` in `macros/src/utils.rs` and
+`schematic/src/schema/renderers/template.rs`.
+
+Also run `cargo test -p schematic_types` on its own. `cargo test --workspace` unifies features across
+crates, so a crate whose own feature list is incomplete still compiles there — that hid a broken
+`serde` feature in `types` until it was audited.
 
 Also verify with **no features** (`cargo build -p schematic_core`) — much of the codegen is behind
 `env`/`extends`/`schema`/`validate` cfgs, and dev-deps enable them all, so feature-gated mistakes
@@ -226,6 +230,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - `StructType.partial` means "refers to a partial config type", **not** "has been partialized".
   `Schema::nullify()` moves a schema's name into the union variant it creates — surprising when
   asserting on partial schemas.
+- `SchemaType` is internally tagged, so any new variant must carry a map-shaped payload. This is why
+  `Reference { name }` is a struct variant and not a newtype — serde refuses to internally tag a
+  newtype wrapping a bare string, which silently broke every cyclic schema.
+- `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
+  (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
+  `variants`; always read it back through `EnumType::get_default`, never `values[index]`.
 - Internally-tagged enums with tuple variants don't compile (serde rejects them). Core doesn't
   currently catch this at derive time.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
