@@ -234,6 +234,10 @@ impl Field {
         }
     }
 
+    pub fn is_flatten(&self) -> bool {
+        self.args.flatten || self.serde_args.flatten
+    }
+
     pub fn is_nested(&self) -> bool {
         self.args
             .nested
@@ -241,8 +245,34 @@ impl Field {
             .is_some_and(|nested| nested.is_nested())
     }
 
+    /// Whether the setting accepts a `null` value.
+    pub fn is_nullable(&self) -> bool {
+        self.value.is_outer_option_wrapped()
+    }
+
+    /// Whether the setting can be omitted, because a default is provided.
+    pub fn is_optional(&self) -> bool {
+        self.args.default.is_some() || self.serde_args.default
+    }
+
     pub fn is_required(&self) -> bool {
         self.args.required
+    }
+
+    pub fn is_skipped(&self) -> bool {
+        self.args.skip || self.serde_args.skip
+    }
+
+    pub fn get_aliases(&self) -> Vec<&String> {
+        let mut aliases = vec![];
+
+        for alias in self.args.alias.iter().chain(self.serde_args.alias.iter()) {
+            if !aliases.contains(&alias) {
+                aliases.push(alias);
+            }
+        }
+
+        aliases
     }
 }
 
@@ -362,6 +392,121 @@ impl ToTokens for Field {
                 #(#attrs)*
                 #vis #ty,
             });
+        }
+    }
+}
+
+#[cfg(feature = "schema")]
+impl Field {
+    /// Generate the schema for this setting. When `as_field` is true, it's
+    /// wrapped in a `SchemaField` keyed by name, otherwise the bare schema
+    /// is returned, for use within tuples.
+    pub fn impl_schema_type(&self, as_field: bool) -> TokenStream {
+        use crate::utils::{extract_comment, extract_deprecated};
+        use syn::Lit;
+
+        let ty = &self.value.ty;
+
+        // Nested configs are inferred as partials, so that the
+        // schema can be marked as such
+        let mut schema = if self.is_nested() {
+            quote! { schema.infer_as_nested::<#ty>() }
+        } else {
+            quote! { schema.infer::<#ty>() }
+        };
+
+        // Literal defaults are rendered within the schema
+        if let Some(Expr::Lit(lit)) = &self.args.default {
+            let value = match &lit.lit {
+                Lit::Str(v) => Some(quote! { LiteralValue::String(#v.into()) }),
+                Lit::Int(v) => Some(if v.suffix().starts_with('u') {
+                    quote! { LiteralValue::Uint(#v) }
+                } else {
+                    quote! { LiteralValue::Int(#v) }
+                }),
+                Lit::Float(v) => Some(if v.suffix() == "f32" {
+                    quote! { LiteralValue::F32(#v) }
+                } else {
+                    quote! { LiteralValue::F64(#v) }
+                }),
+                Lit::Bool(v) => Some(quote! { LiteralValue::Bool(#v) }),
+                _ => None,
+            };
+
+            if let Some(value) = value {
+                schema = quote! { schema.infer_with_default::<#ty>(#value) };
+            }
+        }
+
+        let comment = extract_comment(&self.attrs);
+        let deprecated = extract_deprecated(&self.attrs);
+
+        // Tuple items only support a description
+        if !as_field {
+            return match comment {
+                Some(comment) => quote! {
+                    {
+                        let mut schema = #schema;
+                        schema.set_description(#comment);
+                        schema
+                    }
+                },
+                None => schema,
+            };
+        }
+
+        let mut statements = vec![];
+
+        let aliases = self.get_aliases();
+
+        if !aliases.is_empty() {
+            statements.push(quote! {
+                field.aliases = [#(#aliases),*]
+                    .into_iter()
+                    .map(|alias| alias.to_string())
+                    .collect::<Vec<_>>();
+            });
+        }
+
+        if let Some(comment) = comment {
+            statements.push(quote! { field.comment = Some(#comment.into()); });
+        }
+
+        if let Some(deprecated) = deprecated {
+            statements.push(quote! { field.deprecated = Some(#deprecated.into()); });
+        }
+
+        // Only explicit keys are known statically, as derived
+        // keys depend on the prefix in effect at runtime
+        if let Some(EnvKey::Explicit(env_var)) = self.get_env_var() {
+            statements.push(quote! { field.env_var = Some(#env_var.into()); });
+        }
+
+        for (name, enabled) in [
+            ("flatten", self.is_flatten()),
+            ("hidden", self.is_skipped()),
+            ("nullable", self.is_nullable()),
+            ("optional", self.is_optional()),
+        ] {
+            if enabled {
+                let name = format_ident!("{name}");
+
+                statements.push(quote! { field.#name = true; });
+            }
+        }
+
+        let name = self.get_name_or_index();
+
+        if statements.is_empty() {
+            quote! { (#name.into(), SchemaField::new(#schema)) }
+        } else {
+            quote! {
+                (#name.into(), {
+                    let mut field = SchemaField::new(#schema);
+                    #(#statements)*
+                    field
+                })
+            }
         }
     }
 }

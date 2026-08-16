@@ -1,4 +1,6 @@
-use crate::args::{PartialArg, SerdeContainerArgs, SerdeRenameArg};
+use crate::args::{
+    PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
+};
 use crate::field::{EnvKey, Field};
 use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
 use crate::variant::Variant;
@@ -105,6 +107,47 @@ impl Container {
 
     pub fn get_partial_ident(&self) -> Ident {
         format_ident!("Partial{}", self.ident)
+    }
+
+    /// Return the name that identifies this container to users,
+    /// which is used for schema references.
+    pub fn get_name(&self) -> String {
+        let dir = SerdeIoDirection::From;
+
+        if let Some(name) = self.args.rename.as_ref().and_then(|rn| rn.get_name(dir)) {
+            return name.into();
+        }
+
+        if let Some(name) = self
+            .serde_args
+            .rename
+            .as_ref()
+            .and_then(|rn| rn.get_name(dir))
+        {
+            return name.into();
+        }
+
+        self.ident.to_string()
+    }
+
+    /// Return how the enum variants are tagged when serialized.
+    pub fn get_tag_format(&self) -> SerdeTagFormat {
+        // Every variant is a unit, so they serialize as their own name
+        if matches!(self.inner, ContainerInner::UnitEnum { .. }) {
+            return SerdeTagFormat::Unit;
+        }
+
+        if self.serde_args.untagged {
+            return SerdeTagFormat::Untagged;
+        }
+
+        match (&self.serde_args.tag, &self.serde_args.content) {
+            (Some(tag), Some(content)) => {
+                SerdeTagFormat::Adjacent(tag.to_owned(), content.to_owned())
+            }
+            (Some(tag), None) => SerdeTagFormat::Internal(tag.to_owned()),
+            _ => SerdeTagFormat::External,
+        }
     }
 
     /// Whether the partial enum is untagged, and requires
@@ -485,17 +528,156 @@ impl Container {
 
     /// Generate `Schematic` implementations for both types, which are
     /// required by the `Config` and `PartialConfig` traits.
+    #[cfg(not(feature = "schema"))]
     pub fn impl_schematic(&self) -> TokenStream {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
 
-        // TODO: Generate schemas when the `schema` feature is enabled
         quote! {
             #[automatically_derived]
             impl schematic::Schematic for #base_name {}
 
             #[automatically_derived]
             impl schematic::Schematic for #partial_name {}
+        }
+    }
+
+    /// Generate `Schematic` implementations for both types. The partial
+    /// derives its schema from the full type, with all settings marked
+    /// as partial.
+    #[cfg(feature = "schema")]
+    pub fn impl_schematic(&self) -> TokenStream {
+        let base_name = &self.ident;
+        let partial_name = self.get_partial_ident();
+
+        let base_name_string = self.get_name();
+        let partial_name_string = partial_name.to_string();
+        let inner = self.impl_schematic_type();
+
+        quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #base_name {
+                fn schema_name() -> Option<String> {
+                    Some(#base_name_string.into())
+                }
+
+                fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+                    use schematic::schema::*;
+
+                    #inner
+                }
+            }
+
+            #[automatically_derived]
+            impl schematic::Schematic for #partial_name {
+                fn schema_name() -> Option<String> {
+                    Some(#partial_name_string.into())
+                }
+
+                fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+                    let mut schema = #base_name::build_schema(schema);
+                    schematic::internal::partialize_schema(&mut schema, true);
+                    schema
+                }
+            }
+        }
+    }
+
+    /// Generate the schema for the full configuration.
+    #[cfg(feature = "schema")]
+    pub fn impl_schematic_type(&self) -> TokenStream {
+        use crate::utils::{extract_comment, extract_deprecated};
+
+        let mut meta = vec![];
+
+        if let Some(value) = extract_deprecated(&self.attrs) {
+            meta.push(quote! { schema.set_deprecated(#value); });
+        }
+
+        if let Some(value) = extract_comment(&self.attrs) {
+            meta.push(quote! { schema.set_description(#value); });
+        }
+
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } => {
+                let types = fields
+                    .iter()
+                    .filter(|field| !field.is_excluded())
+                    .map(|field| field.impl_schema_type(true))
+                    .collect::<Vec<_>>();
+
+                if types.is_empty() {
+                    quote! {
+                        #(#meta)*
+                        schema.structure(StructType::default())
+                    }
+                } else {
+                    quote! {
+                        #(#meta)*
+                        schema.structure(StructType::new([
+                            #(#types),*
+                        ]))
+                    }
+                }
+            }
+            ContainerInner::UnnamedStruct { fields } => {
+                let types = fields
+                    .iter()
+                    .filter(|field| !field.is_excluded())
+                    .map(|field| field.impl_schema_type(false))
+                    .collect::<Vec<_>>();
+
+                // A single value is transparent, so use its schema directly
+                if types.len() == 1 {
+                    let inner = &types[0];
+
+                    quote! {
+                        let mut schema = #inner;
+                        #(#meta)*
+                        schema
+                    }
+                } else {
+                    quote! {
+                        #(#meta)*
+                        schema.tuple(TupleType::new([
+                            #(#types),*
+                        ]))
+                    }
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                let unit = matches!(self.inner, ContainerInner::UnitEnum { .. });
+                let tag_format = self.get_tag_format();
+                let mut default_index = quote! { None };
+                let mut types = vec![];
+
+                for variant in variants {
+                    if variant.is_excluded() {
+                        continue;
+                    }
+
+                    if variant.is_default() {
+                        let index = types.len();
+
+                        default_index = quote! { Some(#index) };
+                    }
+
+                    types.push(variant.impl_schema_type(&tag_format));
+                }
+
+                // Enums of only units are enumerable values,
+                // otherwise they're a union of schemas
+                let builder = if unit {
+                    quote! { schema.enumerable(EnumType::from_schemas([#(#types),*], #default_index)) }
+                } else {
+                    quote! { schema.union(UnionType::from_schemas([#(#types),*], #default_index)) }
+                };
+
+                quote! {
+                    #(#meta)*
+                    #builder
+                }
+            }
         }
     }
 

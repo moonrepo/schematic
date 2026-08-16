@@ -1,0 +1,128 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_schemas(
+                [
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(LiteralValue::String("Text".into())),
+                                ),
+                                ("value".into(), schema.infer::<String>()),
+                            ]),
+                        );
+                        item.description = Some("Docs.".into());
+                        item
+                    },
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(LiteralValue::String("List".into())),
+                            ),
+                            ("value".into(), schema.infer::<Vec<String>>()),
+                        ]),
+                    ),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(LiteralValue::String("Pair".into())),
+                            ),
+                            (
+                                "value".into(),
+                                Schema::tuple(
+                                    TupleType::new([
+                                        schema.infer::<usize>(),
+                                        schema.infer::<bool>(),
+                                    ]),
+                                ),
+                            ),
+                        ]),
+                    ),
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(LiteralValue::String("Inner".into())),
+                                ),
+                                ("value".into(), schema.infer_as_nested::<NestedConfig>()),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerOpt".into()),
+                                    ),
+                                ),
+                                (
+                                    "value".into(),
+                                    schema.infer_as_nested::<Option<NestedConfig>>(),
+                                ),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerList".into()),
+                                    ),
+                                ),
+                                (
+                                    "value".into(),
+                                    schema.infer_as_nested::<Vec<NestedConfig>>(),
+                                ),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerMap".into()),
+                                    ),
+                                ),
+                                (
+                                    "value".into(),
+                                    schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                                ),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(LiteralValue::String("Unit".into())),
+                            ),
+                        ]),
+                    ),
+                ],
+                Some(2usize),
+            ),
+        )
+}

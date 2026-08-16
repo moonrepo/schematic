@@ -1,0 +1,8 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    let mut schema = schema.infer_as_nested::<NestedConfig>();
+    schema
+}

@@ -1,14 +1,16 @@
 ---
-source: crates/core/tests/container_type_test.rs
+source: crates/core/tests/container_schema_test.rs
 expression: pretty(container.impl_schematic())
 ---
 #[automatically_derived]
 impl schematic::Schematic for Example {
     fn schema_name() -> Option<String> {
-        Some("Example".into())
+        Some("Renamed".into())
     }
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
         use schematic::schema::*;
+        schema.set_deprecated("Use something else.");
+        schema.set_description("Container docs.");
         schema
             .structure(
                 StructType::new([("a".into(), SchemaField::new(schema.infer::<bool>()))]),

@@ -1,3 +1,5 @@
+#[cfg(feature = "schema")]
+use crate::args::SerdeTagFormat;
 use crate::args::{
     NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
 };
@@ -249,6 +251,171 @@ impl Variant {
         quote! {
             #(#meta),*
         }
+    }
+
+    /// Generate the schema for this variant, shaped by how the
+    /// enum is tagged.
+    #[cfg(feature = "schema")]
+    pub fn impl_schema_type(&self, tag_format: &SerdeTagFormat) -> TokenStream {
+        use crate::utils::{extract_comment, extract_deprecated};
+
+        let name = self.get_name();
+        let nested = self.is_nested();
+
+        // Untagged variants are represented by their value alone
+        let untagged = matches!(tag_format, SerdeTagFormat::Untagged)
+            || self.args.untagged
+            || self.serde_args.untagged;
+
+        let inner = match &self.fields {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(fields) => {
+                let items = fields
+                    .unnamed
+                    .iter()
+                    .map(|field| {
+                        let ty = &field.ty;
+
+                        if nested {
+                            quote! { schema.infer_as_nested::<#ty>() }
+                        } else {
+                            quote! { schema.infer::<#ty>() }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                if items.len() == 1 {
+                    let item = &items[0];
+
+                    quote! { #item }
+                } else {
+                    quote! {
+                        Schema::tuple(TupleType::new([
+                            #(#items),*
+                        ]))
+                    }
+                }
+            }
+            // Unit variants carry no value, so they're the name itself
+            Fields::Unit => quote! { Schema::literal_value(LiteralValue::String(#name.into())) },
+        };
+
+        // Wrap the tagged value so that nested configs can be partialized
+        let wrap = |value: TokenStream| {
+            if nested {
+                quote! {
+                    {
+                        let mut item = #value;
+                        item.partialize();
+                        item
+                    }
+                }
+            } else {
+                value
+            }
+        };
+
+        let unit = self.is_unit_variant();
+        let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
+
+        let mut schema = if let SerdeTagFormat::Unit = tag_format {
+            // Every variant is a unit, so the enum is a list of named values
+            let ty = if self.args.null {
+                quote! { Schema::null() }
+            } else {
+                inner
+            };
+
+            quote! {
+                Schema {
+                    name: Some(#name.into()),
+                    ty: #ty.ty,
+                    ..Default::default()
+                }
+            }
+        } else if self.args.null {
+            // Explicitly represents null, so it's never tagged
+            quote! { Schema::null() }
+        } else if untagged {
+            // Untagged variants are represented by their value alone,
+            // and units have no value
+            if unit {
+                quote! { Schema::null() }
+            } else {
+                inner
+            }
+        } else {
+            match tag_format {
+                SerdeTagFormat::Unit | SerdeTagFormat::Untagged => unreachable!(),
+                // "name" | { "name": value }
+                SerdeTagFormat::External => {
+                    if unit {
+                        inner
+                    } else {
+                        wrap(quote! {
+                            Schema::structure(StructType::new([
+                                (#name.into(), #inner),
+                            ]))
+                        })
+                    }
+                }
+                // { "tag": "name", ...value }
+                SerdeTagFormat::Internal(tag) => {
+                    if unit {
+                        quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                            ]))
+                        }
+                    } else {
+                        wrap(quote! {
+                            {
+                                let mut item = #inner;
+                                item.ty.add_field(#tag, SchemaField::new(#name_literal));
+                                item
+                            }
+                        })
+                    }
+                }
+                // { "tag": "name" } | { "tag": "name", "content": value }
+                SerdeTagFormat::Adjacent(tag, content) => {
+                    if unit {
+                        quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                            ]))
+                        }
+                    } else {
+                        wrap(quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                                (#content.into(), #inner),
+                            ]))
+                        })
+                    }
+                }
+            }
+        };
+
+        let comment = extract_comment(&self.attrs);
+        let deprecated = extract_deprecated(&self.attrs);
+
+        if comment.is_some() || deprecated.is_some() {
+            let comment = comment.map(|value| quote! { item.description = Some(#value.into()); });
+            let deprecated =
+                deprecated.map(|value| quote! { item.deprecated = Some(#value.into()); });
+
+            schema = quote! {
+                {
+                    let mut item = #schema;
+                    #comment
+                    #deprecated
+                    item
+                }
+            };
+        }
+
+        schema
     }
 
     pub fn impl_full_from_partial(&self, partial_name: &Ident) -> ImplResult {
