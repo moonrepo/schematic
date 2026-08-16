@@ -100,11 +100,16 @@ pub trait Config: Sized + Schematic {
     type Partial: PartialConfig;
 
     /// Return default values for the partial configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a default value could not be generated, as this is
+    /// infallible from the perspective of [`Default`].
     fn default_partial() -> Self::Partial {
         let context = <<Self as Config>::Partial as PartialConfig>::Context::default();
 
         <<Self as Config>::Partial as PartialConfig>::default_values(&context)
-            .unwrap_or_default()
+            .expect("Failed to generate default values.")
             .unwrap_or_default()
     }
 

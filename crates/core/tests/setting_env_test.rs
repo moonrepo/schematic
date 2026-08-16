@@ -12,13 +12,33 @@ mod setting_env {
         use super::*;
 
         #[test]
+        fn supports_wrappers() {
+            // Wrappers are stripped from the partial, so the
+            // inner value can be parsed from a variable
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(env = "A")]
+                    a: Arc<String>,
+                    #[setting(env = "B")]
+                    b: Box<usize>,
+                    #[setting(env = "C")]
+                    c: Option<Rc<bool>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
         #[should_panic(expected = "Wrapper types cannot be used with `env`.")]
-        fn errors_if_using_wrappers() {
+        fn errors_if_using_unsized_wrappers() {
+            // Unsized values keep their wrapper, so they cannot be parsed
             Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
                     #[setting(env = "KEY")]
-                    a: Arc<String>,
+                    a: Box<str>,
                 }
             })
             .impl_partial_env_values();
@@ -166,13 +186,28 @@ mod setting_env {
         use super::*;
 
         #[test]
+        fn supports_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    #[setting(env = "A")]
+                    Arc<String>,
+                    #[setting(env = "B")]
+                    Option<Box<usize>>,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
         #[should_panic(expected = "Wrapper types cannot be used with `env`.")]
-        fn errors_if_using_wrappers() {
+        fn errors_if_using_unsized_wrappers() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example(
                     #[setting(env = "KEY")]
-                    Arc<String>,
+                    Box<str>,
                 );
             })
             .impl_partial_env_values();
@@ -301,7 +336,7 @@ mod setting_env_prefix {
                 #[derive(Config)]
                 struct Example {
                     #[setting(env_prefix = "", nested)]
-                    a: String,
+                    a: NestedConfig,
                 }
             })
             .impl_partial_env_values();
@@ -371,7 +406,7 @@ mod setting_env_prefix {
                 #[derive(Config)]
                 struct Example(
                     #[setting(env_prefix = "", nested)]
-                    String,
+                    NestedConfig,
                 );
             })
             .impl_partial_env_values();

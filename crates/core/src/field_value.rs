@@ -10,13 +10,6 @@ use syn::{Expr, Lit, Type};
 #[derive(Debug)]
 pub struct FieldValue(Value);
 
-fn is_collection_layer(layer: &Layer) -> bool {
-    matches!(
-        layer,
-        Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) | Layer::Unknown(_)
-    )
-}
-
 fn wrap_layer(layer: &Layer, value: TokenStream) -> TokenStream {
     match layer {
         Layer::Arc => quote! { Arc::new(#value) },
@@ -32,8 +25,14 @@ fn wrap_layer(layer: &Layer, value: TokenStream) -> TokenStream {
     }
 }
 
-fn wrap_default_layers(layers: &[Layer], mut value: TokenStream) -> TokenStream {
+fn wrap_default_layers(layers: &[&Layer], mut value: TokenStream) -> TokenStream {
     for layer in layers.iter().rev() {
+        // Wrappers that were not stripped, like `Box<str>`, provide a default
+        // for the entire value, as the inner value may not have one
+        if layer.is_wrapper() {
+            continue;
+        }
+
         value = wrap_layer(layer, value);
     }
 
@@ -54,11 +53,23 @@ impl FieldValue {
     }
 
     pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
-        if self.is_outer_option_wrapped() {
+        let outer_option = self.is_outer_option_wrapped();
+
+        // Optional settings default to `None`, unless a value is provided
+        if outer_option && field_args.default.is_none() {
             return ImplResult::skipped();
         };
 
         let mut res = ImplResult::default();
+
+        // Wrappers are stripped from the partial, so only the structural
+        // layers need to be applied. The outermost `Option` is the partial's
+        // own, and is applied last.
+        let mut layers = self.get_partial_layers();
+
+        if outer_option {
+            layers.remove(0);
+        }
 
         // Nested configs source their defaults from the inner partial
         if let Some(nested_ident) = &self.nested_ident {
@@ -70,16 +81,16 @@ impl FieldValue {
 
             res.value = if self.is_collection() {
                 // Collections of nested configs start empty
-                let value = wrap_default_layers(&self.layers, quote! { Default::default() });
+                let value = wrap_default_layers(&layers, quote! { Default::default() });
 
                 quote! { Some(#value) }
-            } else if self.layers.is_empty() {
+            } else if layers.is_empty() {
                 quote! { #ident::default_values(context)? }
             } else {
                 // Wrap the inner partial with each layer
                 let mut value = quote! { inner };
 
-                for layer in self.layers.iter().rev() {
+                for layer in layers.iter().rev() {
                     value = wrap_layer(layer, value);
                 }
 
@@ -120,14 +131,13 @@ impl FieldValue {
                     }
                 };
 
-                let wrappers = self
-                    .layers
+                let outer = layers
                     .iter()
-                    .position(is_collection_layer)
-                    .map(|index| &self.layers[..index])
-                    .unwrap_or(&self.layers[..]);
+                    .position(|layer| layer.is_collection())
+                    .map(|index| &layers[..index])
+                    .unwrap_or(&layers[..]);
 
-                for layer in wrappers.iter().rev() {
+                for layer in outer.iter().rev() {
                     value = wrap_layer(layer, value);
                 }
 
@@ -135,7 +145,7 @@ impl FieldValue {
             }
             // Otherwise fallback to the type default
             None => {
-                let value = wrap_default_layers(&self.layers, quote! { Default::default() });
+                let value = wrap_default_layers(&layers, quote! { Default::default() });
 
                 res.value = quote! { Some(#value) };
             }
@@ -165,9 +175,10 @@ impl FieldValue {
         // is bare or wrapped in a single `Option`, as other layers and
         // collections cannot be parsed from a string. Unless a `parse_env`
         // function is provided, which handles the conversion itself.
+        let layers = self.get_partial_layers();
         let supported = field_args.parse_env.is_some()
-            || self.layers.is_empty()
-            || (self.layers.len() == 1 && self.is_outer_option_wrapped());
+            || layers.is_empty()
+            || (layers.len() == 1 && self.is_outer_option_wrapped());
 
         if let Some(nested_ident) = &self.nested_ident {
             if !supported {
@@ -310,24 +321,23 @@ impl FieldValue {
                 }
             }
             _ => {
-                if self.nested {
-                    if self.is_collection() {
-                        panic!("Collections with nested configs must manually define `merge`.");
-                    }
-
+                // Nested configs are merged recursively, but collections of
+                // them are replaced, as there's no way to know how to pair
+                // up their items. Define `merge` to customize this.
+                if self.nested && !self.is_collection() {
                     // The partial field is always wrapped in an `Option`
                     return self.impl_partial_merge_nested(
                         &quote! { &mut self.#field_name },
                         &quote! { next.#field_name },
                         true,
                     );
-                } else {
-                    quote! {
-                        .apply(
-                            &mut self.#field_name,
-                            next.#field_name,
-                        )?
-                    }
+                }
+
+                quote! {
+                    .apply(
+                        &mut self.#field_name,
+                        next.#field_name,
+                    )?
                 }
             }
         };
@@ -339,24 +349,15 @@ impl FieldValue {
     }
 
     #[cfg(not(feature = "validate"))]
-    pub fn impl_partial_validate(
-        &self,
-        _field_args: &FieldArgs,
-        _field_name: &TokenStream,
-    ) -> ImplResult {
+    pub fn impl_partial_validate(&self, _field_args: &FieldArgs, _field_name: &str) -> ImplResult {
         ImplResult::skipped()
     }
 
     #[cfg(feature = "validate")]
-    pub fn impl_partial_validate(
-        &self,
-        field_args: &FieldArgs,
-        field_name: &TokenStream,
-    ) -> ImplResult {
+    pub fn impl_partial_validate(&self, field_args: &FieldArgs, field_name: &str) -> ImplResult {
         let mut res = ImplResult::default();
 
         if let Some(expr) = field_args.validate.as_deref() {
-            let field_name_string = field_name.to_string();
             let func = match expr {
                 // func(arg)() - already returns a boxed validator
                 Expr::Call(func) => quote! { #func },
@@ -368,7 +369,7 @@ impl FieldValue {
             };
 
             res.value = quote! {
-                validate.check(#field_name_string, setting, self, #func);
+                validate.check(#field_name, setting, self, #func);
             };
         } else {
             res.no_value = true;

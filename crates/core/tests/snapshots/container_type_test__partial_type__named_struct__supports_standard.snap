@@ -18,9 +18,9 @@ struct PartialExample {
     #[serde(skip_serializing_if = "Option::is_none")]
     f: Option<HashMap<u8, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    g: Option<Box<String>>,
+    g: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    h: Option<Arc<Vec<u8>>>,
+    h: Option<Vec<u8>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     i: Option<std::collections::BTreeSet<u8>>,
 }

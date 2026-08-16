@@ -7,10 +7,9 @@ fn default_values(
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     Ok(
         Some(Self {
-            b: Some(Arc::new(Default::default())),
-            c: Some(Box::new(Default::default())),
-            d: Some(Rc::new(Some(Default::default()))),
-            e: Some(Arc::new(Vec::default())),
+            b: Some(Default::default()),
+            c: Some(Default::default()),
+            e: Some(Vec::default()),
             ..Default::default()
         }),
     )

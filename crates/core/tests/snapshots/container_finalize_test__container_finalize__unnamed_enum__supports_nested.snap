@@ -18,17 +18,7 @@ fn finalize(
                     },
                 )
             }
-            Self::D(pa) => {
-                Self::D(
-                    transform_config(
-                        {
-                            let pa = Arc::unwrap_or_clone(pa);
-                            Arc::new(pa.finalize(context)?)
-                        },
-                        context,
-                    )?,
-                )
-            }
+            Self::D(pa) => Self::D(transform_config(pa.finalize(context)?, context)?),
             _ => self,
         },
     )

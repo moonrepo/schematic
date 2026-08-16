@@ -11,6 +11,9 @@ fn from_partial(partial: Self::Partial) -> Self {
         e: partial.e,
         f: partial.f.unwrap_or_default(),
         g: partial.g,
-        h: partial.h.unwrap_or_default(),
+        h: {
+            let data = partial.h.unwrap_or_default();
+            Box::new(data)
+        },
     }
 }

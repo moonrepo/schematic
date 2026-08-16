@@ -24,15 +24,7 @@ fn finalize(
         partial.2 = Some(layer.finalize(context)?);
     }
     if let Some(layer) = partial.3 {
-        partial.3 = Some(
-            transform_config(
-                {
-                    let layer = Arc::unwrap_or_clone(layer);
-                    Arc::new(layer.finalize(context)?)
-                },
-                context,
-            )?,
-        );
+        partial.3 = Some(transform_config(layer.finalize(context)?, context)?);
     }
     Ok(partial)
 }

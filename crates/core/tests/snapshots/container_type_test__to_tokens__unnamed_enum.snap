@@ -143,10 +143,10 @@ impl schematic::PartialConfig for PartialExample {
             Self::Bool(pa) => {}
             Self::Number(pa) => {}
             Self::Nested(pa) => {
-                validate.nested("Nested.0", pa);
+                validate.nested_variant("Nested", 0usize, pa);
             }
             Self::List(pa) => {
-                validate.nested_list("List.0", pa.iter());
+                validate.nested_variant_list("List", 0usize, pa.iter());
             }
             _ => {}
         };

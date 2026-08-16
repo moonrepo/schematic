@@ -88,10 +88,6 @@ impl Variant {
     }
 
     fn validate_args(&self) {
-        if self.is_nested() && self.values.len() > 1 {
-            panic!("Only 1 item is supported when using `nested` in a tuple variant.")
-        }
-
         if self.is_required()
             && self
                 .values
@@ -267,8 +263,8 @@ impl Variant {
                         .iter()
                         .enumerate()
                         .map(|(index, o)| {
-                            if self.is_nested() {
-                                self.values[index].impl_full_from_partial_nested(o).value
+                            if self.values[index].requires_from_partial_mapping() {
+                                self.values[index].impl_full_from_partial_value(o).value
                             } else {
                                 quote! { #o }
                             }
@@ -472,47 +468,55 @@ impl Variant {
                         });
                     }
                     None => {
-                        if self.is_nested() {
-                            // Nested variants only support a single value
-                            let value = &self.values[0];
+                        // Nested configs are merged recursively, but collections
+                        // of them are replaced, as there's no way to know how to
+                        // pair up their items. Define `merge` to customize this.
+                        let mergeable = self.is_nested()
+                            && self.values.iter().any(|value| !value.is_collection());
 
-                            if value.is_collection() {
-                                panic!(
-                                    "Collections with nested configs must manually define `merge`."
-                                );
-                            }
-
+                        if mergeable {
                             let mut requires_internal = false;
 
                             res.value = self.map_unnamed_match(
                                 &self.ident,
                                 fields,
                                 |outer_names, inner_names| {
-                                    let o = &outer_names[0];
-                                    let i = &inner_names[0];
+                                    let statements = outer_names
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(index, o)| {
+                                            let i = &inner_names[index];
+                                            let value = &self.values[index];
 
-                                    // Variant values are not wrapped by the partial,
-                                    // so all layers must be handled
-                                    let merge = value.impl_partial_merge_nested(
-                                        &quote! { #o },
-                                        &quote! { #i },
-                                        false,
-                                    );
+                                            // Collections are replaced in place
+                                            if value.is_collection() {
+                                                return quote! { *#o = #i; };
+                                            }
 
-                                    // Wrap with the manager when the value is optional
-                                    let statement = if merge.requires_internal {
-                                        requires_internal = true;
+                                            // Variant values are not wrapped by the
+                                            // partial, so all layers must be handled
+                                            let merge = value.impl_partial_merge_nested(
+                                                &quote! { #o },
+                                                &quote! { #i },
+                                                false,
+                                            );
 
-                                        let inner = merge.value;
+                                            // Wrap with the manager when the value is optional
+                                            if merge.requires_internal {
+                                                requires_internal = true;
 
-                                        quote! { MergeManager::new(context)#inner; }
-                                    } else {
-                                        merge.value
-                                    };
+                                                let inner = merge.value;
+
+                                                quote! { MergeManager::new(context)#inner; }
+                                            } else {
+                                                merge.value
+                                            }
+                                        })
+                                        .collect::<Vec<_>>();
 
                                     quote! {
                                         if let Self::#name(#(#inner_names),*) = next {
-                                            #statement
+                                            #(#statements)*
                                         } else {
                                             *self = next;
                                         }
@@ -542,7 +546,7 @@ impl Variant {
 
         let value = self.map_unnamed_match(&self.ident, fields, |outer_names, _| {
             let mut statements = vec![];
-            let name_string = self.ident.to_string();
+            let name_string = self.get_name();
 
             #[cfg(feature = "validate")]
             if let Some(expr) = self.args.validate.as_deref() {
@@ -559,14 +563,14 @@ impl Variant {
                 };
 
                 statements.push(quote! {
-                    validate.check(#name_string, (#(#outer_names),*), self, #func);
+                    validate.check_variant(#name_string, (#(#outer_names),*), self, #func);
                 });
             }
 
             if self.is_required() {
                 statements.push(quote! {
                     if [#(#outer_names),*].iter().any(|v| v.is_none()) {
-                        validate.required(#name_string);
+                        validate.required_variant(#name_string);
                     }
                 });
             }
@@ -577,12 +581,15 @@ impl Variant {
                         .iter()
                         .enumerate()
                         .map(|(index, o)| {
-                            let name_index = format!("{name_string}.{index}");
-
                             // Variant values are not wrapped by the partial,
                             // so all layers must be handled
                             self.values[index]
-                                .impl_partial_validate_nested(&name_index, o, false)
+                                .impl_partial_validate_nested(
+                                    &quote! { #name_string, #index },
+                                    o,
+                                    true,
+                                    false,
+                                )
                                 .value
                         })
                         .collect::<Vec<_>>(),

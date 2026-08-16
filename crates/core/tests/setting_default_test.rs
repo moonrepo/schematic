@@ -63,6 +63,26 @@ mod setting_default {
     }
 
     #[test]
+    fn handles_optional_with_defaults() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                no_default: Option<usize>,
+                #[setting(default = 10)]
+                a: Option<usize>,
+                #[setting(default = 10)]
+                b: Arc<Option<usize>>,
+                #[setting(default = vec![1, 2])]
+                c: Option<Vec<usize>>,
+                #[setting(default = "abc")]
+                d: Option<String>,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
+    #[test]
     fn handles_nested_layers() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]
@@ -165,6 +185,27 @@ mod setting_default {
 
     mod unnamed_struct {
         use super::*;
+
+        #[test]
+        fn handles_layers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    Arc<u8>,
+                    Box<bool>,
+                    Rc<Option<usize>>,
+                    Arc<Vec<Option<isize>>>,
+                    #[setting(default = 10)]
+                    Box<usize>,
+                    #[setting(default = 10)]
+                    Arc<Option<usize>>,
+                    // Unsized values keep their wrapper
+                    Box<str>,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
 
         #[test]
         fn supports_types() {

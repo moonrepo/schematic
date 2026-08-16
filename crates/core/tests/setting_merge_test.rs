@@ -162,16 +162,20 @@ mod setting_merge {
         }
 
         #[test]
-        #[should_panic(expected = "Collections with nested configs must manually define `merge`.")]
-        fn errors_if_collection_doesnt_have_merge_attr() {
-            Container::from(parse_quote! {
+        fn replaces_collections_without_merge_attr() {
+            let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
                     #[setting(nested)]
                     a: Vec<NestedConfig>,
+                    #[setting(nested)]
+                    b: HashMap<String, NestedConfig>,
+                    #[setting(nested)]
+                    c: Option<Vec<NestedConfig>>,
                 }
-            })
-            .impl_partial_merge();
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
         }
     }
 
@@ -310,16 +314,18 @@ mod setting_merge {
         }
 
         #[test]
-        #[should_panic(expected = "Collections with nested configs must manually define `merge`.")]
-        fn errors_if_collection_doesnt_have_merge_attr() {
-            Container::from(parse_quote! {
+        fn replaces_collections_without_merge_attr() {
+            let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example(
                     #[setting(nested)]
                     Vec<NestedConfig>,
+                    #[setting(nested)]
+                    HashMap<String, NestedConfig>,
                 );
-            })
-            .impl_partial_merge();
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
         }
     }
 
@@ -452,7 +458,7 @@ mod setting_merge {
                 #[derive(Config)]
                 enum Example {
                     #[setting(nested)]
-                    A(Box<Option<NestedConfig>>),
+                    A(Option<Option<NestedConfig>>),
                 }
             })
             .impl_partial_merge();
@@ -491,16 +497,36 @@ mod setting_merge {
         }
 
         #[test]
-        #[should_panic(expected = "Collections with nested configs must manually define `merge`.")]
-        fn errors_if_collection_doesnt_have_merge_attr() {
-            Container::from(parse_quote! {
+        fn replaces_collections_without_merge_attr() {
+            let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
                     #[setting(nested)]
                     A(Vec<NestedConfig>),
+                    #[setting(nested)]
+                    B(HashMap<String, NestedConfig>),
                 }
-            })
-            .impl_partial_merge();
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_multiple_nested_values() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig, CustomConfig),
+                    #[setting(nested)]
+                    B(NestedConfig, Option<CustomConfig>),
+                    // Collections are replaced in place, alongside a merge
+                    #[setting(nested)]
+                    C(NestedConfig, Vec<CustomConfig>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
         }
     }
 

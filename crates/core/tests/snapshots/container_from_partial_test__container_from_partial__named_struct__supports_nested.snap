@@ -21,17 +21,11 @@ fn from_partial(partial: Self::Partial) -> Self {
         },
         d: {
             let data = partial.d.unwrap_or_default();
-            {
-                let data = Arc::unwrap_or_clone(data);
-                Arc::new(CustomConfig::from_partial(data))
-            }
+            Arc::new(CustomConfig::from_partial(data))
         },
         e: {
             let data = partial.e.unwrap_or_default();
-            {
-                let data = *data;
-                Box::new(NestedConfig::from_partial(data))
-            }
+            Box::new(NestedConfig::from_partial(data))
         },
     }
 }
