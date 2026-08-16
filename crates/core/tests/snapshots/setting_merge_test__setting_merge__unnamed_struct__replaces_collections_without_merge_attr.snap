@@ -8,10 +8,6 @@ fn merge(
     mut next: Self,
 ) -> std::result::Result<(), schematic::ConfigError> {
     use schematic::internal::*;
-    MergeManager::new(context)
-        .nested(&mut self.a, next.a)?
-        .nested(&mut self.b, next.b)?
-        .nested(&mut self.c, next.c)?
-        .nested(&mut self.d, next.d)?;
+    MergeManager::new(context).apply(&mut self.0, next.0)?.apply(&mut self.1, next.1)?;
     Ok(())
 }

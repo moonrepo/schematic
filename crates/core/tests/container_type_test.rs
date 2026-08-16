@@ -60,6 +60,54 @@ mod partial_type {
         }
 
         #[test]
+        fn strips_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: Box<String>,
+                    b: Arc<usize>,
+                    c: Rc<bool>,
+                    d: Option<Arc<String>>,
+                    e: Arc<Vec<String>>,
+                    f: Vec<Arc<String>>,
+                    g: Box<Arc<usize>>,
+                    h: HashMap<String, Box<usize>>,
+                    // Unsized values keep their wrapper
+                    i: Box<str>,
+                    j: Arc<str>,
+                    k: Box<[u8]>,
+                    // The outer `Option` is found after stripping
+                    l: Box<Option<String>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        #[test]
+        fn strips_wrappers_around_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: Box<NestedConfig>,
+                    #[setting(nested)]
+                    b: Arc<NestedConfig>,
+                    #[setting(nested)]
+                    c: Option<Arc<NestedConfig>>,
+                    #[setting(nested)]
+                    d: Arc<Vec<NestedConfig>>,
+                    #[setting(nested)]
+                    e: Vec<Arc<NestedConfig>>,
+                    #[setting(nested = CustomConfig)]
+                    f: HashMap<String, Box<CustomConfig>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        #[test]
         fn supports_attributes() {
             let container = Container::from(parse_quote! {
                 /// Container docs.
@@ -108,6 +156,24 @@ mod partial_type {
         use super::*;
 
         #[test]
+        fn strips_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(
+                    Box<String>,
+                    Option<Arc<usize>>,
+                    Vec<Rc<bool>>,
+                    #[setting(nested)]
+                    Arc<NestedConfig>,
+                    // Unsized values keep their wrapper
+                    Box<str>,
+                );
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        #[test]
         fn supports_standard() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
@@ -151,6 +217,26 @@ mod partial_type {
                     F(String),
                     #[serde(other)]
                     G,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        #[test]
+        fn strips_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A(Box<String>),
+                    B(Option<Arc<usize>>),
+                    C(Vec<Rc<bool>>),
+                    #[setting(nested)]
+                    D(Arc<NestedConfig>),
+                    #[setting(nested)]
+                    E(Option<Box<NestedConfig>>),
+                    // Unsized values keep their wrapper
+                    F(Box<str>),
                 }
             });
 

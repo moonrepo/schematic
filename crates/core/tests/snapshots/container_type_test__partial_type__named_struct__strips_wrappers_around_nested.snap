@@ -8,17 +8,13 @@ struct PartialExample {
     #[serde(skip_serializing_if = "Option::is_none")]
     a: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    b: Option<<CustomConfig as schematic::Config>::Partial>,
+    b: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
     c: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    d: Option<<CustomConfig as schematic::Config>::Partial>,
+    d: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     e: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     f: Option<HashMap<String, <CustomConfig as schematic::Config>::Partial>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    g: Option<BTreeSet<<NestedConfig as schematic::Config>::Partial>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    h: Option<<config::NestedConfig as schematic::Config>::Partial>,
 }

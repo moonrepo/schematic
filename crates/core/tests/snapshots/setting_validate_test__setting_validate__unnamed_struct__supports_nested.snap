@@ -24,7 +24,7 @@ fn validate_with_path(
     }
     if let Some(setting) = &self.3 {
         validate.check("3", setting, self, Box::new(func_ref));
-        validate.nested("3", setting.as_ref());
+        validate.nested("3", setting);
     }
     if let Some(setting) = &self.4 {
         validate.nested("4", setting);

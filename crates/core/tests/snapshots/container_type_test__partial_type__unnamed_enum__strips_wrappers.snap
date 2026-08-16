@@ -1,0 +1,13 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+enum PartialExample {
+    A(String),
+    B(Option<usize>),
+    C(Vec<bool>),
+    D(<NestedConfig as schematic::Config>::Partial),
+    E(Option<<NestedConfig as schematic::Config>::Partial>),
+    F(Box<str>),
+}

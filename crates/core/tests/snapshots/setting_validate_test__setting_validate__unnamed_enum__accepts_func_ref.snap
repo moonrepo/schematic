@@ -12,7 +12,7 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check("A", (pa), self, Box::new(func_ref));
+            validate.check_variant("A", (pa), self, Box::new(func_ref));
         }
         _ => {}
     };

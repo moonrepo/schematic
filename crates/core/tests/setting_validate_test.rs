@@ -75,6 +75,25 @@ mod setting_validate {
         }
 
         #[test]
+        fn uses_serde_names() {
+            // Errors reference the renamed setting, as that's what users see
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(rename = "aa", validate = func_ref)]
+                    a: String,
+                    #[serde(rename = "bb")]
+                    #[setting(required)]
+                    b: Option<String>,
+                    #[setting(rename = "cc", nested)]
+                    c: NestedConfig,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
         fn supports_nested() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
@@ -317,6 +336,24 @@ mod setting_validate {
                     D(Vec<HashMap<String, usize>>),
                     #[setting(validate = func_ref)]
                     E(Option<Vec<HashMap<String, usize>>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn uses_serde_names() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(rename = "aa", validate = func_ref)]
+                    A(String),
+                    #[serde(rename = "bb")]
+                    #[setting(nested)]
+                    B(NestedConfig),
+                    #[setting(rename = "cc", required)]
+                    C(Option<String>),
                 }
             });
 
