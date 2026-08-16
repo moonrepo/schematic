@@ -321,24 +321,23 @@ impl FieldValue {
                 }
             }
             _ => {
-                if self.nested {
-                    if self.is_collection() {
-                        panic!("Collections with nested configs must manually define `merge`.");
-                    }
-
+                // Nested configs are merged recursively, but collections of
+                // them are replaced, as there's no way to know how to pair
+                // up their items. Define `merge` to customize this.
+                if self.nested && !self.is_collection() {
                     // The partial field is always wrapped in an `Option`
                     return self.impl_partial_merge_nested(
                         &quote! { &mut self.#field_name },
                         &quote! { next.#field_name },
                         true,
                     );
-                } else {
-                    quote! {
-                        .apply(
-                            &mut self.#field_name,
-                            next.#field_name,
-                        )?
-                    }
+                }
+
+                quote! {
+                    .apply(
+                        &mut self.#field_name,
+                        next.#field_name,
+                    )?
                 }
             }
         };

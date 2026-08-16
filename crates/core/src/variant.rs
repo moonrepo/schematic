@@ -472,16 +472,16 @@ impl Variant {
                         });
                     }
                     None => {
-                        if self.is_nested() {
-                            // Nested variants only support a single value
-                            let value = &self.values[0];
+                        // Nested configs are merged recursively, but collections
+                        // of them are replaced, as there's no way to know how to
+                        // pair up their items. Define `merge` to customize this.
+                        // Nested variants only support a single value.
+                        let nested_value = self
+                            .values
+                            .first()
+                            .filter(|value| self.is_nested() && !value.is_collection());
 
-                            if value.is_collection() {
-                                panic!(
-                                    "Collections with nested configs must manually define `merge`."
-                                );
-                            }
-
+                        if let Some(value) = nested_value {
                             let mut requires_internal = false;
 
                             res.value = self.map_unnamed_match(

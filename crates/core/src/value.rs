@@ -347,14 +347,11 @@ impl Value {
             layers.remove(0);
         }
 
-        if let Some(layer) = layers.first() {
-            if layer.is_collection() {
-                panic!("Collections with nested configs must manually define `merge`.");
-            } else {
-                panic!(
-                    "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
-                );
-            }
+        // Collections are replaced by the caller, so only `Option`s remain
+        if !layers.is_empty() {
+            panic!(
+                "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
+            );
         }
 
         let manager = optional || outer_option;
