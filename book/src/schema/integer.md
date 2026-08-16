@@ -23,7 +23,9 @@ method.
 schema.integer(IntegerType::new_kind(IntegerKind::U32));
 ```
 
-> Automatically implemented for `usize`-`u128` and `isize`-`i128`.
+> Automatically implemented for `usize`-`u128`, `isize`-`i128`, and their `NonZero` counterparts.
+> Unsigned `NonZero` types carry a `min` of 1; signed ones cannot express "not zero" as a bound, so
+> they stay unconstrained.
 
 ## Default value
 

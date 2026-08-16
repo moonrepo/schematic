@@ -1,15 +1,17 @@
 use crate::*;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeSet, BinaryHeap, HashSet, LinkedList, VecDeque};
 use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ArrayType {
+    /// A schema that at least one item must match. Unlike `items_type`, which
+    /// constrains every item, this constrains the array as a whole.
     #[cfg_attr(
         feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
     )]
-    pub contains: Option<bool>,
+    pub contains: Option<Box<Schema>>,
 
     pub items_type: Box<Schema>,
 
@@ -17,19 +19,7 @@ pub struct ArrayType {
         feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
     )]
-    pub max_contains: Option<usize>,
-
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
     pub max_length: Option<usize>,
-
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
-    pub min_contains: Option<usize>,
 
     #[cfg_attr(
         feature = "serde",
@@ -106,5 +96,23 @@ impl<T: Schematic> Schematic for BTreeSet<T> {
             unique: Some(true),
             ..ArrayType::default()
         })
+    }
+}
+
+impl<T: Schematic> Schematic for VecDeque<T> {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()))
+    }
+}
+
+impl<T: Schematic> Schematic for LinkedList<T> {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()))
+    }
+}
+
+impl<T: Schematic> Schematic for BinaryHeap<T> {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.array(ArrayType::new(schema.infer::<T>()))
     }
 }

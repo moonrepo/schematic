@@ -5,6 +5,6 @@ expression: "& input"
 {
   "ty": {
     "type": "String",
-    "format": "duration"
+    "format": "socket-addr"
   }
 }

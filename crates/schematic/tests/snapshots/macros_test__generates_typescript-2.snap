@@ -37,55 +37,55 @@ export type ValueTypesRest = Record<string, unknown>;
 
 export type ValueTypesBase = {
 	boolean: boolean,
+	string: string,
+	number: number,
+	vector: string[],
+	map: Record<string, number>,
 	/**
 	 * @default 'a'
 	 * @type {'a' | 'b' | 'c'}
 	 */
 	enums: SomeEnum,
-	map: Record<string, number>,
-	number: number,
 	s3_value: string,
-	string: string,
-	vector: string[],
 };
 
 export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
 export type OptionalValues = {
-	optional: string | null,
 	required: boolean,
+	optional: string | null,
 };
 
 export type DefaultValues = {
-	array?: number[],
-	arrayOpt: number[] | null,
 	/** @default true */
 	boolean?: boolean,
 	booleanFn?: boolean,
+	/** @default 'foo' */
+	string?: string,
+	stringFn?: string,
+	/** @default 'foo.json' */
+	fileString?: string,
+	/** @default 'foo with. many values!' */
+	longString?: string,
+	/** @default 'foo/bar' */
+	pathString?: string,
+	pathStringBox: string,
+	/** @default 123 */
+	number?: number,
+	/** @default 1.32 */
+	float32?: number,
+	/** @default 1.64 */
+	float64?: number,
+	array?: number[],
+	arrayOpt: number[] | null,
+	tuple?: [number, number, number, number],
+	tupleOpt: [number, number, number, number] | null,
+	vector?: number[],
 	/**
 	 * @default 'a'
 	 * @type {'a' | 'b' | 'c'}
 	 */
 	enums: SomeEnum,
-	/** @default 'foo.json' */
-	fileString?: string,
-	/** @default 1.32 */
-	float32?: number,
-	/** @default 1.64 */
-	float64?: number,
-	/** @default 'foo with. many values!' */
-	longString?: string,
-	/** @default 123 */
-	number?: number,
-	/** @default 'foo/bar' */
-	pathString?: string,
-	pathStringBox: string,
-	/** @default 'foo' */
-	string?: string,
-	stringFn?: string,
-	tuple?: [number, number, number, number],
-	tupleOpt: [number, number, number, number] | null,
-	vector?: number[],
 };
 
 export type Serde = {
@@ -120,10 +120,10 @@ export type ExtendsOptional = {
 };
 
 export type EnvVars = {
-	/** @env BAR */
-	advanced: string[],
 	/** @env FOO */
 	basic: string,
+	/** @env BAR */
+	advanced: string[],
 };
 
 export type NestedValidations = {
@@ -132,25 +132,15 @@ export type NestedValidations = {
 
 export type Validations = {
 	basic: string,
-	nested: NestedValidations,
-	nested2: NestedValidations | null,
 	optional: string | null,
 	required: string | null,
+	nested: NestedValidations,
+	nested2: NestedValidations | null,
 };
 
 /** Container comment. */
 export type Comments = {
-	/**
-	 * Block
-	 *
-	 * @deprecated Bye
-	 */
-	block: boolean,
-	/**
-	 * Block with a super long comment that will span multiple lines.
-	 * Block with a super long comment that will span multiple lines.
-	 */
-	blockLong: boolean,
+	normal: boolean,
 	/**
 	 * Docs
 	 *
@@ -163,61 +153,71 @@ export type Comments = {
 	 */
 	docsLong: boolean,
 	inlineBlock: boolean,
-	normal: boolean,
+	/**
+	 * Block
+	 *
+	 * @deprecated Bye
+	 */
+	block: boolean,
+	/**
+	 * Block with a super long comment that will span multiple lines.
+	 * Block with a super long comment that will span multiple lines.
+	 */
+	blockLong: boolean,
 };
 
 export type UnnamedMultiple = [string, number | null, boolean];
 
 export type PartialDefaultValues = {
-	array?: number[] | null,
-	arrayOpt?: number[] | null,
 	/** @default true */
 	boolean?: boolean | null,
 	booleanFn?: boolean | null,
-	/** @default 'a' */
-	enums?: SomeEnum | null,
+	/** @default 'foo' */
+	string?: string | null,
+	stringFn?: string | null,
 	/** @default 'foo.json' */
 	fileString?: string | null,
+	/** @default 'foo with. many values!' */
+	longString?: string | null,
+	/** @default 'foo/bar' */
+	pathString?: string | null,
+	pathStringBox?: string | null,
+	/** @default 123 */
+	number?: number | null,
 	/** @default 1.32 */
 	float32?: number | null,
 	/** @default 1.64 */
 	float64?: number | null,
-	/** @default 'foo with. many values!' */
-	longString?: string | null,
-	/** @default 123 */
-	number?: number | null,
-	/** @default 'foo/bar' */
-	pathString?: string | null,
-	pathStringBox?: string | null,
-	/** @default 'foo' */
-	string?: string | null,
-	stringFn?: string | null,
+	array?: number[] | null,
+	arrayOpt?: number[] | null,
 	tuple?: [number, number, number, number] | null,
 	tupleOpt?: [number, number, number, number] | null,
 	vector?: number[] | null,
+	/** @default 'a' */
+	enums?: SomeEnum | null,
 };
 
 export type PartialValueTypesRest = Record<string, unknown>;
 
 export type PartialValueTypesBase = {
 	boolean?: boolean | null,
+	string?: string | null,
+	number?: number | null,
+	vector?: string[] | null,
+	map?: Record<string, number> | null,
 	/** @default 'a' */
 	enums?: SomeEnum | null,
-	map?: Record<string, number> | null,
-	number?: number | null,
 	s3_value?: string | null,
-	string?: string | null,
-	vector?: string[] | null,
 };
 
 export type PartialValueTypes = PartialValueTypesBase & PartialValueTypesRest;
 
 export type PartialNested = {
+	one?: PartialValueTypes | null,
+	two?: PartialValueTypes | null,
 	list?: PartialValueTypes[] | null,
 	map?: Record<string, PartialValueTypes> | null,
 	map2?: Record<string, PartialValueTypes> | null,
-	one?: PartialValueTypes | null,
-	two?: PartialValueTypes | null,
 };
 
 export type PartialNestedValidations = {
@@ -226,8 +226,8 @@ export type PartialNestedValidations = {
 
 export type PartialValidations = {
 	basic?: string | null,
-	nested?: PartialNestedValidations | null,
-	nested2?: PartialNestedValidations | null,
 	optional?: string | null,
 	required?: string | null,
+	nested?: PartialNestedValidations | null,
+	nested2?: PartialNestedValidations | null,
 };

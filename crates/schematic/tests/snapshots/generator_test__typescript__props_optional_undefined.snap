@@ -13,14 +13,14 @@ export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
 /** Some comment. */
 export interface AnotherConfig {
+	/** An optional string. */
+	opt?: string | null | undefined;
 	/**
 	 * An optional enum.
 	 *
 	 * @default 'foo'
 	 */
 	enums?: BasicEnum | null | undefined;
-	/** An optional string. */
-	opt?: string | null | undefined;
 }
 
 export type GenConfigFlattened = Record<string, unknown>;
@@ -28,9 +28,13 @@ export type GenConfigFlattened = Record<string, unknown>;
 /** @deprecated */
 export interface GenConfigBase {
 	boolean?: boolean | undefined;
-	date?: string | undefined;
-	datetime?: string | undefined;
-	decimal?: string | undefined;
+	string?: string | undefined;
+	number?: number | undefined;
+	float32?: number | undefined;
+	float64?: number | undefined;
+	/** This is a list of strings. */
+	vector?: string[] | undefined;
+	map?: Record<string, number> | undefined;
 	/**
 	 * This is a list of `enumerable` values.
 	 *
@@ -43,29 +47,25 @@ export interface GenConfigBase {
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
 	fallbackEnum?: FallbackEnum | undefined;
-	float32?: number | undefined;
-	float64?: number | undefined;
-	indexmap?: Record<string, string> | undefined;
-	indexset?: string[] | null | undefined;
-	jsonValue?: unknown | undefined;
-	map?: Record<string, number> | undefined;
 	/** **Nested** field. */
 	nested?: AnotherConfig | undefined;
-	number?: number | undefined;
+	date?: string | undefined;
+	datetime?: string | undefined;
+	decimal?: string | undefined;
+	time?: string | undefined;
 	path?: string | undefined;
 	regex?: string | undefined;
 	relPath?: string | undefined;
-	string?: string | undefined;
-	time?: string | undefined;
-	tomlValue?: unknown | null | undefined;
 	url?: string | null | undefined;
 	uuid?: string | undefined;
-	/** This is a list of strings. */
-	vector?: string[] | undefined;
 	version?: string | null | undefined;
 	version2?: string | undefined;
 	versionReq?: string | undefined;
+	jsonValue?: unknown | undefined;
+	tomlValue?: unknown | null | undefined;
 	yamlValue?: unknown | undefined;
+	indexmap?: Record<string, string> | undefined;
+	indexset?: string[] | null | undefined;
 }
 
 /** @deprecated */

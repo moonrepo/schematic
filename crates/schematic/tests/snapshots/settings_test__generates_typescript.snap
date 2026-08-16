@@ -7,24 +7,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
 /* eslint-disable */
 
 export interface StandardSettings {
-	/** @env OPT_ENV */
-	opt: string | null;
 	req: string;
 	/** @default 'abc' */
 	reqDefault?: string;
+	/** @env OPT_ENV */
+	opt: string | null;
 }
 
 export interface NestedSettings {
-	nestedOpt: StandardSettings | null;
 	nestedReq: StandardSettings;
+	nestedOpt: StandardSettings | null;
 }
 
 export interface NestedVecSettings {
-	nestedOpt: StandardSettings[] | null;
 	nestedReq: StandardSettings[];
+	nestedOpt: StandardSettings[] | null;
 }
 
 export interface NestedMapSettings {
-	nestedOpt: Record<string, StandardSettings> | null;
 	nestedReq: Record<string, StandardSettings>;
+	nestedOpt: Record<string, StandardSettings> | null;
 }

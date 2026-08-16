@@ -585,3 +585,217 @@ mod reports_application {
         assert!(!Schema::enumerable(EnumType::new([LiteralValue::Bool(true)])).set_default(value));
     }
 }
+
+// Every type below is asserted against what serde ACTUALLY emits, which is
+// how `Duration` was caught claiming to be a string while encoding as a map.
+mod std_coverage {
+    use super::*;
+    use std::collections::{BinaryHeap, LinkedList, VecDeque};
+    use std::net::{IpAddr, SocketAddr, SocketAddrV4, SocketAddrV6};
+    use std::num::{NonZeroI32, NonZeroU8, NonZeroUsize};
+    use std::ops::{Range, RangeInclusive};
+    use std::time::{Duration, SystemTime};
+
+    fn ty<T: Schematic + ?Sized>() -> SchemaType {
+        SchemaBuilder::build_root::<T>().ty
+    }
+
+    fn array_of(inner: SchemaType) -> SchemaType {
+        SchemaType::Array(Box::new(ArrayType::new(Schema::new(inner))))
+    }
+
+    fn integer(kind: IntegerKind) -> SchemaType {
+        SchemaType::Integer(Box::new(IntegerType::new_kind(kind)))
+    }
+
+    fn string_of(format: &str) -> SchemaType {
+        SchemaType::String(Box::new(StringType {
+            format: Some(format.into()),
+            ..StringType::default()
+        }))
+    }
+
+    #[test]
+    fn collections_are_arrays() {
+        let expected = array_of(integer(IntegerKind::U8));
+
+        assert_eq!(ty::<VecDeque<u8>>(), expected);
+        assert_eq!(ty::<LinkedList<u8>>(), expected);
+        assert_eq!(ty::<BinaryHeap<u8>>(), expected);
+    }
+
+    #[test]
+    fn non_zero_integers_keep_their_kind() {
+        assert_eq!(
+            ty::<NonZeroUsize>(),
+            SchemaType::Integer(Box::new(IntegerType {
+                min: Some(1),
+                kind: IntegerKind::Usize,
+                ..IntegerType::default()
+            }))
+        );
+        assert_eq!(
+            ty::<NonZeroU8>(),
+            SchemaType::Integer(Box::new(IntegerType {
+                min: Some(1),
+                kind: IntegerKind::U8,
+                ..IntegerType::default()
+            }))
+        );
+        // Signed cannot express "not zero" as a bound
+        assert_eq!(
+            ty::<NonZeroI32>(),
+            SchemaType::Integer(Box::new(IntegerType {
+                kind: IntegerKind::I32,
+                ..IntegerType::default()
+            }))
+        );
+    }
+
+    #[test]
+    fn network_addresses_are_strings() {
+        assert_eq!(ty::<IpAddr>(), string_of("ip"));
+        assert_eq!(ty::<SocketAddr>(), string_of("socket-addr"));
+        assert_eq!(ty::<SocketAddrV4>(), string_of("socket-addr"));
+        assert_eq!(ty::<SocketAddrV6>(), string_of("socket-addr"));
+    }
+
+    fn field_names(ty: &SchemaType) -> Vec<&str> {
+        let SchemaType::Struct(inner) = ty else {
+            panic!("expected a struct, got {ty:?}");
+        };
+
+        inner.fields.keys().map(|key| key.as_str()).collect()
+    }
+
+    #[test]
+    fn duration_models_the_map_serde_emits() {
+        let ty = ty::<Duration>();
+
+        assert_eq!(field_names(&ty), vec!["secs", "nanos"]);
+
+        // Matches `{"secs":3,"nanos":500}`
+        let value = serde_json::to_value(Duration::new(3, 500)).unwrap();
+        let SchemaType::Struct(inner) = &ty else {
+            panic!("expected a struct");
+        };
+
+        for key in value.as_object().unwrap().keys() {
+            assert!(inner.fields.contains_key(key), "missing `{key}`");
+        }
+    }
+
+    #[test]
+    fn system_time_models_the_map_serde_emits() {
+        let ty = ty::<SystemTime>();
+
+        assert_eq!(
+            field_names(&ty),
+            vec!["secs_since_epoch", "nanos_since_epoch"]
+        );
+
+        let value = serde_json::to_value(SystemTime::UNIX_EPOCH).unwrap();
+        let SchemaType::Struct(inner) = &ty else {
+            panic!("expected a struct");
+        };
+
+        for key in value.as_object().unwrap().keys() {
+            assert!(inner.fields.contains_key(key), "missing `{key}`");
+        }
+    }
+
+    #[test]
+    fn ranges_model_the_map_serde_emits() {
+        for ty in [ty::<Range<usize>>(), ty::<RangeInclusive<usize>>()] {
+            assert_eq!(field_names(&ty), vec!["start", "end"]);
+        }
+
+        let value = serde_json::to_value(1usize..5).unwrap();
+
+        assert_eq!(value.as_object().unwrap().len(), 2);
+    }
+}
+
+mod field_ordering {
+    use super::*;
+
+    // Generators emit fields in this order, so it has to be the declared
+    // order rather than an alphabetical one.
+    #[test]
+    fn preserves_insertion_order() {
+        let ty = StructType::new([
+            ("zebra".to_string(), Schema::null()),
+            ("apple".to_string(), Schema::null()),
+            ("mango".to_string(), Schema::null()),
+        ]);
+
+        assert_eq!(
+            ty.fields.keys().collect::<Vec<_>>(),
+            vec!["zebra", "apple", "mango"]
+        );
+    }
+
+    #[test]
+    fn add_field_appends() {
+        let mut schema = Schema::structure(StructType::new([("b".to_string(), Schema::null())]));
+
+        schema.add_field("a", Schema::null());
+
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!("expected a struct");
+        };
+
+        assert_eq!(inner.fields.keys().collect::<Vec<_>>(), vec!["b", "a"]);
+    }
+
+    #[test]
+    fn survives_a_serde_round_trip() {
+        let schema = Schema::structure(StructType::new([
+            ("zebra".to_string(), Schema::null()),
+            ("apple".to_string(), Schema::null()),
+        ]));
+
+        let json = serde_json::to_string(&schema).unwrap();
+        let back: Schema = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(back, schema);
+
+        let SchemaType::Struct(inner) = &back.ty else {
+            panic!("expected a struct");
+        };
+
+        assert_eq!(
+            inner.fields.keys().collect::<Vec<_>>(),
+            vec!["zebra", "apple"]
+        );
+    }
+}
+
+mod array_contains {
+    use super::*;
+
+    #[test]
+    fn holds_a_schema_not_a_flag() {
+        let ty = ArrayType {
+            contains: Some(Box::new(Schema::string(StringType::default()))),
+            ..ArrayType::new(Schema::null())
+        };
+
+        assert_eq!(
+            ty.contains.as_deref().map(|schema| &schema.ty),
+            Some(&SchemaType::String(Box::default()))
+        );
+    }
+
+    #[test]
+    fn round_trips_through_serde() {
+        let schema = Schema::array(ArrayType {
+            contains: Some(Box::new(Schema::string(StringType::default()))),
+            ..ArrayType::new(Schema::null())
+        });
+
+        let json = serde_json::to_string(&schema).unwrap();
+
+        assert_eq!(serde_json::from_str::<Schema>(&json).unwrap(), schema);
+    }
+}

@@ -59,6 +59,12 @@ schema.structure(StructType::new([
 ]));
 ```
 
+> Automatically implemented for `Duration`, `SystemTime`, `Range`, and `RangeInclusive`. These look
+> like scalars but serde encodes them as maps, so the schema describes the map.
+
+Fields keep the order they were inserted in, which is the order they were declared in when the
+schema comes from a derive. Generators emit them in that order.
+
 ## Settings
 
 The following fields can be passed to [`StructType`][struct], which are then fed into the

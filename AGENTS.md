@@ -240,6 +240,13 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
   (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
   `variants`; always read it back through `EnumType::get_default`, never `values[index]`.
+- Before adding a `Schematic` impl, serialize the type and look at the output. A schema describes
+  what serde accepts, not what the type looks like — `Duration` and `SystemTime` spent a long time
+  modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema
+  reject valid config. `OsString` is why there is still no impl for it: it encodes as
+  `{"Unix": [bytes]}`, not a string.
+- `StructType.fields` is an `IndexMap`, so fields stay in declaration order and every generator emits
+  them that way. Don't swap it for a sorted map — alphabetical output was a bug, not a feature.
 - Internally-tagged enums with tuple variants don't compile (serde rejects them). Core doesn't
   currently catch this at derive time.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.

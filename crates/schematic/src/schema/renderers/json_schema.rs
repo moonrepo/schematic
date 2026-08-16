@@ -204,24 +204,21 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<JsonSchema> {
-        let use_contains = array.contains.is_some_and(|v| v);
+        // `contains` constrains the array as a whole, and `items` every entry,
+        // so the two are independent and both are rendered when present.
+        let contains = match &array.contains {
+            Some(inner) => Some(Box::new(self.render_schema(inner)?)),
+            None => None,
+        };
 
         let data = SchemaObject {
             metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
             array: Some(Box::new(ArrayValidation {
-                contains: if use_contains {
-                    Some(Box::new(self.render_schema(&array.items_type)?))
-                } else {
-                    None
-                },
-                items: if use_contains {
-                    None
-                } else {
-                    Some(SingleOrVec::Single(Box::new(
-                        self.render_schema(&array.items_type)?,
-                    )))
-                },
+                contains,
+                items: Some(SingleOrVec::Single(Box::new(
+                    self.render_schema(&array.items_type)?,
+                ))),
                 max_items: array.max_length.map(|i| i as u32),
                 min_items: array.min_length.map(|i| i as u32),
                 unique_items: array.unique,

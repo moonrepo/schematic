@@ -24,7 +24,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
-⬛️                                "content": SchemaField {
+⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
@@ -34,7 +34,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        nullable: false,
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
-⬛️                                                format: None,
 ⬛️                                                value: String(
 ⬛️                                                    "foo",
 ⬛️                                                ),
@@ -50,7 +49,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    read_only: false,
 ⬛️                                    write_only: false,
 ⬛️                                },
-⬛️                                "type": SchemaField {
+⬛️                                "content": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
@@ -60,7 +59,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        nullable: false,
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
-⬛️                                                format: None,
 ⬛️                                                value: String(
 ⬛️                                                    "foo",
 ⬛️                                                ),
@@ -90,6 +88,31 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
+⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
+⬛️                                    comment: None,
+⬛️                                    schema: Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Literal(
+⬛️                                            LiteralType {
+⬛️                                                value: String(
+⬛️                                                    "bar",
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    deprecated: None,
+⬛️                                    env_var: None,
+⬛️                                    flatten: false,
+⬛️                                    hidden: false,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
+⬛️                                    read_only: false,
+⬛️                                    write_only: false,
+⬛️                                },
 ⬛️                                "content": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
@@ -113,32 +136,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    read_only: false,
 ⬛️                                    write_only: false,
 ⬛️                                },
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                format: None,
-⬛️                                                value: String(
-⬛️                                                    "bar",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
 ⬛️                            },
 ⬛️                            partial: false,
 ⬛️                            required: None,
@@ -153,6 +150,31 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
+⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
+⬛️                                    comment: None,
+⬛️                                    schema: Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Literal(
+⬛️                                            LiteralType {
+⬛️                                                value: String(
+⬛️                                                    "baz",
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    deprecated: None,
+⬛️                                    env_var: None,
+⬛️                                    flatten: false,
+⬛️                                    hidden: false,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
+⬛️                                    read_only: false,
+⬛️                                    write_only: false,
+⬛️                                },
 ⬛️                                "content": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
@@ -184,32 +206,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                    read_only: false,
 ⬛️                                    write_only: false,
 ⬛️                                },
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                format: None,
-⬛️                                                value: String(
-⬛️                                                    "baz",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
 ⬛️                            },
 ⬛️                            partial: false,
 ⬛️                            required: None,
@@ -224,6 +220,31 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
+⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
+⬛️                                    comment: None,
+⬛️                                    schema: Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Literal(
+⬛️                                            LiteralType {
+⬛️                                                value: String(
+⬛️                                                    "qux",
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    deprecated: None,
+⬛️                                    env_var: None,
+⬛️                                    flatten: false,
+⬛️                                    hidden: false,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
+⬛️                                    read_only: false,
+⬛️                                    write_only: false,
+⬛️                                },
 ⬛️                                "content": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
@@ -302,32 +323,6 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                                },
 ⬛️                                                partial: true,
 ⬛️                                                required: None,
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                format: None,
-⬛️                                                value: String(
-⬛️                                                    "qux",
-⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },

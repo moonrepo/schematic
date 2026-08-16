@@ -23,7 +23,6 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Literal(
 ⬛️                        LiteralType {
-⬛️                            format: None,
 ⬛️                            value: String(
 ⬛️                                "foo",
 ⬛️                            ),
@@ -142,7 +141,6 @@ expression: "create_diff::<InternalTagged>()"
 🟥                                        nullable: false,
 🟥                                        ty: Literal(
 🟥                                            LiteralType {
-🟥                                                format: None,
 🟥                                                value: String(
 🟥                                                    "qux",
 🟥                                                ),
@@ -160,7 +158,6 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                        nullable: false,
 🟩                                                        ty: Literal(
 🟩                                                            LiteralType {
-🟩                                                                format: None,
 🟩                                                                value: String(
 🟩                                                                    "qux",
 🟩                                                                ),

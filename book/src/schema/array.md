@@ -24,7 +24,8 @@ method.
 schema.array(ArrayType::new(schema.infer::<String>()));
 ```
 
-> Automatically implemented for `Vec`, `BTreeSet`, `HashSet`, `[T; N]`, and `&[T]`.
+> Automatically implemented for `Vec`, `VecDeque`, `LinkedList`, `BinaryHeap`, `BTreeSet`,
+> `HashSet`, `[T; N]`, `[T]`, and `&[T]`.
 
 ## Settings
 
@@ -33,13 +34,13 @@ The following fields can be passed to [`ArrayType`][array], which are then fed i
 
 ### Contains
 
-The `contains` field can be enabled to indicate that the array must contain at least one item of the
-type defined by `items_type`, instead of all items.
+The `contains` field takes a schema that at least one item must match. It applies alongside
+`items_type`, which constrains every item, rather than replacing it.
 
 ```rust
 ArrayType {
 	// ...
-	contains: Some(true),
+	contains: Some(Box::new(Schema::string(StringType::default()))),
 }
 ```
 

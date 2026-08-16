@@ -34,7 +34,6 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                                        nullable: false,
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
-⬛️                                                format: None,
 ⬛️                                                value: String(
 ⬛️                                                    "foo",
 ⬛️                                                ),
