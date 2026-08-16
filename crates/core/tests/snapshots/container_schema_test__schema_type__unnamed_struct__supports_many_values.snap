@@ -8,11 +8,13 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
             TupleType::new([
                 schema.infer::<String>(),
                 {
-                    let mut schema = schema.infer::<usize>();
+                    let mut schema = schema.infer::<Vec<usize>>();
                     schema.set_description("Item docs.");
                     schema
                 },
                 schema.infer_as_nested::<NestedConfig>(),
+                schema.infer_as_nested::<Vec<NestedConfig>>(),
+                schema.infer_as_nested::<Option<CustomConfig>>(),
             ]),
         )
 }

@@ -16,11 +16,12 @@ fn pretty_body(tokens: TokenStream) -> String {
     })
 }
 
+// The trait implementations for both the full and partial types
 mod schematic {
     use super::*;
 
     #[test]
-    fn implements_both_types() {
+    fn named_struct() {
         let container = Container::from(parse_quote! {
             /// Container docs.
             #[derive(Config)]
@@ -28,6 +29,42 @@ mod schematic {
             #[deprecated = "Use something else."]
             struct Example {
                 a: bool,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_schematic()));
+    }
+
+    #[test]
+    fn unnamed_struct() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example(bool, usize);
+        });
+
+        assert_snapshot!(pretty(container.impl_schematic()));
+    }
+
+    #[test]
+    fn unnamed_enum() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(rename = "Renamed")]
+            enum Example {
+                A(bool),
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_schematic()));
+    }
+
+    #[test]
+    fn unit_enum() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A,
+                B,
             }
         });
 
@@ -92,6 +129,27 @@ mod schema_type {
         }
 
         #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: NestedConfig,
+                    #[setting(nested)]
+                    b: Option<NestedConfig>,
+                    #[setting(nested)]
+                    c: Vec<NestedConfig>,
+                    #[setting(nested = CustomConfig)]
+                    d: HashMap<String, CustomConfig>,
+                    #[setting(nested)]
+                    e: Box<NestedConfig>,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
         fn supports_empty() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
@@ -117,22 +175,60 @@ mod schema_type {
         }
 
         #[test]
+        fn supports_single_nested_value() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(#[setting(nested)] NestedConfig);
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_single_nested_collection() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example(#[setting(nested)] Vec<NestedConfig>);
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
         fn supports_many_values() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example(
                     String,
                     /// Item docs.
-                    usize,
+                    Vec<usize>,
                     #[setting(nested)]
                     NestedConfig,
+                    #[setting(nested)]
+                    Vec<NestedConfig>,
+                    #[setting(nested = CustomConfig)]
+                    Option<CustomConfig>,
+                    #[setting(exclude)]
+                    bool,
                 );
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_empty() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example();
             });
 
             assert_snapshot!(pretty_body(container.impl_schematic_type()));
         }
     }
 
+    // Every tagging format uses the same variants, so that the
+    // output can be compared across them
     mod unnamed_enum {
         use super::*;
 
@@ -142,11 +238,19 @@ mod schema_type {
                 #[derive(Config)]
                 enum Example {
                     /// Docs.
-                    A(String),
+                    Text(String),
+                    List(Vec<String>),
                     #[setting(default)]
-                    B(usize, bool),
+                    Pair(usize, bool),
                     #[setting(nested)]
-                    C(NestedConfig),
+                    Inner(NestedConfig),
+                    #[setting(nested)]
+                    InnerOpt(Option<NestedConfig>),
+                    #[setting(nested)]
+                    InnerList(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    InnerMap(HashMap<String, CustomConfig>),
+                    Unit,
                 }
             });
 
@@ -159,9 +263,20 @@ mod schema_type {
                 #[derive(Config)]
                 #[serde(untagged)]
                 enum Example {
-                    A(String),
+                    /// Docs.
+                    Text(String),
+                    List(Vec<String>),
+                    #[setting(default)]
+                    Pair(usize, bool),
                     #[setting(nested)]
-                    B(NestedConfig),
+                    Inner(NestedConfig),
+                    #[setting(nested)]
+                    InnerOpt(Option<NestedConfig>),
+                    #[setting(nested)]
+                    InnerList(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    InnerMap(HashMap<String, CustomConfig>),
+                    Unit,
                 }
             });
 
@@ -174,9 +289,20 @@ mod schema_type {
                 #[derive(Config)]
                 #[serde(tag = "type")]
                 enum Example {
-                    A(String),
+                    /// Docs.
+                    Text(String),
+                    List(Vec<String>),
+                    #[setting(default)]
+                    Pair(usize, bool),
                     #[setting(nested)]
-                    B(NestedConfig),
+                    Inner(NestedConfig),
+                    #[setting(nested)]
+                    InnerOpt(Option<NestedConfig>),
+                    #[setting(nested)]
+                    InnerList(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    InnerMap(HashMap<String, CustomConfig>),
+                    Unit,
                 }
             });
 
@@ -189,9 +315,57 @@ mod schema_type {
                 #[derive(Config)]
                 #[serde(tag = "type", content = "value")]
                 enum Example {
-                    A(String),
+                    /// Docs.
+                    Text(String),
+                    List(Vec<String>),
+                    #[setting(default)]
+                    Pair(usize, bool),
                     #[setting(nested)]
-                    B(NestedConfig),
+                    Inner(NestedConfig),
+                    #[setting(nested)]
+                    InnerOpt(Option<NestedConfig>),
+                    #[setting(nested)]
+                    InnerList(Vec<NestedConfig>),
+                    #[setting(nested = CustomConfig)]
+                    InnerMap(HashMap<String, CustomConfig>),
+                    Unit,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_variant_untagged() {
+            // A single variant can opt out of the container's tagging
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type")]
+                enum Example {
+                    Text(String),
+                    #[setting(untagged)]
+                    Inner(String),
+                    #[serde(untagged)]
+                    Other(String),
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_renames_and_exclusions() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(rename = "text")]
+                    Text(String),
+                    #[serde(rename = "number")]
+                    Number(usize),
+                    #[setting(exclude)]
+                    Gone(bool),
+                    #[setting(default)]
+                    Last(bool),
                 }
             });
 
@@ -199,11 +373,13 @@ mod schema_type {
         }
     }
 
+    // All-unit enums are enumerable values, regardless of the
+    // tagging format that was configured
     mod unit_enum {
         use super::*;
 
         #[test]
-        fn supports_standard() {
+        fn supports_external() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
@@ -215,6 +391,51 @@ mod schema_type {
                     C,
                     #[setting(exclude)]
                     D,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_untagged() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(untagged)]
+                enum Example {
+                    A,
+                    #[setting(default)]
+                    B,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_internal_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type")]
+                enum Example {
+                    A,
+                    #[setting(default)]
+                    B,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_adjacent_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type", content = "value")]
+                enum Example {
+                    A,
+                    #[setting(default)]
+                    B,
                 }
             });
 

@@ -296,65 +296,105 @@ impl Variant {
                     }
                 }
             }
-            // Unit variants are the name itself, unless represented as null
-            Fields::Unit => {
-                if self.args.null || untagged {
-                    quote! { Schema::null() }
-                } else {
-                    quote! { Schema::literal_value(LiteralValue::String(#name.into())) }
+            // Unit variants carry no value, so they're the name itself
+            Fields::Unit => quote! { Schema::literal_value(LiteralValue::String(#name.into())) },
+        };
+
+        // Wrap the tagged value so that nested configs can be partialized
+        let wrap = |value: TokenStream| {
+            if nested {
+                quote! {
+                    {
+                        let mut item = #value;
+                        item.partialize();
+                        item
+                    }
                 }
+            } else {
+                value
             }
         };
 
-        let partialize = if nested {
-            quote! { item.partialize(); }
-        } else {
-            quote! {}
-        };
+        let unit = self.is_unit_variant();
+        let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
-        let mut schema = match tag_format {
-            // Every variant is a unit, so the enum is a list of values
-            SerdeTagFormat::Unit => quote! {
+        let mut schema = if let SerdeTagFormat::Unit = tag_format {
+            // Every variant is a unit, so the enum is a list of named values
+            let ty = if self.args.null {
+                quote! { Schema::null() }
+            } else {
+                inner
+            };
+
+            quote! {
                 Schema {
                     name: Some(#name.into()),
-                    ty: #inner.ty,
+                    ty: #ty.ty,
                     ..Default::default()
                 }
-            },
-            SerdeTagFormat::Untagged => inner,
-            // { "name": value }
-            SerdeTagFormat::External => quote! {
-                {
-                    let mut item = Schema::structure(StructType::new([
-                        (#name.into(), #inner),
-                    ]));
-                    #partialize
-                    item
+            }
+        } else if self.args.null {
+            // Explicitly represents null, so it's never tagged
+            quote! { Schema::null() }
+        } else if untagged {
+            // Untagged variants are represented by their value alone,
+            // and units have no value
+            if unit {
+                quote! { Schema::null() }
+            } else {
+                inner
+            }
+        } else {
+            match tag_format {
+                SerdeTagFormat::Unit | SerdeTagFormat::Untagged => unreachable!(),
+                // "name" | { "name": value }
+                SerdeTagFormat::External => {
+                    if unit {
+                        inner
+                    } else {
+                        wrap(quote! {
+                            Schema::structure(StructType::new([
+                                (#name.into(), #inner),
+                            ]))
+                        })
+                    }
                 }
-            },
-            // { "tag": "name", ...value }
-            SerdeTagFormat::Internal(tag) => quote! {
-                {
-                    let mut item = #inner;
-                    item.ty.add_field(
-                        #tag,
-                        SchemaField::new(Schema::literal_value(LiteralValue::String(#name.into()))),
-                    );
-                    #partialize
-                    item
+                // { "tag": "name", ...value }
+                SerdeTagFormat::Internal(tag) => {
+                    if unit {
+                        quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                            ]))
+                        }
+                    } else {
+                        wrap(quote! {
+                            {
+                                let mut item = #inner;
+                                item.ty.add_field(#tag, SchemaField::new(#name_literal));
+                                item
+                            }
+                        })
+                    }
                 }
-            },
-            // { "tag": "name", "content": value }
-            SerdeTagFormat::Adjacent(tag, content) => quote! {
-                {
-                    let mut item = Schema::structure(StructType::new([
-                        (#tag.into(), Schema::literal_value(LiteralValue::String(#name.into()))),
-                        (#content.into(), #inner),
-                    ]));
-                    #partialize
-                    item
+                // { "tag": "name" } | { "tag": "name", "content": value }
+                SerdeTagFormat::Adjacent(tag, content) => {
+                    if unit {
+                        quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                            ]))
+                        }
+                    } else {
+                        wrap(quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #name_literal),
+                                (#content.into(), #inner),
+                            ]))
+                        })
+                    }
                 }
-            },
+            }
         };
 
         let comment = extract_comment(&self.attrs);

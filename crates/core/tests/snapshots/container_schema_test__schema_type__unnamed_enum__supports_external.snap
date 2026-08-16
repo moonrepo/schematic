@@ -8,42 +8,76 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
             UnionType::from_schemas(
                 [
                     {
-                        let mut item = {
-                            let mut item = Schema::structure(
-                                StructType::new([("A".into(), schema.infer::<String>())]),
-                            );
-                            item
-                        };
+                        let mut item = Schema::structure(
+                            StructType::new([("Text".into(), schema.infer::<String>())]),
+                        );
                         item.description = Some("Docs.".into());
+                        item
+                    },
+                    Schema::structure(
+                        StructType::new([("List".into(), schema.infer::<Vec<String>>())]),
+                    ),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "Pair".into(),
+                                Schema::tuple(
+                                    TupleType::new([
+                                        schema.infer::<usize>(),
+                                        schema.infer::<bool>(),
+                                    ]),
+                                ),
+                            ),
+                        ]),
+                    ),
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                ("Inner".into(), schema.infer_as_nested::<NestedConfig>()),
+                            ]),
+                        );
+                        item.partialize();
                         item
                     },
                     {
                         let mut item = Schema::structure(
                             StructType::new([
                                 (
-                                    "B".into(),
-                                    Schema::tuple(
-                                        TupleType::new([
-                                            schema.infer::<usize>(),
-                                            schema.infer::<bool>(),
-                                        ]),
-                                    ),
+                                    "InnerOpt".into(),
+                                    schema.infer_as_nested::<Option<NestedConfig>>(),
                                 ),
-                            ]),
-                        );
-                        item
-                    },
-                    {
-                        let mut item = Schema::structure(
-                            StructType::new([
-                                ("C".into(), schema.infer_as_nested::<NestedConfig>()),
                             ]),
                         );
                         item.partialize();
                         item
                     },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "InnerList".into(),
+                                    schema.infer_as_nested::<Vec<NestedConfig>>(),
+                                ),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = Schema::structure(
+                            StructType::new([
+                                (
+                                    "InnerMap".into(),
+                                    schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                                ),
+                            ]),
+                        );
+                        item.partialize();
+                        item
+                    },
+                    Schema::literal_value(LiteralValue::String("Unit".into())),
                 ],
-                Some(1usize),
+                Some(2usize),
             ),
         )
 }

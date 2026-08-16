@@ -8,30 +8,125 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
             UnionType::from_schemas(
                 [
                     {
-                        let mut item = schema.infer::<String>();
+                        let mut item = {
+                            let mut item = schema.infer::<String>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Text".into())),
+                                    ),
+                                );
+                            item
+                        };
+                        item.description = Some("Docs.".into());
+                        item
+                    },
+                    {
+                        let mut item = schema.infer::<Vec<String>>();
                         item.ty
                             .add_field(
                                 "type",
                                 SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("A".into())),
+                                    Schema::literal_value(LiteralValue::String("List".into())),
                                 ),
                             );
                         item
                     },
                     {
-                        let mut item = schema.infer_as_nested::<NestedConfig>();
+                        let mut item = Schema::tuple(
+                            TupleType::new([
+                                schema.infer::<usize>(),
+                                schema.infer::<bool>(),
+                            ]),
+                        );
                         item.ty
                             .add_field(
                                 "type",
                                 SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("B".into())),
+                                    Schema::literal_value(LiteralValue::String("Pair".into())),
                                 ),
                             );
+                        item
+                    },
+                    {
+                        let mut item = {
+                            let mut item = schema.infer_as_nested::<NestedConfig>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Inner".into())),
+                                    ),
+                                );
+                            item
+                        };
                         item.partialize();
                         item
                     },
+                    {
+                        let mut item = {
+                            let mut item = schema
+                                .infer_as_nested::<Option<NestedConfig>>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(
+                                            LiteralValue::String("InnerOpt".into()),
+                                        ),
+                                    ),
+                                );
+                            item
+                        };
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = {
+                            let mut item = schema.infer_as_nested::<Vec<NestedConfig>>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(
+                                            LiteralValue::String("InnerList".into()),
+                                        ),
+                                    ),
+                                );
+                            item
+                        };
+                        item.partialize();
+                        item
+                    },
+                    {
+                        let mut item = {
+                            let mut item = schema
+                                .infer_as_nested::<HashMap<String, CustomConfig>>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(
+                                            LiteralValue::String("InnerMap".into()),
+                                        ),
+                                    ),
+                                );
+                            item
+                        };
+                        item.partialize();
+                        item
+                    },
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(LiteralValue::String("Unit".into())),
+                            ),
+                        ]),
+                    ),
                 ],
-                None,
+                Some(2usize),
             ),
         )
 }

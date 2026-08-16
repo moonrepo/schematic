@@ -1,0 +1,35 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty(container.impl_schematic())
+---
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Renamed".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .union(
+                UnionType::from_schemas(
+                    [
+                        Schema::structure(
+                            StructType::new([("A".into(), schema.infer::<bool>())]),
+                        ),
+                    ],
+                    None,
+                ),
+            )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {
+    fn schema_name() -> Option<String> {
+        Some("PartialExample".into())
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = Example::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}
