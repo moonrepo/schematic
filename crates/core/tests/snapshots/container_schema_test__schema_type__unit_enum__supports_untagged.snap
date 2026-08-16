@@ -1,0 +1,24 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .enumerable(
+            EnumType::from_schemas(
+                [
+                    Schema {
+                        name: Some("A".into()),
+                        ty: Schema::literal_value(LiteralValue::String("A".into())).ty,
+                        ..Default::default()
+                    },
+                    Schema {
+                        name: Some("B".into()),
+                        ty: Schema::literal_value(LiteralValue::String("B".into())).ty,
+                        ..Default::default()
+                    },
+                ],
+                Some(1usize),
+            ),
+        )
+}

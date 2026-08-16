@@ -1,0 +1,23 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_schemas(
+                [
+                    Schema::structure(
+                        StructType::new([("text".into(), schema.infer::<String>())]),
+                    ),
+                    Schema::structure(
+                        StructType::new([("number".into(), schema.infer::<usize>())]),
+                    ),
+                    Schema::structure(
+                        StructType::new([("Last".into(), schema.infer::<bool>())]),
+                    ),
+                ],
+                Some(2usize),
+            ),
+        )
+}

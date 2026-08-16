@@ -1,5 +1,5 @@
 ---
-source: crates/core/tests/container_type_test.rs
+source: crates/core/tests/container_schema_test.rs
 expression: pretty(container.impl_schematic())
 ---
 #[automatically_derived]
@@ -9,10 +9,7 @@ impl schematic::Schematic for Example {
     }
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
         use schematic::schema::*;
-        schema
-            .structure(
-                StructType::new([("a".into(), SchemaField::new(schema.infer::<bool>()))]),
-            )
+        schema.tuple(TupleType::new([schema.infer::<bool>(), schema.infer::<usize>()]))
     }
 }
 #[automatically_derived]

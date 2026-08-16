@@ -60,6 +60,48 @@ impl Default for Example {
     }
 }
 #[automatically_derived]
-impl schematic::Schematic for Example {}
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .enumerable(
+                EnumType::from_schemas(
+                    [
+                        Schema {
+                            name: Some("A".into()),
+                            ty: Schema::literal_value(LiteralValue::String("A".into()))
+                                .ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("B".into()),
+                            ty: Schema::literal_value(LiteralValue::String("B".into()))
+                                .ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("C".into()),
+                            ty: Schema::literal_value(LiteralValue::String("C".into()))
+                                .ty,
+                            ..Default::default()
+                        },
+                    ],
+                    Some(1usize),
+                ),
+            )
+    }
+}
 #[automatically_derived]
-impl schematic::Schematic for PartialExample {}
+impl schematic::Schematic for PartialExample {
+    fn schema_name() -> Option<String> {
+        Some("PartialExample".into())
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = Example::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}
