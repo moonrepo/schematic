@@ -1,8 +1,8 @@
+#[cfg(feature = "schema")]
+use crate::args::SerdeTagFormat;
 use crate::args::{
     NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
 };
-#[cfg(feature = "schema")]
-use crate::args::SerdeTagFormat;
 use crate::container::ContainerArgs;
 use crate::utils::{ImplResult, is_inheritable_attribute};
 use crate::variant_value::VariantValue;
