@@ -88,10 +88,6 @@ impl Variant {
     }
 
     fn validate_args(&self) {
-        if self.is_nested() && self.values.len() > 1 {
-            panic!("Only 1 item is supported when using `nested` in a tuple variant.")
-        }
-
         if self.is_required()
             && self
                 .values
@@ -475,44 +471,52 @@ impl Variant {
                         // Nested configs are merged recursively, but collections
                         // of them are replaced, as there's no way to know how to
                         // pair up their items. Define `merge` to customize this.
-                        // Nested variants only support a single value.
-                        let nested_value = self
-                            .values
-                            .first()
-                            .filter(|value| self.is_nested() && !value.is_collection());
+                        let mergeable = self.is_nested()
+                            && self.values.iter().any(|value| !value.is_collection());
 
-                        if let Some(value) = nested_value {
+                        if mergeable {
                             let mut requires_internal = false;
 
                             res.value = self.map_unnamed_match(
                                 &self.ident,
                                 fields,
                                 |outer_names, inner_names| {
-                                    let o = &outer_names[0];
-                                    let i = &inner_names[0];
+                                    let statements = outer_names
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(index, o)| {
+                                            let i = &inner_names[index];
+                                            let value = &self.values[index];
 
-                                    // Variant values are not wrapped by the partial,
-                                    // so all layers must be handled
-                                    let merge = value.impl_partial_merge_nested(
-                                        &quote! { #o },
-                                        &quote! { #i },
-                                        false,
-                                    );
+                                            // Collections are replaced in place
+                                            if value.is_collection() {
+                                                return quote! { *#o = #i; };
+                                            }
 
-                                    // Wrap with the manager when the value is optional
-                                    let statement = if merge.requires_internal {
-                                        requires_internal = true;
+                                            // Variant values are not wrapped by the
+                                            // partial, so all layers must be handled
+                                            let merge = value.impl_partial_merge_nested(
+                                                &quote! { #o },
+                                                &quote! { #i },
+                                                false,
+                                            );
 
-                                        let inner = merge.value;
+                                            // Wrap with the manager when the value is optional
+                                            if merge.requires_internal {
+                                                requires_internal = true;
 
-                                        quote! { MergeManager::new(context)#inner; }
-                                    } else {
-                                        merge.value
-                                    };
+                                                let inner = merge.value;
+
+                                                quote! { MergeManager::new(context)#inner; }
+                                            } else {
+                                                merge.value
+                                            }
+                                        })
+                                        .collect::<Vec<_>>();
 
                                     quote! {
                                         if let Self::#name(#(#inner_names),*) = next {
-                                            #statement
+                                            #(#statements)*
                                         } else {
                                             *self = next;
                                         }

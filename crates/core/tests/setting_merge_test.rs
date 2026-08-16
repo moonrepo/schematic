@@ -510,6 +510,24 @@ mod setting_merge {
 
             assert_snapshot!(pretty(container.impl_partial_merge()));
         }
+
+        #[test]
+        fn supports_multiple_nested_values() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig, CustomConfig),
+                    #[setting(nested)]
+                    B(NestedConfig, Option<CustomConfig>),
+                    // Collections are replaced in place, alongside a merge
+                    #[setting(nested)]
+                    C(NestedConfig, Vec<CustomConfig>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
     }
 
     mod unit_enum {

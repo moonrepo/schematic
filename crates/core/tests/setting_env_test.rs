@@ -336,7 +336,7 @@ mod setting_env_prefix {
                 #[derive(Config)]
                 struct Example {
                     #[setting(env_prefix = "", nested)]
-                    a: String,
+                    a: NestedConfig,
                 }
             })
             .impl_partial_env_values();
@@ -406,7 +406,7 @@ mod setting_env_prefix {
                 #[derive(Config)]
                 struct Example(
                     #[setting(env_prefix = "", nested)]
-                    String,
+                    NestedConfig,
                 );
             })
             .impl_partial_env_values();

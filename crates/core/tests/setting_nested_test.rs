@@ -148,6 +148,34 @@ mod setting_nested {
                 }
             });
         }
+
+        #[test]
+        #[should_panic(
+            expected = "Nested configurations must be a `Config` type, received `bool`."
+        )]
+        fn panics_for_primitives() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: bool,
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Nested configurations must be a `Config` type, received `Vec<String>`."
+        )]
+        fn panics_for_primitives_in_collections() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: Vec<String>,
+                }
+            });
+        }
     }
 
     mod unnamed_struct {
@@ -402,10 +430,23 @@ mod setting_nested {
         }
 
         #[test]
+        fn supports_multiple_items() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A(NestedConfig, CustomConfig),
+                }
+            });
+
+            assert_eq!(container.inner.get_variants()[0].values.len(), 2);
+        }
+
+        #[test]
         #[should_panic(
-            expected = "Only 1 item is supported when using `nested` in a tuple variant."
+            expected = "Nested configurations must be a `Config` type, received `bool`."
         )]
-        fn panics_multiple_items() {
+        fn panics_if_any_item_is_not_a_config() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {

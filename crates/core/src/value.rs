@@ -93,9 +93,22 @@ impl Value {
             }
         });
 
-        if self.nested && self.nested_ident.is_none() {
+        if !self.nested {
+            return;
+        }
+
+        let Some(nested_ident) = &self.nested_ident else {
             panic!(
                 "Unable to extract the nested configuration identifier from `{}`. Try explicitly passing the identifier with `nested = ConfigName`.",
+                self.ty_string
+            )
+        };
+
+        // Primitives can never implement `Config`, so catch them here instead
+        // of failing later with an obscure trait error
+        if is_primitive_ident(nested_ident) {
+            panic!(
+                "Nested configurations must be a `Config` type, received `{}`.",
                 self.ty_string
             )
         }
@@ -453,6 +466,15 @@ impl Value {
 
 fn is_wrapper_ident(ident: &Ident) -> bool {
     ident == "Arc" || ident == "Box" || ident == "Rc"
+}
+
+fn is_primitive_ident(ident: &Ident) -> bool {
+    [
+        "String", "bool", "char", "f32", "f64", "i8", "i16", "i32", "i64", "i128", "isize", "str",
+        "u8", "u16", "u32", "u64", "u128", "usize",
+    ]
+    .iter()
+    .any(|primitive| ident == primitive)
 }
 
 /// Whether a type cannot exist without being wrapped in a pointer,
