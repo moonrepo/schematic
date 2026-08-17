@@ -78,7 +78,7 @@ pub fn is_nested_type(schema: &SchemaType) -> bool {
                 uni.variants_types
                     .iter()
                     .find(|v| !v.is_null())
-                    .is_some_and(|v| is_nested_type(v))
+                    .is_some_and(|v| is_nested_type(&v.ty))
             } else {
                 false
             }

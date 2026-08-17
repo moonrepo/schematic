@@ -1,7 +1,6 @@
 use crate::*;
 use std::cell::RefCell;
 use std::mem;
-use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 /// A [`Schema`] builder.
@@ -212,20 +211,6 @@ impl SchemaBuilder {
         let mut schema = self.infer::<T>();
         schema.set_default(default);
         schema
-    }
-}
-
-impl Deref for SchemaBuilder {
-    type Target = SchemaType;
-
-    fn deref(&self) -> &Self::Target {
-        &self.ty
-    }
-}
-
-impl DerefMut for SchemaBuilder {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.ty
     }
 }
 

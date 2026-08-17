@@ -830,3 +830,262 @@ mod array_contains {
         assert_eq!(serde_json::from_str::<Schema>(&json).unwrap(), schema);
     }
 }
+
+mod display {
+    use super::*;
+
+    #[test]
+    fn renders_scalars() {
+        assert_eq!(Schema::null().to_string(), "null");
+        assert_eq!(Schema::unknown().to_string(), "unknown");
+        assert_eq!(Schema::boolean(BooleanType::default()).to_string(), "bool");
+        assert_eq!(Schema::string(StringType::default()).to_string(), "string");
+        assert_eq!(
+            Schema::integer(IntegerType::new_kind(IntegerKind::U16)).to_string(),
+            "u16"
+        );
+        assert_eq!(
+            Schema::float(FloatType::new_kind(FloatKind::F64)).to_string(),
+            "f64"
+        );
+    }
+
+    #[test]
+    fn renders_a_formatted_string() {
+        let schema = Schema::string(StringType {
+            format: Some("path".into()),
+            ..StringType::default()
+        });
+
+        assert_eq!(schema.to_string(), "string:path");
+    }
+
+    #[test]
+    fn renders_a_char_as_a_length_one_string() {
+        let schema = Schema::string(StringType {
+            min_length: Some(1),
+            max_length: Some(1),
+            ..StringType::default()
+        });
+
+        assert_eq!(schema.to_string(), "char");
+    }
+
+    #[test]
+    fn renders_containers() {
+        assert_eq!(
+            Schema::array(ArrayType::new(Schema::string(StringType::default()))).to_string(),
+            "[string]"
+        );
+        assert_eq!(
+            Schema::object(ObjectType::new(
+                Schema::string(StringType::default()),
+                Schema::boolean(BooleanType::default()),
+            ))
+            .to_string(),
+            "{string: bool}"
+        );
+        assert_eq!(
+            Schema::tuple(TupleType::new([
+                Schema::string(StringType::default()),
+                Schema::null(),
+            ]))
+            .to_string(),
+            "(string, null)"
+        );
+    }
+
+    #[test]
+    fn renders_unions_and_enums() {
+        assert_eq!(
+            SchemaBuilder::build_root::<Option<String>>().to_string(),
+            "string | null"
+        );
+        assert_eq!(
+            Schema::enumerable(EnumType::new([
+                LiteralValue::String("a".into()),
+                LiteralValue::UInt(2),
+            ]))
+            .to_string(),
+            "\"a\" | 2"
+        );
+    }
+
+    // Only structs and references render as their name; everything else
+    // renders structurally even when named.
+    #[test]
+    fn renders_names_for_structs_and_references_only() {
+        let mut schema = Schema::structure(StructType::default());
+        schema.set_name("MyStruct");
+        assert_eq!(schema.to_string(), "MyStruct");
+
+        assert_eq!(Schema::reference("MyRef").to_string(), "MyRef");
+
+        let mut schema = Schema::string(StringType::default());
+        schema.set_name("MyString");
+        assert_eq!(schema.to_string(), "string");
+    }
+
+    #[test]
+    fn renders_literals() {
+        assert_eq!(
+            Schema::literal_value(LiteralValue::String("a".into())).to_string(),
+            "\"a\""
+        );
+        assert_eq!(
+            Schema::literal_value(LiteralValue::Bool(true)).to_string(),
+            "true"
+        );
+        assert_eq!(
+            Schema::literal_value(LiteralValue::Int(-3)).to_string(),
+            "-3"
+        );
+    }
+}
+
+mod unions {
+    use super::*;
+
+    fn variants() -> [Schema; 2] {
+        [Schema::string(StringType::default()), Schema::null()]
+    }
+
+    #[test]
+    fn new_any_defaults_to_any_of() {
+        let ty = UnionType::new_any(variants());
+
+        assert_eq!(ty.operator, UnionOperator::AnyOf);
+        assert_eq!(ty.variants_types.len(), 2);
+        assert!(!ty.partial);
+        assert_eq!(ty.default_index, None);
+    }
+
+    #[test]
+    fn new_one_uses_one_of() {
+        assert_eq!(
+            UnionType::new_one(variants()).operator,
+            UnionOperator::OneOf
+        );
+    }
+
+    #[test]
+    fn from_schemas_carries_the_default_index() {
+        let ty = UnionType::from_schemas(variants(), Some(1));
+
+        assert_eq!(ty.default_index, Some(1));
+        assert_eq!(ty.operator, UnionOperator::AnyOf);
+    }
+
+    #[test]
+    fn has_null_detects_a_null_variant() {
+        assert!(UnionType::new_any(variants()).has_null());
+        assert!(
+            !UnionType::new_any([
+                Schema::string(StringType::default()),
+                Schema::boolean(BooleanType::default()),
+            ])
+            .has_null()
+        );
+    }
+}
+
+mod enums {
+    use super::*;
+
+    #[test]
+    fn new_collects_values_without_variants() {
+        let ty = EnumType::new([
+            LiteralValue::String("a".into()),
+            LiteralValue::String("b".into()),
+        ]);
+
+        assert_eq!(ty.values.len(), 2);
+        assert!(ty.variants.is_none());
+        assert_eq!(ty.default_index, None);
+    }
+
+    #[test]
+    fn from_fields_keeps_declaration_order() {
+        let ty = EnumType::from_fields(
+            [
+                (
+                    "zebra".to_string(),
+                    SchemaField::new(Schema::literal_value(LiteralValue::String("z".into()))),
+                ),
+                (
+                    "apple".to_string(),
+                    SchemaField::new(Schema::literal_value(LiteralValue::String("a".into()))),
+                ),
+            ],
+            Some(1),
+        );
+
+        assert_eq!(
+            ty.variants.as_ref().unwrap().keys().collect::<Vec<_>>(),
+            vec!["zebra", "apple"]
+        );
+        assert_eq!(ty.values.len(), 2);
+        assert_eq!(
+            Schema::enumerable(ty).get_default(),
+            Some(&LiteralValue::String("a".into()))
+        );
+    }
+
+    #[test]
+    fn from_fields_skips_non_literal_values() {
+        let ty = EnumType::from_fields(
+            [
+                ("null".to_string(), SchemaField::new(Schema::null())),
+                (
+                    "text".to_string(),
+                    SchemaField::new(Schema::literal_value(LiteralValue::String("t".into()))),
+                ),
+            ],
+            None,
+        );
+
+        assert_eq!(ty.variants.as_ref().unwrap().len(), 2);
+        assert_eq!(ty.values.len(), 1);
+    }
+}
+
+mod objects {
+    use super::*;
+
+    #[test]
+    fn new_sets_both_types() {
+        let ty = ObjectType::new(
+            Schema::string(StringType::default()),
+            Schema::boolean(BooleanType::default()),
+        );
+
+        assert_eq!(ty.key_type.ty, SchemaType::String(Box::default()));
+        assert_eq!(ty.value_type.ty, SchemaType::Boolean(Box::default()));
+        assert_eq!(ty.required, None);
+    }
+}
+
+mod literal_equality {
+    use super::*;
+
+    // Derived `PartialEq` would inherit `NaN != NaN`, making a schema
+    // unequal to its own clone.
+    #[test]
+    fn nan_equals_itself() {
+        for schema in [
+            Schema::literal_value(LiteralValue::F64(f64::NAN)),
+            Schema::literal_value(LiteralValue::F32(f32::NAN)),
+        ] {
+            assert_eq!(schema, schema.clone());
+        }
+    }
+
+    #[test]
+    fn ordinary_values_still_compare_normally() {
+        assert_eq!(LiteralValue::F64(1.5), LiteralValue::F64(1.5));
+        assert_ne!(LiteralValue::F64(1.5), LiteralValue::F64(2.5));
+        assert_ne!(LiteralValue::F64(1.5), LiteralValue::F32(1.5));
+        assert_eq!(LiteralValue::F64(0.0), LiteralValue::F64(-0.0));
+        assert_ne!(LiteralValue::Int(1), LiteralValue::UInt(1));
+    }
+}

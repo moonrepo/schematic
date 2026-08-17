@@ -1,6 +1,5 @@
 use crate::*;
 use std::fmt;
-use std::ops::{Deref, DerefMut};
 
 /// Describes the metadata and shape of a type.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -212,6 +211,43 @@ impl Schema {
         self.ty = value;
     }
 
+    /// Return a `default` value from the inner schema type.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        self.ty.get_default()
+    }
+
+    /// Set the `default` of the inner schema type. Returns false when the
+    /// type holds no default.
+    pub fn set_default(&mut self, default: LiteralValue) -> bool {
+        self.ty.set_default(default)
+    }
+
+    /// Add a field to the inner type if it's a struct. Returns false when it
+    /// isn't one.
+    pub fn add_field(&mut self, key: &str, value: impl Into<SchemaField>) -> bool {
+        self.ty.add_field(key, value)
+    }
+
+    /// Return true if the inner type is an explicit null.
+    pub fn is_null(&self) -> bool {
+        self.ty.is_null()
+    }
+
+    /// Return true if the inner type is nullable (a union with a null).
+    pub fn is_nullable(&self) -> bool {
+        self.ty.is_nullable()
+    }
+
+    /// Return true if the inner type is a reference.
+    pub fn is_reference(&self) -> bool {
+        self.ty.is_reference()
+    }
+
+    /// Return true if the inner type is a struct.
+    pub fn is_struct(&self) -> bool {
+        self.ty.is_struct()
+    }
+
     /// Return a non-null schema if available. If a null type,
     /// returns `None`. If a union type, returns the first variant that
     /// resolves to a non-null type, or `None`. Otherwise, returns the
@@ -236,20 +272,6 @@ impl fmt::Display for Schema {
             Some(name) if self.ty.is_struct() || self.ty.is_reference() => write!(f, "{name}"),
             _ => write!(f, "{}", self.ty),
         }
-    }
-}
-
-impl Deref for Schema {
-    type Target = SchemaType;
-
-    fn deref(&self) -> &Self::Target {
-        &self.ty
-    }
-}
-
-impl DerefMut for Schema {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.ty
     }
 }
 

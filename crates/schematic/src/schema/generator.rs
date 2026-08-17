@@ -2,6 +2,7 @@ use super::SchemaRenderer;
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use schematic_types::*;
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -10,12 +11,37 @@ use std::path::Path;
 #[derive(Debug, Default)]
 pub struct SchemaGenerator {
     pub schemas: IndexMap<String, Schema>,
+
+    // Which Rust type claimed each schema name. Schemas are keyed by name
+    // alone, so two distinct types answering `schema_name` with the same
+    // string would silently collapse into one, and every reference to that
+    // name would resolve to whichever was added first.
+    sources: HashMap<String, &'static str>,
 }
 
 impl SchemaGenerator {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
+    ///
+    /// # Panics
+    ///
+    /// If another type has already been added under the same schema name.
+    /// Rendering both is impossible, and picking one silently would emit a
+    /// document whose references point at the wrong type.
     pub fn add<T: Schematic>(&mut self) {
         let schema = SchemaBuilder::build_root::<T>();
+
+        if let Some(name) = T::schema_name() {
+            let source = std::any::type_name::<T>();
+
+            if let Some(previous) = self.sources.insert(name.clone(), source)
+                && previous != source
+            {
+                panic!(
+                    "A schema named `{name}` has already been added by `{previous}`, and `{source}` cannot reuse it. Give one of them a distinct `schema_name`."
+                );
+            }
+        }
+
         self.add_schema(&schema);
     }
 

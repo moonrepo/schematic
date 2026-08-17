@@ -537,3 +537,66 @@ mod typescript {
         }));
     }
 }
+
+mod name_collisions {
+    use super::*;
+
+    // Schemas are keyed by name alone, so two types answering with the same
+    // one would collapse into a single definition and every reference to it
+    // would resolve to whichever was added first.
+    struct First;
+    struct Second;
+
+    macro_rules! impl_collides {
+        ($type:ty) => {
+            impl Schematic for $type {
+                fn schema_name() -> Option<String> {
+                    Some("Collides".into())
+                }
+
+                fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                    schema.string_default()
+                }
+            }
+        };
+    }
+
+    impl_collides!(First);
+    impl_collides!(Second);
+
+    #[test]
+    #[should_panic(expected = "A schema named `Collides` has already been added")]
+    fn reports_two_types_sharing_a_name() {
+        let mut generator = SchemaGenerator::default();
+
+        generator.add::<First>();
+        generator.add::<Second>();
+    }
+
+    #[test]
+    fn allows_adding_the_same_type_twice() {
+        let mut generator = SchemaGenerator::default();
+
+        generator.add::<First>();
+        generator.add::<First>();
+
+        assert_eq!(generator.schemas.len(), 1);
+    }
+
+    // Recursive configs legitimately register the same name at several
+    // expansion depths, which must not be mistaken for a collision.
+    #[derive(Config)]
+    struct Recurses {
+        #[setting(nested)]
+        children: Vec<Recurses>,
+    }
+
+    #[test]
+    fn allows_a_recursive_type() {
+        let mut generator = SchemaGenerator::default();
+
+        generator.add::<PartialRecurses>();
+
+        assert!(generator.schemas.contains_key("PartialRecurses"));
+    }
+}

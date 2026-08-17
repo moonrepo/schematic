@@ -240,6 +240,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
   (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
   `variants`; always read it back through `EnumType::get_default`, never `values[index]`.
+- `Schema` no longer derefs to `SchemaType` — the accessors it needs (`get_default`, `is_null`,
+  `add_field`, …) are forwarded explicitly. Reach for `schema.ty` when you want the type itself.
+- `schema_name` must be unique per type; `SchemaGenerator::add` panics on a collision because schemas
+  are keyed by name and the loser would silently vanish behind the winner's `$ref`s. Adding the same
+  type twice is fine, as is a recursive type registering itself at several depths.
 - Before adding a `Schematic` impl, serialize the type and look at the output. A schema describes
   what serde accepts, not what the type looks like — `Duration` and `SystemTime` spent a long time
   modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema

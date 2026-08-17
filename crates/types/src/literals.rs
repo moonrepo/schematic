@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum LiteralValue {
@@ -10,6 +10,23 @@ pub enum LiteralValue {
     Int(isize),
     UInt(usize),
     String(String),
+}
+
+// Hand written rather than derived so that a schema always equals itself.
+// Deriving it inherits `f32`/`f64` equality, under which `NaN != NaN`, and a
+// schema holding a NaN default then compares unequal to its own clone.
+impl PartialEq for LiteralValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Bool(a), Self::Bool(b)) => a == b,
+            (Self::F32(a), Self::F32(b)) => a == b || (a.is_nan() && b.is_nan()),
+            (Self::F64(a), Self::F64(b)) => a == b || (a.is_nan() && b.is_nan()),
+            (Self::Int(a), Self::Int(b)) => a == b,
+            (Self::UInt(a), Self::UInt(b)) => a == b,
+            (Self::String(a), Self::String(b)) => a == b,
+            _ => false,
+        }
+    }
 }
 
 impl fmt::Display for LiteralValue {
