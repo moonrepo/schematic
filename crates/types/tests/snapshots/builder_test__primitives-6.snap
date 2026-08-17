@@ -3,6 +3,7 @@ source: crates/types/tests/builder_test.rs
 expression: "& input"
 ---
 {
+  "nullable": true,
   "ty": {
     "type": "Union",
     "partial": false,

@@ -171,7 +171,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
         let mut out = vec![];
 
-        for (name, field) in &structure.fields {
+        for (name, field) in structure.sorted_fields() {
             if field.flatten {
                 continue;
             }

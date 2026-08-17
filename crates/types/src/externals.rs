@@ -139,6 +139,13 @@ mod serde_json_feature {
     }
 }
 
+#[cfg(feature = "serde_ron")]
+mod serde_ron_feature {
+    use super::*;
+
+    impl_unknown!(ron::Value);
+}
+
 #[cfg(feature = "serde_rpkl")]
 mod serde_rpkl_feature {
     use super::*;

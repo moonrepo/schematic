@@ -429,6 +429,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "optionalWithDefault": {
+          "default": 123,
           "anyOf": [
             {
               "type": "number"

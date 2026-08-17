@@ -1,5 +1,9 @@
 use crate::*;
 use std::fmt;
+use std::num::{
+    NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
+};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -150,6 +154,38 @@ impl_int!(i32, IntegerKind::I32);
 impl_int!(i64, IntegerKind::I64);
 impl_int!(i128, IntegerKind::I128);
 
+// Serializes as a plain number, so the only difference from the sized
+// integer is the excluded zero.
+macro_rules! impl_non_zero_int {
+    ($type:ty, $kind:expr_2021) => {
+        impl Schematic for $type {
+            fn build_schema(mut schema: SchemaBuilder) -> Schema {
+                schema.integer(IntegerType {
+                    // Unsigned starts at 1; signed cannot express "not zero"
+                    // as a bound, so it stays unconstrained.
+                    min: if $kind.is_unsigned() { Some(1) } else { None },
+                    kind: $kind,
+                    ..IntegerType::default()
+                })
+            }
+        }
+    };
+}
+
+impl_non_zero_int!(NonZeroUsize, IntegerKind::Usize);
+impl_non_zero_int!(NonZeroU8, IntegerKind::U8);
+impl_non_zero_int!(NonZeroU16, IntegerKind::U16);
+impl_non_zero_int!(NonZeroU32, IntegerKind::U32);
+impl_non_zero_int!(NonZeroU64, IntegerKind::U64);
+impl_non_zero_int!(NonZeroU128, IntegerKind::U128);
+
+impl_non_zero_int!(NonZeroIsize, IntegerKind::Isize);
+impl_non_zero_int!(NonZeroI8, IntegerKind::I8);
+impl_non_zero_int!(NonZeroI16, IntegerKind::I16);
+impl_non_zero_int!(NonZeroI32, IntegerKind::I32);
+impl_non_zero_int!(NonZeroI64, IntegerKind::I64);
+impl_non_zero_int!(NonZeroI128, IntegerKind::I128);
+
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum FloatKind {
@@ -210,12 +246,6 @@ pub struct FloatType {
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub multiple_of: Option<f64>,
-
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
-    pub name: Option<String>,
 }
 
 impl FloatType {
