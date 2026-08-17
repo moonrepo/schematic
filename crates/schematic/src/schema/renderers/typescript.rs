@@ -189,7 +189,7 @@ impl TypeScriptRenderer {
 
         // Extract flattened fields first as we'll need to use intersections
         // to support them correctly in TypeScript
-        for (field_name, field) in &structure.fields {
+        for (field_name, field) in structure.sorted_fields() {
             if field.flatten
                 && let Some(schema) = field.schema.get_nonnull_schema()
             {
@@ -518,7 +518,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
             Ok(())
         };
 
-        for (name, field) in &structure.fields {
+        for (name, field) in structure.sorted_fields() {
             // Handle in `export_object_types`
             if field.flatten {
                 continue;

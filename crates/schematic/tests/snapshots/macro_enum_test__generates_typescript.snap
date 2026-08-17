@@ -23,8 +23,8 @@ export type OfBothTypes = {
 };
 
 export interface SomeConfig {
-	foo: string;
 	bar: number;
+	foo: string;
 }
 
 export type NestedConfigs = {
@@ -55,17 +55,17 @@ export type ExternalTagged = {
 export type InternalTagged = 'foo' | boolean | number | SomeConfig;
 
 export type AdjacentTagged = {
-	type: 'foo';
 	content: 'foo';
+	type: 'foo';
 } | {
-	type: 'bar';
 	content: boolean;
+	type: 'bar';
 } | {
-	type: 'bazzer';
 	content: number;
+	type: 'bazzer';
 } | {
-	type: 'qux';
 	content: SomeConfig;
+	type: 'qux';
 };
 
 export type PartialAllUnit = 'foo' | 'bar' | 'baz';
@@ -85,8 +85,8 @@ export type PartialOfBothTypes = {
 };
 
 export interface PartialSomeConfig {
-	foo?: string | null;
 	bar?: number | null;
+	foo?: string | null;
 }
 
 export type PartialNestedConfigs = {
@@ -117,15 +117,15 @@ export type PartialExternalTagged = {
 export type PartialInternalTagged = 'foo' | boolean | number | PartialSomeConfig;
 
 export type PartialAdjacentTagged = {
-	type: 'foo';
 	content: 'foo';
+	type: 'foo';
 } | {
-	type: 'bar';
 	content: boolean;
+	type: 'bar';
 } | {
-	type: 'bazzer';
 	content: number;
+	type: 'bazzer';
 } | {
-	type: 'qux';
 	content: PartialSomeConfig;
+	type: 'qux';
 };

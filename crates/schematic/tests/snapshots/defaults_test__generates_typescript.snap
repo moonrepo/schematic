@@ -9,24 +9,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
 export interface CustomDefaults {
 	/** @default true */
 	boolean?: boolean;
-	/** @default 'foo' */
-	string?: string;
-	/** @default 123 */
-	number?: number;
-	vector?: number[];
 	/** @default 1.32 */
 	float?: number;
+	/** @default 123 */
+	number?: number;
+	/** @default 'foo' */
+	string?: string;
+	vector?: number[];
 }
 
 export interface ReqOptDefaults {
-	required: number;
-	/** @default 123 */
-	requiredWithDefault?: number;
-	requiredWithDefaultFn?: number;
 	optional: number | null;
 	/** @default 123 */
 	optionalWithDefault?: number | null;
 	optionalWithDefaultFn?: number | null;
+	required: number;
+	/** @default 123 */
+	requiredWithDefault?: number;
+	requiredWithDefaultFn?: number;
 }
 
 export interface ContextDefaults {
@@ -36,71 +36,71 @@ export interface ContextDefaults {
 
 export interface NativeDefaults {
 	boolean: boolean;
-	string: string;
-	number: number;
-	vector: string[];
+	boxed: string;
 	float32: number;
 	float64: number;
-	boxed: string;
+	number: number;
+	string: string;
+	vector: string[];
 }
 
 export interface NestedDefaults {
 	nested: NativeDefaults;
 	nestedBoxed: {
 		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
+		boxed: string;
 		float32: number;
 		float64: number;
-		boxed: string;
+		number: number;
+		string: string;
+		vector: string[];
 	};
+	nestedMap: Record<string, NativeDefaults>;
+	nestedMapBoxed: Record<string, {
+		boolean: boolean;
+		boxed: string;
+		float32: number;
+		float64: number;
+		number: number;
+		string: string;
+		vector: string[];
+	}>;
+	nestedMapOptBoxed: Record<string, {
+		boolean: boolean;
+		boxed: string;
+		float32: number;
+		float64: number;
+		number: number;
+		string: string;
+		vector: string[];
+	} | null>;
 	nestedOpt: NativeDefaults | null;
 	nestedOptBoxed: {
 		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
+		boxed: string;
 		float32: number;
 		float64: number;
-		boxed: string;
+		number: number;
+		string: string;
+		vector: string[];
 	} | null;
 	nestedVec: NativeDefaults[];
 	nestedVecBoxed: {
 		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
+		boxed: string;
 		float32: number;
 		float64: number;
-		boxed: string;
+		number: number;
+		string: string;
+		vector: string[];
 	}[];
 	nestedVecOptBoxed: ({
 		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
+		boxed: string;
 		float32: number;
 		float64: number;
-		boxed: string;
+		number: number;
+		string: string;
+		vector: string[];
 	} | null)[];
-	nestedMap: Record<string, NativeDefaults>;
-	nestedMapBoxed: Record<string, {
-		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
-		float32: number;
-		float64: number;
-		boxed: string;
-	}>;
-	nestedMapOptBoxed: Record<string, {
-		boolean: boolean;
-		string: string;
-		number: number;
-		vector: string[];
-		float32: number;
-		float64: number;
-		boxed: string;
-	} | null>;
 }

@@ -10,14 +10,14 @@ export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
 /** Some comment. */
 export interface AnotherConfig {
-	/** An optional string. */
-	opt: string | null;
 	/**
 	 * An optional enum.
 	 *
 	 * @default 'foo'
 	 */
 	enums: BasicEnum | null;
+	/** An optional string. */
+	opt: string | null;
 }
 
 export type GenConfigFlattened = Record<string, unknown>;
@@ -25,13 +25,9 @@ export type GenConfigFlattened = Record<string, unknown>;
 /** @deprecated */
 export interface GenConfigBase {
 	boolean: boolean;
-	string: string;
-	number: number;
-	float32: number;
-	float64: number;
-	/** This is a list of strings. */
-	vector: string[];
-	map: Record<string, number>;
+	date: string;
+	datetime: string;
+	decimal: string;
 	/**
 	 * This is a list of `enumerable` values.
 	 *
@@ -44,25 +40,29 @@ export interface GenConfigBase {
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
 	fallbackEnum: FallbackEnum;
+	float32: number;
+	float64: number;
+	indexmap: Record<string, string>;
+	indexset: string[] | null;
+	jsonValue: unknown;
+	map: Record<string, number>;
 	/** **Nested** field. */
 	nested: AnotherConfig;
-	date: string;
-	datetime: string;
-	decimal: string;
-	time: string;
+	number: number;
 	path: string;
 	regex: string;
 	relPath: string;
+	string: string;
+	time: string;
+	tomlValue: unknown | null;
 	url: string | null;
 	uuid: string;
+	/** This is a list of strings. */
+	vector: string[];
 	version: string | null;
 	version2: string;
 	versionReq: string;
-	jsonValue: unknown;
-	tomlValue: unknown | null;
 	yamlValue: unknown;
-	indexmap: Record<string, string>;
-	indexset: string[] | null;
 }
 
 /** @deprecated */

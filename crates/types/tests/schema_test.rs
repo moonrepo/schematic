@@ -719,8 +719,7 @@ mod std_coverage {
 mod field_ordering {
     use super::*;
 
-    // Generators emit fields in this order, so it has to be the declared
-    // order rather than an alphabetical one.
+    // The model keeps what the user declared...
     #[test]
     fn preserves_insertion_order() {
         let ty = StructType::new([
@@ -733,6 +732,38 @@ mod field_ordering {
             ty.fields.keys().collect::<Vec<_>>(),
             vec!["zebra", "apple", "mango"]
         );
+    }
+
+    // ...while renderers read through this, so generated output stays
+    // alphabetical no matter how the source type is ordered.
+    #[test]
+    fn sorted_fields_is_alphabetical() {
+        let ty = StructType::new([
+            ("zebra".to_string(), Schema::null()),
+            ("apple".to_string(), Schema::null()),
+            ("mango".to_string(), Schema::null()),
+        ]);
+
+        assert_eq!(
+            ty.sorted_fields().into_keys().collect::<Vec<_>>(),
+            vec!["apple", "mango", "zebra"]
+        );
+
+        // The declared order is untouched by reading it
+        assert_eq!(
+            ty.fields.keys().collect::<Vec<_>>(),
+            vec!["zebra", "apple", "mango"]
+        );
+    }
+
+    #[test]
+    fn sorted_fields_sees_every_field() {
+        let ty = StructType::new([
+            ("b".to_string(), Schema::null()),
+            ("a".to_string(), Schema::null()),
+        ]);
+
+        assert_eq!(ty.sorted_fields().len(), ty.fields.len());
     }
 
     #[test]

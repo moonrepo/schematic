@@ -7,12 +7,47 @@ expression: "fs::read_to_string(file).unwrap()"
   // @env TEMPLATE_BOOLEAN
   "boolean": false,
 
-  // This is a string.
-  "string": "custom value",
+  "emptyArray": [],
 
-  // This is a number with a long description.
-  // This is a number with a long description.
-  "number": 0,
+  "emptyObject": {},
+
+  // This is an enum with a medium length description and deprecated.
+  // @deprecated Dont use enums!
+  // @values "foo" | "bar" | "baz"
+  "enums": "foo",
+
+  // This field is testing array expansion.
+  "expandArray": [
+    {
+      // An optional enum.
+      "enums": "foo",
+
+      // An optional string.
+      "opt": ""
+    }
+  ],
+
+  "expandArrayPrimitive": [
+    123456
+  ],
+
+  // This field is testing object expansion.
+  "expandObject": {
+    "example": {
+      // An optional enum.
+      "enums": "foo",
+
+      // An optional string.
+      "opt": ""
+    }
+  },
+
+  "expandObjectPrimitive": {
+    "example": 0
+  },
+
+  // @values "foo" | "bar" | "baz"
+  "fallbackEnum": "foo",
 
   // This is a float thats deprecated.
   // @deprecated
@@ -21,28 +56,21 @@ expression: "fs::read_to_string(file).unwrap()"
   // This is a float.
   "float64": 1.23,
 
-  // This is a list of strings.
-  "vector": [],
-
   // This is a map of numbers.
   // "map": {},
 
-  // This is an enum with a medium length description and deprecated.
-  // @deprecated Dont use enums!
-  // @values "foo" | "bar" | "baz"
-  "enums": "foo",
-
-  // @values "foo" | "bar" | "baz"
-  "fallbackEnum": "foo",
-
   // This is a nested struct with its own fields.
   "nested": {
-    // An optional string.
-    "opt": "custom nested value",
-
     // An optional enum.
-    "enums": "foo"
+    "enums": "foo",
+
+    // An optional string.
+    "opt": "custom nested value"
   },
+
+  // This is a number with a long description.
+  // This is a number with a long description.
+  "number": 0,
 
   // This is a nested struct with its own fields.
   "one": {
@@ -51,40 +79,12 @@ expression: "fs::read_to_string(file).unwrap()"
       // An optional string.
       // @env ENV_PREFIX_OPT
       "opt": "",
-    },
-  },
-
-  // This field is testing array expansion.
-  "expandArray": [
-    {
-      // An optional string.
-      "opt": "",
-
-      // An optional enum.
-      "enums": "foo"
-    }
-  ],
-
-  "expandArrayPrimitive": [
-    123456
-  ],
-
-  "emptyArray": [],
-
-  // This field is testing object expansion.
-  "expandObject": {
-    "example": {
-      // An optional string.
-      "opt": "",
-
-      // An optional enum.
-      "enums": "foo"
     }
   },
 
-  "expandObjectPrimitive": {
-    "example": 0
-  },
+  // This is a string.
+  "string": "custom value",
 
-  "emptyObject": {}
+  // This is a list of strings.
+  "vector": []
 }

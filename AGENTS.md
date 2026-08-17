@@ -245,8 +245,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema
   reject valid config. `OsString` is why there is still no impl for it: it encodes as
   `{"Unix": [bytes]}`, not a string.
-- `StructType.fields` is an `IndexMap`, so fields stay in declaration order and every generator emits
-  them that way. Don't swap it for a sorted map — alphabetical output was a bug, not a feature.
+- `StructType.fields` is an `IndexMap` so the *model* keeps declaration order, but renderers iterate
+  `StructType::sorted_fields()` so *output* stays alphabetical. Both halves are deliberate: the model
+  preserves what the user wrote, the generated file stays stable no matter how the type is ordered.
+  A new renderer that iterates `fields` directly will silently reintroduce declaration-ordered output.
 - Internally-tagged enums with tuple variants don't compile (serde rejects them). Core doesn't
   currently catch this at derive time.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.

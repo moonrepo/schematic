@@ -4,39 +4,39 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "boolean": false,
-  "string": "abc",
-  "number": 0,
-  "float64": 1.23,
-  "vector": [],
+  "emptyArray": [],
+  "emptyObject": {},
   "enums": "foo",
-  "fallbackEnum": "foo",
-  "nested": {
-    "opt": "",
-    "enums": "foo"
-  },
-  "one": {
-    "two": {
-      "opt": "",
-    },
-  },
   "expandArray": [
     {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   ],
   "expandArrayPrimitive": [
     0
   ],
-  "emptyArray": [],
   "expandObject": {
     "example": {
-      "opt": "",
-      "enums": "foo"
+      "enums": "foo",
+      "opt": ""
     }
   },
   "expandObjectPrimitive": {
     "example": 0
   },
-  "emptyObject": {}
+  "fallbackEnum": "foo",
+  "float64": 1.23,
+  "nested": {
+    "enums": "foo",
+    "opt": ""
+  },
+  "number": 0,
+  "one": {
+    "two": {
+      "opt": "",
+    }
+  },
+  "string": "abc",
+  "vector": []
 }

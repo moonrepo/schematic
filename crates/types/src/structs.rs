@@ -1,4 +1,5 @@
 use crate::*;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::ops::{Range, RangeInclusive};
 use std::time::{Duration, SystemTime};
@@ -38,6 +39,17 @@ impl StructType {
 
     pub fn is_hidden(&self) -> bool {
         self.fields.values().all(|field| field.hidden)
+    }
+
+    /// Return the fields keyed and ordered by name. `fields` itself keeps the
+    /// order they were declared in, which is what the schema models, but
+    /// rendered output is alphabetical so that it stays stable regardless of
+    /// how the source type happens to be written.
+    pub fn sorted_fields(&self) -> BTreeMap<&String, &SchemaField> {
+        self.fields
+            .iter()
+            .map(|(name, field)| (name, field.as_ref()))
+            .collect()
     }
 }
 

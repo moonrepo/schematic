@@ -438,7 +438,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         let mut additional_properties = Some(Box::new(JsonSchema::Bool(false)));
         let exclude_aliases = self.options.exclude_aliases;
 
-        for (name, field) in &structure.fields {
+        for (name, field) in structure.sorted_fields() {
             if field.hidden {
                 continue;
             }
