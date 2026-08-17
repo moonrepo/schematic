@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use schematic::internal::partialize_schema;
-use schematic::{Config, ConfigEnum, SchemaBuilder, Schematic, derive_enum};
+use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, SchemaType, Schematic, derive_enum};
 use similar::{ChangeTag, TextDiff};
 use starbase_sandbox::assert_snapshot;
 use std::collections::HashMap;
@@ -246,4 +246,62 @@ fn partial_derive() {
         field2: Some("test2".to_string()),
     };
     assert_eq!(&Some("test1".to_string()), basic2.as_ref());
+}
+
+#[derive(Config)]
+struct Recursive {
+    name: String,
+    #[setting(nested)]
+    children: Vec<Recursive>,
+}
+
+fn collect_references(schema: &Schema, out: &mut Vec<String>) {
+    match &schema.ty {
+        SchemaType::Reference { name, .. } => out.push(name.to_owned()),
+        SchemaType::Array(inner) => collect_references(&inner.items_type, out),
+        SchemaType::Object(inner) => collect_references(&inner.value_type, out),
+        SchemaType::Struct(inner) => {
+            for field in inner.fields.values() {
+                collect_references(&field.schema, out);
+            }
+        }
+        SchemaType::Tuple(inner) => {
+            for item in &inner.items_types {
+                collect_references(item, out);
+            }
+        }
+        SchemaType::Union(inner) => {
+            for variant in &inner.variants_types {
+                collect_references(variant, out);
+            }
+        }
+        _ => {}
+    };
+}
+
+// A cycle resolves to a reference, which has to be renamed alongside the type
+// it points at, otherwise the partial schema references a type that was never
+// rendered.
+#[test]
+fn recursive_references_follow_the_partial_name() {
+    let schema = SchemaBuilder::build_root::<PartialRecursive>();
+
+    assert_eq!(schema.name.as_deref(), Some("PartialRecursive"));
+
+    let mut references = vec![];
+    collect_references(&schema, &mut references);
+
+    assert_eq!(references, vec!["PartialRecursive"]);
+}
+
+#[test]
+fn recursive_references_are_untouched_when_not_partial() {
+    let schema = SchemaBuilder::build_root::<Recursive>();
+
+    assert_eq!(schema.name.as_deref(), Some("Recursive"));
+
+    let mut references = vec![];
+    collect_references(&schema, &mut references);
+
+    assert_eq!(references, vec!["Recursive"]);
 }

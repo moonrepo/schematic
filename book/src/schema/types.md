@@ -38,6 +38,11 @@ impl Schematic for T {
 > This method is optional, but is encouraged for non-primitive types. It will associate references
 > between types, and avoid circular references.
 
+Names must be unique across every type added to a generator, since schemas are keyed by name alone.
+Adding two different types under the same name panics rather than silently rendering one of them.
+This is worth keeping in mind for generic types — a fixed name on `Wrapper<T>` collides across every
+`T`, so build the name from the parameter instead.
+
 ## Inferring schemas
 
 When building a schema, you'll almost always need to reference schemas from other types that

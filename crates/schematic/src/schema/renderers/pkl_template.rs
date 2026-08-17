@@ -124,7 +124,7 @@ impl SchemaRenderer<String> for PklTemplateRenderer {
 
         self.ctx.depth += 1;
 
-        for (name, field) in &structure.fields {
+        for (name, field) in structure.sorted_fields() {
             if field.flatten {
                 continue;
             }

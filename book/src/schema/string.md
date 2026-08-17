@@ -12,8 +12,11 @@ impl Schematic for T {
 }
 ```
 
-> Automatically implemented for `char`, `str`, `String`, `Path`, `PathBuf`, `Ipv4Addr`, `Ipv6Addr`,
-> `SystemTime`, and `Duration`.
+> Automatically implemented for `char`, `str`, `String`, `Path`, `PathBuf`, `IpAddr`, `Ipv4Addr`,
+> `Ipv6Addr`, `SocketAddr`, `SocketAddrV4`, and `SocketAddrV6`.
+
+> `SystemTime` and `Duration` are _not_ strings. Serde encodes them as maps — `{ secs, nanos }` and
+> `{ secs_since_epoch, nanos_since_epoch }` — so they model as [structs](./struct.md).
 
 ## Default value
 

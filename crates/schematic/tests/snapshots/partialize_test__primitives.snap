@@ -13,7 +13,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️    ty: Struct(
 ⬛️        StructType {
 ⬛️            fields: {
-⬛️                "boolean": SchemaField {
+⬛️                "string": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -21,116 +21,14 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        description: None,
 ⬛️                        name: None,
 🟥                        nullable: false,
-🟥                        ty: Boolean(
-🟥                            BooleanType {
-🟥                                default: None,
-🟩                        nullable: true,
-🟩                        ty: Union(
-🟩                            UnionType {
-🟩                                default_index: None,
-🟩                                partial: false,
-🟩                                operator: AnyOf,
-🟩                                variants_types: [
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: None,
-🟩                                        nullable: false,
-🟩                                        ty: Boolean(
-🟩                                            BooleanType {
-🟩                                                default: None,
-🟩                                            },
-🟩                                        ),
-🟩                                    },
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: None,
-🟩                                        nullable: false,
-🟩                                        ty: Null,
-🟩                                    },
-🟩                                ],
-⬛️                            },
-⬛️                        ),
-⬛️                    },
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    flatten: false,
-⬛️                    hidden: false,
-🟥                    nullable: false,
-🟥                    optional: false,
-🟩                    nullable: true,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "booleanOpt": SchemaField {
-⬛️                    aliases: [],
-⬛️                    comment: None,
-⬛️                    schema: Schema {
-⬛️                        deprecated: None,
-⬛️                        description: None,
-⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
-⬛️                        ty: Union(
-⬛️                            UnionType {
-⬛️                                default_index: None,
-⬛️                                partial: false,
-⬛️                                operator: AnyOf,
-⬛️                                variants_types: [
-⬛️                                    Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Boolean(
-⬛️                                            BooleanType {
-⬛️                                                default: None,
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Null,
-⬛️                                    },
-⬛️                                ],
-⬛️                            },
-⬛️                        ),
-⬛️                    },
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    flatten: false,
-⬛️                    hidden: false,
-⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "float": SchemaField {
-⬛️                    aliases: [],
-⬛️                    comment: None,
-⬛️                    schema: Schema {
-⬛️                        deprecated: None,
-⬛️                        description: None,
-⬛️                        name: None,
-🟥                        nullable: false,
-🟥                        ty: Float(
-🟥                            FloatType {
+🟥                        ty: String(
+🟥                            StringType {
 🟥                                default: None,
 🟥                                enum_values: None,
 🟥                                format: None,
-🟥                                kind: F32,
-🟥                                max: None,
-🟥                                max_exclusive: None,
-🟥                                min: None,
-🟥                                min_exclusive: None,
-🟥                                multiple_of: None,
-🟥                                name: None,
+🟥                                max_length: None,
+🟥                                min_length: None,
+🟥                                pattern: None,
 🟩                        nullable: true,
 🟩                        ty: Union(
 🟩                            UnionType {
@@ -143,18 +41,14 @@ expression: "create_diff::<Primitives>()"
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
-🟩                                        ty: Float(
-🟩                                            FloatType {
+🟩                                        ty: String(
+🟩                                            StringType {
 🟩                                                default: None,
 🟩                                                enum_values: None,
 🟩                                                format: None,
-🟩                                                kind: F32,
-🟩                                                max: None,
-🟩                                                max_exclusive: None,
-🟩                                                min: None,
-🟩                                                min_exclusive: None,
-🟩                                                multiple_of: None,
-🟩                                                name: None,
+🟩                                                max_length: None,
+🟩                                                min_length: None,
+🟩                                                pattern: None,
 🟩                                            },
 🟩                                        ),
 🟩                                    },
@@ -176,62 +70,6 @@ expression: "create_diff::<Primitives>()"
 🟥                    nullable: false,
 🟥                    optional: false,
 🟩                    nullable: true,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "floatOpt": SchemaField {
-⬛️                    aliases: [],
-⬛️                    comment: None,
-⬛️                    schema: Schema {
-⬛️                        deprecated: None,
-⬛️                        description: None,
-⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
-⬛️                        ty: Union(
-⬛️                            UnionType {
-⬛️                                default_index: None,
-⬛️                                partial: false,
-⬛️                                operator: AnyOf,
-⬛️                                variants_types: [
-⬛️                                    Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Float(
-⬛️                                            FloatType {
-⬛️                                                default: None,
-⬛️                                                enum_values: None,
-⬛️                                                format: None,
-⬛️                                                kind: F64,
-⬛️                                                max: None,
-⬛️                                                max_exclusive: None,
-⬛️                                                min: None,
-⬛️                                                min_exclusive: None,
-⬛️                                                multiple_of: None,
-⬛️                                                name: None,
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Null,
-⬛️                                    },
-⬛️                                ],
-⬛️                            },
-⬛️                        ),
-⬛️                    },
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    flatten: false,
-⬛️                    hidden: false,
-⬛️                    nullable: true,
-🟥                    optional: false,
 🟩                    optional: true,
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
@@ -303,7 +141,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "numberOpt": SchemaField {
+⬛️                "boolean": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -311,7 +149,175 @@ expression: "create_diff::<Primitives>()"
 ⬛️                        description: None,
 ⬛️                        name: None,
 🟥                        nullable: false,
+🟥                        ty: Boolean(
+🟥                            BooleanType {
+🟥                                default: None,
 🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Boolean(
+🟩                                            BooleanType {
+🟩                                                default: None,
+🟩                                            },
+🟩                                        ),
+🟩                                    },
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Null,
+🟩                                    },
+🟩                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    flatten: false,
+⬛️                    hidden: false,
+🟥                    nullable: false,
+🟥                    optional: false,
+🟩                    nullable: true,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "float": SchemaField {
+⬛️                    aliases: [],
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+🟥                        nullable: false,
+🟥                        ty: Float(
+🟥                            FloatType {
+🟥                                default: None,
+🟥                                enum_values: None,
+🟥                                format: None,
+🟥                                kind: F32,
+🟥                                max: None,
+🟥                                max_exclusive: None,
+🟥                                min: None,
+🟥                                min_exclusive: None,
+🟥                                multiple_of: None,
+🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Float(
+🟩                                            FloatType {
+🟩                                                default: None,
+🟩                                                enum_values: None,
+🟩                                                format: None,
+🟩                                                kind: F32,
+🟩                                                max: None,
+🟩                                                max_exclusive: None,
+🟩                                                min: None,
+🟩                                                min_exclusive: None,
+🟩                                                multiple_of: None,
+🟩                                            },
+🟩                                        ),
+🟩                                    },
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
+🟩                                        ty: Null,
+🟩                                    },
+🟩                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    flatten: false,
+⬛️                    hidden: false,
+🟥                    nullable: false,
+🟥                    optional: false,
+🟩                    nullable: true,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "stringOpt": SchemaField {
+⬛️                    aliases: [],
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+⬛️                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+⬛️                                partial: false,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: String(
+⬛️                                            StringType {
+⬛️                                                default: None,
+⬛️                                                enum_values: None,
+⬛️                                                format: None,
+⬛️                                                max_length: None,
+⬛️                                                min_length: None,
+⬛️                                                pattern: None,
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    flatten: false,
+⬛️                    hidden: false,
+⬛️                    nullable: true,
+🟥                    optional: false,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "numberOpt": SchemaField {
+⬛️                    aliases: [],
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -358,76 +364,14 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "string": SchemaField {
+⬛️                "booleanOpt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
 ⬛️                        deprecated: None,
 ⬛️                        description: None,
 ⬛️                        name: None,
-🟥                        nullable: false,
-🟥                        ty: String(
-🟥                            StringType {
-🟥                                default: None,
-🟥                                enum_values: None,
-🟥                                format: None,
-🟥                                max_length: None,
-🟥                                min_length: None,
-🟥                                pattern: None,
-🟩                        nullable: true,
-🟩                        ty: Union(
-🟩                            UnionType {
-🟩                                default_index: None,
-🟩                                partial: false,
-🟩                                operator: AnyOf,
-🟩                                variants_types: [
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: None,
-🟩                                        nullable: false,
-🟩                                        ty: String(
-🟩                                            StringType {
-🟩                                                default: None,
-🟩                                                enum_values: None,
-🟩                                                format: None,
-🟩                                                max_length: None,
-🟩                                                min_length: None,
-🟩                                                pattern: None,
-🟩                                            },
-🟩                                        ),
-🟩                                    },
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: None,
-🟩                                        nullable: false,
-🟩                                        ty: Null,
-🟩                                    },
-🟩                                ],
-⬛️                            },
-⬛️                        ),
-⬛️                    },
-⬛️                    deprecated: None,
-⬛️                    env_var: None,
-⬛️                    flatten: false,
-⬛️                    hidden: false,
-🟥                    nullable: false,
-🟥                    optional: false,
-🟩                    nullable: true,
-🟩                    optional: true,
-⬛️                    read_only: false,
-⬛️                    write_only: false,
-⬛️                },
-⬛️                "stringOpt": SchemaField {
-⬛️                    aliases: [],
-⬛️                    comment: None,
-⬛️                    schema: Schema {
-⬛️                        deprecated: None,
-⬛️                        description: None,
-⬛️                        name: None,
-🟥                        nullable: false,
-🟩                        nullable: true,
+⬛️                        nullable: true,
 ⬛️                        ty: Union(
 ⬛️                            UnionType {
 ⬛️                                default_index: None,
@@ -439,14 +383,63 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                        description: None,
 ⬛️                                        name: None,
 ⬛️                                        nullable: false,
-⬛️                                        ty: String(
-⬛️                                            StringType {
+⬛️                                        ty: Boolean(
+⬛️                                            BooleanType {
+⬛️                                                default: None,
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Null,
+⬛️                                    },
+⬛️                                ],
+⬛️                            },
+⬛️                        ),
+⬛️                    },
+⬛️                    deprecated: None,
+⬛️                    env_var: None,
+⬛️                    flatten: false,
+⬛️                    hidden: false,
+⬛️                    nullable: true,
+🟥                    optional: false,
+🟩                    optional: true,
+⬛️                    read_only: false,
+⬛️                    write_only: false,
+⬛️                },
+⬛️                "floatOpt": SchemaField {
+⬛️                    aliases: [],
+⬛️                    comment: None,
+⬛️                    schema: Schema {
+⬛️                        deprecated: None,
+⬛️                        description: None,
+⬛️                        name: None,
+⬛️                        nullable: true,
+⬛️                        ty: Union(
+⬛️                            UnionType {
+⬛️                                default_index: None,
+⬛️                                partial: false,
+⬛️                                operator: AnyOf,
+⬛️                                variants_types: [
+⬛️                                    Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Float(
+⬛️                                            FloatType {
 ⬛️                                                default: None,
 ⬛️                                                enum_values: None,
 ⬛️                                                format: None,
-⬛️                                                max_length: None,
-⬛️                                                min_length: None,
-⬛️                                                pattern: None,
+⬛️                                                kind: F64,
+⬛️                                                max: None,
+⬛️                                                max_exclusive: None,
+⬛️                                                min: None,
+⬛️                                                min_exclusive: None,
+⬛️                                                multiple_of: None,
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },

@@ -137,6 +137,14 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                 partialize_schema(variant, false);
             }
         }
+        // A cycle within a nested config resolves to a reference, which must
+        // follow the type it points at, otherwise it names a type that was
+        // never rendered.
+        SchemaType::Reference { name, partial }
+            if (*partial || force_partial) && !name.starts_with("Partial") =>
+        {
+            *name = format!("Partial{name}");
+        }
         _ => {}
     };
 }

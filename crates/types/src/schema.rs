@@ -1,6 +1,5 @@
 use crate::*;
 use std::fmt;
-use std::ops::{Deref, DerefMut};
 
 /// Describes the metadata and shape of a type.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -24,7 +23,7 @@ pub struct Schema {
     )]
     pub name: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing))]
+    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
     pub nullable: bool,
 
     pub ty: SchemaType,
@@ -79,6 +78,14 @@ impl Schema {
         Self::new(SchemaType::Object(Box::new(value)))
     }
 
+    /// Create a schema that references another schema by name.
+    pub fn reference(name: impl AsRef<str>) -> Self {
+        Self::new(SchemaType::Reference {
+            name: name.as_ref().to_owned(),
+            partial: false,
+        })
+    }
+
     /// Create a string schema.
     pub fn string(value: StringType) -> Self {
         Self::new(SchemaType::String(Box::new(value)))
@@ -112,12 +119,15 @@ impl Schema {
     /// Convert the current schema to a nullable type. If already nullable,
     /// do nothing, otherwise convert to a union.
     pub fn nullify(&mut self) {
-        if self.nullable {
-            // May already be a null union through inference
-            return;
-        }
+        // Inference builds a nullable union without raising the flag, so the
+        // two can disagree — check both before deciding there's work to do.
+        let already_nullable = self.nullable || self.ty.is_nullable();
 
         self.nullable = true;
+
+        if already_nullable {
+            return;
+        }
 
         if let SchemaType::Union(inner) = &mut self.ty {
             // If the union has an explicit name, then we can assume it's a distinct
@@ -140,12 +150,23 @@ impl Schema {
         self.ty = SchemaType::Union(Box::new(UnionType::new_any([new_schema, Schema::null()])));
     }
 
-    /// Mark the inner schema type as partial. Only structs and unions can be marked partial,
-    /// but arrays and objects will also be recursively set to update the inner type.
+    /// Mark the inner schema type as partial. Only structs, unions, and references can be
+    /// marked partial, but arrays, objects, and tuples will also be recursively set to
+    /// update the inner types.
     pub fn partialize(&mut self) {
         match &mut self.ty {
             SchemaType::Array(inner) => inner.items_type.partialize(),
             SchemaType::Object(inner) => inner.value_type.partialize(),
+            SchemaType::Tuple(inner) => {
+                for item in inner.items_types.iter_mut() {
+                    item.partialize();
+                }
+            }
+            // A cycle resolves to a reference, so it has to point at the partial
+            // type once partialized, otherwise the reference dangles.
+            SchemaType::Reference { partial, .. } => {
+                *partial = true;
+            }
             SchemaType::Struct(inner) => {
                 inner.partial = true;
             }
@@ -190,23 +211,56 @@ impl Schema {
         self.ty = value;
     }
 
+    /// Return a `default` value from the inner schema type.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        self.ty.get_default()
+    }
+
+    /// Set the `default` of the inner schema type. Returns false when the
+    /// type holds no default.
+    pub fn set_default(&mut self, default: LiteralValue) -> bool {
+        self.ty.set_default(default)
+    }
+
+    /// Add a field to the inner type if it's a struct. Returns false when it
+    /// isn't one.
+    pub fn add_field(&mut self, key: &str, value: impl Into<SchemaField>) -> bool {
+        self.ty.add_field(key, value)
+    }
+
+    /// Return true if the inner type is an explicit null.
+    pub fn is_null(&self) -> bool {
+        self.ty.is_null()
+    }
+
+    /// Return true if the inner type is nullable (a union with a null).
+    pub fn is_nullable(&self) -> bool {
+        self.ty.is_nullable()
+    }
+
+    /// Return true if the inner type is a reference.
+    pub fn is_reference(&self) -> bool {
+        self.ty.is_reference()
+    }
+
+    /// Return true if the inner type is a struct.
+    pub fn is_struct(&self) -> bool {
+        self.ty.is_struct()
+    }
+
     /// Return a non-null schema if available. If a null type,
-    /// returns `None`. If a union type, returns the first non-null
-    /// type or `None`. Otherwise, returns the current type.
+    /// returns `None`. If a union type, returns the first variant that
+    /// resolves to a non-null type, or `None`. Otherwise, returns the
+    /// current type.
     pub fn get_nonnull_schema(&self) -> Option<&Schema> {
         match &self.ty {
             SchemaType::Null => None,
-            SchemaType::Union(inner) => {
-                for ty in &inner.variants_types {
-                    if ty.is_null() {
-                        continue;
-                    }
-
-                    return Some(ty);
-                }
-
-                None
-            }
+            // Resolve each variant rather than taking the first non-null one,
+            // as a variant may itself be a union that holds nothing but nulls.
+            SchemaType::Union(inner) => inner
+                .variants_types
+                .iter()
+                .find_map(|variant| variant.get_nonnull_schema()),
             _ => Some(self),
         }
     }
@@ -214,25 +268,10 @@ impl Schema {
 
 impl fmt::Display for Schema {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.name.is_some() && (self.ty.is_struct() || self.ty.is_reference()) {
-            write!(f, "{}", self.name.as_ref().unwrap())
-        } else {
-            write!(f, "{}", self.ty)
+        match &self.name {
+            Some(name) if self.ty.is_struct() || self.ty.is_reference() => write!(f, "{name}"),
+            _ => write!(f, "{}", self.ty),
         }
-    }
-}
-
-impl Deref for Schema {
-    type Target = SchemaType;
-
-    fn deref(&self) -> &Self::Target {
-        &self.ty
-    }
-}
-
-impl DerefMut for Schema {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.ty
     }
 }
 
@@ -245,7 +284,7 @@ impl From<Schema> for SchemaType {
 impl Schematic for Schema {}
 
 #[cfg(feature = "serde")]
-fn is_false(value: &bool) -> bool {
+pub(crate) fn is_false(value: &bool) -> bool {
     !value
 }
 

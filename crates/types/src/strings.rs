@@ -1,8 +1,7 @@
 use crate::*;
 use std::fmt;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -109,8 +108,10 @@ impl_string_format!(Path, "path");
 impl_string_format!(&Path, "path");
 impl_string_format!(PathBuf, "path");
 
+impl_string_format!(IpAddr, "ip");
 impl_string_format!(Ipv4Addr, "ipv4");
 impl_string_format!(Ipv6Addr, "ipv6");
 
-impl_string_format!(SystemTime, "time");
-impl_string_format!(Duration, "duration");
+impl_string_format!(SocketAddr, "socket-addr");
+impl_string_format!(SocketAddrV4, "socket-addr");
+impl_string_format!(SocketAddrV6, "socket-addr");

@@ -116,7 +116,7 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
         self.ctx.depth += 1;
 
-        for (index, (name, field)) in structure.fields.iter().enumerate() {
+        for (index, (name, field)) in structure.sorted_fields().into_iter().enumerate() {
             if field.flatten {
                 continue;
             }

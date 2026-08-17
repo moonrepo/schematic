@@ -3,22 +3,22 @@ source: crates/types/tests/builder_test.rs
 expression: "& input"
 ---
 {
-  "name": "TestStruct",
   "ty": {
     "type": "Struct",
     "fields": {
-      "str": {
-        "schema": {
-          "ty": {
-            "type": "String"
-          }
-        }
-      },
-      "num": {
+      "secs": {
         "schema": {
           "ty": {
             "type": "Integer",
-            "kind": "Usize"
+            "kind": "U64"
+          }
+        }
+      },
+      "nanos": {
+        "schema": {
+          "ty": {
+            "type": "Integer",
+            "kind": "U32"
           }
         }
       }

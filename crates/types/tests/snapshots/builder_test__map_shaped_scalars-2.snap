@@ -3,18 +3,18 @@ source: crates/types/tests/builder_test.rs
 expression: "& input"
 ---
 {
-  "name": "TestStruct",
   "ty": {
     "type": "Struct",
     "fields": {
-      "str": {
+      "start": {
         "schema": {
           "ty": {
-            "type": "String"
+            "type": "Integer",
+            "kind": "Usize"
           }
         }
       },
-      "num": {
+      "end": {
         "schema": {
           "ty": {
             "type": "Integer",

@@ -3,7 +3,8 @@
 use schematic_types::*;
 use starbase_sandbox::assert_snapshot;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -205,12 +206,47 @@ fn strings() {
     );
 
     assert_build!(
-        Duration,
+        SocketAddr,
         SchemaType::String(Box::new(StringType {
-            format: Some("duration".into()),
+            format: Some("socket-addr".into()),
             ..StringType::default()
         })),
-        "string:duration"
+        "string:socket-addr"
+    );
+}
+
+// Serde encodes these as maps, so the schema describes the map rather than
+// the scalar-looking `Display` form.
+#[test]
+fn map_shaped_scalars() {
+    assert_build!(
+        Duration,
+        SchemaType::Struct(Box::new(StructType::new([
+            (
+                "secs".into(),
+                Schema::integer(IntegerType::new_kind(IntegerKind::U64))
+            ),
+            (
+                "nanos".into(),
+                Schema::integer(IntegerType::new_kind(IntegerKind::U32))
+            ),
+        ]))),
+        "struct"
+    );
+
+    assert_build!(
+        Range<usize>,
+        SchemaType::Struct(Box::new(StructType::new([
+            (
+                "start".into(),
+                Schema::integer(IntegerType::new_kind(IntegerKind::Usize))
+            ),
+            (
+                "end".into(),
+                Schema::integer(IntegerType::new_kind(IntegerKind::Usize))
+            ),
+        ]))),
+        "struct"
     );
 }
 
@@ -288,12 +324,15 @@ fn supports_cycles() {
     assert_eq!(
         test_builder::<Cycle>().ty,
         SchemaType::Struct(Box::new(StructType {
-            fields: BTreeMap::from_iter([(
+            fields: IndexMap::from_iter([(
                 "values".into(),
                 Box::new(SchemaField {
                     schema: Schema::object(ObjectType::new(
                         Schema::string(StringType::default()),
-                        SchemaType::Reference("Cycle".into()),
+                        SchemaType::Reference {
+                            name: "Cycle".into(),
+                            partial: false
+                        },
                     )),
                     ..Default::default()
                 })

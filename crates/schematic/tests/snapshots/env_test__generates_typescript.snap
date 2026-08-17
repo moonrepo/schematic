@@ -26,4 +26,3 @@ export interface EnvVarsPrefixed {
 	/** @env ENV_STRING */
 	string: string;
 }
-

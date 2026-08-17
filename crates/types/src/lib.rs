@@ -66,19 +66,19 @@ impl<T: Schematic> Schematic for &mut T {
     }
 }
 
-impl<T: Schematic> Schematic for Box<T> {
+impl<T: Schematic + ?Sized> Schematic for Box<T> {
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
-impl<T: Schematic> Schematic for Rc<T> {
+impl<T: Schematic + ?Sized> Schematic for Rc<T> {
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
-impl<T: Schematic> Schematic for Arc<T> {
+impl<T: Schematic + ?Sized> Schematic for Arc<T> {
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
@@ -92,6 +92,6 @@ impl<T: Schematic + ToOwned + ?Sized> Schematic for Cow<'_, T> {
 
 impl<T: Schematic> Schematic for Option<T> {
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
-        schema.union(UnionType::new_any([schema.infer::<T>(), Schema::null()]))
+        schema.nullable(schema.infer::<T>())
     }
 }
