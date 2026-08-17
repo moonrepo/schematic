@@ -4,7 +4,44 @@
 
 #### 💥 Breaking
 
+##### Config
+
 - Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+
+##### Schema
+
+- Changed `SchemaType::Reference` from a newtype into a struct variant. Serde is unable to
+  internally tag a newtype whose value isn't a map, so any schema containing a reference (which is
+  how cycles are represented) previously failed to serialize.
+
+  ```rust
+  // Before
+  SchemaType::Reference("Name".into())
+
+  // After
+  SchemaType::Reference { name: "Name".into(), partial: false }
+  // Or
+  Schema::reference("Name")
+  ```
+
+- Changed `StructType.fields` from a `BTreeMap` to an `IndexMap`, so the schema preserves the order
+  fields were declared in. Generators still render alphabetically, via
+  `StructType::sorted_fields()`.
+- Changed `ArrayType.contains` from `Option<bool>` to `Option<Box<Schema>>`. It's now the JSON
+  Schema `contains` subschema, and applies alongside `items_type` instead of reinterpreting it.
+- Changed `SchemaType::add_field` and `SchemaType::set_default` to return a `bool` indicating
+  whether the operation applied. They previously did nothing when the type couldn't hold the
+  value.
+- Removed `Deref`/`DerefMut` for `Schema` and `SchemaBuilder`. `Schema` now forwards the
+  `SchemaType` accessors directly (`get_default`, `set_default`, `add_field`, `is_null`,
+  `is_nullable`, `is_reference`, `is_struct`); reach for `schema.ty` for anything else.
+- Removed `ArrayType.max_contains` and `ArrayType.min_contains`, which no renderer could emit.
+- Removed `FloatType.name`, which was never rendered and duplicated `Schema.name`.
+- Removed `LiteralType.format`, which was never rendered.
+- Updated `Duration` and `SystemTime` to model as structs instead of strings. Serde encodes them as
+  `{ secs, nanos }` and `{ secs_since_epoch, nanos_since_epoch }`, so the previous string schemas
+  rejected valid documents.
+- Updated `Schema.nullable` to serialize when true, instead of always being skipped.
 
 #### 🚀 Updates
 
@@ -30,6 +67,48 @@
   `#[serde(rename(deserialize = "de_name", serialize = "ser_name"))]`.
 - Added support for `skip_deserializing_if` and `skip_serializing_if` on fields.
 - Updated `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
+
+##### Schema
+
+- Added `Schema::reference()`, to go with the constructors for the other types.
+- Added `EnumType::get_default()` and `EnumType::set_default()`, which resolve `default_index`
+  against whichever list it indexes.
+- Added `StructType::sorted_fields()`, which renderers use to keep generated output alphabetical.
+- Added `Schematic` implementations for `[T]`, `VecDeque`, `LinkedList`, `BinaryHeap`, `IpAddr`,
+  `SocketAddr`, `SocketAddrV4`, `SocketAddrV6`, `Range`, and `RangeInclusive`.
+- Added `Schematic` implementations for the `NonZero` integers. The unsigned ones carry a `min` of
+  1; signed ones can't express "not zero" as a bound, so they stay unconstrained.
+- Added a `Schematic` implementation for `ron::Value`, behind the existing `serde_ron` feature,
+  which until now enabled a dependency but no implementations.
+- Updated `Box`, `Rc`, and `Arc` to accept unsized inner types, so `Box<str>`, `Arc<str>` and
+  `Box<[T]>` can now build a schema. This is required for partial configs, which keep the wrapper
+  when the inner type is unsized.
+- Updated `SchemaBuilder::generate`, `build_root`, `infer`, `infer_as_nested`, and
+  `infer_with_default` to accept unsized types.
+- Updated `SchemaGenerator::add` to panic when two types claim the same `schema_name`. Schemas are
+  keyed by name, so one would previously be dropped and every reference to it resolved to the other.
+
+#### 🐞 Fixes
+
+##### Schema
+
+- Fixed the `serde` feature not enabling `indexmap/serde`, which made `schematic_types` fail to
+  compile on its own.
+- Fixed `SchemaType::set_default` doing nothing for unions and enums, which silently dropped the
+  default of every `Option` wrapped setting from the generated schema.
+- Fixed `EnumType` resolving `default_index` against `values` instead of `variants`. The two differ
+  in length when a variant carries no literal value, so the default could be lost or point
+  elsewhere.
+- Fixed `EnumType::from_schemas` panicking without an explanation when a variant schema had no name.
+- Fixed `Schema::partialize` not recursing into tuples, and not marking references, which made a
+  recursive nested config render a `$ref` to a type that was never generated.
+- Fixed `Schema::nullify` not detecting an already nullable type, which double wrapped named unions
+  and left the method non-idempotent.
+- Fixed `Schema.nullable` never being set when inferring an `Option`, and never surviving a
+  serialization round trip.
+- Fixed `Schema::get_nonnull_schema` not resolving nested unions, so a union of nothing but nulls
+  was returned as if it were non-null.
+- Fixed `LiteralValue` comparing unequal to itself when holding a `NaN` float.
 
 #### ⚙️ Internal
 
