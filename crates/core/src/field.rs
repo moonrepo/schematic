@@ -1,9 +1,9 @@
-use crate::args::{
-    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
-};
+use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
-use crate::utils::{ImplResult, is_inheritable_attribute, preserve_str_literal};
+use crate::utils::{
+    ImplResult, format_case, get_renamed_value, is_inheritable_attribute, preserve_str_literal,
+};
 use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
@@ -152,7 +152,14 @@ impl Field {
         // Unnamed settings have no name to derive from, so they may only
         // be sourced with an explicit `env`.
         if self.container_args.env_prefix.is_some() && self.ident.is_some() {
-            return Some(EnvKey::Derived(self.get_name().to_uppercase()));
+            // Deliberately un-cased: `rename_all` shapes the serialized key,
+            // while the variable name stays derived from the Rust name (or
+            // an explicit rename).
+            let name = self
+                .get_name_renamed()
+                .unwrap_or_else(|| self.get_name_original().to_string());
+
+            return Some(EnvKey::Derived(name.to_uppercase()));
         }
 
         None
@@ -169,23 +176,30 @@ impl Field {
             })
     }
 
+    /// Return an explicit `rename`, if one was provided. Casing is not
+    /// applied, as a rename is used exactly as written.
+    fn get_name_renamed(&self) -> Option<String> {
+        get_renamed_value(self.args.rename.as_ref(), self.serde_args.rename.as_ref())
+    }
+
+    /// Return the name this setting serializes as. A container `rename_all`
+    /// is applied here, and not only forwarded to serde, so that schemas,
+    /// `settings()`, and validation paths describe the key that is actually
+    /// accepted. There is no default case.
     pub fn get_name(&self) -> String {
-        let dir = SerdeIoDirection::From;
-
-        if let Some(name) = self.args.rename.as_ref().and_then(|rn| rn.get_name(dir)) {
-            return name.into();
+        if let Some(name) = self.get_name_renamed() {
+            return name;
         }
 
-        if let Some(name) = self
-            .serde_args
-            .rename
-            .as_ref()
-            .and_then(|rn| rn.get_name(dir))
-        {
-            return name.into();
-        }
+        let name = self.get_name_original().to_string();
 
-        self.get_name_original().to_string()
+        match get_renamed_value(
+            self.container_args.rename_all.as_ref(),
+            self.serde_container_args.rename_all.as_ref(),
+        ) {
+            Some(format) => format_case(&format, &name, false),
+            None => name,
+        }
     }
 
     pub fn get_name_original(&self) -> &Ident {

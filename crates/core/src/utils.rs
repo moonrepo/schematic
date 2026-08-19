@@ -1,6 +1,54 @@
+use crate::args::{SerdeIoDirection, SerdeRenameArg};
+use convert_case::{Boundary, Case, Casing};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Attribute, Expr, ExprLit, Lit, Meta, Path};
+
+/// Resolve the container's `rename[_all]`, preferring the `config`/`schematic`
+/// attribute over the `serde` one. Returns `None` when neither is set, as
+/// there is no default case — a name is left exactly as it was written.
+pub fn get_renamed_value(
+    config: Option<&SerdeRenameArg>,
+    serde: Option<&SerdeRenameArg>,
+) -> Option<String> {
+    let dir = SerdeIoDirection::From;
+
+    config
+        .and_then(|rename| rename.get_name(dir))
+        .or_else(|| serde.and_then(|rename| rename.get_name(dir)))
+        .map(|format| format.to_owned())
+}
+
+/// Apply a serde `rename_all` casing to a name. Mirrors what serde does to
+/// the serialized key, so that derive-time names (schemas, settings,
+/// validation paths) describe what is actually accepted.
+pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
+    let case = match format {
+        "lowercase" => return value.to_lowercase(),
+        "UPPERCASE" => return value.to_uppercase(),
+        "PascalCase" => Case::Pascal,
+        "camelCase" => Case::Camel,
+        "snake_case" => Case::Snake,
+        "SCREAMING_SNAKE_CASE" => Case::UpperSnake,
+        "kebab-case" => Case::Kebab,
+        "SCREAMING-KEBAB-CASE" => Case::UpperKebab,
+        other => {
+            panic!(
+                "Unknown `rename_all` value `{other}`. Supported values are lowercase, UPPERCASE, PascalCase, camelCase, snake_case, SCREAMING_SNAKE_CASE, kebab-case, and SCREAMING-KEBAB-CASE."
+            );
+        }
+    };
+
+    value
+        .from_case(if is_variant {
+            Case::Pascal
+        } else {
+            Case::Snake
+        })
+        // Keeps `field2` from becoming `field_2`
+        .remove_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
+        .to_case(case)
+}
 
 pub fn get_meta_path(meta: &Meta) -> &Path {
     match meta {

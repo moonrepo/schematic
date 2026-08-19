@@ -109,10 +109,8 @@ pub fn extract_deprecated(attrs: &[&Attribute]) -> Option<String> {
                     };
                 }
             }
-            Meta::Path(_) => {
-                if get_meta_path(&attr.meta).is_ident("deprecated") {
-                    return Some(String::new()); // No message, handle in renderer
-                }
+            Meta::Path(_) if get_meta_path(&attr.meta).is_ident("deprecated") => {
+                return Some(String::new()); // No message, handle in renderer
             }
             _ => {}
         }

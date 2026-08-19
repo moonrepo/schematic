@@ -6,6 +6,8 @@
 
 ##### Config
 
+- Structs will no longer default to `camelCase` field name casing.
+- Enums will no longer default to `kebab-case` variant name casing.
 - Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
 
 ##### Schema
@@ -30,8 +32,7 @@
 - Changed `ArrayType.contains` from `Option<bool>` to `Option<Box<Schema>>`. It's now the JSON
   Schema `contains` subschema, and applies alongside `items_type` instead of reinterpreting it.
 - Changed `SchemaType::add_field` and `SchemaType::set_default` to return a `bool` indicating
-  whether the operation applied. They previously did nothing when the type couldn't hold the
-  value.
+  whether the operation applied. They previously did nothing when the type couldn't hold the value.
 - Removed `Deref`/`DerefMut` for `Schema` and `SchemaBuilder`. `Schema` now forwards the
   `SchemaType` accessors directly (`get_default`, `set_default`, `add_field`, `is_null`,
   `is_nullable`, `is_reference`, `is_struct`); reach for `schema.ty` for anything else.

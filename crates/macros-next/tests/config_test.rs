@@ -226,6 +226,7 @@ mod wrappers {
 
     #[derive(Debug, Config)]
     pub struct Wrapped {
+        #[allow(clippy::box_collection)]
         boxed: Box<String>,
         shared: Arc<usize>,
         // Kept in the partial, since the inner type is unsized
@@ -317,9 +318,8 @@ mod enums {
     // Unit enums stay externally tagged, otherwise they only deserialize
     // from `null`.
     //
-    // Note the casing: core does not yet apply a default `rename_all`, so
-    // variants keep their Rust names. The production derive lowercases them,
-    // and this assertion should flip to "high" once that is ported.
+    // Names are used exactly as written: there is no default casing, so a
+    // variant only changes shape when `rename_all` asks it to.
     #[test]
     fn unit_enums_deserialize_from_a_string() {
         let partial: PartialLevel = serde_json::from_str("\"High\"").unwrap();
@@ -353,5 +353,123 @@ mod serde_attrs {
     #[test]
     fn rejects_unknown_fields() {
         assert!(serde_json::from_str::<PartialRenamed>(r#"{"nope": 1}"#).is_err());
+    }
+}
+
+// `rename_all` has to reach the derive-time name, not only the partial's
+// serde attribute, or the schema and `settings()` would describe a key that
+// serde does not accept. There is no default case: without `rename_all` the
+// Rust name is used exactly as written.
+mod casing {
+    use super::*;
+    use schematic::{SchemaBuilder, SchemaType};
+
+    fn field_names<T: schematic::Schematic>() -> Vec<String> {
+        let schema = SchemaBuilder::build_root::<T>();
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!("expected a struct");
+        };
+
+        inner.fields.keys().cloned().collect()
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Untouched {
+        some_field_name: String,
+    }
+
+    #[test]
+    fn leaves_names_alone_without_rename_all() {
+        assert!(serde_json::from_str::<PartialUntouched>(r#"{"some_field_name": "a"}"#).is_ok());
+        assert!(serde_json::from_str::<PartialUntouched>(r#"{"someFieldName": "a"}"#).is_err());
+
+        assert_eq!(field_names::<Untouched>(), vec!["some_field_name"]);
+        assert_eq!(
+            Untouched::settings().keys().collect::<Vec<_>>(),
+            vec!["some_field_name"]
+        );
+    }
+
+    #[derive(Debug, Config)]
+    #[config(rename_all = "camelCase")]
+    pub struct Camel {
+        some_field_name: String,
+        another_one: usize,
+        #[setting(rename = "kept_as_is")]
+        explicitly_renamed: bool,
+    }
+
+    #[test]
+    fn applies_rename_all_to_serde() {
+        let partial: PartialCamel =
+            serde_json::from_str(r#"{"someFieldName": "a", "anotherOne": 1}"#).unwrap();
+
+        assert_eq!(partial.some_field_name, Some("a".into()));
+        assert_eq!(partial.another_one, Some(1));
+    }
+
+    #[test]
+    fn applies_rename_all_to_derive_time_names() {
+        assert_eq!(
+            field_names::<Camel>(),
+            vec!["someFieldName", "anotherOne", "kept_as_is"]
+        );
+        // `settings()` is a `BTreeMap`, so it reports alphabetically
+        assert_eq!(
+            Camel::settings().keys().collect::<Vec<_>>(),
+            vec!["anotherOne", "kept_as_is", "someFieldName"]
+        );
+    }
+
+    // An explicit rename is used exactly as written, never re-cased
+    #[test]
+    fn does_not_case_an_explicit_rename() {
+        assert!(serde_json::from_str::<PartialCamel>(r#"{"kept_as_is": true}"#).is_ok());
+        assert!(serde_json::from_str::<PartialCamel>(r#"{"keptAsIs": true}"#).is_err());
+    }
+
+    #[derive(Debug, Config, Serialize)]
+    #[serde(rename_all = "kebab-case")]
+    pub struct ViaSerde {
+        some_field_name: String,
+    }
+
+    #[test]
+    fn honours_rename_all_from_the_serde_attribute() {
+        assert!(serde_json::from_str::<PartialViaSerde>(r#"{"some-field-name": "a"}"#).is_ok());
+        assert_eq!(field_names::<ViaSerde>(), vec!["some-field-name"]);
+    }
+
+    #[derive(Debug, Config)]
+    #[config(rename_all = "kebab-case")]
+    pub enum Variants {
+        SomeVariant(String),
+        #[setting(default)]
+        AnotherOne(bool),
+    }
+
+    #[test]
+    fn applies_rename_all_to_variants() {
+        let partial: PartialVariants = serde_json::from_str(r#"{"some-variant": "a"}"#).unwrap();
+
+        assert!(matches!(partial, PartialVariants::SomeVariant(_)));
+        assert!(serde_json::from_str::<PartialVariants>(r#"{"SomeVariant": "a"}"#).is_err());
+
+        assert_eq!(
+            Variants::settings().keys().collect::<Vec<_>>(),
+            vec!["another-one", "some-variant"]
+        );
+    }
+
+    #[derive(Debug, Config)]
+    #[config(rename_all = "SCREAMING_SNAKE_CASE")]
+    pub struct Screaming {
+        some_field_name: String,
+    }
+
+    #[test]
+    fn supports_every_serde_case() {
+        assert!(serde_json::from_str::<PartialScreaming>(r#"{"SOME_FIELD_NAME": "a"}"#).is_ok());
+        assert_eq!(field_names::<Screaming>(), vec!["SOME_FIELD_NAME"]);
     }
 }

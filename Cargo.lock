@@ -1971,6 +1971,7 @@ dependencies = [
 name = "schematic_core"
 version = "0.18.7"
 dependencies = [
+ "convert_case",
  "darling",
  "prettyplease",
  "proc-macro2",

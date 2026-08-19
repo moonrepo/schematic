@@ -251,6 +251,7 @@ impl Variant<'_> {
         self.map_unnamed_match_custom(name, &self_name, fields, factory)
     }
 
+    #[allow(clippy::explicit_counter_loop)]
     fn map_unnamed_match_custom<F>(
         &self,
         name: &Ident,
