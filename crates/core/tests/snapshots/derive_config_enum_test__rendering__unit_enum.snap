@@ -1,0 +1,98 @@
+---
+source: crates/core/tests/derive_config_enum_test.rs
+expression: pretty(output.to_token_stream())
+---
+#[automatically_derived]
+impl schematic::ConfigEnum for Example {
+    fn variants() -> Vec<Example> {
+        vec![Self::Info, Self::Error, Self::Off]
+    }
+}
+#[automatically_derived]
+impl std::str::FromStr for Example {
+    type Err = schematic::ConfigError;
+    fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+        Ok(
+            match value {
+                "Info" => Self::Info,
+                "Error" => Self::Error,
+                "Off" => Self::Off,
+                unknown => {
+                    return Err(
+                        schematic::ConfigError::EnumUnknownVariant(unknown.to_owned()),
+                    );
+                }
+            },
+        )
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<String> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: String) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(&value)
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<&String> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: &String) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(value)
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<&str> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(value)
+    }
+}
+#[automatically_derived]
+impl std::fmt::Display for Example {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f, "{}", match self { Self::Info => "Info", Self::Error => "Error", Self::Off
+            => "Off", }
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema.set_description("Container docs.");
+        schema
+            .enumerable(
+                EnumType::from_schemas(
+                    [
+                        Schema {
+                            name: Some("Info".into()),
+                            ty: Schema::literal_value(
+                                    LiteralValue::String("Info".into()),
+                                )
+                                .ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("Error".into()),
+                            ty: Schema::literal_value(
+                                    LiteralValue::String("Error".into()),
+                                )
+                                .ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("Off".into()),
+                            ty: Schema::literal_value(LiteralValue::String("Off".into()))
+                                .ty,
+                            ..Default::default()
+                        },
+                    ],
+                    None,
+                ),
+            )
+    }
+}

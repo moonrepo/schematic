@@ -38,16 +38,24 @@ re-exports `schematic_macros`, so swapping the two is a separate step blocked on
 
 Still unported, in rough order of what blocks the swap:
 
-- **`ConfigEnum`.** Not started; `macros-next` doesn't export it.
 - **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it. Production
   puts `#[instrument(skip_all)]` on `default_values`, `env_values`, `extends_from`, `finalize`,
   `merge`, `validate_with_path`, `from_partial`, `settings`, `default`, and `build_schema`.
 - **`#[setting(skip_deserializing_if)]`** parses but emits nothing (serde has no such attribute).
 - `#[setting(exclude)]` is behind `cfg(schema)` in core but unconditional in production, so it fails
   to parse when the feature is off.
+- **`#[variant(value)]`** is not carried over. Core uses `#[variant(rename)]`, which the book already
+  describes `value` as being "similar to", so the two would be redundant.
 
 Not gaps, despite looking like them: named-field enum variants panic in *both* crates, and
 `#[config(serde(...))]` was deliberately removed in the rewrite.
+
+`ConfigEnum` has no implementation of its own. It is the same `Container` with
+`macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
+`ConfigEnum`/`FromStr`/`TryFrom`/`Display` impls plus `impl_schematic_full`. The schema comes out of
+the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (even when a
+`fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
+variant and infers the fallback's inner type as a string, matching production.
 
 **Casing is a deliberate divergence, not a gap.** Production defaults to `camelCase` for struct
 fields and `kebab-case` for enum variants. Core has *no default* — a name is used exactly as
