@@ -1,0 +1,23 @@
+---
+source: crates/core/tests/derive_schematic_test.rs
+expression: pretty(output.to_token_stream())
+---
+#[automatically_derived]
+impl<T, U> schematic::Schematic for Example<T, U> {
+    fn schema_name() -> Option<String> {
+        let mut name = String::from("Example");
+        name.push_str(&schematic::schema::schema_name_of::<T>());
+        name.push_str(&schematic::schema::schema_name_of::<U>());
+        Some(name)
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .structure(
+                StructType::new([
+                    ("first".into(), SchemaField::new(schema.infer::<T>())),
+                    ("second".into(), SchemaField::new(schema.infer::<U>())),
+                ]),
+            )
+    }
+}

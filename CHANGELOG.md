@@ -74,6 +74,9 @@
 - Added `EnumType::get_default()` and `EnumType::set_default()`, which resolve `default_index`
   against whichever list it indexes.
 - Added `StructType::sorted_fields()`, which renderers use to keep generated output alphabetical.
+- Added `schema_name_of()`, which resolves the schema name of a type, for composing the name of a
+  generic type from its arguments. Types without a name of their own fall back to their Rust type
+  name, so instantiations over primitives still resolve distinctly.
 - Added `Schematic` implementations for `[T]`, `VecDeque`, `LinkedList`, `BinaryHeap`, `IpAddr`,
   `SocketAddr`, `SocketAddrV4`, `SocketAddrV6`, `Range`, and `RangeInclusive`.
 - Added `Schematic` implementations for the `NonZero` integers. The unsigned ones carry a `min` of

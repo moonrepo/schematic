@@ -1995,8 +1995,14 @@ dependencies = [
 name = "schematic_macros_next"
 version = "0.18.7"
 dependencies = [
+ "proc-macro2",
  "quote",
+ "schematic",
  "schematic_core",
+ "schematic_macros_next",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
  "syn 3.0.3",
 ]
 
