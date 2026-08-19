@@ -1,5 +1,5 @@
 ---
-source: crates/core/tests/schematic_macro_test.rs
+source: crates/core/tests/derive_schematic_test.rs
 expression: pretty(output.to_token_stream())
 ---
 #[automatically_derived]

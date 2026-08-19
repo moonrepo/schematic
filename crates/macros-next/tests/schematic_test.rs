@@ -156,6 +156,67 @@ mod generics {
         value: T,
     }
 
+    // Schemas are keyed by name alone, so every instantiation has to resolve
+    // to a distinct one or they collapse into a single definition.
+    #[test]
+    fn names_include_the_type_arguments() {
+        assert_eq!(
+            build::<Wrapper<bool>>().name.as_deref(),
+            Some("WrapperBool")
+        );
+        assert_eq!(
+            build::<Wrapper<String>>().name.as_deref(),
+            Some("WrapperString")
+        );
+        assert_eq!(
+            build::<Wrapper<Vec<String>>>().name.as_deref(),
+            Some("WrapperVecString")
+        );
+    }
+
+    #[derive(Schematic)]
+    struct Named {
+        value: bool,
+    }
+
+    // A type argument that names itself is used as-is
+    #[test]
+    fn names_use_the_arguments_own_schema_name() {
+        assert_eq!(
+            build::<Wrapper<Named>>().name.as_deref(),
+            Some("WrapperNamed")
+        );
+    }
+
+    #[derive(Schematic)]
+    struct TwoParams<T: schematic::Schematic, U: schematic::Schematic> {
+        first: T,
+        second: U,
+    }
+
+    #[test]
+    fn names_append_every_type_argument() {
+        assert_eq!(
+            build::<TwoParams<bool, Named>>().name.as_deref(),
+            Some("TwoParamsBoolNamed")
+        );
+    }
+
+    // The collision this prevents: without the arguments in the name, both
+    // instantiations claim "Wrapper" and the generator rejects the second.
+    #[test]
+    fn instantiations_coexist_in_a_generator() {
+        use schematic::schema::SchemaGenerator;
+
+        let mut generator = SchemaGenerator::default();
+
+        generator.add::<Wrapper<bool>>();
+        generator.add::<Wrapper<String>>();
+
+        assert!(generator.schemas.contains_key("WrapperBool"));
+        assert!(generator.schemas.contains_key("WrapperString"));
+    }
+
     #[test]
     fn supports_where_clauses() {
         let schema = build::<Bounded<usize>>();

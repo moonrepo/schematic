@@ -560,21 +560,48 @@ impl Container {
         }
     }
 
+    /// Generate the body of `schema_name`. A generic container appends the
+    /// name of each type argument, since schemas are keyed by name alone and
+    /// every instantiation would otherwise claim the same one.
+    #[cfg(feature = "schema")]
+    pub fn impl_schematic_name(&self) -> TokenStream {
+        let base_name_string = self.get_name();
+        let params = self
+            .generics
+            .type_params()
+            .map(|param| &param.ident)
+            .collect::<Vec<_>>();
+
+        if params.is_empty() {
+            return quote! { Some(#base_name_string.into()) };
+        }
+
+        quote! {
+            let mut name = String::from(#base_name_string);
+
+            #(
+                name.push_str(&schematic::schema::schema_name_of::<#params>());
+            )*
+
+            Some(name)
+        }
+    }
+
     /// Generate the `Schematic` implementation for the full type. This is
     /// also the whole of a standalone `#[derive(Schematic)]`, which has no
     /// partial type to pair with.
     #[cfg(feature = "schema")]
     pub fn impl_schematic_full(&self) -> TokenStream {
         let base_name = &self.ident;
-        let base_name_string = self.get_name();
         let inner = self.impl_schematic_type();
+        let name = self.impl_schematic_name();
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
             impl #impl_generics schematic::Schematic for #base_name #ty_generics #where_clause {
                 fn schema_name() -> Option<String> {
-                    Some(#base_name_string.into())
+                    #name
                 }
 
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {

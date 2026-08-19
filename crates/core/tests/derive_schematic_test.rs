@@ -113,6 +113,19 @@ mod generics {
     }
 
     #[test]
+    fn supports_multiple_type_parameters() {
+        let output = schematic_only(parse_quote! {
+            #[derive(Schematic)]
+            struct Example<T, U> {
+                first: T,
+                second: U,
+            }
+        });
+
+        assert_snapshot!(pretty(output.to_token_stream()));
+    }
+
+    #[test]
     fn supports_where_clauses() {
         let output = schematic_only(parse_quote! {
             #[derive(Schematic)]

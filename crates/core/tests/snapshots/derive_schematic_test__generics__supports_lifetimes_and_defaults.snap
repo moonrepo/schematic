@@ -1,11 +1,13 @@
 ---
-source: crates/core/tests/schematic_macro_test.rs
+source: crates/core/tests/derive_schematic_test.rs
 expression: pretty(output.to_token_stream())
 ---
 #[automatically_derived]
-impl<T: Schematic + Clone> schematic::Schematic for Example<T> {
+impl<'a, T> schematic::Schematic for Example<'a, T> {
     fn schema_name() -> Option<String> {
-        Some("Example".into())
+        let mut name = String::from("Example");
+        name.push_str(&schematic::schema::schema_name_of::<T>());
+        Some(name)
     }
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
         use schematic::schema::*;
@@ -13,6 +15,7 @@ impl<T: Schematic + Clone> schematic::Schematic for Example<T> {
             .structure(
                 StructType::new([
                     ("inner".into(), SchemaField::new(schema.infer::<T>())),
+                    ("name".into(), SchemaField::new(schema.infer::<&'a str>())),
                 ]),
             )
     }

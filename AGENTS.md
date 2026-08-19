@@ -47,7 +47,9 @@ Still unported, in rough order of what blocks the swap:
 
 Generics are supported by `Schematic` but not `Config` (the partial type isn't generic), which
 matches production. As in production, `#[derive(Schematic)]` on a generic type does not add a
-`T: Schematic` bound for you — write it yourself.
+`T: Schematic` bound for you — write it yourself. Unlike production, a generic type's `schema_name`
+appends each type argument (`Wrapper<String>` becomes `WrapperString`), because schemas are keyed by
+name alone and every instantiation would otherwise claim the same one.
 
 When implementing something in `core`, the old implementation in `crates/macros` is the reference.
 It is _not_ always correct — this session found many bugs in it — but it tells you the intended
