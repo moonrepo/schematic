@@ -1,15 +1,8 @@
-use schematic_core::container::Container;
+#![allow(unused)]
 
-// #[cfg(feature = "config")]
-// mod config;
-// #[cfg(feature = "config")]
-// mod config_enum;
-// #[cfg(feature = "schema")]
-// mod schematic;
-
-// use common::Macro;
 use proc_macro::TokenStream;
 use quote::quote;
+use schematic_core::container::Container;
 use syn::{DeriveInput, parse_macro_input};
 
 // #[derive(Config)]
@@ -17,16 +10,9 @@ use syn::{DeriveInput, parse_macro_input};
 #[proc_macro_derive(Config, attributes(config, setting))]
 pub fn config(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
-    let output = config::ConfigMacro(Macro::from(&input));
+    let output = Container::from(input);
 
     quote! { #output }.into()
-}
-
-// #[derive(ConfigEnum)]
-#[cfg(feature = "config")]
-#[proc_macro_derive(ConfigEnum, attributes(config, variant))]
-pub fn config_enum(item: TokenStream) -> TokenStream {
-    config_enum::macro_impl(item)
 }
 
 // #[derive(Schematic)]
@@ -34,8 +20,8 @@ pub fn config_enum(item: TokenStream) -> TokenStream {
 #[proc_macro_derive(Schematic, attributes(schematic, schema))]
 pub fn schematic(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
-    // let output = schematic::SchematicMacro(Macro::from(&input));
-    let container = Container::from(input);
+    let mut output = Container::from(input);
+    output.schematic_only = true;
 
-    quote! { #container }.into()
+    quote! { #output }.into()
 }

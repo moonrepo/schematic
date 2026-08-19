@@ -46,6 +46,39 @@ pub trait Schematic {
     }
 }
 
+/// Resolve the schema name of a type, for composing the name of a generic
+/// type from its arguments.
+///
+/// Types that define a `schema_name` use it as-is. Anything else falls back
+/// to a cleaned up form of its Rust type name, so that instantiations over
+/// unnamed types (primitives, collections) still resolve to distinct names
+/// instead of silently colliding.
+pub fn schema_name_of<T: Schematic + ?Sized>() -> String {
+    if let Some(name) = T::schema_name() {
+        return name;
+    }
+
+    let mut name = String::new();
+
+    // `alloc::vec::Vec<alloc::string::String>` becomes `VecString`
+    for chunk in
+        std::any::type_name::<T>().split(|c: char| !(c.is_alphanumeric() || c == '_' || c == ':'))
+    {
+        let Some(segment) = chunk.rsplit("::").next() else {
+            continue;
+        };
+
+        let mut chars = segment.chars();
+
+        if let Some(first) = chars.next() {
+            name.extend(first.to_uppercase());
+            name.push_str(chars.as_str());
+        }
+    }
+
+    name
+}
+
 // CORE
 
 impl Schematic for () {

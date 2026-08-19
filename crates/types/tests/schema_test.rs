@@ -1089,3 +1089,66 @@ mod literal_equality {
         assert_ne!(LiteralValue::Int(1), LiteralValue::UInt(1));
     }
 }
+
+mod generic_names {
+    use super::*;
+    use std::collections::HashMap;
+
+    struct Named;
+
+    impl Schematic for Named {
+        fn schema_name() -> Option<String> {
+            Some("Named".into())
+        }
+    }
+
+    #[test]
+    fn uses_a_types_own_name_when_it_has_one() {
+        assert_eq!(schema_name_of::<Named>(), "Named");
+    }
+
+    // Primitives and collections have no name of their own, so they fall
+    // back to their Rust type name with module paths stripped. Without this
+    // every instantiation over an unnamed type would resolve identically.
+    #[test]
+    fn falls_back_to_the_rust_type_name() {
+        assert_eq!(schema_name_of::<bool>(), "Bool");
+        assert_eq!(schema_name_of::<usize>(), "Usize");
+        assert_eq!(schema_name_of::<String>(), "String");
+        assert_eq!(schema_name_of::<str>(), "Str");
+    }
+
+    #[test]
+    fn flattens_nested_type_arguments() {
+        assert_eq!(schema_name_of::<Vec<String>>(), "VecString");
+        assert_eq!(schema_name_of::<Option<bool>>(), "OptionBool");
+        assert_eq!(
+            schema_name_of::<HashMap<String, usize>>(),
+            "HashMapStringUsize"
+        );
+        assert_eq!(schema_name_of::<Vec<Named>>(), "VecNamed");
+    }
+
+    #[test]
+    fn produces_distinct_names_for_distinct_arguments() {
+        assert_ne!(schema_name_of::<bool>(), schema_name_of::<usize>());
+        assert_ne!(
+            schema_name_of::<Vec<String>>(),
+            schema_name_of::<Vec<usize>>()
+        );
+    }
+
+    #[test]
+    fn produces_identifier_safe_names() {
+        for name in [
+            schema_name_of::<Vec<String>>(),
+            schema_name_of::<HashMap<String, Vec<bool>>>(),
+            schema_name_of::<(bool, usize)>(),
+        ] {
+            assert!(
+                name.chars().all(|c| c.is_alphanumeric() || c == '_'),
+                "`{name}` is not usable as an identifier"
+            );
+        }
+    }
+}

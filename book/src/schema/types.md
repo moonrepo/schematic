@@ -40,8 +40,20 @@ impl Schematic for T {
 
 Names must be unique across every type added to a generator, since schemas are keyed by name alone.
 Adding two different types under the same name panics rather than silently rendering one of them.
-This is worth keeping in mind for generic types — a fixed name on `Wrapper<T>` collides across every
-`T`, so build the name from the parameter instead.
+
+For generic types, the derive appends the name of each type argument, so `Wrapper<T>` becomes
+`WrapperString`, `WrapperBool`, and so on, and instantiations don't collide. Arguments that name
+themselves are used as-is; the rest fall back to their Rust type name. When implementing the trait
+by hand, do the same with
+[`schema_name_of`](https://docs.rs/schematic/latest/schematic/schema/fn.schema_name_of.html).
+
+```rust
+impl<T: Schematic> Schematic for Wrapper<T> {
+	fn schema_name() -> Option<String> {
+		Some(format!("Wrapper{}", schema_name_of::<T>()))
+	}
+}
+```
 
 ## Inferring schemas
 
