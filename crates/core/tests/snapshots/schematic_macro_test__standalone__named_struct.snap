@@ -1,0 +1,30 @@
+---
+source: crates/core/tests/schematic_macro_test.rs
+expression: pretty(output.to_token_stream())
+---
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema.set_description("Container docs.");
+        schema
+            .structure(
+                StructType::new([
+                    ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                    (
+                        "b".into(),
+                        {
+                            let mut field = SchemaField::new(
+                                schema.infer::<Vec<String>>(),
+                            );
+                            field.comment = Some("Field docs.".into());
+                            field
+                        },
+                    ),
+                ]),
+            )
+    }
+}

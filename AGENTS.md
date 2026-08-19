@@ -24,15 +24,30 @@ rest follows.
 | `crates/types`       | `schematic_types`       | `Schema`, `SchemaBuilder`, `SchemaType`, the `Schematic` trait. No macro code.                                             |
 | `crates/macros`      | `schematic_macros`      | **The production derive.** Currently what ships.                                                                           |
 | `crates/core`        | `schematic_core`        | **The rewrite in progress.** Where new work goes.                                                                          |
-| `crates/macros-next` | `schematic_macros_next` | Thin proc-macro shell intended to consume `core`. Stale scaffolding — its `config` fn references modules that don't exist. |
+| `crates/macros-next` | `schematic_macros_next` | Thin proc-macro shell over `core`. Exports `Config` and `Schematic`; `ConfigEnum` is not ported yet.                        |
 | `crates/test-app`    | `test_app`              | Manual smoke-test binary using the production derive.                                                                      |
 
 ### Migration status — read this first
 
-`crates/macros` is production. `crates/core` is a piece-by-piece rewrite of it. **Nothing consumes
-`core` in a real `#[derive(Config)]` yet** — `macros-next` isn't wired up. So changes in `core` are
-only exercised by its own snapshot tests unless you deliberately compile the generated output (see
-[Testing](#testing)).
+`crates/macros` is production — it is what `crates/schematic` re-exports, and what users get today.
+`crates/core` is a piece-by-piece rewrite of it, consumed by `crates/macros-next`.
+
+`macros-next` exports working `Config` and `Schematic` derives, exercised by real compile-and-run
+tests in `crates/macros-next/tests/`. **Nothing depends on it yet** — `crates/schematic` still
+re-exports `schematic_macros`, so swapping the two is a separate step blocked on the gaps below.
+
+Still unported, in rough order of what blocks the swap:
+
+- **Default casing.** `rename_all` doesn't default to anything, so `enum Level { High }` serializes
+  as `"High"` where production emits `"high"`. moon depends on the production behavior.
+- **`ConfigEnum`.** Not started; `macros-next` doesn't export it.
+- **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it, so it is
+  currently inert.
+- Named-field enum variants, and `#[config(serde(...))]`.
+
+Generics are supported by `Schematic` but not `Config` (the partial type isn't generic), which
+matches production. As in production, `#[derive(Schematic)]` on a generic type does not add a
+`T: Schematic` bound for you — write it yourself.
 
 When implementing something in `core`, the old implementation in `crates/macros` is the reference.
 It is _not_ always correct — this session found many bugs in it — but it tells you the intended
@@ -149,6 +164,13 @@ same code.
 isolation and snapshots the pretty-printed tokens. Type errors, missing trait bounds, and
 cross-method inconsistencies are invisible to them. Several real bugs in this codebase sat in green
 snapshots for exactly this reason.
+
+`crates/macros-next/tests/` is the antidote: it derives against the real runtime and asserts on
+behavior, so it catches what snapshots can't. Run it for any `core` change that alters codegen.
+
+```bash
+cargo test -p schematic_macros_next
+```
 
 Snapshot tests (starbase_sandbox/insta):
 

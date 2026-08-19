@@ -8,7 +8,7 @@ use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Ident, Visibility};
+use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visibility};
 
 // #[config()], #[schematic()]
 #[derive(Debug, Default, FromDeriveInput)]
@@ -33,8 +33,14 @@ pub struct Container {
     pub inner: ContainerInner,
     pub serde_args: Rc<SerdeContainerArgs>,
 
+    /// Render only the `Schematic` implementation, for a standalone
+    /// `#[derive(Schematic)]`. It describes the type it's placed on and
+    /// nothing else, so there's no partial type to pair it with.
+    pub schematic_only: bool,
+
     // inherited
     pub attrs: Vec<Attribute>,
+    pub generics: Generics,
     pub ident: Ident,
     pub vis: Visibility,
 }
@@ -94,8 +100,10 @@ impl Container {
         let container = Self {
             args,
             attrs: input.attrs,
+            generics: input.generics,
             ident: input.ident,
             inner,
+            schematic_only: false,
             serde_args,
             vis: input.vis,
         };
@@ -528,35 +536,43 @@ impl Container {
 
     /// Generate `Schematic` implementations for both types, which are
     /// required by the `Config` and `PartialConfig` traits.
-    #[cfg(not(feature = "schema"))]
     pub fn impl_schematic(&self) -> TokenStream {
-        let base_name = &self.ident;
-        let partial_name = self.get_partial_ident();
+        let full = self.impl_schematic_full();
+        let partial = self.impl_schematic_partial();
 
         quote! {
-            #[automatically_derived]
-            impl schematic::Schematic for #base_name {}
-
-            #[automatically_derived]
-            impl schematic::Schematic for #partial_name {}
+            #full
+            #partial
         }
     }
 
-    /// Generate `Schematic` implementations for both types. The partial
-    /// derives its schema from the full type, with all settings marked
-    /// as partial.
-    #[cfg(feature = "schema")]
-    pub fn impl_schematic(&self) -> TokenStream {
+    /// Generate the `Schematic` implementation for the full type. This is
+    /// also the whole of a standalone `#[derive(Schematic)]`, which has no
+    /// partial type to pair with.
+    #[cfg(not(feature = "schema"))]
+    pub fn impl_schematic_full(&self) -> TokenStream {
         let base_name = &self.ident;
-        let partial_name = self.get_partial_ident();
-
-        let base_name_string = self.get_name();
-        let partial_name_string = partial_name.to_string();
-        let inner = self.impl_schematic_type();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl schematic::Schematic for #base_name {
+            impl #impl_generics schematic::Schematic for #base_name #ty_generics #where_clause {}
+        }
+    }
+
+    /// Generate the `Schematic` implementation for the full type. This is
+    /// also the whole of a standalone `#[derive(Schematic)]`, which has no
+    /// partial type to pair with.
+    #[cfg(feature = "schema")]
+    pub fn impl_schematic_full(&self) -> TokenStream {
+        let base_name = &self.ident;
+        let base_name_string = self.get_name();
+        let inner = self.impl_schematic_type();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_generics schematic::Schematic for #base_name #ty_generics #where_clause {
                 fn schema_name() -> Option<String> {
                     Some(#base_name_string.into())
                 }
@@ -567,7 +583,30 @@ impl Container {
                     #inner
                 }
             }
+        }
+    }
 
+    /// Generate the `Schematic` implementation for the partial type, which
+    /// derives its schema from the full type with all settings partialized.
+    #[cfg(not(feature = "schema"))]
+    pub fn impl_schematic_partial(&self) -> TokenStream {
+        let partial_name = self.get_partial_ident();
+
+        quote! {
+            #[automatically_derived]
+            impl schematic::Schematic for #partial_name {}
+        }
+    }
+
+    /// Generate the `Schematic` implementation for the partial type, which
+    /// derives its schema from the full type with all settings partialized.
+    #[cfg(feature = "schema")]
+    pub fn impl_schematic_partial(&self) -> TokenStream {
+        let base_name = &self.ident;
+        let partial_name = self.get_partial_ident();
+        let partial_name_string = partial_name.to_string();
+
+        quote! {
             #[automatically_derived]
             impl schematic::Schematic for #partial_name {
                 fn schema_name() -> Option<String> {
@@ -1180,6 +1219,14 @@ impl Container {
 // #[derive(Config)]
 impl ToTokens for Container {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        // A standalone `Schematic` has no partial type, so none of the
+        // machinery below applies to it
+        if self.schematic_only {
+            tokens.extend(self.impl_schematic_full());
+
+            return;
+        }
+
         // Partial type
         tokens.extend(self.impl_partial_type());
         tokens.extend(self.impl_partial_type_default());

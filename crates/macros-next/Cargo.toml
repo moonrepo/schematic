@@ -15,14 +15,36 @@ proc-macro = true
 
 [dependencies]
 schematic_core = { version = "0.18.7", path = "../core" }
+proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true }
 
+[dev-dependencies]
+schematic = { path = "../schematic", features = [
+	"config",
+	"env",
+	"extends",
+	"json",
+	"schema",
+	"schema_serde",
+	"validate",
+] }
+schematic_macros_next = { path = ".", features = [
+	"config",
+	"env",
+	"extends",
+	"schema",
+	"validate",
+] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_sandbox = { workspace = true }
+
 [features]
-default = ["schema"]
-config = []
-env = []
-extends = []
-schema = []
-tracing = []
-validate = []
+default = []
+config = ["schematic_core/config"]
+env = ["schematic_core/env"]
+extends = ["schematic_core/extends"]
+schema = ["schematic_core/schema"]
+tracing = ["schematic_core/tracing"]
+validate = ["schematic_core/validate"]
