@@ -2,7 +2,7 @@
 
 use proc_macro::TokenStream;
 use quote::quote;
-use schematic_core::container::Container;
+use schematic_core::container::{Container, ContainerMacro};
 use syn::{DeriveInput, parse_macro_input};
 
 // #[derive(Config)]
@@ -21,7 +21,7 @@ pub fn config(item: TokenStream) -> TokenStream {
 pub fn schematic(item: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(item);
     let mut output = Container::from(input);
-    output.schematic_only = true;
+    output.macro_type = ContainerMacro::Schematic;
 
     quote! { #output }.into()
 }

@@ -10,6 +10,12 @@ use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visibility};
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ContainerMacro {
+    Config,
+    Schematic,
+}
+
 // #[config()], #[schematic()]
 #[derive(Debug, Default, FromDeriveInput)]
 #[darling(default, attributes(config, schematic), supports(struct_any, enum_any))]
@@ -31,11 +37,7 @@ pub struct Container {
     pub args: Rc<ContainerArgs>,
     pub inner: ContainerInner,
     pub serde_args: Rc<SerdeContainerArgs>,
-
-    /// Render only the `Schematic` implementation, for a standalone
-    /// `#[derive(Schematic)]`. It describes the type it's placed on and
-    /// nothing else, so there's no partial type to pair it with.
-    pub schematic_only: bool,
+    pub macro_type: ContainerMacro,
 
     // inherited
     pub attrs: Vec<Attribute>,
@@ -102,7 +104,7 @@ impl Container {
             generics: input.generics,
             ident: input.ident,
             inner,
-            schematic_only: false,
+            macro_type: ContainerMacro::Config,
             serde_args,
             vis: input.vis,
         };
@@ -1245,25 +1247,24 @@ impl Container {
 // #[derive(Config)]
 impl ToTokens for Container {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // A standalone `Schematic` has no partial type, so none of the
-        // machinery below applies to it
-        if self.schematic_only {
-            tokens.extend(self.impl_schematic_full());
+        match self.macro_type {
+            ContainerMacro::Config => {
+                // Partial type
+                tokens.extend(self.impl_partial_type());
+                tokens.extend(self.impl_partial_type_default());
+                tokens.extend(self.impl_partial_type_deserialize());
+                tokens.extend(self.impl_partial());
 
-            return;
+                // Full type
+                tokens.extend(self.impl_full());
+
+                // Both types
+                tokens.extend(self.impl_schematic());
+            }
+            ContainerMacro::Schematic => {
+                tokens.extend(self.impl_schematic_full());
+            }
         }
-
-        // Partial type
-        tokens.extend(self.impl_partial_type());
-        tokens.extend(self.impl_partial_type_default());
-        tokens.extend(self.impl_partial_type_deserialize());
-        tokens.extend(self.impl_partial());
-
-        // Full type
-        tokens.extend(self.impl_full());
-
-        // Both types
-        tokens.extend(self.impl_schematic());
     }
 }
 
