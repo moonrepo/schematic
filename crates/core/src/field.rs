@@ -16,22 +16,16 @@ use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident
 pub struct FieldArgs {
     #[darling(with = preserve_str_literal, map = "Some")]
     pub default: Option<Expr>,
-    #[cfg(feature = "env")]
     pub env: Option<String>,
-    #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
-    #[cfg(feature = "schema")]
     pub exclude: bool,
-    #[cfg(feature = "extends")]
     pub extend: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
-    #[cfg(feature = "env")]
     pub parse_env: Option<ExprPath>,
     pub partial: Option<PartialArg>,
     pub required: bool,
     pub transform: Option<ExprPath>,
-    #[cfg(feature = "validate")]
     pub validate: Option<crate::args::ValidateArg>,
 
     // serde

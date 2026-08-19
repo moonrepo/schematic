@@ -17,7 +17,6 @@ pub struct ContainerArgs {
     // config
     pub allow_unknown_fields: bool,
     pub context: Option<ExprPath>,
-    #[cfg(feature = "env")]
     pub env_prefix: Option<String>,
     pub partial: Option<PartialArg>,
 
