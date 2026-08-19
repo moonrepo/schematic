@@ -15,6 +15,17 @@ pub fn config(item: TokenStream) -> TokenStream {
     quote! { #output }.into()
 }
 
+// #[derive(ConfigEnum)]
+#[cfg(feature = "config")]
+#[proc_macro_derive(ConfigEnum, attributes(config, variant))]
+pub fn config_enum(item: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(item);
+    let mut output = Container::from(input);
+    output.macro_type = ContainerMacro::ConfigUnitEnum;
+
+    quote! { #output }.into()
+}
+
 // #[derive(Schematic)]
 #[cfg(feature = "schema")]
 #[proc_macro_derive(Schematic, attributes(schematic, schema))]

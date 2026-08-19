@@ -10,12 +10,13 @@ use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as NativeVariant};
 
-// #[setting()], #[schema()]
+// #[setting()], #[schema()], #[variant()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema))]
 pub struct VariantArgs {
     pub default: bool,
     pub exclude: bool,
+    pub fallback: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
     pub null: bool,

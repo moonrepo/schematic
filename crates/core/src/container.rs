@@ -13,6 +13,7 @@ use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visib
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ContainerMacro {
     Config,
+    ConfigUnitEnum,
     Schematic,
 }
 
@@ -22,6 +23,7 @@ pub enum ContainerMacro {
 pub struct ContainerArgs {
     // config
     pub allow_unknown_fields: bool,
+    pub before_parse: Option<String>,
     pub context: Option<ExprPath>,
     pub env_prefix: Option<String>,
     pub partial: Option<PartialArg>,
@@ -1260,6 +1262,9 @@ impl ToTokens for Container {
 
                 // Both types
                 tokens.extend(self.impl_schematic());
+            }
+            ContainerMacro::ConfigUnitEnum => {
+                todo!("TODO");
             }
             ContainerMacro::Schematic => {
                 tokens.extend(self.impl_schematic_full());
