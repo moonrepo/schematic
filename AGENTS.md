@@ -38,12 +38,6 @@ re-exports `schematic_macros`, so swapping the two is a separate step blocked on
 
 Still unported, in rough order of what blocks the swap:
 
-- **Casing.** Production resolves a name *at derive time* via `format_case`, defaulting to
-  `camelCase` for struct fields and `kebab-case` for enum variants. Core does neither: it forwards
-  `rename_all` to the partial's serde attribute and otherwise uses the raw Rust name. Two
-  consequences — the serialized shape differs from production for every config, and an explicit
-  `rename_all` reaches serde but *not* the derive-time name, so the schema, `settings()`, and
-  validation paths disagree with what serde actually accepts.
 - **`ConfigEnum`.** Not started; `macros-next` doesn't export it.
 - **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it. Production
   puts `#[instrument(skip_all)]` on `default_values`, `env_values`, `extends_from`, `finalize`,
@@ -54,6 +48,13 @@ Still unported, in rough order of what blocks the swap:
 
 Not gaps, despite looking like them: named-field enum variants panic in *both* crates, and
 `#[config(serde(...))]` was deliberately removed in the rewrite.
+
+**Casing is a deliberate divergence, not a gap.** Production defaults to `camelCase` for struct
+fields and `kebab-case` for enum variants. Core has *no default* — a name is used exactly as
+written, so Rust's `snake_case` is what ships unless `rename_all` says otherwise. When `rename_all`
+is set, `Field::get_name` and `Variant::get_name` apply it via `format_case`, so schemas,
+`settings()`, and validation paths agree with what serde accepts. Env keys deliberately skip the
+casing and stay derived from the Rust name (or an explicit `rename`), matching production.
 
 Generics are supported by `Schematic` but not `Config` (the partial type isn't generic), which
 matches production. As in production, `#[derive(Schematic)]` on a generic type does not add a

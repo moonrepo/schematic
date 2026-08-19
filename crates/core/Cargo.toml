@@ -11,7 +11,7 @@ repository = "https://github.com/moonrepo/schematic"
 all-features = true
 
 [dependencies]
-# convert_case = { workspace = true }
+convert_case = { workspace = true }
 darling = { workspace = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }

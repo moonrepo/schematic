@@ -1,10 +1,8 @@
 #[cfg(feature = "schema")]
 use crate::args::SerdeTagFormat;
-use crate::args::{
-    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeIoDirection, SerdeRenameArg,
-};
+use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
-use crate::utils::{ImplResult, is_inheritable_attribute};
+use crate::utils::{ImplResult, format_case, get_renamed_value, is_inheritable_attribute};
 use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
@@ -122,23 +120,30 @@ impl Variant {
         }
     }
 
+    /// Return an explicit `rename`, if one was provided. Casing is not
+    /// applied, as a rename is used exactly as written.
+    fn get_name_renamed(&self) -> Option<String> {
+        get_renamed_value(self.args.rename.as_ref(), self.serde_args.rename.as_ref())
+    }
+
+    /// Return the name this variant serializes as. A container `rename_all`
+    /// is applied here, and not only forwarded to serde, so that schemas,
+    /// `settings()`, and validation paths describe the key that is actually
+    /// accepted. There is no default case.
     pub fn get_name(&self) -> String {
-        let dir = SerdeIoDirection::From;
-
-        if let Some(name) = self.args.rename.as_ref().and_then(|rn| rn.get_name(dir)) {
-            return name.into();
+        if let Some(name) = self.get_name_renamed() {
+            return name;
         }
 
-        if let Some(name) = self
-            .serde_args
-            .rename
-            .as_ref()
-            .and_then(|rn| rn.get_name(dir))
-        {
-            return name.into();
-        }
+        let name = self.ident.to_string();
 
-        self.ident.to_string()
+        match get_renamed_value(
+            self.container_args.rename_all.as_ref(),
+            self.serde_container_args.rename_all.as_ref(),
+        ) {
+            Some(format) => format_case(&format, &name, true),
+            None => name,
+        }
     }
 
     pub fn is_default(&self) -> bool {
@@ -780,37 +785,8 @@ impl Variant {
 
         self.map_unnamed_match_custom(name, &self_name, fields, factory)
     }
-}
 
-// Only used for partials!
-impl ToTokens for Variant {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let attrs = self.get_partial_attributes();
-        let name = &self.ident;
-
-        tokens.extend(match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
-            Fields::Unnamed(_) => {
-                let types = self
-                    .values
-                    .iter()
-                    .map(|value| value.get_partial_type())
-                    .collect::<Vec<_>>();
-
-                quote! {
-                    #(#attrs)*
-                    #name(#(#types),*),
-                }
-            }
-            Fields::Unit => quote! {
-                #(#attrs)*
-                #name,
-            },
-        });
-    }
-}
-
-impl Variant {
+    #[allow(clippy::explicit_counter_loop)]
     fn map_unnamed_match_custom<F>(
         &self,
         name: &Ident,
@@ -842,5 +818,33 @@ impl Variant {
                 #inner
             },
         }
+    }
+}
+
+// Only used for partials!
+impl ToTokens for Variant {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attrs = self.get_partial_attributes();
+        let name = &self.ident;
+
+        tokens.extend(match &self.fields {
+            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Unnamed(_) => {
+                let types = self
+                    .values
+                    .iter()
+                    .map(|value| value.get_partial_type())
+                    .collect::<Vec<_>>();
+
+                quote! {
+                    #(#attrs)*
+                    #name(#(#types),*),
+                }
+            }
+            Fields::Unit => quote! {
+                #(#attrs)*
+                #name,
+            },
+        });
     }
 }
