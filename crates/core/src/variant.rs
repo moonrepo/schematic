@@ -17,7 +17,6 @@ use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as N
 #[darling(default, attributes(setting, schema))]
 pub struct VariantArgs {
     pub default: bool,
-    #[cfg(feature = "schema")]
     pub exclude: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
@@ -25,7 +24,6 @@ pub struct VariantArgs {
     pub partial: Option<PartialArg>,
     pub required: bool,
     pub transform: Option<ExprPath>,
-    #[cfg(feature = "validate")]
     pub validate: Option<crate::args::ValidateArg>,
 
     // serde

@@ -38,12 +38,22 @@ re-exports `schematic_macros`, so swapping the two is a separate step blocked on
 
 Still unported, in rough order of what blocks the swap:
 
-- **Default casing.** `rename_all` doesn't default to anything, so `enum Level { High }` serializes
-  as `"High"` where production emits `"high"`. moon depends on the production behavior.
+- **Casing.** Production resolves a name *at derive time* via `format_case`, defaulting to
+  `camelCase` for struct fields and `kebab-case` for enum variants. Core does neither: it forwards
+  `rename_all` to the partial's serde attribute and otherwise uses the raw Rust name. Two
+  consequences — the serialized shape differs from production for every config, and an explicit
+  `rename_all` reaches serde but *not* the derive-time name, so the schema, `settings()`, and
+  validation paths disagree with what serde actually accepts.
 - **`ConfigEnum`.** Not started; `macros-next` doesn't export it.
-- **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it, so it is
-  currently inert.
-- Named-field enum variants, and `#[config(serde(...))]`.
+- **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it. Production
+  puts `#[instrument(skip_all)]` on `default_values`, `env_values`, `extends_from`, `finalize`,
+  `merge`, `validate_with_path`, `from_partial`, `settings`, `default`, and `build_schema`.
+- **`#[setting(skip_deserializing_if)]`** parses but emits nothing (serde has no such attribute).
+- `#[setting(exclude)]` is behind `cfg(schema)` in core but unconditional in production, so it fails
+  to parse when the feature is off.
+
+Not gaps, despite looking like them: named-field enum variants panic in *both* crates, and
+`#[config(serde(...))]` was deliberately removed in the rewrite.
 
 Generics are supported by `Schematic` but not `Config` (the partial type isn't generic), which
 matches production. As in production, `#[derive(Schematic)]` on a generic type does not add a
