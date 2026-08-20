@@ -132,16 +132,16 @@ while the schema types have been updated to be more flexible and composable.
   not being validated.
 - Fixed adjacently tagged unit variants declaring a `content` field in their schema. Serde emits
   only the tag for a unit variant.
-- Fixed the schema of externally and internally tagged unit variants. An externally tagged unit is
-  a bare string, and an internally tagged one is an object holding just the tag.
+- Fixed the schema of externally and internally tagged unit variants. An externally tagged unit is a
+  bare string, and an internally tagged one is an object holding just the tag.
 - Fixed the partial schema of a tagged enum marking the tag itself as nullable and optional, which
   claimed that a variant with a missing or null tag was valid.
 - Fixed a block doc comment (`/** ... */`) keeping its leading `*` continuation markers, which
   rendered them as stray markdown list items.
 - Fixed the `config` feature failing to compile without `env`.
-- Fixed the `type_regex` and `type_semver` features failing to compile alongside `config`
-  without `schema`. Their `Schematic` implementations are now gated, so the setting types
-  themselves no longer require the schema layer.
+- Fixed the `type_regex` and `type_semver` features failing to compile alongside `config` without
+  `schema`. Their `Schematic` implementations are now gated, so the setting types themselves no
+  longer require the schema layer.
 
 ##### Schema
 
@@ -168,13 +168,13 @@ while the schema types have been updated to be more flexible and composable.
 - Moved the derive implementation into a new `schematic_core` crate. `schematic_macros` is now a
   thin proc-macro shell over it, and every derive shares one code path.
 - Changed the signatures of `internal::ValidateManager`. `check` and `check_variant` take the value
-  by move and an opaque callable instead of a boxed `Validator`, and `nested_list`/`nested_map`
-  take items as `Option`s. These are `#[doc(hidden)]` and only called by generated code.
+  by move and an opaque callable instead of a boxed `Validator`, and `nested_list`/`nested_map` take
+  items as `Option`s. These are `#[doc(hidden)]` and only called by generated code.
 - Updated `syn` to v3.
 - Updated `darling` to v0.24.
 - Updated `pkl` to v0.8.
 - Updated `garde` (validation) to v0.23.
-- Updated Rust to v1.97.
+- Updated Rust to v1.98.
 - Updated dependencies.
 
 ## 0.19.7
