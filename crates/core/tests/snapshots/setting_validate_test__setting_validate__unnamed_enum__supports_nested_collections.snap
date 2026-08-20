@@ -12,28 +12,38 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check_variant("A", (pa), self, Box::new(func_ref));
-            validate.nested_variant_list("A", 0usize, pa.iter());
+            validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
+            validate.nested_variant_list("A", 0usize, pa.iter().map(Some));
         }
         Self::B(pa) => {
-            validate.check_variant("B", (pa), self, Box::new(func_ref));
-            validate.nested_variant_map("B", 0usize, pa.iter());
+            validate.check_variant("B", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
+            validate
+                .nested_variant_map(
+                    "B",
+                    0usize,
+                    pa.iter().map(|(key, value)| (key, Some(value))),
+                );
         }
         Self::C(pa) => {
-            validate.check_variant("C", (pa), self, Box::new(func_ref));
+            validate.check_variant("C", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             if let Some(pa) = pa {
-                validate.nested_variant_list("C", 0usize, pa.iter());
+                validate.nested_variant_list("C", 0usize, pa.iter().map(Some));
             }
         }
         Self::D(pa) => {
-            validate.nested_variant_list("D", 0usize, pa.iter());
+            validate.nested_variant_list("D", 0usize, pa.iter().map(Some));
         }
         Self::E(pa) => {
-            validate.nested_variant_map("E", 0usize, pa.iter());
+            validate
+                .nested_variant_map(
+                    "E",
+                    0usize,
+                    pa.iter().map(|(key, value)| (key, Some(value))),
+                );
         }
         Self::F(pa) => {
             if let Some(pa) = pa {
-                validate.nested_variant_list("F", 0usize, pa.iter());
+                validate.nested_variant_list("F", 0usize, pa.iter().map(Some));
             }
         }
         _ => {}

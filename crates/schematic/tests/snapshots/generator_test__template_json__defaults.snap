@@ -7,9 +7,9 @@ expression: "fs::read_to_string(file).unwrap()"
   // @env TEMPLATE_BOOLEAN
   "boolean": false,
 
-  "emptyArray": [],
+  "empty_array": [],
 
-  "emptyObject": {},
+  "empty_object": {},
 
   // This is an enum with a medium length description and deprecated.
   // @deprecated Dont use enums!
@@ -17,7 +17,7 @@ expression: "fs::read_to_string(file).unwrap()"
   "enums": "foo",
 
   // This field is testing array expansion.
-  "expandArray": [
+  "expand_array": [
     {
       // An optional enum.
       "enums": "foo",
@@ -27,12 +27,12 @@ expression: "fs::read_to_string(file).unwrap()"
     }
   ],
 
-  "expandArrayPrimitive": [
+  "expand_array_primitive": [
     0
   ],
 
   // This field is testing object expansion.
-  "expandObject": {
+  "expand_object": {
     "example": {
       // An optional enum.
       "enums": "foo",
@@ -42,12 +42,12 @@ expression: "fs::read_to_string(file).unwrap()"
     }
   },
 
-  "expandObjectPrimitive": {
+  "expand_object_primitive": {
     "example": 0
   },
 
   // @values "foo" | "bar" | "baz"
-  "fallbackEnum": "foo",
+  "fallback_enum": "foo",
 
   // This is a float thats deprecated.
   // @deprecated
@@ -68,8 +68,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "opt": ""
   },
 
-  // This is a number with a long description.
-  // This is a number with a long description.
+  // This is a number with a long description. This is a number with a long description.
   "number": 0,
 
   // This is a nested struct with its own fields.
@@ -77,7 +76,6 @@ expression: "fs::read_to_string(file).unwrap()"
     // This is another nested field.
     "two": {
       // An optional string.
-      // @env ENV_PREFIX_OPT
       "opt": "",
     }
   },

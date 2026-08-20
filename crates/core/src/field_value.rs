@@ -359,17 +359,19 @@ impl FieldValue {
 
         if let Some(expr) = field_args.validate.as_deref() {
             let func = match expr {
-                // func(arg)() - already returns a boxed validator
-                Expr::Call(func) => quote! { #func },
-                // func() - must be boxed
-                Expr::Path(func) => quote! { Box::new(#func) },
+                // func(arg)() - returns a validator
+                // func() - is the validator itself
+                Expr::Call(_) | Expr::Path(_) => quote! { #expr },
                 _ => {
                     panic!("Unsupported `validate` syntax.");
                 }
             };
 
+            // Called through a closure rather than passed by value, so that
+            // the setting deref coerces on its way in, letting a `String`
+            // reach a `&str` validator and a `Vec<T>` a `&[T]` one
             res.value = quote! {
-                validate.check(#field_name, setting, self, #func);
+                validate.check(#field_name, setting, self, |v, d, c, f| #func(v, d, c, f));
             };
         } else {
             res.no_value = true;

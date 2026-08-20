@@ -12,22 +12,30 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check_variant("A", (pa), self, Box::new(func_ref));
+            validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::B(pa, pb) => {
-            validate.check_variant("B", (pa, pb), self, Box::new(func_ref));
+            validate
+                .check_variant("B", (pa, pb), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::C(pa, pb, pc) => {
-            validate.check_variant("C", (pa, pb, pc), self, Box::new(func_ref));
+            validate
+                .check_variant(
+                    "C",
+                    (pa, pb, pc),
+                    self,
+                    |v, d, c, f| func_ref(v, d, c, f),
+                );
         }
         Self::A(pa) => {
-            validate.check_variant("A", (pa), self, Box::new(func_ref));
+            validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             if [pa].iter().any(|v| v.is_none()) {
                 validate.required_variant("A");
             }
         }
         Self::B(pa, pb) => {
-            validate.check_variant("B", (pa, pb), self, Box::new(func_ref));
+            validate
+                .check_variant("B", (pa, pb), self, |v, d, c, f| func_ref(v, d, c, f));
             if [pa, pb].iter().any(|v| v.is_none()) {
                 validate.required_variant("B");
             }

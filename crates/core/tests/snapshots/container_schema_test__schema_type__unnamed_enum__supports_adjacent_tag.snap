@@ -46,73 +46,79 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             ),
                         ]),
                     ),
-                    {
-                        let mut item = Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(LiteralValue::String("Inner".into())),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(LiteralValue::String("Inner".into())),
+                            ),
+                            (
+                                "value".into(),
+                                {
+                                    let mut item = schema.infer_as_nested::<NestedConfig>();
+                                    item.partialize();
+                                    item
+                                },
+                            ),
+                        ]),
+                    ),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerOpt".into()),
                                 ),
-                                ("value".into(), schema.infer_as_nested::<NestedConfig>()),
-                            ]),
-                        );
-                        item.partialize();
-                        item
-                    },
-                    {
-                        let mut item = Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerOpt".into()),
-                                    ),
+                            ),
+                            (
+                                "value".into(),
+                                {
+                                    let mut item = schema
+                                        .infer_as_nested::<Option<NestedConfig>>();
+                                    item.partialize();
+                                    item
+                                },
+                            ),
+                        ]),
+                    ),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerList".into()),
                                 ),
-                                (
-                                    "value".into(),
-                                    schema.infer_as_nested::<Option<NestedConfig>>(),
+                            ),
+                            (
+                                "value".into(),
+                                {
+                                    let mut item = schema
+                                        .infer_as_nested::<Vec<NestedConfig>>();
+                                    item.partialize();
+                                    item
+                                },
+                            ),
+                        ]),
+                    ),
+                    Schema::structure(
+                        StructType::new([
+                            (
+                                "type".into(),
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerMap".into()),
                                 ),
-                            ]),
-                        );
-                        item.partialize();
-                        item
-                    },
-                    {
-                        let mut item = Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerList".into()),
-                                    ),
-                                ),
-                                (
-                                    "value".into(),
-                                    schema.infer_as_nested::<Vec<NestedConfig>>(),
-                                ),
-                            ]),
-                        );
-                        item.partialize();
-                        item
-                    },
-                    {
-                        let mut item = Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerMap".into()),
-                                    ),
-                                ),
-                                (
-                                    "value".into(),
-                                    schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
-                                ),
-                            ]),
-                        );
-                        item.partialize();
-                        item
-                    },
+                            ),
+                            (
+                                "value".into(),
+                                {
+                                    let mut item = schema
+                                        .infer_as_nested::<HashMap<String, CustomConfig>>();
+                                    item.partialize();
+                                    item
+                                },
+                            ),
+                        ]),
+                    ),
                     Schema::structure(
                         StructType::new([
                             (

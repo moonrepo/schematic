@@ -174,7 +174,7 @@ fn loads_env_vars_for_optional_nested_when_valued() {
     unsafe { env::set_var("ENV_STRING", "foo") };
 
     let result = ConfigLoader::<EnvVarsBase>::new()
-        .code("optNested:\n  string: bar", "code.yaml")
+        .code("opt_nested:\n  string: bar", "code.yaml")
         .unwrap()
         .load()
         .unwrap();

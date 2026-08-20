@@ -9,7 +9,7 @@ pub struct SomeConfig {
 }
 
 #[derive(Config)]
-#[config(serde(untagged))]
+#[serde(untagged)]
 enum Untagged {
     Foo,
     Bar(bool),

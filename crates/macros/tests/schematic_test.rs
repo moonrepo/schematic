@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use schematic::{Schema, SchemaBuilder, SchemaType};
-use schematic_macros_next::Schematic;
+use schematic_macros::Schematic;
 use std::collections::HashMap;
 
 fn build<T: schematic::Schematic>() -> Schema {

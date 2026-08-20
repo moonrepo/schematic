@@ -32,6 +32,9 @@ pub use starbase_styles::color;
 #[cfg(feature = "config")]
 pub use config::*;
 
+// The derives are feature gated in the macro crate: `Config` and
+// `ConfigEnum` behind `config`, `Schematic` behind `schema`
+#[cfg(any(feature = "config", feature = "schema"))]
 pub use schematic_macros::*;
 pub use schematic_types::{Schema, SchemaBuilder, SchemaType, Schematic};
 

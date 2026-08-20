@@ -52,7 +52,8 @@ pub struct ProjectsConfig {
 }
 
 #[derive(Debug, Config, Eq, PartialEq)]
-#[config(context = Context, serde(untagged))]
+#[config(context = Context)]
+#[serde(untagged)]
 pub enum Projects {
     #[setting(nested, validate = test_cfg)]
     Config(ProjectsConfig),

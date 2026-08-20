@@ -7,7 +7,7 @@ sometimes known as an "any" or "mixed" type.
 use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
 
 impl Schematic for T {
-	fn build_schema(schema: SchemaBuilder) -> Schema {
+	fn build_schema(mut schema: SchemaBuilder) -> Schema {
 		schema.build()
 	}
 }

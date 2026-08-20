@@ -160,7 +160,7 @@ fn nested_map() {
 }
 
 #[derive(Config)]
-#[config(serde(untagged))]
+#[serde(untagged)]
 enum Untagged {
     Foo,
     Bar(bool),
@@ -189,7 +189,7 @@ fn enum_external() {
 }
 
 #[derive(Config)]
-#[config(serde(tag = "type"))]
+#[serde(tag = "type")]
 enum InternalTagged {
     Foo,
     Bar(bool),
@@ -204,10 +204,8 @@ fn enum_internal() {
 }
 
 #[derive(Config)]
-#[config(
-    serde(tag = "type", content = "content"),
-    partial(derive(derive_more::TryInto))
-)]
+#[serde(tag = "type", content = "content")]
+#[config(partial(derive(derive_more::TryInto)))]
 enum AdjacentTagged {
     Foo,
     Bar(bool),

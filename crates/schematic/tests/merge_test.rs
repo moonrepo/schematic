@@ -138,7 +138,7 @@ fn loads_defaults_for_optional_nested() {
     let result = ConfigLoader::<MergeBase>::new()
         .code(
             r"
-optNested:
+opt_nested:
     string: hij",
             "code.yaml",
         )

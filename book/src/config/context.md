@@ -43,3 +43,31 @@ let result = ConfigLoader::<ExampleConfig>::new()
 
 > Refer to the [default values](./struct/default.md), [merge strategies](./struct/merge.md), and
 > [validation rules](./struct/validate.md) sections for more information on how to use context.
+
+## Metadata
+
+Alongside the configuration itself, the derive records a little metadata about each
+[setting](./settings.md), reachable with
+[`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings).
+It returns a map keyed by the serde name of each setting, or by position for unnamed ones.
+
+```rust
+for (name, setting) in ExampleConfig::settings() {
+	println!("{name}: {}", setting.type_alias);
+
+	if let Some(key) = &setting.env_key {
+		println!("  reads {key}");
+	}
+
+	if let Some(nested) = &setting.nested {
+		println!("  has {} nested settings", nested.len());
+	}
+}
+```
+
+Each entry carries the setting's `type_alias` (the Rust type as written), its `env_key`, and a
+`nested` map when the setting holds another [nested config](./nested.md).
+
+> Only an explicit `#[setting(env)]` populates `env_key`. A key derived from an
+> [`env_prefix`](./struct/env.md#container-prefixes) depends on the prefix in effect at runtime, so
+> it isn't known here.

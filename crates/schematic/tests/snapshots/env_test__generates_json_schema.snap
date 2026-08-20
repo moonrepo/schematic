@@ -66,4 +66,3 @@ expression: "std::fs::read_to_string(file).unwrap()"
     }
   }
 }
-

@@ -1,4 +1,4 @@
-use crate::config::{PartialConfig, Path, ValidateError, Validator};
+use crate::config::{PartialConfig, Path, ValidateError, ValidateResult};
 
 pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
@@ -18,21 +18,39 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         }
     }
 
-    pub fn check<V, D>(&mut self, key: &str, value: &V, data: &D, validator: Validator<V, D, Ctx>) {
+    pub fn check<V, D>(
+        &mut self,
+        key: &str,
+        value: V,
+        data: &D,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
+    ) {
         self.check_at(self.path.join_key(key), value, data, validator);
     }
 
     pub fn check_variant<V, D>(
         &mut self,
         variant: &str,
-        value: &V,
+        value: V,
         data: &D,
-        validator: Validator<V, D, Ctx>,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
     ) {
         self.check_at(self.path.join_variant(variant), value, data, validator);
     }
 
-    fn check_at<V, D>(&mut self, path: Path, value: &V, data: &D, validator: Validator<V, D, Ctx>) {
+    // The value is taken as-is rather than by reference, because a variant of
+    // several values passes a tuple of references, not a reference to a tuple.
+    //
+    // The validator is an opaque callable rather than a `Validator` box, so
+    // that the generated closure can deref coerce the value on its way in.
+    // A `String` setting reaches a `&str` validator, a `Vec<T>` a `&[T]` one.
+    fn check_at<V, D>(
+        &mut self,
+        path: Path,
+        value: V,
+        data: &D,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
+    ) {
         if let Err(error) = validator(value, data, self.context, self.finalizing) {
             self.errors.push(error.prepend_path(path));
         }
@@ -76,7 +94,11 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.path.join_variant(variant).join_index(index)
     }
 
-    pub fn nested_list<'v, I: IntoIterator<Item = &'v S>, S: PartialConfig<Context = Ctx> + 'v>(
+    pub fn nested_list<
+        'v,
+        I: IntoIterator<Item = Option<&'v S>>,
+        S: PartialConfig<Context = Ctx> + 'v,
+    >(
         &mut self,
         key: &str,
         list: I,
@@ -86,7 +108,7 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
 
     pub fn nested_variant_list<
         'v,
-        I: IntoIterator<Item = &'v S>,
+        I: IntoIterator<Item = Option<&'v S>>,
         S: PartialConfig<Context = Ctx> + 'v,
     >(
         &mut self,
@@ -97,12 +119,23 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_list_at(self.variant_path(variant, index), list);
     }
 
-    fn nested_list_at<'v, I: IntoIterator<Item = &'v S>, S: PartialConfig<Context = Ctx> + 'v>(
+    // Items arrive as `Option`s so that a `Vec<Option<T>>` works like a
+    // `Vec<T>`. A missing item is skipped but still consumes its index,
+    // otherwise every later item would be reported at the wrong position.
+    fn nested_list_at<
+        'v,
+        I: IntoIterator<Item = Option<&'v S>>,
+        S: PartialConfig<Context = Ctx> + 'v,
+    >(
         &mut self,
         path: Path,
         list: I,
     ) {
         for (i, item) in list.into_iter().enumerate() {
+            let Some(item) = item else {
+                continue;
+            };
+
             if let Err(errors) =
                 item.validate_with_path(self.context, self.finalizing, path.join_index(i))
             {
@@ -113,7 +146,8 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
 
     pub fn nested_map<
         'v,
-        I: IntoIterator<Item = (&'v String, &'v S)>,
+        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
+        K: std::fmt::Display + 'v,
         S: PartialConfig<Context = Ctx> + 'v,
     >(
         &mut self,
@@ -125,7 +159,8 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
 
     pub fn nested_variant_map<
         'v,
-        I: IntoIterator<Item = (&'v String, &'v S)>,
+        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
+        K: std::fmt::Display + 'v,
         S: PartialConfig<Context = Ctx> + 'v,
     >(
         &mut self,
@@ -136,9 +171,12 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_map_at(self.variant_path(variant, index), map);
     }
 
+    // A map key is only required to be `Display`, as that is all a path
+    // segment needs, so keys like `usize` work the same as `String`
     fn nested_map_at<
         'v,
-        I: IntoIterator<Item = (&'v String, &'v S)>,
+        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
+        K: std::fmt::Display + 'v,
         S: PartialConfig<Context = Ctx> + 'v,
     >(
         &mut self,
@@ -146,6 +184,10 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         map: I,
     ) {
         for (sub_key, value) in map.into_iter() {
+            let Some(value) = value else {
+                continue;
+            };
+
             if let Err(errors) =
                 value.validate_with_path(self.context, self.finalizing, path.join_key(sub_key))
             {

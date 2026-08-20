@@ -12,28 +12,28 @@ expression: "fs::read_to_string(file).unwrap()"
     "datetime",
     "decimal",
     "enums",
-    "fallbackEnum",
+    "fallback_enum",
     "float32",
     "float64",
     "indexmap",
     "indexset",
-    "jsonValue",
+    "json_value",
     "map",
     "nested",
     "number",
     "path",
     "regex",
-    "relPath",
+    "rel_path",
     "string",
     "time",
-    "tomlValue",
+    "toml_value",
     "url",
     "uuid",
     "vector",
     "version",
     "version2",
-    "versionReq",
-    "yamlValue"
+    "version_req",
+    "yaml_value"
   ],
   "properties": {
     "boolean": {
@@ -65,8 +65,8 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "fallbackEnum": {
-      "title": "fallbackEnum",
+    "fallback_enum": {
+      "title": "fallback_enum",
       "default": "foo",
       "allOf": [
         {
@@ -106,8 +106,8 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "jsonValue": {
-      "title": "jsonValue",
+    "json_value": {
+      "title": "json_value",
       "type": [
         "boolean",
         "object",
@@ -150,8 +150,8 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "regex"
     },
-    "relPath": {
-      "title": "relPath",
+    "rel_path": {
+      "title": "rel_path",
       "type": "string",
       "format": "path"
     },
@@ -164,8 +164,8 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "time"
     },
-    "tomlValue": {
-      "title": "tomlValue",
+    "toml_value": {
+      "title": "toml_value",
       "anyOf": [
         {
           "type": [
@@ -222,12 +222,12 @@ expression: "fs::read_to_string(file).unwrap()"
       "title": "version2",
       "type": "string"
     },
-    "versionReq": {
-      "title": "versionReq",
+    "version_req": {
+      "title": "version_req",
       "type": "string"
     },
-    "yamlValue": {
-      "title": "yamlValue",
+    "yaml_value": {
+      "title": "yaml_value",
       "type": [
         "boolean",
         "object",
@@ -297,19 +297,19 @@ expression: "fs::read_to_string(file).unwrap()"
     "FallbackEnum": {
       "anyOf": [
         {
-          "title": "Foo",
+          "title": "foo",
           "const": "foo"
         },
         {
-          "title": "Bar",
+          "title": "bar",
           "const": "bar"
         },
         {
-          "title": "Baz",
+          "title": "baz",
           "const": "baz"
         },
         {
-          "title": "Other",
+          "title": "other",
           "type": "string"
         }
       ]

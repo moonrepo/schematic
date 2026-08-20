@@ -42,30 +42,30 @@ export interface GenConfigBase {
 	 * @default 'foo'
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
-	fallbackEnum: FallbackEnum;
+	fallback_enum: FallbackEnum;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
 	indexset: string[] | null;
-	jsonValue: unknown;
+	json_value: unknown;
 	map: Record<string, number>;
 	/** **Nested** field. */
 	nested: AnotherConfig;
 	number: number;
 	path: string;
 	regex: string;
-	relPath: string;
+	rel_path: string;
 	string: string;
 	time: string;
-	tomlValue: unknown | null;
+	toml_value: unknown | null;
 	url: string | null;
 	uuid: string;
 	/** This is a list of strings. */
 	vector: string[];
 	version: string | null;
 	version2: string;
-	versionReq: string;
-	yamlValue: unknown;
+	version_req: string;
+	yaml_value: unknown;
 }
 
 /** @deprecated */
@@ -98,30 +98,30 @@ export interface PartialGenConfigBase {
 	 */
 	enums?: BasicEnum | null;
 	/** @default 'foo' */
-	fallbackEnum?: FallbackEnum | null;
+	fallback_enum?: FallbackEnum | null;
 	float32?: number | null;
 	float64?: number | null;
 	indexmap?: Record<string, string> | null;
 	indexset?: string[] | null;
-	jsonValue?: unknown | null;
+	json_value?: unknown | null;
 	map?: Record<string, number> | null;
 	/** **Nested** field. */
 	nested?: PartialAnotherConfig | null;
 	number?: number | null;
 	path?: string | null;
 	regex?: string | null;
-	relPath?: string | null;
+	rel_path?: string | null;
 	string?: string | null;
 	time?: string | null;
-	tomlValue?: unknown | null;
+	toml_value?: unknown | null;
 	url?: string | null;
 	uuid?: string | null;
 	/** This is a list of strings. */
 	vector?: string[] | null;
 	version?: string | null;
 	version2?: string | null;
-	versionReq?: string | null;
-	yamlValue?: unknown | null;
+	version_req?: string | null;
+	yaml_value?: unknown | null;
 }
 
 /** @deprecated */

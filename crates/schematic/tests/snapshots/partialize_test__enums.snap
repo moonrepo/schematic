@@ -41,7 +41,7 @@ expression: "create_diff::<Enums>()"
 🟥                                ],
 🟥                                variants: Some(
 🟥                                    {
-🟥                                        "A": SchemaField {
+🟥                                        "a": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -85,7 +85,7 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "B": SchemaField {
+🟥                                        "b": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -111,7 +111,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                ],
 🟩                                                variants: Some(
 🟩                                                    {
-🟩                                                        "A": SchemaField {
+🟩                                                        "a": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -136,7 +136,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                            read_only: false,
 🟩                                                            write_only: false,
 🟩                                                        },
-🟩                                                        "B": SchemaField {
+🟩                                                        "b": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -161,7 +161,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                            read_only: false,
 🟩                                                            write_only: false,
 🟩                                                        },
-🟩                                                        "C": SchemaField {
+🟩                                                        "c": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -198,7 +198,7 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "C": SchemaField {
+🟥                                        "c": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -224,15 +224,15 @@ expression: "create_diff::<Enums>()"
 🟥                                            write_only: false,
 🟥                                        },
 🟩                                        ),
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -248,7 +248,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "unitOpt": SchemaField {
+⬛️                "unit_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -287,7 +287,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                ],
 ⬛️                                                variants: Some(
 ⬛️                                                    {
-⬛️                                                        "A": SchemaField {
+⬛️                                                        "a": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -312,7 +312,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            read_only: false,
 ⬛️                                                            write_only: false,
 ⬛️                                                        },
-⬛️                                                        "B": SchemaField {
+⬛️                                                        "b": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -337,7 +337,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            read_only: false,
 ⬛️                                                            write_only: false,
 ⬛️                                                        },
-⬛️                                                        "C": SchemaField {
+⬛️                                                        "c": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -416,7 +416,7 @@ expression: "create_diff::<Enums>()"
 🟥                                ],
 🟥                                variants: Some(
 🟥                                    {
-🟥                                        "A": SchemaField {
+🟥                                        "a": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -460,7 +460,7 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "B": SchemaField {
+🟥                                        "b": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -472,31 +472,6 @@ expression: "create_diff::<Enums>()"
 🟥                                                    LiteralType {
 🟥                                                        value: String(
 🟥                                                            "b",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "C": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        value: String(
-🟥                                                            "c",
 🟥                                                        ),
 🟩                                                values: [
 🟩                                                    String(
@@ -511,7 +486,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                ],
 🟩                                                variants: Some(
 🟩                                                    {
-🟩                                                        "A": SchemaField {
+🟩                                                        "a": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -536,7 +511,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                            read_only: false,
 🟩                                                            write_only: false,
 🟩                                                        },
-🟩                                                        "B": SchemaField {
+🟩                                                        "b": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -561,7 +536,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                            read_only: false,
 🟩                                                            write_only: false,
 🟩                                                        },
-🟩                                                        "C": SchemaField {
+🟩                                                        "c": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -586,7 +561,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                            read_only: false,
 🟩                                                            write_only: false,
 🟩                                                        },
-🟩                                                        "Other": SchemaField {
+🟩                                                        "other": SchemaField {
 🟩                                                            aliases: [],
 🟩                                                            comment: None,
 🟩                                                            schema: Schema {
@@ -626,7 +601,32 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "Other": SchemaField {
+🟥                                        "c": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "other": SchemaField {
 🟥                                            aliases: [],
 🟥                                            comment: None,
 🟥                                            schema: Schema {
@@ -679,7 +679,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "fallbackOpt": SchemaField {
+⬛️                "fallback_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -718,7 +718,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                ],
 ⬛️                                                variants: Some(
 ⬛️                                                    {
-⬛️                                                        "A": SchemaField {
+⬛️                                                        "a": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -743,7 +743,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            read_only: false,
 ⬛️                                                            write_only: false,
 ⬛️                                                        },
-⬛️                                                        "B": SchemaField {
+⬛️                                                        "b": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -768,7 +768,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            read_only: false,
 ⬛️                                                            write_only: false,
 ⬛️                                                        },
-⬛️                                                        "C": SchemaField {
+⬛️                                                        "c": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -793,7 +793,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                            read_only: false,
 ⬛️                                                            write_only: false,
 ⬛️                                                        },
-⬛️                                                        "Other": SchemaField {
+⬛️                                                        "other": SchemaField {
 ⬛️                                                            aliases: [],
 ⬛️                                                            comment: None,
 ⬛️                                                            schema: Schema {
@@ -877,7 +877,7 @@ expression: "create_diff::<Enums>()"
 🟥                                        ty: Struct(
 🟥                                            StructType {
 🟥                                                fields: {
-🟥                                                    "a": SchemaField {
+🟥                                                    "A": SchemaField {
 🟥                                                        aliases: [],
 🟥                                                        comment: None,
 🟥                                                        schema: Schema {
@@ -906,43 +906,21 @@ expression: "create_diff::<Enums>()"
 🟩                                                        ty: Struct(
 🟩                                                            StructType {
 🟩                                                                fields: {
-🟩                                                                    "a": SchemaField {
+🟩                                                                    "A": SchemaField {
 🟩                                                                        aliases: [],
 🟩                                                                        comment: None,
 🟩                                                                        schema: Schema {
 🟩                                                                            deprecated: None,
 🟩                                                                            description: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: true,
-🟩                                                                            ty: Union(
-🟩                                                                                UnionType {
-🟩                                                                                    default_index: None,
-🟩                                                                                    partial: false,
-🟩                                                                                    operator: AnyOf,
-🟩                                                                                    variants_types: [
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: Some(
-🟩                                                                                                "PartialEmpty",
-🟩                                                                                            ),
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Struct(
-🟩                                                                                                StructType {
-🟩                                                                                                    fields: {},
-🟩                                                                                                    partial: true,
-🟩                                                                                                    required: None,
-🟩                                                                                                },
-🟩                                                                                            ),
-🟩                                                                                        },
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Null,
-🟩                                                                                        },
-🟩                                                                                    ],
+🟩                                                                            name: Some(
+🟩                                                                                "PartialEmpty",
+🟩                                                                            ),
+🟩                                                                            nullable: false,
+🟩                                                                            ty: Struct(
+🟩                                                                                StructType {
+🟩                                                                                    fields: {},
+🟩                                                                                    partial: true,
+🟩                                                                                    required: None,
 🟩                                                                                },
 🟩                                                                            ),
 🟩                                                                        },
@@ -950,15 +928,15 @@ expression: "create_diff::<Enums>()"
 🟩                                                                        env_var: None,
 🟩                                                                        flatten: false,
 🟩                                                                        hidden: false,
-🟩                                                                        nullable: true,
-🟩                                                                        optional: true,
+🟩                                                                        nullable: false,
+🟩                                                                        optional: false,
 🟩                                                                        read_only: false,
 🟩                                                                        write_only: false,
 🟩                                                                    },
 ⬛️                                                                },
 🟥                                                            ),
 🟥                                                        },
-🟩                                                                partial: true,
+🟩                                                                partial: false,
 🟩                                                                required: None,
 🟩                                                            },
 🟩                                                        ),
@@ -977,43 +955,21 @@ expression: "create_diff::<Enums>()"
 🟩                                                        ty: Struct(
 🟩                                                            StructType {
 🟩                                                                fields: {
-🟩                                                                    "b": SchemaField {
+🟩                                                                    "B": SchemaField {
 🟩                                                                        aliases: [],
 🟩                                                                        comment: None,
 🟩                                                                        schema: Schema {
 🟩                                                                            deprecated: None,
 🟩                                                                            description: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: true,
-🟩                                                                            ty: Union(
-🟩                                                                                UnionType {
-🟩                                                                                    default_index: None,
-🟩                                                                                    partial: false,
-🟩                                                                                    operator: AnyOf,
-🟩                                                                                    variants_types: [
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: Some(
-🟩                                                                                                "PartialEmpty",
-🟩                                                                                            ),
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Struct(
-🟩                                                                                                StructType {
-🟩                                                                                                    fields: {},
-🟩                                                                                                    partial: true,
-🟩                                                                                                    required: None,
-🟩                                                                                                },
-🟩                                                                                            ),
-🟩                                                                                        },
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Null,
-🟩                                                                                        },
-🟩                                                                                    ],
+🟩                                                                            name: Some(
+🟩                                                                                "PartialEmpty",
+🟩                                                                            ),
+🟩                                                                            nullable: false,
+🟩                                                                            ty: Struct(
+🟩                                                                                StructType {
+🟩                                                                                    fields: {},
+🟩                                                                                    partial: true,
+🟩                                                                                    required: None,
 🟩                                                                                },
 🟩                                                                            ),
 🟩                                                                        },
@@ -1021,19 +977,19 @@ expression: "create_diff::<Enums>()"
 🟩                                                                        env_var: None,
 🟩                                                                        flatten: false,
 🟩                                                                        hidden: false,
-🟩                                                                        nullable: true,
-🟩                                                                        optional: true,
+🟩                                                                        nullable: false,
+🟩                                                                        optional: false,
 🟩                                                                        read_only: false,
 🟩                                                                        write_only: false,
 🟩                                                                    },
 🟩                                                                },
-🟩                                                                partial: true,
+🟩                                                                partial: false,
 🟩                                                                required: None,
 🟩                                                            },
 🟩                                                        ),
 ⬛️                                                    },
 🟥                                                },
-🟥                                                partial: true,
+🟥                                                partial: false,
 🟥                                                required: None,
 🟩                                                ],
 ⬛️                                            },
@@ -1047,7 +1003,7 @@ expression: "create_diff::<Enums>()"
 🟥                                        ty: Struct(
 🟥                                            StructType {
 🟥                                                fields: {
-🟥                                                    "b": SchemaField {
+🟥                                                    "B": SchemaField {
 🟥                                                        aliases: [],
 🟥                                                        comment: None,
 🟥                                                        schema: Schema {
@@ -1075,7 +1031,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                        write_only: false,
 🟥                                                    },
 🟥                                                },
-🟥                                                partial: true,
+🟥                                                partial: false,
 🟥                                                required: None,
 🟥                                            },
 🟥                                        ),
@@ -1096,7 +1052,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "tupleOpt": SchemaField {
+⬛️                "tuple_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -1132,52 +1088,22 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        ty: Struct(
 ⬛️                                                            StructType {
 ⬛️                                                                fields: {
-⬛️                                                                    "a": SchemaField {
+⬛️                                                                    "A": SchemaField {
 ⬛️                                                                        aliases: [],
 ⬛️                                                                        comment: None,
 ⬛️                                                                        schema: Schema {
 ⬛️                                                                            deprecated: None,
 ⬛️                                                                            description: None,
-🟥                                                                            name: Some(
+⬛️                                                                            name: Some(
 🟥                                                                                "Empty",
-🟥                                                                            ),
-🟥                                                                            nullable: false,
-🟥                                                                            ty: Struct(
-🟥                                                                                StructType {
-🟥                                                                                    fields: {},
-🟥                                                                                    partial: true,
-🟥                                                                                    required: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: true,
-🟩                                                                            ty: Union(
-🟩                                                                                UnionType {
-🟩                                                                                    default_index: None,
-🟩                                                                                    partial: false,
-🟩                                                                                    operator: AnyOf,
-🟩                                                                                    variants_types: [
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: Some(
-🟩                                                                                                "PartialEmpty",
-🟩                                                                                            ),
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Struct(
-🟩                                                                                                StructType {
-🟩                                                                                                    fields: {},
-🟩                                                                                                    partial: true,
-🟩                                                                                                    required: None,
-🟩                                                                                                },
-🟩                                                                                            ),
-🟩                                                                                        },
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Null,
-🟩                                                                                        },
-🟩                                                                                    ],
+🟩                                                                                "PartialEmpty",
+⬛️                                                                            ),
+⬛️                                                                            nullable: false,
+⬛️                                                                            ty: Struct(
+⬛️                                                                                StructType {
+⬛️                                                                                    fields: {},
+⬛️                                                                                    partial: true,
+⬛️                                                                                    required: None,
 ⬛️                                                                                },
 ⬛️                                                                            ),
 ⬛️                                                                        },
@@ -1185,15 +1111,13 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                                        env_var: None,
 ⬛️                                                                        flatten: false,
 ⬛️                                                                        hidden: false,
-🟥                                                                        nullable: false,
-🟥                                                                        optional: false,
-🟩                                                                        nullable: true,
-🟩                                                                        optional: true,
+⬛️                                                                        nullable: false,
+⬛️                                                                        optional: false,
 ⬛️                                                                        read_only: false,
 ⬛️                                                                        write_only: false,
 ⬛️                                                                    },
 ⬛️                                                                },
-⬛️                                                                partial: true,
+⬛️                                                                partial: false,
 ⬛️                                                                required: None,
 ⬛️                                                            },
 ⬛️                                                        ),
@@ -1206,52 +1130,22 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        ty: Struct(
 ⬛️                                                            StructType {
 ⬛️                                                                fields: {
-⬛️                                                                    "b": SchemaField {
+⬛️                                                                    "B": SchemaField {
 ⬛️                                                                        aliases: [],
 ⬛️                                                                        comment: None,
 ⬛️                                                                        schema: Schema {
 ⬛️                                                                            deprecated: None,
 ⬛️                                                                            description: None,
-🟥                                                                            name: Some(
+⬛️                                                                            name: Some(
 🟥                                                                                "Empty",
-🟥                                                                            ),
-🟥                                                                            nullable: false,
-🟥                                                                            ty: Struct(
-🟥                                                                                StructType {
-🟥                                                                                    fields: {},
-🟥                                                                                    partial: true,
-🟥                                                                                    required: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: true,
-🟩                                                                            ty: Union(
-🟩                                                                                UnionType {
-🟩                                                                                    default_index: None,
-🟩                                                                                    partial: false,
-🟩                                                                                    operator: AnyOf,
-🟩                                                                                    variants_types: [
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: Some(
-🟩                                                                                                "PartialEmpty",
-🟩                                                                                            ),
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Struct(
-🟩                                                                                                StructType {
-🟩                                                                                                    fields: {},
-🟩                                                                                                    partial: true,
-🟩                                                                                                    required: None,
-🟩                                                                                                },
-🟩                                                                                            ),
-🟩                                                                                        },
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Null,
-🟩                                                                                        },
-🟩                                                                                    ],
+🟩                                                                                "PartialEmpty",
+⬛️                                                                            ),
+⬛️                                                                            nullable: false,
+⬛️                                                                            ty: Struct(
+⬛️                                                                                StructType {
+⬛️                                                                                    fields: {},
+⬛️                                                                                    partial: true,
+⬛️                                                                                    required: None,
 ⬛️                                                                                },
 ⬛️                                                                            ),
 ⬛️                                                                        },
@@ -1259,15 +1153,13 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                                        env_var: None,
 ⬛️                                                                        flatten: false,
 ⬛️                                                                        hidden: false,
-🟥                                                                        nullable: false,
-🟥                                                                        optional: false,
-🟩                                                                        nullable: true,
-🟩                                                                        optional: true,
+⬛️                                                                        nullable: false,
+⬛️                                                                        optional: false,
 ⬛️                                                                        read_only: false,
 ⬛️                                                                        write_only: false,
 ⬛️                                                                    },
 ⬛️                                                                },
-⬛️                                                                partial: true,
+⬛️                                                                partial: false,
 ⬛️                                                                required: None,
 ⬛️                                                            },
 ⬛️                                                        ),
