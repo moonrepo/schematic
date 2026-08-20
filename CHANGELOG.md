@@ -61,6 +61,9 @@
 - Updated the methods of `PartialConfig` to all have a default implementation. This helps to greatly
   reduce the amount of macro generated code.
 - Improved the parse, handling, and validation of container and field attributes.
+- Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
+  instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,
+  so `very_high`, `VeryHigh`, and `VERY HIGH` can all resolve to the same variant.
 
 ##### Serde
 

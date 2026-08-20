@@ -37,21 +37,24 @@ This enum will generate the following implementations:
 
 The following fields are supported for the `#[config]` container attribute:
 
-- `before_parse` - Transform the variant string value before parsing. Supports `lowercase` or
-  `UPPERCASE`.
+- `before_parse` - Transform the incoming string before parsing, so that loosely cased input still
+  matches. Accepts the same case names as `rename_all`: `lowercase`, `UPPERCASE`, `PascalCase`,
+  `camelCase`, `snake_case`, `SCREAMING_SNAKE_CASE`, `kebab-case`, and `SCREAMING-KEBAB-CASE`.
 
 ```rust
 #[derive(ConfigEnum)]
-#[config(before_parse = "UPPERCASE")]
+#[config(before_parse = "kebab-case")]
 enum ExampleEnum {
 	// ...
 }
 ```
 
+With the above, `very_high`, `VeryHigh`, and `VERY HIGH` all parse into the same variant.
+
 And the following for serde compatibility:
 
 - `rename`
-- `rename_all` - Defaults to `kebab-case`.
+- `rename_all` - Has no default. Variant names are used exactly as written unless this is set.
 
 ### Variants
 

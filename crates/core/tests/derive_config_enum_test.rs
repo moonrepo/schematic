@@ -150,7 +150,7 @@ mod validation {
     }
 
     #[test]
-    #[should_panic(expected = "Unknown `before_parse` value `nope`")]
+    #[should_panic(expected = "Unknown `before_parse` value `nope`. Supported values are")]
     fn rejects_an_unknown_before_parse() {
         render(parse_quote! {
             #[derive(ConfigEnum)]

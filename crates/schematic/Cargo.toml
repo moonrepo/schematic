@@ -69,6 +69,7 @@ reqwest = { workspace = true, optional = true, features = ["blocking"] }
 [features]
 default = ["config", "env", "extends", "validate"]
 config = [
+	"dep:convert_case",
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
 	"schematic_macros/config",

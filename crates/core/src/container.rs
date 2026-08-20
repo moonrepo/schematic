@@ -2,7 +2,7 @@ use crate::args::{
     PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
 };
 use crate::field::{EnvKey, Field};
-use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
+use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string, validate_case_format};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
@@ -661,23 +661,17 @@ impl Container {
     }
 
     /// Normalize the incoming value before it is matched against a variant.
+    /// Accepts the same case names as serde's `rename_all`.
     fn impl_config_enum_before_parse(&self) -> TokenStream {
         let Some(format) = self.args.before_parse.as_deref() else {
             return quote! {};
         };
 
-        let method = match format {
-            "lowercase" => quote! { to_lowercase },
-            "UPPERCASE" => quote! { to_uppercase },
-            other => {
-                panic!(
-                    "Unknown `before_parse` value `{other}`. Supported values are lowercase and UPPERCASE."
-                );
-            }
-        };
+        // Validated here so a typo fails the build rather than every parse
+        validate_case_format("before_parse", format);
 
         quote! {
-            let value = value.#method();
+            let value = schematic::internal::format_case(value, #format);
             let value = value.as_str();
         }
     }

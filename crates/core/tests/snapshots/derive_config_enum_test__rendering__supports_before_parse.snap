@@ -12,7 +12,7 @@ impl schematic::ConfigEnum for Example {
 impl std::str::FromStr for Example {
     type Err = schematic::ConfigError;
     fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
-        let value = value.to_lowercase();
+        let value = schematic::internal::format_case(value, "lowercase");
         let value = value.as_str();
         Ok(
             match value {

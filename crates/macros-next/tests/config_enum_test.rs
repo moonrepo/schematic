@@ -131,6 +131,89 @@ mod before_parse {
         assert_eq!(Upper::from_str("info").unwrap(), Upper::Info);
         assert_eq!(Upper::Info.to_string(), "INFO");
     }
+
+    // Every case serde's `rename_all` accepts is accepted here too, so
+    // loosely cased input can be normalized before it is matched.
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "kebab-case", rename_all = "kebab-case")]
+    enum Kebab {
+        VeryHigh,
+    }
+
+    #[test]
+    fn supports_kebab_case() {
+        for input in [
+            "very_high",
+            "VeryHigh",
+            "VERY_HIGH",
+            "very high",
+            "veryHigh",
+        ] {
+            assert_eq!(
+                Kebab::from_str(input).unwrap(),
+                Kebab::VeryHigh,
+                "`{input}` did not normalize"
+            );
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "camelCase")]
+    enum Camel {
+        #[variant(rename = "veryHigh")]
+        VeryHigh,
+    }
+
+    #[test]
+    fn supports_camel_case() {
+        for input in ["very_high", "VeryHigh", "very-high"] {
+            assert_eq!(Camel::from_str(input).unwrap(), Camel::VeryHigh);
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(
+        before_parse = "SCREAMING_SNAKE_CASE",
+        rename_all = "SCREAMING_SNAKE_CASE"
+    )]
+    enum Screaming {
+        VeryHigh,
+    }
+
+    #[test]
+    fn supports_screaming_snake_case() {
+        for input in ["very-high", "veryHigh", "very_high"] {
+            assert_eq!(Screaming::from_str(input).unwrap(), Screaming::VeryHigh);
+        }
+
+        assert_eq!(Screaming::VeryHigh.to_string(), "VERY_HIGH");
+    }
+
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "PascalCase")]
+    enum Pascal {
+        VeryHigh,
+    }
+
+    #[test]
+    fn supports_pascal_case() {
+        for input in ["very-high", "very_high", "veryHigh"] {
+            assert_eq!(Pascal::from_str(input).unwrap(), Pascal::VeryHigh);
+        }
+    }
+
+    // Digit boundaries are preserved, matching the derive-time helper
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "snake_case", rename_all = "snake_case")]
+    enum Digits {
+        Version2,
+    }
+
+    #[test]
+    fn keeps_digits_attached() {
+        assert_eq!(Digits::Version2.to_string(), "version2");
+        assert_eq!(Digits::from_str("Version2").unwrap(), Digits::Version2);
+    }
 }
 
 mod fallback {
