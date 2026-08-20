@@ -32,11 +32,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       }
     },
     "nested": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/EnvVarsNested"
-        }
-      ]
+      "$ref": "#/definitions/EnvVarsNested"
     },
     "number": {
       "type": "number"

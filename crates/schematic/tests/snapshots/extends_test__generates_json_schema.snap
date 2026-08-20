@@ -12,11 +12,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "extends": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/ExtendsFrom"
-        }
-      ]
+      "$ref": "#/definitions/ExtendsFrom"
     },
     "value": {
       "type": "array",

@@ -11,11 +11,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "projects": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Projects"
-        }
-      ]
+      "$ref": "#/definitions/Projects"
     }
   },
   "additionalProperties": false,

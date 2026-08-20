@@ -20,11 +20,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
   ],
   "properties": {
     "nested": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/NativeDefaults"
-        }
-      ]
+      "$ref": "#/definitions/NativeDefaults"
     },
     "nested_boxed": {
       "type": "object",

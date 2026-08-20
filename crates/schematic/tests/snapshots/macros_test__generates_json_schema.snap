@@ -285,11 +285,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "extends": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/ExtendsFrom"
-            }
-          ]
+          "$ref": "#/definitions/ExtendsFrom"
         }
       },
       "additionalProperties": false
@@ -931,11 +927,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "string"
         },
         "nested": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/NestedValidations"
-            }
-          ]
+          "$ref": "#/definitions/NestedValidations"
         },
         "nested2": {
           "anyOf": [

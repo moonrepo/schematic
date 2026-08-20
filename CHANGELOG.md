@@ -31,6 +31,17 @@ while the schema types have been updated to be more flexible and composable.
 
 ##### Schema
 
+- Updated `schemars` to v1, which replaces its typed schema model with plain JSON. This reshapes
+  `JsonSchemaOptions`:
+  - `visitors: Vec<Box<dyn GenVisitor>>` is now `transforms: Vec<Box<dyn GenTransform>>`.
+  - `option_nullable` and `option_add_null_type` were removed. Schemars no longer has them, and this
+    renderer never read them.
+  - `definitions_path` keeps its meaning as the `$ref` prefix, and is no longer inherited from
+    schemars, whose field of that name is now a JSON pointer.
+  - `JsonSchemaRenderer` implements `SchemaRenderer<schemars::Schema>` rather than
+    `SchemaRenderer<schemars::schema::Schema>`.
+- Changed a `$ref` with no sibling keys to render on its own, instead of inside a single-element
+  `allOf`. The two are equivalent, and a `$ref` that does have siblings is still wrapped.
 - Changed `SchemaType::Reference` from a newtype into a struct variant. Serde is unable to
   internally tag a newtype whose value isn't a map, so any schema containing a reference (which is
   how cycles are represented) previously failed to serialize.
