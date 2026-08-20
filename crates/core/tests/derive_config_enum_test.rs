@@ -172,3 +172,21 @@ mod validation {
         });
     }
 }
+
+mod generics {
+    use super::*;
+
+    #[test]
+    fn generic_fallback() {
+        let output = config_enum(parse_quote! {
+            #[derive(ConfigEnum)]
+            enum Example<T: Clone> {
+                Known,
+                #[variant(fallback)]
+                Other(T),
+            }
+        });
+
+        assert_snapshot!(pretty(output.to_token_stream()));
+    }
+}
