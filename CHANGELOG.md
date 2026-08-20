@@ -17,6 +17,11 @@ while the schema types have been updated to be more flexible and composable.
   same thing.
 - Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`. The
   loader is still instrumented; only the derive output no longer is.
+- Replaced `reqwest` with `ureq` for the `url` feature. `ureq` is blocking but builds no runtime of
+  its own, so loading a URL from inside an async runtime now blocks the thread instead of panicking.
+  `ConfigError::ReadUrlFailed` carries a `ureq::Error` instead of a `reqwest::Error`.
+- Changed a non-2xx response to a URL source into a `ConfigError::ReadUrlFailed`. It previously
+  passed the response body to the parser, so a 404 page surfaced as a parse error.
 - Changed doc comments to render as a single flowing paragraph instead of one line per source line.
   Markdown list items are still kept on their own line.
 - Changed `#[setting(env_prefix)]` keys to no longer appear as `@env` annotations in generated
@@ -139,6 +144,9 @@ while the schema types have been updated to be more flexible and composable.
 - Fixed a block doc comment (`/** ... */`) keeping its leading `*` continuation markers, which
   rendered them as stray markdown list items.
 - Fixed the `config` feature failing to compile without `env`.
+- Fixed the `url` feature being unable to request any HTTPS URL. `reqwest` was declared without
+  a TLS backend, so it only worked in this repository, where a dev-dependency happened to enable
+  one. `ureq` enables rustls by default.
 - Fixed the `type_regex` and `type_semver` features failing to compile alongside `config` without
   `schema`. Their `Schematic` implementations are now gated, so the setting types themselves no
   longer require the schema layer.

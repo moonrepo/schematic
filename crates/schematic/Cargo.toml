@@ -64,7 +64,7 @@ toml = { workspace = true, optional = true }
 serde_norway = { workspace = true, optional = true }
 
 # url
-reqwest = { workspace = true, optional = true, features = ["blocking"] }
+ureq = { workspace = true, optional = true }
 
 [features]
 default = ["config", "env", "extends", "validate"]
@@ -80,7 +80,7 @@ schema_serde = ["schema", "schematic_types/serde"]
 # Features
 env = ["schematic_macros/env"]
 extends = ["schematic_macros/extends"]
-url = ["dep:reqwest"]
+url = ["dep:ureq"]
 validate = ["dep:garde", "schematic_macros/validate"]
 
 # Formats
@@ -141,8 +141,9 @@ schematic = { path = ".", features = [
 	"validate_url",
 	"yaml",
 ] }
-reqwest = { workspace = true, features = ["blocking", "rustls"] }
 serial_test = "4.0.1"
+# Only to prove loading works from inside an async runtime
+tokio = { version = "1.53.1", features = ["macros", "rt"] }
 similar = "3.1.2"
 starbase_sandbox = { workspace = true }
 strip-ansi-escapes = "0.2.1"
