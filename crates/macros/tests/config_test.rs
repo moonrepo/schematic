@@ -8,7 +8,7 @@
 // imported by name (the trait aliased out of the way) and the derives come
 // from this crate.
 use schematic::{Config as ConfigTrait, ConfigLoader, PartialConfig};
-use schematic_macros_next::Config;
+use schematic_macros::Config;
 use serde::Serialize;
 use std::collections::HashMap;
 

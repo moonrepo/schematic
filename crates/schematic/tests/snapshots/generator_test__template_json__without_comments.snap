@@ -4,28 +4,28 @@ expression: "fs::read_to_string(file).unwrap()"
 ---
 {
   "boolean": false,
-  "emptyArray": [],
-  "emptyObject": {},
+  "empty_array": [],
+  "empty_object": {},
   "enums": "foo",
-  "expandArray": [
+  "expand_array": [
     {
       "enums": "foo",
       "opt": ""
     }
   ],
-  "expandArrayPrimitive": [
+  "expand_array_primitive": [
     0
   ],
-  "expandObject": {
+  "expand_object": {
     "example": {
       "enums": "foo",
       "opt": ""
     }
   },
-  "expandObjectPrimitive": {
+  "expand_object_primitive": {
     "example": 0
   },
-  "fallbackEnum": "foo",
+  "fallback_enum": "foo",
   "float64": 1.23,
   "nested": {
     "enums": "foo",

@@ -35,32 +35,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
 ⬛️                                                value: String(
-⬛️                                                    "foo",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                "content": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "foo",
+⬛️                                                    "Foo",
 ⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),
@@ -99,7 +74,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
 ⬛️                                                value: String(
-⬛️                                                    "bar",
+⬛️                                                    "Bar",
 ⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),
@@ -161,7 +136,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
 ⬛️                                                value: String(
-⬛️                                                    "baz",
+⬛️                                                    "Baz",
 ⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),
@@ -231,7 +206,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        ty: Literal(
 ⬛️                                            LiteralType {
 ⬛️                                                value: String(
-⬛️                                                    "qux",
+⬛️                                                    "Qux",
 ⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),

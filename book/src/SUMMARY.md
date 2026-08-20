@@ -6,6 +6,7 @@
   - [Partials](./config/partial.md)
   - [Nesting](./config/nested.md)
   - [Context](./config/context.md)
+  - [Generics](./config/generics.md)
   - [Structs & enums](./config/struct/index.md)
     - [Default values](./config/struct/default.md)
     - [Transforming values](./config/struct/transform.md)

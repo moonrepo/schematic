@@ -9,7 +9,7 @@ use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
 		schema.structure(StructType {
-			fields: HashMap::from_iter([
+			fields: IndexMap::from_iter([
 				(
 					"name".into(),
 					Box::new(SchemaField {

@@ -146,7 +146,7 @@ impl schematic::PartialConfig for PartialExample {
                 validate.nested_variant("Nested", 0usize, pa);
             }
             Self::List(pa) => {
-                validate.nested_variant_list("List", 0usize, pa.iter());
+                validate.nested_variant_list("List", 0usize, pa.iter().map(Some));
             }
             _ => {}
         };

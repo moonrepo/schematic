@@ -55,6 +55,8 @@ impl<T: Config> Default for ConfigLoader<T> {
 impl<T: Config> ConfigLoader<T> {
     /// Create a new config loader and auto-register formats based on enables features.
     pub fn new() -> Self {
+        // Only mutated when a format feature registers one below
+        #[allow(unused_mut)]
         let mut loader = ConfigLoader::default();
 
         #[cfg(feature = "json")]

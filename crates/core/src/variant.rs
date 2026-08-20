@@ -384,7 +384,10 @@ impl Variant {
             Fields::Unit => quote! { Schema::literal_value(LiteralValue::String(#name.into())) },
         };
 
-        // Wrap the tagged value so that nested configs can be partialized
+        // Mark a nested value so that it resolves to its partial. Only the
+        // value itself is marked, never a struct synthesized around it for
+        // tagging, as that struct is not a partial config -- its tag is a
+        // literal that is always present.
         let wrap = |value: TokenStream| {
             if nested {
                 quote! {
@@ -398,6 +401,7 @@ impl Variant {
                 value
             }
         };
+        let partial_inner = wrap(inner.clone());
 
         let unit = self.is_unit_variant();
         let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
@@ -436,11 +440,11 @@ impl Variant {
                     if unit {
                         inner
                     } else {
-                        wrap(quote! {
+                        quote! {
                             Schema::structure(StructType::new([
-                                (#name.into(), #inner),
+                                (#name.into(), #partial_inner),
                             ]))
-                        })
+                        }
                     }
                 }
                 // { "tag": "name", ...value }
@@ -470,12 +474,12 @@ impl Variant {
                             ]))
                         }
                     } else {
-                        wrap(quote! {
+                        quote! {
                             Schema::structure(StructType::new([
                                 (#tag.into(), #name_literal),
-                                (#content.into(), #inner),
+                                (#content.into(), #partial_inner),
                             ]))
-                        })
+                        }
                     }
                 }
             }
@@ -804,17 +808,23 @@ impl Variant {
                 use syn::Expr;
 
                 let func = match expr {
-                    // func(arg)() - already returns a boxed validator
-                    Expr::Call(func) => quote! { #func },
-                    // func() - must be boxed
-                    Expr::Path(func) => quote! { Box::new(#func) },
+                    // func(arg)() - returns a validator
+                    // func() - is the validator itself
+                    Expr::Call(_) | Expr::Path(_) => quote! { #expr },
                     _ => {
                         panic!("Unsupported `validate` syntax.");
                     }
                 };
 
+                // See `FieldValue::impl_partial_validate` for why this is
+                // called through a closure instead of passed by value
                 statements.push(quote! {
-                    validate.check_variant(#name_string, (#(#outer_names),*), self, #func);
+                    validate.check_variant(
+                        #name_string,
+                        (#(#outer_names),*),
+                        self,
+                        |v, d, c, f| #func(v, d, c, f),
+                    );
                 });
             }
 

@@ -12,19 +12,19 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check_variant("A", (pa), self, Box::new(func_ref));
+            validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::B(pa) => {
-            validate.check_variant("B", (pa), self, Box::new(func_ref));
+            validate.check_variant("B", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::C(pa) => {
-            validate.check_variant("C", (pa), self, Box::new(func_ref));
+            validate.check_variant("C", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::D(pa) => {
-            validate.check_variant("D", (pa), self, Box::new(func_ref));
+            validate.check_variant("D", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         Self::E(pa) => {
-            validate.check_variant("E", (pa), self, Box::new(func_ref));
+            validate.check_variant("E", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
         }
         _ => {}
     };

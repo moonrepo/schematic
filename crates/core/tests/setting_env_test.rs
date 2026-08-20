@@ -495,7 +495,9 @@ mod setting_parse_env {
         }
 
         #[test]
-        #[should_panic(expected = "Cannot use `parse_env` without `env`.")]
+        #[should_panic(
+            expected = "Cannot use `parse_env` without `env` or a container `env_prefix`."
+        )]
         fn errors_without_env() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -553,7 +555,9 @@ mod setting_parse_env {
         }
 
         #[test]
-        #[should_panic(expected = "Cannot use `parse_env` without `env`.")]
+        #[should_panic(
+            expected = "Cannot use `parse_env` without `env` or a container `env_prefix`."
+        )]
         fn errors_without_env() {
             Container::from(parse_quote! {
                 #[derive(Config)]

@@ -21,11 +21,37 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Literal(
-⬛️                        LiteralType {
-⬛️                            value: String(
-⬛️                                "foo",
-⬛️                            ),
+⬛️                    ty: Struct(
+⬛️                        StructType {
+⬛️                            fields: {
+⬛️                                "type": SchemaField {
+⬛️                                    aliases: [],
+⬛️                                    comment: None,
+⬛️                                    schema: Schema {
+⬛️                                        deprecated: None,
+⬛️                                        description: None,
+⬛️                                        name: None,
+⬛️                                        nullable: false,
+⬛️                                        ty: Literal(
+⬛️                                            LiteralType {
+⬛️                                                value: String(
+⬛️                                                    "Foo",
+⬛️                                                ),
+⬛️                                            },
+⬛️                                        ),
+⬛️                                    },
+⬛️                                    deprecated: None,
+⬛️                                    env_var: None,
+⬛️                                    flatten: false,
+⬛️                                    hidden: false,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
+⬛️                                    read_only: false,
+⬛️                                    write_only: false,
+⬛️                                },
+⬛️                            },
+⬛️                            partial: false,
+⬛️                            required: None,
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },
@@ -142,7 +168,7 @@ expression: "create_diff::<InternalTagged>()"
 🟥                                        ty: Literal(
 🟥                                            LiteralType {
 🟥                                                value: String(
-🟥                                                    "qux",
+🟥                                                    "Qux",
 🟥                                                ),
 🟩                                        nullable: true,
 🟩                                        ty: Union(
@@ -159,7 +185,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                        ty: Literal(
 🟩                                                            LiteralType {
 🟩                                                                value: String(
-🟩                                                                    "qux",
+🟩                                                                    "Qux",
 🟩                                                                ),
 🟩                                                            },
 🟩                                                        ),

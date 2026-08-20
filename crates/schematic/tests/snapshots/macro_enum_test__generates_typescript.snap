@@ -6,20 +6,18 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 /* eslint-disable */
 
-export type AllUnit = 'foo' | 'bar' | 'baz';
+export type AllUnit = 'Foo' | 'Bar' | 'Baz';
 
 export type AllUnnamed = {
-	foo: string;
+	Foo: string;
 } | {
-	bar: boolean;
+	Bar: boolean;
 } | {
-	baz: number;
+	Baz: number;
 };
 
-export type OfBothTypes = {
-	foo: null;
-} | {
-	bar: [boolean, number];
+export type OfBothTypes = null | {
+	Bar: [boolean, number];
 };
 
 export interface SomeConfig {
@@ -28,60 +26,57 @@ export interface SomeConfig {
 }
 
 export type NestedConfigs = {
-	string: string;
+	String: string;
 } | {
-	object: SomeConfig;
+	Object: SomeConfig;
 } | {
-	objects: [SomeConfig, SomeConfig];
+	Objects: [SomeConfig, SomeConfig];
 };
 
 export type WithSerde = string | boolean | number;
 
 /** Container */
-export type WithComments = 'foo' | 'bar' | 'baz';
+export type WithComments = 'Foo' | 'Bar' | 'Baz';
 
 export type Untagged = null | boolean | [number, string] | SomeConfig;
 
-export type ExternalTagged = {
-	foo: 'foo';
-} | {
-	bar: boolean;
+export type ExternalTagged = 'Foo' | {
+	Bar: boolean;
 } | {
 	bazzer: number;
 } | {
-	qux: SomeConfig;
+	Qux: SomeConfig;
 };
 
-export type InternalTagged = 'foo' | boolean | number | SomeConfig;
+export type InternalTagged = {
+	type: 'Foo';
+} | boolean | number | SomeConfig;
 
 export type AdjacentTagged = {
-	content: 'foo';
-	type: 'foo';
+	type: 'Foo';
 } | {
 	content: boolean;
-	type: 'bar';
+	type: 'Bar';
 } | {
 	content: number;
 	type: 'bazzer';
 } | {
 	content: SomeConfig;
-	type: 'qux';
+	type: 'Qux';
 };
 
-export type PartialAllUnit = 'foo' | 'bar' | 'baz';
+export type PartialAllUnit = 'Foo' | 'Bar' | 'Baz';
 
 export type PartialAllUnnamed = {
-	foo: string;
+	Foo: string;
 } | {
-	bar: boolean;
+	Bar: boolean;
 } | {
-	baz: number;
+	Baz: number;
 };
 
-export type PartialOfBothTypes = {
-	foo: null;
-} | {
-	bar: [boolean, number];
+export type PartialOfBothTypes = null | {
+	Bar: [boolean, number];
 };
 
 export interface PartialSomeConfig {
@@ -90,42 +85,41 @@ export interface PartialSomeConfig {
 }
 
 export type PartialNestedConfigs = {
-	string: string;
+	String: string;
 } | {
-	object?: PartialSomeConfig | null;
+	Object: PartialSomeConfig;
 } | {
-	objects?: [PartialSomeConfig, PartialSomeConfig] | null;
+	Objects: [PartialSomeConfig, PartialSomeConfig];
 };
 
 export type PartialWithSerde = string | boolean | number;
 
 /** Container */
-export type PartialWithComments = 'foo' | 'bar' | 'baz';
+export type PartialWithComments = 'Foo' | 'Bar' | 'Baz';
 
 export type PartialUntagged = null | boolean | [number, string] | PartialSomeConfig;
 
-export type PartialExternalTagged = {
-	foo: 'foo';
-} | {
-	bar: boolean;
+export type PartialExternalTagged = 'Foo' | {
+	Bar: boolean;
 } | {
 	bazzer: number;
 } | {
-	qux?: PartialSomeConfig | null;
+	Qux: PartialSomeConfig;
 };
 
-export type PartialInternalTagged = 'foo' | boolean | number | PartialSomeConfig;
+export type PartialInternalTagged = {
+	type: 'Foo';
+} | boolean | number | PartialSomeConfig;
 
 export type PartialAdjacentTagged = {
-	content: 'foo';
-	type: 'foo';
+	type: 'Foo';
 } | {
 	content: boolean;
-	type: 'bar';
+	type: 'Bar';
 } | {
 	content: number;
 	type: 'bazzer';
 } | {
 	content: PartialSomeConfig;
-	type: 'qux';
+	type: 'Qux';
 };

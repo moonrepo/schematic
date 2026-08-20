@@ -36,6 +36,22 @@ enum Projects {
 }
 ```
 
+A variant holding several values passes them as a tuple of references, not as a reference to a
+tuple.
+
+```rust
+fn validate_pair<P, C>(value: (&String, &usize), partial: &P, context: &C, finalize: bool) -> ValidateResult {
+	// ...
+}
+
+#[derive(Config)]
+enum Entry {
+	#[setting(validate = validate_pair)]
+	Pair(String, usize),
+	// ...
+}
+```
+
 > We provide a handful of built-in validation functions in the
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
 > some functions are factories which can be called to produce a validator.
@@ -67,14 +83,19 @@ If validation fails, you must return a
 [`ValidateError`](https://docs.rs/schematic/latest/schematic/struct.ValidateError.html) with a
 failure message.
 
+The setting is passed by reference, and deref coerces on its way in, so the first argument can take
+a borrowed form of the type instead of the type itself. A `String` setting reaches a `&str`
+validator, as above, and a `Vec<T>` setting reaches a `&[T]` one.
+
 ### Factories
 
 For composition and reusability concerns, we also support factory functions that can be called to
 create a unique validator. This can be seen above with `schematic::validate::regex`. To create your
 own factory, declare a normal function, with any number of arguments, that returns a
-[`Validator`](https://docs.rs/schematic/latest/schematic/validate/type.Validator.html).
+[`Validator`](https://docs.rs/schematic/latest/schematic/type.Validator.html).
 
-Using the `regex` factory as an example, it would look something like this.
+Using the `regex` factory as an example, it would look something like this. The closure takes the
+same four arguments a plain validator does.
 
 ```rust
 use schematic::Validator;
@@ -82,7 +103,7 @@ use schematic::Validator;
 fn regex<T, P, C>(pattern: &str) -> Validator<T, P, C> {
 	let pattern = regex::Regex::new(pattern).unwrap();
 
-	Box::new(move |value, _, _| {
+	Box::new(move |value, _, _, _| {
 		if !pattern.is_match(value) {
 			return Err(ValidateError::new("Some failure message"));
 		}

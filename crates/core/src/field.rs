@@ -112,8 +112,10 @@ impl Field {
                 panic!("Cannot use `env_prefix` without `nested`.");
             }
 
-            if self.args.parse_env.is_some() && self.args.env.is_none() {
-                panic!("Cannot use `parse_env` without `env`.");
+            // A key may be explicit, or derived from the container's prefix,
+            // but without one there is nothing for the parser to receive
+            if self.args.parse_env.is_some() && self.get_env_var().is_none() {
+                panic!("Cannot use `parse_env` without `env` or a container `env_prefix`.");
             }
         }
 

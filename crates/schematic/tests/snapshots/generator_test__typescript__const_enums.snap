@@ -8,9 +8,9 @@ expression: "generate(TypeScriptOptions\n{\n    const_enum: true, enum_format: E
 
 /** Docblock comment. */
 export const enum BasicEnum {
-	Foo,
-	Bar,
-	Baz,
+	foo,
+	bar,
+	baz,
 }
 
 export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
@@ -46,30 +46,30 @@ export interface GenConfigBase {
 	 * @default 'foo'
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
-	fallbackEnum: FallbackEnum;
+	fallback_enum: FallbackEnum;
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
 	indexset: string[] | null;
-	jsonValue: unknown;
+	json_value: unknown;
 	map: Record<string, number>;
 	/** **Nested** field. */
 	nested: AnotherConfig;
 	number: number;
 	path: string;
 	regex: string;
-	relPath: string;
+	rel_path: string;
 	string: string;
 	time: string;
-	tomlValue: unknown | null;
+	toml_value: unknown | null;
 	url: string | null;
 	uuid: string;
 	/** This is a list of strings. */
 	vector: string[];
 	version: string | null;
 	version2: string;
-	versionReq: string;
-	yamlValue: unknown;
+	version_req: string;
+	yaml_value: unknown;
 }
 
 /** @deprecated */

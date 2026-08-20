@@ -42,30 +42,30 @@ export interface GenConfigBase {
 	 * @default 'foo'
 	 * @type {'foo' | 'bar' | 'baz' | string}
 	 */
-	fallbackEnum?: FallbackEnum | undefined;
+	fallback_enum?: FallbackEnum | undefined;
 	float32?: number | undefined;
 	float64?: number | undefined;
 	indexmap?: Record<string, string> | undefined;
 	indexset?: string[] | null | undefined;
-	jsonValue?: unknown | undefined;
+	json_value?: unknown | undefined;
 	map?: Record<string, number> | undefined;
 	/** **Nested** field. */
 	nested?: AnotherConfig | undefined;
 	number?: number | undefined;
 	path?: string | undefined;
 	regex?: string | undefined;
-	relPath?: string | undefined;
+	rel_path?: string | undefined;
 	string?: string | undefined;
 	time?: string | undefined;
-	tomlValue?: unknown | null | undefined;
+	toml_value?: unknown | null | undefined;
 	url?: string | null | undefined;
 	uuid?: string | undefined;
 	/** This is a list of strings. */
 	vector?: string[] | undefined;
 	version?: string | null | undefined;
 	version2?: string | undefined;
-	versionReq?: string | undefined;
-	yamlValue?: unknown | undefined;
+	version_req?: string | undefined;
+	yaml_value?: unknown | undefined;
 }
 
 /** @deprecated */

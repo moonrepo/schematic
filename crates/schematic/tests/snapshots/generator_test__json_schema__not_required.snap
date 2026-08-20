@@ -32,7 +32,7 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "fallbackEnum": {
+    "fallback_enum": {
       "default": "foo",
       "allOf": [
         {
@@ -68,7 +68,7 @@ expression: "fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "jsonValue": {
+    "json_value": {
       "type": [
         "boolean",
         "object",
@@ -106,7 +106,7 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "regex"
     },
-    "relPath": {
+    "rel_path": {
       "type": "string",
       "format": "path"
     },
@@ -117,7 +117,7 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string",
       "format": "time"
     },
-    "tomlValue": {
+    "toml_value": {
       "anyOf": [
         {
           "type": [
@@ -169,10 +169,10 @@ expression: "fs::read_to_string(file).unwrap()"
     "version2": {
       "type": "string"
     },
-    "versionReq": {
+    "version_req": {
       "type": "string"
     },
-    "yamlValue": {
+    "yaml_value": {
       "type": [
         "boolean",
         "object",

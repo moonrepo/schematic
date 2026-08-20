@@ -72,7 +72,7 @@ impl EnvManager {
                     }
                 })
                 .map_err(|error| {
-                    HandlerError(format!("Invalid environment variable {key}: {error}"))
+                    HandlerError(format!("Invalid environment variable {key}. {error}"))
                 });
         }
 

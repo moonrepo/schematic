@@ -9,7 +9,7 @@ configuration format built and maintained by Apple.
 ```pkl
 port = 3000
 secure = true
-allowedHosts = List(".localhost")
+allowed_hosts = List(".localhost")
 ```
 
 > Pkl support can be enabled with the `pkl` Cargo feature.

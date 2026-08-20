@@ -149,7 +149,7 @@ expression: "create_diff::<Nested>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "fieldOpt": SchemaField {
+⬛️                "field_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {

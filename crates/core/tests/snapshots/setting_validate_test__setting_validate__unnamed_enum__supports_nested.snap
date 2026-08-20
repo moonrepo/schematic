@@ -12,21 +12,21 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     match self {
         Self::A(pa) => {
-            validate.check_variant("A", (pa), self, Box::new(func_ref));
+            validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             validate.nested_variant("A", 0usize, pa);
         }
         Self::B(pa) => {
-            validate.check_variant("B", (pa), self, Box::new(func_ref));
+            validate.check_variant("B", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             validate.nested_variant("B", 0usize, pa);
         }
         Self::C(pa) => {
-            validate.check_variant("C", (pa), self, Box::new(func_ref));
+            validate.check_variant("C", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             if let Some(pa) = pa {
                 validate.nested_variant("C", 0usize, pa);
             }
         }
         Self::D(pa) => {
-            validate.check_variant("D", (pa), self, Box::new(func_ref));
+            validate.check_variant("D", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             validate.nested_variant("D", 0usize, pa);
         }
         Self::E(pa) => {

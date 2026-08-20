@@ -21,37 +21,11 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Struct(
-⬛️                        StructType {
-⬛️                            fields: {
-⬛️                                "foo": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "foo",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                            },
-⬛️                            partial: false,
-⬛️                            required: None,
+⬛️                    ty: Literal(
+⬛️                        LiteralType {
+⬛️                            value: String(
+⬛️                                "Foo",
+⬛️                            ),
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },
@@ -63,7 +37,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
-⬛️                                "bar": SchemaField {
+⬛️                                "Bar": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
@@ -100,7 +74,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
-⬛️                                "baz": SchemaField {
+⬛️                                "Baz": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
@@ -145,26 +119,27 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
 ⬛️                            fields: {
-⬛️                                "qux": SchemaField {
+⬛️                                "Qux": SchemaField {
 ⬛️                                    aliases: [],
 ⬛️                                    comment: None,
 ⬛️                                    schema: Schema {
 ⬛️                                        deprecated: None,
 ⬛️                                        description: None,
-🟥                                        name: Some(
+⬛️                                        name: Some(
 🟥                                            "Basic",
-🟥                                        ),
-🟥                                        nullable: false,
-🟥                                        ty: Struct(
-🟥                                            StructType {
-🟥                                                fields: {
-🟥                                                    "field": SchemaField {
-🟥                                                        aliases: [],
-🟥                                                        comment: None,
-🟥                                                        schema: Schema {
-🟥                                                            deprecated: None,
-🟥                                                            description: None,
-🟥                                                            name: None,
+🟩                                            "PartialBasic",
+⬛️                                        ),
+⬛️                                        nullable: false,
+⬛️                                        ty: Struct(
+⬛️                                            StructType {
+⬛️                                                fields: {
+⬛️                                                    "field": SchemaField {
+⬛️                                                        aliases: [],
+⬛️                                                        comment: None,
+⬛️                                                        schema: Schema {
+⬛️                                                            deprecated: None,
+⬛️                                                            description: None,
+⬛️                                                            name: None,
 🟥                                                            nullable: false,
 🟥                                                            ty: String(
 🟥                                                                StringType {
@@ -174,99 +149,54 @@ expression: "create_diff::<ExternalTagged>()"
 🟥                                                                    max_length: None,
 🟥                                                                    min_length: None,
 🟥                                                                    pattern: None,
-🟩                                        name: None,
-🟩                                        nullable: true,
-🟩                                        ty: Union(
-🟩                                            UnionType {
-🟩                                                default_index: None,
-🟩                                                partial: false,
-🟩                                                operator: AnyOf,
-🟩                                                variants_types: [
-🟩                                                    Schema {
-🟩                                                        deprecated: None,
-🟩                                                        description: None,
-🟩                                                        name: Some(
-🟩                                                            "PartialBasic",
-🟩                                                        ),
-🟩                                                        nullable: false,
-🟩                                                        ty: Struct(
-🟩                                                            StructType {
-🟩                                                                fields: {
-🟩                                                                    "field": SchemaField {
-🟩                                                                        aliases: [],
-🟩                                                                        comment: None,
-🟩                                                                        schema: Schema {
+🟩                                                            nullable: true,
+🟩                                                            ty: Union(
+🟩                                                                UnionType {
+🟩                                                                    default_index: None,
+🟩                                                                    partial: false,
+🟩                                                                    operator: AnyOf,
+🟩                                                                    variants_types: [
+🟩                                                                        Schema {
 🟩                                                                            deprecated: None,
 🟩                                                                            description: None,
 🟩                                                                            name: None,
-🟩                                                                            nullable: true,
-🟩                                                                            ty: Union(
-🟩                                                                                UnionType {
-🟩                                                                                    default_index: None,
-🟩                                                                                    partial: false,
-🟩                                                                                    operator: AnyOf,
-🟩                                                                                    variants_types: [
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: String(
-🟩                                                                                                StringType {
-🟩                                                                                                    default: None,
-🟩                                                                                                    enum_values: None,
-🟩                                                                                                    format: None,
-🟩                                                                                                    max_length: None,
-🟩                                                                                                    min_length: None,
-🟩                                                                                                    pattern: None,
-🟩                                                                                                },
-🟩                                                                                            ),
-🟩                                                                                        },
-🟩                                                                                        Schema {
-🟩                                                                                            deprecated: None,
-🟩                                                                                            description: None,
-🟩                                                                                            name: None,
-🟩                                                                                            nullable: false,
-🟩                                                                                            ty: Null,
-🟩                                                                                        },
-🟩                                                                                    ],
+🟩                                                                            nullable: false,
+🟩                                                                            ty: String(
+🟩                                                                                StringType {
+🟩                                                                                    default: None,
+🟩                                                                                    enum_values: None,
+🟩                                                                                    format: None,
+🟩                                                                                    max_length: None,
+🟩                                                                                    min_length: None,
+🟩                                                                                    pattern: None,
 🟩                                                                                },
 🟩                                                                            ),
 🟩                                                                        },
-🟩                                                                        deprecated: None,
-🟩                                                                        env_var: None,
-🟩                                                                        flatten: false,
-🟩                                                                        hidden: false,
-🟩                                                                        nullable: true,
-🟩                                                                        optional: true,
-🟩                                                                        read_only: false,
-🟩                                                                        write_only: false,
-🟩                                                                    },
+🟩                                                                        Schema {
+🟩                                                                            deprecated: None,
+🟩                                                                            description: None,
+🟩                                                                            name: None,
+🟩                                                                            nullable: false,
+🟩                                                                            ty: Null,
+🟩                                                                        },
+🟩                                                                    ],
 ⬛️                                                                },
-🟥                                                            ),
-🟥                                                        },
-🟩                                                                partial: true,
-🟩                                                                required: None,
-🟩                                                            },
-🟩                                                        ),
-🟩                                                    },
-🟩                                                    Schema {
+⬛️                                                            ),
+⬛️                                                        },
 ⬛️                                                        deprecated: None,
-🟥                                                        env_var: None,
-🟥                                                        flatten: false,
-🟥                                                        hidden: false,
-🟩                                                        description: None,
-🟩                                                        name: None,
-⬛️                                                        nullable: false,
+⬛️                                                        env_var: None,
+⬛️                                                        flatten: false,
+⬛️                                                        hidden: false,
+🟥                                                        nullable: false,
 🟥                                                        optional: false,
-🟥                                                        read_only: false,
-🟥                                                        write_only: false,
-🟩                                                        ty: Null,
+🟩                                                        nullable: true,
+🟩                                                        optional: true,
+⬛️                                                        read_only: false,
+⬛️                                                        write_only: false,
 ⬛️                                                    },
-🟥                                                },
-🟥                                                partial: true,
-🟥                                                required: None,
-🟩                                                ],
+⬛️                                                },
+⬛️                                                partial: true,
+⬛️                                                required: None,
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
@@ -274,15 +204,13 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                                    env_var: None,
 ⬛️                                    flatten: false,
 ⬛️                                    hidden: false,
-🟥                                    nullable: false,
-🟥                                    optional: false,
-🟩                                    nullable: true,
-🟩                                    optional: true,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
 ⬛️                                    read_only: false,
 ⬛️                                    write_only: false,
 ⬛️                                },
 ⬛️                            },
-⬛️                            partial: true,
+⬛️                            partial: false,
 ⬛️                            required: None,
 ⬛️                        },
 ⬛️                    ),

@@ -21,12 +21,12 @@ export interface CustomDefaults {
 export interface ReqOptDefaults {
 	optional: number | null;
 	/** @default 123 */
-	optionalWithDefault?: number | null;
-	optionalWithDefaultFn?: number | null;
+	optional_with_default?: number | null;
+	optional_with_default_fn?: number | null;
 	required: number;
 	/** @default 123 */
-	requiredWithDefault?: number;
-	requiredWithDefaultFn?: number;
+	required_with_default?: number;
+	required_with_default_fn?: number;
 }
 
 export interface ContextDefaults {
@@ -46,7 +46,7 @@ export interface NativeDefaults {
 
 export interface NestedDefaults {
 	nested: NativeDefaults;
-	nestedBoxed: {
+	nested_boxed: {
 		boolean: boolean;
 		boxed: string;
 		float32: number;
@@ -55,8 +55,8 @@ export interface NestedDefaults {
 		string: string;
 		vector: string[];
 	};
-	nestedMap: Record<string, NativeDefaults>;
-	nestedMapBoxed: Record<string, {
+	nested_map: Record<string, NativeDefaults>;
+	nested_map_boxed: Record<string, {
 		boolean: boolean;
 		boxed: string;
 		float32: number;
@@ -65,7 +65,7 @@ export interface NestedDefaults {
 		string: string;
 		vector: string[];
 	}>;
-	nestedMapOptBoxed: Record<string, {
+	nested_map_opt_boxed: Record<string, {
 		boolean: boolean;
 		boxed: string;
 		float32: number;
@@ -74,8 +74,8 @@ export interface NestedDefaults {
 		string: string;
 		vector: string[];
 	} | null>;
-	nestedOpt: NativeDefaults | null;
-	nestedOptBoxed: {
+	nested_opt: NativeDefaults | null;
+	nested_opt_boxed: {
 		boolean: boolean;
 		boxed: string;
 		float32: number;
@@ -84,8 +84,8 @@ export interface NestedDefaults {
 		string: string;
 		vector: string[];
 	} | null;
-	nestedVec: NativeDefaults[];
-	nestedVecBoxed: {
+	nested_vec: NativeDefaults[];
+	nested_vec_boxed: {
 		boolean: boolean;
 		boxed: string;
 		float32: number;
@@ -94,7 +94,7 @@ export interface NestedDefaults {
 		string: string;
 		vector: string[];
 	}[];
-	nestedVecOptBoxed: ({
+	nested_vec_opt_boxed: ({
 		boolean: boolean;
 		boxed: string;
 		float32: number;

@@ -107,7 +107,7 @@ enum WithComments {
 }
 
 #[derive(Config)]
-#[config(serde(untagged, expecting = "something"))]
+#[serde(untagged, expecting = "something")]
 enum Untagged {
     Unit,
     OneTuple(bool),
@@ -128,7 +128,7 @@ enum ExternalTagged {
 }
 
 #[derive(Config)]
-#[config(serde(tag = "type"))]
+#[serde(tag = "type")]
 enum InternalTagged {
     Foo,
     Bar(bool),
@@ -139,7 +139,7 @@ enum InternalTagged {
 }
 
 #[derive(Config)]
-#[config(serde(tag = "type", content = "content"))]
+#[serde(tag = "type", content = "content")]
 enum AdjacentTagged {
     Foo,
     Bar(bool),
@@ -227,13 +227,13 @@ fn untagged_enum_deserialize_error_shows_all_variants() {
 
     // Verify that variant names are listed in the error
     assert!(
-        error.contains("unit"),
-        "Error should mention 'unit' variant, got: {}",
+        error.contains("Unit"),
+        "Error should mention 'Unit' variant, got: {}",
         error
     );
     assert!(
-        error.contains("one-tuple"),
-        "Error should mention 'one-tuple' variant, got: {}",
+        error.contains("OneTuple"),
+        "Error should mention 'OneTuple' variant, got: {}",
         error
     );
     assert!(
@@ -242,8 +242,8 @@ fn untagged_enum_deserialize_error_shows_all_variants() {
         error
     );
     assert!(
-        error.contains("tuple-of-struct"),
-        "Error should mention 'tuple-of-struct' variant, got: {}",
+        error.contains("TupleOfStruct"),
+        "Error should mention 'TupleOfStruct' variant, got: {}",
         error
     );
 }

@@ -108,7 +108,7 @@ mod nested {
     #[serial]
     fn applies_defaults_for_optional() {
         let config = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, "code.json")
+            .code(r#"{ "nested_opt": { "req": "xyz" } }"#, "code.json")
             .unwrap()
             .load()
             .unwrap()
@@ -129,7 +129,7 @@ mod nested {
         unsafe { env::set_var("OPT_ENV", "env") };
 
         let config = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, "code.json")
+            .code(r#"{ "nested_opt": { "req": "xyz" } }"#, "code.json")
             .unwrap()
             .load()
             .unwrap()
@@ -145,7 +145,7 @@ mod nested {
     #[serial]
     fn validates_all() {
         let error = ConfigLoader::<NestedSettings>::new()
-            .code(r#"{ "nestedOpt": { "req": "xyz" } }"#, "code.json")
+            .code(r#"{ "nested_opt": { "req": "xyz" } }"#, "code.json")
             .unwrap()
             .load_with_context(&Context { fail: true })
             .err()
@@ -187,8 +187,8 @@ mod nested_vec {
             .code(
                 r#"
 {
-	"nestedReq": [{ "req": "xyz" }],
-	"nestedOpt": [{ "opt": "hij" }]
+	"nested_req": [{ "req": "xyz" }],
+	"nested_opt": [{ "opt": "hij" }]
 }"#,
                 "code.json",
             )
@@ -225,8 +225,8 @@ mod nested_vec {
             .code(
                 r#"
 {
-	"nestedReq": [{ "req": "xyz" }],
-	"nestedOpt": [{ "opt": "hij" }]
+	"nested_req": [{ "req": "xyz" }],
+	"nested_opt": [{ "opt": "hij" }]
 }"#,
                 "code.json",
             )
@@ -248,8 +248,8 @@ mod nested_vec {
             .code(
                 r#"
 {
-	"nestedReq": [{ "req": "1" }, { "req": "2" }],
-	"nestedOpt": [{ "opt": "3" }]
+	"nested_req": [{ "req": "1" }, { "req": "2" }],
+	"nested_opt": [{ "opt": "3" }]
 }"#,
                 "code.json",
             )
@@ -297,8 +297,8 @@ mod nested_map {
             .code(
                 r#"
 {
-	"nestedReq": { "key": { "req": "xyz" } },
-	"nestedOpt": { "key": { "opt": "hij" } }
+	"nested_req": { "key": { "req": "xyz" } },
+	"nested_opt": { "key": { "opt": "hij" } }
 }"#,
                 "code.json",
             )
@@ -341,8 +341,8 @@ mod nested_map {
             .code(
                 r#"
 {
-	"nestedReq": { "key": { "req": "xyz" } },
-	"nestedOpt": { "key": { "opt": "hij" } }
+	"nested_req": { "key": { "req": "xyz" } },
+	"nested_opt": { "key": { "opt": "hij" } }
 }"#,
                 "code.json",
             )
@@ -370,8 +370,8 @@ mod nested_map {
             .code(
                 r#"
 {
-	"nestedReq": { "key1": { "req": "xyz" } },
-	"nestedOpt": { "key2": { "opt": "hij" }, "key3": { "opt": "abc" } }
+	"nested_req": { "key1": { "req": "xyz" } },
+	"nested_opt": { "key2": { "opt": "hij" }, "key3": { "opt": "abc" } }
 }"#,
                 "code.json",
             )

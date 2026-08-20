@@ -26,8 +26,8 @@ From here, for every type that implements
 [`Schematic`](https://docs.rs/schematic/latest/schematic/trait.Schematic.html) and you want to
 include in the generated output, call
 [`SchemaGenerator::add()`](https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.add).
-If you only have a [`SchemaType`](https://docs.rs/schematic/latest/schematic/enum.SchemaType.html),
-you can use the
+If you already have a [`Schema`](https://docs.rs/schematic/latest/schematic/struct.Schema.html)
+rather than a type, you can use the
 [`SchemaGenerator::add_schema()`](https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.add_schema)
 method instead.
 
@@ -42,6 +42,10 @@ generator.add::<ThirdConfig>();
 
 > We'll recursively add referenced and nested schemas for types that are added. No need to
 > explicitly add all required types!
+
+Schemas are keyed by [name](../types.md#defining-names), so adding two different types that report
+the same one panics. Rendering both is impossible, and silently keeping one would leave every
+reference to the other pointing at the wrong type. Adding the same type twice is fine.
 
 ### Generating output
 

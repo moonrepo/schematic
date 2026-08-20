@@ -11,7 +11,7 @@ fn validate_with_path(
     use schematic::internal::*;
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.a {
-        validate.check("a", setting, self, Box::new(func_ref));
+        validate.check("a", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

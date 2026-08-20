@@ -11,19 +11,19 @@ fn validate_with_path(
     use schematic::internal::*;
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.0 {
-        validate.check("0", setting, self, Box::new(func_ref));
+        validate.check("0", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if let Some(setting) = &self.1 {
-        validate.check("1", setting, self, Box::new(func_ref));
+        validate.check("1", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if let Some(setting) = &self.2 {
-        validate.check("2", setting, self, Box::new(func_ref));
+        validate.check("2", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if let Some(setting) = &self.3 {
-        validate.check("3", setting, self, Box::new(func_ref));
+        validate.check("3", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if let Some(setting) = &self.4 {
-        validate.check("4", setting, self, Box::new(func_ref));
+        validate.check("4", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

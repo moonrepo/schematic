@@ -7,11 +7,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "title": "NestedMapSettings",
   "type": "object",
   "required": [
-    "nestedOpt",
-    "nestedReq"
+    "nested_opt",
+    "nested_req"
   ],
   "properties": {
-    "nestedOpt": {
+    "nested_opt": {
       "anyOf": [
         {
           "type": "object",
@@ -27,7 +27,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
         }
       ]
     },
-    "nestedReq": {
+    "nested_req": {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/StandardSettings"
@@ -43,11 +43,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "NestedSettings",
       "type": "object",
       "required": [
-        "nestedOpt",
-        "nestedReq"
+        "nested_opt",
+        "nested_req"
       ],
       "properties": {
-        "nestedOpt": {
+        "nested_opt": {
           "anyOf": [
             {
               "$ref": "#/definitions/StandardSettings"
@@ -57,7 +57,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
-        "nestedReq": {
+        "nested_req": {
           "allOf": [
             {
               "$ref": "#/definitions/StandardSettings"
@@ -71,11 +71,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "NestedVecSettings",
       "type": "object",
       "required": [
-        "nestedOpt",
-        "nestedReq"
+        "nested_opt",
+        "nested_req"
       ],
       "properties": {
-        "nestedOpt": {
+        "nested_opt": {
           "anyOf": [
             {
               "type": "array",
@@ -88,7 +88,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
             }
           ]
         },
-        "nestedReq": {
+        "nested_req": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/StandardSettings"
@@ -118,7 +118,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "req": {
           "type": "string"
         },
-        "reqDefault": {
+        "req_default": {
           "default": "abc",
           "type": "string"
         }

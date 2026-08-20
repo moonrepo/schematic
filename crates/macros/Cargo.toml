@@ -14,16 +14,36 @@ all-features = true
 proc-macro = true
 
 [dependencies]
-convert_case = { workspace = true }
-darling = { workspace = true }
+schematic_core = { version = "0.18.7", path = "../core" }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
-syn = { workspace = true, features = ["full"] }
+syn = { workspace = true }
+
+[dev-dependencies]
+schematic = { path = "../schematic", features = [
+	"config",
+	"env",
+	"extends",
+	"json",
+	"schema",
+	"schema_serde",
+	"validate",
+] }
+schematic_macros = { path = ".", features = [
+	"config",
+	"env",
+	"extends",
+	"schema",
+	"validate",
+] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_sandbox = { workspace = true }
 
 [features]
 default = []
-config = []
-env = []
-extends = []
-schema = []
-validate = []
+config = ["schematic_core/config"]
+env = ["schematic_core/env"]
+extends = ["schematic_core/extends"]
+schema = ["schematic_core/schema"]
+validate = ["schematic_core/validate"]
