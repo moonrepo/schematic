@@ -1,0 +1,98 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(
+    default,
+    bound(deserialize = "T: serde::de::DeserializeOwned, U: serde::de::DeserializeOwned")
+)]
+struct PartialExample<T, U>(
+    #[serde(skip_serializing_if = "Option::is_none")]
+    Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    Option<U>,
+);
+#[automatically_derived]
+impl<T, U> schematic::PartialConfig for PartialExample<T, U> {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Ok(Some(Self(Some(Default::default()), Some(Default::default()))))
+    }
+    fn finalize(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = Self::default();
+        if let Some(layer) = Self::default_values(context)? {
+            partial.merge(context, layer)?;
+        }
+        partial.merge(context, self)?;
+        if let Some(layer) = Self::env_values()? {
+            partial.merge(context, layer)?;
+        }
+        Ok(partial)
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        use schematic::internal::*;
+        MergeManager::new(context)
+            .apply(&mut self.0, next.0)?
+            .apply(&mut self.1, next.1)?;
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl<T, U> schematic::Config for Example<T, U> {
+    type Partial = PartialExample<T, U>;
+    fn from_partial(partial: Self::Partial) -> Self {
+        Self(partial.0.unwrap_or_default(), partial.1.unwrap_or_default())
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            ("0".into(), ConfigSetting::new("T")),
+            ("1".into(), ConfigSetting::new("U")),
+        ])
+    }
+}
+#[automatically_derived]
+impl<T, U> Default for Example<T, U> {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl<T, U> schematic::Schematic for Example<T, U> {
+    fn schema_name() -> Option<String> {
+        let mut name = String::from("Example");
+        name.push_str(&schematic::schema::schema_name_of::<T>());
+        name.push_str(&schematic::schema::schema_name_of::<U>());
+        Some(name)
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema.tuple(TupleType::new([schema.infer::<T>(), schema.infer::<U>()]))
+    }
+}
+#[automatically_derived]
+impl<T, U> schematic::Schematic for PartialExample<T, U> {
+    fn schema_name() -> Option<String> {
+        let mut name = String::from("PartialExample");
+        name.push_str(&schematic::schema::schema_name_of::<T>());
+        name.push_str(&schematic::schema::schema_name_of::<U>());
+        Some(name)
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = <Example<T, U> as schematic::Schematic>::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}

@@ -473,3 +473,176 @@ mod casing {
         assert_eq!(field_names::<Screaming>(), vec!["SOME_FIELD_NAME"]);
     }
 }
+
+// A generic config needs its type arguments carried into the partial type
+// and every impl. `PartialConfig` requires `DeserializeOwned`, so the derive
+// states that bound outright rather than letting serde infer a conflicting
+// `Deserialize<'de>` one.
+mod generics {
+    use super::*;
+    use schematic::{Schema, SchemaBuilder, SchemaType};
+    use serde::de::DeserializeOwned;
+
+    pub trait Setting:
+        Clone
+        + std::fmt::Debug
+        + Default
+        + PartialEq
+        + Serialize
+        + DeserializeOwned
+        + schematic::Schematic
+    {
+    }
+
+    impl<T> Setting for T where
+        T: Clone
+            + std::fmt::Debug
+            + Default
+            + PartialEq
+            + Serialize
+            + DeserializeOwned
+            + schematic::Schematic
+    {
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Wrapper<T: Setting> {
+        inner: T,
+        label: String,
+    }
+
+    #[test]
+    fn builds_a_generic_partial() {
+        let partial: PartialWrapper<usize> =
+            serde_json::from_str(r#"{"inner": 5, "label": "a"}"#).unwrap();
+
+        assert_eq!(partial.inner, Some(5));
+        assert_eq!(partial.label, Some("a".into()));
+    }
+
+    #[test]
+    fn constructs_the_full_type() {
+        let config = Wrapper::<usize>::from_partial(PartialWrapper {
+            inner: Some(5),
+            label: Some("a".into()),
+        });
+
+        assert_eq!(config.inner, 5);
+        assert_eq!(config.label, "a");
+    }
+
+    #[test]
+    fn loads_through_the_loader() {
+        let result = ConfigLoader::<Wrapper<usize>>::new().load().unwrap();
+
+        assert_eq!(result.config.inner, 0);
+        assert_eq!(result.config.label, "");
+    }
+
+    #[test]
+    fn merges_a_generic_partial() {
+        let mut base = PartialWrapper::<usize> {
+            inner: Some(1),
+            label: None,
+        };
+
+        base.merge(
+            &(),
+            PartialWrapper {
+                inner: Some(2),
+                label: Some("b".into()),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(base.inner, Some(2));
+        assert_eq!(base.label, Some("b".into()));
+    }
+
+    #[test]
+    fn implements_default() {
+        assert_eq!(Wrapper::<usize>::default().inner, 0);
+    }
+
+    // Each instantiation resolves to a distinct schema name, for both the
+    // full type and its partial
+    #[test]
+    fn names_schemas_per_instantiation() {
+        assert_eq!(
+            SchemaBuilder::build_root::<Wrapper<usize>>()
+                .name
+                .as_deref(),
+            Some("WrapperUsize")
+        );
+        assert_eq!(
+            SchemaBuilder::build_root::<Wrapper<String>>()
+                .name
+                .as_deref(),
+            Some("WrapperString")
+        );
+        assert_eq!(
+            SchemaBuilder::build_root::<PartialWrapper<usize>>()
+                .name
+                .as_deref(),
+            Some("PartialWrapperUsize")
+        );
+    }
+
+    #[test]
+    fn builds_a_generic_schema() {
+        let schema: Schema = SchemaBuilder::build_root::<Wrapper<bool>>();
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!("expected a struct");
+        };
+
+        assert_eq!(
+            inner.fields["inner"].schema.ty,
+            SchemaType::Boolean(Box::default())
+        );
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Pair<T: Setting, U: Setting>(T, U);
+
+    #[test]
+    fn supports_multiple_parameters_on_a_tuple_struct() {
+        let config = Pair::<usize, String>::from_partial(PartialPair(Some(1), Some("a".into())));
+
+        assert_eq!(config.0, 1);
+        assert_eq!(config.1, "a");
+    }
+
+    #[derive(Debug, Config)]
+    pub enum Either<T: Setting> {
+        Value(T),
+        #[setting(default)]
+        Nothing,
+    }
+
+    #[test]
+    fn supports_generic_enums() {
+        assert!(matches!(
+            PartialEither::<usize>::default(),
+            PartialEither::Nothing
+        ));
+
+        let config = Either::<usize>::from_partial(PartialEither::Value(3));
+
+        assert!(matches!(config, Either::Value(3)));
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Bounded<T>
+    where
+        T: Setting,
+    {
+        value: T,
+    }
+
+    #[test]
+    fn supports_where_clauses() {
+        let config = Bounded::<bool>::from_partial(PartialBounded { value: Some(true) });
+
+        assert!(config.value);
+    }
+}

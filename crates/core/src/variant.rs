@@ -205,16 +205,18 @@ impl Variant {
     }
 
     /// A match arm that formats this variant back into its string value.
+    /// Each arm writes for itself, so that a fallback holding a generic type
+    /// can go through `Display` rather than having to be a `&str`.
     pub fn impl_config_enum_display(&self) -> TokenStream {
         let name = &self.ident;
 
         if self.is_fallback() {
-            return quote! { Self::#name(fallback) => fallback, };
+            return quote! { Self::#name(fallback) => std::fmt::Display::fmt(fallback, f), };
         }
 
         let value = self.get_name();
 
-        quote! { Self::#name => #value, }
+        quote! { Self::#name => f.write_str(#value), }
     }
 
     /// A match arm that parses a string into this variant. A fallback absorbs

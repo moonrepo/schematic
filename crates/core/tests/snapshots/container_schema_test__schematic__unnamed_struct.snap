@@ -18,7 +18,7 @@ impl schematic::Schematic for PartialExample {
         Some("PartialExample".into())
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-        let mut schema = Example::build_schema(schema);
+        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
         schematic::internal::partialize_schema(&mut schema, true);
         schema
     }

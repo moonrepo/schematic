@@ -64,6 +64,12 @@
 - Updated `#[setting(extend)]` settings to support `Option` wrapped values.
 - Updated the methods of `PartialConfig` to all have a default implementation. This helps to greatly
   reduce the amount of macro generated code.
+- Added generics support to `#[derive(Config)]` and `#[derive(ConfigEnum)]`, which previously only
+  worked on `#[derive(Schematic)]`. Type arguments are carried into the partial type and every
+  generated implementation, and a generic type's schema name appends them, so `Wrapper<String>`
+  and `Wrapper<usize>` no longer collide.
+  - Bounds are not inferred. A generic `Config` needs `Clone + Default + DeserializeOwned +
+    Schematic + Serialize` on its type parameters, since `PartialConfig` requires them.
 - Improved the parse, handling, and validation of container and field attributes.
 - Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
   instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,

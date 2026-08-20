@@ -141,6 +141,29 @@ impl Container {
         self.ident.to_string()
     }
 
+    /// Generics for a type *declaration*, which keeps bounds and defaults.
+    /// The where clause is returned separately, as its position differs
+    /// between named and tuple shapes.
+    pub fn get_declaration_generics(&self) -> (&Generics, Option<&syn::WhereClause>) {
+        (&self.generics, self.generics.where_clause.as_ref())
+    }
+
+    /// The same generics with a `'de` lifetime prepended, for a hand written
+    /// `Deserialize` implementation.
+    pub fn get_deserialize_generics(&self) -> Generics {
+        let mut generics = self.generics.clone();
+
+        generics.params.insert(
+            0,
+            syn::GenericParam::Lifetime(syn::LifetimeParam::new(syn::Lifetime::new(
+                "'de",
+                proc_macro2::Span::call_site(),
+            ))),
+        );
+
+        generics
+    }
+
     pub fn is_config_enum(&self) -> bool {
         matches!(self.macro_type, ContainerMacro::ConfigUnitEnum)
     }
@@ -200,6 +223,36 @@ impl Container {
         attrs
     }
 
+    /// `PartialConfig` requires the partial to be `DeserializeOwned`, which
+    /// means every type argument must be too. Serde would otherwise infer a
+    /// `T: Deserialize<'de>` bound of its own, and the two are ambiguous when
+    /// both are in scope, so the bound is stated outright.
+    ///
+    /// Returns `None` when there is nothing generic to bound, or when the
+    /// user supplied their own bound through `partial(serde(...))`.
+    fn get_partial_deserialize_bound(&self) -> Option<String> {
+        let params = self
+            .generics
+            .type_params()
+            .map(|param| format!("{}: serde::de::DeserializeOwned", param.ident))
+            .collect::<Vec<_>>();
+
+        if params.is_empty() || self.has_partial_serde_bound() {
+            return None;
+        }
+
+        Some(params.join(", "))
+    }
+
+    fn has_partial_serde_bound(&self) -> bool {
+        self.args.partial.as_ref().is_some_and(|partial| {
+            partial
+                .get_attributes()
+                .iter()
+                .any(|attr| attr.to_string().contains("bound"))
+        })
+    }
+
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
         let mut meta = vec![];
 
@@ -233,6 +286,10 @@ impl Container {
 
         if let Some(expecting) = &self.serde_args.expecting {
             meta.push(quote! { expecting = #expecting });
+        }
+
+        if let Some(bound) = self.get_partial_deserialize_bound() {
+            meta.push(quote! { bound(deserialize = #bound) });
         }
 
         // Config attributes take precedence over serde attributes
@@ -271,18 +328,19 @@ impl Container {
 
         let from_partial_method = self.impl_full_from_partial();
         let settings_method = self.impl_full_settings();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl schematic::Config for #base_name {
-                type Partial = #partial_name;
+            impl #impl_generics schematic::Config for #base_name #ty_generics #where_clause {
+                type Partial = #partial_name #ty_generics;
 
                 #from_partial_method
                 #settings_method
             }
 
             #[automatically_derived]
-            impl Default for #base_name {
+            impl #impl_generics Default for #base_name #ty_generics #where_clause {
                 fn default() -> Self {
                     <Self as schematic::Config>::from_partial(
                         <Self as schematic::Config>::default_partial()
@@ -423,21 +481,23 @@ impl Container {
         let partial_name = self.get_partial_ident();
         let attrs = self.get_partial_attributes();
         let vis = &self.vis;
+        let (generics, where_clause) = self.get_declaration_generics();
 
         match &self.inner {
             ContainerInner::NamedStruct { fields } => quote! {
                 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
                 #(#attrs)*
-                #vis struct #partial_name {
+                #vis struct #partial_name #generics #where_clause {
                     #(#fields)*
                 }
             },
+            // A tuple struct takes its where clause after the fields
             ContainerInner::UnnamedStruct { fields } => quote! {
                 #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
                 #(#attrs)*
-                #vis struct #partial_name(
+                #vis struct #partial_name #generics (
                     #(#fields)*
-                );
+                ) #where_clause;
             },
             ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
                 // Untagged enums implement `Deserialize` manually,
@@ -451,7 +511,7 @@ impl Container {
                 quote! {
                     #[derive(#derives)]
                     #(#attrs)*
-                    #vis enum #partial_name {
+                    #vis enum #partial_name #generics #where_clause {
                         #(#variants)*
                     }
                 }
@@ -480,9 +540,11 @@ impl Container {
         let partial_name = self.get_partial_ident();
         let value = default_variant.impl_partial_default_value().value;
 
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+
         quote! {
             #[automatically_derived]
-            impl Default for #partial_name {
+            impl #impl_generics Default for #partial_name #ty_generics #where_clause {
                 fn default() -> Self {
                     Self::#value
                 }
@@ -509,9 +571,13 @@ impl Container {
             }
         }
 
+        let de_generics = self.get_deserialize_generics();
+        let (de_impl_generics, _, _) = de_generics.split_for_impl();
+        let (_, ty_generics, where_clause) = self.generics.split_for_impl();
+
         quote! {
             #[automatically_derived]
-            impl<'de> serde::Deserialize<'de> for #partial_name {
+            impl #de_impl_generics serde::Deserialize<'de> for #partial_name #ty_generics #where_clause {
                 fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
                 where
                     D: serde::Deserializer<'de>,
@@ -652,9 +718,9 @@ impl Container {
             #[automatically_derived]
             impl #impl_generics std::fmt::Display for #name #ty_generics #where_clause {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    write!(f, "{}", match self {
+                    match self {
                         #(#display_arms)*
-                    })
+                    }
                 }
             }
         }
@@ -695,7 +761,10 @@ impl Container {
     /// every instantiation would otherwise claim the same one.
     #[cfg(feature = "schema")]
     pub fn impl_schematic_name(&self) -> TokenStream {
-        let base_name_string = self.get_name();
+        self.impl_schematic_name_for(self.get_name())
+    }
+
+    fn impl_schematic_name_for(&self, base_name_string: String) -> TokenStream {
         let params = self
             .generics
             .type_params()
@@ -748,10 +817,11 @@ impl Container {
     #[cfg(not(feature = "schema"))]
     pub fn impl_schematic_partial(&self) -> TokenStream {
         let partial_name = self.get_partial_ident();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl schematic::Schematic for #partial_name {}
+            impl #impl_generics schematic::Schematic for #partial_name #ty_generics #where_clause {}
         }
     }
 
@@ -761,17 +831,18 @@ impl Container {
     pub fn impl_schematic_partial(&self) -> TokenStream {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
-        let partial_name_string = partial_name.to_string();
+        let partial_schema_name = self.impl_schematic_name_for(partial_name.to_string());
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl schematic::Schematic for #partial_name {
+            impl #impl_generics schematic::Schematic for #partial_name #ty_generics #where_clause {
                 fn schema_name() -> Option<String> {
-                    Some(#partial_name_string.into())
+                    #partial_schema_name
                 }
 
                 fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-                    let mut schema = #base_name::build_schema(schema);
+                    let mut schema = <#base_name #ty_generics as schematic::Schematic>::build_schema(schema);
                     schematic::internal::partialize_schema(&mut schema, true);
                     schema
                 }
@@ -891,10 +962,11 @@ impl Container {
         let finalize_method = self.impl_partial_finalize();
         let merge_method = self.impl_partial_merge();
         let validate_method = self.impl_partial_validate();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
             #[automatically_derived]
-            impl schematic::PartialConfig for #partial_name {
+            impl #impl_generics schematic::PartialConfig for #partial_name #ty_generics #where_clause {
                 type Context = #context;
 
                 #default_values_method

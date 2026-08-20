@@ -54,10 +54,10 @@ impl std::convert::TryFrom<&str> for Example {
 #[automatically_derived]
 impl std::fmt::Display for Example {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f, "{}", match self { Self::Known => "Known", Self::Other(fallback) =>
-            fallback, }
-        )
+        match self {
+            Self::Known => f.write_str("Known"),
+            Self::Other(fallback) => std::fmt::Display::fmt(fallback, f),
+        }
     }
 }
 #[automatically_derived]
