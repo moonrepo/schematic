@@ -143,6 +143,7 @@ schematic = { path = ".", features = [
 ] }
 reqwest = { workspace = true, features = ["blocking", "rustls"] }
 serial_test = "4.0.1"
+tokio = { version = "1", features = ["macros", "rt"] }
 similar = "3.1.2"
 starbase_sandbox = { workspace = true }
 strip-ansi-escapes = "0.2.1"
