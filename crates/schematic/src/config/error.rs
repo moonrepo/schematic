@@ -82,7 +82,7 @@ pub enum ConfigError {
     ReadUrlFailed {
         url: String,
         #[source]
-        error: Box<reqwest::Error>,
+        error: Box<ureq::Error>,
     },
 
     #[cfg(feature = "json")]

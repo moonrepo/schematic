@@ -77,7 +77,7 @@ or
 [`ConfigLoader::file_optional()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file_optional)
 methods. For URLs, use the
 [`ConfigLoader::url()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url)
-method (requires the `url` Cargo feature, which is on by default). For inline code, use the
+method (requires the `url` Cargo feature, which is _not_ enabled by default). For inline code, use the
 [`ConfigLoader::code()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code)
 method, which requires an explicit format.
 

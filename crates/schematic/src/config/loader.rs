@@ -342,7 +342,7 @@ impl<T: Config> ConfigLoader<T> {
 
                 let mut cacher = self.cacher.lock().unwrap();
 
-                let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                let handle_http_error = |error: ureq::Error| ConfigError::ReadUrlFailed {
                     url: url.to_owned(),
                     error: Box::new(error),
                 };
@@ -350,10 +350,12 @@ impl<T: Config> ConfigLoader<T> {
                 let content = if let Some(cache) = cacher.read(url)? {
                     cache
                 } else {
-                    let body = reqwest::blocking::get(url)
-                        .map_err(handle_reqwest_error)?
-                        .text()
-                        .map_err(handle_reqwest_error)?;
+                    let body = ureq::get(url)
+                        .call()
+                        .map_err(handle_http_error)?
+                        .body_mut()
+                        .read_to_string()
+                        .map_err(handle_http_error)?;
 
                     cacher.write(url, &body)?;
 

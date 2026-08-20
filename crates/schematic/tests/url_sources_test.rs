@@ -49,6 +49,37 @@ fn errors_on_www() {
         .unwrap();
 }
 
+// A non-2xx response is an error, rather than an error page handed to the
+// parser as if it were config
+#[test]
+fn errors_on_a_missing_url() {
+    let error = ConfigLoader::<Config>::new()
+        .url(get_url("yaml/does-not-exist.yml"))
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert!(
+        matches!(error, ConfigError::ReadUrlFailed { .. }),
+        "expected a read failure, got {error:?}"
+    );
+}
+
+// `ureq` is blocking but never builds a runtime of its own, so loading from
+// inside one blocks the thread instead of panicking the way a client with a
+// private runtime would
+#[tokio::test]
+async fn loads_from_within_an_async_runtime() {
+    let result = ConfigLoader::<Config>::new()
+        .url(get_url("yaml/one.yml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "foo");
+}
+
 #[cfg(feature = "json")]
 #[test]
 fn loads_json_files() {
