@@ -764,6 +764,7 @@ impl Container {
         self.impl_schematic_name_for(self.get_name())
     }
 
+    #[cfg(feature = "schema")]
     fn impl_schematic_name_for(&self, base_name_string: String) -> TokenStream {
         let params = self
             .generics

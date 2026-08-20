@@ -2,17 +2,21 @@
 
 ## Next
 
+This is a major release that has been in development for over a year. The macro layer has been
+rewritten from the ground up, utilizing new patterns to improve maintainability and extendability,
+while the schema types have been updated to be more flexible and composable.
+
 #### 💥 Breaking
 
 ##### Config
 
 - Structs will no longer default to `camelCase` field name casing.
 - Enums will no longer default to `kebab-case` variant name casing.
-- Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+- Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` directly instead.
 - Removed `#[variant(value)]` on enum variants. Use `#[variant(rename)]` instead, which does the
   same thing.
-- Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`.
-  The loader is still instrumented; only the derive output no longer is.
+- Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`. The
+  loader is still instrumented; only the derive output no longer is.
 
 ##### Schema
 
@@ -66,10 +70,11 @@
   reduce the amount of macro generated code.
 - Added generics support to `#[derive(Config)]` and `#[derive(ConfigEnum)]`, which previously only
   worked on `#[derive(Schematic)]`. Type arguments are carried into the partial type and every
-  generated implementation, and a generic type's schema name appends them, so `Wrapper<String>`
-  and `Wrapper<usize>` no longer collide.
-  - Bounds are not inferred. A generic `Config` needs `Clone + Default + DeserializeOwned +
-    Schematic + Serialize` on its type parameters, since `PartialConfig` requires them.
+  generated implementation, and a generic type's schema name appends them, so `Wrapper<String>` and
+  `Wrapper<usize>` no longer collide.
+  - Bounds are not inferred. A generic `Config` needs
+    `Clone + Default + DeserializeOwned + Schematic + Serialize` on its type parameters, since
+    `PartialConfig` requires them.
 - Improved the parse, handling, and validation of container and field attributes.
 - Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
   instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,

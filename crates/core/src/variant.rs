@@ -211,7 +211,7 @@ impl Variant {
         let name = &self.ident;
 
         if self.is_fallback() {
-            return quote! { Self::#name(fallback) => std::fmt::Display::fmt(fallback, f), };
+            return quote! { Self::#name(fallback) => write!(f, "{fallback}"), };
         }
 
         let value = self.get_name();
