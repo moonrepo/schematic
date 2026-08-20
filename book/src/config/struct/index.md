@@ -14,6 +14,7 @@ struct AppConfig {
 #[derive(Config)]
 enum Host {
 	Local,
+	#[setting(nested)]
 	Remote(HostConfig),
 }
 ```
@@ -37,8 +38,7 @@ The following fields are supported for the `#[config]` container attribute:
 - `context` - Sets the struct to be used as the [context](../context.md). Defaults to `None`.
 - `env_prefix` - Sets the prefix to use for [environment variable](./env.md#container-prefixes)
   mapping. Defaults to `None`.
-- `serde` - A nested attribute that sets tagging related fields for the [partial](../partial.md).
-  Defaults to `None`.
+- `partial` - Forwards attributes to the [partial](../partial.md).
 
 ```rust
 #[derive(Config)]
@@ -52,6 +52,7 @@ And the following for serde compatibility:
 
 - `rename`
 - `rename_all` - Has no default. Field names are used exactly as written unless this is set.
+- `rename_all_fields` _(enum only)_ - Applies a casing to the fields of every variant.
 
 ## Serde support
 
@@ -76,5 +77,26 @@ struct Example {
 
 > These values can also be applied using `#[serde]`, which is useful if you want to apply them to
 > the main struct as well, and not just the partial struct.
+
+### Enum tagging
+
+Serde's tagging attributes are read straight off the `#[serde]` attribute and forwarded to the
+partial, so `untagged`, `tag`, `content`, and `expecting` work as they normally would.
+
+```rust
+#[derive(Config)]
+#[serde(untagged)]
+enum Host {
+	Local,
+	#[setting(nested)]
+	Remote(HostConfig),
+}
+```
+
+The derive registers `serde` as a helper attribute, so this is accepted even when the type derives
+only [`Config`][config] and not `Serialize` or `Deserialize`.
+
+> A unit-only enum is always externally tagged, no matter what you set. Marking one `untagged`
+> would leave its variants deserializable only from `null`.
 
 [config]: https://docs.rs/schematic/latest/schematic/trait.Config.html

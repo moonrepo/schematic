@@ -3,7 +3,7 @@
 The [`EnumType`][enum] can be used to represent a list of [literal values](./literal.md).
 
 ```rust
-use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{EnumType, LiteralValue}};
+use schematic::{Schematic, Schema, SchemaBuilder, schema::{EnumType, LiteralValue}};
 
 impl Schematic for T {
 	fn build_schema(mut schema: SchemaBuilder) -> Schema {
@@ -47,27 +47,27 @@ schema.enumerable(EnumType {
 	variants: Some(IndexMap::from_iter([
 		(
 			"Debug".into(),
-			SchemaField {
+			Box::new(SchemaField {
 				comment: Some("Shows debug messages and above".into()),
-				schema: Schema::new(SchemaType::literal(LiteralValue::String("debug".into()))),
+				schema: Schema::literal_value(LiteralValue::String("debug".into())),
 				..SchemaField::default()
-			}
+			})
 		),
 		(
 			"Error".into(),
-			SchemaField {
+			Box::new(SchemaField {
 				comment: Some("Shows only error messages".into()),
-				schema: Schema::new(SchemaType::literal(LiteralValue::String("error".into()))),
+				schema: Schema::literal_value(LiteralValue::String("error".into())),
 				..SchemaField::default()
-			}
+			})
 		),
 		(
 			"Warning".into(),
-			SchemaField {
+			Box::new(SchemaField {
 				comment: Some("Shows warning and error messages".into()),
-				schema: Schema::new(SchemaType::literal(LiteralValue::String("warning".into()))),
+				schema: Schema::literal_value(LiteralValue::String("warning".into())),
 				..SchemaField::default()
-			}
+			})
 		),
 	])),
 	..EnumType::default()
@@ -75,5 +75,29 @@ schema.enumerable(EnumType {
 ```
 
 > This comes in handy when working with specific generators, like TypeScript.
+
+> `variants` is the source of truth, and `values` is a derived subset of it. A variant whose schema
+> holds no literal value contributes no entry to `values`, so the two can differ in length.
+
+## Default value
+
+The `default_index` field points at the entry that is the default. It indexes `variants` when that
+map is set, and `values` otherwise, so prefer the
+[`EnumType::get_default()`](https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html#method.get_default)
+and
+[`EnumType::set_default()`](https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html#method.set_default)
+methods over indexing either list yourself.
+
+```rust
+let mut ty = EnumType::new([
+	LiteralValue::String("debug".into()),
+	LiteralValue::String("error".into()),
+]);
+
+// Returns false and keeps the current default when no entry matches
+ty.set_default(LiteralValue::String("error".into()));
+
+assert_eq!(ty.get_default(), Some(&LiteralValue::String("error".into())));
+```
 
 [enum]: https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html

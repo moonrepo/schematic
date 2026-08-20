@@ -6,22 +6,35 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::str::FromStr;
 
+/// A [`Version`] that can be used as a setting.
+///
+/// [`Version`] does not implement `Default`, which a required setting needs,
+/// and cannot be given it from here as it is a foreign type. Its serde support
+/// also sits behind a `semver` feature that `schematic` does not enable, so
+/// this wrapper (de)serializes from the version string instead.
+///
+/// Defaults to `0.0.0`.
+///
+/// `VersionReq` needs no equivalent, as it already defaults to `*`.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct VersionSetting(pub Version);
 
 impl VersionSetting {
+    /// Parse a version from a string.
     pub fn new(value: impl AsRef<str>) -> Result<Self, Error> {
         Ok(Self(Version::parse(value.as_ref())?))
     }
 }
 
+/// Defaults to `0.0.0`.
 impl Default for VersionSetting {
     fn default() -> Self {
         Self(Version::new(0, 0, 0))
     }
 }
 
+/// Derefs to the inner [`Version`], so its methods can be called directly.
 impl Deref for VersionSetting {
     type Target = Version;
 

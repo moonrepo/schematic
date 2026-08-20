@@ -24,6 +24,9 @@ Implements a schema for `IndexMap` and `IndexSet` from the
 
 Implements a schema for `Regex` from the [regex](https://crates.io/crates/regex) crate.
 
+> To use `Regex` as a [setting](../config/settings.md#third-party-types), reach for `RegexSetting`, which
+> supplies the `Default` a required setting needs.
+
 ## relative-path
 
 > Requires the `type_relative_path` Cargo feature.
@@ -33,9 +36,9 @@ Implements schemas for `RelativePath` and `RelativePathBuf` from the
 
 ## rpkl
 
-> Requires the `type_serde_rpkl` Cargo feature.
+> Requires the `pkl` Cargo feature.
 
-Implements schemas for `Value` from the [rpkl](https://crates.io/crates/rpkl) crate.
+Implements a schema for `Value` from the [rpkl](https://crates.io/crates/rpkl) crate.
 
 ## rust_decimal
 
@@ -51,30 +54,40 @@ crate.
 Implements schemas for `Version` and `VersionReq` from the [semver](https://crates.io/crates/semver)
 crate.
 
+> To use `Version` as a [setting](../config/settings.md#third-party-types), reach for `VersionSetting`, which
+> supplies the `Default` a required setting needs.
+
+## ron
+
+> Requires the `ron` Cargo feature.
+
+Implements a schema for `Value` from the [ron](https://crates.io/crates/ron) crate.
+
 ## serde_json
 
-> Requires the `type_serde_json` Cargo feature.
+> Requires the `json` Cargo feature.
 
 Implements schemas for `Value`, `Number`, and `Map` from the
 [serde_json](https://crates.io/crates/serde_json) crate.
 
 ## serde_yaml
 
-> Requires the `type_serde_yaml` Cargo feature.
+> Requires the `serde_yaml` Cargo feature on `schematic_types` directly. The `schematic` crate does
+> not enable it, as its `yaml` feature uses `serde_norway` instead.
 
 Implements schemas for `Value`, `Number`, and `Mapping` from the
 [serde_yaml](https://crates.io/crates/serde_yaml) crate.
 
 ## serde_yaml_norway
 
-> Requires the `serde_yaml_norway` Cargo feature.
+> Requires the `yaml` Cargo feature.
 
 Implements schemas for `Value`, `Number`, and `Mapping` from the
 [serde_norway](https://crates.io/crates/serde_norway) crate.
 
 ## toml
 
-> Requires the `type_serde_toml` Cargo feature.
+> Requires the `toml` Cargo feature.
 
 Implements schemas for `Value` and `Map` from the [toml](https://crates.io/crates/toml) crate.
 

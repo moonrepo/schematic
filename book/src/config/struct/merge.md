@@ -36,7 +36,7 @@ result. If `None` is returned, neither value will be used.
 Here's an example of the merge function above.
 
 ```rust
-fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> MergeResult<Vec<T>>> {
+fn append_vec<T>(mut prev: Vec<T>, next: Vec<T>, context: &Context) -> MergeResult<Vec<T>> {
 	prev.extend(next);
 
 	Ok(Some(prev))

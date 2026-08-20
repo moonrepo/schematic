@@ -18,9 +18,9 @@ struct AppConfig {
 ## Container prefixes
 
 If you'd prefer to not define `env` for _every_ setting, you can instead define a prefix on the
-containing struct using the `#[setting(env_prefix)]` attribute field. This will define an
+containing struct using the `#[config(env_prefix)]` container attribute field. This will define an
 environment variable for _all_ direct fields in the struct, in the format of "env prefix + field
-name" in UPPER_SNAKE_CASE.
+name" in uppercase.
 
 For example, the environment variable below for `port` is now `APP_PORT`.
 
@@ -33,11 +33,17 @@ struct AppConfig {
 }
 ```
 
+A derived key is the field's Rust name (or its explicit `rename`) uppercased, and nothing more. It
+is deliberately not reshaped by `rename_all`, so changing how a setting is spelled in a config file
+never moves its environment variable.
+
+An explicit `#[setting(env)]` is absolute. A prefix is never applied to it, and the two cannot be
+combined on the same setting.
+
 ### Nested prefixes
 
-Since `env_prefix` only applies to direct fields and not for nested/children structs, you'll need to
-define `env_prefix` for each struct, and manually set the prefixes. Schematic _does not concatenate_
-the prefixes between parent and child.
+`env_prefix` only applies to direct fields, not to nested children, and prefixes are _not_
+concatenated between parent and child. Each struct declares its own.
 
 ```rust
 #[derive(Config)]
@@ -53,6 +59,23 @@ struct AppConfig {
 	pub server: AppServerConfig,
 }
 ```
+
+A parent can override the prefix a nested child uses, with `env_prefix` on the field itself. The
+child must still declare an `env_prefix` of its own, as that is what opts its fields into being
+derived at all.
+
+```rust
+#[derive(Config)]
+struct AppConfig {
+	#[setting(nested, env_prefix = "OVERRIDE_")]
+	pub server: AppServerConfig,
+}
+```
+
+> Derived keys aren't known when the [schema](../../schema/index.md) is built, since the prefix in
+> effect depends on how the type is nested at runtime. Only explicit `#[setting(env)]` keys appear
+> in a generated [config template](../../schema/generator/template.md) or in
+> [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings).
 
 ## Parsing values
 
@@ -72,6 +95,9 @@ struct AppConfig {
 
 > We provide a handful of built-in parsing functions in the
 > [`env` module](https://docs.rs/schematic/latest/schematic/env/index.html).
+
+`parse_env` needs a variable to read, so it requires either an `env` on the setting, or an
+`env_prefix` on the container. It's a derive-time error otherwise.
 
 ## Parse handler function
 

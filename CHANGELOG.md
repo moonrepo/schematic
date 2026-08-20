@@ -94,7 +94,7 @@ while the schema types have been updated to be more flexible and composable.
 
 - Added support for explicit deserialize and serialize renaming on containers and fields:
   `#[serde(rename(deserialize = "de_name", serialize = "ser_name"))]`.
-- Added support for `skip_deserializing_if` and `skip_serializing_if` on fields.
+- Added support for `skip_serializing_if` on fields.
 - Updated `alias` to support multiple aliases: `#[serde(alias = "alias1", alias = "alias2")]`
 
 ##### Schema

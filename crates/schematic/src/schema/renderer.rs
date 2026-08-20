@@ -4,7 +4,7 @@ use schematic_types::*;
 pub type RenderResult<T = String> = miette::Result<T>;
 
 /// Renders [`SchemaType`]s to a distinct format (derived from generic `O`)
-/// for use within a [`SchemaGenerator`].
+/// for use within a [`SchemaGenerator`](super::SchemaGenerator).
 pub trait SchemaRenderer<O = String> {
     /// Return true of the provided name is a referenced type.
     fn is_reference(&self, name: &str) -> bool;
@@ -64,7 +64,7 @@ pub trait SchemaRenderer<O = String> {
         self.render_schema_without_reference(schema)
     }
 
-    /// Like [`render_schema`] but does not check for references.
+    /// Like [`Self::render_schema`] but does not check for references.
     fn render_schema_without_reference(&mut self, schema: &Schema) -> RenderResult<O> {
         match &schema.ty {
             SchemaType::Null => self.render_null(schema),
