@@ -23,7 +23,6 @@ schematic_core = { path = ".", features = [
 	"env",
 	"extends",
 	"schema",
-	"tracing",
 	"validate",
 ] }
 prettyplease = "0.3.0"
@@ -36,5 +35,4 @@ config = []
 env = []
 extends = []
 schema = []
-tracing = []
 validate = []

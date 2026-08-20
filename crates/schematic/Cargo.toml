@@ -76,7 +76,6 @@ config = [
 ]
 schema = ["dep:convert_case", "dep:indexmap", "schematic_macros/schema"]
 schema_serde = ["schema", "schematic_types/serde"]
-tracing = ["schematic_macros/tracing"]
 
 # Features
 env = ["schematic_macros/env"]
@@ -128,7 +127,6 @@ schematic = { path = ".", features = [
 	"schema",
 	"schema_serde",
 	"toml",
-	"tracing",
 	"type_chrono",
 	"type_indexmap",
 	"type_regex",

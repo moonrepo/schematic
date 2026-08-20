@@ -177,12 +177,9 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
 
     #[cfg(feature = "schema")]
     {
-        use crate::utils::{
-            extract_comment, extract_deprecated, instrument_quote, map_option_argument_quote,
-        };
+        use crate::utils::{extract_comment, extract_deprecated, map_option_argument_quote};
 
         let default_index = map_option_argument_quote(default_index);
-        let instrument = instrument_quote();
 
         let deprecated = if let Some(comment) = extract_deprecated(&attrs) {
             quote! { schema.set_deprecated(#comment); }
@@ -202,7 +199,6 @@ pub fn macro_impl(item: TokenStream) -> TokenStream {
                     Some(#meta_name.into())
                 }
 
-                #instrument
                 fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                     use schematic::schema::*;
                     #deprecated

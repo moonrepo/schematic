@@ -9,6 +9,10 @@
 - Structs will no longer default to `camelCase` field name casing.
 - Enums will no longer default to `kebab-case` variant name casing.
 - Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+- Removed `#[variant(value)]` on enum variants. Use `#[variant(rename)]` instead, which does the
+  same thing.
+- Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`.
+  The loader is still instrumented; only the derive output no longer is.
 
 ##### Schema
 

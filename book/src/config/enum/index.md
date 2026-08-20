@@ -61,13 +61,11 @@ And the following for serde compatibility:
 The following fields are supported for the `#[variant]` variant attribute:
 
 - `fallback` - Marks the variant as the [fallback](./fallback.md).
-- `value` - Overrides (explicitly sets) the string value used for parsing and formatting. This is
-  similar to serde's `rename`.
 
 And the following for serde compatibility:
 
 - `alias`
-- `rename`
+- `rename` - Overrides (explicitly sets) the string value used for parsing and formatting.
 
 ## Deriving common traits
 
