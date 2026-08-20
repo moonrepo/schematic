@@ -374,3 +374,79 @@ mod derive_enum_helper {
         );
     }
 }
+
+// A generic `ConfigEnum` only makes sense with a fallback, since unit
+// variants carry no data. The type argument has to reach every impl, and
+// `Display` writes the fallback through its own `Display` rather than
+// requiring it to be a `&str`.
+mod generics {
+    use super::*;
+
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(rename_all = "kebab-case")]
+    enum Value<T>
+    where
+        T: Clone + Default + std::fmt::Display + for<'a> TryFrom<&'a str> + schematic::Schematic,
+    {
+        Known,
+        Other,
+        #[variant(fallback)]
+        Custom(T),
+    }
+
+    #[test]
+    fn parses_named_variants() {
+        assert_eq!(Value::<String>::from_str("known").unwrap(), Value::Known);
+        assert_eq!(Value::<String>::from_str("other").unwrap(), Value::Other);
+    }
+
+    #[test]
+    fn parses_through_a_generic_fallback() {
+        assert_eq!(
+            Value::<String>::from_str("anything").unwrap(),
+            Value::Custom("anything".into())
+        );
+    }
+
+    #[test]
+    fn formats_a_generic_fallback() {
+        assert_eq!(Value::<String>::Custom("abc".into()).to_string(), "abc");
+        assert_eq!(Value::<String>::Known.to_string(), "known");
+    }
+
+    #[test]
+    fn lists_variants() {
+        assert_eq!(
+            Value::<String>::variants(),
+            vec![Value::Known, Value::Other, Value::Custom(String::new())]
+        );
+    }
+
+    // The schema name carries the type argument, so instantiations don't
+    // collide in a generator
+    #[test]
+    fn names_schemas_per_instantiation() {
+        assert_eq!(
+            SchemaBuilder::build_root::<Value<String>>().name.as_deref(),
+            Some("ValueString")
+        );
+    }
+
+    #[test]
+    fn builds_a_generic_schema() {
+        let schema = SchemaBuilder::build_root::<Value<String>>();
+        let SchemaType::Enum(inner) = &schema.ty else {
+            panic!("expected an enum, got {:?}", schema.ty);
+        };
+        let variants = inner.variants.as_ref().unwrap();
+
+        assert_eq!(
+            variants.keys().collect::<Vec<_>>(),
+            vec!["known", "other", "custom"]
+        );
+        assert!(matches!(
+            variants["custom"].schema.ty,
+            SchemaType::String(_)
+        ));
+    }
+}

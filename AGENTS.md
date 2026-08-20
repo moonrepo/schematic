@@ -62,11 +62,24 @@ is set, `Field::get_name` and `Variant::get_name` apply it via `format_case`, so
 `settings()`, and validation paths agree with what serde accepts. Env keys deliberately skip the
 casing and stay derived from the Rust name (or an explicit `rename`), matching production.
 
-Generics are supported by `Schematic` but not `Config` (the partial type isn't generic), which
-matches production. As in production, `#[derive(Schematic)]` on a generic type does not add a
-`T: Schematic` bound for you — write it yourself. Unlike production, a generic type's `schema_name`
-appends each type argument (`Wrapper<String>` becomes `WrapperString`), because schemas are keyed by
-name alone and every instantiation would otherwise claim the same one.
+**All three derives support generics**, which is a divergence from production (where only
+`Schematic` does). `Container` carries `input.generics`, and every emitted item threads them
+through: the partial declaration, its `Default`/`Deserialize`, `PartialConfig`, `Config`, and both
+`Schematic` impls. Three things fall out of that:
+
+- No bounds are added for you. `PartialConfig` requires `Clone + Default + DeserializeOwned +
+  Schematic + Serialize`, so a generic `Config` needs those on its own type parameters, and a
+  generic `Schematic` needs `T: Schematic`. An under-bounded type fails to compile at the impl.
+- The partial gets an explicit `#[serde(bound(deserialize = "T: DeserializeOwned"))]`. Without it
+  serde infers `T: Deserialize<'de>`, which is ambiguous against the `DeserializeOwned` the where
+  clause carries. `#[config(partial(serde(bound(...))))]` suppresses the generated one.
+- A generic type's `schema_name` appends each type argument (`Wrapper<String>` becomes
+  `WrapperString`, its partial `PartialWrapperString`), because schemas are keyed by name alone and
+  every instantiation would otherwise claim the same one.
+
+A generic `ConfigEnum` only makes sense with a `fallback`, since unit variants carry no data. Its
+`Display` writes each arm for itself, so the fallback goes through `T: Display` instead of having to
+be a `&str`.
 
 When implementing something in `core`, the old implementation in `crates/macros` is the reference.
 It is _not_ always correct — this session found many bugs in it — but it tells you the intended

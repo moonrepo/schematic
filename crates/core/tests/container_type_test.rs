@@ -494,3 +494,77 @@ mod to_tokens {
         assert_snapshot!(pretty(container.to_token_stream()));
     }
 }
+
+// Every emitted item has to carry the type arguments through: the partial
+// declaration, its `Default`/`Deserialize`, `PartialConfig`, `Config`, and
+// both `Schematic` impls.
+mod generics {
+    use super::*;
+
+    #[test]
+    fn named_struct() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example<T> {
+                inner: T,
+                label: String,
+            }
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    #[test]
+    fn unnamed_struct() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example<T, U>(T, U);
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    #[test]
+    fn unnamed_enum() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example<T> {
+                Value(T),
+                #[setting(default)]
+                Nothing,
+            }
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    #[test]
+    fn supports_bounds_and_where_clauses() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example<T: Clone>
+            where
+                T: Default,
+            {
+                inner: T,
+            }
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    #[test]
+    fn untagged_enum_deserialize_carries_generics() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(untagged)]
+            enum Example<T> {
+                Value(T),
+                #[setting(default)]
+                Nothing,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
+    }
+}
