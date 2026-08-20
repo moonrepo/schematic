@@ -1,7 +1,7 @@
 mod utils;
 
 use quote::ToTokens;
-use schematic_core::container::Container;
+use schematic_core::container::{Container, ContainerMacro};
 use starbase_sandbox::assert_snapshot;
 use syn::parse_quote;
 use utils::pretty;
@@ -9,7 +9,7 @@ use utils::pretty;
 // The standalone derive is the same container with the flag flipped
 fn schematic_only(input: syn::DeriveInput) -> Container {
     let mut container = Container::from(input);
-    container.schematic_only = true;
+    container.macro_type = ContainerMacro::Schematic;
     container
 }
 

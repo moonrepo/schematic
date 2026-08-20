@@ -2,7 +2,9 @@
 use crate::args::SerdeTagFormat;
 use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
 use crate::container::ContainerArgs;
-use crate::utils::{ImplResult, format_case, get_renamed_value, is_inheritable_attribute};
+use crate::utils::{
+    ImplResult, format_case, get_meta_path, get_renamed_value, is_inheritable_attribute,
+};
 use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
@@ -10,12 +12,13 @@ use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as NativeVariant};
 
-// #[setting()], #[schema()]
+// #[setting()], #[schema()], #[variant()]
 #[derive(Debug, Default, FromAttributes)]
-#[darling(default, attributes(setting, schema))]
+#[darling(default, attributes(setting, schema, variant))]
 pub struct VariantArgs {
     pub default: bool,
     pub exclude: bool,
+    pub fallback: bool,
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
     pub null: bool,
@@ -148,6 +151,91 @@ impl Variant {
 
     pub fn is_default(&self) -> bool {
         self.args.default
+            || self
+                .attrs
+                .iter()
+                .any(|attr| get_meta_path(&attr.meta).is_ident("default"))
+    }
+
+    /// Whether this variant absorbs any value that no other variant matches.
+    pub fn is_fallback(&self) -> bool {
+        self.args.fallback
+    }
+
+    /// Aliases can be provided by both attributes, so combine them.
+    pub fn get_aliases(&self) -> Vec<&String> {
+        let mut aliases = vec![];
+
+        for alias in self.args.alias.iter().chain(self.serde_args.alias.iter()) {
+            if !aliases.contains(&alias) {
+                aliases.push(alias);
+            }
+        }
+
+        aliases
+    }
+
+    /// Validate this variant within a `ConfigEnum`, which only models a list
+    /// of named string values.
+    pub fn validate_config_enum(&self) {
+        if self.is_fallback() {
+            match &self.fields {
+                Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
+                Fields::Unnamed(_) => {
+                    panic!("Only 1 unnamed field is supported for `fallback`.");
+                }
+                _ => {
+                    panic!("Only unnamed tuple variants are supported for `fallback`.");
+                }
+            };
+        } else if !self.is_unit_variant() {
+            panic!("Only unit variants are supported, unless marked as `fallback`.");
+        }
+    }
+
+    /// An expression that constructs this variant, for `ConfigEnum::variants`.
+    pub fn impl_config_enum_value(&self) -> TokenStream {
+        let name = &self.ident;
+
+        if self.is_fallback() {
+            quote! { Self::#name(Default::default()) }
+        } else {
+            quote! { Self::#name }
+        }
+    }
+
+    /// A match arm that formats this variant back into its string value.
+    pub fn impl_config_enum_display(&self) -> TokenStream {
+        let name = &self.ident;
+
+        if self.is_fallback() {
+            return quote! { Self::#name(fallback) => fallback, };
+        }
+
+        let value = self.get_name();
+
+        quote! { Self::#name => #value, }
+    }
+
+    /// A match arm that parses a string into this variant. A fallback absorbs
+    /// anything left over, so it must be matched last.
+    pub fn impl_config_enum_from_str(&self) -> TokenStream {
+        let name = &self.ident;
+
+        if self.is_fallback() {
+            return quote! {
+                fallback => Self::#name(
+                    fallback.try_into().map_err(|_| {
+                        schematic::ConfigError::EnumInvalidFallback(fallback.to_string())
+                    })?
+                ),
+            };
+        }
+
+        let value = self.get_name();
+        let aliases = self.get_aliases();
+
+        quote! { #value #(| #aliases)* => Self::#name, }
     }
 
     pub fn is_excluded(&self) -> bool {
@@ -207,16 +295,7 @@ impl Variant {
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
         let mut meta = vec![];
 
-        // Aliases can be provided by both, so combine them
-        let mut aliases: Vec<&String> = vec![];
-
-        for alias in self.args.alias.iter().chain(self.serde_args.alias.iter()) {
-            if !aliases.contains(&alias) {
-                aliases.push(alias);
-            }
-        }
-
-        for alias in aliases {
+        for alias in self.get_aliases() {
             meta.push(quote! { alias = #alias });
         }
 

@@ -24,7 +24,7 @@ rest follows.
 | `crates/types`       | `schematic_types`       | `Schema`, `SchemaBuilder`, `SchemaType`, the `Schematic` trait. No macro code.                                             |
 | `crates/macros`      | `schematic_macros`      | **The production derive.** Currently what ships.                                                                           |
 | `crates/core`        | `schematic_core`        | **The rewrite in progress.** Where new work goes.                                                                          |
-| `crates/macros-next` | `schematic_macros_next` | Thin proc-macro shell over `core`. Exports `Config` and `Schematic`; `ConfigEnum` is not ported yet.                        |
+| `crates/macros-next` | `schematic_macros_next` | Thin proc-macro shell over `core`. Exports `Config`, `ConfigEnum`, and `Schematic`.                                        |
 | `crates/test-app`    | `test_app`              | Manual smoke-test binary using the production derive.                                                                      |
 
 ### Migration status — read this first
@@ -32,22 +32,28 @@ rest follows.
 `crates/macros` is production — it is what `crates/schematic` re-exports, and what users get today.
 `crates/core` is a piece-by-piece rewrite of it, consumed by `crates/macros-next`.
 
-`macros-next` exports working `Config` and `Schematic` derives, exercised by real compile-and-run
-tests in `crates/macros-next/tests/`. **Nothing depends on it yet** — `crates/schematic` still
-re-exports `schematic_macros`, so swapping the two is a separate step blocked on the gaps below.
+`macros-next` exports working `Config`, `ConfigEnum`, and `Schematic` derives, exercised by real
+compile-and-run tests in `crates/macros-next/tests/`. **Nothing depends on it yet** —
+`crates/schematic` still re-exports `schematic_macros`, so swapping the two is a separate step
+blocked on the gaps below.
 
 Still unported, in rough order of what blocks the swap:
 
-- **`ConfigEnum`.** Not started; `macros-next` doesn't export it.
-- **`tracing`.** The feature is declared and forwarded to `core`, but no codegen reads it. Production
-  puts `#[instrument(skip_all)]` on `default_values`, `env_values`, `extends_from`, `finalize`,
-  `merge`, `validate_with_path`, `from_partial`, `settings`, `default`, and `build_schema`.
 - **`#[setting(skip_deserializing_if)]`** parses but emits nothing (serde has no such attribute).
 - `#[setting(exclude)]` is behind `cfg(schema)` in core but unconditional in production, so it fails
   to parse when the feature is off.
 
 Not gaps, despite looking like them: named-field enum variants panic in *both* crates, and
-`#[config(serde(...))]` was deliberately removed in the rewrite.
+`#[config(serde(...))]`, `#[variant(value)]`, and the `tracing` feature were all deliberately
+removed in the rewrite — `#[variant(rename)]` covers what `value` did, and generated code is no
+longer wrapped in `#[tracing::instrument]` (the loader still is).
+
+`ConfigEnum` has no implementation of its own. It is the same `Container` with
+`macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
+`ConfigEnum`/`FromStr`/`TryFrom`/`Display` impls plus `impl_schematic_full`. The schema comes out of
+the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (even when a
+`fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
+variant and infers the fallback's inner type as a string, matching production.
 
 **Casing is a deliberate divergence, not a gap.** Production defaults to `camelCase` for struct
 fields and `kebab-case` for enum variants. Core has *no default* — a name is used exactly as

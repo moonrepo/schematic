@@ -2,7 +2,7 @@ use crate::args::{
     PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
 };
 use crate::field::{EnvKey, Field};
-use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string};
+use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string, validate_case_format};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
@@ -10,12 +10,20 @@ use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visibility};
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ContainerMacro {
+    Config,
+    ConfigUnitEnum,
+    Schematic,
+}
+
 // #[config()], #[schematic()]
 #[derive(Debug, Default, FromDeriveInput)]
 #[darling(default, attributes(config, schematic), supports(struct_any, enum_any))]
 pub struct ContainerArgs {
     // config
     pub allow_unknown_fields: bool,
+    pub before_parse: Option<String>,
     pub context: Option<ExprPath>,
     pub env_prefix: Option<String>,
     pub partial: Option<PartialArg>,
@@ -31,11 +39,7 @@ pub struct Container {
     pub args: Rc<ContainerArgs>,
     pub inner: ContainerInner,
     pub serde_args: Rc<SerdeContainerArgs>,
-
-    /// Render only the `Schematic` implementation, for a standalone
-    /// `#[derive(Schematic)]`. It describes the type it's placed on and
-    /// nothing else, so there's no partial type to pair it with.
-    pub schematic_only: bool,
+    pub macro_type: ContainerMacro,
 
     // inherited
     pub attrs: Vec<Attribute>,
@@ -102,7 +106,7 @@ impl Container {
             generics: input.generics,
             ident: input.ident,
             inner,
-            schematic_only: false,
+            macro_type: ContainerMacro::Config,
             serde_args,
             vis: input.vis,
         };
@@ -137,10 +141,13 @@ impl Container {
         self.ident.to_string()
     }
 
+    pub fn is_config_enum(&self) -> bool {
+        matches!(self.macro_type, ContainerMacro::ConfigUnitEnum)
+    }
+
     /// Return how the enum variants are tagged when serialized.
     pub fn get_tag_format(&self) -> SerdeTagFormat {
-        // Every variant is a unit, so they serialize as their own name
-        if matches!(self.inner, ContainerInner::UnitEnum { .. }) {
+        if matches!(self.inner, ContainerInner::UnitEnum { .. }) || self.is_config_enum() {
             return SerdeTagFormat::Unit;
         }
 
@@ -545,6 +552,130 @@ impl Container {
         }
     }
 
+    /// Generate the `ConfigEnum`, `FromStr`, `TryFrom`, and `Display`
+    /// implementations for a unit-only enum.
+    pub fn impl_config_enum(&self) -> TokenStream {
+        let (ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants }) =
+            &self.inner
+        else {
+            panic!("Only enums are supported.");
+        };
+
+        let mut values = vec![];
+        let mut display_arms = vec![];
+        let mut from_str_arms = vec![];
+        let mut fallback_arm = None;
+
+        for variant in variants {
+            variant.validate_config_enum();
+
+            values.push(variant.impl_config_enum_value());
+            display_arms.push(variant.impl_config_enum_display());
+
+            // A fallback absorbs anything left over, so it has to be matched
+            // after every named value
+            if variant.is_fallback() {
+                if fallback_arm.is_some() {
+                    panic!("Only 1 fallback variant is supported.");
+                }
+
+                fallback_arm = Some(variant.impl_config_enum_from_str());
+            } else {
+                from_str_arms.push(variant.impl_config_enum_from_str());
+            }
+        }
+
+        // Without a fallback, an unknown value is an error
+        let fallback_arm = fallback_arm.unwrap_or_else(|| {
+            quote! {
+                unknown => {
+                    return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned()));
+                }
+            }
+        });
+
+        let name = &self.ident;
+        let before_parse = self.impl_config_enum_before_parse();
+        let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
+
+        quote! {
+            #[automatically_derived]
+            impl #impl_generics schematic::ConfigEnum for #name #ty_generics #where_clause {
+                fn variants() -> Vec<#name #ty_generics> {
+                    vec![
+                        #(#values),*
+                    ]
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics std::str::FromStr for #name #ty_generics #where_clause {
+                type Err = schematic::ConfigError;
+
+                fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+                    #before_parse
+
+                    Ok(match value {
+                        #(#from_str_arms)*
+                        #fallback_arm
+                    })
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics std::convert::TryFrom<String> for #name #ty_generics #where_clause {
+                type Error = schematic::ConfigError;
+
+                fn try_from(value: String) -> std::result::Result<Self, schematic::ConfigError> {
+                    std::str::FromStr::from_str(&value)
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics std::convert::TryFrom<&String> for #name #ty_generics #where_clause {
+                type Error = schematic::ConfigError;
+
+                fn try_from(value: &String) -> std::result::Result<Self, schematic::ConfigError> {
+                    std::str::FromStr::from_str(value)
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics std::convert::TryFrom<&str> for #name #ty_generics #where_clause {
+                type Error = schematic::ConfigError;
+
+                fn try_from(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+                    std::str::FromStr::from_str(value)
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics std::fmt::Display for #name #ty_generics #where_clause {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    write!(f, "{}", match self {
+                        #(#display_arms)*
+                    })
+                }
+            }
+        }
+    }
+
+    /// Normalize the incoming value before it is matched against a variant.
+    /// Accepts the same case names as serde's `rename_all`.
+    fn impl_config_enum_before_parse(&self) -> TokenStream {
+        let Some(format) = self.args.before_parse.as_deref() else {
+            return quote! {};
+        };
+
+        // Validated here so a typo fails the build rather than every parse
+        validate_case_format("before_parse", format);
+
+        quote! {
+            let value = schematic::internal::format_case(value, #format);
+            let value = value.as_str();
+        }
+    }
+
     /// Generate the `Schematic` implementation for the full type. This is
     /// also the whole of a standalone `#[derive(Schematic)]`, which has no
     /// partial type to pair with.
@@ -711,7 +842,8 @@ impl Container {
                 }
             }
             ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
-                let unit = matches!(self.inner, ContainerInner::UnitEnum { .. });
+                let unit =
+                    matches!(self.inner, ContainerInner::UnitEnum { .. }) || self.is_config_enum();
                 let tag_format = self.get_tag_format();
                 let mut default_index = quote! { None };
                 let mut types = vec![];
@@ -1245,25 +1377,28 @@ impl Container {
 // #[derive(Config)]
 impl ToTokens for Container {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // A standalone `Schematic` has no partial type, so none of the
-        // machinery below applies to it
-        if self.schematic_only {
-            tokens.extend(self.impl_schematic_full());
+        match self.macro_type {
+            ContainerMacro::Config => {
+                // Partial type
+                tokens.extend(self.impl_partial_type());
+                tokens.extend(self.impl_partial_type_default());
+                tokens.extend(self.impl_partial_type_deserialize());
+                tokens.extend(self.impl_partial());
 
-            return;
+                // Full type
+                tokens.extend(self.impl_full());
+
+                // Both types
+                tokens.extend(self.impl_schematic());
+            }
+            ContainerMacro::ConfigUnitEnum => {
+                tokens.extend(self.impl_config_enum());
+                tokens.extend(self.impl_schematic_full());
+            }
+            ContainerMacro::Schematic => {
+                tokens.extend(self.impl_schematic_full());
+            }
         }
-
-        // Partial type
-        tokens.extend(self.impl_partial_type());
-        tokens.extend(self.impl_partial_type_default());
-        tokens.extend(self.impl_partial_type_deserialize());
-        tokens.extend(self.impl_partial());
-
-        // Full type
-        tokens.extend(self.impl_full());
-
-        // Both types
-        tokens.extend(self.impl_schematic());
     }
 }
 

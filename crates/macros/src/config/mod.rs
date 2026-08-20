@@ -4,7 +4,6 @@ pub mod field_value;
 pub mod variant;
 
 use crate::common::Macro;
-use crate::utils::instrument_quote;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 
@@ -33,7 +32,6 @@ impl ToTokens for ConfigMacro<'_> {
         let merge = cfg.type_of.generate_merge();
         let from_partial = cfg.type_of.generate_from_partial(&partial_name);
         let settings_metadata = cfg.type_of.generate_settings_metadata();
-        let instrument = instrument_quote();
 
         let context = match cfg.args.context.as_ref() {
             Some(ctx) => quote! { #ctx },
@@ -44,7 +42,6 @@ impl ToTokens for ConfigMacro<'_> {
             let env_values = cfg.type_of.generate_env_values();
 
             quote! {
-                #instrument
                 fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #env_values
@@ -58,7 +55,6 @@ impl ToTokens for ConfigMacro<'_> {
             let extends_from = cfg.type_of.generate_extends_from();
 
             quote! {
-                #instrument
                 fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
                     #extends_from
                 }
@@ -71,7 +67,6 @@ impl ToTokens for ConfigMacro<'_> {
             let validate = cfg.type_of.generate_validate();
 
             quote! {
-                #instrument
                 fn validate_with_path(
                     &self,
                     context: &Self::Context,
@@ -98,7 +93,6 @@ impl ToTokens for ConfigMacro<'_> {
             impl schematic::PartialConfig for #partial_name {
                 type Context = #context;
 
-                #instrument
                 fn default_values(context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                     use schematic::internal::*;
                     #default_values
@@ -108,12 +102,10 @@ impl ToTokens for ConfigMacro<'_> {
 
                 #extends_method
 
-                #instrument
                 fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
                     #finalize
                 }
 
-                #instrument
                 fn merge(
                     &mut self,
                     context: &Self::Context,
@@ -128,7 +120,6 @@ impl ToTokens for ConfigMacro<'_> {
 
             #[automatically_derived]
             impl Default for #name {
-                #instrument
                 fn default() -> Self {
                     let context = <<Self as schematic::Config>::Partial as schematic::PartialConfig>::Context::default();
 
@@ -142,12 +133,10 @@ impl ToTokens for ConfigMacro<'_> {
             impl schematic::Config for #name {
                 type Partial = #partial_name;
 
-                #instrument
                 fn from_partial(partial: Self::Partial) -> Self {
                     #from_partial
                 }
 
-                #instrument
                 fn settings() -> schematic::ConfigSettingMap {
                     #settings_metadata
                 }
@@ -169,7 +158,6 @@ impl ToTokens for ConfigMacro<'_> {
                         Some(#schema_name.into())
                     }
 
-                    #instrument
                     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                         use schematic::schema::*;
 
@@ -183,7 +171,6 @@ impl ToTokens for ConfigMacro<'_> {
                         Some(#partial_schema_name.into())
                     }
 
-                    #instrument
                     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
                         #partial_schema_impl
                         schema
