@@ -429,20 +429,36 @@ impl Value {
         let mut setting = quote! { #setting_var };
         let mut value = None;
 
-        for layer in layers {
+        for (index, layer) in layers.iter().enumerate() {
             match layer {
                 Layer::Arc | Layer::Box | Layer::Rc => {
                     setting = quote! { #setting.as_ref() };
                 }
-                Layer::Map(_) => {
-                    value = Some(quote! {
-                        validate.#nested_map(#target, #setting.iter());
-                    });
-                    break;
-                }
-                Layer::Set(_) | Layer::Vec(_) => {
-                    value = Some(quote! {
-                        validate.#nested_list(#target, #setting.iter());
+                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) => {
+                    // An item may itself be optional, as in `Vec<Option<T>>`,
+                    // and a `None` has nothing to validate. Items are handed
+                    // over as `Option`s either way, so that a missing one
+                    // still holds its position in the reported path.
+                    let optional_items = layers
+                        .get(index + 1)
+                        .is_some_and(|layer| **layer == Layer::Option);
+
+                    value = Some(if matches!(layer, Layer::Map(_)) {
+                        let items = if optional_items {
+                            quote! { #setting.iter().map(|(key, value)| (key, value.as_ref())) }
+                        } else {
+                            quote! { #setting.iter().map(|(key, value)| (key, Some(value))) }
+                        };
+
+                        quote! { validate.#nested_map(#target, #items); }
+                    } else {
+                        let items = if optional_items {
+                            quote! { #setting.iter().map(|item| item.as_ref()) }
+                        } else {
+                            quote! { #setting.iter().map(Some) }
+                        };
+
+                        quote! { validate.#nested_list(#target, #items); }
                     });
                     break;
                 }

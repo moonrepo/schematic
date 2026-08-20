@@ -109,7 +109,8 @@ impl schematic::PartialConfig for PartialExample {
         use schematic::internal::*;
         let mut validate = ValidateManager::new(context, finalizing, path);
         if let Some(setting) = &self.name {
-            validate.check("name", setting, self, Box::new(validate_name));
+            validate
+                .check("name", setting, self, |v, d, c, f| validate_name(v, d, c, f));
         }
         if self.port.is_none() {
             validate.required("port");
@@ -118,7 +119,7 @@ impl schematic::PartialConfig for PartialExample {
             validate.nested("nested", setting);
         }
         if let Some(setting) = &self.list {
-            validate.nested_list("list", setting.iter());
+            validate.nested_list("list", setting.iter().map(Some));
         }
         if !validate.errors.is_empty() {
             return Err(validate.errors);

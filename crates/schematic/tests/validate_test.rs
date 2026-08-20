@@ -198,14 +198,14 @@ fn doesnt_error_if_required_and_notempty() {
     assert!(result.is_ok());
 
     let result = ConfigLoader::<ValidateEnumRequired>::new()
-        .code(r#"{ "required": "abc" }"#, "code.json")
+        .code(r#"{ "Required": "abc" }"#, "code.json")
         .unwrap()
         .load();
 
     assert!(result.is_ok());
 
     let result = ConfigLoader::<ValidateEnumRequired>::new()
-        .code(r#"{ "optional": null }"#, "code.json")
+        .code(r#"{ "Optional": null }"#, "code.json")
         .unwrap()
         .load();
 
@@ -227,7 +227,7 @@ fn errors_if_required_and_empty() {
     );
 
     let error = ConfigLoader::<ValidateEnumRequired>::new()
-        .code(r#"{ "required": null }"#, "code.json")
+        .code(r#"{ "Required": null }"#, "code.json")
         .unwrap()
         .load()
         .err()
@@ -235,6 +235,6 @@ fn errors_if_required_and_empty() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateEnumRequired. \n  required: this setting is required"
+        "Failed to validate ValidateEnumRequired. \n  Required: this setting is required"
     );
 }

@@ -162,10 +162,10 @@ fn create_template_options() -> TemplateOptions {
     TemplateOptions {
         comment_fields: vec!["float32".into(), "map".into()],
         expand_fields: vec![
-            "expandArray".into(),
-            "expandArrayPrimitive".into(),
-            "expandObject".into(),
-            "expandObjectPrimitive".into(),
+            "expand_array".into(),
+            "expand_array_primitive".into(),
+            "expand_object".into(),
+            "expand_object_primitive".into(),
         ],
         hide_fields: vec!["skipped".into(), "one.two.skipped".into()],
         ..TemplateOptions::default()

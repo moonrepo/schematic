@@ -11,25 +11,25 @@ fn validate_with_path(
     use schematic::internal::*;
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.a {
-        validate.check("a", setting, self, Box::new(func_ref));
-        validate.nested_list("a", setting.iter());
+        validate.check("a", setting, self, |v, d, c, f| func_ref(v, d, c, f));
+        validate.nested_list("a", setting.iter().map(Some));
     }
     if let Some(setting) = &self.b {
-        validate.check("b", setting, self, Box::new(func_ref));
-        validate.nested_map("b", setting.iter());
+        validate.check("b", setting, self, |v, d, c, f| func_ref(v, d, c, f));
+        validate.nested_map("b", setting.iter().map(|(key, value)| (key, Some(value))));
     }
     if let Some(setting) = &self.c {
-        validate.check("c", setting, self, Box::new(func_ref));
-        validate.nested_list("c", setting.iter());
+        validate.check("c", setting, self, |v, d, c, f| func_ref(v, d, c, f));
+        validate.nested_list("c", setting.iter().map(Some));
     }
     if let Some(setting) = &self.d {
-        validate.nested_list("d", setting.iter());
+        validate.nested_list("d", setting.iter().map(Some));
     }
     if let Some(setting) = &self.e {
-        validate.nested_map("e", setting.iter());
+        validate.nested_map("e", setting.iter().map(|(key, value)| (key, Some(value))));
     }
     if let Some(setting) = &self.f {
-        validate.nested_list("f", setting.iter());
+        validate.nested_list("f", setting.iter().map(Some));
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

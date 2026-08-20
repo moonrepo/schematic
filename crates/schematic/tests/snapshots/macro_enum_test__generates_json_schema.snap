@@ -9,15 +9,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
     {
       "type": "object",
       "required": [
-        "content",
         "type"
       ],
       "properties": {
-        "content": {
-          "const": "foo"
-        },
         "type": {
-          "const": "foo"
+          "const": "Foo"
         }
       },
       "additionalProperties": false
@@ -33,7 +29,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         "type": {
-          "const": "bar"
+          "const": "Bar"
         }
       },
       "additionalProperties": false
@@ -69,7 +65,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "type": {
-          "const": "qux"
+          "const": "Qux"
         }
       },
       "additionalProperties": false
@@ -82,15 +78,11 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "content",
             "type"
           ],
           "properties": {
-            "content": {
-              "const": "foo"
-            },
             "type": {
-              "const": "foo"
+              "const": "Foo"
             }
           },
           "additionalProperties": false
@@ -106,7 +98,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
               "type": "boolean"
             },
             "type": {
-              "const": "bar"
+              "const": "Bar"
             }
           },
           "additionalProperties": false
@@ -142,7 +134,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
               ]
             },
             "type": {
-              "const": "qux"
+              "const": "Qux"
             }
           },
           "additionalProperties": false
@@ -153,9 +145,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "AllUnit",
       "type": "string",
       "enum": [
-        "foo",
-        "bar",
-        "baz"
+        "Foo",
+        "Bar",
+        "Baz"
       ]
     },
     "AllUnnamed": {
@@ -164,10 +156,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "foo"
+            "Foo"
           ],
           "properties": {
-            "foo": {
+            "Foo": {
               "type": "string"
             }
           },
@@ -176,10 +168,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "boolean"
             }
           },
@@ -188,10 +180,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "baz"
+            "Baz"
           ],
           "properties": {
-            "baz": {
+            "Baz": {
               "type": "number"
             }
           },
@@ -203,24 +195,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "ExternalTagged",
       "anyOf": [
         {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
+          "const": "Foo"
         },
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "boolean"
             }
           },
@@ -241,10 +224,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "qux"
+            "Qux"
           ],
           "properties": {
-            "qux": {
+            "Qux": {
               "allOf": [
                 {
                   "$ref": "#/definitions/SomeConfig"
@@ -260,7 +243,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "InternalTagged",
       "anyOf": [
         {
-          "const": "foo"
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "Foo"
+            }
+          },
+          "additionalProperties": false
         },
         {
           "type": "boolean"
@@ -279,10 +271,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "string"
+            "String"
           ],
           "properties": {
-            "string": {
+            "String": {
               "type": "string"
             }
           },
@@ -291,10 +283,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "object"
+            "Object"
           ],
           "properties": {
-            "object": {
+            "Object": {
               "allOf": [
                 {
                   "$ref": "#/definitions/SomeConfig"
@@ -307,10 +299,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "objects"
+            "Objects"
           ],
           "properties": {
-            "objects": {
+            "Objects": {
               "type": "array",
               "items": [
                 {
@@ -332,24 +324,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "OfBothTypes",
       "anyOf": [
         {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "type": "null"
-            }
-          },
-          "additionalProperties": false
+          "type": "null"
         },
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "array",
               "items": [
                 {
@@ -371,9 +354,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "PartialAllUnit",
       "type": "string",
       "enum": [
-        "foo",
-        "bar",
-        "baz"
+        "Foo",
+        "Bar",
+        "Baz"
       ]
     },
     "PartialAllUnnamed": {
@@ -382,10 +365,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "foo"
+            "Foo"
           ],
           "properties": {
-            "foo": {
+            "Foo": {
               "type": "string"
             }
           },
@@ -394,10 +377,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "boolean"
             }
           },
@@ -406,10 +389,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "baz"
+            "Baz"
           ],
           "properties": {
-            "baz": {
+            "Baz": {
               "type": "number"
             }
           },
@@ -421,24 +404,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "PartialExternalTagged",
       "anyOf": [
         {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "const": "foo"
-            }
-          },
-          "additionalProperties": false
+          "const": "Foo"
         },
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "boolean"
             }
           },
@@ -458,14 +432,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "type": "object",
+          "required": [
+            "Qux"
+          ],
           "properties": {
-            "qux": {
-              "anyOf": [
+            "Qux": {
+              "allOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
-                },
-                {
-                  "type": "null"
                 }
               ]
             }
@@ -478,7 +452,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "PartialInternalTagged",
       "anyOf": [
         {
-          "const": "foo"
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "Foo"
+            }
+          },
+          "additionalProperties": false
         },
         {
           "type": "boolean"
@@ -497,10 +480,10 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "type": "object",
           "required": [
-            "string"
+            "String"
           ],
           "properties": {
-            "string": {
+            "String": {
               "type": "string"
             }
           },
@@ -508,14 +491,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "type": "object",
+          "required": [
+            "Object"
+          ],
           "properties": {
-            "object": {
-              "anyOf": [
+            "Object": {
+              "allOf": [
                 {
                   "$ref": "#/definitions/PartialSomeConfig"
-                },
-                {
-                  "type": "null"
                 }
               ]
             }
@@ -524,26 +507,22 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "type": "object",
+          "required": [
+            "Objects"
+          ],
           "properties": {
-            "objects": {
-              "anyOf": [
+            "Objects": {
+              "type": "array",
+              "items": [
                 {
-                  "type": "array",
-                  "items": [
-                    {
-                      "$ref": "#/definitions/PartialSomeConfig"
-                    },
-                    {
-                      "$ref": "#/definitions/PartialSomeConfig"
-                    }
-                  ],
-                  "maxItems": 2,
-                  "minItems": 2
+                  "$ref": "#/definitions/PartialSomeConfig"
                 },
                 {
-                  "type": "null"
+                  "$ref": "#/definitions/PartialSomeConfig"
                 }
-              ]
+              ],
+              "maxItems": 2,
+              "minItems": 2
             }
           },
           "additionalProperties": false
@@ -554,24 +533,15 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "PartialOfBothTypes",
       "anyOf": [
         {
-          "type": "object",
-          "required": [
-            "foo"
-          ],
-          "properties": {
-            "foo": {
-              "type": "null"
-            }
-          },
-          "additionalProperties": false
+          "type": "null"
         },
         {
           "type": "object",
           "required": [
-            "bar"
+            "Bar"
           ],
           "properties": {
-            "bar": {
+            "Bar": {
               "type": "array",
               "items": [
                 {
@@ -648,9 +618,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "description": "Container",
       "type": "string",
       "enum": [
-        "foo",
-        "bar",
-        "baz"
+        "Foo",
+        "Bar",
+        "Baz"
       ]
     },
     "PartialWithSerde": {
@@ -716,9 +686,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "description": "Container",
       "type": "string",
       "enum": [
-        "foo",
-        "bar",
-        "baz"
+        "Foo",
+        "Bar",
+        "Baz"
       ]
     },
     "WithSerde": {

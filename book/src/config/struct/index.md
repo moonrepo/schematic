@@ -60,11 +60,11 @@ By default the [`Config`][config] macro will apply the following `#[serde]` to t
 layer merging.
 
 ```rust
-#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields)]
 ```
 
-However, the `deny_unknown_fields` and `rename_all` fields can be customized, and we also support
-the `rename` field, both via the top-level `#[config]` attribute.
+However, the `deny_unknown_fields` field can be customized, and we also support the `rename` and
+`rename_all` fields, all via the top-level `#[config]` attribute.
 
 ```rust
 #[derive(Config)]

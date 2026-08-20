@@ -1,8 +1,10 @@
+#[cfg(feature = "env")]
 mod env;
 mod merge;
 #[cfg(feature = "validate")]
 mod validate;
 
+#[cfg(feature = "env")]
 pub use env::*;
 pub use merge::*;
 #[cfg(feature = "validate")]

@@ -17,6 +17,12 @@ while the schema types have been updated to be more flexible and composable.
   same thing.
 - Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`. The
   loader is still instrumented; only the derive output no longer is.
+- Changed doc comments to render as a single flowing paragraph instead of one line per source line.
+  Markdown list items are still kept on their own line.
+- Changed `#[setting(env_prefix)]` keys to no longer appear as `@env` annotations in generated
+  templates. A derived key depends on the prefix in effect at runtime, which a parent's
+  `#[setting(nested, env_prefix)]` can override, so it isn't known when the schema is built.
+  Explicit `#[setting(env)]` keys are unaffected.
 
 ##### Schema
 
@@ -75,6 +81,10 @@ while the schema types have been updated to be more flexible and composable.
   - Bounds are not inferred. A generic `Config` needs
     `Clone + Default + DeserializeOwned + Schematic + Serialize` on its type parameters, since
     `PartialConfig` requires them.
+- Added support for `#[setting(parse_env)]` alongside a container `env_prefix`. It previously
+  required an explicit `#[setting(env)]` and panicked at derive time otherwise.
+- Added support for `#[deprecated(since = "...", note = "...")]`, whose note is now used as the
+  deprecation message. Only `#[deprecated]` and `#[deprecated = "..."]` were recognized before.
 - Improved the parse, handling, and validation of container and field attributes.
 - Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
   instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,
@@ -112,6 +122,27 @@ while the schema types have been updated to be more flexible and composable.
 
 #### 🐞 Fixes
 
+##### Config
+
+- Fixed validators being unable to accept a borrowed form of the setting. A `String` setting now
+  reaches a `&str` validator and a `Vec<T>` a `&[T]` one, which built-ins like
+  `validate::extends_string` and `validate::extends_list` rely on.
+- Fixed nested configs in a map keyed by anything other than `String` failing to compile.
+- Fixed nested configs wrapped in an `Option` inside a collection, such as `Vec<Option<Config>>`,
+  not being validated.
+- Fixed adjacently tagged unit variants declaring a `content` field in their schema. Serde emits
+  only the tag for a unit variant.
+- Fixed the schema of externally and internally tagged unit variants. An externally tagged unit is
+  a bare string, and an internally tagged one is an object holding just the tag.
+- Fixed the partial schema of a tagged enum marking the tag itself as nullable and optional, which
+  claimed that a variant with a missing or null tag was valid.
+- Fixed a block doc comment (`/** ... */`) keeping its leading `*` continuation markers, which
+  rendered them as stray markdown list items.
+- Fixed the `config` feature failing to compile without `env`.
+- Fixed the `type_regex` and `type_semver` features failing to compile alongside `config`
+  without `schema`. Their `Schematic` implementations are now gated, so the setting types
+  themselves no longer require the schema layer.
+
 ##### Schema
 
 - Fixed the `serde` feature not enabling `indexmap/serde`, which made `schematic_types` fail to
@@ -134,6 +165,11 @@ while the schema types have been updated to be more flexible and composable.
 
 #### ⚙️ Internal
 
+- Moved the derive implementation into a new `schematic_core` crate. `schematic_macros` is now a
+  thin proc-macro shell over it, and every derive shares one code path.
+- Changed the signatures of `internal::ValidateManager`. `check` and `check_variant` take the value
+  by move and an opaque callable instead of a boxed `Validator`, and `nested_list`/`nested_map`
+  take items as `Option`s. These are `#[doc(hidden)]` and only called by generated code.
 - Updated `syn` to v3.
 - Updated `darling` to v0.24.
 - Updated `pkl` to v0.8.

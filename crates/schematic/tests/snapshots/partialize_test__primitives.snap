@@ -259,7 +259,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "stringOpt": SchemaField {
+⬛️                "string_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -310,7 +310,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "numberOpt": SchemaField {
+⬛️                "number_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -364,7 +364,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "booleanOpt": SchemaField {
+⬛️                "boolean_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -410,7 +410,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "floatOpt": SchemaField {
+⬛️                "float_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {

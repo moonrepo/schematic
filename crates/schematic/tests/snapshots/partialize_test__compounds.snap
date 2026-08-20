@@ -102,7 +102,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "listOpt": SchemaField {
+⬛️                "list_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {
@@ -279,7 +279,7 @@ expression: "create_diff::<Compounds>()"
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
-⬛️                "mapOpt": SchemaField {
+⬛️                "map_opt": SchemaField {
 ⬛️                    aliases: [],
 ⬛️                    comment: None,
 ⬛️                    schema: Schema {

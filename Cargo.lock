@@ -1985,22 +1985,11 @@ dependencies = [
 name = "schematic_macros"
 version = "0.19.4"
 dependencies = [
- "convert_case",
- "darling",
- "proc-macro2",
- "quote",
- "syn 3.0.3",
-]
-
-[[package]]
-name = "schematic_macros_next"
-version = "0.18.7"
-dependencies = [
  "proc-macro2",
  "quote",
  "schematic",
  "schematic_core",
- "schematic_macros_next",
+ "schematic_macros",
  "serde",
  "serde_json",
  "starbase_sandbox",

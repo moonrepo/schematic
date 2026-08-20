@@ -9,8 +9,8 @@ For example, the `ExampleConfig` from the [first chapter](../config/index.md) wo
 following partial struct:
 
 ```rust
-#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default, deny_unknown_fields)]
 pub struct PartialExampleConfig {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub number: Option<usize>,

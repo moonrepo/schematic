@@ -251,7 +251,7 @@ enum CustomFormatEnum {
     Foo,
     #[serde(rename = "bAr")]
     Bar,
-    #[variant(value = "b-a-z")]
+    #[variant(rename = "b-a-z")]
     Baz,
 }
 

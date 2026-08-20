@@ -1,3 +1,4 @@
+#[cfg(feature = "schema")]
 use crate::schema::{Schema, SchemaBuilder, Schematic};
 use semver::{Error, Version};
 use serde::{Deserialize, Serialize};
@@ -74,6 +75,7 @@ impl Hash for VersionSetting {
     }
 }
 
+#[cfg(feature = "schema")]
 impl Schematic for VersionSetting {
     fn build_schema(_: SchemaBuilder) -> Schema {
         SchemaBuilder::generate::<Version>()

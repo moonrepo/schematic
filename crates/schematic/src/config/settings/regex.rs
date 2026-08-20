@@ -1,3 +1,4 @@
+#[cfg(feature = "schema")]
 use crate::schema::{Schema, SchemaBuilder, Schematic};
 use regex::{Error, Regex};
 use serde::{Deserialize, Serialize};
@@ -74,6 +75,7 @@ impl Hash for RegexSetting {
     }
 }
 
+#[cfg(feature = "schema")]
 impl Schematic for RegexSetting {
     fn build_schema(_: SchemaBuilder) -> Schema {
         SchemaBuilder::generate::<Regex>()

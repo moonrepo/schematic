@@ -20,7 +20,7 @@ fn validate_with_path(
         validate.nested("c", setting);
     }
     if let Some(setting) = &self.d {
-        validate.nested_list("d", setting.iter());
+        validate.nested_list("d", setting.iter().map(Some));
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

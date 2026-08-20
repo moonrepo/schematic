@@ -131,8 +131,22 @@ pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
             continue;
         };
 
-        for line in value.value().split('\n') {
-            let line = line.trim();
+        let value = value.value();
+
+        // A block comment arrives as a single multi-line value, where a
+        // leading `*` continues the block rather than starting a list.
+        // Line comments arrive one attribute per line, so a `*` there is
+        // markdown and must survive.
+        let block = value.contains('\n');
+
+        for line in value.split('\n') {
+            let mut line = line.trim();
+
+            if block {
+                line = line
+                    .strip_prefix("* ")
+                    .unwrap_or_else(|| if line == "*" { "" } else { line });
+            }
 
             // Preserve list items as their own line
             if line.starts_with("* ") || line.starts_with("- ") {
@@ -184,9 +198,12 @@ pub fn extract_deprecated(attrs: &[Attribute]) -> Option<String> {
                 let mut message = String::new();
 
                 let _ = attr.parse_nested_meta(|meta| {
+                    // Every value is consumed, not just `note`, otherwise
+                    // parsing stops at the first key that isn't one
+                    let value = meta.value()?.parse::<Lit>()?;
+
                     if meta.path.is_ident("note")
-                        && let Ok(value) = meta.value()
-                        && let Ok(Lit::Str(value)) = value.parse::<Lit>()
+                        && let Lit::Str(value) = value
                     {
                         message = value.value().trim().to_owned();
                     }

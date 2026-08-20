@@ -18,52 +18,54 @@ rest follows.
 
 ## Workspace map
 
-| Crate                | Package                 | Role                                                                                                                       |
-| -------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `crates/schematic`   | `schematic`             | The user-facing runtime: `Config`/`PartialConfig` traits, loader, merge/validate/env helpers, schema renderers.            |
-| `crates/types`       | `schematic_types`       | `Schema`, `SchemaBuilder`, `SchemaType`, the `Schematic` trait. No macro code.                                             |
-| `crates/macros`      | `schematic_macros`      | **The production derive.** Currently what ships.                                                                           |
-| `crates/core`        | `schematic_core`        | **The rewrite in progress.** Where new work goes.                                                                          |
-| `crates/macros-next` | `schematic_macros_next` | Thin proc-macro shell over `core`. Exports `Config`, `ConfigEnum`, and `Schematic`.                                        |
-| `crates/test-app`    | `test_app`              | Manual smoke-test binary using the production derive.                                                                      |
+| Crate              | Package            | Role                                                                                                           |
+| ------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `crates/schematic` | `schematic`        | The user-facing runtime: `Config`/`PartialConfig` traits, loader, merge/validate/env helpers, schema renderers. |
+| `crates/types`     | `schematic_types`  | `Schema`, `SchemaBuilder`, `SchemaType`, the `Schematic` trait. No macro code.                                  |
+| `crates/core`      | `schematic_core`   | **Where the derive lives.** Container/field/variant analysis and all codegen.                                   |
+| `crates/macros`    | `schematic_macros` | Thin proc-macro shell over `core`. Exports `Config`, `ConfigEnum`, and `Schematic`.                             |
+| `crates/test-app`  | `test_app`         | Manual smoke-test binary.                                                                                       |
 
 ### Migration status — read this first
 
-`crates/macros` is production — it is what `crates/schematic` re-exports, and what users get today.
-`crates/core` is a piece-by-piece rewrite of it, consumed by `crates/macros-next`.
+The rewrite has landed. The old hand-written derive was deleted and `crates/macros-next` was renamed
+to `crates/macros`, so `schematic_macros` is now a thin shell over `core` and there is only one
+derive implementation. Anything describing `macros` as a separate production implementation is
+stale.
 
-`macros-next` exports working `Config`, `ConfigEnum`, and `Schematic` derives, exercised by real
-compile-and-run tests in `crates/macros-next/tests/`. **Nothing depends on it yet** —
-`crates/schematic` still re-exports `schematic_macros`, so swapping the two is a separate step
-blocked on the gaps below.
+All three derives declare `serde` as a helper attribute, so `#[serde(untagged)]`, `#[serde(tag)]`,
+and friends are legal on a type that derives only `Config`. That is the replacement for the removed
+`#[config(serde(...))]`.
 
-Still unported, in rough order of what blocks the swap:
+Deliberately dropped in the rewrite, and not coming back:
 
-- **`#[setting(skip_deserializing_if)]`** parses but emits nothing (serde has no such attribute).
-- `#[setting(exclude)]` is behind `cfg(schema)` in core but unconditional in production, so it fails
-  to parse when the feature is off.
+- `#[config(serde(...))]` — write the native `#[serde(...)]` attribute instead.
+- `#[variant(value)]` — `#[variant(rename)]` covers it.
+- The `tracing` feature. Generated code is no longer wrapped in `#[tracing::instrument]`; the loader
+  still is.
+- Named-field enum variants panic, as they did in the old derive too.
 
-Not gaps, despite looking like them: named-field enum variants panic in *both* crates, and
-`#[config(serde(...))]`, `#[variant(value)]`, and the `tracing` feature were all deliberately
-removed in the rewrite — `#[variant(rename)]` covers what `value` did, and generated code is no
-longer wrapped in `#[tracing::instrument]` (the loader still is).
+Known remaining hole: **`#[setting(skip_deserializing_if)]`** parses but emits nothing, because
+serde has no such attribute.
 
 `ConfigEnum` has no implementation of its own. It is the same `Container` with
 `macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
 `ConfigEnum`/`FromStr`/`TryFrom`/`Display` impls plus `impl_schematic_full`. The schema comes out of
 the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (even when a
 `fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
-variant and infers the fallback's inner type as a string, matching production.
+variant and infers the fallback's inner type as a string, as the old derive did.
 
-**Casing is a deliberate divergence, not a gap.** Production defaults to `camelCase` for struct
-fields and `kebab-case` for enum variants. Core has *no default* — a name is used exactly as
-written, so Rust's `snake_case` is what ships unless `rename_all` says otherwise. When `rename_all`
+**Casing has no default.** The old derive applied `camelCase` to struct fields and `kebab-case` to
+enum variants. Core applies nothing — a name is used exactly as written, so Rust's `snake_case` is
+what ships unless `rename_all` says otherwise. This was the single largest source of churn when the
+rewrite landed, and it is why so many fixtures and snapshots in `crates/schematic/tests` are
+snake_case. When `rename_all`
 is set, `Field::get_name` and `Variant::get_name` apply it via `format_case`, so schemas,
 `settings()`, and validation paths agree with what serde accepts. Env keys deliberately skip the
-casing and stay derived from the Rust name (or an explicit `rename`), matching production.
+casing and stay derived from the Rust name (or an explicit `rename`).
 
-**All three derives support generics**, which is a divergence from production (where only
-`Schematic` does). `Container` carries `input.generics`, and every emitted item threads them
+**All three derives support generics**, where the old derive supported them only on `Schematic`.
+`Container` carries `input.generics`, and every emitted item threads them
 through: the partial declaration, its `Default`/`Deserialize`, `PartialConfig`, `Config`, and both
 `Schematic` impls. Three things fall out of that:
 
@@ -81,9 +83,11 @@ A generic `ConfigEnum` only makes sense with a `fallback`, since unit variants c
 `Display` writes each arm for itself, so the fallback goes through `T: Display` instead of having to
 be a `&str`.
 
-When implementing something in `core`, the old implementation in `crates/macros` is the reference.
-It is _not_ always correct — this session found many bugs in it — but it tells you the intended
-behavior and the shapes users depend on.
+The old hand-written derive is gone from the worktree but still reachable through git history, at
+`git show <pre-migration-rev>:crates/macros/...`. It is a useful reference for *intended* behavior
+and the shapes users depend on, but it is **not** a correctness oracle — the rewrite fixed a long
+list of real bugs in it, several of which only surfaced when `schematic`'s own suite was pointed at
+`core`.
 
 ## The Config ↔ Partial model
 
@@ -197,11 +201,13 @@ isolation and snapshots the pretty-printed tokens. Type errors, missing trait bo
 cross-method inconsistencies are invisible to them. Several real bugs in this codebase sat in green
 snapshots for exactly this reason.
 
-`crates/macros-next/tests/` is the antidote: it derives against the real runtime and asserts on
-behavior, so it catches what snapshots can't. Run it for any `core` change that alters codegen.
+`crates/macros/tests/` is the antidote: it derives against the real runtime and asserts on
+behavior, so it catches what snapshots can't. `crates/schematic/tests/` now does too, since it
+compiles against `core`. Run both for any `core` change that alters codegen.
 
 ```bash
-cargo test -p schematic_macros_next
+cargo test -p schematic_macros
+cargo test -p schematic
 ```
 
 Snapshot tests (starbase_sandbox/insta):
@@ -241,9 +247,22 @@ cargo clippy --workspace --all-targets
 cargo fmt --all --check
 ```
 
-Known pre-existing clippy warnings (not yours): a `count` loop counter in `core/src/variant.rs` and
-`macros/src/config/variant.rs`, and a collapsible `if` in `macros/src/utils.rs` and
-`schematic/src/schema/renderers/template.rs`.
+`cargo clippy --workspace --all-targets` is clean, and so is `cargo build -p schematic` on its own.
+If you see a warning now, it is yours.
+
+Those two are not the same check. `--workspace --all-targets` unifies features across crates, and
+dev-dependencies turn nearly everything on, so a re-export or `mut` that is dead under a narrower
+feature set stays invisible there. Build individual crates, and a few feature combinations, before
+claiming a change is warning-free:
+
+```bash
+cargo build -p schematic                                          # default features only
+cargo build -p schematic --no-default-features                    # nothing on
+cargo build -p schematic --no-default-features --features config  # one feature at a time
+```
+
+The same unification is why `cargo test --workspace` can pass while a real feature combination
+fails to compile — see the note about `schematic_types` below.
 
 Also run `cargo test -p schematic_types` on its own. `cargo test --workspace` unifies features across
 crates, so a crate whose own feature list is incomplete still compiles there — that hid a broken
@@ -261,7 +280,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   keys _derived_ from a setting name get the prefix, and only when the container declares
   `env_prefix`. Deriving keys for every container would force `FromStr` on every setting, which
   breaks `Duration`, tuples, etc. A parent's `#[setting(nested, env_prefix)]` therefore only
-  overrides a child that declares one. `settings()` reports explicit keys only.
+  overrides a child that declares one. `settings()` reports explicit keys only, and so does
+  `SchemaField.env_var` — which is why a derived key no longer shows up as an `@env` annotation in
+  a rendered template, where the old derive emitted one.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
   `merge` to change it.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,
@@ -273,10 +294,26 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 
+- **Validators are called through a generated closure**, never passed by value, so that the value
+  deref coerces on its way in — a `String` setting reaches a `&str` validator and a `Vec<T>` a
+  `&[T]` one. `ValidateManager::check` therefore takes `impl FnOnce(V, &D, &Ctx, bool)` and takes
+  the value by move, because a variant of several values passes a *tuple of references*, not a
+  reference to a tuple. Boxing the validator instead breaks built-ins like `validate::extends_string`.
+- **A doc comment becomes one flowing paragraph**, not one line per source line, with markdown list
+  items kept on their own line. A block comment (`/** ... */`) arrives as a single multi-line
+  attribute value, so its leading `*` is a continuation marker and gets stripped; a `///` line
+  arrives as its own attribute, so a `*` there is markdown and survives.
+
 ## Gotchas
 
 - `#[setting(...)]` and `#[serde(...)]` both feed the derive. Setting attrs take precedence; aliases
   from both are merged.
+- All three derives declare `serde` as a helper attribute, so `#[serde(...)]` is accepted on a type
+  that derives only `Config`. Two derives declaring the same helper is fine — serde's own
+  `Serialize`/`Deserialize` pair does it.
+- `Schema::partialize()` on a tagged enum variant marks the **value**, never the `{tag, content}`
+  struct synthesized around it. Marking the wrapper makes the runtime nullify the tag, so the
+  partial schema claims `{"type": null}` is valid.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full

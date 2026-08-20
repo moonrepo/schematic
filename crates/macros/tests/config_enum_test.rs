@@ -5,7 +5,7 @@
 #![allow(dead_code)]
 
 use schematic::{ConfigEnum as ConfigEnumTrait, ConfigError, SchemaBuilder, SchemaType};
-use schematic_macros_next::ConfigEnum;
+use schematic_macros::ConfigEnum;
 use std::str::FromStr;
 
 mod basic {
