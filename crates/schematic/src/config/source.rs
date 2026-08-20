@@ -15,10 +15,7 @@ pub enum Source {
 
     /// Secure URL to the configuration.
     #[cfg(feature = "url")]
-    Url {
-        url: String,
-        content: Option<String>,
-    },
+    Url { url: String },
 }
 
 impl Source {
@@ -87,7 +84,7 @@ impl Source {
     pub fn url<T: TryInto<String>>(url: T) -> Result<Source, ConfigError> {
         let url: String = url.try_into().map_err(|_| ConfigError::InvalidUrl)?;
 
-        Ok(Source::Url { url, content: None })
+        Ok(Source::Url { url })
     }
 
     /// Return a file extension (without period) for the source if one is available.

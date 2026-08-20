@@ -118,43 +118,6 @@ impl<T: Config> ConfigLoader<T> {
         self.source(Source::url(url)?)
     }
 
-    /// Add a URL source to preload immediately.
-    #[cfg(feature = "url")]
-    pub async fn url_preload<S: TryInto<String>>(
-        &mut self,
-        url: S,
-    ) -> Result<&mut Self, ConfigError> {
-        let mut source = Source::url(url)?;
-
-        if let Source::Url { url, content } = &mut source {
-            match { self.cacher.lock().unwrap().read(url)? } {
-                Some(cache) => {
-                    *content = Some(strip_bom(&cache).to_owned());
-                }
-                None => {
-                    let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-                        url: url.to_owned(),
-                        error: Box::new(error),
-                    };
-
-                    let body = reqwest::get(url.to_owned())
-                        .await
-                        .map_err(handle_reqwest_error)?
-                        .text()
-                        .await
-                        .map_err(handle_reqwest_error)?;
-                    let body = strip_bom(&body).to_owned();
-
-                    self.cacher.lock().unwrap().write(url, &body)?;
-
-                    *content = Some(body);
-                }
-            }
-        }
-
-        self.source(source)
-    }
-
     /// Load, parse, merge, and validate all sources into a final configuration.
     pub fn load(&self) -> Result<ConfigLoadResult<T>, ConfigError> {
         let context = <T::Partial as PartialConfig>::Context::default();
@@ -370,10 +333,7 @@ impl<T: Config> ConfigLoader<T> {
                 (Cow::Owned(strip_bom(&content).to_owned()), None)
             }
             #[cfg(feature = "url")]
-            Source::Url {
-                url,
-                content: preloaded_content,
-            } => {
+            Source::Url { url } => {
                 use crate::helpers::is_secure_url;
 
                 if !is_secure_url(url) {
@@ -382,31 +342,28 @@ impl<T: Config> ConfigLoader<T> {
 
                 let mut cacher = self.cacher.lock().unwrap();
 
-                let content: Cow<'_, str> = if let Some(preloaded) = preloaded_content {
-                    Cow::Borrowed(strip_bom(preloaded))
-                } else {
-                    let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
-                        url: url.to_owned(),
-                        error: Box::new(error),
-                    };
-
-                    match cacher.read(url)? {
-                        Some(cache) => Cow::Owned(strip_bom(&cache).to_owned()),
-                        None => {
-                            let body = reqwest::blocking::get(url)
-                                .map_err(handle_reqwest_error)?
-                                .text()
-                                .map_err(handle_reqwest_error)?;
-                            let body = strip_bom(&body).to_owned();
-
-                            cacher.write(url, &body)?;
-
-                            Cow::Owned(body)
-                        }
-                    }
+                let handle_reqwest_error = |error: reqwest::Error| ConfigError::ReadUrlFailed {
+                    url: url.to_owned(),
+                    error: Box::new(error),
                 };
 
-                (content, cacher.get_file_path(url)?)
+                let content = if let Some(cache) = cacher.read(url)? {
+                    cache
+                } else {
+                    let body = reqwest::blocking::get(url)
+                        .map_err(handle_reqwest_error)?
+                        .text()
+                        .map_err(handle_reqwest_error)?;
+
+                    cacher.write(url, &body)?;
+
+                    body
+                };
+
+                (
+                    Cow::Owned(strip_bom(&content).to_owned()),
+                    cacher.get_file_path(url)?,
+                )
             }
         };
 
