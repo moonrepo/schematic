@@ -193,11 +193,3 @@ pub fn map_option_argument_quote<T: ToTokens>(value: Option<T>) -> proc_macro2::
         }
     }
 }
-
-pub fn instrument_quote() -> proc_macro2::TokenStream {
-    #[cfg(feature = "tracing")]
-    quote! { #[tracing::instrument(skip_all)] }
-
-    #[cfg(not(feature = "tracing"))]
-    quote! {}
-}

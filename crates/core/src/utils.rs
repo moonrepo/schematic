@@ -22,7 +22,34 @@ pub fn get_renamed_value(
 /// Apply a serde `rename_all` casing to a name. Mirrors what serde does to
 /// the serialized key, so that derive-time names (schemas, settings,
 /// validation paths) describe what is actually accepted.
+/// The case names serde accepts for `rename_all`, and that `before_parse`
+/// reuses. Kept in step with `schematic::internal::format_case`, which does
+/// the same conversion at runtime.
+pub const CASE_FORMATS: [&str; 8] = [
+    "lowercase",
+    "UPPERCASE",
+    "PascalCase",
+    "camelCase",
+    "snake_case",
+    "SCREAMING_SNAKE_CASE",
+    "kebab-case",
+    "SCREAMING-KEBAB-CASE",
+];
+
+/// Panic when a case format isn't one serde recognizes. Takes the attribute
+/// name so the message points at whichever one was misspelled.
+pub fn validate_case_format(attr: &str, format: &str) {
+    if !CASE_FORMATS.contains(&format) {
+        panic!(
+            "Unknown `{attr}` value `{format}`. Supported values are {}.",
+            CASE_FORMATS.join(", ")
+        );
+    }
+}
+
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
+    validate_case_format("rename_all", format);
+
     let case = match format {
         "lowercase" => return value.to_lowercase(),
         "UPPERCASE" => return value.to_uppercase(),
@@ -32,11 +59,7 @@ pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
         "SCREAMING_SNAKE_CASE" => Case::UpperSnake,
         "kebab-case" => Case::Kebab,
         "SCREAMING-KEBAB-CASE" => Case::UpperKebab,
-        other => {
-            panic!(
-                "Unknown `rename_all` value `{other}`. Supported values are lowercase, UPPERCASE, PascalCase, camelCase, snake_case, SCREAMING_SNAKE_CASE, kebab-case, and SCREAMING-KEBAB-CASE."
-            );
-        }
+        _ => unreachable!("Validated above."),
     };
 
     value

@@ -141,7 +141,6 @@ The following Cargo features are available:
 - `pkl` - Enables Pkl.
 - `ron` - Enables RON.
 - `toml` - Enables TOML.
-- `tracing` - Wrap generated code in tracing instrumentations.
 - `url` - Enables loading, extending, and parsing configs from URLs.
 - `validate` (default) - Enables setting value validation.
 - `yaml` - Enables YAML.

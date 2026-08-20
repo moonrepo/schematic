@@ -51,7 +51,7 @@ struct ExampleConfig {
 And the following for serde compatibility:
 
 - `rename`
-- `rename_all` - Defaults to `camelCase`.
+- `rename_all` - Has no default. Field names are used exactly as written unless this is set.
 
 ## Serde support
 

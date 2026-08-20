@@ -9,6 +9,10 @@
 - Structs will no longer default to `camelCase` field name casing.
 - Enums will no longer default to `kebab-case` variant name casing.
 - Removed `#[config(serde(...))]` on containers. Use `#[serde(...)]` instead.
+- Removed `#[variant(value)]` on enum variants. Use `#[variant(rename)]` instead, which does the
+  same thing.
+- Removed the `tracing` Cargo feature, which wrapped generated code in `#[tracing::instrument]`.
+  The loader is still instrumented; only the derive output no longer is.
 
 ##### Schema
 
@@ -61,6 +65,9 @@
 - Updated the methods of `PartialConfig` to all have a default implementation. This helps to greatly
   reduce the amount of macro generated code.
 - Improved the parse, handling, and validation of container and field attributes.
+- Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
+  instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,
+  so `very_high`, `VeryHigh`, and `VERY HIGH` can all resolve to the same variant.
 
 ##### Serde
 
