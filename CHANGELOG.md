@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## Unreleased
 
 This is a major release that has been in development for over a year. The macro layer has been
 rewritten from the ground up, utilizing new patterns to improve maintainability and extendability,
@@ -162,9 +162,9 @@ while the schema types have been updated to be more flexible and composable.
 - Fixed a block doc comment (`/** ... */`) keeping its leading `*` continuation markers, which
   rendered them as stray markdown list items.
 - Fixed the `config` feature failing to compile without `env`.
-- Fixed the `url` feature being unable to request any HTTPS URL. `reqwest` was declared without
-  a TLS backend, so it only worked in this repository, where a dev-dependency happened to enable
-  one. `ureq` enables rustls by default.
+- Fixed the `url` feature being unable to request any HTTPS URL. `reqwest` was declared without a
+  TLS backend, so it only worked in this repository, where a dev-dependency happened to enable one.
+  `ureq` enables rustls by default.
 - Fixed the `type_regex` and `type_semver` features failing to compile alongside `config` without
   `schema`. Their `Schematic` implementations are now gated, so the setting types themselves no
   longer require the schema layer.

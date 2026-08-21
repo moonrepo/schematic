@@ -1,6 +1,6 @@
 [package]
 name = "schematic_core"
-version = "0.18.7"
+version = "0.0.1"
 edition = "2024"
 license = "MIT"
 description = "Core building blocks for schematic macros."

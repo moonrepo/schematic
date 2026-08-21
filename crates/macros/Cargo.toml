@@ -14,7 +14,7 @@ all-features = true
 proc-macro = true
 
 [dependencies]
-schematic_core = { version = "0.18.7", path = "../core" }
+schematic_core = { version = "0.0.1", path = "../core" }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true }
