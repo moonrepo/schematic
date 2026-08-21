@@ -58,11 +58,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "content": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/PartialSomeConfig"
-            }
-          ]
+          "$ref": "#/definitions/PartialSomeConfig"
         },
         "type": {
           "const": "Qux"
@@ -127,11 +123,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "content": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/SomeConfig"
-                }
-              ]
+              "$ref": "#/definitions/SomeConfig"
             },
             "type": {
               "const": "Qux"
@@ -228,11 +220,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Qux": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/SomeConfig"
-                }
-              ]
+              "$ref": "#/definitions/SomeConfig"
             }
           },
           "additionalProperties": false
@@ -287,11 +275,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Object": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/SomeConfig"
-                }
-              ]
+              "$ref": "#/definitions/SomeConfig"
             }
           },
           "additionalProperties": false
@@ -437,11 +421,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Qux": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/PartialSomeConfig"
-                }
-              ]
+              "$ref": "#/definitions/PartialSomeConfig"
             }
           },
           "additionalProperties": false
@@ -496,11 +476,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Object": {
-              "allOf": [
-                {
-                  "$ref": "#/definitions/PartialSomeConfig"
-                }
-              ]
+              "$ref": "#/definitions/PartialSomeConfig"
             }
           },
           "additionalProperties": false

@@ -69,9 +69,13 @@ JsonSchemaRenderer::new(JsonSchemaOptions {
 });
 ```
 
-> This type also contains all fields from the upstream
-> [`SchemaSettings`](https://docs.rs/schemars/latest/schemars/gen/struct.SchemaSettings.html) type
-> from the `schemars` crate. Refer to their documentation for more information.
+> This type also carries some fields from the upstream
+> [`SchemaSettings`](https://docs.rs/schemars/latest/schemars/generate/struct.SchemaSettings.html)
+> type in the `schemars` crate — `meta_schema`, `transforms`, and `inline_subschemas`. Refer to
+> their documentation for more information.
+
+> `definitions_path` is the prefix each `$ref` is built from, such as `#/definitions/`. Schemars
+> models its own field of that name as a JSON pointer instead, so the two are not interchangeable.
 
 ### Markdown descriptions
 

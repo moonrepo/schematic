@@ -58,11 +58,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "nested_req": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/StandardSettings"
-            }
-          ]
+          "$ref": "#/definitions/StandardSettings"
         }
       },
       "additionalProperties": false

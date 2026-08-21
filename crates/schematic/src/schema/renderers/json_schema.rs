@@ -1,15 +1,25 @@
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
-use schemars::r#gen::{GenVisitor, SchemaSettings};
-use schemars::schema::{
-    ArrayValidation, InstanceType, Metadata, NumberValidation, ObjectValidation, RootSchema,
-    Schema as JsonSchema, SchemaObject, SingleOrVec, StringValidation, SubschemaValidation,
-};
+use schemars::generate::{GenTransform, SchemaSettings};
 use schematic_types::*;
-use serde_json::{Number, Value};
+use serde_json::{Map, Number, Value};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::mem;
+
+/// A schema document, which schemars models as JSON rather than as typed nodes.
+type JsonSchema = schemars::Schema;
+
+/// Keys that describe a schema rather than constrain it. A field replaces these
+/// wholesale with its own, so they are dropped from what the type contributed.
+const METADATA_KEYS: [&str; 6] = [
+    "title",
+    "description",
+    "default",
+    "deprecated",
+    "readOnly",
+    "writeOnly",
+];
 
 pub struct JsonSchemaOptions {
     /// Allows newlines in descriptions, otherwise strips them.
@@ -28,12 +38,12 @@ pub struct JsonSchemaOptions {
     /// This overrides any `title` manually defined by a type.
     pub set_field_name_as_title: bool,
 
-    // Inherited from schemars.
-    pub option_nullable: bool,
-    pub option_add_null_type: bool,
+    /// Prefix that `$ref` values are built from.
     pub definitions_path: String,
+
+    // Inherited from schemars.
     pub meta_schema: Option<String>,
-    pub visitors: Vec<Box<dyn GenVisitor>>,
+    pub transforms: Vec<Box<dyn GenTransform>>,
     pub inline_subschemas: bool,
 }
 
@@ -47,11 +57,11 @@ impl Default for JsonSchemaOptions {
             markdown_description: false,
             mark_struct_fields_required: true,
             set_field_name_as_title: false,
-            option_nullable: settings.option_nullable,
-            option_add_null_type: settings.option_add_null_type,
-            definitions_path: settings.definitions_path,
-            meta_schema: settings.meta_schema,
-            visitors: settings.visitors,
+            // Schemars models this as a JSON pointer, while we concatenate it
+            // onto a name to form a `$ref`, so it is not inherited
+            definitions_path: "#/definitions/".into(),
+            meta_schema: settings.meta_schema.map(|schema| schema.to_string()),
+            transforms: settings.transforms,
             inline_subschemas: settings.inline_subschemas,
         }
     }
@@ -139,6 +149,22 @@ fn lit_to_value(lit: &LiteralValue) -> Value {
     }
 }
 
+/// Insert a key only when there is a value for it, so that an absent setting
+/// leaves no trace in the document.
+fn insert_some(map: &mut Map<String, Value>, key: &str, value: Option<Value>) {
+    if let Some(value) = value {
+        map.insert(key.to_owned(), value);
+    }
+}
+
+fn number(value: f64) -> Option<Value> {
+    Number::from_f64(value).map(Value::Number)
+}
+
+fn count(value: usize) -> Value {
+    Value::Number(Number::from(value))
+}
+
 impl JsonSchemaRenderer {
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
@@ -147,20 +173,33 @@ impl JsonSchemaRenderer {
         }
     }
 
-    fn create_metadata_from_schema(&self, schema: &Schema) -> Metadata {
-        Metadata {
-            title: if self.options.set_field_name_as_title {
-                None
-            } else {
-                schema.name.clone()
-            },
-            deprecated: schema.deprecated.is_some(),
-            description: schema
-                .description
-                .clone()
-                .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
-            ..Default::default()
+    /// Start a schema document with the metadata a type carries. Keys are
+    /// inserted in the order schemars used to serialize them, so that upgrading
+    /// does not reshuffle every generated file.
+    fn create_metadata_from_schema(&self, schema: &Schema) -> Map<String, Value> {
+        let mut map = Map::new();
+
+        if !self.options.set_field_name_as_title
+            && let Some(name) = &schema.name
+        {
+            map.insert("title".into(), Value::String(name.to_owned()));
         }
+
+        if let Some(description) = &schema.description {
+            map.insert(
+                "description".into(),
+                Value::String(clean_comment(
+                    description.to_owned(),
+                    self.options.allow_newlines_in_description,
+                )),
+            );
+        }
+
+        if schema.deprecated.is_some() {
+            map.insert("deprecated".into(), Value::Bool(true));
+        }
+
+        map
     }
 
     fn create_field_from_schema(
@@ -168,33 +207,53 @@ impl JsonSchemaRenderer {
         name: &str,
         field: &SchemaField,
     ) -> RenderResult<JsonSchema> {
-        let mut schema = self.render_schema(&field.schema)?;
+        let rendered = self.render_schema(&field.schema)?;
 
-        if let JsonSchema::Object(ref mut inner) = schema {
-            let mut metadata = Metadata {
-                title: if self.options.set_field_name_as_title && !name.is_empty() {
-                    Some(name.to_owned())
-                } else {
-                    None
-                },
-                description: field
-                    .comment
-                    .clone()
-                    .map(|desc| clean_comment(desc, self.options.allow_newlines_in_description)),
-                deprecated: field.deprecated.is_some(),
-                read_only: field.read_only,
-                write_only: field.write_only,
-                ..Default::default()
-            };
+        let Some(object) = rendered.as_object() else {
+            return Ok(rendered);
+        };
 
-            if let Some(default) = field.schema.get_default() {
-                metadata.default = Some(lit_to_value(default));
-            }
+        // The field describes itself, so its metadata replaces whatever the
+        // type contributed rather than merging with it
+        let mut map = Map::new();
 
-            inner.metadata = Some(Box::new(metadata));
+        if self.options.set_field_name_as_title && !name.is_empty() {
+            map.insert("title".into(), Value::String(name.to_owned()));
         }
 
-        Ok(schema)
+        if let Some(comment) = &field.comment {
+            map.insert(
+                "description".into(),
+                Value::String(clean_comment(
+                    comment.to_owned(),
+                    self.options.allow_newlines_in_description,
+                )),
+            );
+        }
+
+        if let Some(default) = field.schema.get_default() {
+            map.insert("default".into(), lit_to_value(default));
+        }
+
+        if field.deprecated.is_some() {
+            map.insert("deprecated".into(), Value::Bool(true));
+        }
+
+        if field.read_only {
+            map.insert("readOnly".into(), Value::Bool(true));
+        }
+
+        if field.write_only {
+            map.insert("writeOnly".into(), Value::Bool(true));
+        }
+
+        for (key, value) in object {
+            if !METADATA_KEYS.contains(&key.as_str()) {
+                map.insert(key.to_owned(), value.to_owned());
+            }
+        }
+
+        Ok(JsonSchema::from(map))
     }
 }
 
@@ -204,30 +263,25 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     }
 
     fn render_array(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<JsonSchema> {
+        let mut map = self.create_metadata_from_schema(schema);
+
+        map.insert("type".into(), Value::String("array".into()));
+        map.insert(
+            "items".into(),
+            self.render_schema(&array.items_type)?.to_value(),
+        );
+
+        insert_some(&mut map, "maxItems", array.max_length.map(count));
+        insert_some(&mut map, "minItems", array.min_length.map(count));
+        insert_some(&mut map, "uniqueItems", array.unique.map(Value::Bool));
+
         // `contains` constrains the array as a whole, and `items` every entry,
         // so the two are independent and both are rendered when present.
-        let contains = match &array.contains {
-            Some(inner) => Some(Box::new(self.render_schema(inner)?)),
-            None => None,
-        };
+        if let Some(inner) = &array.contains {
+            map.insert("contains".into(), self.render_schema(inner)?.to_value());
+        }
 
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
-            array: Some(Box::new(ArrayValidation {
-                contains,
-                items: Some(SingleOrVec::Single(Box::new(
-                    self.render_schema(&array.items_type)?,
-                ))),
-                max_items: array.max_length.map(|i| i as u32),
-                min_items: array.min_length.map(|i| i as u32),
-                unique_items: array.unique,
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
-
-        Ok(JsonSchema::Object(data))
+        Ok(JsonSchema::from(map))
     }
 
     fn render_boolean(
@@ -235,15 +289,15 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         _boolean: &BooleanType,
         schema: &Schema,
     ) -> RenderResult<JsonSchema> {
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Boolean))),
-            ..Default::default()
-        }))
+        let mut map = self.create_metadata_from_schema(schema);
+
+        map.insert("type".into(), Value::String("boolean".into()));
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_enum(&mut self, enu: &EnumType, schema: &Schema) -> RenderResult<JsonSchema> {
-        let metadata = self.create_metadata_from_schema(schema);
+        let mut map = self.create_metadata_from_schema(schema);
 
         // Unit enum with a fallback variant
         if enu
@@ -255,83 +309,83 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
 
             for (name, field) in enu.variants.as_ref().unwrap() {
                 if !field.hidden {
-                    any_of.push(self.create_field_from_schema(name, field)?);
+                    any_of.push(self.create_field_from_schema(name, field)?.to_value());
                 }
             }
 
-            return Ok(JsonSchema::Object(SchemaObject {
-                metadata: Some(Box::new(metadata)),
-                subschemas: Some(Box::new(SubschemaValidation {
-                    any_of: Some(any_of),
-                    ..Default::default()
-                })),
-                ..Default::default()
-            }));
+            map.insert("anyOf".into(), Value::Array(any_of));
+
+            return Ok(JsonSchema::from(map));
         }
 
         // Unit enum with no fallback variant
-        let mut instance_type = InstanceType::String;
+        let mut instance_type = "string";
         let mut enum_values = vec![];
 
         for value in &enu.values {
             match value {
                 LiteralValue::Bool(v) => {
-                    instance_type = InstanceType::Boolean;
+                    instance_type = "boolean";
                     enum_values.push(Value::Bool(*v));
                 }
                 LiteralValue::F32(v) => {
-                    instance_type = InstanceType::Number;
+                    instance_type = "number";
                     enum_values.push(Value::Number(Number::from_f64(*v as f64).unwrap()));
                 }
                 LiteralValue::F64(v) => {
-                    instance_type = InstanceType::Number;
+                    instance_type = "number";
                     enum_values.push(Value::Number(Number::from_f64(*v).unwrap()));
                 }
                 LiteralValue::Int(v) => {
-                    instance_type = InstanceType::Number;
+                    instance_type = "number";
                     enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::UInt(v) => {
-                    instance_type = InstanceType::Number;
+                    instance_type = "number";
                     enum_values.push(Value::Number(Number::from(*v)));
                 }
                 LiteralValue::String(v) => {
-                    instance_type = InstanceType::String;
+                    instance_type = "string";
                     enum_values.push(Value::String(v.to_owned()));
                 }
             };
         }
 
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(metadata)),
-            instance_type: Some(SingleOrVec::Single(Box::new(instance_type))),
-            enum_values: Some(enum_values),
-            ..Default::default()
-        }))
+        map.insert("type".into(), Value::String(instance_type.into()));
+        map.insert("enum".into(), Value::Array(enum_values));
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_float(&mut self, float: &FloatType, schema: &Schema) -> RenderResult<JsonSchema> {
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
-            enum_values: float.enum_values.clone().map(|values| {
-                values
-                    .into_iter()
-                    .map(|v| Value::Number(Number::from_f64(v).unwrap()))
-                    .collect()
-            }),
-            format: float.format.clone(),
-            number: Some(Box::new(NumberValidation {
-                exclusive_maximum: float.max_exclusive,
-                exclusive_minimum: float.min_exclusive,
-                maximum: float.max,
-                minimum: float.min,
-                multiple_of: float.multiple_of,
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("number".into()));
+
+        insert_some(&mut map, "format", float.format.clone().map(Value::String));
+
+        if let Some(values) = &float.enum_values {
+            map.insert(
+                "enum".into(),
+                Value::Array(values.iter().filter_map(|v| number(*v)).collect()),
+            );
+        }
+
+        insert_some(&mut map, "multipleOf", float.multiple_of.and_then(number));
+        insert_some(&mut map, "maximum", float.max.and_then(number));
+        insert_some(
+            &mut map,
+            "exclusiveMaximum",
+            float.max_exclusive.and_then(number),
+        );
+        insert_some(&mut map, "minimum", float.min.and_then(number));
+        insert_some(
+            &mut map,
+            "exclusiveMinimum",
+            float.min_exclusive.and_then(number),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_integer(
@@ -339,27 +393,55 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         integer: &IntegerType,
         schema: &Schema,
     ) -> RenderResult<JsonSchema> {
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Number))),
-            enum_values: integer.enum_values.clone().map(|values| {
-                values
-                    .into_iter()
-                    .map(|v| Value::Number(Number::from(v)))
-                    .collect()
-            }),
-            format: integer.format.clone(),
-            number: Some(Box::new(NumberValidation {
-                exclusive_maximum: integer.max_exclusive.map(|i| i as f64),
-                exclusive_minimum: integer.min_exclusive.map(|i| i as f64),
-                maximum: integer.max.map(|i| i as f64),
-                minimum: integer.min.map(|i| i as f64),
-                multiple_of: integer.multiple_of.map(|i| i as f64),
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("number".into()));
+
+        insert_some(
+            &mut map,
+            "format",
+            integer.format.clone().map(Value::String),
+        );
+
+        if let Some(values) = &integer.enum_values {
+            map.insert(
+                "enum".into(),
+                Value::Array(
+                    values
+                        .iter()
+                        .map(|v| Value::Number(Number::from(*v)))
+                        .collect(),
+                ),
+            );
+        }
+
+        insert_some(
+            &mut map,
+            "multipleOf",
+            integer.multiple_of.and_then(|i| number(i as f64)),
+        );
+        insert_some(
+            &mut map,
+            "maximum",
+            integer.max.and_then(|i| number(i as f64)),
+        );
+        insert_some(
+            &mut map,
+            "exclusiveMaximum",
+            integer.max_exclusive.and_then(|i| number(i as f64)),
+        );
+        insert_some(
+            &mut map,
+            "minimum",
+            integer.min.and_then(|i| number(i as f64)),
+        );
+        insert_some(
+            &mut map,
+            "exclusiveMinimum",
+            integer.min_exclusive.and_then(|i| number(i as f64)),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_literal(
@@ -367,65 +449,81 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         literal: &LiteralType,
         schema: &Schema,
     ) -> RenderResult<JsonSchema> {
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            const_value: Some(lit_to_value(&literal.value)),
-            ..Default::default()
-        }))
+        let mut map = self.create_metadata_from_schema(schema);
+
+        map.insert("const".into(), lit_to_value(&literal.value));
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_null(&mut self, schema: &Schema) -> RenderResult<JsonSchema> {
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Null))),
-            ..Default::default()
-        }))
+        let mut map = self.create_metadata_from_schema(schema);
+
+        map.insert("type".into(), Value::String("null".into()));
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_object(&mut self, object: &ObjectType, schema: &Schema) -> RenderResult<JsonSchema> {
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            object: Some(Box::new(ObjectValidation {
-                max_properties: object.max_length.map(|i| i as u32),
-                min_properties: object.min_length.map(|i| i as u32),
-                required: BTreeSet::from_iter(object.required.clone().unwrap_or_default()),
-                additional_properties: Some(Box::new(self.render_schema(&object.value_type)?)),
-                property_names: Some(Box::new(self.render_schema(&object.key_type)?)),
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("object".into()));
+
+        insert_some(&mut map, "maxProperties", object.max_length.map(count));
+        insert_some(&mut map, "minProperties", object.min_length.map(count));
+
+        let required = BTreeSet::from_iter(object.required.clone().unwrap_or_default());
+
+        if !required.is_empty() {
+            map.insert(
+                "required".into(),
+                Value::Array(required.into_iter().map(Value::String).collect()),
+            );
+        }
+
+        map.insert(
+            "additionalProperties".into(),
+            self.render_schema(&object.value_type)?.to_value(),
+        );
+        map.insert(
+            "propertyNames".into(),
+            self.render_schema(&object.key_type)?.to_value(),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<JsonSchema> {
-        Ok(JsonSchema::Object(SchemaObject {
-            // Note: Don't add metadata as it causes nested schema references!
-            reference: Some(format!("{}{}", self.options.definitions_path, reference)),
-            ..Default::default()
-        }))
+        // Note: Don't add metadata as it causes nested schema references!
+        Ok(JsonSchema::new_ref(format!(
+            "{}{}",
+            self.options.definitions_path, reference
+        )))
     }
 
     fn render_string(&mut self, string: &StringType, schema: &Schema) -> RenderResult<JsonSchema> {
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
-            enum_values: string
-                .enum_values
-                .clone()
-                .map(|values| values.into_iter().map(Value::String).collect()),
-            format: string.format.clone(),
-            string: Some(Box::new(StringValidation {
-                max_length: string.max_length.map(|i| i as u32),
-                min_length: string.min_length.map(|i| i as u32),
-                pattern: string.pattern.clone(),
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("string".into()));
+
+        insert_some(&mut map, "format", string.format.clone().map(Value::String));
+
+        if let Some(values) = &string.enum_values {
+            map.insert(
+                "enum".into(),
+                Value::Array(values.iter().cloned().map(Value::String).collect()),
+            );
+        }
+
+        insert_some(&mut map, "maxLength", string.max_length.map(count));
+        insert_some(&mut map, "minLength", string.min_length.map(count));
+        insert_some(
+            &mut map,
+            "pattern",
+            string.pattern.clone().map(Value::String),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_struct(
@@ -435,7 +533,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
-        let mut additional_properties = Some(Box::new(JsonSchema::Bool(false)));
+        let mut additional_properties = Some(Value::Bool(false));
         let exclude_aliases = self.options.exclude_aliases;
 
         for (name, field) in structure.sorted_fields() {
@@ -448,12 +546,12 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
                     let flattened = self.render_schema_without_reference(schema)?;
 
                     if matches!(schema.ty, SchemaType::Object(_))
-                        && let JsonSchema::Object(inner) = flattened.clone()
-                        && let Some(object) = inner.object
+                        && let Some(inner) = flattened.as_object()
+                        && let Some(value) = inner.get("additionalProperties")
                     {
-                        additional_properties = object.additional_properties;
+                        additional_properties = Some(value.to_owned());
                     } else {
-                        additional_properties = Some(Box::new(flattened));
+                        additional_properties = Some(flattened.to_value());
                     }
                 }
 
@@ -468,125 +566,157 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
                 for alias in &field.aliases {
                     properties.insert(
                         alias.to_owned(),
-                        self.create_field_from_schema(alias, field)?,
+                        self.create_field_from_schema(alias, field)?.to_value(),
                     );
                 }
             }
 
-            properties.insert(name.to_owned(), self.create_field_from_schema(name, field)?);
+            properties.insert(
+                name.to_owned(),
+                self.create_field_from_schema(name, field)?.to_value(),
+            );
         }
 
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            object: Some(Box::new(ObjectValidation {
-                additional_properties,
-                required,
-                properties,
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("object".into()));
+
+        if !required.is_empty() {
+            map.insert(
+                "required".into(),
+                Value::Array(required.into_iter().map(Value::String).collect()),
+            );
+        }
+
+        map.insert(
+            "properties".into(),
+            Value::Object(properties.into_iter().collect()),
+        );
+
+        insert_some(&mut map, "additionalProperties", additional_properties);
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_tuple(&mut self, tuple: &TupleType, schema: &Schema) -> RenderResult<JsonSchema> {
         let mut items = vec![];
 
         for item in &tuple.items_types {
-            items.push(self.render_schema(item)?);
+            items.push(self.render_schema(item)?.to_value());
         }
 
-        let data = SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Array))),
-            array: Some(Box::new(ArrayValidation {
-                items: Some(SingleOrVec::Vec(items)),
-                max_items: Some(tuple.items_types.len() as u32),
-                min_items: Some(tuple.items_types.len() as u32),
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(data))
+        map.insert("type".into(), Value::String("array".into()));
+        map.insert("items".into(), Value::Array(items));
+        map.insert("maxItems".into(), count(tuple.items_types.len()));
+        map.insert("minItems".into(), count(tuple.items_types.len()));
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_union(&mut self, uni: &UnionType, schema: &Schema) -> RenderResult<JsonSchema> {
         let mut items = vec![];
-        let mut metadata = self.create_metadata_from_schema(schema);
+        let mut default = None;
 
         for item in &uni.variants_types {
-            items.push(self.render_schema(item)?);
+            items.push(self.render_schema(item)?.to_value());
 
-            if metadata.default.is_none() {
-                if let Some(def) = item.get_default() {
-                    metadata.default = Some(lit_to_value(def));
-                }
+            if default.is_none()
+                && let Some(def) = item.get_default()
+            {
+                default = Some(lit_to_value(def));
             }
         }
 
-        let subschema = match uni.operator {
-            UnionOperator::AnyOf => SubschemaValidation {
-                any_of: Some(items),
-                ..Default::default()
-            },
-            UnionOperator::OneOf => SubschemaValidation {
-                one_of: Some(items),
-                ..Default::default()
-            },
-        };
+        let mut map = self.create_metadata_from_schema(schema);
 
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(metadata)),
-            subschemas: Some(Box::new(subschema)),
-            ..Default::default()
-        }))
+        // `default` sits with the other metadata keys, ahead of the subschemas
+        if let Some(default) = default {
+            let rest = mem::take(&mut map);
+
+            for (key, value) in rest {
+                map.insert(key.clone(), value);
+
+                if key == "description" || (key == "title" && !map.contains_key("description")) {
+                    map.insert("default".into(), default.clone());
+                }
+            }
+
+            if !map.contains_key("default") {
+                map.insert("default".into(), default);
+            }
+        }
+
+        map.insert(
+            match uni.operator {
+                UnionOperator::AnyOf => "anyOf".into(),
+                UnionOperator::OneOf => "oneOf".into(),
+            },
+            Value::Array(items),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render_unknown(&mut self, schema: &Schema) -> RenderResult<JsonSchema> {
-        Ok(JsonSchema::Object(SchemaObject {
-            metadata: Some(Box::new(self.create_metadata_from_schema(schema))),
-            instance_type: Some(SingleOrVec::Vec(vec![
-                InstanceType::Boolean,
-                InstanceType::Object,
-                InstanceType::Array,
-                InstanceType::Number,
-                InstanceType::String,
-                InstanceType::Integer,
-            ])),
-            ..Default::default()
-        }))
+        let mut map = self.create_metadata_from_schema(schema);
+
+        map.insert(
+            "type".into(),
+            Value::Array(
+                ["boolean", "object", "array", "number", "string", "integer"]
+                    .into_iter()
+                    .map(|ty| Value::String(ty.into()))
+                    .collect(),
+            ),
+        );
+
+        Ok(JsonSchema::from(map))
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
         self.references = HashSet::from_iter(schemas.keys().cloned());
 
-        let mut root_schema = RootSchema {
-            meta_schema: self.options.meta_schema.clone(),
-            ..RootSchema::default()
-        };
+        let mut root = Map::new();
+
+        if let Some(meta_schema) = &self.options.meta_schema {
+            root.insert("$schema".into(), Value::String(meta_schema.to_owned()));
+        }
+
+        let mut definitions = BTreeMap::new();
 
         for (i, (name, schema)) in schemas.iter().enumerate() {
+            let rendered = self.render_schema_without_reference(schema)?;
+
             // The last schema in the generator is the root schema
             if i == schemas.len() - 1 {
-                root_schema.schema = self.render_schema_without_reference(schema)?.into_object();
+                if let Some(object) = rendered.as_object() {
+                    for (key, value) in object {
+                        root.insert(key.to_owned(), value.to_owned());
+                    }
+                }
 
             // Otherwise the others are all ref definitions
             } else {
-                root_schema.definitions.insert(
-                    name.to_owned(),
-                    self.render_schema_without_reference(schema)?,
-                );
+                definitions.insert(name.to_owned(), rendered.to_value());
             }
         }
 
-        for visitor in &mut self.options.visitors {
-            visitor.visit_root_schema(&mut root_schema)
+        if !definitions.is_empty() {
+            root.insert(
+                "definitions".into(),
+                Value::Object(definitions.into_iter().collect()),
+            );
         }
 
-        let mut json = serde_json::to_value(&root_schema).into_diagnostic()?;
+        let mut root_schema = JsonSchema::from(root);
+
+        for transform in &mut self.options.transforms {
+            transform.transform(&mut root_schema);
+        }
+
+        let mut json = root_schema.to_value();
 
         if self.options.markdown_description {
             inject_markdown_descriptions(&mut json)?;
