@@ -98,6 +98,31 @@ expression: "create_diff::<Enums>()"
 🟥                                                        value: String(
 🟥                                                            "b",
 🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "c": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
 🟩                                                values: [
 🟩                                                    String(
 🟩                                                        "a",
@@ -189,31 +214,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    },
 ⬛️                                                ),
 ⬛️                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "c": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        value: String(
-🟥                                                            "c",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
 🟥                                            deprecated: None,
 🟥                                            env_var: None,
 🟥                                            flatten: false,
@@ -473,6 +473,59 @@ expression: "create_diff::<Enums>()"
 🟥                                                        value: String(
 🟥                                                            "b",
 🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "c": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "other": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: String(
+🟥                                                    StringType {
+🟥                                                        default: None,
+🟥                                                        enum_values: None,
+🟥                                                        format: None,
+🟥                                                        max_length: None,
+🟥                                                        min_length: None,
+🟥                                                        pattern: None,
 🟩                                                values: [
 🟩                                                    String(
 🟩                                                        "a",
@@ -592,59 +645,6 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                    },
 ⬛️                                                ),
 ⬛️                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "c": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        value: String(
-🟥                                                            "c",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "other": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: String(
-🟥                                                    StringType {
-🟥                                                        default: None,
-🟥                                                        enum_values: None,
-🟥                                                        format: None,
-🟥                                                        max_length: None,
-🟥                                                        min_length: None,
-🟥                                                        pattern: None,
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
 🟥                                            deprecated: None,
 🟥                                            env_var: None,
 🟥                                            flatten: false,
