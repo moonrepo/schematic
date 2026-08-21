@@ -296,6 +296,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   derive time can resolve. `path_names_a_value` goes by the last segment's first character, which
   works because a name breaking Rust's conventions would already be earning a lint. Non-literal
   defaults still never reach the schema — `impl_schema_type` only reads `Expr::Lit`.
+- **A container `#[serde(default)]` makes every field optional**, the same as one declared on the
+  field, since serde falls back per field when the input omits it. `SchemaField.optional` reflects
+  that, which is what puts the `?` on a TypeScript property.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 
@@ -304,10 +307,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `&[T]` one. `ValidateManager::check` therefore takes `impl FnOnce(V, &D, &Ctx, bool)` and takes
   the value by move, because a variant of several values passes a *tuple of references*, not a
   reference to a tuple. Boxing the validator instead breaks built-ins like `validate::extends_string`.
-- **A doc comment becomes one flowing paragraph**, not one line per source line, with markdown list
-  items kept on their own line. A block comment (`/** ... */`) arrives as a single multi-line
-  attribute value, so its leading `*` is a continuation marker and gets stripped; a `///` line
-  arrives as its own attribute, so a `*` there is markdown and survives.
+- **A doc comment keeps the line structure the author wrote.** Renderers depend on it — a JSDoc
+  block or a template comment that was several lines has to stay several lines, and collapsing it
+  breaks markdown lists and paragraph breaks. A block comment (`/** ... */`) arrives as a single
+  multi-line attribute value, so its leading `*` is a continuation marker and gets stripped; a `///`
+  line arrives as its own attribute, so a `*` there is markdown and survives.
 
 ## Gotchas
 

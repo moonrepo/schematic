@@ -440,6 +440,60 @@ mod enums {
 
 mod serde_attrs {
     use super::*;
+    use std::collections::BTreeMap;
+
+    // A `serde` predicate describes the full type, where the field is a `T`.
+    // The partial holds an `Option<T>`, so forwarding it there cannot compile.
+    #[derive(Debug, Config, Serialize)]
+    pub struct SkipSerializing {
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        map: BTreeMap<String, String>,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        list: Vec<String>,
+    }
+
+    #[test]
+    fn a_serde_predicate_is_left_to_the_full_type() {
+        // The partial falls back to its own, which is what its shape allows
+        let partial = PartialSkipSerializing::default();
+
+        assert_eq!(serde_json::to_string(&partial).unwrap(), "{}");
+    }
+
+    #[test]
+    fn a_serde_predicate_still_applies_to_the_full_type() {
+        let config = SkipSerializing::default();
+
+        assert_eq!(serde_json::to_string(&config).unwrap(), "{}");
+    }
+
+    fn is_empty_option(value: &Option<String>) -> bool {
+        value.as_ref().is_none_or(|inner| inner.is_empty())
+    }
+
+    // The `setting` form does reach the partial, so it is written against the
+    // partial's `Option`
+    #[derive(Debug, Config, Serialize)]
+    pub struct SkipSerializingSetting {
+        #[setting(skip_serializing_if = "is_empty_option")]
+        name: String,
+    }
+
+    #[test]
+    fn a_setting_predicate_applies_to_the_partial() {
+        let mut partial = PartialSkipSerializingSetting::default();
+
+        assert_eq!(serde_json::to_string(&partial).unwrap(), "{}");
+
+        partial.name = Some(String::new());
+        assert_eq!(serde_json::to_string(&partial).unwrap(), "{}");
+
+        partial.name = Some("abc".into());
+        assert_eq!(
+            serde_json::to_string(&partial).unwrap(),
+            r#"{"name":"abc"}"#
+        );
+    }
 
     #[derive(Debug, Config, Serialize)]
     pub struct Renamed {

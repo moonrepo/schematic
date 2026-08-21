@@ -261,8 +261,11 @@ impl Field {
     }
 
     /// Whether the setting can be omitted, because a default is provided.
+    /// Whether the setting may be omitted from the input. A `default` on the
+    /// container applies to every field, so it counts the same as one declared
+    /// on the field itself.
     pub fn is_optional(&self) -> bool {
-        self.args.default.is_some() || self.serde_args.default
+        self.args.default.is_some() || self.serde_args.default || self.serde_container_args.default
     }
 
     pub fn is_required(&self) -> bool {
@@ -350,12 +353,10 @@ impl Field {
         } else {
             if self.args.skip_serializing || self.serde_args.skip_serializing {
                 meta.push(quote! { skip_serializing });
-            } else if let Some(func) = self
-                .args
-                .skip_serializing_if
-                .as_ref()
-                .or(self.serde_args.skip_serializing_if.as_ref())
-            {
+            } else if let Some(func) = self.args.skip_serializing_if.as_ref() {
+                // Only the `setting` form is honored. A `serde` one belongs to
+                // the full type, where the field is a `T`, while here it is an
+                // `Option<T>`, so the predicate would not apply to it.
                 meta.push(quote! { skip_serializing_if = #func });
             } else {
                 // Partial values are always optional, so avoid serializing `None`

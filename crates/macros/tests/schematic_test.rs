@@ -325,3 +325,52 @@ mod field_metadata {
         assert!(!inner.fields.contains_key("hidden"));
     }
 }
+
+// A container `#[serde(default)]` lets serde fall back per field, so every
+// field may be omitted from the input and renders as optional
+mod container_serde_default {
+    use super::*;
+
+    #[derive(Schematic)]
+    #[serde(default)]
+    pub struct AllOptional {
+        pub name: String,
+        pub count: usize,
+    }
+
+    #[derive(Schematic)]
+    pub struct NoneOptional {
+        pub name: String,
+        pub count: usize,
+    }
+
+    fn optional_fields<T: schematic::Schematic>() -> Vec<(String, bool)> {
+        let schema = SchemaBuilder::build_root::<T>();
+
+        let SchemaType::Struct(inner) = schema.ty else {
+            panic!("expected a struct");
+        };
+
+        inner
+            .fields
+            .iter()
+            .map(|(name, field)| (name.to_owned(), field.optional))
+            .collect()
+    }
+
+    #[test]
+    fn a_container_default_makes_every_field_optional() {
+        assert_eq!(
+            optional_fields::<AllOptional>(),
+            vec![("name".into(), true), ("count".into(), true)]
+        );
+    }
+
+    #[test]
+    fn without_it_fields_stay_required() {
+        assert_eq!(
+            optional_fields::<NoneOptional>(),
+            vec![("name".into(), false), ("count".into(), false)]
+        );
+    }
+}

@@ -148,12 +148,7 @@ pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
                     .unwrap_or_else(|| if line == "*" { "" } else { line });
             }
 
-            // Preserve list items as their own line
-            if line.starts_with("* ") || line.starts_with("- ") {
-                lines.push(format!("\n{line}"));
-            } else {
-                lines.push(line.to_owned());
-            }
+            lines.push(line.to_owned());
         }
     }
 
@@ -161,7 +156,7 @@ pub fn extract_comment(attrs: &[Attribute]) -> Option<String> {
         return None;
     }
 
-    Some(lines.join(" ").trim().to_owned())
+    Some(lines.join("\n").trim().to_owned())
 }
 
 /// Extract the deprecated message from a list of attributes. Returns an

@@ -63,7 +63,8 @@ And the following for serde compatibility:
 - `skip`
 - `skip_deserializing`
 - `skip_serializing`
-- `skip_serializing_if`
+- `skip_serializing_if` - Only honored from `#[setting]`, and written against the partial's
+  `Option`. The `#[serde]` form is left for the full type, whose field is not wrapped.
 - `untagged` _(enum only)_
 
 ### Serde support
