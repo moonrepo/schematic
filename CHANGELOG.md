@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.20.0
 
 This is a major release that has been in development for over a year. The macro layer has been
 rewritten from the ground up, utilizing new patterns to improve maintainability and extendability,
