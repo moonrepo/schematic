@@ -96,6 +96,114 @@ mod named_struct {
     }
 }
 
+// https://github.com/moonrepo/schematic/issues/173
+mod default_values {
+    use super::*;
+    use schematic::DefaultValueResult;
+    use serde::Deserialize;
+
+    #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, schematic::Schematic)]
+    pub enum LevelFilter {
+        #[default]
+        Off,
+        Debug,
+    }
+
+    #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize, schematic::Schematic)]
+    pub struct Point {
+        pub x: usize,
+        pub y: usize,
+    }
+
+    impl Point {
+        pub const ORIGIN: Point = Point { x: 0, y: 0 };
+    }
+
+    pub mod limits {
+        pub const MAX: usize = 99;
+    }
+
+    fn pick_level<C>(_: &C) -> DefaultValueResult<LevelFilter> {
+        Ok(Some(LevelFilter::Debug))
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Values {
+        #[setting(default = LevelFilter::Debug)]
+        variant: LevelFilter,
+        #[setting(default = Point::ORIGIN)]
+        assoc_const: Point,
+        #[setting(default = limits::MAX)]
+        path_const: usize,
+        #[setting(default = Point { x: 1, y: 2 })]
+        literal: Point,
+        #[setting(default = Point { x: 3, ..Point::ORIGIN })]
+        literal_with_rest: Point,
+    }
+
+    #[test]
+    fn uses_a_path_that_names_a_value() {
+        let config = Values::default();
+
+        assert_eq!(config.variant, LevelFilter::Debug);
+        assert_eq!(config.assoc_const, Point { x: 0, y: 0 });
+        assert_eq!(config.path_const, 99);
+    }
+
+    #[test]
+    fn uses_a_struct_literal() {
+        let config = Values::default();
+
+        assert_eq!(config.literal, Point { x: 1, y: 2 });
+        assert_eq!(config.literal_with_rest, Point { x: 3, y: 0 });
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Handlers {
+        #[setting(default = pick_level)]
+        via_fn: LevelFilter,
+    }
+
+    // A `snake_case` path is still called with the context, which is what
+    // tells the two apart
+    #[test]
+    fn still_calls_a_handler_function() {
+        assert_eq!(Handlers::default().via_fn, LevelFilter::Debug);
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Layered {
+        #[setting(default = LevelFilter::Debug)]
+        optional: Option<LevelFilter>,
+        #[setting(default = LevelFilter::Debug)]
+        boxed: Box<LevelFilter>,
+        #[setting(default = vec![LevelFilter::Debug])]
+        list: Vec<LevelFilter>,
+    }
+
+    #[test]
+    fn wraps_a_value_in_its_layers() {
+        let config = Layered::default();
+
+        assert_eq!(config.optional, Some(LevelFilter::Debug));
+        assert_eq!(*config.boxed, LevelFilter::Debug);
+        assert_eq!(config.list, vec![LevelFilter::Debug]);
+    }
+
+    // A default is the lowest layer, so a configured value still wins
+    #[test]
+    fn a_source_still_overrides_it() {
+        let result = ConfigLoader::<Values>::new()
+            .code(r#"{"variant": "Off"}"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap();
+
+        assert_eq!(result.config.variant, LevelFilter::Off);
+        assert_eq!(result.config.literal, Point { x: 1, y: 2 });
+    }
+}
+
 mod merging {
     use super::*;
 

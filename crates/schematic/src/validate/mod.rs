@@ -8,6 +8,7 @@ mod number;
 mod string;
 #[cfg(feature = "validate_url")]
 mod url;
+mod uuid;
 
 pub use crate::config::{ValidateError, ValidateResult, Validator};
 #[cfg(feature = "validate_email")]
@@ -20,6 +21,7 @@ pub use number::*;
 pub use string::*;
 #[cfg(feature = "validate_url")]
 pub use url::*;
+pub use uuid::*;
 
 pub(crate) fn map_err(error: garde::Error) -> ValidateError {
     ValidateError::new(error.to_string())
