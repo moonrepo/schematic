@@ -93,6 +93,8 @@ pub struct ValidateFuncs {
     url: String,
     #[setting(validate = validate::url_secure)]
     url_secure: String,
+    #[setting(validate = validate::uuid)]
+    uuid: String,
     #[setting(validate = validate::in_range(1, 5))]
     range: i32,
     #[setting(validate = validate::extends_string)]
@@ -114,7 +116,7 @@ fn runs_the_validator_funcs() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
+        "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  uuid: not a valid UUID: expected 36 characters, found 0\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
     )
 }
 
