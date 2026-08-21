@@ -133,7 +133,10 @@ export interface Comments {
 	 * @deprecated Bye
 	 */
 	block: boolean;
-	/** Block with a super long comment that will span multiple lines. Block with a super long comment that will span multiple lines. */
+	/**
+	 * Block with a super long comment that will span multiple lines.
+	 * Block with a super long comment that will span multiple lines.
+	 */
 	block_long: boolean;
 	/**
 	 * Docs
@@ -141,7 +144,10 @@ export interface Comments {
 	 * @deprecated
 	 */
 	docs: boolean;
-	/** Docs with a super long comment that will span multiple lines. It also **contains** some _markdown_ [stuff](.). */
+	/**
+	 * Docs with a super long comment that will span multiple lines.
+	 * It also **contains** some _markdown_ [stuff](.).
+	 */
 	docs_long: boolean;
 	inline_block: boolean;
 	normal: boolean;

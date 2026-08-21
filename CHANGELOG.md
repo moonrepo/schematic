@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a `#[serde(skip_serializing_if)]` on a field being applied to the partial, where the field
+  is an `Option` and the predicate could never typecheck. It is now left for the full type, while
+  `#[setting(skip_serializing_if)]` still applies to the partial.
+- Fixed a container `#[serde(default)]` not marking its fields as optional in the schema. A
+  TypeScript property that should have been `name?:` was rendered as `name:`.
+- Fixed doc comments being collapsed onto a single line in 0.20.0. They keep the line structure they
+  were written with, which renderers rely on for markdown lists and paragraph breaks.
+
 ## 0.20.0
 
 This is a major release that has been in development for over a year. The macro layer has been

@@ -68,7 +68,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "opt": ""
   },
 
-  // This is a number with a long description. This is a number with a long description.
+  // This is a number with a long description.
+  // This is a number with a long description.
   "number": 0,
 
   // This is a nested struct with its own fields.
