@@ -112,6 +112,61 @@ mod setting_default {
         assert_snapshot!(pretty(container.impl_partial_default_values()));
     }
 
+    // A path that names a value rather than a function, told apart by Rust's
+    // naming conventions, so that an enum variant does not compile as a call
+    #[test]
+    fn supports_value_paths() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(default = LevelFilter::Debug)]
+                a: LevelFilter,
+                #[setting(default = MAX)]
+                b: usize,
+                #[setting(default = limits::MAX)]
+                c: usize,
+                #[setting(default = Point::ORIGIN)]
+                d: Point,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
+    #[test]
+    fn supports_struct_literals() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(default = Point { x: 1, y: 2 })]
+                a: Point,
+                #[setting(default = Wrapper { inner: Point { x: 0, y: 0 } })]
+                b: Wrapper,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
+    // An `Option` setting still gets its value wrapped, and a collection still
+    // takes the whole literal
+    #[test]
+    fn wraps_value_paths_in_layers() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(default = LevelFilter::Debug)]
+                a: Option<LevelFilter>,
+                #[setting(default = LevelFilter::Debug)]
+                b: Box<LevelFilter>,
+                #[setting(default = vec![LevelFilter::Debug])]
+                c: Vec<LevelFilter>,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
     mod named_struct {
         use super::*;
 

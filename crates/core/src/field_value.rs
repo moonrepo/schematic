@@ -5,10 +5,25 @@ use crate::value::{Layer, Value};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::ops::Deref;
-use syn::{Expr, Lit, Type};
+use syn::{Expr, Lit, Path, Type};
 
 #[derive(Debug)]
 pub struct FieldValue(Value);
+
+/// Whether a path names a value -- an enum variant, unit struct, or constant --
+/// rather than a function to hand the context to.
+///
+/// Both arrive as a bare `Expr::Path`, and nothing at derive time can resolve
+/// which one it is, so this leans on Rust's naming conventions: a function is
+/// `snake_case`, while everything that names a value is `PascalCase` or
+/// `SCREAMING_SNAKE_CASE`. A handler that ignored that would already be earning
+/// a `non_snake_case` warning of its own.
+fn path_names_a_value(path: &Path) -> bool {
+    path.segments
+        .last()
+        .and_then(|segment| segment.ident.to_string().chars().next())
+        .is_some_and(|char| char.is_uppercase())
+}
 
 fn wrap_layer(layer: &Layer, value: TokenStream) -> TokenStream {
     match layer {
@@ -102,7 +117,7 @@ impl FieldValue {
 
         match field_args.default.as_ref() {
             // Handler functions return the entire value
-            Some(Expr::Path(func)) => {
+            Some(Expr::Path(func)) if !path_names_a_value(&func.path) => {
                 res.requires_internal = true;
                 res.value = quote! { handle_default_result(#func(context))? };
             }
@@ -110,7 +125,12 @@ impl FieldValue {
             // collection, so only wrap with the layers outside of it
             Some(expr) => {
                 let mut value = match expr {
-                    Expr::Array(_) | Expr::Call(_) | Expr::Macro(_) | Expr::Tuple(_) => {
+                    Expr::Array(_)
+                    | Expr::Call(_)
+                    | Expr::Macro(_)
+                    | Expr::Path(_)
+                    | Expr::Struct(_)
+                    | Expr::Tuple(_) => {
                         quote! { #expr }
                     }
                     Expr::Lit(lit) => match &lit.lit {
@@ -126,7 +146,7 @@ impl FieldValue {
                     },
                     invalid => {
                         panic!(
-                            "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, or tuples."
+                            "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, tuples, structs, paths, or calls."
                         );
                     }
                 };
