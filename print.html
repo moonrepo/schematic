@@ -1,0 +1,3240 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Schematic</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-19aa7bb6.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-67a62e30.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Schematic</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/moonrepo/schematic" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="schematic"><a class="header" href="#schematic">Schematic</a></h1>
+<p>Schematic is a library that provides:</p>
+<ul>
+<li>A layered serde-driven <a href="#configuration">configuration system</a> with support for merge
+strategies, validation rules, environment variables, and more!</li>
+<li>A <a href="#schemas">schema modeling system</a> that can be used to generate TypeScript types, JSON
+schemas, and more!</li>
+</ul>
+<p>Both of these features can be used independently or together.</p>
+<pre><code>cargo add schematic
+</code></pre>
+<h2 id="example-references"><a class="header" href="#example-references">Example references</a></h2>
+<p>The following projects are using Schematic and can be used as a reference:</p>
+<ul>
+<li><a href="https://github.com/moonrepo/moon/tree/master/nextgen/config">moon</a> - A build system for web based
+monorepos.</li>
+<li><a href="https://github.com/moonrepo/proto/blob/master/crates/core/src/proto_config.rs">proto</a> - A
+multi-language version manager with WASM plugin support.</li>
+<li><a href="https://github.com/IgnisDa/ryot/blob/main/crates/config/src/lib.rs">ryot</a> - Track various aspects
+of your life.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="configuration"><a class="header" href="#configuration">Configuration</a></h1>
+<blockquote>
+<p>Requires the <code>config</code> Cargo feature, which is enabled by default.</p>
+</blockquote>
+<p>The primary feature of Schematic is a layered serde-driven configuration solution, and is powered
+through the <a href="#structs--enums"><code>Config</code></a> and <a href="#unit-only-enums"><code>ConfigEnum</code></a> traits, and their
+associated derive macro. These macros help to generate and automate the following (when applicable):</p>
+<ul>
+<li>Generates a <a href="#partials">partial implementation</a>, with all field values wrapped in <code>Option</code>.</li>
+<li>Provides <a href="#default-values">default value</a> and <a href="#environment-variables">environment variable</a>
+handling.</li>
+<li>Implements <a href="#merge-strategies">merging</a> and <a href="#validation-rules">validation</a> logic.</li>
+<li>Models a <a href="#schemas">schema</a> (when <code>schema</code> Cargo feature enabled).</li>
+<li>And other minor features, like <a href="#metadata">context &amp; metadata</a>.</li>
+</ul>
+<p>The struct or enum that derives <code>Config</code> represents the <em>final state</em>, after all
+<a href="#partials">partial layers</a> have been merged, and default and environment variable values have
+been applied. This means that all fields (settings) should <em>not</em> be wrapped in <code>Option</code>, unless the
+setting is truly optional (think nullable in the config file).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct ExampleConfig {
+	pub number: usize,
+	pub string: String,
+	pub boolean: bool,
+	pub array: Vec&lt;String&gt;,
+	pub optional: Option&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This pattern provides the optimal developer experience, as you can reference the settings as-is,
+without having to unwrap them, or use <code>match</code> or <code>if-let</code> statements!</p>
+</blockquote>
+<h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
+<p>Define a struct or enum and derive the <a href="#structs--enums"><code>Config</code></a> trait. Fields within the struct
+(known as <a href="#settings">settings</a>) can be annotated with the <code>#[setting]</code> attribute to provide
+additional functionality.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::Config;
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(default = 3000, env = "PORT")]
+	pub port: usize,
+
+	#[setting(default = true)]
+	pub secure: bool,
+
+	#[setting(default = vec!["localhost".into()])]
+	pub allowed_hosts: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="loading-sources"><a class="header" href="#loading-sources">Loading sources</a></h3>
+<p>When all of your structs and enums have been defined, you can then load, parse, merge, and validate
+a configuration from one or many sources. A source is either a file path, secure URL, or inline code
+string.</p>
+<p>Begin by importing the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html"><code>ConfigLoader</code></a> struct and
+initializing it with the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>
+type you want to load.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::ConfigLoader;
+
+let loader = ConfigLoader::&lt;AppConfig&gt;::new();
+<span class="boring">}</span></code></pre>
+<p>From here, you can feed it sources to load. For file paths, use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file"><code>ConfigLoader::file()</code></a>
+or
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.file_optional"><code>ConfigLoader::file_optional()</code></a>
+methods. For URLs, use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url"><code>ConfigLoader::url()</code></a>
+method (requires the <code>url</code> Cargo feature, which is <em>not</em> enabled by default). For inline code, use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code"><code>ConfigLoader::code()</code></a>
+method, which requires an explicit format.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>loader.code("secure: false", "example.yml")?;
+loader.file("path/to/config.yml")?;
+loader.url("https://ordomain.com/to/config.yaml")?;
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>The formats to use are derived from the trailing file extension.</p>
+</blockquote>
+<p>And lastly call the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load"><code>ConfigLoader::load()</code></a>
+method to generate the final configuration. This methods returns a result, which includes the final
+configuration, as well as all of the <a href="#partials">partial layers</a> that were loaded.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let result = loader.load()?;
+
+result.config; // AppConfig
+result.layers; // Vec&lt;Layer&lt;PartialAppConfig&gt;&gt;
+<span class="boring">}</span></code></pre>
+<h3 id="automatic-schemas"><a class="header" href="#automatic-schemas">Automatic schemas</a></h3>
+<p>When the <code>schema</code> Cargo feature is enabled, the
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait will be
+automatically implemented for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> and
+<a href="https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html"><code>ConfigEnum</code></a>. You do <em>not</em> and
+<em>should not</em> derive both of these together.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Correct
+#[derive(Config)]
+struct AppConfig {}
+
+// Incorrect
+#[derive(Config, Schematic)]
+struct AppConfig {}
+<span class="boring">}</span></code></pre>
+<h2 id="supported-source-formats"><a class="header" href="#supported-source-formats">Supported source formats</a></h2>
+<p>Schematic is powered entirely by <a href="https://serde.rs">serde</a>, and supports the following formats:</p>
+<ul>
+<li>JSON - Uses <code>serde_json</code> and requires the <code>json</code> Cargo feature.</li>
+<li>Pkl - Uses <code>rpkl</code> and requires the <code>pkl</code> Cargo feature.</li>
+<li>RON - Uses <code>ron</code> and requires the <code>ron</code> Cargo feature.</li>
+<li>TOML - Uses <code>toml</code> and requires the <code>toml</code> Cargo feature.</li>
+<li>YAML - Uses <code>serde_norway</code> and requires the <code>yaml</code> Cargo feature.</li>
+</ul>
+<h2 id="cargo-features"><a class="header" href="#cargo-features">Cargo features</a></h2>
+<p>The following Cargo features are available:</p>
+<ul>
+<li><code>config</code> (default) - Enables configuration support (all the above stuff).</li>
+<li><code>env</code> (default) - Enables environment variables for settings.</li>
+<li><code>extends</code> (default) - Enables configs to extend other configs.</li>
+<li><code>json</code> - Enables JSON.</li>
+<li><code>pkl</code> - Enables Pkl.</li>
+<li><code>ron</code> - Enables RON.</li>
+<li><code>toml</code> - Enables TOML.</li>
+<li><code>url</code> - Enables loading, extending, and parsing configs from URLs.</li>
+<li><code>validate</code> (default) - Enables setting value validation.</li>
+<li><code>yaml</code> - Enables YAML.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
+<p>Settings are the individual fields of a <a href="#structs--enums"><code>Config</code> struct</a> or variants of a
+<a href="#structs--enums"><code>Config</code> enum</a>, and can be annotated with the optional <code>#[setting]</code> attribute.</p>
+<h2 id="third-party-types"><a class="header" href="#third-party-types">Third-party types</a></h2>
+<p>A setting that isn’t wrapped in <code>Option</code> falls back to <code>Default::default()</code> when the config provides
+no value and no <a href="#default-values">default value</a> is declared, so every required setting has to
+implement <code>Default</code>. Plenty of third-party types don’t, and being foreign, can’t be given it.</p>
+<p>For the two we support directly, we provide a newtype that does:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Setting</th><th>Wraps</th><th>Default</th><th>Cargo feature</th></tr>
+</thead>
+<tbody>
+<tr><td><a href="https://docs.rs/schematic/latest/schematic/struct.RegexSetting.html"><code>RegexSetting</code></a></td><td><code>regex::Regex</code></td><td><code>.</code></td><td><code>type_regex</code></td></tr>
+<tr><td><a href="https://docs.rs/schematic/latest/schematic/struct.VersionSetting.html"><code>VersionSetting</code></a></td><td><code>semver::Version</code></td><td><code>0.0.0</code></td><td><code>type_semver</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Config, RegexSetting, VersionSetting};
+
+#[derive(Config)]
+struct AppConfig {
+	pub allowed: RegexSetting,
+	pub version: VersionSetting,
+}
+<span class="boring">}</span></code></pre>
+<p>Each derefs to the type it wraps, so its methods can be called directly, and each parses from a
+string, so the wrapper works without the upstream crate’s <code>serde</code> feature.</p>
+<blockquote>
+<p><code>semver::VersionReq</code> needs no wrapper, as it already defaults to <code>*</code>. Types that are only ever
+optional don’t need one either, since an <code>Option</code> setting defaults to <code>None</code>.</p>
+</blockquote>
+<h2 id="attribute-fields"><a class="header" href="#attribute-fields">Attribute fields</a></h2>
+<p>The following fields are supported for the <code>#[setting]</code> field/variant attribute:</p>
+<ul>
+<li><code>default</code> - Sets the <a href="#default-values">default value</a>. On an enum variant, this is a marker
+that takes no value, and names the variant the partial defaults to.</li>
+<li><code>env</code> <em>(struct only)</em> - Sets the <a href="#environment-variables">environment variable</a> to receive a value from.</li>
+<li><code>env_prefix</code> <em>(struct only)</em> - Overrides the <a href="#container-prefixes">environment variable</a>
+prefix of the nested config this field holds. Requires <code>nested</code>.</li>
+<li><code>exclude</code> - Omits the field or variant from the generated <a href="#schemas">schema</a>. Has no
+effect without the <code>schema</code> Cargo feature.</li>
+<li><code>extend</code> <em>(struct only)</em> - Enables a configuration to <a href="#extendable-sources">extend other configs</a>.</li>
+<li><code>merge</code> - Defines a function to use for <a href="#merge-strategies">merging values</a>.</li>
+<li><code>nested</code> - Marks the field as using a <a href="#nesting">nested <code>Config</code></a>.</li>
+<li><code>null</code> <em>(enum only)</em> - Marks the variant as representing <code>null</code>, so it is never tagged.</li>
+<li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="#environment-variables">environment variable</a> value using a
+function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container.</li>
+<li><code>partial</code> - Forwards attributes to the field on the <a href="#partials">partial</a>.</li>
+<li><code>required</code> - Marks the field as required. This is useful for <code>Option</code> types that do not support
+<code>Default</code>, but require a value.</li>
+<li><code>transform</code> - Defines a function to use for <a href="#transforming-values">transforming values</a>.</li>
+<li><code>validate</code> - Defines a function to use for <a href="#validation-rules">validating values</a>.</li>
+</ul>
+<p>And the following for serde compatibility:</p>
+<ul>
+<li><code>alias</code></li>
+<li><code>flatten</code></li>
+<li><code>rename</code></li>
+<li><code>skip</code></li>
+<li><code>skip_deserializing</code></li>
+<li><code>skip_serializing</code></li>
+<li><code>skip_serializing_if</code></li>
+<li><code>untagged</code> <em>(enum only)</em></li>
+</ul>
+<h3 id="serde-support"><a class="header" href="#serde-support">Serde support</a></h3>
+<p>A handful of serde attribute fields are currently supported (above) and will apply a <code>#[serde]</code>
+attribute to the <a href="#partials">partial</a> implementation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct Example {
+	#[setting(rename = "type")]
+	pub type_of: SomeEnum,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>These values can also be applied using <code>#[serde]</code>, which is useful if you want to apply them to
+the main struct as well, and not just the partial struct. When a field is set through both, the
+<code>#[setting]</code> value wins, except for <code>alias</code>, where the two lists are merged.</p>
+</blockquote>
+<p>Names are used exactly as written. There is no default casing, so a field named <code>allowed_hosts</code> is
+parsed as <code>allowed_hosts</code> unless a <code>rename</code> or <code>rename_all</code> says otherwise. An explicit <code>rename</code> is
+never re-cased by <code>rename_all</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="partials"><a class="header" href="#partials">Partials</a></h1>
+<p>A powerful feature of Schematic is what we call partial configurations. These are a mirror of the
+derived <a href="#structs--enums"><code>Config</code> struct</a> or <a href="#structs--enums"><code>Config</code> enum</a>, with all
+settings wrapped in <code>Option</code>, the item name prefixed with <code>Partial</code>, and have common serde and
+derive attributes automatically applied.</p>
+<p>For example, the <code>ExampleConfig</code> from the <a href="#configuration">first chapter</a> would generate the
+following partial struct:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct PartialExampleConfig {
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub number: Option&lt;usize&gt;,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub string: Option&lt;String&gt;,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub boolean: Option&lt;bool&gt;,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub array: Option&lt;Vec&lt;String&gt;&gt;,
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub optional: Option&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>So what are partials used for exactly? Partials are used for the entire parsing, layering,
+extending, and merging process, and ultimately become the <a href="#configuration">final configuration</a>.</p>
+<p>When deserializing a source with serde, we utilize the partial config as the target type, because
+not all fields are guaranteed to be present. This is especially true when merging multiple sources
+together, as each source may only contain a subset of the final config. Each source represents a
+layer to be merged.</p>
+<p>Partials are also beneficial when serializing, as only settings with values will be written to the
+source, instead of everything! A common complaint of serde’s strictness.</p>
+<p>As stated above, partials also handle the following:</p>
+<ul>
+<li>Defining <a href="#default-values">default values</a> for settings.</li>
+<li>Inheriting <a href="#environment-variables">environment variable</a> values.</li>
+<li>Merging partials with <a href="#merge-strategies">strategy functions</a>.</li>
+<li>Validating current values with <a href="#validation-rules">validate functions</a>.</li>
+<li>Declaring <a href="#extendable-sources">extendable sources</a>.</li>
+</ul>
+<h2 id="partial-attribute-forwarding"><a class="header" href="#partial-attribute-forwarding">Partial attribute forwarding</a></h2>
+<p>Attributes can be forwarded to the generated partial struct using the <code>#[config(partial())]</code>
+attribute on structs and enums.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(derive_more::AsRef)))]
+struct ExampleConfig {
+	//
+}
+<span class="boring">}</span></code></pre>
+<p>Fields attributes can be forwarded using <code>#[setting(partial())]</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(derive_more::AsRef)))]
+struct ExampleConfig {
+	#[setting(partial(as_ref))]
+	port: usize
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="nesting"><a class="header" href="#nesting">Nesting</a></h1>
+<p><a href="#structs--enums"><code>Config</code> structs</a> can easily be nested within other <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>s using
+the <code>#[setting(nested)]</code> attribute. Children will be deeply merged and validated alongside the
+parent.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct ChildConfig {
+	// ...
+}
+
+#[derive(Config)]
+struct ParentConfig {
+	#[setting(nested)]
+	pub nested: ChildConfig,
+
+	#[setting(nested)]
+	pub optional_nested: Option&lt;ChildConfig&gt;,
+}
+
+#[derive(Config)]
+enum ParentEnum {
+	#[setting(nested)]
+	Variant(ChildConfig),
+}
+<span class="boring">}</span></code></pre>
+<p>The <code>#[setting(nested)]</code> attribute is required, as the macro will substitute <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> with
+its <a href="#partials">partial</a> implementation.</p>
+<blockquote>
+<p>Nested values can also be wrapped in collections, like <code>Vec</code> and <code>HashMap</code>. However, these are
+tricky to support and may not work in all situations!</p>
+</blockquote>
+<h2 id="bare-structs"><a class="header" href="#bare-structs">Bare structs</a></h2>
+<p>For structs that <em>do not</em> implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> trait, you can use them as-is without the
+<code>#[setting(nested)]</code> attribute. When using bare structs, be aware that all of the functionality
+provided by our <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> trait is not available, like merging and validation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct BareConfig {
+	// ...
+}
+
+#[derive(Config)]
+pub struct ParentConfig {
+	pub nested: BareConfig,
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="context"><a class="header" href="#context">Context</a></h1>
+<p>Context is an important mechanism that allows for different <a href="#default-values">default values</a>,
+<a href="#merge-strategies">merge strategies</a>, and <a href="#validation-rules">validation rules</a> to be used, for
+the <em>same</em> configuration struct, depending on context!</p>
+<p>To begin, a context is a struct with a default implementation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Default)]
+struct ExampleContext {
+	pub some_value: bool,
+	pub another_value: usize,
+}
+<span class="boring">}</span></code></pre>
+<p>Context must then be associated with a
+<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> derived struct through the
+<code>context</code> attribute field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(context = ExampleContext)]
+struct ExampleConfig {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<p>And then passed to the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load_with_context"><code>ConfigLoader::load_with_context()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let context = ExampleContext {
+	some_value: true,
+	another_value: 10,
+};
+
+let result = ConfigLoader::&lt;ExampleConfig&gt;::new()
+	.url(url_to_config)?
+	.load_with_context(&amp;context)?;
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Refer to the <a href="#default-values">default values</a>, <a href="#merge-strategies">merge strategies</a>, and
+<a href="#validation-rules">validation rules</a> sections for more information on how to use context.</p>
+</blockquote>
+<h2 id="metadata"><a class="header" href="#metadata">Metadata</a></h2>
+<p>Alongside the configuration itself, the derive records a little metadata about each
+<a href="#settings">setting</a>, reachable with
+<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings"><code>Config::settings()</code></a>.
+It returns a map keyed by the serde name of each setting, or by position for unnamed ones.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>for (name, setting) in ExampleConfig::settings() {
+	println!("{name}: {}", setting.type_alias);
+
+	if let Some(key) = &amp;setting.env_key {
+		println!("  reads {key}");
+	}
+
+	if let Some(nested) = &amp;setting.nested {
+		println!("  has {} nested settings", nested.len());
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>Each entry carries the setting’s <code>type_alias</code> (the Rust type as written), its <code>env_key</code>, and a
+<code>nested</code> map when the setting holds another <a href="#nesting">nested config</a>.</p>
+<blockquote>
+<p>Only an explicit <code>#[setting(env)]</code> populates <code>env_key</code>. A key derived from an
+<a href="#container-prefixes"><code>env_prefix</code></a> depends on the prefix in effect at runtime, so
+it isn’t known here.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="generics"><a class="header" href="#generics">Generics</a></h1>
+<p><a href="#structs--enums"><code>Config</code></a>, <a href="#unit-only-enums"><code>ConfigEnum</code></a>, and
+<a href="#schemas"><code>Schematic</code></a> can all be derived for types with type parameters. The parameters
+are carried into the <a href="#partials">partial</a> and into every generated implementation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct Wrapper&lt;T&gt; {
+	pub inner: T,
+	pub label: String,
+}
+<span class="boring">}</span></code></pre>
+<h2 id="bounds-are-not-inferred"><a class="header" href="#bounds-are-not-inferred">Bounds are not inferred</a></h2>
+<p>The derive does not add bounds for you. A partial has to be <code>Clone + Default + DeserializeOwned + Schematic + Serialize</code>, because that is what
+<a href="https://docs.rs/schematic/latest/schematic/trait.PartialConfig.html"><code>PartialConfig</code></a> requires, so
+every type parameter needs them too. A type that is missing one fails to compile at the generated
+<code>impl</code>, not at the definition.</p>
+<p>Declaring them once as a trait alias keeps the noise down:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use serde::{Serialize, de::DeserializeOwned};
+
+pub trait Setting:
+	Clone + Default + PartialEq + Serialize + DeserializeOwned + schematic::Schematic
+{
+}
+
+impl&lt;T&gt; Setting for T where
+	T: Clone + Default + PartialEq + Serialize + DeserializeOwned + schematic::Schematic
+{
+}
+
+#[derive(Config)]
+struct Wrapper&lt;T: Setting&gt; {
+	pub inner: T,
+	pub label: String,
+}
+<span class="boring">}</span></code></pre>
+<p>A generic <code>Schematic</code> only needs <code>T: Schematic</code>, since it has no partial.</p>
+<h2 id="serde-bounds"><a class="header" href="#serde-bounds">Serde bounds</a></h2>
+<p>The partial is emitted with an explicit <code>#[serde(bound(deserialize = "T: DeserializeOwned"))]</code>.
+Without it serde would infer a <code>T: Deserialize&lt;'de&gt;</code> bound of its own, which is ambiguous against
+the <code>DeserializeOwned</code> already in scope. Supplying your own bound through
+<code>#[config(partial(serde(bound(...))))]</code> suppresses the generated one.</p>
+<h2 id="schema-names"><a class="header" href="#schema-names">Schema names</a></h2>
+<p>Schemas are keyed by name alone, so every instantiation of a generic type would otherwise claim the
+same one. The derive appends each type argument to the name, so <code>Wrapper&lt;String&gt;</code> becomes
+<code>WrapperString</code> and its partial <code>PartialWrapperString</code>. See
+<a href="#defining-names">defining names</a> for the manual equivalent.</p>
+<h2 id="enums"><a class="header" href="#enums">Enums</a></h2>
+<p>A generic <a href="#unit-only-enums"><code>ConfigEnum</code></a> only makes sense with a
+<a href="#fallback-variant">fallback variant</a>, since unit variants carry no data. The parameter needs
+whatever the generated implementations use: <code>Default</code> for
+<a href="https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html#tymethod.variants"><code>variants()</code></a>,
+<code>TryFrom&lt;&amp;str&gt;</code> for parsing into the fallback, <code>Display</code> for formatting back out, and <code>Schematic</code>
+for the schema name.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone, Debug, PartialEq, ConfigEnum)]
+enum Value&lt;T&gt;
+where
+	T: Clone + Default + std::fmt::Display + for&lt;'a&gt; TryFrom&lt;&amp;'a str&gt; + schematic::Schematic,
+{
+	Known,
+	Other,
+	#[variant(fallback)]
+	Custom(T),
+}
+<span class="boring">}</span></code></pre>
+<p><code>Display</code> is written one arm at a time, so the fallback goes through <code>T: Display</code> rather than having
+to resolve to a <code>&amp;str</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="structs--enums"><a class="header" href="#structs--enums">Structs &amp; enums</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> trait can be derived for structs and enums.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	pub base: String,
+	pub port: usize,
+	pub secure: bool,
+	pub allowed_hosts: Vec&lt;String&gt;,
+}
+
+#[derive(Config)]
+enum Host {
+	Local,
+	#[setting(nested)]
+	Remote(HostConfig),
+}
+<span class="boring">}</span></code></pre>
+<h2 id="enum-caveats"><a class="header" href="#enum-caveats">Enum caveats</a></h2>
+<p><a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> can only be derived for enums with tuple or unit variants, but not struct/named
+variants. Why not struct variants? Because with this pattern, the enum acts like a union type. This
+also allows for <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> functionality, like partials, merging, and validation, to be
+applied to the contents of each variant.</p>
+<blockquote>
+<p>If you’d like to support unit-only enums, you can use the <a href="#unit-only-enums"><code>ConfigEnum</code> trait</a>
+instead.</p>
+</blockquote>
+<h2 id="attribute-fields-1"><a class="header" href="#attribute-fields-1">Attribute fields</a></h2>
+<p>The following fields are supported for the <code>#[config]</code> container attribute:</p>
+<ul>
+<li><code>allow_unknown_fields</code> - Removes the serde <code>deny_unknown_fields</code> from the
+<a href="#partials">partial struct</a>. Defaults to <code>false</code>.</li>
+<li><code>context</code> - Sets the struct to be used as the <a href="#context">context</a>. Defaults to <code>None</code>.</li>
+<li><code>env_prefix</code> - Sets the prefix to use for <a href="#container-prefixes">environment variable</a>
+mapping. Defaults to <code>None</code>.</li>
+<li><code>partial</code> - Forwards attributes to the <a href="#partials">partial</a>.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(allow_unknown_fields, env_prefix = "EXAMPLE_")]
+struct ExampleConfig {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<p>And the following for serde compatibility:</p>
+<ul>
+<li><code>rename</code></li>
+<li><code>rename_all</code> - Has no default. Field names are used exactly as written unless this is set.</li>
+<li><code>rename_all_fields</code> <em>(enum only)</em> - Applies a casing to the fields of every variant.</li>
+</ul>
+<h2 id="serde-support-1"><a class="header" href="#serde-support-1">Serde support</a></h2>
+<p>By default the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> macro will apply the following <code>#[serde]</code> to the
+<a href="#partials">partial struct</a>. The <code>default</code> and <code>deny_unknown_fields</code> ensure proper parsing and
+layer merging.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[serde(default, deny_unknown_fields)]
+<span class="boring">}</span></code></pre>
+<p>However, the <code>deny_unknown_fields</code> field can be customized, and we also support the <code>rename</code> and
+<code>rename_all</code> fields, all via the top-level <code>#[config]</code> attribute.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(allow_unknown_fields, rename = "ExampleConfig", rename_all = "snake_case")]
+struct Example {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>These values can also be applied using <code>#[serde]</code>, which is useful if you want to apply them to
+the main struct as well, and not just the partial struct.</p>
+</blockquote>
+<h3 id="enum-tagging"><a class="header" href="#enum-tagging">Enum tagging</a></h3>
+<p>Serde’s tagging attributes are read straight off the <code>#[serde]</code> attribute and forwarded to the
+partial, so <code>untagged</code>, <code>tag</code>, <code>content</code>, and <code>expecting</code> work as they normally would.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[serde(untagged)]
+enum Host {
+	Local,
+	#[setting(nested)]
+	Remote(HostConfig),
+}
+<span class="boring">}</span></code></pre>
+<p>The derive registers <code>serde</code> as a helper attribute, so this is accepted even when the type derives
+only <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> and not <code>Serialize</code> or <code>Deserialize</code>.</p>
+<blockquote>
+<p>A unit-only enum is always externally tagged, no matter what you set. Marking one <code>untagged</code>
+would leave its variants deserializable only from <code>null</code>.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="default-values"><a class="header" href="#default-values">Default values</a></h1>
+<p>In Schematic, there are 2 forms of default values:</p>
+<ul>
+<li>The first is applied through the <a href="#partials">partial configuration</a>, is defined with the
+<code>#[setting]</code> attribute, and is the first layer to be merged.</li>
+<li>The second is on the <a href="#configuration">final configuration</a> itself, and uses the <code>Default</code> trait to
+generate the final value if none was provided. This acts more like a fallback.</li>
+</ul>
+<p>To define a default value, use the <code>#[setting(default)]</code> attribute. The <code>default</code> attribute field
+accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
+literals, paths that name a value, and function and macro calls.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(default = "/")]
+	pub base: String,
+
+	#[setting(default = 3000)]
+	pub port: usize,
+
+	#[setting(default = true)]
+	pub secure: bool,
+
+	#[setting(default = vec!["localhost".into()])]
+	pub allowed_hosts: Vec&lt;String&gt;,
+
+	#[setting(default = LevelFilter::Debug)]
+	pub log_level: LevelFilter,
+
+	#[setting(default = Retry { attempts: 3, backoff: 500 })]
+	pub retry: Retry,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="paths-value-or-function"><a class="header" href="#paths-value-or-function">Paths: value or function?</a></h3>
+<p>A bare path is ambiguous — <code>LevelFilter::Debug</code> names a value, while <code>find_unused_port</code> names a
+<a href="#handler-function">handler function</a> to call. Nothing at compile time can tell them apart, so
+Schematic goes by Rust’s naming conventions:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Last segment of the path</th><th>Treated as</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td>Starts uppercase</td><td>A value</td><td><code>LevelFilter::Debug</code></td></tr>
+<tr><td>Starts lowercase</td><td>A handler function</td><td><code>find_unused_port</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>That covers enum variants, unit structs, and constants on one side, and functions on the other,
+since a name breaking those conventions would already be earning a compiler lint.</p>
+<blockquote>
+<p>A handler function that must keep a non-conventional name can be reached through a <code>snake_case</code>
+wrapper, or called directly with <code>default = my_wrapper()</code> when it needs no context.</p>
+</blockquote>
+<p>For enums, the <code>default</code> field takes no value, and simply marks which variant to use as the default.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Remote(HostConfig),
+}
+<span class="boring">}</span></code></pre>
+<h2 id="handler-function"><a class="header" href="#handler-function">Handler function</a></h2>
+<p>If you need more control or need to calculate a complex value, you can pass a reference to a
+function to call. This function receives the <a href="#context">context</a> as the first argument, and can
+return an optional value. If <code>None</code> is returned, the <code>Default</code> value will be used instead.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn find_unused_port(ctx: &amp;Context) -&gt; DefaultValueResult&lt;usize&gt; {
+	let port = do_find()?;
+
+	Ok(Some(port))
+}
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(default = find_unused_port)]
+	pub port: usize,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="context-handling"><a class="header" href="#context-handling">Context handling</a></h3>
+<p>If you’re not using <a href="#context">context</a>, you can use <code>()</code> as the context type, or rely on
+generic inferrence.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn using_unit_type(_: &amp;()) -&gt; DefaultValueResult&lt;usize&gt; {
+	// ...
+}
+
+fn using_generics&lt;C&gt;(_: &amp;C) -&gt; DefaultValueResult&lt;usize&gt; {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="transforming-values"><a class="header" href="#transforming-values">Transforming values</a></h1>
+<p>Sometimes a value is configured by a user, but it needs to be transformed in some way to be usable,
+for example, expanding file system paths to absolute from relative.</p>
+<p>This can be achieved with the <code>#[setting(transform)]</code> attribute field, which requires a reference to
+a function to call. Only values with a defined value are transformed, while optional values remain
+<code>None</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(transform = make_absolute)]
+	pub env_file: Option&lt;PathBuf&gt;,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Transformations happen during the finalize phase, <em>after</em> <a href="#environment-variables">environment variables</a> are
+inherited, and <em>before</em> it is <a href="#validation-rules">validated</a>.</p>
+</blockquote>
+<h2 id="transform-handler-function"><a class="header" href="#transform-handler-function">Transform handler function</a></h2>
+<p>When defining a custom <code>transform</code> function, the defined value and <a href="#context">context</a> are
+passed as arguments, and the function must return the transformed result.</p>
+<p>Here’s an example of the transform function above.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn make_absolute(value: PathBuf, context: &amp;Context) -&gt; TransformResult&lt;PathBuf&gt; {
+	Ok(if value.is_absolute() {
+		value
+	} else {
+		context.root.join(value)
+	})
+}
+<span class="boring">}</span></code></pre>
+<h3 id="nested-values"><a class="header" href="#nested-values">Nested values</a></h3>
+<p>Transformers can also be used on <a href="#nesting">nested configs</a>, but when defining the transformer
+function, the value being transformed is the <em><a href="#partials">partial nested config</a></em>, not the final
+one. For example:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn transform_nested(value: PartialChildConfig, context: &amp;Context) -&gt; TransformResult&lt;PartialChildConfig&gt; {
+	Ok(value)
+}
+
+#[derive(Config)]
+struct ParentConfig {
+	#[setting(nested, transform = transform_nested)]
+	pub child: ChildConfig,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="context-handling-1"><a class="header" href="#context-handling-1">Context handling</a></h3>
+<p>If you’re not using <a href="#context">context</a>, you can use <code>()</code> as the context type, or rely on
+generic inferrence.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn using_unit_type&lt;T&gt;(value: T, _: &amp;()) -&gt; TransformResult&lt;T&gt; {
+	// ...
+}
+
+fn using_generics&lt;T, C&gt;(value: T, _: &amp;C) -&gt; TransformResult&lt;T&gt; {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
+<blockquote>
+<p>Requires the <code>env</code> Cargo feature, which is enabled by default.</p>
+</blockquote>
+<blockquote>
+<p>Not supported for enums.</p>
+</blockquote>
+<p>Settings can also inherit values from environment variables via the <code>#[setting(env)]</code> attribute
+field. When using this, variables take the <em>highest</em> precedence, and are merged as the last layer.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(default = 3000, env = "PORT")]
+	pub port: usize,
+}
+<span class="boring">}</span></code></pre>
+<h2 id="container-prefixes"><a class="header" href="#container-prefixes">Container prefixes</a></h2>
+<p>If you’d prefer to not define <code>env</code> for <em>every</em> setting, you can instead define a prefix on the
+containing struct using the <code>#[config(env_prefix)]</code> container attribute field. This will define an
+environment variable for <em>all</em> direct fields in the struct, in the format of “env prefix + field
+name” in uppercase.</p>
+<p>For example, the environment variable below for <code>port</code> is now <code>APP_PORT</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(env_prefix = "APP_")]
+struct AppConfig {
+	#[setting(default = 3000)]
+	pub port: usize,
+}
+<span class="boring">}</span></code></pre>
+<p>A derived key is the field’s Rust name (or its explicit <code>rename</code>) uppercased, and nothing more. It
+is deliberately not reshaped by <code>rename_all</code>, so changing how a setting is spelled in a config file
+never moves its environment variable.</p>
+<p>An explicit <code>#[setting(env)]</code> is absolute. A prefix is never applied to it, and the two cannot be
+combined on the same setting.</p>
+<h3 id="nested-prefixes"><a class="header" href="#nested-prefixes">Nested prefixes</a></h3>
+<p><code>env_prefix</code> only applies to direct fields, not to nested children, and prefixes are <em>not</em>
+concatenated between parent and child. Each struct declares its own.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(env_prefix = "APP_SERVER_")]
+struct AppServerConfig {
+	// ...
+}
+
+#[derive(Config)]
+#[config(env_prefix = "APP_")]
+struct AppConfig {
+	#[setting(nested)]
+	pub server: AppServerConfig,
+}
+<span class="boring">}</span></code></pre>
+<p>A parent can override the prefix a nested child uses, with <code>env_prefix</code> on the field itself. The
+child must still declare an <code>env_prefix</code> of its own, as that is what opts its fields into being
+derived at all.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(nested, env_prefix = "OVERRIDE_")]
+	pub server: AppServerConfig,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Derived keys aren’t known when the <a href="#schemas">schema</a> is built, since the prefix in
+effect depends on how the type is nested at runtime. Only explicit <code>#[setting(env)]</code> keys appear
+in a generated <a href="#config-templates-experimental">config template</a> or in
+<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings"><code>Config::settings()</code></a>.</p>
+</blockquote>
+<h2 id="parsing-values"><a class="header" href="#parsing-values">Parsing values</a></h2>
+<p>We also support parsing environment variables into the required type. For example, the variable may
+be a comma separated list of values, or a JSON string.</p>
+<p>The <code>#[setting(parse_env)]</code> attribute field can be used, which requires a path to a function to
+handle the parsing, and receives the variable value as a single argument.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(env = "ALLOWED_HOSTS", parse_env = schematic::env::split_comma)]
+	pub allowed_hosts: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>We provide a handful of built-in parsing functions in the
+<a href="https://docs.rs/schematic/latest/schematic/env/index.html"><code>env</code> module</a>.</p>
+</blockquote>
+<p><code>parse_env</code> needs a variable to read, so it requires either an <code>env</code> on the setting, or an
+<code>env_prefix</code> on the container. It’s a derive-time error otherwise.</p>
+<h2 id="parse-handler-function"><a class="header" href="#parse-handler-function">Parse handler function</a></h2>
+<p>You can also define your own function for parsing values out of environment variables.</p>
+<p>When defining a custom <code>parse_env</code> function, the variable value is passed as the 1st argument. A
+<code>None</code> value can be returned, which will fallback to the previous or default value.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn custom_parse(var: String) -&gt; ParseEnvResult&lt;ReturnValue&gt; {
+	do_parse()
+		.map(|v| Some(v))
+		.map_err(|e| HandlerError::new(e.to_string()))
+}
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(env = "FIELD", parse_env = custom_parse)]
+	pub field: String,
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="extendable-sources"><a class="header" href="#extendable-sources">Extendable sources</a></h1>
+<blockquote>
+<p>Requires the <code>extends</code> Cargo feature, which is enabled by default.</p>
+</blockquote>
+<blockquote>
+<p>Not supported for enums.</p>
+</blockquote>
+<p>Configs can extend other configs, generating an accurate layer chain, via the <code>#[setting(extend)]</code>
+attribute field. Extended configs can either be a file path (relative from the current config) or a
+secure URL.</p>
+<p>When defining <code>extend</code>, we currently support 3 types of patterns. We also suggest making the setting
+optional, so that extending is not required by consumers!</p>
+<h2 id="single-source"><a class="header" href="#single-source">Single source</a></h2>
+<p>The first pattern is with a single string, which only allows a single file or URL to be extended.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(extend, validate = schematic::validate::extends_string)]
+	pub extends: Option&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>Example:</p>
+<pre><code class="language-yaml">extends: "./another/file.yml"
+</code></pre>
+<h2 id="multiple-sources"><a class="header" href="#multiple-sources">Multiple sources</a></h2>
+<p>The second pattern is with a list of strings, allowing multiple files or URLs to be extended. Each
+item in the list is merged from top to bottom (lowest precedence to highest).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(extend, validate = schematic::validate::extends_list)]
+	pub extends: Option&lt;Vec&lt;String&gt;&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>Example:</p>
+<pre><code class="language-yaml">extends:
+  - "./another/file.yml"
+  - "https://domain.com/some/other/file.yml"
+</code></pre>
+<h2 id="either-pattern"><a class="header" href="#either-pattern">Either pattern</a></h2>
+<p>And lastly, supporting both a string or a list, using our built-in enum.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(extend, validate = schematic::validate::extends_from)]
+	pub extends: Option&lt;schematic::ExtendsFrom&gt;,
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="merge-strategies"><a class="header" href="#merge-strategies">Merge strategies</a></h1>
+<p>A common requirement for configuration is to merge multiple sources/layers into a final result. By
+default Schematic will replace the previous setting value with the next value if the next value is
+<code>Some</code>, but sometimes you want far more control, like shallow or deep merging collections.</p>
+<p>This can be achieved with the <code>#[setting(merge)]</code> attribute field, which requires a reference to a
+function to call.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(merge = schematic::merge::append_vec)]
+	pub allowed_hosts: Vec&lt;String&gt;,
+}
+
+#[derive(Config)]
+enum Projects {
+	#[setting(merge = schematic::merge::append_vec)]
+	List(Vec&lt;String&gt;),
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>We provide a handful of built-in merge functions in the
+<a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
+</blockquote>
+<h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
+<p>You can also define your own function for merging values.</p>
+<p>When defining a custom <code>merge</code> function, the previous value, next value, and
+<a href="#context">context</a> are passed as arguments, and the function must return an optional merged
+result. If <code>None</code> is returned, neither value will be used.</p>
+<p>Here’s an example of the merge function above.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn append_vec&lt;T&gt;(mut prev: Vec&lt;T&gt;, next: Vec&lt;T&gt;, context: &amp;Context) -&gt; MergeResult&lt;Vec&lt;T&gt;&gt; {
+	prev.extend(next);
+
+	Ok(Some(prev))
+}
+
+#[derive(Config)]
+struct ExampleConfig {
+	#[setting(merge = append_vec)]
+	pub field: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="context-handling-2"><a class="header" href="#context-handling-2">Context handling</a></h3>
+<p>If you’re not using <a href="#context">context</a>, you can use <code>()</code> as the context type, or rely on
+generic inferrence.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn using_unit_type&lt;T&gt;(prev: T, next: T, _: &amp;()) -&gt; MergeResult&lt;T&gt; {
+	// ...
+}
+
+fn using_generics&lt;T, C&gt;(prev: T, next: T, _: &amp;C) -&gt; MergeResult&lt;T&gt; {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="validation-rules"><a class="header" href="#validation-rules">Validation rules</a></h1>
+<blockquote>
+<p>Requires the <code>validate</code> Cargo feature, which is enabled by default.</p>
+</blockquote>
+<p>What kind of configuration crate would this be without built-in validation? As such, we support it
+as a first-class feature, with built-in validation rules provided by the
+<a href="https://crates.io/crates/garde">garde</a> crate.</p>
+<p>In Schematic, validation <em>does not</em> happen as part of the serde parsing process, and instead happens
+for each <a href="#partials">partial configuration</a> to be merged. However, with that said, <em>prefer serde
+parsing over validation rules for structural adherence</em>
+(<a href="https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/">learn more</a>).</p>
+<p>Validation can be applied on a per-setting basis with the <code>#[setting(validate)]</code> attribute field,
+which requires a reference to a function to call.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(validate = schematic::validate::alphanumeric)]
+	pub secret_key: String,
+
+	#[setting(validate = schematic::validate::regex("^\.env"))]
+	pub env_file: String,
+}
+<span class="boring">}</span></code></pre>
+<p>Or on a per-variant basis when using an enum.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Projects {
+	#[setting(validate = schematic::validate::min_length(1))]
+	List(Vec&lt;String&gt;),
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<p>A variant holding several values passes them as a tuple of references, not as a reference to a
+tuple.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn validate_pair&lt;P, C&gt;(value: (&amp;String, &amp;usize), partial: &amp;P, context: &amp;C, finalize: bool) -&gt; ValidateResult {
+	// ...
+}
+
+#[derive(Config)]
+enum Entry {
+	#[setting(validate = validate_pair)]
+	Pair(String, usize),
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>We provide a handful of built-in validation functions in the
+<a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
+some functions are factories which can be called to produce a validator.</p>
+</blockquote>
+<h2 id="validate-handler-function"><a class="header" href="#validate-handler-function">Validate handler function</a></h2>
+<p>You can also define your own function for validating values, also known as a validator.</p>
+<p>When defining a custom validate function, the value to check is passed as the first argument, the
+current/parent partial as the second, the <a href="#context">context</a> as the third, and whether this is
+the final validation pass.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn validate_string(
+	value: &amp;str,
+	partial: &amp;PartialAppConfig,
+	context: &amp;Context
+	finalize: bool
+) -&gt; ValidateResult {
+	if !do_check(value) {
+		return Err(ValidateError::new("Some failure message"));
+	}
+
+	Ok(())
+}
+<span class="boring">}</span></code></pre>
+<p>If validation fails, you must return a
+<a href="https://docs.rs/schematic/latest/schematic/struct.ValidateError.html"><code>ValidateError</code></a> with a
+failure message.</p>
+<p>The setting is passed by reference, and deref coerces on its way in, so the first argument can take
+a borrowed form of the type instead of the type itself. A <code>String</code> setting reaches a <code>&amp;str</code>
+validator, as above, and a <code>Vec&lt;T&gt;</code> setting reaches a <code>&amp;[T]</code> one.</p>
+<h3 id="factories"><a class="header" href="#factories">Factories</a></h3>
+<p>For composition and reusability concerns, we also support factory functions that can be called to
+create a unique validator. This can be seen above with <code>schematic::validate::regex</code>. To create your
+own factory, declare a normal function, with any number of arguments, that returns a
+<a href="https://docs.rs/schematic/latest/schematic/type.Validator.html"><code>Validator</code></a>.</p>
+<p>Using the <code>regex</code> factory as an example, it would look something like this. The closure takes the
+same four arguments a plain validator does.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::Validator;
+
+fn regex&lt;T, P, C&gt;(pattern: &amp;str) -&gt; Validator&lt;T, P, C&gt; {
+	let pattern = regex::Regex::new(pattern).unwrap();
+
+	Box::new(move |value, _, _, _| {
+		if !pattern.is_match(value) {
+			return Err(ValidateError::new("Some failure message"));
+		}
+
+		Ok(())
+	})
+}
+<span class="boring">}</span></code></pre>
+<h3 id="path-targeting"><a class="header" href="#path-targeting">Path targeting</a></h3>
+<p>If validating an item in a list or collection, you can specifiy the nested path when failing. This
+is extremely useful when building error messages.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::PathSegment;
+
+ValidateError::with_segments(
+	"Some failure message",
+	// [i].key
+	[PathSegment::Index(i), PathSegment::Key(key.to_string())]
+)
+<span class="boring">}</span></code></pre>
+<h3 id="context-and-partial-handling"><a class="header" href="#context-and-partial-handling">Context and partial handling</a></h3>
+<p>If you’re not using <a href="#context">context</a>, or want to create a validator for any kind of partial,
+we suggest generic inferrence.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn using_generics&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C, finalize: bool) -&gt; ValidateResult {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<h2 id="cargo-features-1"><a class="header" href="#cargo-features-1">Cargo features</a></h2>
+<p>The following Cargo features can be enabled for more functionality:</p>
+<ul>
+<li><code>validate_email</code> - Enables email validation with the <code>schematic::validate::email</code> function.</li>
+<li><code>validate_url</code> - Enables URL validation with the <code>schematic::validate::url</code> and <code>url_secure</code>
+functions.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="unit-only-enums"><a class="header" href="#unit-only-enums">Unit-only enums</a></h1>
+<p>Configurations typically use enums to support multiple values within a specific
+<a href="#settings">setting</a>. To simplify this process, and to provide streamlined interoperability
+with <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>, we offer a
+<a href="https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html"><code>ConfigEnum</code></a> trait and macro
+that can be derived for enums with unit-only variants.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(ConfigEnum)]
+enum LogLevel {
+	Info,
+	Error,
+	Debug,
+	Off
+}
+<span class="boring">}</span></code></pre>
+<p>When paired with <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>, it’ll look like:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	pub log_level: LogLevel
+}
+<span class="boring">}</span></code></pre>
+<p>This enum will generate the following implementations:</p>
+<ul>
+<li>Provides a static
+<a href="https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html#tymethod.variants"><code>T::variants()</code></a>
+method, that returns a list of all variants. Perfect for iteration.</li>
+<li>Implements <code>FromStr</code> and <code>TryFrom</code> for parsing from a string.</li>
+<li>Implements <code>Display</code> for formatting into a string.</li>
+</ul>
+<h2 id="attribute-fields-2"><a class="header" href="#attribute-fields-2">Attribute fields</a></h2>
+<p>The following fields are supported for the <code>#[config]</code> container attribute:</p>
+<ul>
+<li><code>before_parse</code> - Transform the incoming string before parsing, so that loosely cased input still
+matches. Accepts the same case names as <code>rename_all</code>: <code>lowercase</code>, <code>UPPERCASE</code>, <code>PascalCase</code>,
+<code>camelCase</code>, <code>snake_case</code>, <code>SCREAMING_SNAKE_CASE</code>, <code>kebab-case</code>, and <code>SCREAMING-KEBAB-CASE</code>.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(ConfigEnum)]
+#[config(before_parse = "kebab-case")]
+enum ExampleEnum {
+	// ...
+}
+<span class="boring">}</span></code></pre>
+<p>With the above, <code>very_high</code>, <code>VeryHigh</code>, and <code>VERY HIGH</code> all parse into the same variant.</p>
+<p>And the following for serde compatibility:</p>
+<ul>
+<li><code>rename</code></li>
+<li><code>rename_all</code> - Has no default. Variant names are used exactly as written unless this is set.</li>
+</ul>
+<h3 id="variants"><a class="header" href="#variants">Variants</a></h3>
+<p>The following fields are supported for the <code>#[variant]</code> variant attribute:</p>
+<ul>
+<li><code>fallback</code> - Marks the variant as the <a href="#fallback-variant">fallback</a>.</li>
+</ul>
+<p>And the following for serde compatibility:</p>
+<ul>
+<li><code>alias</code></li>
+<li><code>rename</code> - Overrides (explicitly sets) the string value used for parsing and formatting.</li>
+</ul>
+<h2 id="deriving-common-traits"><a class="header" href="#deriving-common-traits">Deriving common traits</a></h2>
+<p>All enums (not just unit-only enums) typically support the same derived traits, like <code>Clone</code>, <code>Eq</code>,
+etc. To reduce boilerplate, we offer a
+<a href="https://docs.rs/schematic/latest/schematic/macro.derive_enum.html"><code>derive_enum!</code></a> macro that will
+apply these traits for you.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>derive_enum!(
+	#[derive(ConfigEnum)]
+	enum LogLevel {
+		Info,
+		Error,
+		Debug,
+		Off
+	}
+);
+<span class="boring">}</span></code></pre>
+<p>This macro will inject the following attributes:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="default-variant"><a class="header" href="#default-variant">Default variant</a></h1>
+<p>To define a default variant, use the <code>Default</code> trait and the optional <code>#[default]</code> variant
+attribute. We provide no special functionality or syntax for handling defaults.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(ConfigEnum, Default)]
+enum LogLevel {
+	Info,
+	Error,
+	Debug,
+	#[default]
+	Off
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="fallback-variant"><a class="header" href="#fallback-variant">Fallback variant</a></h1>
+<p>Although <a href="https://docs.rs/schematic/latest/schematic/trait.ConfigEnum.html"><code>ConfigEnum</code></a> only
+supports unit variants, we do support a catch-all variant known as the “fallback variant”, which can
+be defined with <code>#[variant(fallback)]</code>. Fallback variants are primarily used when parsing from a
+string, and will be used if no other variant matches.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(ConfigEnum)]
+enum Value {
+	Foo,
+	Bar,
+	Baz
+	#[variant(fallback)]
+	Other(String)
+}
+<span class="boring">}</span></code></pre>
+<p>However, this pattern does have a few caveats:</p>
+<ul>
+<li>Only 1 fallback variant can be defined.</li>
+<li>The fallback variant must be a tuple variant with a single field.</li>
+<li>The field type can be anything and we’ll attempt to convert it with <code>try_into()</code>.</li>
+<li>The fallback inner value <em>is not</em> casing formatted based on serde’s <code>rename_all</code>.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let qux = Value::from_str("qux")?; // Value::Other("qux")
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="experimental"><a class="header" href="#experimental">Experimental</a></h1>
+<h2 id="pkl-configuration-format--v017"><a class="header" href="#pkl-configuration-format--v017">Pkl configuration format (&gt;= v0.17)</a></h2>
+<p>Thanks to the <a href="https://crates.io/crates/rpkl"><code>rpkl</code> crate</a>, we have experimental support for the
+<a href="https://pkl-lang.org/index.html">Pkl configuration language</a>. Pkl is a dynamic and programmable
+configuration format built and maintained by Apple.</p>
+<pre><code class="language-pkl">port = 3000
+secure = true
+allowed_hosts = List(".localhost")
+</code></pre>
+<blockquote>
+<p>Pkl support can be enabled with the <code>pkl</code> Cargo feature.</p>
+</blockquote>
+<h3 id="caveats"><a class="header" href="#caveats">Caveats</a></h3>
+<p>Unlike our other static formats, Pkl requires the following to work correctly:</p>
+<ul>
+<li>The <code>pkl</code> binary must exist on <code>PATH</code>. This requires every user to
+<a href="https://pkl-lang.org/main/current/pkl-cli/index.html#installation">install Pkl</a> onto their
+machine.</li>
+<li>Pkl parses local file system paths only.
+<ul>
+<li>Passing source code directly to <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html"><code>ConfigLoader</code></a> is NOT supported.</li>
+<li>Reading configuration from URLs is NOT supported, but can be worked around by implementing a
+custom file-based <a href="https://docs.rs/schematic/latest/schematic/trait.Cacher.html"><code>Cacher</code></a>.</li>
+</ul>
+</li>
+</ul>
+<h3 id="known-issues"><a class="header" href="#known-issues">Known issues</a></h3>
+<ul>
+<li>The <code>rpkl</code> crate is relatively new and may be buggy or have missing/incomplete functionality.</li>
+<li>When parsing fails and a code snippet is rendered in the terminal using <code>miette</code>, the line/column
+offset may not be accurate.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="schemas"><a class="header" href="#schemas">Schemas</a></h1>
+<blockquote>
+<p>Requires the <code>schema</code> Cargo feature, which is <em>not</em> enabled by default.</p>
+</blockquote>
+<p>The other feature of Schematic is the ability to model schemas for Rust types using the
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and associated macro. Schemas are useful for:</p>
+<ul>
+<li><a href="#code-generation">Generating code</a>, documentation, and other formats.</li>
+<li>Ensuring data integrity across systems.</li>
+<li>Standardizing interoperability and enforcing contracts.</li>
+</ul>
+<h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
+<p>Define a struct, enum, or type and derive the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait. Our macro will attempt
+to convert all fields, variants, values, and generics into a schema representation using
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::Schematic;
+
+#[derive(Schematic)]
+enum UserStatus {
+	Active,
+	Inactive,
+}
+
+#[derive(Schematic)]
+struct User {
+	pub name: String;
+	pub age: usize;
+	pub status: UserStatus;
+}
+<span class="boring">}</span></code></pre>
+<p>Once a type has a schema associated with it, it can be fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="custom-implementation"><a class="header" href="#custom-implementation">Custom implementation</a></h3>
+<p>Our derive macro will always implement schemas using the default state of <a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>,
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html"><code>SchemaType</code></a>, and <a href="#types">associated types</a>. If you want these types to use
+custom settings, you can implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait and
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>
+method manually.</p>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method is optional, but is encouraged for non-primitive types. It will associate references between
+types, and avoid circular references.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::*};
+
+#[derive(Schematic)]
+enum UserStatus {
+	Active,
+	Inactive,
+}
+
+struct User {
+	pub name: String;
+	pub age: usize;
+	pub status: UserStatus;
+}
+
+impl Schematic for User {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("User".into())
+	}
+
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType::new([
+			("name".into(), schema.nest().string(StringType {
+				min_length: Some(1),
+				..StringType::default()
+			})),
+			("age".into(), schema.nest().integer(IntegerType::new_kind(IntegerKind::Usize))),
+			("status".into(), schema.infer::&lt;UserStatus&gt;()),
+		]))
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Learn more about our <a href="#types">supported types</a>.</p>
+</blockquote>
+<h2 id="cargo-features-2"><a class="header" href="#cargo-features-2">Cargo features</a></h2>
+<p>The following Cargo features are available:</p>
+<h4 id="renderers"><a class="header" href="#renderers">Renderers</a></h4>
+<p>Learn more about <a href="#code-generation">renderers</a>.</p>
+<ul>
+<li><code>renderer_json_schema</code> - Enables JSON schema generation.</li>
+<li><code>renderer_template</code> - Enables config template generation.</li>
+<li><code>renderer_typescript</code> - Enables TypeScript types generation.</li>
+</ul>
+<h4 id="external-types"><a class="header" href="#external-types">External types</a></h4>
+<p>Learn more about <a href="#external-types-1">external types</a>.</p>
+<ul>
+<li><code>type_chrono</code> - Implements schematic for the <code>chrono</code> crate.</li>
+<li><code>type_indexmap</code> - Implements schematic for the <code>indexmap</code> crate.</li>
+<li><code>type_regex</code> - Implements schematic for the <code>regex</code> crate.</li>
+<li><code>type_relative_path</code> - Implements schematic for the <code>relative-path</code> crate.</li>
+<li><code>type_rust_decimal</code> - Implements schematic for the <code>rust_decimal</code> crate.</li>
+<li><code>type_semver</code> - Implements schematic for the <code>semver</code> crate.</li>
+<li><code>type_url</code> - Implements schematic for the <code>url</code> crate.</li>
+<li><code>type_uuid</code> - Implements schematic for the <code>uuid</code> crate.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="types"><a class="header" href="#types">Types</a></h1>
+<p>Schema types are the building blocks when modeling your schema. They are used to define the explicit
+shape of your types, data, or configuration. This type information is then passed to a
+<a href="#code-generation">generator</a>, which can then generate and render the schema types in a variety
+of formats.</p>
+<ul>
+<li><a href="#arrays">Arrays</a></li>
+<li><a href="#booleans">Booleans</a></li>
+<li><a href="#enums-1">Enums</a></li>
+<li><a href="#floats">Floats</a></li>
+<li><a href="#integers">Integers</a></li>
+<li><a href="#literals">Literals</a></li>
+<li><a href="#nulls">Nulls</a></li>
+<li><a href="#objects">Objects</a></li>
+<li><a href="#strings">Strings</a></li>
+<li><a href="#structs">Structs</a></li>
+<li><a href="#tuples">Tuples</a></li>
+<li><a href="#unions">Unions</a></li>
+<li><a href="#unknown">Unknown</a></li>
+</ul>
+<h2 id="defining-names"><a class="header" href="#defining-names">Defining names</a></h2>
+<p>Schemas can be named, which is useful for referencing them in other types when generating code. By
+default the <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> derive macro will use the name of the type, but when
+implementing the trait manually, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.schema_name"><code>Schematic::schema_name()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Schematic for T {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some("CustomName".into())
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This method is optional, but is encouraged for non-primitive types. It will associate references
+between types, and avoid circular references.</p>
+</blockquote>
+<p>Names must be unique across every type added to a generator, since schemas are keyed by name alone.
+Adding two different types under the same name panics rather than silently rendering one of them.</p>
+<p>For generic types, the derive appends the name of each type argument, so <code>Wrapper&lt;T&gt;</code> becomes
+<code>WrapperString</code>, <code>WrapperBool</code>, and so on, and instantiations don’t collide. Arguments that name
+themselves are used as-is; the rest fall back to their Rust type name. When implementing the trait
+by hand, do the same with
+<a href="https://docs.rs/schematic/latest/schematic/schema/fn.schema_name_of.html"><code>schema_name_of</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;T: Schematic&gt; Schematic for Wrapper&lt;T&gt; {
+	fn schema_name() -&gt; Option&lt;String&gt; {
+		Some(format!("Wrapper{}", schema_name_of::&lt;T&gt;()))
+	}
+}
+<span class="boring">}</span></code></pre>
+<h2 id="inferring-schemas"><a class="header" href="#inferring-schemas">Inferring schemas</a></h2>
+<p>When building a schema, you’ll almost always need to reference schemas from other types that
+implement <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a>. To do so, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.build_schema"><code>SchemaBuilder.infer::&lt;T&gt;()</code></a>
+method, which will create a nested builder, and build an isolated schema based on its
+implementation.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>struct OtherType {}
+
+impl Schematic for OtherType {
+	// ...
+}
+
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		let builtin_type = schema.infer::&lt;String&gt;();
+		let custom_type = schema.infer::&lt;OtherType&gt;();
+
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre>
+<h2 id="creating-nested-schemas"><a class="header" href="#creating-nested-schemas">Creating nested schemas</a></h2>
+<p>When building a schema, you may have situations where you need to build nested schemas, for example,
+within struct fields. You <em>cannot</em> use the type-based methods on <code>SchemaBuilder</code>, as they mutate the
+current builder. Instead you must created another builder, which can be achieved with the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nest"><code>SchemaBuilder.nest()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		// Mutates self
+		schema.string_default();
+
+		// Creates a new builder and mutates it
+		schema.nest().string_default();
+
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="arrays"><a class="header" href="#arrays">Arrays</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a> can be used to represent a variable list of homogeneous values of a given
+type, as defined by <code>items_type</code>. For example, a list of strings:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ArrayType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.array(ArrayType {
+			items_type: Box::new(schema.infer::&lt;String&gt;()),
+			..ArrayType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>items_type</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.ArrayType.html#method.new"><code>ArrayType::new()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.array(ArrayType::new(schema.infer::&lt;String&gt;()));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>Vec</code>, <code>VecDeque</code>, <code>LinkedList</code>, <code>BinaryHeap</code>, <code>BTreeSet</code>,
+<code>HashSet</code>, <code>[T; N]</code>, <code>[T]</code>, and <code>&amp;[T]</code>.</p>
+</blockquote>
+<h2 id="settings-1"><a class="header" href="#settings-1">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ArrayType.html"><code>ArrayType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="contains"><a class="header" href="#contains">Contains</a></h3>
+<p>The <code>contains</code> field takes a schema that at least one item must match. It applies alongside
+<code>items_type</code>, which constrains every item, rather than replacing it.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ArrayType {
+	// ...
+	contains: Some(Box::new(Schema::string(StringType::default()))),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="length"><a class="header" href="#length">Length</a></h3>
+<p>The <code>min_length</code> and <code>max_length</code> fields can be used to restrict the length of the array. Both
+fields accept a non-zero number, and can be used together or individually.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ArrayType {
+	// ...
+	min_length: Some(1),
+	max_length: Some(10),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="uniqueness"><a class="header" href="#uniqueness">Uniqueness</a></h3>
+<p>The <code>unique</code> field can be used to indicate that all items in the array must be unique. Note that
+Schematic <em>does not</em> verify uniqueness.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ArrayType {
+	// ...
+	unique: Some(true),
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="booleans"><a class="header" href="#booleans">Booleans</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> can be used to represent a boolean <code>true</code> or <code>false</code> value. Values that
+evaluate to true or false, such as 1 and 0, are not accepted by the schema.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::BooleanType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.boolean_default()
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>bool</code>.</p>
+</blockquote>
+<h2 id="default-value"><a class="header" href="#default-value">Default value</a></h2>
+<p>To customize the default value for use within <a href="#code-generation">generators</a>, pass the desired
+value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.BooleanType.html"><code>BooleanType</code></a> constructor.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.boolean(BooleanType::new(true));
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="enums-1"><a class="header" href="#enums-1">Enums</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html"><code>EnumType</code></a> can be used to represent a list of <a href="#literals">literal values</a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, schema::{EnumType, LiteralValue}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.enumerable(EnumType {
+			values: vec![
+				LiteralValue::String("debug".into()),
+				LiteralValue::String("error".into()),
+				LiteralValue::String("warning".into()),
+			],
+			..EnumType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>values</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.EnumType.html#method.new"><code>EnumType::new()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.enumerable(EnumType::new([
+	LiteralValue::String("debug".into()),
+	LiteralValue::String("error".into()),
+	LiteralValue::String("warning".into()),
+]));
+<span class="boring">}</span></code></pre>
+<h2 id="detailed-variants"><a class="header" href="#detailed-variants">Detailed variants</a></h2>
+<p>If you’d like to provide more detailed information for each variant (value), like descriptions and
+visibility, you can define the <code>variants</code> field and pass a map of
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaField.html"><code>SchemaField</code></a>s.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.enumerable(EnumType {
+	values: vec![
+		LiteralValue::String("debug".into()),
+		LiteralValue::String("error".into()),
+		LiteralValue::String("warning".into()),
+	],
+	variants: Some(IndexMap::from_iter([
+		(
+			"Debug".into(),
+			Box::new(SchemaField {
+				comment: Some("Shows debug messages and above".into()),
+				schema: Schema::literal_value(LiteralValue::String("debug".into())),
+				..SchemaField::default()
+			})
+		),
+		(
+			"Error".into(),
+			Box::new(SchemaField {
+				comment: Some("Shows only error messages".into()),
+				schema: Schema::literal_value(LiteralValue::String("error".into())),
+				..SchemaField::default()
+			})
+		),
+		(
+			"Warning".into(),
+			Box::new(SchemaField {
+				comment: Some("Shows warning and error messages".into()),
+				schema: Schema::literal_value(LiteralValue::String("warning".into())),
+				..SchemaField::default()
+			})
+		),
+	])),
+	..EnumType::default()
+})
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This comes in handy when working with specific generators, like TypeScript.</p>
+</blockquote>
+<blockquote>
+<p><code>variants</code> is the source of truth, and <code>values</code> is a derived subset of it. A variant whose schema
+holds no literal value contributes no entry to <code>values</code>, so the two can differ in length.</p>
+</blockquote>
+<h2 id="default-value-1"><a class="header" href="#default-value-1">Default value</a></h2>
+<p>The <code>default_index</code> field points at the entry that is the default. It indexes <code>variants</code> when that
+map is set, and <code>values</code> otherwise, so prefer the
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html#method.get_default"><code>EnumType::get_default()</code></a>
+and
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html#method.set_default"><code>EnumType::set_default()</code></a>
+methods over indexing either list yourself.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut ty = EnumType::new([
+	LiteralValue::String("debug".into()),
+	LiteralValue::String("error".into()),
+]);
+
+// Returns false and keeps the current default when no entry matches
+ty.set_default(LiteralValue::String("error".into()));
+
+assert_eq!(ty.get_default(), Some(&amp;LiteralValue::String("error".into())));
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="floats"><a class="header" href="#floats">Floats</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> can be used to represent a float or double.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{FloatType, FloatKind}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.float(FloatType {
+			kind: FloatKind::F32,
+			..FloatType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>kind</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.FloatType.html#method.new_kind"><code>FloatType::new_kind()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.float(FloatType::new_kind(FloatKind::F32));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>f32</code> and <code>f64</code>.</p>
+</blockquote>
+<h2 id="default-value-2"><a class="header" href="#default-value-2">Default value</a></h2>
+<p>To customize the default value for use within <a href="#code-generation">generators</a>, pass the desired
+value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a> constructor.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.float(FloatType::new_32(32.0));
+// Or
+schema.float(FloatType::new_64(64.0));
+<span class="boring">}</span></code></pre>
+<h2 id="settings-2"><a class="header" href="#settings-2">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.FloatType.html"><code>FloatType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="enumerable"><a class="header" href="#enumerable">Enumerable</a></h3>
+<p>The <code>enum_values</code> field can be used to specify a list of literal values that are allowed for the
+field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>FloatType {
+	// ...
+	enum_values: Some(vec![0.0, 0.25, 0.5, 0.75, 1.0]),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="formats"><a class="header" href="#formats">Formats</a></h3>
+<p>The <code>format</code> field can be used to associate semantic meaning to the float, and how the float will be
+used and displayed.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>FloatType {
+	// ...
+	format: Some("currency".into()),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<h3 id="minmax"><a class="header" href="#minmax">Min/max</a></h3>
+<p>The <code>min</code> and <code>max</code> fields can be used to specify the minimum and maximum inclusive values allowed.
+Both fields accept a non-zero number, and can be used together or individually.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>FloatType {
+	// ...
+	min: Some(0.0), // &gt;0
+	max: Some(1.0), // &lt;1
+}
+<span class="boring">}</span></code></pre>
+<p>These fields are not exclusive and do not include the lower and upper bound values. To include them,
+use <code>min_exclusive</code> and <code>max_exclusive</code> instead.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>FloatType {
+	// ...
+	min_exclusive: Some(0.0), // &gt;=0
+	max_exclusive: Some(1.0), // &lt;=1
+}
+<span class="boring">}</span></code></pre>
+<h3 id="multiple-of"><a class="header" href="#multiple-of">Multiple of</a></h3>
+<p>The <code>multiple_of</code> field can be used to specify a value that the float must be a multiple of.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>FloatType {
+	// ...
+	multiple_of: Some(0.25), // 0.0, 0.25, 0.50, etc
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="integers"><a class="header" href="#integers">Integers</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> can be used to represent an integer (number).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{IntegerType, IntegerKind}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.integer(IntegerType {
+			kind: IntegerKind::U32,
+			..IntegerType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>kind</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.IntegerType.html#method.new_kind"><code>IntegerType::new_kind()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.integer(IntegerType::new_kind(IntegerKind::U32));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>usize</code>-<code>u128</code>, <code>isize</code>-<code>i128</code>, and their <code>NonZero</code> counterparts.
+Unsigned <code>NonZero</code> types carry a <code>min</code> of 1; signed ones cannot express “not zero” as a bound, so
+they stay unconstrained.</p>
+</blockquote>
+<h2 id="default-value-3"><a class="header" href="#default-value-3">Default value</a></h2>
+<p>To customize the default value for use within <a href="#code-generation">generators</a>, pass the desired
+value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a> constructor.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.integer(IntegerType::new(IntegerKind::I32, 100));
+// Or
+schema.integer(IntegerType::new_unsigned(IntegerKind::U32, 100));
+<span class="boring">}</span></code></pre>
+<h2 id="settings-3"><a class="header" href="#settings-3">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.IntegerType.html"><code>IntegerType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="enumerable-1"><a class="header" href="#enumerable-1">Enumerable</a></h3>
+<p>The <code>enum_values</code> field can be used to specify a list of literal values that are allowed for the
+field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>IntegerType {
+	// ...
+	enum_values: Some(vec![0, 25, 50, 75, 100]),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="formats-1"><a class="header" href="#formats-1">Formats</a></h3>
+<p>The <code>format</code> field can be used to associate semantic meaning to the integer, and how the integer
+will be used and displayed.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>IntegerType {
+	// ...
+	format: Some("age".into()),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<h3 id="minmax-1"><a class="header" href="#minmax-1">Min/max</a></h3>
+<p>The <code>min</code> and <code>max</code> fields can be used to specify the minimum and maximum inclusive values allowed.
+Both fields accept a non-zero number, and can be used together or individually.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>IntegerType {
+	// ...
+	min: Some(0), // &gt;0
+	max: Some(100), // &lt;100
+}
+<span class="boring">}</span></code></pre>
+<p>These fields are not exclusive and do not include the lower and upper bound values. To include them,
+use <code>min_exclusive</code> and <code>max_exclusive</code> instead.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>IntegerType {
+	// ...
+	min_exclusive: Some(0), // &gt;=0
+	max_exclusive: Some(100), // &lt;=100
+}
+<span class="boring">}</span></code></pre>
+<h3 id="multiple-of-1"><a class="header" href="#multiple-of-1">Multiple of</a></h3>
+<p>The <code>multiple_of</code> field can be used to specify a value that the integer must be a multiple of.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>IntegerType {
+	// ...
+	multiple_of: Some(25), // 0, 25, 50, etc
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="literals"><a class="header" href="#literals">Literals</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.LiteralType.html"><code>LiteralType</code></a> can
+be used to represent a literal primitive value, such as a string or number.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{LiteralType, LiteralValue}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.literal(LiteralType::new(LiteralValue::String("enabled".into())))
+		// Or
+		schema.literal_value(LiteralValue::String("enabled".into()))
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/enum.LiteralValue.html"><code>LiteralValue</code></a>
+type is used by other schema types for their default or enumerable values.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="nulls"><a class="header" href="#nulls">Nulls</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Null"><code>SchemaType::Null</code></a> variant can be used to represent a literal <code>null</code> value. This works
+best when paired with unions or fields that need to be <a href="#marking-as-nullable">nullable</a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.set_type_and_build(SchemaType::Null)
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>()</code> and <code>Option&lt;T&gt;</code>.</p>
+</blockquote>
+<h2 id="marking-as-nullable"><a class="header" href="#marking-as-nullable">Marking as nullable</a></h2>
+<p>If you want a concrete schema to also accept null (an <code>Option</code>al value), you can use the
+<a href="https://docs.rs/schematic/latest/schematic/struct.SchemaBuilder.html#method.nullable"><code>SchemaBuilder::nullable()</code></a>
+method. Under the hood, this will create a union of the defined type, and the null type.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// string | null
+schema.nullable(schema.infer::&lt;String&gt;());
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="objects"><a class="header" href="#objects">Objects</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a> can be used to represent a key-value object of homogenous types. This is
+also known as a map, record, keyed object, or indexed object.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::ObjectType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.object(ObjectType {
+			key_type: Box::new(schema.infer::&lt;String&gt;()),
+			value_type: Box::new(schema.infer::&lt;String&gt;()),
+			..ObjectType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>key_type</code> and <code>value_type</code> fields, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.ObjectType.html#method.new"><code>ObjectType::new()</code></a>
+method.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.object(ObjectType::new(schema.infer::&lt;String&gt;(), schema.infer::&lt;String&gt;()));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>BTreeMap</code> and <code>HashMap</code>.</p>
+</blockquote>
+<h2 id="settings-4"><a class="header" href="#settings-4">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.ObjectType.html"><code>ObjectType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="length-1"><a class="header" href="#length-1">Length</a></h3>
+<p>The <code>min_length</code> and <code>max_length</code> fields can be used to restrict the length (key-value pairs) of the
+object. Both fields accept a non-zero number, and can be used together or individually.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ObjectType {
+	// ...
+	min_length: Some(1),
+	max_length: Some(10),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="required-keys"><a class="header" href="#required-keys">Required keys</a></h3>
+<p>The <code>required</code> field can be used to specify a list of keys that are required for the object, and
+must exist when the object is validated.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ObjectType {
+	// ...
+	required: Some(vec!["foo".into(), "bar".into()]),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="strings"><a class="header" href="#strings">Strings</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> can be used to represent a sequence of bytes, you know, a string.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{StringType, IntegerKind}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.string_default()
+	}
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>char</code>, <code>str</code>, <code>String</code>, <code>Path</code>, <code>PathBuf</code>, <code>IpAddr</code>, <code>Ipv4Addr</code>,
+<code>Ipv6Addr</code>, <code>SocketAddr</code>, <code>SocketAddrV4</code>, and <code>SocketAddrV6</code>.</p>
+</blockquote>
+<blockquote>
+<p><code>SystemTime</code> and <code>Duration</code> are <em>not</em> strings. Serde encodes them as maps — <code>{ secs, nanos }</code> and
+<code>{ secs_since_epoch, nanos_since_epoch }</code> — so they model as <a href="#structs">structs</a>.</p>
+</blockquote>
+<h2 id="default-value-4"><a class="header" href="#default-value-4">Default value</a></h2>
+<p>To customize the default value for use within <a href="#code-generation">generators</a>, pass the desired
+value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a> constructor.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.string(StringType::new("abc"));
+<span class="boring">}</span></code></pre>
+<h2 id="settings-5"><a class="header" href="#settings-5">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StringType.html"><code>StringType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="enumerable-2"><a class="header" href="#enumerable-2">Enumerable</a></h3>
+<p>The <code>enum_values</code> field can be used to specify a list of literal values that are allowed for the
+field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StringType {
+	// ...
+	enum_values: Some(vec!["a".into(), "b".into(), "c".into()]),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="formats-2"><a class="header" href="#formats-2">Formats</a></h3>
+<p>The <code>format</code> field can be used to associate semantic meaning to the string, and how the string will
+be used and displayed.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StringType {
+	// ...
+	format: Some("url".into()),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<h3 id="length-2"><a class="header" href="#length-2">Length</a></h3>
+<p>The <code>min_length</code> and <code>max_length</code> fields can be used to restrict the length of the string. Both
+fields accept a non-zero number, and can be used together or individually.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StringType {
+	// ...
+	min_length: Some(1),
+	max_length: Some(10),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="patterns"><a class="header" href="#patterns">Patterns</a></h3>
+<p>The <code>pattern</code> field can be used to define a regex pattern that the string must abide by.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StringType {
+	// ...
+	format: Some("version".into()),
+	pattern: Some("\d+\.\d+\.\d+".into()),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="structs"><a class="header" href="#structs">Structs</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a> can be used to represent a struct with explicitly named fields and typed
+values. This is also known as a “shape” or “model”.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::StructType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.structure(StructType {
+			fields: IndexMap::from_iter([
+				(
+					"name".into(),
+					Box::new(SchemaField {
+						comment: Some("Name of the user".into()),
+						schema: schema.infer::&lt;String&gt;(),
+						..SchemaField::default()
+					})
+				),
+				(
+					"age".into(),
+					Box::new(SchemaField {
+						comment: Some("Age of the user".into()),
+						schema: schema.nest().integer(IntegerType::new_kind(IntegerKind::U16)),
+						..SchemaField::default()
+					})
+				),
+				(
+					"active".into(),
+					Box::new(SchemaField {
+						comment: Some("Is the user active".into()),
+						schema: schema.infer::&lt;bool&gt;(),
+						..SchemaField::default()
+					})
+				),
+			]),
+			..StructType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining <code>fields</code>, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.StructType.html#method.new"><code>StructType::new()</code></a>
+method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.structure(StructType::new([
+	(
+		"name".into(),
+		SchemaField {
+			comment: Some("Name of the user".into()),
+			schema: schema.infer::&lt;String&gt;(),
+			..SchemaField::default()
+		}
+	),
+	// ...
+]));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for <code>Duration</code>, <code>SystemTime</code>, <code>Range</code>, and <code>RangeInclusive</code>. These look
+like scalars but serde encodes them as maps, so the schema describes the map.</p>
+</blockquote>
+<p>Fields keep the order they were inserted in, which is the declaration order when the schema comes
+from a derive. <a href="#code-generation">Generators</a> sort them by name when rendering, so generated
+output stays alphabetical regardless of how the source type is written.</p>
+<h2 id="settings-6"><a class="header" href="#settings-6">Settings</a></h2>
+<p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a>, which are then fed into the
+<a href="#code-generation">generator</a>.</p>
+<h3 id="required-fields"><a class="header" href="#required-fields">Required fields</a></h3>
+<p>The <code>required</code> field can be used to specify a list of fields that are required for the struct.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StructType {
+	// ...
+	required: Some(vec!["name".into()]),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> can be used to represent a fixed list of heterogeneous values of a given
+type, as defined by <code>items_types</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{TupleType, IntegerKind}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.tuple(TupleType {
+			items_types: vec![
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
+			],
+			..TupleType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>items_types</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.TupleType.html#method.new"><code>TupleType::new()</code></a>
+method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>schema.tuple(TupleType::new([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Automatically implemented for tuples of 0-12 length.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="unions"><a class="header" href="#unions">Unions</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.UnionType.html"><code>UnionType</code></a> paired with
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Union"><code>SchemaType::Union</code></a>
+can be used to represent a list of heterogeneous schema types (variants), in which a value must
+match one or more of the types.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{UnionType, UnionOperator}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.union(UnionType {
+			operator: UnionOperator::AnyOf,
+			variants_types: vec![
+				Box::new(schema.infer::&lt;String&gt;()),
+				Box::new(schema.infer::&lt;bool&gt;()),
+				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
+			],
+			..UnionType::default()
+		})
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>If you’re only defining the <code>variants_types</code> field, you can use the shorthand
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_any"><code>UnionType::new_any()</code></a>
+(any of) or
+<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_one"><code>UnionType::new_one()</code></a>
+(one of) methods. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Any of
+schema.union(UnionType::new_any([
+	schema.infer::&lt;String&gt;(),
+	schema.infer::&lt;bool&gt;(),
+	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
+]));
+
+// One of
+schema.union(UnionType::new_one([
+	// ...
+]));
+<span class="boring">}</span></code></pre>
+<h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
+<p>Unions support 2 kinds of operators, any of and one of, both of which can be defined with the
+<code>operator</code> field.</p>
+<ul>
+<li>Any of requires the value to match any of the variants.</li>
+<li>One of requires the value to match <em>only one</em> of the variants.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>UnionType {
+	// ...
+	operator: UnionOperator::OneOf,
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="unknown"><a class="header" href="#unknown">Unknown</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Unknown"><code>SchemaType::Unknown</code></a> variant can be used to represent an unknown type. This is
+sometimes known as an “any” or “mixed” type.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.build()
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Unknown"><code>SchemaType::Unknown</code></a> variant is also the default variant, and the default
+implementation for
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html#method.build_schema"><code>Schematic::build_schema()</code></a>,
+so the above can simply be written as:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl Schematic for T {}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="external-types-1"><a class="header" href="#external-types-1">External types</a></h1>
+<p>Schematic provides schema implementations for third-party <a href="https://crates.io">crates</a> through a
+concept known as external types. This functionality is opt-in through Cargo features.</p>
+<h2 id="chrono"><a class="header" href="#chrono">chrono</a></h2>
+<blockquote>
+<p>Requires the <code>type_chrono</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Date</code>, <code>DateTime</code>, <code>Duration</code>, <code>Days</code>, <code>Months</code>, <code>IsoWeek</code>, <code>NaiveWeek</code>,
+<code>NaiveDate</code>, <code>NaiveDateTime</code>, and <code>NaiveTime</code> from the <a href="https://crates.io/crates/chrono">chrono</a>
+crate.</p>
+<h2 id="indexmap"><a class="header" href="#indexmap">indexmap</a></h2>
+<blockquote>
+<p>Requires the <code>type_indexmap</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>IndexMap</code> and <code>IndexSet</code> from the
+<a href="https://crates.io/crates/indexmap">indexmap</a> crate.</p>
+<h2 id="regex"><a class="header" href="#regex">regex</a></h2>
+<blockquote>
+<p>Requires the <code>type_regex</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Regex</code> from the <a href="https://crates.io/crates/regex">regex</a> crate.</p>
+<blockquote>
+<p>To use <code>Regex</code> as a <a href="#third-party-types">setting</a>, reach for <code>RegexSetting</code>, which
+supplies the <code>Default</code> a required setting needs.</p>
+</blockquote>
+<h2 id="relative-path"><a class="header" href="#relative-path">relative-path</a></h2>
+<blockquote>
+<p>Requires the <code>type_relative_path</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>RelativePath</code> and <code>RelativePathBuf</code> from the
+<a href="https://crates.io/crates/relative-path">relative-path</a> crate.</p>
+<h2 id="rpkl"><a class="header" href="#rpkl">rpkl</a></h2>
+<blockquote>
+<p>Requires the <code>pkl</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Value</code> from the <a href="https://crates.io/crates/rpkl">rpkl</a> crate.</p>
+<h2 id="rust_decimal"><a class="header" href="#rust_decimal">rust_decimal</a></h2>
+<blockquote>
+<p>Requires the <code>type_rust_decimal</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Decimal</code> from the <a href="https://crates.io/crates/rust_decimal">rust_decimal</a>
+crate.</p>
+<h2 id="semver"><a class="header" href="#semver">semver</a></h2>
+<blockquote>
+<p>Requires the <code>type_semver</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Version</code> and <code>VersionReq</code> from the <a href="https://crates.io/crates/semver">semver</a>
+crate.</p>
+<blockquote>
+<p>To use <code>Version</code> as a <a href="#third-party-types">setting</a>, reach for <code>VersionSetting</code>, which
+supplies the <code>Default</code> a required setting needs.</p>
+</blockquote>
+<h2 id="ron"><a class="header" href="#ron">ron</a></h2>
+<blockquote>
+<p>Requires the <code>ron</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Value</code> from the <a href="https://crates.io/crates/ron">ron</a> crate.</p>
+<h2 id="serde_json"><a class="header" href="#serde_json">serde_json</a></h2>
+<blockquote>
+<p>Requires the <code>json</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Map</code> from the
+<a href="https://crates.io/crates/serde_json">serde_json</a> crate.</p>
+<h2 id="serde_yaml"><a class="header" href="#serde_yaml">serde_yaml</a></h2>
+<blockquote>
+<p>Requires the <code>serde_yaml</code> Cargo feature on <code>schematic_types</code> directly. The <code>schematic</code> crate does
+not enable it, as its <code>yaml</code> feature uses <code>serde_norway</code> instead.</p>
+</blockquote>
+<p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
+<a href="https://crates.io/crates/serde_yaml">serde_yaml</a> crate.</p>
+<h2 id="serde_yaml_norway"><a class="header" href="#serde_yaml_norway">serde_yaml_norway</a></h2>
+<blockquote>
+<p>Requires the <code>yaml</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
+<a href="https://crates.io/crates/serde_norway">serde_norway</a> crate.</p>
+<h2 id="toml"><a class="header" href="#toml">toml</a></h2>
+<blockquote>
+<p>Requires the <code>toml</code> Cargo feature.</p>
+</blockquote>
+<p>Implements schemas for <code>Value</code> and <code>Map</code> from the <a href="https://crates.io/crates/toml">toml</a> crate.</p>
+<h2 id="url"><a class="header" href="#url">url</a></h2>
+<blockquote>
+<p>Requires the <code>type_url</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Url</code> from the <a href="https://crates.io/crates/url">url</a> crate.</p>
+<h2 id="uuid"><a class="header" href="#uuid">uuid</a></h2>
+<blockquote>
+<p>Requires the <code>type_uuid</code> Cargo feature.</p>
+</blockquote>
+<p>Implements a schema for <code>Uuid</code> from the <a href="https://crates.io/crates/uuid">uuid</a> crate.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="code-generation"><a class="header" href="#code-generation">Code generation</a></h1>
+<p>The primary benefit of a schema modeling system, is that you can consume this type information to
+generate code into multiple output formats. This is a common pattern in many languages, and is a
+great way to reduce boilerplate.</p>
+<p>In the context of Rust, why use multiple disparate crates, each with their own unique
+implementations and <code>#[derive]</code> macros, just to generate some output. With Schematic, you can ditch
+all of these and use a single standardized approach.</p>
+<h2 id="usage-2"><a class="header" href="#usage-2">Usage</a></h2>
+<p>To make use of the generator, import and instantiate our
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html"><code>SchemaGenerator</code></a>.
+This is typically done within a one-off <code>main</code> function that can be ran from Cargo.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::SchemaGenerator;
+
+let mut generator = SchemaGenerator::default();
+<span class="boring">}</span></code></pre>
+<h3 id="adding-types"><a class="header" href="#adding-types">Adding types</a></h3>
+<p>From here, for every type that implements
+<a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> and you want to
+include in the generated output, call
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.add"><code>SchemaGenerator::add()</code></a>.
+If you already have a <a href="https://docs.rs/schematic/latest/schematic/struct.Schema.html"><code>Schema</code></a>
+rather than a type, you can use the
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.add_schema"><code>SchemaGenerator::add_schema()</code></a>
+method instead.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::SchemaGenerator;
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;FirstConfig&gt;();
+generator.add::&lt;SecondConfig&gt;();
+generator.add::&lt;ThirdConfig&gt;();
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>We’ll recursively add referenced and nested schemas for types that are added. No need to
+explicitly add all required types!</p>
+</blockquote>
+<p>Schemas are keyed by <a href="#defining-names">name</a>, so adding two different types that report
+the same one panics. Rendering both is impossible, and silently keeping one would leave every
+reference to the other pointing at the wrong type. Adding the same type twice is fine.</p>
+<h3 id="generating-output"><a class="header" href="#generating-output">Generating output</a></h3>
+<p>From here, call
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.generate"><code>SchemaGenerator::generate()</code></a>
+to render the schemes with a chosen <a href="#renderers-1">renderer</a> to an output file of your choice. This
+method can be called multiple times, each with a different output file or renderer.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::SchemaGenerator;
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;FirstConfig&gt;();
+generator.add::&lt;SecondConfig&gt;();
+generator.add::&lt;ThirdConfig&gt;();
+generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
+generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<h2 id="renderers-1"><a class="header" href="#renderers-1">Renderers</a></h2>
+<p>The following built-in renderers are available, but custom renderers can be created as well by
+implementing the
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.SchemaRenderer.html"><code>SchemaRenderer</code></a>
+trait.</p>
+<ul>
+<li><a href="#config-templates-experimental">Config templates</a></li>
+<li><a href="#json-schemas">JSON schemas</a></li>
+<li><a href="#typescript-types">TypeScript types</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="config-templates-experimental"><a class="header" href="#config-templates-experimental">Config templates (experimental)</a></h1>
+<blockquote>
+<p>Requires the <code>template</code> and desired <a href="#supported-source-formats">format</a> Cargo
+feature.</p>
+</blockquote>
+<p>With our <a href="#support-formats">format renderers</a>, you can generate a config template in a specific
+format. This template will include all fields, default values, comments, metadata, and is useful for
+situations like scaffolding files during installation.</p>
+<p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::SchemaGenerator;
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;CustomType&gt;();
+generator.generate(output_dir.join("config.json"), renderer)?;
+<span class="boring">}</span></code></pre>
+<h2 id="supported-formats"><a class="header" href="#supported-formats">Supported formats</a></h2>
+<h3 id="json"><a class="header" href="#json">JSON</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/json_template/struct.JsonTemplateRenderer.html"><code>JsonTemplateRenderer</code></a>
+will render JSON templates <em>without</em> comments. Any commented related options will be force disabled.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{JsonTemplateRenderer, TemplateOptions};
+
+JsonTemplateRenderer::default();
+JsonTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre>
+<h3 id="jsonc"><a class="header" href="#jsonc">JSONC</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/jsonc_template/struct.JsoncTemplateRenderer.html"><code>JsoncTemplateRenderer</code></a>
+will render JSON templates <em>with</em> comments. We suggest using the <code>.jsonc</code> file extension, but not
+required.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{JsoncTemplateRenderer, TemplateOptions};
+
+JsoncTemplateRenderer::default();
+JsoncTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre>
+<h3 id="pkl"><a class="header" href="#pkl">Pkl</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/pkl_template/struct.PklTemplateRenderer.html"><code>PklTemplateRenderer</code></a>
+will render Pkl templates.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{PklTemplateRenderer, TemplateOptions};
+
+PklTemplateRenderer::default();
+PklTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre>
+<h3 id="toml-1"><a class="header" href="#toml-1">TOML</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/toml_template/struct.TomlTemplateRenderer.html"><code>TomlTemplateRenderer</code></a>
+will render TOML templates.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{TomlTemplateRenderer, TemplateOptions};
+
+TomlTemplateRenderer::default();
+TomlTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre>
+<h3 id="yaml"><a class="header" href="#yaml">YAML</a></h3>
+<p>The
+<a href="https://docs.rs/schematic/latest/schematic/schema/yaml_template/struct.YamlTemplateRenderer.html"><code>YamlTemplateRenderer</code></a>
+will render YAML templates.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{YamlTemplateRenderer, TemplateOptions};
+
+YamlTemplateRenderer::default();
+YamlTemplateRenderer::new(TemplateOptions::default());
+<span class="boring">}</span></code></pre>
+<h2 id="root-document"><a class="header" href="#root-document">Root document</a></h2>
+<p>A template represents a single document, typically for a struct. In Schematic, the <em>last type to be
+added</em> to <code>SchemaGenerator</code> will be the root document, while all other types will be ignored. For
+example:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// These are only used for type information
+generator.add::&lt;FirstConfig&gt;();
+generator.add::&lt;SecondConfig&gt;();
+generator.add::&lt;ThirdConfig&gt;();
+
+// This is the root document
+generator.add::&lt;LastType&gt;();
+generator.generate(output_dir.join("config.json"), renderer)?;
+<span class="boring">}</span></code></pre>
+<h2 id="caveats-1"><a class="header" href="#caveats-1">Caveats</a></h2>
+<p>By default <a href="#arrays">arrays</a> and <a href="#objects">objects</a> do not support default values, and will
+render <code>[]</code> and <code>{}</code> respectively. This can be customized with the
+<a href="#field-expansion"><code>expand_fields</code> option</a>.</p>
+<p>Furthermore, <a href="#enums-1">enums</a> and <a href="#unions">unions</a> only support default values when
+explicitly marked as such. For example, with <code>#[default]</code>.</p>
+<p>And lastly, when we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid
+value for TOML, and may not be what you expect.</p>
+<h2 id="example-output"><a class="header" href="#example-output">Example output</a></h2>
+<p>Given the following type:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct ServerConfig {
+	/// The base URL to serve from.
+	#[setting(default = "/")]
+	pub base_url: String,
+
+	/// The default port to listen on.
+	#[setting(default = 8080, env = "PORT")]
+	pub port: usize,
+}
+<span class="boring">}</span></code></pre>
+<p>Would render the following formats:</p>
+<table>
+<tr>
+<td>JSONC</td>
+<td>Pkl</td>
+</tr>
+
+<tr>
+<td>
+<pre><code class="language-json">{
+	// The base URL to serve from.
+	"base_url": "/",
+
+	// The default port to listen on.
+	// @env PORT
+	"port": 8080
+}
+</code></pre>
+</td>
+<td>
+<pre><code class="language-pkl"># The base URL to serve from.
+base_url = "/"
+
+# The default port to listen on.
+# @env PORT
+port = 8080
+</code></pre>
+</td>
+</tr>
+
+</table>
+
+<br />
+<table>
+<tr>
+<td>TOML</td>
+<td>YAML</td>
+</tr>
+
+<tr>
+<td>
+<pre><code class="language-toml"># The base URL to serve from.
+base_url = "/"
+
+# The default port to listen on.
+# @env PORT
+port = 8080
+</code></pre>
+</td>
+<td>
+<pre><code class="language-yaml"># The base URL to serve from.
+base_url: "/"
+
+# The default port to listen on.
+# @env PORT
+port: 8080
+</code></pre>
+</td>
+</tr>
+
+</table>
+
+<blockquote>
+<p>Applying the desired casing for field names should be done with serde <code>rename_all</code> on the
+container.</p>
+</blockquote>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateOptions.html"><code>TemplateOptions</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::TemplateOptions;
+
+JsoncTemplateRenderer::new(TemplateOptions {
+	// ...
+	..TemplateOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>The <code>format</code> option is required!</p>
+</blockquote>
+<h3 id="indentation"><a class="header" href="#indentation">Indentation</a></h3>
+<p>The indentation of the generated template can be customized using the <code>indent_char</code> option. By
+default this is 2 spaces (<code> </code>).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	indent_char: "\t".into(),
+}
+<span class="boring">}</span></code></pre>
+<p>The spacing between fields can also be toggled with the <code>newline_between_fields</code> option. By default
+this is enabled, which adds a newline between each field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	newline_between_fields: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="comments"><a class="header" href="#comments">Comments</a></h3>
+<p>All Rust doc comments (<code>///</code>) are rendered as comments above each field in the template. This can be
+disabled with the <code>comments</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	comments: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="header-and-footer"><a class="header" href="#header-and-footer">Header and footer</a></h3>
+<p>The <code>header</code> and <code>footer</code> options can be customized to add additional content to the top and bottom
+of the rendered template respectively.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	header: "$schema: \"https://example.com/schema.json\"\n\n".into(),
+	footer: "\n\n# Learn more: https://example.com".into(),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="field-display"><a class="header" href="#field-display">Field display</a></h3>
+<p>By default all non-skipped fields in the root document (struct) are rendered in the template. If
+you’d like to hide certain fields from being rendered, you can use the <code>hide_fields</code> option. This
+option accepts a list of field names and also supports dot-notation for nested fields.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	hide_fields: vec!["key".into(), "nested.key".into()],
+}
+<span class="boring">}</span></code></pre>
+<p>Alternatively, you can choose to <em>only</em> render specific fields with <code>only_fields</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	only_fields: vec!["key".into(), "nested.key".into()],
+}
+<span class="boring">}</span></code></pre>
+<p>And lastly, if you’d like to render a field but have it commented out by default, use the
+<code>comment_fields</code> option instead. This also supports dot-notation for nested fields.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	comment_fields: vec!["key".into(), "nested.key".into()],
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Field names use the serde cased name, not the Rust struct field name.</p>
+</blockquote>
+<h3 id="field-expansion"><a class="header" href="#field-expansion">Field expansion</a></h3>
+<p>For <a href="#arrays">arrays</a> and <a href="#objects">objects</a>, we render an empty value (<code>[]</code> or <code>{}</code>) by
+default because there’s no actual data associated with the schema. However, if you’d like to render
+a single example item for a field, you can use the <code>expand_fields</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	expand_fields: vec!["key".into(), "nested.key".into()],
+}
+<span class="boring">}</span></code></pre>
+<p>Here’s an example of how this works:</p>
+<table>
+<tr>
+<td>Not expanded</td>
+<td>Expanded</td>
+</tr>
+
+<tr>
+<td>
+<pre><code class="language-json">{
+	"proxies": []
+}
+</code></pre>
+</td>
+<td>
+<pre><code class="language-json">{
+	"proxies": [
+		// An example proxy configuration.
+		{
+			"host": "",
+			"port": 8080
+		}
+	]
+}
+</code></pre>
+</td>
+</tr>
+
+</table>
+
+<h3 id="custom-values"><a class="header" href="#custom-values">Custom values</a></h3>
+<p>If you need more control of what gets rendered for a specific field, you can use the <code>custom_values</code>
+option. This option accepts a map of field names to custom values (schemas), and will take priority
+over default and empty values. Dot-notation for nested fields is also supported.</p>
+<p>Using the example output above, we can override the <code>port</code> field to render <code>3000</code> instead of <code>8080</code>
+like so:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TemplateOptions {
+	// ...
+	custom_values: HashMap::from_iter([
+		("port".into(), Schema::integer(IntegerType::new_unsigned(IntegerKind::Usize, 3000)))
+	]),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>If the custom schema type does not match the field type, it will trigger a panic.</p>
+</blockquote>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="json-schemas"><a class="header" href="#json-schemas">JSON schemas</a></h1>
+<blockquote>
+<p>Requires the <code>json_schema</code> Cargo feature.</p>
+</blockquote>
+<p>With our
+<a href="https://docs.rs/schematic/latest/schematic/schema/json_schema/struct.JsonSchemaRenderer.html"><code>JsonSchemaRenderer</code></a>,
+you can generate a <a href="https://json-schema.org/">JSON Schema</a> document for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Internally
+this renderer uses the <a href="https://crates.io/crates/schemars"><code>schemars</code></a> crate to generate the JSON
+document.</p>
+<p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{SchemaGenerator, JsonSchemaRenderer};
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;CustomType&gt;();
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>For a reference implementation, check out
+<a href="https://github.com/moonrepo/moon/blob/master/nextgen/config/src/main.rs">moonrepo/moon</a>.</p>
+</blockquote>
+<h2 id="root-document-1"><a class="header" href="#root-document-1">Root document</a></h2>
+<p>Unlike other renderers, a JSON schema represents a single document, with referenced types being
+organized into definitions. In Schematic, the <em>last type to be added to <code>SchemaGenerator</code></em> will be
+the root document, while all other types will become definitions. For example:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// These are definitions
+generator.add::&lt;FirstConfig&gt;();
+generator.add::&lt;SecondConfig&gt;();
+generator.add::&lt;ThirdConfig&gt;();
+
+// This is the root document
+generator.add::&lt;LastType&gt;();
+generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<p>When rendered, will look something like the following:</p>
+<pre><code class="language-json">{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "LastType",
+	"type": "object",
+	"properties": {
+		// Fields in LastType...
+	},
+	"definitions": {
+		// Other types...
+	}
+}
+</code></pre>
+<h2 id="options-1"><a class="header" href="#options-1">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/json_schema/type.JsonSchemaOptions.html"><code>JsonSchemaOptions</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::JsonSchemaOptions;
+
+JsonSchemaRenderer::new(JsonSchemaOptions {
+	// ...
+	..JsonSchemaOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This type also carries some fields from the upstream
+<a href="https://docs.rs/schemars/latest/schemars/generate/struct.SchemaSettings.html"><code>SchemaSettings</code></a>
+type in the <code>schemars</code> crate — <code>meta_schema</code>, <code>transforms</code>, and <code>inline_subschemas</code>. Refer to
+their documentation for more information.</p>
+</blockquote>
+<blockquote>
+<p><code>definitions_path</code> is the prefix each <code>$ref</code> is built from, such as <code>#/definitions/</code>. Schemars
+models its own field of that name as a JSON pointer instead, so the two are not interchangeable.</p>
+</blockquote>
+<h3 id="markdown-descriptions"><a class="header" href="#markdown-descriptions">Markdown descriptions</a></h3>
+<p>By default, the <code>description</code> field in the JSON schema specification is supposed to be a plain text
+string, but some tools support markdown through another field called <code>markdownDescription</code>.</p>
+<p>To support this pattern, enable the <code>markdown_description</code> option, which will inject the
+<code>markdownDescription</code> field if markdown was detected in the <code>description</code> field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	markdown_description: true,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>This is a non-standard extension to the JSON schema specification.</p>
+</blockquote>
+<h3 id="required-fields-1"><a class="header" href="#required-fields-1">Required fields</a></h3>
+<p>When a struct is rendered, automatically mark all non-<code>Option</code> struct fields as required, and
+include them in the JSON schema
+<a href="https://json-schema.org/understanding-json-schema/reference/object#required"><code>required</code> field</a>.
+This is enabled by default.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="field-titles"><a class="header" href="#field-titles">Field titles</a></h3>
+<p>The JSON schema specification supports a
+<a href="https://json-schema.org/understanding-json-schema/reference/annotations"><code>title</code> annotation</a> for
+each field, which is a human-readable string. By default this is the name of the Rust struct, enum,
+or type field.</p>
+<p>But depending on the tool that consumes the schema, this may not be the best representation. As an
+alternative, the <code>set_field_name_as_title</code> option can be enabled to use the field name itself as the
+<code>title</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>JsonSchemaOptions {
+	// ...
+	set_field_name_as_title: true,
+}
+<span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="typescript-types"><a class="header" href="#typescript-types">TypeScript types</a></h1>
+<blockquote>
+<p>Requires the <code>typescript</code> Cargo feature.</p>
+</blockquote>
+<p>With our
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptRenderer.html"><code>TypeScriptRenderer</code></a>,
+you can generate <a href="https://www.typescriptlang.org/">TypeScript types</a> for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. To utilize,
+instantiate a generator, add types to render, and generate the output file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{SchemaGenerator, TypeScriptRenderer};
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;CustomType&gt;();
+generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>For a reference implementation, check out
+<a href="https://github.com/moonrepo/moon/blob/master/nextgen/config/src/main.rs">moonrepo/moon</a>.</p>
+</blockquote>
+<h2 id="options-2"><a class="header" href="#options-2">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptOptions.html"><code>TypeScriptOptions</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::TypeScriptOptions;
+
+TypeScriptRenderer::new(TypeScriptOptions {
+	// ...
+	..TypeScriptOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<h3 id="indentation-1"><a class="header" href="#indentation-1">Indentation</a></h3>
+<p>The indentation of the generated TypeScript code can be customized using the <code>indent_char</code> option.
+By default this is a tab (<code>\t</code>).</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	indent_char: "  ".into(),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="enum-types"><a class="header" href="#enum-types">Enum types</a></h3>
+<p><a href="#enums-1">Enum types</a> can be rendered in a format of your choice using the <code>enum_format</code> option
+and the
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.EnumFormat.html"><code>EnumFormat</code></a>
+enum. By default enums are rendered as TypeScript string unions, but can be rendered as TypeScript
+enums instead.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	enum_format: EnumFormat::Enum,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">// Default
+export type LogLevel = "debug" | "info" | "error";
+
+// As enum
+export enum LogLevel {
+	Debug,
+	Info,
+	Error,
+}
+</code></pre>
+<p>Furthermore, the <code>const_enum</code> option can be enabled to render <code>const enum</code> types instead of <code>enum</code>
+types. This does not apply when <code>EnumFormat::Union</code> is used.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	const_enum: true,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">// Enabled
+export const enum LogLevel {}
+
+// Disabled
+export enum LogLevel {}
+</code></pre>
+<h3 id="object-types"><a class="header" href="#object-types">Object types</a></h3>
+<p><a href="#structs">Struct types</a> can be rendered as either TypeScript interfaces or type aliases using
+the <code>object_format</code> option and the
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.ObjectFormat.html"><code>ObjectFormat</code></a>
+enum. By default structs are rendered as TypeScript interfaces.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	object_format: ObjectFormat::Type,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">// Default
+export interface User {
+	name: string;
+}
+
+// As alias
+export type User = {
+	name: string;
+};
+</code></pre>
+<h3 id="properties-format"><a class="header" href="#properties-format">Properties format</a></h3>
+<p>Properties within a struct can be rendered as either optional or required in TypeScript, depending
+on usage. The default format for all properties can be customized with the <code>property_format</code> option
+and the
+<a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html"><code>PropertyFormat</code></a>
+enum. By default all properties are required.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	property_format: PropertyFormat::Required,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">// Default / required
+export interface User {
+	name: string;
+}
+
+// Optional
+export interface User {
+	name?: string;
+}
+
+// Optional with undefined union
+export interface User {
+	name?: string | undefined;
+}
+</code></pre>
+<h3 id="type-references"><a class="header" href="#type-references">Type references</a></h3>
+<p>In the context of this renderer, a type reference is simply a reference to another type by its name,
+and is used by other types of another name. For example, the fields of a struct type may reference
+another type by name.</p>
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
+
+export interface User {
+	status: UserStatus;
+}
+</code></pre>
+<p>Depending on your use case, this may not be desirable. If so, you can enable the
+<code>disable_references</code> option, which disables references entirely, and inlines all type information.
+So the example above would become:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	disable_references: true,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">export type UserStatus = "active" | "inactive";
+
+export interface User {
+	status: "active" | "inactive";
+}
+</code></pre>
+<p>Additionally, the <code>exclude_references</code> option can be used to exclude a type reference by name
+entirely from the output, as demonstrated below.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	exclude_references: vec!["UserStatus".into()],
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">export interface User {
+	status: "active" | "inactive";
+}
+</code></pre>
+<h3 id="importing-external-types"><a class="header" href="#importing-external-types">Importing external types</a></h3>
+<p>For better interoperability, you can import external types from other TypeScript modules using the
+<code>external_types</code> option, which is a map of file paths (relative from the output location) to a list
+of types to import from that file. This is useful if:</p>
+<ul>
+<li>You have existing types that aren’t generated and want to reference.</li>
+<li>You want to reference types from other generated files, and don’t want to duplicate them.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>TypeScriptOptions {
+	// ...
+	external_types: HashMap::from_iter([
+		("./states".into(), vec!["UserStatus".into()]),
+	]),
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-ts">import type { UserStatus } from "./states";
+
+export interface User {
+	status: UserStatus;
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
