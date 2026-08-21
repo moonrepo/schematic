@@ -101,6 +101,10 @@ while the schema types have been updated to be more flexible and composable.
   required an explicit `#[setting(env)]` and panicked at derive time otherwise.
 - Added support for `#[deprecated(since = "...", note = "...")]`, whose note is now used as the
   deprecation message. Only `#[deprecated]` and `#[deprecated = "..."]` were recognized before.
+- Added support for struct literals and paths that name a value in `#[setting(default)]`, so an enum
+  variant or constant can be written directly: `#[setting(default = LevelFilter::Debug)]`. A path
+  whose last segment starts uppercase is a value, and one starting lowercase is still a handler
+  function to call. ([#173](https://github.com/moonrepo/schematic/issues/173))
 - Improved the parse, handling, and validation of container and field attributes.
 - Updated `#[config(before_parse)]` on `ConfigEnum` to accept every case that `rename_all` does,
   instead of only `lowercase` and `UPPERCASE`. Incoming values are normalized before being matched,

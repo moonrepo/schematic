@@ -291,6 +291,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `Result`, and silently returning wrong values is worse.
 - **Validation error paths use serde names** (renames honored) for fields and variants; variants use
   `PathSegment::Variant` + index, rendering `Many[0].inner`.
+- **A `#[setting(default)]` path is told apart by its casing.** `LevelFilter::Debug` names a value,
+  `find_unused_port` names a handler function, and both arrive as a bare `Expr::Path` that nothing at
+  derive time can resolve. `path_names_a_value` goes by the last segment's first character, which
+  works because a name breaking Rust's conventions would already be earning a lint. Non-literal
+  defaults still never reach the schema — `impl_schema_type` only reads `Expr::Lit`.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 
