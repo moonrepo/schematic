@@ -296,6 +296,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   derive time can resolve. `path_names_a_value` goes by the last segment's first character, which
   works because a name breaking Rust's conventions would already be earning a lint. Non-literal
   defaults still never reach the schema — `impl_schema_type` only reads `Expr::Lit`.
+- **Partial fields are always `pub`**, never the setting's own visibility. The partial is what a
+  caller receives from the loader, so a `pub(crate)` setting would otherwise leave them a field they
+  cannot read or set through `..Default::default()`. The partial *type* still inherits the
+  container's visibility, which is what actually caps how far those fields reach.
 - **A container `#[serde(default)]` makes every field optional**, the same as one declared on the
   field, since serde falls back per field when the input omits it. `SchemaField.optional` reflects
   that, which is what puts the `?` on a TypeScript property.

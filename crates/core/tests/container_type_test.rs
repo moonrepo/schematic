@@ -137,8 +137,10 @@ mod partial_type {
             assert_snapshot!(pretty(container.impl_partial_type()));
         }
 
+        // The container keeps its own visibility, while the fields are always
+        // public, so a caller holding the partial can read all of it
         #[test]
-        fn inherits_visibility() {
+        fn inherits_container_visibility_but_not_the_fields() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 pub(crate) struct Example {

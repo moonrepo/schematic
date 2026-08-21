@@ -6,13 +6,13 @@ expression: pretty(container.impl_partial_type())
 #[serde(default)]
 struct PartialExample(
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<String>,
+    pub Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<usize>,
+    pub Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<Vec<bool>>,
+    pub Option<Vec<bool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<<NestedConfig as schematic::Config>::Partial>,
+    pub Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<Box<str>>,
+    pub Option<Box<str>>,
 );

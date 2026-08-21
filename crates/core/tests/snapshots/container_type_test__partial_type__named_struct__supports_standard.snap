@@ -6,21 +6,21 @@ expression: pretty(container.impl_partial_type())
 #[serde(default, deny_unknown_fields)]
 struct PartialExample {
     #[serde(skip_serializing_if = "Option::is_none")]
-    a: Option<bool>,
+    pub a: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    b: Option<usize>,
+    pub b: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    c: Option<String>,
+    pub c: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    d: Option<String>,
+    pub d: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    e: Option<Vec<String>>,
+    pub e: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    f: Option<HashMap<u8, String>>,
+    pub f: Option<HashMap<u8, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    g: Option<String>,
+    pub g: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    h: Option<Vec<u8>>,
+    pub h: Option<Vec<u8>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    i: Option<std::collections::BTreeSet<u8>>,
+    pub i: Option<std::collections::BTreeSet<u8>>,
 }

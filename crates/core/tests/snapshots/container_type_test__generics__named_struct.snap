@@ -10,9 +10,9 @@ expression: pretty(container.to_token_stream())
 )]
 struct PartialExample<T> {
     #[serde(skip_serializing_if = "Option::is_none")]
-    inner: Option<T>,
+    pub inner: Option<T>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    label: Option<String>,
+    pub label: Option<String>,
 }
 #[automatically_derived]
 impl<T> schematic::PartialConfig for PartialExample<T> {

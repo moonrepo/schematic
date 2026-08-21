@@ -8,13 +8,13 @@ pub struct PartialExample(
     #[serde(skip_serializing_if = "Option::is_none")]
     pub Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<String>,
+    pub Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<<NestedConfig as schematic::Config>::Partial>,
+    pub Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+    pub Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     /// Docs.
     #[serde(default)]
-    Option<usize>,
+    pub Option<usize>,
 );

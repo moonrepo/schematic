@@ -13,7 +13,7 @@ where
     T: Default,
 {
     #[serde(skip_serializing_if = "Option::is_none")]
-    inner: Option<T>,
+    pub inner: Option<T>,
 }
 #[automatically_derived]
 impl<T: Clone> schematic::PartialConfig for PartialExample<T>

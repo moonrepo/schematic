@@ -10,18 +10,18 @@ struct PartialExample {
     #[serde(rename = "aa", skip_serializing_if = "Option::is_none")]
     /// Field docs.
     #[serde(default)]
-    a: Option<bool>,
+    pub a: Option<bool>,
     #[serde(alias = "bb", flatten, skip_serializing_if = "Option::is_none")]
-    b: Option<HashMap<String, String>>,
+    pub b: Option<HashMap<String, String>>,
     #[serde(skip)]
-    c: Option<usize>,
+    pub c: Option<usize>,
     #[serde(skip_serializing, skip_deserializing)]
-    d: Option<usize>,
+    pub d: Option<usize>,
     #[serde(skip_serializing_if = "is_zero")]
-    e: Option<usize>,
+    pub e: Option<usize>,
     #[serde(rename(deserialize = "ff"), skip_serializing_if = "Option::is_none")]
     #[allow(dead_code)]
     #[deprecated]
     #[cfg(feature = "example")]
-    f: Option<usize>,
+    pub f: Option<usize>,
 }

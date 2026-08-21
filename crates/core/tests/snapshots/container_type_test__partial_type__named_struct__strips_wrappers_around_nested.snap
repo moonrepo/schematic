@@ -6,15 +6,15 @@ expression: pretty(container.impl_partial_type())
 #[serde(default, deny_unknown_fields)]
 struct PartialExample {
     #[serde(skip_serializing_if = "Option::is_none")]
-    a: Option<<NestedConfig as schematic::Config>::Partial>,
+    pub a: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    b: Option<<NestedConfig as schematic::Config>::Partial>,
+    pub b: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    c: Option<<NestedConfig as schematic::Config>::Partial>,
+    pub c: Option<<NestedConfig as schematic::Config>::Partial>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    d: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+    pub d: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    e: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+    pub e: Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    f: Option<HashMap<String, <CustomConfig as schematic::Config>::Partial>>,
+    pub f: Option<HashMap<String, <CustomConfig as schematic::Config>::Partial>>,
 }

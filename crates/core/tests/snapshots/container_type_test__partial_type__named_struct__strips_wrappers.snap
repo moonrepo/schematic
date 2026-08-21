@@ -6,27 +6,27 @@ expression: pretty(container.impl_partial_type())
 #[serde(default, deny_unknown_fields)]
 struct PartialExample {
     #[serde(skip_serializing_if = "Option::is_none")]
-    a: Option<String>,
+    pub a: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    b: Option<usize>,
+    pub b: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    c: Option<bool>,
+    pub c: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    d: Option<String>,
+    pub d: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    e: Option<Vec<String>>,
+    pub e: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    f: Option<Vec<String>>,
+    pub f: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    g: Option<usize>,
+    pub g: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    h: Option<HashMap<String, usize>>,
+    pub h: Option<HashMap<String, usize>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    i: Option<Box<str>>,
+    pub i: Option<Box<str>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    j: Option<Arc<str>>,
+    pub j: Option<Arc<str>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    k: Option<Box<[u8]>>,
+    pub k: Option<Box<[u8]>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    l: Option<String>,
+    pub l: Option<String>,
 }

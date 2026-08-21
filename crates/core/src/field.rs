@@ -8,7 +8,7 @@ use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident, Visibility};
+use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident};
 
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
@@ -74,7 +74,6 @@ pub struct Field {
     pub ident: Option<Ident>, // Named
     pub index: usize,         // Unnamed
     pub modifiers: FieldModifiers,
-    pub vis: Visibility,
 }
 
 impl Field {
@@ -94,7 +93,6 @@ impl Field {
             modifiers: field.modifiers,
             serde_args,
             serde_container_args,
-            vis: field.vis,
             value: FieldValue::new(field.ty, args.nested.as_ref()),
             args,
         };
@@ -390,18 +388,22 @@ impl Field {
 impl ToTokens for Field {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let attrs = self.get_partial_attributes();
-        let vis = &self.vis;
         let ty = self.get_partial_type();
 
+        // Always public, never the setting's own visibility. The partial is
+        // handed to callers as the parsed representation, so a `pub(crate)`
+        // setting would leave them a field they cannot read. The partial type
+        // itself is only as visible as the container, which is what actually
+        // caps the reach of these fields.
         if let Some(name) = &self.ident {
             tokens.extend(quote! {
                 #(#attrs)*
-                #vis #name: #ty,
+                pub #name: #ty,
             });
         } else {
             tokens.extend(quote! {
                 #(#attrs)*
-                #vis #ty,
+                pub #ty,
             });
         }
     }

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed partial fields inheriting the setting's visibility. They are always `pub` now, as a
+  `pub(crate)` setting made the partial unusable from another crate, including through
+  `..Default::default()`. The partial type still inherits the container's visibility.
+
 ## 0.20.1
 
 #### 🐞 Fixes
