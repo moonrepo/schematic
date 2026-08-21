@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-19aa7bb6.js";
+            window.path_to_searchindex_js = "../searchindex-7603683b.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-67a62e30.js"></script>
@@ -242,7 +242,8 @@ function. Requires either <code>env</code>, or an <code>env_prefix</code> on the
 <li><code>skip</code></li>
 <li><code>skip_deserializing</code></li>
 <li><code>skip_serializing</code></li>
-<li><code>skip_serializing_if</code></li>
+<li><code>skip_serializing_if</code> - Only honored from <code>#[setting]</code>, and written against the partial’s
+<code>Option</code>. The <code>#[serde]</code> form is left for the full type, whose field is not wrapped.</li>
 <li><code>untagged</code> <em>(enum only)</em></li>
 </ul>
 <h3 id="serde-support"><a class="header" href="#serde-support">Serde support</a></h3>
