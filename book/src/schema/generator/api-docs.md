@@ -131,6 +131,49 @@ ApiDocsOptions {
 }
 ```
 
+### Custom tags
+
+Tags are rendered by the `render_tags` function, which receives the tags of a type, property, or
+variant as a list of
+[`ApiDocsTag`](https://docs.rs/schematic/latest/schematic/schema/api_docs/enum.ApiDocsTag.html)
+values, and returns markdown. The default renders a block quote of bold labels, but a documentation
+site may prefer its own components.
+
+```rust
+use schematic::schema::ApiDocsTag;
+
+ApiDocsOptions {
+	// ...
+	render_tags: Box::new(|tags| {
+		tags.iter()
+			.map(|tag| match tag {
+				ApiDocsTag::Deprecated(Some(message)) => format!("<Badge>{tag}</Badge> {message}"),
+				_ => format!("<Badge>{tag}</Badge>"),
+			})
+			.collect::<Vec<_>>()
+			.join(" ")
+	}),
+}
+```
+
+The function is only called when there is at least one tag, and returning an empty string omits the
+tags entirely.
+
+### Custom descriptions
+
+Descriptions are rendered by the `render_description` function, which receives the doc comment as
+written and returns markdown. The default keeps the comment as is, only trimming each line. Use this
+to wrap descriptions in a component, or to rewrite links.
+
+```rust
+ApiDocsOptions {
+	// ...
+	render_description: Box::new(|description| format!(":::note\n{}\n:::", description.trim())),
+}
+```
+
+Returning an empty string omits the description.
+
 ### Aliases
 
 A field's aliases are listed in its table. Disable this with the `exclude_aliases` option.

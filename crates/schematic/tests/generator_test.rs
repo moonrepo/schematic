@@ -737,6 +737,55 @@ mod api_docs {
     }
 
     #[test]
+    fn custom_tags_and_description() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                render_tags: Box::new(|tags| {
+                    tags.iter()
+                        .map(|tag| match tag {
+                            ApiDocsTag::Deprecated(Some(message)) => {
+                                format!("<Badge>{tag}</Badge> {message}")
+                            }
+                            _ => format!("<Badge>{tag}</Badge>"),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                }),
+                render_description: Box::new(|description| {
+                    format!(":::note\n{}\n:::", description.trim())
+                }),
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    // An empty result from either function omits that block, rather than
+    // leaving a blank line where it would have been
+    #[test]
+    fn empty_tags_and_description_are_omitted() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                render_tags: Box::new(|_| String::new()),
+                render_description: Box::new(|_| String::new()),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(!output.contains("Nullable"));
+        assert!(!output.contains("Some comment."));
+        assert!(!output.contains("\n\n\n"));
+        assert!(output.contains("### `enums`\n\n| Attribute | Value |"));
+    }
+
+    #[test]
     fn errors_without_schemas() {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("docs.md");

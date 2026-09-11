@@ -6,6 +6,85 @@ use std::borrow::Cow;
 use std::collections::{BTreeSet, HashSet};
 use std::fmt;
 
+/// A tag describing how a type, property, or variant may be provided.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ApiDocsTag {
+    /// The default variant of an enum or union.
+    Default,
+    /// Deprecated, with the deprecation message when one was given.
+    Deprecated(Option<String>),
+    /// A property whose keys are flattened into its parent.
+    Flattened,
+    /// Accepts `null`.
+    Nullable,
+    /// A property that may be omitted.
+    Optional,
+    /// A property that must be provided.
+    Required,
+    /// A property that is only serialized, never deserialized.
+    ReadOnly,
+    /// A property that is only deserialized, never serialized.
+    WriteOnly,
+}
+
+impl ApiDocsTag {
+    /// The human readable label of the tag.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Default => "Default",
+            Self::Deprecated(_) => "Deprecated",
+            Self::Flattened => "Flattened",
+            Self::Nullable => "Nullable",
+            Self::Optional => "Optional",
+            Self::Required => "Required",
+            Self::ReadOnly => "Read only",
+            Self::WriteOnly => "Write only",
+        }
+    }
+}
+
+impl fmt::Display for ApiDocsTag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())
+    }
+}
+
+/// Renders the tags of a type, property, or variant to markdown. Only called
+/// with at least one tag, and an empty result omits the tags entirely.
+pub type ApiDocsTagsRenderer = Box<dyn Fn(&[ApiDocsTag]) -> String>;
+
+/// Renders the description of a type, property, or variant to markdown,
+/// from the doc comment as written. An empty result omits the description.
+pub type ApiDocsDescriptionRenderer = Box<dyn Fn(&str) -> String>;
+
+/// The default tags renderer, which renders a block quote of bold labels
+/// separated by a middle dot, such as `> **Required** · **Nullable**`. A
+/// deprecation message follows its label in parentheses.
+pub fn default_tags_renderer(tags: &[ApiDocsTag]) -> String {
+    let tags = tags
+        .iter()
+        .map(|tag| match tag {
+            ApiDocsTag::Deprecated(Some(message)) => {
+                format!("**{}** ({})", tag.label(), message.trim())
+            }
+            _ => format!("**{}**", tag.label()),
+        })
+        .collect::<Vec<_>>();
+
+    format!("> {}", tags.join(" · "))
+}
+
+/// The default description renderer, which keeps a description as written,
+/// so that paragraphs and lists survive, and only trims each line.
+pub fn default_description_renderer(description: &str) -> String {
+    description
+        .trim()
+        .lines()
+        .map(|line| line.trim())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// Options to control the rendered API documentation.
 pub struct ApiDocsOptions {
     /// Exclude field aliases from being rendered.
@@ -18,6 +97,15 @@ pub struct ApiDocsOptions {
 
     /// Tag all non-optional struct fields as required.
     pub mark_struct_fields_required: bool,
+
+    /// Renders the description of a type, property, or variant. Receives the
+    /// doc comment as written. Defaults to [`default_description_renderer`].
+    pub render_description: ApiDocsDescriptionRenderer,
+
+    /// Renders the tags of a type, property, or variant. Receives the tags in
+    /// a fixed order, and is only called when there is at least one. Defaults
+    /// to [`default_tags_renderer`].
+    pub render_tags: ApiDocsTagsRenderer,
 }
 
 impl Default for ApiDocsOptions {
@@ -26,6 +114,8 @@ impl Default for ApiDocsOptions {
             exclude_aliases: false,
             link_extension: ".md".into(),
             mark_struct_fields_required: true,
+            render_description: Box::new(default_description_renderer),
+            render_tags: Box::new(default_tags_renderer),
         }
     }
 }
@@ -160,16 +250,6 @@ where
     values.into_iter().map(code).collect::<Vec<_>>().join(", ")
 }
 
-/// Keep a description as written, so that paragraphs and lists survive.
-fn clean_comment(comment: &str) -> String {
-    comment
-        .trim()
-        .lines()
-        .map(|line| line.trim())
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
 /// Remove `null` from a nullable schema, so that nullability is reported once
 /// through a tag instead of repeated in every type expression. A union that
 /// is left with a single variant collapses to that variant.
@@ -266,20 +346,22 @@ impl ApiDocsRenderer {
         out.join("\n")
     }
 
-    fn render_tags(&self, tags: Vec<String>) -> Option<String> {
+    fn render_tags(&self, tags: Vec<ApiDocsTag>) -> Option<String> {
         if tags.is_empty() {
             return None;
         }
 
-        Some(format!("> {}", tags.join(" · ")))
+        Some((self.options.render_tags)(&tags)).filter(|out| !out.is_empty())
     }
 
-    fn deprecated_tag(&self, message: &str) -> String {
-        if message.is_empty() {
-            "**Deprecated**".to_owned()
-        } else {
-            format!("**Deprecated** ({})", message.trim())
-        }
+    fn render_description(&self, description: &str) -> Option<String> {
+        Some((self.options.render_description)(description)).filter(|out| !out.is_empty())
+    }
+
+    fn deprecated_tag(&self, message: &str) -> ApiDocsTag {
+        let message = message.trim();
+
+        ApiDocsTag::Deprecated((!message.is_empty()).then(|| message.to_owned()))
     }
 
     /// Render the literal values an enumerable type accepts, for both
@@ -435,16 +517,16 @@ impl ApiDocsRenderer {
         let nullable = field.nullable || field.schema.is_nullable();
 
         if field.optional {
-            tags.push("**Optional**".to_owned());
+            tags.push(ApiDocsTag::Optional);
         }
         // A missing `Option` deserializes as `None`, and a flattened field has
         // no key of its own, so neither can be required
         else if self.options.mark_struct_fields_required && !nullable && !field.flatten {
-            tags.push("**Required**".to_owned());
+            tags.push(ApiDocsTag::Required);
         }
 
         if nullable {
-            tags.push("**Nullable**".to_owned());
+            tags.push(ApiDocsTag::Nullable);
         }
 
         if let Some(deprecated) = &field.deprecated {
@@ -452,23 +534,27 @@ impl ApiDocsRenderer {
         }
 
         if field.read_only {
-            tags.push("**Read only**".to_owned());
+            tags.push(ApiDocsTag::ReadOnly);
         }
 
         if field.write_only {
-            tags.push("**Write only**".to_owned());
+            tags.push(ApiDocsTag::WriteOnly);
         }
 
         if field.flatten {
-            tags.push("**Flattened**".to_owned());
+            tags.push(ApiDocsTag::Flattened);
         }
 
         if let Some(tags) = self.render_tags(tags) {
             out.push(tags);
         }
 
-        if let Some(comment) = &field.comment {
-            out.push(clean_comment(comment));
+        if let Some(comment) = field
+            .comment
+            .as_deref()
+            .and_then(|comment| self.render_description(comment))
+        {
+            out.push(comment);
         }
 
         out.push(self.render_field_table(field)?);
@@ -506,7 +592,7 @@ impl ApiDocsRenderer {
         let mut tags = vec![];
 
         if is_default {
-            tags.push("**Default**".to_owned());
+            tags.push(ApiDocsTag::Default);
         }
 
         if let Some(deprecated) = variant
@@ -523,10 +609,11 @@ impl ApiDocsRenderer {
 
         if let Some(comment) = variant
             .comment
-            .as_ref()
-            .or(variant.schema.description.as_ref())
+            .as_deref()
+            .or(variant.schema.description.as_deref())
+            .and_then(|comment| self.render_description(comment))
         {
-            out.push(clean_comment(comment));
+            out.push(comment);
         }
 
         // A unit variant is its value, while a fallback variant accepts a type
@@ -609,7 +696,7 @@ impl ApiDocsRenderer {
             let mut tags = vec![];
 
             if uni.default_index == Some(index) {
-                tags.push("**Default**".to_owned());
+                tags.push(ApiDocsTag::Default);
             }
 
             if let Some(deprecated) = &variant.deprecated {
@@ -620,8 +707,12 @@ impl ApiDocsRenderer {
                 section.push(tags);
             }
 
-            if let Some(description) = &variant.description {
-                section.push(clean_comment(description));
+            if let Some(description) = variant
+                .description
+                .as_deref()
+                .and_then(|description| self.render_description(description))
+            {
+                section.push(description);
             }
 
             let mut rows = vec![("Type", self.render_type_expression(&expr))];
@@ -680,15 +771,19 @@ impl ApiDocsRenderer {
         }
 
         if schema.nullable || schema.is_nullable() {
-            tags.push("**Nullable**".to_owned());
+            tags.push(ApiDocsTag::Nullable);
         }
 
         if let Some(tags) = self.render_tags(tags) {
             out.push(tags);
         }
 
-        if let Some(description) = &schema.description {
-            out.push(clean_comment(description));
+        if let Some(description) = schema
+            .description
+            .as_deref()
+            .and_then(|description| self.render_description(description))
+        {
+            out.push(description);
         }
 
         let body = match &schema.ty {
