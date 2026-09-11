@@ -806,6 +806,25 @@ mod api_docs {
         assert!(output.contains("## Properties"));
     }
 
+    // A documentation tool that ids headings its own way needs the index
+    // links to follow it
+    #[test]
+    fn custom_anchors() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                render_anchor: Box::new(|heading| format!("prop-{}", heading.replace('_', "-"))),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("| [`nullable_items`](#prop-nullable-items) |"));
+        assert!(!output.contains("](#nullable_items)"));
+    }
+
     // The same function shapes inline links and the references list
     #[test]
     fn custom_links() {

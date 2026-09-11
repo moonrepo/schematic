@@ -180,6 +180,21 @@ ApiDocsOptions {
 
 The renderer is created for each page, so per-type values can be set when generating that type.
 
+### Custom anchors
+
+Each index entry links to its section by a fragment, rendered from the heading text by the
+`render_anchor` function. The default follows the GitHub convention that most documentation tools
+share, lowercasing the text, removing punctuation, and hyphenating spaces, so the heading
+`` `expand_array` `` is linked as `#expand_array`. A tool that ids headings differently needs the
+function to match it.
+
+```rust
+ApiDocsOptions {
+	// ...
+	render_anchor: Box::new(|heading| format!("prop-{}", heading.replace('_', "-"))),
+}
+```
+
 ### Custom links
 
 Links to other pages are rendered by the `render_link` function, which receives the name of the

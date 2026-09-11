@@ -72,6 +72,24 @@ pub fn default_link_renderer(name: &str) -> String {
     format!("[{}](./{name}.md)", code(name))
 }
 
+/// Renders the fragment a section is linked by, from the text of its
+/// heading, such as the property or variant name. The result follows the
+/// `#` in an index link, so it must match the id the documentation tool
+/// gives the heading.
+pub type ApiDocsAnchorRenderer = Box<dyn Fn(&str) -> String>;
+
+/// The default anchor renderer, which follows the GitHub convention that
+/// most documentation tools share: lowercased, punctuation removed, and
+/// spaces hyphenated, so `` `expand_array` `` becomes `expand_array`.
+pub fn default_anchor_renderer(heading: &str) -> String {
+    heading
+        .to_lowercase()
+        .chars()
+        .filter(|ch| ch.is_alphanumeric() || *ch == ' ' || *ch == '-' || *ch == '_')
+        .map(|ch| if ch == ' ' { '-' } else { ch })
+        .collect()
+}
+
 /// The default tags renderer, which renders a block quote of bold labels
 /// separated by a middle dot, such as `> **Required** · **Nullable**`. A
 /// deprecation message follows its label in parentheses.
@@ -136,6 +154,10 @@ pub struct ApiDocsOptions {
     /// Tag all non-optional struct fields as required.
     pub mark_struct_fields_required: bool,
 
+    /// Renders the fragment an index entry links its section by, from the
+    /// heading text. Defaults to [`default_anchor_renderer`].
+    pub render_anchor: ApiDocsAnchorRenderer,
+
     /// Renders a link to a referenced type's page, label included, from the
     /// type name. Defaults to [`default_link_renderer`].
     pub render_link: ApiDocsLinkRenderer,
@@ -159,6 +181,7 @@ impl Default for ApiDocsOptions {
             include_index: true,
             index_page: Some("index.md".into()),
             mark_struct_fields_required: true,
+            render_anchor: Box::new(default_anchor_renderer),
             render_link: Box::new(default_link_renderer),
             render_description: Box::new(default_description_renderer),
             render_tags: Box::new(default_tags_renderer),
@@ -314,17 +337,6 @@ where
     V: AsRef<str>,
 {
     values.into_iter().map(code).collect::<Vec<_>>().join(", ")
-}
-
-/// The anchor a heading is linked by, following the GitHub convention that
-/// most renderers share: lowercased, punctuation removed, spaces hyphenated.
-fn anchor(heading: &str) -> String {
-    heading
-        .to_lowercase()
-        .chars()
-        .filter(|ch| ch.is_alphanumeric() || *ch == ' ' || *ch == '-' || *ch == '_')
-        .map(|ch| if ch == ' ' { '-' } else { ch })
-        .collect()
 }
 
 /// The first paragraph of a description on a single line, for a table cell.
@@ -752,7 +764,7 @@ impl ApiDocsRenderer {
             out.push(format!(
                 "| [{}](#{}) | {} | {} |",
                 code(&row.name),
-                anchor(&row.name),
+                (self.options.render_anchor)(&row.name),
                 row.ty,
                 row.description
                     .as_deref()
