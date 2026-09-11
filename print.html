@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-7603683b.js";
+            window.path_to_searchindex_js = "searchindex-99cd6189.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-67a62e30.js"></script>
+        <script src="toc-44c352f9.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -1537,6 +1537,7 @@ impl Schematic for User {
 <h4 id="renderers"><a class="header" href="#renderers">Renderers</a></h4>
 <p>Learn more about <a href="#code-generation">renderers</a>.</p>
 <ul>
+<li><code>renderer_api_docs</code> - Enables markdown API documentation generation.</li>
 <li><code>renderer_json_schema</code> - Enables JSON schema generation.</li>
 <li><code>renderer_template</code> - Enables config template generation.</li>
 <li><code>renderer_typescript</code> - Enables TypeScript types generation.</li>
@@ -2357,6 +2358,13 @@ schema.union(UnionType::new_one([
 	// ...
 ]));
 <span class="boring">}</span></code></pre>
+<h2 id="variant-names"><a class="header" href="#variant-names">Variant names</a></h2>
+<p>A union derived from an enum with <code>#[derive(Config)]</code> or <code>#[derive(Schematic)]</code> records the name of
+each variant in <code>variants_names</code>, by position in <code>variants_types</code>, so that renderers such as
+<a href="#api-documentation">API documentation</a> can label a variant. A union built by hand carries no
+names, and
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.UnionType.html#method.get_variant_name"><code>UnionType::get_variant_name()</code></a>
+returns <code>None</code> for it.</p>
 <h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
 <p>Unions support 2 kinds of operators, any of and one of, both of which can be defined with the
 <code>operator</code> field.</p>
@@ -2550,10 +2558,291 @@ implementing the
 <a href="https://docs.rs/schematic/latest/schematic/schema/trait.SchemaRenderer.html"><code>SchemaRenderer</code></a>
 trait.</p>
 <ul>
+<li><a href="#api-documentation">API documentation</a></li>
 <li><a href="#config-templates-experimental">Config templates</a></li>
 <li><a href="#json-schemas">JSON schemas</a></li>
 <li><a href="#typescript-types">TypeScript types</a></li>
 </ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="api-documentation"><a class="header" href="#api-documentation">API documentation</a></h1>
+<blockquote>
+<p>Requires the <code>renderer_api_docs</code> Cargo feature.</p>
+</blockquote>
+<p>With our
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html"><code>ApiDocsRenderer</code></a>,
+you can generate markdown API documentation for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each type
+becomes its own page, describing every property or variant, and linking to the pages of the types it
+references.</p>
+<p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{SchemaGenerator, ApiDocsRenderer};
+
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;CustomType&gt;();
+generator.generate(output_dir.join("CustomType.md"), ApiDocsRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<h2 id="one-page-per-type"><a class="header" href="#one-page-per-type">One page per type</a></h2>
+<p>Like a <a href="#json-schemas">JSON schema</a>, each render produces a single document, and the <em>last type
+to be added to <code>SchemaGenerator</code></em> is the one rendered. Every other type in the generator is known to
+the renderer, so a property whose type is one of them links to that type’s page. A composite type,
+such as a list of a config, is rendered as code, which cannot hold a link, so the types it refers to
+are linked in a references row of their own.</p>
+<p>To generate a page for every type at once, including the ones that were added by nesting, use
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.generate_all"><code>ApiDocsRenderer::generate_all()</code></a>
+with an output directory instead. It writes a page per type, named after the type with a <code>.md</code>
+extension, along with an <a href="#index-page">index page</a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut generator = SchemaGenerator::default();
+generator.add::&lt;RootConfig&gt;();
+
+ApiDocsRenderer::default().generate_all(&amp;generator, output_dir.join("config"))?;
+<span class="boring">}</span></code></pre>
+<p>To control each page individually, generate them one at a time. Adding a type that is already in
+the generator, because an earlier type nested it, moves it to the end, so add each one before
+generating its file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>generator.add::&lt;RootConfig&gt;();
+generator.generate(output_dir.join("RootConfig.md"), ApiDocsRenderer::default())?;
+
+// Nested by `RootConfig`, so already in the generator
+generator.add::&lt;NestedConfig&gt;();
+generator.generate(output_dir.join("NestedConfig.md"), ApiDocsRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<p>By default links are relative, so all pages are expected to live in the same directory, and to be
+named after the type they document, which is what <code>generate_all</code> produces. The
+<a href="#custom-links"><code>render_link</code></a> option changes that, and a custom link should agree with wherever
+the pages are written.</p>
+<h2 id="index-page"><a class="header" href="#index-page">Index page</a></h2>
+<p><code>generate_all</code> also writes an index page, a table of every type that links to its page, with its
+kind and the first paragraph of its description.</p>
+<pre><code class="language-markdown">---
+title: Index
+---
+
+## Types
+
+| Type | Kind | Description |
+| --- | --- | --- |
+| [`ServerConfig`](./ServerConfig.md) | Struct | Configures the HTTP server. |
+| [`TlsConfig`](./TlsConfig.md) | Struct | TLS settings, when serving over HTTPS. |
+</code></pre>
+<p>The <code>index_page</code> option names the file, and <code>None</code> skips it. When generating pages one at a time,
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.render_index_page"><code>ApiDocsRenderer::render_index_page()</code></a>
+renders the same content from the generator’s schemas.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	index_page: Some("README.md".into()),
+}
+<span class="boring">}</span></code></pre>
+<h2 id="page-structure"><a class="header" href="#page-structure">Page structure</a></h2>
+<p>A page starts with frontmatter that titles it after the type, followed by the type’s description,
+and an index that summarizes every section to come, linking to each. A struct then lists its
+properties, and an enum lists its variants, headed by the variant name. A union that was built by
+hand has no variant names, so each of its variants is headed by its type instead. Types that are
+referenced from the page are listed at the end.</p>
+<pre><code class="language-markdown">---
+title: ServerConfig
+---
+
+Configures the HTTP server.
+
+## Index
+
+| Property        | Type                          | Description                            |
+| --------------- | ----------------------------- | -------------------------------------- |
+| [`port`](#port) | `number`                      | The port to listen on.                 |
+| [`tls`](#tls)   | [`TlsConfig`](./TlsConfig.md) | TLS settings, when serving over HTTPS. |
+
+## Properties
+
+### `port`
+
+&gt; **Optional**
+
+The port to listen on.
+
+| Attribute            | Value         |
+| -------------------- | ------------- |
+| Type                 | `number`      |
+| Default              | `8080`        |
+| Minimum              | `1024`        |
+| Environment variable | `SERVER_PORT` |
+
+### `tls`
+
+&gt; **Nullable**
+
+TLS settings, when serving over HTTPS.
+
+| Attribute | Value                         |
+| --------- | ----------------------------- |
+| Type      | [`TlsConfig`](./TlsConfig.md) |
+
+## References
+
+- [`TlsConfig`](./TlsConfig.md)
+</code></pre>
+<p>The tags after a name describe how a property may be provided: whether it is required or optional,
+nullable, deprecated (with the deprecation message when there is one), read only, write only, or
+flattened into its parent. Enum variants are tagged with whether they are the default.</p>
+<p>The table describes the type itself: its shape, default value, accepted values, constraints such as
+minimums and patterns, aliases, and the environment variable it can be set with.</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsOptions.html"><code>ApiDocsOptions</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::ApiDocsOptions;
+
+ApiDocsRenderer::new(ApiDocsOptions {
+	// ...
+	..ApiDocsOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<h3 id="frontmatter"><a class="header" href="#frontmatter">Frontmatter</a></h3>
+<p>Each page opens with frontmatter that titles it after the type. Documentation tools often read more
+from it, such as a sidebar position or a label, which the <code>frontmatter</code> map adds as <code>key: value</code>
+lines after the title, in key order. Values are written verbatim, so quote them as the tool expects.
+A <code>title</code> entry replaces the type name.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::collections::BTreeMap;
+
+ApiDocsOptions {
+	// ...
+	frontmatter: BTreeMap::from_iter([
+		("sidebar_position".into(), "2".into()),
+		("description".into(), "\"Configures the server.\"".into()),
+	]),
+}
+<span class="boring">}</span></code></pre>
+<p>The renderer is created for each page, so per-type values can be set when generating that type.</p>
+<h3 id="custom-anchors"><a class="header" href="#custom-anchors">Custom anchors</a></h3>
+<p>Each index entry links to its section by a fragment, rendered from the heading text by the
+<code>render_anchor</code> function. The default follows the GitHub convention that most documentation tools
+share, lowercasing the text, removing punctuation, and hyphenating spaces, so the heading
+<code>`expand_array`</code> is linked as <code>#expand_array</code>. A tool that ids headings differently needs the
+function to match it.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_anchor: Box::new(|heading| format!("prop-{}", heading.replace('_', "-"))),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="custom-links"><a class="header" href="#custom-links">Custom links</a></h3>
+<p>Links to other pages are rendered by the <code>render_link</code> function, which receives the name of the
+referenced type and returns the whole link, label included. The default labels the link with the
+name as inline code and links to a markdown file named after the type in the same directory, such
+as <code>[`Name`](./Name.md)</code>. Documentation tools that route on a path rather than a file, pages
+split across directories, or a site with its own link component can return whatever they need. The
+same function renders the inline links and the references list.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_link: Box::new(|name| format!("&lt;Link to=\"/docs/config/{name}\"&gt;{name}&lt;/Link&gt;")),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="enum-format"><a class="header" href="#enum-format">Enum format</a></h3>
+<p>A unit enum renders a section per variant, which is thorough but long for an enum with many
+variants. The <code>enum_format</code> option can render them as a single table instead, one row per variant
+with its value, tags, and description. The index is omitted for it, as the table already summarizes
+every variant. Unions always render as sections, since their variants carry values that need
+describing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::ApiDocsEnumFormat;
+
+ApiDocsOptions {
+	// ...
+	enum_format: ApiDocsEnumFormat::Table,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-markdown">## Variants
+
+| Variant | Value     | Tags                                 | Description            |
+| ------- | --------- | ------------------------------------ | ---------------------- |
+| `debug` | `"debug"` |                                      | Log everything.        |
+| `info`  | `"info"`  | **Default**                          | Log at info and above. |
+| `off`   | `"off"`   | **Deprecated** (Use `none` instead.) | Disable logging.       |
+</code></pre>
+<blockquote>
+<p>Tags in the table are rendered as labels, not through the <code>render_tags</code> function, as its output is
+a block that cannot sit inside a table cell.</p>
+</blockquote>
+<h3 id="index"><a class="header" href="#index">Index</a></h3>
+<p>The index ahead of the properties or variants shows each one’s type and the first paragraph of its
+description. Disable it with the <code>include_index</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	include_index: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="required-fields-1"><a class="header" href="#required-fields-1">Required fields</a></h3>
+<p>When a struct is rendered, fields that are not optional, nullable, or flattened are tagged as
+required. This is enabled by default.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="custom-tags"><a class="header" href="#custom-tags">Custom tags</a></h3>
+<p>Tags are rendered by the <code>render_tags</code> function, which receives the tags of a type, property, or
+variant as a list of
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/enum.ApiDocsTag.html"><code>ApiDocsTag</code></a>
+values, and returns markdown. The default renders a block quote of bold labels, but a documentation
+site may prefer its own components.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::ApiDocsTag;
+
+ApiDocsOptions {
+	// ...
+	render_tags: Box::new(|tags| {
+		tags.iter()
+			.map(|tag| match tag {
+				ApiDocsTag::Deprecated(Some(message)) =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt; {message}"),
+				_ =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt;"),
+			})
+			.collect::&lt;Vec&lt;_&gt;&gt;()
+			.join(" ")
+	}),
+}
+<span class="boring">}</span></code></pre>
+<p>The function is only called when there is at least one tag, and returning an empty string omits the
+tags entirely.</p>
+<h3 id="custom-descriptions"><a class="header" href="#custom-descriptions">Custom descriptions</a></h3>
+<p>Descriptions are rendered by the <code>render_description</code> function, which receives the doc comment as
+written and returns markdown. The default keeps the comment as is, only trimming each line. Use this
+to wrap descriptions in a component, or to rewrite links.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_description: Box::new(|description| format!(":::note\n{}\n:::", description.trim())),
+}
+<span class="boring">}</span></code></pre>
+<p>Returning an empty string omits the description.</p>
+<h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
+<p>A field’s aliases are listed in its table. Disable this with the <code>exclude_aliases</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	exclude_aliases: true,
+}
+<span class="boring">}</span></code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="config-templates-experimental"><a class="header" href="#config-templates-experimental">Config templates (experimental)</a></h1>
 <blockquote>
@@ -2733,7 +3022,7 @@ port: 8080
 <p>Applying the desired casing for field names should be done with serde <code>rename_all</code> on the
 container.</p>
 </blockquote>
-<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<h2 id="options-1"><a class="header" href="#options-1">Options</a></h2>
 <p>Custom options can be passed to the renderer using
 <a href="https://docs.rs/schematic/latest/schematic/schema/template/struct.TemplateOptions.html"><code>TemplateOptions</code></a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -2930,7 +3219,7 @@ generator.generate(output_dir.join("schema.json"), JsonSchemaRenderer::default()
 	}
 }
 </code></pre>
-<h2 id="options-1"><a class="header" href="#options-1">Options</a></h2>
+<h2 id="options-2"><a class="header" href="#options-2">Options</a></h2>
 <p>Custom options can be passed to the renderer using
 <a href="https://docs.rs/schematic/latest/schematic/schema/json_schema/type.JsonSchemaOptions.html"><code>JsonSchemaOptions</code></a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -2967,7 +3256,7 @@ string, but some tools support markdown through another field called <code>markd
 <blockquote>
 <p>This is a non-standard extension to the JSON schema specification.</p>
 </blockquote>
-<h3 id="required-fields-1"><a class="header" href="#required-fields-1">Required fields</a></h3>
+<h3 id="required-fields-2"><a class="header" href="#required-fields-2">Required fields</a></h3>
 <p>When a struct is rendered, automatically mark all non-<code>Option</code> struct fields as required, and
 include them in the JSON schema
 <a href="https://json-schema.org/understanding-json-schema/reference/object#required"><code>required</code> field</a>.
@@ -3016,7 +3305,7 @@ generator.generate(output_dir.join("types.ts"), TypeScriptRenderer::default())?;
 <p>For a reference implementation, check out
 <a href="https://github.com/moonrepo/moon/blob/master/nextgen/config/src/main.rs">moonrepo/moon</a>.</p>
 </blockquote>
-<h2 id="options-2"><a class="header" href="#options-2">Options</a></h2>
+<h2 id="options-3"><a class="header" href="#options-3">Options</a></h2>
 <p>Custom options can be passed to the renderer using
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptOptions.html"><code>TypeScriptOptions</code></a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]

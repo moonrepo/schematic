@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Unions - Schematic</title>
+        <title>API documentation - Schematic</title>
 
 
         <!-- Custom HTML head -->
@@ -12,33 +12,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
-        <link rel="stylesheet" href="../css/variables-8adf115d.css">
-        <link rel="stylesheet" href="../css/general-e96d0476.css">
-        <link rel="stylesheet" href="../css/chrome-d279d366.css">
-        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-99cd6189.js";
+            window.path_to_searchindex_js = "../../searchindex-99cd6189.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-44c352f9.js"></script>
+        <script src="../../toc-44c352f9.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -105,7 +105,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
             </noscript>
             <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -140,7 +140,7 @@
                     <h1 class="menu-title">Schematic</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
                         <a href="https://github.com/moonrepo/schematic" title="Git repository" aria-label="Git repository">
@@ -177,67 +177,283 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="unions"><a class="header" href="#unions">Unions</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.UnionType.html"><code>UnionType</code></a> paired with
-<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Union"><code>SchemaType::Union</code></a>
-can be used to represent a list of heterogeneous schema types (variants), in which a value must
-match one or more of the types.</p>
+                        <h1 id="api-documentation"><a class="header" href="#api-documentation">API documentation</a></h1>
+<blockquote>
+<p>Requires the <code>renderer_api_docs</code> Cargo feature.</p>
+</blockquote>
+<p>With our
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html"><code>ApiDocsRenderer</code></a>,
+you can generate markdown API documentation for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each type
+becomes its own page, describing every property or variant, and linking to the pages of the types it
+references.</p>
+<p>To utilize, instantiate a generator, add types to render, and generate the output file.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{UnionType, UnionOperator}};
+</span>use schematic::schema::{SchemaGenerator, ApiDocsRenderer};
 
-impl Schematic for T {
-	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
-		schema.union(UnionType {
-			operator: UnionOperator::AnyOf,
-			variants_types: vec![
-				Box::new(schema.infer::&lt;String&gt;()),
-				Box::new(schema.infer::&lt;bool&gt;()),
-				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
-			],
-			..UnionType::default()
-		})
-	}
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;CustomType&gt;();
+generator.generate(output_dir.join("CustomType.md"), ApiDocsRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<h2 id="one-page-per-type"><a class="header" href="#one-page-per-type">One page per type</a></h2>
+<p>Like a <a href="./json-schema.html">JSON schema</a>, each render produces a single document, and the <em>last type
+to be added to <code>SchemaGenerator</code></em> is the one rendered. Every other type in the generator is known to
+the renderer, so a property whose type is one of them links to that type’s page. A composite type,
+such as a list of a config, is rendered as code, which cannot hold a link, so the types it refers to
+are linked in a references row of their own.</p>
+<p>To generate a page for every type at once, including the ones that were added by nesting, use
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.generate_all"><code>ApiDocsRenderer::generate_all()</code></a>
+with an output directory instead. It writes a page per type, named after the type with a <code>.md</code>
+extension, along with an <a href="#index-page">index page</a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut generator = SchemaGenerator::default();
+generator.add::&lt;RootConfig&gt;();
+
+ApiDocsRenderer::default().generate_all(&amp;generator, output_dir.join("config"))?;
+<span class="boring">}</span></code></pre>
+<p>To control each page individually, generate them one at a time. Adding a type that is already in
+the generator, because an earlier type nested it, moves it to the end, so add each one before
+generating its file.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>generator.add::&lt;RootConfig&gt;();
+generator.generate(output_dir.join("RootConfig.md"), ApiDocsRenderer::default())?;
+
+// Nested by `RootConfig`, so already in the generator
+generator.add::&lt;NestedConfig&gt;();
+generator.generate(output_dir.join("NestedConfig.md"), ApiDocsRenderer::default())?;
+<span class="boring">}</span></code></pre>
+<p>By default links are relative, so all pages are expected to live in the same directory, and to be
+named after the type they document, which is what <code>generate_all</code> produces. The
+<a href="#custom-links"><code>render_link</code></a> option changes that, and a custom link should agree with wherever
+the pages are written.</p>
+<h2 id="index-page"><a class="header" href="#index-page">Index page</a></h2>
+<p><code>generate_all</code> also writes an index page, a table of every type that links to its page, with its
+kind and the first paragraph of its description.</p>
+<pre><code class="language-markdown">---
+title: Index
+---
+
+## Types
+
+| Type | Kind | Description |
+| --- | --- | --- |
+| [`ServerConfig`](./ServerConfig.md) | Struct | Configures the HTTP server. |
+| [`TlsConfig`](./TlsConfig.md) | Struct | TLS settings, when serving over HTTPS. |
+</code></pre>
+<p>The <code>index_page</code> option names the file, and <code>None</code> skips it. When generating pages one at a time,
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.render_index_page"><code>ApiDocsRenderer::render_index_page()</code></a>
+renders the same content from the generator’s schemas.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	index_page: Some("README.md".into()),
 }
 <span class="boring">}</span></code></pre>
-<p>If you’re only defining the <code>variants_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_any"><code>UnionType::new_any()</code></a>
-(any of) or
-<a href="https://docs.rs/schematic/latest/schematic/struct.UnionType.html#method.new_one"><code>UnionType::new_one()</code></a>
-(one of) methods. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// Any of
-schema.union(UnionType::new_any([
-	schema.infer::&lt;String&gt;(),
-	schema.infer::&lt;bool&gt;(),
-	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
-]));
+<h2 id="page-structure"><a class="header" href="#page-structure">Page structure</a></h2>
+<p>A page starts with frontmatter that titles it after the type, followed by the type’s description,
+and an index that summarizes every section to come, linking to each. A struct then lists its
+properties, and an enum lists its variants, headed by the variant name. A union that was built by
+hand has no variant names, so each of its variants is headed by its type instead. Types that are
+referenced from the page are listed at the end.</p>
+<pre><code class="language-markdown">---
+title: ServerConfig
+---
 
-// One of
-schema.union(UnionType::new_one([
-	// ...
-]));
-<span class="boring">}</span></code></pre>
-<h2 id="variant-names"><a class="header" href="#variant-names">Variant names</a></h2>
-<p>A union derived from an enum with <code>#[derive(Config)]</code> or <code>#[derive(Schematic)]</code> records the name of
-each variant in <code>variants_names</code>, by position in <code>variants_types</code>, so that renderers such as
-<a href="./generator/api-docs.html">API documentation</a> can label a variant. A union built by hand carries no
-names, and
-<a href="https://docs.rs/schematic/latest/schematic/schema/struct.UnionType.html#method.get_variant_name"><code>UnionType::get_variant_name()</code></a>
-returns <code>None</code> for it.</p>
-<h2 id="operators"><a class="header" href="#operators">Operators</a></h2>
-<p>Unions support 2 kinds of operators, any of and one of, both of which can be defined with the
-<code>operator</code> field.</p>
-<ul>
-<li>Any of requires the value to match any of the variants.</li>
-<li>One of requires the value to match <em>only one</em> of the variants.</li>
-</ul>
+Configures the HTTP server.
+
+## Index
+
+| Property        | Type                          | Description                            |
+| --------------- | ----------------------------- | -------------------------------------- |
+| [`port`](#port) | `number`                      | The port to listen on.                 |
+| [`tls`](#tls)   | [`TlsConfig`](./TlsConfig.md) | TLS settings, when serving over HTTPS. |
+
+## Properties
+
+### `port`
+
+&gt; **Optional**
+
+The port to listen on.
+
+| Attribute            | Value         |
+| -------------------- | ------------- |
+| Type                 | `number`      |
+| Default              | `8080`        |
+| Minimum              | `1024`        |
+| Environment variable | `SERVER_PORT` |
+
+### `tls`
+
+&gt; **Nullable**
+
+TLS settings, when serving over HTTPS.
+
+| Attribute | Value                         |
+| --------- | ----------------------------- |
+| Type      | [`TlsConfig`](./TlsConfig.md) |
+
+## References
+
+- [`TlsConfig`](./TlsConfig.md)
+</code></pre>
+<p>The tags after a name describe how a property may be provided: whether it is required or optional,
+nullable, deprecated (with the deprecation message when there is one), read only, write only, or
+flattened into its parent. Enum variants are tagged with whether they are the default.</p>
+<p>The table describes the type itself: its shape, default value, accepted values, constraints such as
+minimums and patterns, aliases, and the environment variable it can be set with.</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsOptions.html"><code>ApiDocsOptions</code></a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>UnionType {
+</span>use schematic::schema::ApiDocsOptions;
+
+ApiDocsRenderer::new(ApiDocsOptions {
 	// ...
-	operator: UnionOperator::OneOf,
+	..ApiDocsOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<h3 id="frontmatter"><a class="header" href="#frontmatter">Frontmatter</a></h3>
+<p>Each page opens with frontmatter that titles it after the type. Documentation tools often read more
+from it, such as a sidebar position or a label, which the <code>frontmatter</code> map adds as <code>key: value</code>
+lines after the title, in key order. Values are written verbatim, so quote them as the tool expects.
+A <code>title</code> entry replaces the type name.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::collections::BTreeMap;
+
+ApiDocsOptions {
+	// ...
+	frontmatter: BTreeMap::from_iter([
+		("sidebar_position".into(), "2".into()),
+		("description".into(), "\"Configures the server.\"".into()),
+	]),
+}
+<span class="boring">}</span></code></pre>
+<p>The renderer is created for each page, so per-type values can be set when generating that type.</p>
+<h3 id="custom-anchors"><a class="header" href="#custom-anchors">Custom anchors</a></h3>
+<p>Each index entry links to its section by a fragment, rendered from the heading text by the
+<code>render_anchor</code> function. The default follows the GitHub convention that most documentation tools
+share, lowercasing the text, removing punctuation, and hyphenating spaces, so the heading
+<code>`expand_array`</code> is linked as <code>#expand_array</code>. A tool that ids headings differently needs the
+function to match it.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_anchor: Box::new(|heading| format!("prop-{}", heading.replace('_', "-"))),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="custom-links"><a class="header" href="#custom-links">Custom links</a></h3>
+<p>Links to other pages are rendered by the <code>render_link</code> function, which receives the name of the
+referenced type and returns the whole link, label included. The default labels the link with the
+name as inline code and links to a markdown file named after the type in the same directory, such
+as <code>[`Name`](./Name.md)</code>. Documentation tools that route on a path rather than a file, pages
+split across directories, or a site with its own link component can return whatever they need. The
+same function renders the inline links and the references list.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_link: Box::new(|name| format!("&lt;Link to=\"/docs/config/{name}\"&gt;{name}&lt;/Link&gt;")),
+}
+<span class="boring">}</span></code></pre>
+<h3 id="enum-format"><a class="header" href="#enum-format">Enum format</a></h3>
+<p>A unit enum renders a section per variant, which is thorough but long for an enum with many
+variants. The <code>enum_format</code> option can render them as a single table instead, one row per variant
+with its value, tags, and description. The index is omitted for it, as the table already summarizes
+every variant. Unions always render as sections, since their variants carry values that need
+describing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::ApiDocsEnumFormat;
+
+ApiDocsOptions {
+	// ...
+	enum_format: ApiDocsEnumFormat::Table,
+}
+<span class="boring">}</span></code></pre>
+<pre><code class="language-markdown">## Variants
+
+| Variant | Value     | Tags                                 | Description            |
+| ------- | --------- | ------------------------------------ | ---------------------- |
+| `debug` | `"debug"` |                                      | Log everything.        |
+| `info`  | `"info"`  | **Default**                          | Log at info and above. |
+| `off`   | `"off"`   | **Deprecated** (Use `none` instead.) | Disable logging.       |
+</code></pre>
+<blockquote>
+<p>Tags in the table are rendered as labels, not through the <code>render_tags</code> function, as its output is
+a block that cannot sit inside a table cell.</p>
+</blockquote>
+<h3 id="index"><a class="header" href="#index">Index</a></h3>
+<p>The index ahead of the properties or variants shows each one’s type and the first paragraph of its
+description. Disable it with the <code>include_index</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	include_index: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="required-fields"><a class="header" href="#required-fields">Required fields</a></h3>
+<p>When a struct is rendered, fields that are not optional, nullable, or flattened are tagged as
+required. This is enabled by default.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="custom-tags"><a class="header" href="#custom-tags">Custom tags</a></h3>
+<p>Tags are rendered by the <code>render_tags</code> function, which receives the tags of a type, property, or
+variant as a list of
+<a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/enum.ApiDocsTag.html"><code>ApiDocsTag</code></a>
+values, and returns markdown. The default renders a block quote of bold labels, but a documentation
+site may prefer its own components.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::ApiDocsTag;
+
+ApiDocsOptions {
+	// ...
+	render_tags: Box::new(|tags| {
+		tags.iter()
+			.map(|tag| match tag {
+				ApiDocsTag::Deprecated(Some(message)) =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt; {message}"),
+				_ =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt;"),
+			})
+			.collect::&lt;Vec&lt;_&gt;&gt;()
+			.join(" ")
+	}),
+}
+<span class="boring">}</span></code></pre>
+<p>The function is only called when there is at least one tag, and returning an empty string omits the
+tags entirely.</p>
+<h3 id="custom-descriptions"><a class="header" href="#custom-descriptions">Custom descriptions</a></h3>
+<p>Descriptions are rendered by the <code>render_description</code> function, which receives the doc comment as
+written and returns markdown. The default keeps the comment as is, only trimming each line. Use this
+to wrap descriptions in a component, or to rewrite links.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	render_description: Box::new(|description| format!(":::note\n{}\n:::", description.trim())),
+}
+<span class="boring">}</span></code></pre>
+<p>Returning an empty string omits the description.</p>
+<h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
+<p>A field’s aliases are listed in its table. Disable this with the <code>exclude_aliases</code> option.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsOptions {
+	// ...
+	exclude_aliases: true,
 }
 <span class="boring">}</span></code></pre>
 
@@ -245,11 +461,11 @@ returns <code>None</code> for it.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../schema/tuple.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../schema/generator/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../schema/unknown.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../schema/generator/template.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -259,11 +475,11 @@ returns <code>None</code> for it.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../schema/tuple.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../schema/generator/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../schema/unknown.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../schema/generator/template.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
@@ -283,13 +499,13 @@ returns <code>None</code> for it.</p>
         </script>
 
 
-        <script src="../elasticlunr-ef4e11c1.min.js"></script>
-        <script src="../mark-09e88c2c.min.js"></script>
-        <script src="../searcher-09f2665d.js"></script>
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-09f2665d.js"></script>
 
-        <script src="../clipboard-1626706a.min.js"></script>
-        <script src="../highlight-abc7f01d.js"></script>
-        <script src="../book-609e4cb8.js"></script>
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
 
