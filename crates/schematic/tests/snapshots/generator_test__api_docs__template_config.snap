@@ -14,9 +14,9 @@ title: TemplateConfig
 | [`empty_array`](#empty_array) | `number[]` |  |
 | [`empty_object`](#empty_object) | `Record<string, number>` |  |
 | [`enums`](#enums) | [`BasicEnum`](./BasicEnum.md) | This is an enum with a medium length description and deprecated. |
-| [`expand_array`](#expand_array) | [`AnotherConfig`](./AnotherConfig.md)`[]` | This field is testing array expansion. |
+| [`expand_array`](#expand_array) | `AnotherConfig[]` | This field is testing array expansion. |
 | [`expand_array_primitive`](#expand_array_primitive) | `number[]` |  |
-| [`expand_object`](#expand_object) | `Record<string, `[`AnotherConfig`](./AnotherConfig.md)`>` | This field is testing object expansion. |
+| [`expand_object`](#expand_object) | `Record<string, AnotherConfig>` | This field is testing object expansion. |
 | [`expand_object_primitive`](#expand_object_primitive) | `Record<string, number>` |  |
 | [`fallback_enum`](#fallback_enum) | [`FallbackEnum`](./FallbackEnum.md) |  |
 | [`float32`](#float32) | `number` | This is a float thats deprecated. |
@@ -78,7 +78,8 @@ This field is testing array expansion.
 
 | Attribute | Value |
 | --- | --- |
-| Type | [`AnotherConfig`](./AnotherConfig.md)`[]` |
+| Type | `AnotherConfig[]` |
+| References | [`AnotherConfig`](./AnotherConfig.md) |
 
 ### `expand_array_primitive`
 
@@ -96,7 +97,8 @@ This field is testing object expansion.
 
 | Attribute | Value |
 | --- | --- |
-| Type | `Record<string, `[`AnotherConfig`](./AnotherConfig.md)`>` |
+| Type | `Record<string, AnotherConfig>` |
+| References | [`AnotherConfig`](./AnotherConfig.md) |
 
 ### `expand_object_primitive`
 

@@ -23,7 +23,9 @@ generator.generate(output_dir.join("CustomType.md"), ApiDocsRenderer::default())
 
 Like a [JSON schema](./json-schema.md), each render produces a single document, and the _last type
 to be added to `SchemaGenerator`_ is the one rendered. Every other type in the generator is known to
-the renderer, so a property whose type is one of them links to that type's page.
+the renderer, so a property whose type is one of them links to that type's page. A composite type,
+such as a list of a config, is rendered as code, which cannot hold a link, so the types it refers to
+are linked in a references row of their own.
 
 To generate a page for every type at once, including the ones that were added by nesting, use
 [`ApiDocsRenderer::generate_all()`](https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.generate_all)

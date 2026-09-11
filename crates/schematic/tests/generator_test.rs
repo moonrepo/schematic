@@ -828,6 +828,10 @@ mod api_docs {
             )
         );
         assert!(output.contains("- <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link>"));
+        // A composite type stays one code span, and links its references beside it
+        assert!(output.contains(
+            "| Type | `AnotherConfig[]` |\n| References | <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link> |"
+        ));
         assert!(!output.contains(".md"));
     }
 

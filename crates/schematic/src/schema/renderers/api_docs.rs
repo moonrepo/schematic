@@ -254,6 +254,26 @@ impl TypeExpression {
     pub fn is_union(&self) -> bool {
         self.is_union
     }
+
+    /// Return true if the expression is nothing but a reference to a type.
+    pub fn is_reference(&self) -> bool {
+        matches!(self.parts.as_slice(), [TypePart::Reference(_)])
+    }
+
+    /// The types the expression refers to, in order of first appearance.
+    pub fn references(&self) -> Vec<&str> {
+        let mut names: Vec<&str> = vec![];
+
+        for part in &self.parts {
+            if let TypePart::Reference(name) = part
+                && !names.contains(&name.as_str())
+            {
+                names.push(name);
+            }
+        }
+
+        names
+    }
 }
 
 /// The expression as plain text, with references reduced to their names.
@@ -491,17 +511,47 @@ impl ApiDocsRenderer {
         (self.options.render_link)(name)
     }
 
+    /// Render a type expression as a single code span, or as a link when it
+    /// is nothing but a reference. A link cannot sit inside a code span, so
+    /// the types a composite expression refers to are linked separately by
+    /// [`Self::render_type_references`].
     fn render_type_expression(&self, expr: &TypeExpression) -> String {
-        let mut out = String::new();
+        match expr.references().as_slice() {
+            [name] if expr.is_reference() => self.create_link(name),
+            _ => code(expr.to_string()),
+        }
+    }
 
-        for part in &expr.parts {
-            match part {
-                TypePart::Code(value) => out.push_str(&code(value)),
-                TypePart::Reference(name) => out.push_str(&self.create_link(name)),
-            }
+    /// Links to the types a composite expression refers to, or `None` when
+    /// it refers to nothing, or is itself rendered as a link.
+    fn render_type_references(&self, expr: &TypeExpression) -> Option<String> {
+        if expr.is_reference() {
+            return None;
         }
 
-        out
+        let links = expr
+            .references()
+            .into_iter()
+            .map(|name| self.create_link(name))
+            .collect::<Vec<_>>();
+
+        if links.is_empty() {
+            None
+        } else {
+            Some(links.join(", "))
+        }
+    }
+
+    /// The rows describing a type in a table: the type itself, and the
+    /// types it refers to when they cannot be linked from the type.
+    fn type_rows(&self, label: &'static str, expr: &TypeExpression) -> Vec<(&'static str, String)> {
+        let mut rows = vec![(label, self.render_type_expression(expr))];
+
+        if let Some(references) = self.render_type_references(expr) {
+            rows.push(("References", references));
+        }
+
+        rows
     }
 
     fn render_table(&self, rows: Vec<(&str, String)>) -> String {
@@ -726,7 +776,8 @@ impl ApiDocsRenderer {
     /// accepted values, and constraints.
     fn render_field_table(&mut self, field: &SchemaField) -> RenderResult {
         let schema = strip_null(&field.schema);
-        let mut rows = vec![("Type", self.render_field_type(field)?)];
+        let expr = self.render_schema(&schema)?;
+        let mut rows = self.type_rows("Type", &expr);
 
         if let Some(default) = field.schema.get_default() {
             rows.push(("Default", code(lit_to_string(default))));
@@ -878,7 +929,7 @@ impl ApiDocsRenderer {
         };
 
         let expr = self.render_schema(&variant.schema)?;
-        let mut rows = vec![(key, self.render_type_expression(&expr))];
+        let mut rows = self.type_rows(key, &expr);
 
         rows.extend(self.create_constraint_rows(&variant.schema));
 
@@ -1032,7 +1083,7 @@ impl ApiDocsRenderer {
                 section.push(description);
             }
 
-            let mut rows = vec![("Type", self.render_type_expression(&expr))];
+            let mut rows = self.type_rows("Type", &expr);
 
             if let Some(default) = variant.get_default() {
                 rows.push(("Default", code(lit_to_string(default))));
@@ -1058,7 +1109,7 @@ impl ApiDocsRenderer {
         let stripped = strip_null(schema);
         let expr = self.render_schema_without_reference(&stripped)?;
 
-        let mut rows = vec![("Type", self.render_type_expression(&expr))];
+        let mut rows = self.type_rows("Type", &expr);
 
         if let Some(default) = schema.get_default() {
             rows.push(("Default", code(lit_to_string(default))));
