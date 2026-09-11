@@ -44,7 +44,7 @@ the type they document.
 
 ## Page structure
 
-A page starts with front matter that titles it after the type, followed by the type's description,
+A page starts with frontmatter that titles it after the type, followed by the type's description,
 and an index that summarizes every section to come, linking to each. A struct then lists its
 properties, and an enum lists its variants, headed by the variant name. A union that was built by
 hand has no variant names, so each of its variants is headed by its type instead. Types that are
@@ -59,10 +59,10 @@ Configures the HTTP server.
 
 ## Index
 
-| Property | Type | Description |
-| --- | --- | --- |
-| [`port`](#port) | `number` | The port to listen on. |
-| [`tls`](#tls) | [`TlsConfig`](./TlsConfig.md) | TLS settings, when serving over HTTPS. |
+| Property        | Type                          | Description                            |
+| --------------- | ----------------------------- | -------------------------------------- |
+| [`port`](#port) | `number`                      | The port to listen on.                 |
+| [`tls`](#tls)   | [`TlsConfig`](./TlsConfig.md) | TLS settings, when serving over HTTPS. |
 
 ## Properties
 
@@ -72,11 +72,11 @@ Configures the HTTP server.
 
 The port to listen on.
 
-| Attribute | Value |
-| --- | --- |
-| Type | `number` |
-| Default | `8080` |
-| Minimum | `1024` |
+| Attribute            | Value         |
+| -------------------- | ------------- |
+| Type                 | `number`      |
+| Default              | `8080`        |
+| Minimum              | `1024`        |
 | Environment variable | `SERVER_PORT` |
 
 ### `tls`
@@ -85,9 +85,9 @@ The port to listen on.
 
 TLS settings, when serving over HTTPS.
 
-| Attribute | Value |
-| --- | --- |
-| Type | [`TlsConfig`](./TlsConfig.md) |
+| Attribute | Value                         |
+| --------- | ----------------------------- |
+| Type      | [`TlsConfig`](./TlsConfig.md) |
 
 ## References
 
@@ -114,6 +114,27 @@ ApiDocsRenderer::new(ApiDocsOptions {
 	..ApiDocsOptions::default()
 });
 ```
+
+### Frontmatter
+
+Each page opens with frontmatter that titles it after the type. Documentation tools often read more
+from it, such as a sidebar position or a label, which the `frontmatter` map adds as `key: value`
+lines after the title, in key order. Values are written verbatim, so quote them as the tool expects.
+A `title` entry replaces the type name.
+
+```rust
+use std::collections::BTreeMap;
+
+ApiDocsOptions {
+	// ...
+	frontmatter: BTreeMap::from_iter([
+		("sidebar_position".into(), "2".into()),
+		("description".into(), "\"Configures the server.\"".into()),
+	]),
+}
+```
+
+The renderer is created for each page, so per-type values can be set when generating that type.
 
 ### Link extension
 

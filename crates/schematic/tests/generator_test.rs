@@ -4,7 +4,7 @@ use indexmap::{IndexMap, IndexSet};
 use schematic::schema::{IntegerKind, IntegerType, SchemaGenerator, StringType, TemplateOptions};
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::PathBuf;
 
@@ -716,6 +716,44 @@ mod api_docs {
                 ..ApiDocsOptions::default()
             }
         ));
+    }
+
+    #[test]
+    fn custom_frontmatter() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                frontmatter: BTreeMap::from_iter([
+                    ("sidebar_position".to_owned(), "2".to_owned()),
+                    ("description".to_owned(), "\"Another: config\"".to_owned()),
+                ]),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.starts_with(
+            "---\ntitle: AnotherConfig\ndescription: \"Another: config\"\nsidebar_position: 2\n---\n\nSome comment."
+        ));
+    }
+
+    #[test]
+    fn frontmatter_title_overrides_the_type_name() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                frontmatter: BTreeMap::from_iter([("title".to_owned(), "Another".to_owned())]),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.starts_with("---\ntitle: Another\n---\n"));
+        assert!(!output.contains("title: AnotherConfig"));
     }
 
     #[test]

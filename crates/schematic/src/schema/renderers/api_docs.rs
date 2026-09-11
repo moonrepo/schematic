@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 use miette::miette;
 use schematic_types::*;
 use std::borrow::Cow;
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt;
 
 /// A tag describing how a type, property, or variant may be provided.
@@ -90,6 +90,11 @@ pub struct ApiDocsOptions {
     /// Exclude field aliases from being rendered.
     pub exclude_aliases: bool,
 
+    /// Additional frontmatter entries, written as `key: value` lines after
+    /// the title, in key order. Values are written verbatim, so quote them
+    /// as the consuming tool expects. A `title` entry replaces the type name.
+    pub frontmatter: BTreeMap<String, String>,
+
     /// Render an index of all properties or variants, linking to each
     /// section, ahead of the sections themselves.
     pub include_index: bool,
@@ -116,6 +121,7 @@ impl Default for ApiDocsOptions {
     fn default() -> Self {
         Self {
             exclude_aliases: false,
+            frontmatter: BTreeMap::new(),
             include_index: true,
             link_extension: ".md".into(),
             mark_struct_fields_required: true,
@@ -871,8 +877,28 @@ impl ApiDocsRenderer {
         Ok(format!("## Type\n\n{}", self.render_table(rows)))
     }
 
+    fn render_frontmatter(&self, name: &str) -> String {
+        let title = self
+            .options
+            .frontmatter
+            .get("title")
+            .map(String::as_str)
+            .unwrap_or(name);
+        let mut lines = vec!["---".to_owned(), format!("title: {title}")];
+
+        // Sorted so that the output is stable no matter how the map iterates
+        for (key, value) in &self.options.frontmatter {
+            if key != "title" {
+                lines.push(format!("{key}: {value}"));
+            }
+        }
+
+        lines.push("---".to_owned());
+        lines.join("\n")
+    }
+
     fn render_page(&mut self, name: &str, schema: &Schema) -> RenderResult {
-        let mut out = vec![format!("---\ntitle: {name}\n---")];
+        let mut out = vec![self.render_frontmatter(name)];
         let mut tags = vec![];
 
         if let Some(deprecated) = &schema.deprecated {
