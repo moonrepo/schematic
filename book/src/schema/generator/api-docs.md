@@ -25,12 +25,23 @@ Like a [JSON schema](./json-schema.md), each render produces a single document, 
 to be added to `SchemaGenerator`_ is the one rendered. Every other type in the generator is known to
 the renderer, so a property whose type is one of them links to that type's page.
 
-Adding a type that is already in the generator, because an earlier type nested it, moves it to the
-end. To generate a page for every type, add each one before generating its file.
+To generate a page for every type at once, including the ones that were added by nesting, use
+[`ApiDocsRenderer::generate_all()`](https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.generate_all)
+with an output directory instead. It writes a page per type, named after the type with a `.md`
+extension, along with an [index page](#index-page).
 
 ```rust
 let mut generator = SchemaGenerator::default();
+generator.add::<RootConfig>();
 
+ApiDocsRenderer::default().generate_all(&generator, output_dir.join("config"))?;
+```
+
+To control each page individually, generate them one at a time. Adding a type that is already in
+the generator, because an earlier type nested it, moves it to the end, so add each one before
+generating its file.
+
+```rust
 generator.add::<RootConfig>();
 generator.generate(output_dir.join("RootConfig.md"), ApiDocsRenderer::default())?;
 
@@ -40,7 +51,38 @@ generator.generate(output_dir.join("NestedConfig.md"), ApiDocsRenderer::default(
 ```
 
 By default links are relative, so all pages are expected to live in the same directory, and to be
-named after the type they document. The [`render_link`](#custom-links) option changes that.
+named after the type they document, which is what `generate_all` produces. The
+[`render_link`](#custom-links) option changes that, and a custom link should agree with wherever
+the pages are written.
+
+## Index page
+
+`generate_all` also writes an index page, a table of every type that links to its page, with its
+kind and the first paragraph of its description.
+
+```markdown
+---
+title: Index
+---
+
+## Types
+
+| Type | Kind | Description |
+| --- | --- | --- |
+| [`ServerConfig`](./ServerConfig.md) | Struct | Configures the HTTP server. |
+| [`TlsConfig`](./TlsConfig.md) | Struct | TLS settings, when serving over HTTPS. |
+```
+
+The `index_page` option names the file, and `None` skips it. When generating pages one at a time,
+[`ApiDocsRenderer::render_index_page()`](https://docs.rs/schematic/latest/schematic/schema/api_docs/struct.ApiDocsRenderer.html#method.render_index_page)
+renders the same content from the generator's schemas.
+
+```rust
+ApiDocsOptions {
+	// ...
+	index_page: Some("README.md".into()),
+}
+```
 
 ## Page structure
 

@@ -1,10 +1,13 @@
+use crate::schema::SchemaGenerator;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
-use miette::miette;
+use miette::{IntoDiagnostic, miette};
 use schematic_types::*;
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt;
+use std::fs;
+use std::path::Path;
 
 /// A tag describing how a type, property, or variant may be provided.
 #[derive(Clone, Debug, PartialEq)]
@@ -126,6 +129,10 @@ pub struct ApiDocsOptions {
     /// section, ahead of the sections themselves.
     pub include_index: bool,
 
+    /// File name of the index page listing every type, written by
+    /// [`ApiDocsRenderer::generate_all`]. `None` skips the page.
+    pub index_page: Option<String>,
+
     /// Tag all non-optional struct fields as required.
     pub mark_struct_fields_required: bool,
 
@@ -150,6 +157,7 @@ impl Default for ApiDocsOptions {
             exclude_aliases: false,
             frontmatter: BTreeMap::new(),
             include_index: true,
+            index_page: Some("index.md".into()),
             mark_struct_fields_required: true,
             render_link: Box::new(default_link_renderer),
             render_description: Box::new(default_description_renderer),
@@ -382,6 +390,101 @@ impl ApiDocsRenderer {
             references: HashSet::default(),
             linked: BTreeSet::default(),
         }
+    }
+
+    /// Render a page for every schema in the generator into the directory,
+    /// each named after its type with a `.md` extension, along with the
+    /// index page. Every schema is known to every page, so references link
+    /// to each other the same as they do through [`SchemaGenerator::generate`].
+    pub fn generate_all<P: AsRef<Path>>(
+        &mut self,
+        generator: &SchemaGenerator,
+        output_dir: P,
+    ) -> miette::Result<()> {
+        let output_dir = output_dir.as_ref();
+        let schemas = &generator.schemas;
+
+        if schemas.is_empty() {
+            return Err(miette!(
+                "At least one type must be added to the generator to render API docs."
+            ));
+        }
+
+        fs::create_dir_all(output_dir).into_diagnostic()?;
+
+        let write = |file_name: String, mut output: String| -> miette::Result<()> {
+            output.push('\n');
+            fs::write(output_dir.join(file_name), output).into_diagnostic()
+        };
+
+        for name in schemas.keys() {
+            write(format!("{name}.md"), self.render_page_of(schemas, name)?)?;
+        }
+
+        if let Some(index_page) = self.options.index_page.clone() {
+            write(index_page, self.render_index_page(schemas)?)?;
+        }
+
+        Ok(())
+    }
+
+    /// Render the index page, a table of every schema in name order that
+    /// links to its page, with its kind and the first paragraph of its
+    /// description.
+    pub fn render_index_page(&mut self, schemas: &IndexMap<String, Schema>) -> RenderResult {
+        self.references = HashSet::from_iter(schemas.keys().cloned());
+        self.linked = BTreeSet::default();
+
+        let mut out = vec![
+            self.render_frontmatter("Index"),
+            "## Types".to_owned(),
+            "| Type | Kind | Description |\n| --- | --- | --- |".to_owned(),
+        ];
+
+        let mut rows = vec![];
+
+        for (name, schema) in BTreeMap::from_iter(schemas) {
+            let kind = match &schema.ty {
+                SchemaType::Struct(_) => "Struct".to_owned(),
+                SchemaType::Enum(_) => "Enum".to_owned(),
+                SchemaType::Union(_) => "Union".to_owned(),
+                _ => {
+                    let expr = self.render_schema_without_reference(schema)?;
+
+                    self.render_type_expression(&expr)
+                }
+            };
+
+            rows.push(format!(
+                "| {} | {kind} | {} |",
+                self.create_link(name),
+                schema
+                    .description
+                    .as_deref()
+                    .map(summarize)
+                    .unwrap_or_default(),
+            ));
+        }
+
+        // Rows follow the header directly, with no blank line between
+        let table = out.pop().unwrap();
+        out.push(format!("{table}\n{}", rows.join("\n")));
+
+        Ok(out.join("\n\n"))
+    }
+
+    /// Render the page of one schema, with every schema known as a reference.
+    fn render_page_of(&mut self, schemas: &IndexMap<String, Schema>, name: &str) -> RenderResult {
+        let Some(schema) = schemas.get(name) else {
+            return Err(miette!(
+                "No schema named `{name}` has been added to the generator."
+            ));
+        };
+
+        self.references = HashSet::from_iter(schemas.keys().cloned());
+        self.linked = BTreeSet::default();
+
+        self.render_page(name, schema)
     }
 
     fn create_link(&self, name: &str) -> String {
@@ -1219,15 +1322,12 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
         // The last schema in the generator is the page to render, and every
         // other schema is a type it may link to
-        let Some((name, schema)) = schemas.last() else {
+        let Some(name) = schemas.keys().last().cloned() else {
             return Err(miette!(
                 "At least one type must be added to the generator to render API docs."
             ));
         };
 
-        self.references = HashSet::from_iter(schemas.keys().cloned());
-        self.linked = BTreeSet::default();
-
-        self.render_page(name, schema)
+        self.render_page_of(&schemas, &name)
     }
 }

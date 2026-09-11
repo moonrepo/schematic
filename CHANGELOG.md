@@ -10,7 +10,8 @@
   page are linked to their own pages.
   The `render_tags`, `render_description`, and `render_link` options take functions that customize
   how tags, descriptions, and links are rendered, `frontmatter` adds entries to each page's frontmatter, and
-  `enum_format` can render a unit enum's variants as one table.
+  `enum_format` can render a unit enum's variants as one table. `ApiDocsRenderer::generate_all`
+  writes a page for every type in a generator into a directory, along with an index page.
 - Added `UnionType.variants_names`, which a union derived from an enum fills with the name of each
   variant, by position in `variants_types`. Read it through `UnionType::get_variant_name()`.
 - Re-adding a type to `SchemaGenerator` now moves it to the end, so that a type nested by an earlier

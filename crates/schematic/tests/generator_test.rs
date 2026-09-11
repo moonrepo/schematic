@@ -881,6 +881,75 @@ mod api_docs {
     }
 
     #[test]
+    fn generate_all_writes_every_page_and_an_index() {
+        let sandbox = create_empty_sandbox();
+        let dir = sandbox.path().join("docs");
+
+        ApiDocsRenderer::default()
+            .generate_all(&create_generator(), &dir)
+            .unwrap();
+
+        let mut files = fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect::<Vec<_>>();
+        files.sort();
+
+        assert_eq!(
+            files,
+            vec![
+                "AnotherConfig.md",
+                "BasicEnum.md",
+                "FallbackEnum.md",
+                "GenConfig.md",
+                "index.md",
+            ]
+        );
+
+        // A page is the same as the one a single generate renders
+        let single = generate(create_generator(), ApiDocsOptions::default());
+
+        assert_eq!(
+            fs::read_to_string(dir.join("GenConfig.md")).unwrap(),
+            single
+        );
+        assert!(
+            fs::read_to_string(dir.join("AnotherConfig.md"))
+                .unwrap()
+                .starts_with("---\ntitle: AnotherConfig\n---")
+        );
+
+        assert_snapshot!(fs::read_to_string(dir.join("index.md")).unwrap());
+    }
+
+    #[test]
+    fn generate_all_without_index_page() {
+        let sandbox = create_empty_sandbox();
+        let dir = sandbox.path().join("docs");
+
+        ApiDocsRenderer::new(ApiDocsOptions {
+            index_page: None,
+            ..ApiDocsOptions::default()
+        })
+        .generate_all(&create_generator(), &dir)
+        .unwrap();
+
+        assert!(!dir.join("index.md").exists());
+        assert!(dir.join("GenConfig.md").exists());
+    }
+
+    #[test]
+    fn generate_all_errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+
+        let error = ApiDocsRenderer::default()
+            .generate_all(&SchemaGenerator::default(), sandbox.path().join("docs"))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
+    }
+
+    #[test]
     fn errors_without_schemas() {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("docs.md");
