@@ -85,8 +85,23 @@ pub fn default_description_renderer(description: &str) -> String {
         .join("\n")
 }
 
+/// How the variants of a unit enum are rendered.
+#[derive(Debug, Default, PartialEq)]
+pub enum ApiDocsEnumFormat {
+    /// A section per variant, with its tags, description, and value.
+    #[default]
+    Sections,
+    /// A single table, one row per variant. The index is omitted, as the
+    /// table already summarizes every variant.
+    Table,
+}
+
 /// Options to control the rendered API documentation.
 pub struct ApiDocsOptions {
+    /// How the variants of a unit enum are rendered. Unions, whose variants
+    /// carry values, are always rendered as sections.
+    pub enum_format: ApiDocsEnumFormat,
+
     /// Exclude field aliases from being rendered.
     pub exclude_aliases: bool,
 
@@ -120,6 +135,7 @@ pub struct ApiDocsOptions {
 impl Default for ApiDocsOptions {
     fn default() -> Self {
         Self {
+            enum_format: ApiDocsEnumFormat::default(),
             exclude_aliases: false,
             frontmatter: BTreeMap::new(),
             include_index: true,
@@ -399,6 +415,40 @@ impl ApiDocsRenderer {
 
     fn render_description(&self, description: &str) -> Option<String> {
         Some((self.options.render_description)(description)).filter(|out| !out.is_empty())
+    }
+
+    /// The tags of an enum variant.
+    fn variant_tags(&self, variant: &SchemaField, is_default: bool) -> Vec<ApiDocsTag> {
+        let mut tags = vec![];
+
+        if is_default {
+            tags.push(ApiDocsTag::Default);
+        }
+
+        if let Some(deprecated) = variant
+            .deprecated
+            .as_deref()
+            .or(variant.schema.deprecated.as_deref())
+        {
+            tags.push(self.deprecated_tag(deprecated));
+        }
+
+        tags
+    }
+
+    /// Tags as a comma separated list of labels, for a table cell. A block
+    /// quote from `render_tags` cannot sit inside a cell, so it isn't used.
+    fn render_inline_tags(&self, tags: &[ApiDocsTag]) -> String {
+        tags.iter()
+            .map(|tag| match tag {
+                ApiDocsTag::Deprecated(Some(message)) => {
+                    format!("**{}** ({})", tag.label(), message.trim())
+                }
+                _ => format!("**{}**", tag.label()),
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+            .replace('|', "\\|")
     }
 
     fn deprecated_tag(&self, message: &str) -> ApiDocsTag {
@@ -694,21 +744,8 @@ impl ApiDocsRenderer {
         is_default: bool,
     ) -> RenderResult {
         let mut out = vec![format!("### {}", code(name))];
-        let mut tags = vec![];
 
-        if is_default {
-            tags.push(ApiDocsTag::Default);
-        }
-
-        if let Some(deprecated) = variant
-            .deprecated
-            .as_ref()
-            .or(variant.schema.deprecated.as_ref())
-        {
-            tags.push(self.deprecated_tag(deprecated));
-        }
-
-        if let Some(tags) = self.render_tags(tags) {
+        if let Some(tags) = self.render_tags(self.variant_tags(variant, is_default)) {
             out.push(tags);
         }
 
@@ -759,6 +796,10 @@ impl ApiDocsRenderer {
                 .collect(),
         };
 
+        if self.options.enum_format == ApiDocsEnumFormat::Table {
+            return self.render_enum_table(enu, &variants);
+        }
+
         let mut index = vec![];
         let mut sections = vec![];
 
@@ -786,6 +827,49 @@ impl ApiDocsRenderer {
         }
 
         Ok(self.assemble_sections("Variant", "## Variants", index, sections))
+    }
+
+    /// The variants of a unit enum as one table, a row per variant. A
+    /// fallback variant, which accepts a type rather than a value, shows
+    /// that type in the value column.
+    fn render_enum_table(
+        &mut self,
+        enu: &EnumType,
+        variants: &[(String, SchemaField)],
+    ) -> RenderResult {
+        let mut rows = vec![];
+
+        for (position, (name, variant)) in variants.iter().enumerate() {
+            if variant.hidden {
+                continue;
+            }
+
+            let expr = self.render_schema(&variant.schema)?;
+            let tags = self.variant_tags(variant, enu.default_index == Some(position));
+            let description = variant
+                .comment
+                .as_deref()
+                .or(variant.schema.description.as_deref())
+                .map(summarize)
+                .unwrap_or_default();
+
+            rows.push(format!(
+                "| {} | {} | {} | {} |",
+                code(name),
+                self.render_type_expression(&expr),
+                self.render_inline_tags(&tags),
+                description,
+            ));
+        }
+
+        if rows.is_empty() {
+            return Ok(String::new());
+        }
+
+        Ok(format!(
+            "## Variants\n\n| Variant | Value | Tags | Description |\n| --- | --- | --- | --- |\n{}",
+            rows.join("\n")
+        ))
     }
 
     /// A page for a union, such as an untagged enum, which lists each variant.

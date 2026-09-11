@@ -683,6 +683,39 @@ mod api_docs {
     }
 
     #[test]
+    fn enum_table() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<FallbackEnum>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    // The table format only applies to unit enums, as union variants carry
+    // values that need a section to describe
+    #[test]
+    fn enum_table_leaves_unions_as_sections() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<Targets>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("## Index"));
+        assert!(output.contains("### `List`"));
+    }
+
+    #[test]
     fn union() {
         let mut generator = SchemaGenerator::default();
         generator.add::<Targets>();

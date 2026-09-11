@@ -1,0 +1,16 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions\n{ enum_format: ApiDocsEnumFormat::Table, ..ApiDocsOptions::default() })"
+---
+---
+title: FallbackEnum
+---
+
+## Variants
+
+| Variant | Value | Tags | Description |
+| --- | --- | --- | --- |
+| `foo` | `"foo"` | **Default** |  |
+| `bar` | `"bar"` |  |  |
+| `baz` | `"baz"` |  |  |
+| `other` | `string` |  |  |

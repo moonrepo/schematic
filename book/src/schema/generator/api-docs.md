@@ -148,6 +148,36 @@ ApiDocsOptions {
 }
 ```
 
+### Enum format
+
+A unit enum renders a section per variant, which is thorough but long for an enum with many
+variants. The `enum_format` option can render them as a single table instead, one row per variant
+with its value, tags, and description. The index is omitted for it, as the table already summarizes
+every variant. Unions always render as sections, since their variants carry values that need
+describing.
+
+```rust
+use schematic::schema::ApiDocsEnumFormat;
+
+ApiDocsOptions {
+	// ...
+	enum_format: ApiDocsEnumFormat::Table,
+}
+```
+
+```markdown
+## Variants
+
+| Variant | Value     | Tags                                 | Description            |
+| ------- | --------- | ------------------------------------ | ---------------------- |
+| `debug` | `"debug"` |                                      | Log everything.        |
+| `info`  | `"info"`  | **Default**                          | Log at info and above. |
+| `off`   | `"off"`   | **Deprecated** (Use `none` instead.) | Disable logging.       |
+```
+
+> Tags in the table are rendered as labels, not through the `render_tags` function, as its output is
+> a block that cannot sit inside a table cell.
+
 ### Index
 
 The index ahead of the properties or variants shows each one's type and the first paragraph of its
