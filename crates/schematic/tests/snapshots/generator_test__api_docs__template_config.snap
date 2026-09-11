@@ -1,0 +1,192 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(create_template_generator(), ApiDocsOptions::default())"
+---
+---
+title: TemplateConfig
+---
+
+## Properties
+
+### `boolean`
+
+> **Required**
+
+This is a boolean with a medium length description.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `boolean` |
+| Environment variable | `TEMPLATE_BOOLEAN` |
+
+### `empty_array`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number[]` |
+
+### `empty_object`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, number>` |
+
+### `enums`
+
+> **Required** · **Deprecated** (Dont use enums!)
+
+This is an enum with a medium length description and deprecated.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`BasicEnum`](./BasicEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `expand_array`
+
+> **Required**
+
+This field is testing array expansion.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`AnotherConfig`](./AnotherConfig.md)`[]` |
+
+### `expand_array_primitive`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number[]` |
+
+### `expand_object`
+
+> **Required**
+
+This field is testing object expansion.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, `[`AnotherConfig`](./AnotherConfig.md)`>` |
+
+### `expand_object_primitive`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, number>` |
+
+### `fallback_enum`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`FallbackEnum`](./FallbackEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `float32`
+
+> **Required** · **Deprecated**
+
+This is a float thats deprecated.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `float64`
+
+> **Optional**
+
+This is a float.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+| Default | `1.23` |
+
+### `map`
+
+> **Required**
+
+This is a map of numbers.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, number>` |
+
+### `nested`
+
+> **Required**
+
+This is a nested struct with its own fields.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`AnotherConfig`](./AnotherConfig.md) |
+
+### `number`
+
+> **Required**
+
+This is a number with a long description.
+This is a number with a long description.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `one`
+
+> **Required**
+
+This is a nested struct with its own fields.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`OneDepthConfig`](./OneDepthConfig.md) |
+
+### `skipped`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `string`
+
+> **Optional**
+
+This is a string.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Default | `"abc"` |
+
+### `vector`
+
+> **Required**
+
+This is a list of strings.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+## References
+
+- [AnotherConfig](./AnotherConfig.md)
+- [BasicEnum](./BasicEnum.md)
+- [FallbackEnum](./FallbackEnum.md)
+- [OneDepthConfig](./OneDepthConfig.md)

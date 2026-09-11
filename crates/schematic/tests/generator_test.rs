@@ -1,7 +1,7 @@
 #![allow(dead_code, deprecated)]
 
 use indexmap::{IndexMap, IndexSet};
-use schematic::schema::{SchemaGenerator, TemplateOptions};
+use schematic::schema::{IntegerKind, IntegerType, SchemaGenerator, StringType, TemplateOptions};
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
 use std::collections::HashMap;
@@ -144,6 +144,89 @@ struct TemplateConfig {
     expand_object: HashMap<String, AnotherConfig>,
     expand_object_primitive: HashMap<String, usize>,
     empty_object: HashMap<String, usize>,
+}
+
+/// A port number, constrained to the registered range.
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+struct Port(u16);
+
+impl Schematic for Port {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.integer(IntegerType {
+            kind: IntegerKind::U16,
+            min: Some(1024),
+            max: Some(49151),
+            ..IntegerType::default()
+        })
+    }
+}
+
+/// A short identifier.
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+struct Ident(String);
+
+impl Schematic for Ident {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string(StringType {
+            max_length: Some(32),
+            min_length: Some(1),
+            pattern: Some("^[a-z][a-z0-9-]*$".into()),
+            ..StringType::default()
+        })
+    }
+}
+
+/// Either a list of targets, or a map of targets to paths.
+#[derive(Clone, Config)]
+#[serde(untagged)]
+enum Targets {
+    /// A list of targets.
+    List(Vec<String>),
+    /// A map of targets.
+    Map(HashMap<String, String>),
+}
+
+/// A config that exercises everything the docs can describe.
+///
+/// - With a list item.
+/// - And another.
+#[derive(Clone, Config)]
+struct DocsConfig {
+    /// A string with a default and aliases.
+    #[serde(alias = "label", alias = "title")]
+    #[setting(default = "hello", env = "DOCS_NAME")]
+    name: String,
+    /// A constrained integer.
+    port: Port,
+    /// A constrained string.
+    ident: Option<Ident>,
+    /// An optional nested config.
+    #[setting(nested)]
+    nested: Option<AnotherConfig>,
+    /// A list of nested configs.
+    #[setting(nested)]
+    list: Vec<AnotherConfig>,
+    /// A map of enums.
+    map: HashMap<String, BasicEnum>,
+    /// An enum, which carries its own default.
+    level: BasicEnum,
+    /// A deprecated field, use `name` instead.
+    #[deprecated = "Use `name` instead."]
+    old_name: Option<String>,
+    /// A tuple of values.
+    pair: (String, u32),
+    /// An inline struct.
+    duration: std::time::Duration,
+    /// A union of a list or a map.
+    #[setting(nested)]
+    targets: Targets,
+    /// A list of nullable enums.
+    nullable_items: Vec<Option<BasicEnum>>,
+    /// An optional boolean.
+    #[serde(default)]
+    boolean: bool,
+    #[setting(skip)]
+    hidden: String,
 }
 
 fn create_generator() -> SchemaGenerator {
@@ -535,6 +618,134 @@ mod typescript {
             indent_char: "  ".into(),
             ..TypeScriptOptions::default()
         }));
+    }
+}
+
+#[cfg(feature = "renderer_api_docs")]
+mod api_docs {
+    use super::*;
+    use schematic::schema::api_docs::*;
+
+    fn generate(generator: SchemaGenerator, options: ApiDocsOptions) -> String {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("docs.md");
+
+        generator
+            .generate(&file, ApiDocsRenderer::new(options))
+            .unwrap();
+
+        fs::read_to_string(file).unwrap()
+    }
+
+    #[test]
+    fn defaults() {
+        assert_snapshot!(generate(create_generator(), ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn partials() {
+        let mut generator = create_generator();
+        generator.add::<PartialGenConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn all_field_shapes() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn template_config() {
+        assert_snapshot!(generate(
+            create_template_generator(),
+            ApiDocsOptions::default()
+        ));
+    }
+
+    #[test]
+    fn unit_enum() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<BasicEnum>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn fallback_enum() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<FallbackEnum>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn union() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<Targets>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    // A type nested by an earlier one is already in the generator, so adding
+    // it again has to make it the page that renders.
+    #[test]
+    fn readded_nested_type_becomes_the_page() {
+        let mut generator = create_generator();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(generator, ApiDocsOptions::default());
+
+        assert!(output.starts_with("---\ntitle: AnotherConfig\n---"));
+        assert_snapshot!(output);
+    }
+
+    #[test]
+    fn without_required_or_aliases() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                exclude_aliases: true,
+                mark_struct_fields_required: false,
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    #[test]
+    fn custom_link_extension() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                link_extension: String::new(),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("[`AnotherConfig`](./AnotherConfig)"));
+        assert!(output.contains("- [AnotherConfig](./AnotherConfig)"));
+        assert!(!output.contains(".md"));
+    }
+
+    #[test]
+    fn errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("docs.md");
+
+        let error = SchemaGenerator::default()
+            .generate(&file, ApiDocsRenderer::default())
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
     }
 }
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `ApiDocsRenderer`, behind the `renderer_api_docs` feature, that renders a markdown API
+  documentation page for a type. Each property or variant is described with tags, its comment, and
+  a table of type information, and types referenced from the page are linked to their own pages.
+- Re-adding a type to `SchemaGenerator` now moves it to the end, so that a type nested by an earlier
+  one can still become the root of a single-document render.
+
 ## 0.20.3
 
 #### ⚙️ Internal

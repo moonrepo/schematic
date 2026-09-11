@@ -50,11 +50,6 @@ export type ValueTypesBase = {
 
 export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
-export type OptionalValues = {
-	optional: string | null,
-	required: boolean,
-};
-
 export type DefaultValues = {
 	array?: number[],
 	array_opt: number[] | null,
@@ -170,6 +165,11 @@ export type Comments = {
 };
 
 export type UnnamedMultiple = [string, number | null, boolean];
+
+export type OptionalValues = {
+	optional: string | null,
+	required: boolean,
+};
 
 export type PartialDefaultValues = {
 	array?: number[] | null,

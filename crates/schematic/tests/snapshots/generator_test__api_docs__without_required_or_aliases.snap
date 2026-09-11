@@ -1,0 +1,143 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions\n{\n    exclude_aliases: true, mark_struct_fields_required: false,\n    ..ApiDocsOptions::default()\n})"
+---
+---
+title: DocsConfig
+---
+
+A config that exercises everything the docs can describe.
+
+- With a list item.
+- And another.
+
+## Properties
+
+### `boolean`
+
+> **Optional**
+
+An optional boolean.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `boolean` |
+
+### `duration`
+
+An inline struct.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `{ nanos: number, secs: number }` |
+
+### `ident`
+
+> **Nullable**
+
+A constrained string.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Pattern | `^[a-z][a-z0-9-]*$` |
+| Min length | `1` |
+| Max length | `32` |
+
+### `level`
+
+An enum, which carries its own default.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`BasicEnum`](./BasicEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `list`
+
+A list of nested configs.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`AnotherConfig`](./AnotherConfig.md)`[]` |
+
+### `map`
+
+A map of enums.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, `[`BasicEnum`](./BasicEnum.md)`>` |
+
+### `name`
+
+> **Optional**
+
+A string with a default and aliases.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Default | `"hello"` |
+| Environment variable | `DOCS_NAME` |
+
+### `nested`
+
+> **Nullable**
+
+An optional nested config.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`AnotherConfig`](./AnotherConfig.md) |
+
+### `nullable_items`
+
+A list of nullable enums.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `(`[`BasicEnum`](./BasicEnum.md)` \| null)[]` |
+
+### `old_name`
+
+> **Nullable** · **Deprecated** (Use `name` instead.)
+
+A deprecated field, use `name` instead.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `pair`
+
+A tuple of values.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `[string, number]` |
+
+### `port`
+
+A constrained integer.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+| Minimum | `1024` |
+| Maximum | `49151` |
+
+### `targets`
+
+A union of a list or a map.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Targets`](./Targets.md) |
+
+## References
+
+- [AnotherConfig](./AnotherConfig.md)
+- [BasicEnum](./BasicEnum.md)
+- [Targets](./Targets.md)

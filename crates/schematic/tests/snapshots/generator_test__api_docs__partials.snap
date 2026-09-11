@@ -1,0 +1,262 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions::default())"
+---
+---
+title: PartialGenConfig
+---
+
+> **Deprecated**
+
+## Properties
+
+### `boolean`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `boolean` |
+
+### `date`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `date` |
+
+### `datetime`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `date-time` |
+
+### `decimal`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `decimal` |
+
+### `enums`
+
+> **Optional** · **Nullable**
+
+This is a list of `enumerable` values.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`BasicEnum`](./BasicEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `fallback_enum`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`FallbackEnum`](./FallbackEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `flattened`
+
+> **Optional** · **Nullable** · **Flattened**
+
+Flattened field...
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, unknown>` |
+
+### `float32`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `float64`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `indexmap`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, string>` |
+
+### `indexset`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+### `json_value`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+### `map`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, number>` |
+
+### `nested`
+
+> **Optional** · **Nullable**
+
+**Nested** field.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`PartialAnotherConfig`](./PartialAnotherConfig.md) |
+
+### `number`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `path`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `path` |
+
+### `regex`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `regex` |
+
+### `rel_path`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `path` |
+
+### `string`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `time`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `time` |
+
+### `toml_value`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+### `url`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `uri` |
+
+### `uuid`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `uuid` |
+
+### `vector`
+
+> **Optional** · **Nullable**
+
+This is a list of strings.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+### `version`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `version2`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `version_req`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `yaml_value`
+
+> **Optional** · **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+## References
+
+- [BasicEnum](./BasicEnum.md)
+- [FallbackEnum](./FallbackEnum.md)
+- [PartialAnotherConfig](./PartialAnotherConfig.md)

@@ -72,6 +72,7 @@ implementing the
 [`SchemaRenderer`](https://docs.rs/schematic/latest/schematic/schema/trait.SchemaRenderer.html)
 trait.
 
+- [API documentation](./api-docs.md)
 - [Config templates](./template.md)
 - [JSON schemas](./json-schema.md)
 - [TypeScript types](./typescript.md)

@@ -34,11 +34,6 @@ export interface ValueTypesBase {
 
 export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
-export interface OptionalValues {
-	optional: string | null;
-	required: boolean;
-}
-
 export interface DefaultValues {
 	array?: number[];
 	array_opt: number[] | null;
@@ -154,6 +149,11 @@ export interface Comments {
 }
 
 export type UnnamedMultiple = [string, number | null, boolean];
+
+export interface OptionalValues {
+	optional: string | null;
+	required: boolean;
+}
 
 export interface PartialDefaultValues {
 	array?: number[] | null;

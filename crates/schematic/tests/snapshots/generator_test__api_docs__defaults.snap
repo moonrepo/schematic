@@ -1,0 +1,262 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(create_generator(), ApiDocsOptions::default())"
+---
+---
+title: GenConfig
+---
+
+> **Deprecated**
+
+## Properties
+
+### `boolean`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `boolean` |
+
+### `date`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `date` |
+
+### `datetime`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `date-time` |
+
+### `decimal`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `decimal` |
+
+### `enums`
+
+> **Required**
+
+This is a list of `enumerable` values.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`BasicEnum`](./BasicEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `fallback_enum`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`FallbackEnum`](./FallbackEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `flattened`
+
+> **Flattened**
+
+Flattened field...
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, unknown>` |
+
+### `float32`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `float64`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `indexmap`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, string>` |
+
+### `indexset`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+### `json_value`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+### `map`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, number>` |
+
+### `nested`
+
+> **Required**
+
+**Nested** field.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`AnotherConfig`](./AnotherConfig.md) |
+
+### `number`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `number` |
+
+### `path`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `path` |
+
+### `regex`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `regex` |
+
+### `rel_path`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `path` |
+
+### `string`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `time`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `time` |
+
+### `toml_value`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+### `url`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `uri` |
+
+### `uuid`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+| Format | `uuid` |
+
+### `vector`
+
+> **Required**
+
+This is a list of strings.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+### `version`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `version2`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `version_req`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `yaml_value`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | `unknown` |
+
+## References
+
+- [AnotherConfig](./AnotherConfig.md)
+- [BasicEnum](./BasicEnum.md)
+- [FallbackEnum](./FallbackEnum.md)

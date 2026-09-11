@@ -1,0 +1,37 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: output
+---
+---
+title: AnotherConfig
+---
+
+Some comment.
+
+## Properties
+
+### `enums`
+
+> **Nullable**
+
+An optional enum.
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`BasicEnum`](./BasicEnum.md) |
+| Default | `"foo"` |
+| Values | `"foo"`, `"bar"`, `"baz"` |
+
+### `opt`
+
+> **Nullable**
+
+An optional string.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+## References
+
+- [BasicEnum](./BasicEnum.md)

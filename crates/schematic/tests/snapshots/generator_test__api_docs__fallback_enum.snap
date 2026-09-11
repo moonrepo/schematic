@@ -1,0 +1,35 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions::default())"
+---
+---
+title: FallbackEnum
+---
+
+## Variants
+
+### `foo`
+
+> **Default**
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"foo"` |
+
+### `bar`
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"bar"` |
+
+### `baz`
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"baz"` |
+
+### `other`
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
