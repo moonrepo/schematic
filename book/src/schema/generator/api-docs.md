@@ -39,8 +39,8 @@ generator.add::<NestedConfig>();
 generator.generate(output_dir.join("NestedConfig.md"), ApiDocsRenderer::default())?;
 ```
 
-Links are relative, so all pages are expected to live in the same directory, and to be named after
-the type they document.
+By default links are relative, so all pages are expected to live in the same directory, and to be
+named after the type they document. The [`render_link`](#custom-links) option changes that.
 
 ## Page structure
 
@@ -91,7 +91,7 @@ TLS settings, when serving over HTTPS.
 
 ## References
 
-- [TlsConfig](./TlsConfig.md)
+- [`TlsConfig`](./TlsConfig.md)
 ```
 
 The tags after a name describe how a property may be provided: whether it is required or optional,
@@ -136,15 +136,19 @@ ApiDocsOptions {
 
 The renderer is created for each page, so per-type values can be set when generating that type.
 
-### Link extension
+### Custom links
 
-Links to other pages append `.md` to the type name. Documentation tools that route on the file name
-rather than the file may want bare links instead, which the `link_extension` option controls.
+Links to other pages are rendered by the `render_link` function, which receives the name of the
+referenced type and returns the whole link, label included. The default labels the link with the
+name as inline code and links to a markdown file named after the type in the same directory, such
+as `` [`Name`](./Name.md) ``. Documentation tools that route on a path rather than a file, pages
+split across directories, or a site with its own link component can return whatever they need. The
+same function renders the inline links and the references list.
 
 ```rust
 ApiDocsOptions {
 	// ...
-	link_extension: "".into(),
+	render_link: Box::new(|name| format!("<Link to=\"/docs/config/{name}\">{name}</Link>")),
 }
 ```
 

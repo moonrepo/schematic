@@ -57,6 +57,18 @@ pub type ApiDocsTagsRenderer = Box<dyn Fn(&[ApiDocsTag]) -> String>;
 /// from the doc comment as written. An empty result omits the description.
 pub type ApiDocsDescriptionRenderer = Box<dyn Fn(&str) -> String>;
 
+/// Renders a link to a referenced type's page, from the type name, as a
+/// complete markdown link including its label. Used wherever a type is
+/// linked: inline in a type expression, and in the references list.
+pub type ApiDocsLinkRenderer = Box<dyn Fn(&str) -> String>;
+
+/// The default link renderer, which labels the link with the type name as
+/// inline code, and links to a markdown file named after the type in the
+/// same directory, such as `` [`Name`](./Name.md) ``.
+pub fn default_link_renderer(name: &str) -> String {
+    format!("[{}](./{name}.md)", code(name))
+}
+
 /// The default tags renderer, which renders a block quote of bold labels
 /// separated by a middle dot, such as `> **Required** · **Nullable**`. A
 /// deprecation message follows its label in parentheses.
@@ -114,13 +126,12 @@ pub struct ApiDocsOptions {
     /// section, ahead of the sections themselves.
     pub include_index: bool,
 
-    /// File extension appended to the name of a referenced type when linking
-    /// to its page, such as `.md`. Set to an empty string to link to the bare
-    /// name, for documentation tools that route on the file name.
-    pub link_extension: String,
-
     /// Tag all non-optional struct fields as required.
     pub mark_struct_fields_required: bool,
+
+    /// Renders a link to a referenced type's page, label included, from the
+    /// type name. Defaults to [`default_link_renderer`].
+    pub render_link: ApiDocsLinkRenderer,
 
     /// Renders the description of a type, property, or variant. Receives the
     /// doc comment as written. Defaults to [`default_description_renderer`].
@@ -139,8 +150,8 @@ impl Default for ApiDocsOptions {
             exclude_aliases: false,
             frontmatter: BTreeMap::new(),
             include_index: true,
-            link_extension: ".md".into(),
             mark_struct_fields_required: true,
+            render_link: Box::new(default_link_renderer),
             render_description: Box::new(default_description_renderer),
             render_tags: Box::new(default_tags_renderer),
         }
@@ -374,7 +385,7 @@ impl ApiDocsRenderer {
     }
 
     fn create_link(&self, name: &str) -> String {
-        format!("./{name}{}", self.options.link_extension)
+        (self.options.render_link)(name)
     }
 
     fn render_type_expression(&self, expr: &TypeExpression) -> String {
@@ -383,9 +394,7 @@ impl ApiDocsRenderer {
         for part in &expr.parts {
             match part {
                 TypePart::Code(value) => out.push_str(&code(value)),
-                TypePart::Reference(name) => {
-                    out.push_str(&format!("[{}]({})", code(name), self.create_link(name)));
-                }
+                TypePart::Reference(name) => out.push_str(&self.create_link(name)),
             }
         }
 
@@ -1024,7 +1033,7 @@ impl ApiDocsRenderer {
             let links = self
                 .linked
                 .iter()
-                .map(|name| format!("- [{name}]({})", self.create_link(name)))
+                .map(|name| format!("- {}", self.create_link(name)))
                 .collect::<Vec<_>>();
 
             out.push(format!("## References\n\n{}", links.join("\n")));

@@ -209,7 +209,7 @@ This is a list of strings.
 
 ## References
 
-- [AnotherConfig](./AnotherConfig.md)
-- [BasicEnum](./BasicEnum.md)
-- [FallbackEnum](./FallbackEnum.md)
-- [OneDepthConfig](./OneDepthConfig.md)
+- [`AnotherConfig`](./AnotherConfig.md)
+- [`BasicEnum`](./BasicEnum.md)
+- [`FallbackEnum`](./FallbackEnum.md)
+- [`OneDepthConfig`](./OneDepthConfig.md)

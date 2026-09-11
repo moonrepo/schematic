@@ -156,6 +156,6 @@ A union of a list or a map.
 
 ## References
 
-- [AnotherConfig](./AnotherConfig.md)
-- [BasicEnum](./BasicEnum.md)
-- [Targets](./Targets.md)
+- [`AnotherConfig`](./AnotherConfig.md)
+- [`BasicEnum`](./BasicEnum.md)
+- [`Targets`](./Targets.md)

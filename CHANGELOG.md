@@ -8,8 +8,8 @@
   documentation page for a type. An index summarizes every property or variant, each is then
   described with tags, its comment, and a table of type information, and types referenced from the
   page are linked to their own pages.
-  The `render_tags` and `render_description` options take functions that customize how tags and
-  descriptions are rendered, `frontmatter` adds entries to each page's frontmatter, and
+  The `render_tags`, `render_description`, and `render_link` options take functions that customize
+  how tags, descriptions, and links are rendered, `frontmatter` adds entries to each page's frontmatter, and
   `enum_format` can render a unit enum's variants as one table.
 - Added `UnionType.variants_names`, which a union derived from an enum fills with the name of each
   variant, by position in `variants_types`. Read it through `UnionType::get_variant_name()`.

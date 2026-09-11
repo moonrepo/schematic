@@ -806,21 +806,28 @@ mod api_docs {
         assert!(output.contains("## Properties"));
     }
 
+    // The same function shapes inline links and the references list
     #[test]
-    fn custom_link_extension() {
+    fn custom_links() {
         let mut generator = SchemaGenerator::default();
         generator.add::<DocsConfig>();
 
         let output = generate(
             generator,
             ApiDocsOptions {
-                link_extension: String::new(),
+                render_link: Box::new(|name| {
+                    format!("<Link to=\"/docs/config/{name}\">{name}</Link>")
+                }),
                 ..ApiDocsOptions::default()
             },
         );
 
-        assert!(output.contains("[`AnotherConfig`](./AnotherConfig)"));
-        assert!(output.contains("- [AnotherConfig](./AnotherConfig)"));
+        assert!(
+            output.contains(
+                "| Type | <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link> |"
+            )
+        );
+        assert!(output.contains("- <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link>"));
         assert!(!output.contains(".md"));
     }
 

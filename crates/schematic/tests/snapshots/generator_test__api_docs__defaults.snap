@@ -290,6 +290,6 @@ This is a list of strings.
 
 ## References
 
-- [AnotherConfig](./AnotherConfig.md)
-- [BasicEnum](./BasicEnum.md)
-- [FallbackEnum](./FallbackEnum.md)
+- [`AnotherConfig`](./AnotherConfig.md)
+- [`BasicEnum`](./BasicEnum.md)
+- [`FallbackEnum`](./FallbackEnum.md)
