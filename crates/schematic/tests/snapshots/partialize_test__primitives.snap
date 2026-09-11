@@ -35,6 +35,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -99,6 +100,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -158,6 +160,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -217,6 +220,7 @@ expression: "create_diff::<Primitives>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -272,6 +276,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -323,6 +328,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -377,6 +383,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -423,6 +430,7 @@ expression: "create_diff::<Primitives>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,

@@ -11,13 +11,19 @@ impl schematic::Schematic for Example {
         use schematic::schema::*;
         schema
             .union(
-                UnionType::from_schemas(
+                UnionType::from_named_schemas(
                     [
-                        Schema::structure(
-                            StructType::new([("A".into(), schema.infer::<bool>())]),
+                        (
+                            "A".into(),
+                            Schema::structure(
+                                StructType::new([("A".into(), schema.infer::<bool>())]),
+                            ),
                         ),
-                        Schema::structure(
-                            StructType::new([("B".into(), schema.infer::<String>())]),
+                        (
+                            "B".into(),
+                            Schema::structure(
+                                StructType::new([("B".into(), schema.infer::<String>())]),
+                            ),
                         ),
                     ],
                     None,

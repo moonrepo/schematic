@@ -10,7 +10,7 @@ Either a list of targets, or a map of targets to paths.
 
 ## Variants
 
-### `string[]`
+### `List`
 
 A list of targets.
 
@@ -18,7 +18,7 @@ A list of targets.
 | --- | --- |
 | Type | `string[]` |
 
-### `Record<string, string>`
+### `Map`
 
 A map of targets.
 

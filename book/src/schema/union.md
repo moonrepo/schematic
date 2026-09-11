@@ -43,6 +43,15 @@ schema.union(UnionType::new_one([
 ]));
 ```
 
+## Variant names
+
+A union derived from an enum with `#[derive(Config)]` or `#[derive(Schematic)]` records the name of
+each variant in `variants_names`, by position in `variants_types`, so that renderers such as
+[API documentation](./generator/api-docs.md) can label a variant. A union built by hand carries no
+names, and
+[`UnionType::get_variant_name()`](https://docs.rs/schematic/latest/schematic/schema/struct.UnionType.html#method.get_variant_name)
+returns `None` for it.
+
 ## Operators
 
 Unions support 2 kinds of operators, any of and one of, both of which can be defined with the

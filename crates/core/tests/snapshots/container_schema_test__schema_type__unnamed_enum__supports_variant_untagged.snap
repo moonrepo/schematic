@@ -5,21 +5,24 @@ expression: pretty_body(container.impl_schematic_type())
 fn build_schema(mut schema: SchemaBuilder) -> Schema {
     schema
         .union(
-            UnionType::from_schemas(
+            UnionType::from_named_schemas(
                 [
-                    {
-                        let mut item = schema.infer::<String>();
-                        item.ty
-                            .add_field(
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Text".into())),
-                                ),
-                            );
-                        item
-                    },
-                    schema.infer::<String>(),
-                    schema.infer::<String>(),
+                    (
+                        "Text".into(),
+                        {
+                            let mut item = schema.infer::<String>();
+                            item.ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Text".into())),
+                                    ),
+                                );
+                            item
+                        },
+                    ),
+                    ("Inner".into(), schema.infer::<String>()),
+                    ("Other".into(), schema.infer::<String>()),
                 ],
                 None,
             ),

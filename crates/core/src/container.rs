@@ -919,6 +919,7 @@ impl Container {
                 let tag_format = self.get_tag_format();
                 let mut default_index = quote! { None };
                 let mut types = vec![];
+                let mut named_types = vec![];
 
                 for variant in variants {
                     if variant.is_excluded() {
@@ -931,15 +932,20 @@ impl Container {
                         default_index = quote! { Some(#index) };
                     }
 
-                    types.push(variant.impl_schema_type(&tag_format));
+                    let name = variant.get_name();
+                    let ty = variant.impl_schema_type(&tag_format);
+
+                    named_types.push(quote! { (#name.into(), #ty) });
+                    types.push(ty);
                 }
 
                 // Enums of only units are enumerable values,
-                // otherwise they're a union of schemas
+                // otherwise they're a union of schemas. A union variant's
+                // schema is its value alone, so the name travels beside it.
                 let builder = if unit {
                     quote! { schema.enumerable(EnumType::from_schemas([#(#types),*], #default_index)) }
                 } else {
-                    quote! { schema.union(UnionType::from_schemas([#(#types),*], #default_index)) }
+                    quote! { schema.union(UnionType::from_named_schemas([#(#named_types),*], #default_index)) }
                 };
 
                 quote! {

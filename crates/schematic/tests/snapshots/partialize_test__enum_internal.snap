@@ -15,6 +15,14 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️            default_index: None,
 ⬛️            partial: false,
 ⬛️            operator: AnyOf,
+⬛️            variants_names: Some(
+⬛️                [
+⬛️                    "Foo",
+⬛️                    "Bar",
+⬛️                    "Baz",
+⬛️                    "Qux",
+⬛️                ],
+⬛️            ),
 ⬛️            variants_types: [
 ⬛️                Schema {
 ⬛️                    deprecated: None,
@@ -118,6 +126,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                default_index: None,
 🟩                                                partial: false,
 🟩                                                operator: AnyOf,
+🟩                                                variants_names: None,
 🟩                                                variants_types: [
 🟩                                                    Schema {
 🟩                                                        deprecated: None,
@@ -176,6 +185,7 @@ expression: "create_diff::<InternalTagged>()"
 🟩                                                default_index: None,
 🟩                                                partial: false,
 🟩                                                operator: AnyOf,
+🟩                                                variants_names: None,
 🟩                                                variants_types: [
 🟩                                                    Schema {
 🟩                                                        deprecated: None,

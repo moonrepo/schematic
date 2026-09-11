@@ -45,8 +45,9 @@ the type they document.
 ## Page structure
 
 A page starts with front matter that titles it after the type, followed by the type's description.
-A struct then lists its properties, a unit enum lists its variants, and a union lists each type it
-accepts. Types that are referenced from the page are listed at the end.
+A struct then lists its properties, and an enum lists its variants, headed by the variant name. A
+union that was built by hand has no variant names, so each of its variants is headed by its type
+instead. Types that are referenced from the page are listed at the end.
 
 ```markdown
 ---

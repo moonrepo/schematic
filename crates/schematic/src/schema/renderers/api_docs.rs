@@ -182,12 +182,20 @@ fn strip_null(schema: &Schema) -> Cow<'_, Schema> {
         return Cow::Borrowed(schema);
     }
 
-    let variants_types = uni
-        .variants_types
-        .iter()
-        .filter(|variant| !variant.is_null())
-        .cloned()
-        .collect::<Vec<_>>();
+    let mut variants_types = vec![];
+    let mut variants_names = vec![];
+
+    for (index, variant) in uni.variants_types.iter().enumerate() {
+        if variant.is_null() {
+            continue;
+        }
+
+        variants_types.push(variant.clone());
+
+        if let Some(name) = uni.get_variant_name(index) {
+            variants_names.push(name.to_owned());
+        }
+    }
 
     match variants_types.len() {
         0 => Cow::Owned(Schema::null()),
@@ -195,6 +203,10 @@ fn strip_null(schema: &Schema) -> Cow<'_, Schema> {
         _ => {
             let mut stripped = schema.clone();
             stripped.ty = SchemaType::Union(Box::new(UnionType {
+                // Names travel by position, so only keep them if every kept
+                // variant still has one
+                variants_names: (variants_names.len() == variants_types.len())
+                    .then_some(variants_names),
                 variants_types,
                 ..(**uni).clone()
             }));
@@ -577,7 +589,8 @@ impl ApiDocsRenderer {
     }
 
     /// A page for a union, such as an untagged enum, which lists each variant.
-    /// Variants have no names of their own, so each is headed by its type.
+    /// A variant is headed by its name when the union was derived from an
+    /// enum, and by its type otherwise.
     fn render_union_page(&mut self, uni: &UnionType) -> RenderResult {
         let mut out = vec![];
 
@@ -588,7 +601,11 @@ impl ApiDocsRenderer {
             }
 
             let expr = self.render_schema(variant)?;
-            let mut section = vec![format!("### {}", code(expr.to_string()))];
+            let heading = match uni.get_variant_name(index) {
+                Some(name) => name.to_owned(),
+                None => expr.to_string(),
+            };
+            let mut section = vec![format!("### {}", code(heading))];
             let mut tags = vec![];
 
             if uni.default_index == Some(index) {

@@ -5,22 +5,37 @@ expression: pretty_body(container.impl_schematic_type())
 fn build_schema(mut schema: SchemaBuilder) -> Schema {
     schema
         .union(
-            UnionType::from_schemas(
+            UnionType::from_named_schemas(
                 [
-                    {
-                        let mut item = schema.infer::<String>();
-                        item.description = Some("Docs.".into());
-                        item
-                    },
-                    schema.infer::<Vec<String>>(),
-                    Schema::tuple(
-                        TupleType::new([schema.infer::<usize>(), schema.infer::<bool>()]),
+                    (
+                        "Text".into(),
+                        {
+                            let mut item = schema.infer::<String>();
+                            item.description = Some("Docs.".into());
+                            item
+                        },
                     ),
-                    schema.infer_as_nested::<NestedConfig>(),
-                    schema.infer_as_nested::<Option<NestedConfig>>(),
-                    schema.infer_as_nested::<Vec<NestedConfig>>(),
-                    schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
-                    Schema::null(),
+                    ("List".into(), schema.infer::<Vec<String>>()),
+                    (
+                        "Pair".into(),
+                        Schema::tuple(
+                            TupleType::new([
+                                schema.infer::<usize>(),
+                                schema.infer::<bool>(),
+                            ]),
+                        ),
+                    ),
+                    ("Inner".into(), schema.infer_as_nested::<NestedConfig>()),
+                    (
+                        "InnerOpt".into(),
+                        schema.infer_as_nested::<Option<NestedConfig>>(),
+                    ),
+                    ("InnerList".into(), schema.infer_as_nested::<Vec<NestedConfig>>()),
+                    (
+                        "InnerMap".into(),
+                        schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                    ),
+                    ("Unit".into(), Schema::null()),
                 ],
                 Some(2usize),
             ),

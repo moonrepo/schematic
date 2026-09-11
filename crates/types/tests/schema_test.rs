@@ -977,6 +977,32 @@ mod unions {
     }
 
     #[test]
+    fn from_named_schemas_carries_names_by_position() {
+        let ty = UnionType::from_named_schemas(
+            [
+                ("Text".to_owned(), Schema::string(StringType::default())),
+                ("Nothing".to_owned(), Schema::null()),
+            ],
+            Some(1),
+        );
+
+        assert_eq!(ty.default_index, Some(1));
+        assert_eq!(ty.variants_types.len(), 2);
+        assert_eq!(ty.get_variant_name(0), Some(&"Text".to_owned()));
+        assert_eq!(ty.get_variant_name(1), Some(&"Nothing".to_owned()));
+        assert_eq!(ty.get_variant_name(2), None);
+    }
+
+    // A union built by hand has no names, so lookups are simply empty
+    #[test]
+    fn unnamed_union_has_no_variant_names() {
+        let ty = UnionType::new_any(variants());
+
+        assert_eq!(ty.variants_names, None);
+        assert_eq!(ty.get_variant_name(0), None);
+    }
+
+    #[test]
     fn has_null_detects_a_null_variant() {
         assert!(UnionType::new_any(variants()).has_null());
         assert!(

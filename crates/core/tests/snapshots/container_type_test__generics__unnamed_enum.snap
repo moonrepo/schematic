@@ -90,12 +90,18 @@ impl<T> schematic::Schematic for Example<T> {
         use schematic::schema::*;
         schema
             .union(
-                UnionType::from_schemas(
+                UnionType::from_named_schemas(
                     [
-                        Schema::structure(
-                            StructType::new([("Value".into(), schema.infer::<T>())]),
+                        (
+                            "Value".into(),
+                            Schema::structure(
+                                StructType::new([("Value".into(), schema.infer::<T>())]),
+                            ),
                         ),
-                        Schema::literal_value(LiteralValue::String("Nothing".into())),
+                        (
+                            "Nothing".into(),
+                            Schema::literal_value(LiteralValue::String("Nothing".into())),
+                        ),
                     ],
                     Some(1usize),
                 ),
