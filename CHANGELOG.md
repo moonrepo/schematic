@@ -6,9 +6,10 @@
 
 - Restored `#[config(env_prefix)]` keys in `SchemaField.env_var` and `Config::settings()`, so they
   appear again as `@env` annotations in generated templates and TypeScript. The key is the
-  container's own prefix joined to the setting name, which is what the type reads on its own. A
-  parent's `#[setting(nested, env_prefix)]` override is applied at runtime and isn't reflected. A
-  setting that never reads the environment, like a collection without `parse_env`, reports no key.
+  container's own prefix joined to the setting name. A setting that never reads the environment,
+  like a collection without `parse_env`, reports no key.
+- Changed `#[setting(nested, env_prefix)]` to add a prefix instead of replacing the child's own.
+  This allows both environment variables to work together.
 
 ## 0.20.4
 

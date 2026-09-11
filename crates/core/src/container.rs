@@ -1143,21 +1143,24 @@ impl Container {
 
         let internal = ImplResult::impl_use_internal(true);
 
-        let prefix_fallback = if let Some(env_prefix) = &self.args.env_prefix {
+        // A prefix passed in by a parent is read alongside the container's
+        // own, rather than replacing it, so that the keys reported in the
+        // schema and `settings()` always work
+        let own_prefix = if let Some(env_prefix) = &self.args.env_prefix {
             if env_prefix.is_empty() {
                 panic!("Attribute `env_prefix` cannot be empty.");
             }
 
-            quote! { prefix.or(Some(#env_prefix)) }
+            quote! { Some(#env_prefix) }
         } else {
-            quote! { prefix }
+            quote! { None }
         };
 
         quote! {
             fn env_values_with_prefix(prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
 
-                let mut env = EnvManager::new(#prefix_fallback);
+                let mut env = EnvManager::new(prefix, #own_prefix);
                 let mut partial = Self::default();
 
                 #inner

@@ -44,7 +44,7 @@ impl schematic::PartialConfig for PartialExample {
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         use schematic::internal::*;
-        let mut env = EnvManager::new(prefix.or(Some("EXAMPLE_")));
+        let mut env = EnvManager::new(prefix, Some("EXAMPLE_"));
         let mut partial = Self::default();
         partial.enabled = env.get("ENABLED")?;
         partial.name = env.get_prefixed("NAME")?;

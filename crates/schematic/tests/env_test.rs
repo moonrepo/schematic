@@ -231,6 +231,75 @@ fn loads_from_prefixed() {
     assert_eq!(result.config.list2, vec![1, 2, 3]);
 }
 
+#[derive(Debug, Config)]
+pub struct EnvVarsOverridden {
+    #[setting(nested, env_prefix = "OVERRIDE_")]
+    nested: EnvVarsPrefixed,
+}
+
+#[test]
+#[serial]
+fn loads_parent_prefix() {
+    reset_vars();
+
+    unsafe {
+        env::set_var("OVERRIDE_STRING", "foo");
+        env::set_var("OVERRIDE_NUMBER", "123")
+    };
+
+    let result = ConfigLoader::<EnvVarsOverridden>::new().load();
+
+    unsafe {
+        env::remove_var("OVERRIDE_STRING");
+        env::remove_var("OVERRIDE_NUMBER")
+    };
+
+    let result = result.unwrap();
+
+    assert_eq!(result.config.nested.string, "foo");
+    assert_eq!(result.config.nested.number, 123);
+}
+
+#[test]
+#[serial]
+fn loads_own_prefix_under_parent_prefix() {
+    reset_vars();
+
+    unsafe {
+        env::set_var("ENV_STRING", "foo");
+        env::set_var("ENV_NUMBER", "123")
+    };
+
+    let result = ConfigLoader::<EnvVarsOverridden>::new().load().unwrap();
+
+    assert_eq!(result.config.nested.string, "foo");
+    assert_eq!(result.config.nested.number, 123);
+}
+
+#[test]
+#[serial]
+fn own_prefix_takes_precedence_over_parent_prefix() {
+    reset_vars();
+
+    unsafe {
+        env::set_var("ENV_STRING", "own");
+        env::set_var("OVERRIDE_STRING", "parent");
+        env::set_var("OVERRIDE_NUMBER", "1")
+    };
+
+    let result = ConfigLoader::<EnvVarsOverridden>::new().load();
+
+    unsafe {
+        env::remove_var("OVERRIDE_STRING");
+        env::remove_var("OVERRIDE_NUMBER")
+    };
+
+    let result = result.unwrap();
+
+    assert_eq!(result.config.nested.string, "own");
+    assert_eq!(result.config.nested.number, 1);
+}
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {

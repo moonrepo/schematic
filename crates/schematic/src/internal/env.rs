@@ -4,16 +4,24 @@ use std::str::FromStr;
 
 pub struct EnvManager {
     count: u8,
-    prefix: String,
+    /// Prefixes to apply to derived keys, in order of precedence. The
+    /// container's own prefix comes first, then the one a parent passed
+    /// in with `#[setting(nested, env_prefix)]`. The container's own must
+    /// win, because `finalize` re-reads the environment without a parent
+    /// in the picture, and that read is applied last.
+    prefixes: Vec<String>,
 }
 
 impl EnvManager {
-    pub fn new<T: AsRef<str>>(prefix: Option<T>) -> Self {
+    pub fn new<T: AsRef<str>>(override_prefix: Option<T>, prefix: Option<T>) -> Self {
         Self {
             count: 0,
-            prefix: prefix
+            prefixes: vec![override_prefix, prefix]
+                .into_iter()
+                .flatten()
                 .map(|pre| pre.as_ref().to_string())
-                .unwrap_or_default(),
+                .filter(|pre| !pre.is_empty())
+                .collect(),
         }
     }
 
@@ -37,26 +45,29 @@ impl EnvManager {
         self.read(key, parser)
     }
 
-    /// Get a variable using the key with the prefix applied.
+    /// Get a variable using the key with a prefix applied.
     /// For keys derived from setting names when using `env_prefix`.
     pub fn get_prefixed<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
         self.get_and_parse_prefixed(key, |value| parse_value(value).map(|v| Some(v)))
     }
 
-    /// Get and parse a variable using the key with the prefix applied.
+    /// Get and parse a variable using the key with a prefix applied. Each
+    /// prefix is tried in order, and the first variable found wins.
     /// For keys derived from setting names when using `env_prefix`.
     pub fn get_and_parse_prefixed<T>(
         &mut self,
         key: &str,
         parser: impl Fn(String) -> ParseEnvResult<T>,
     ) -> ParseEnvResult<T> {
-        // Derived keys are only applicable when a prefix is in effect,
-        // otherwise we'd be reading arbitrary variables like `PATH`
-        if self.prefix.is_empty() {
-            return Ok(None);
+        for index in 0..self.prefixes.len() {
+            let full_key = format!("{}{key}", self.prefixes[index]);
+
+            if let Some(value) = self.read(&full_key, &parser)? {
+                return Ok(Some(value));
+            }
         }
 
-        self.read(&format!("{}{key}", self.prefix), parser)
+        Ok(None)
     }
 
     fn read<T>(
