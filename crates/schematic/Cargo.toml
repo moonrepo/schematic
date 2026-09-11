@@ -31,7 +31,7 @@ garde = { version = "0.23.0", default-features = false, optional = true, feature
 ] }
 serde = { workspace = true }
 serde_path_to_error = { version = "0.1.20", optional = true }
-starbase_styles = { version = "0.6.9", optional = true }
+starbase_styles = { version = "0.6.10", optional = true }
 
 # settings
 regex = { workspace = true, optional = true }
