@@ -7,15 +7,19 @@
 - Added an `ApiDocsRenderer`, behind the `renderer_api_docs` feature, that renders a markdown API
   documentation page for a type. An index summarizes every property or variant, each is then
   described with tags, its comment, and a table of type information, and types referenced from the
-  page are linked to their own pages.
-  The `render_tags`, `render_description`, `render_link`, and `render_anchor` options take
-  functions that customize how tags, descriptions, links, and section fragments are rendered, `frontmatter` adds entries to each page's frontmatter, and
-  `enum_format` can render a unit enum's variants as one table. `ApiDocsRenderer::generate_all`
-  writes a page for every type in a generator into a directory, along with an index page.
+  page are linked to their own pages. The `render_tags`, `render_description`, `render_link`, and
+  `render_anchor` options take functions that customize how tags, descriptions, links, and section
+  fragments are rendered, `frontmatter` adds entries to each page's frontmatter, and `enum_format`
+  can render a unit enum's variants as one table. `ApiDocsRenderer::generate_all` writes a page for
+  every type in a generator into a directory, along with an index page.
 - Added `UnionType.variants_names`, which a union derived from an enum fills with the name of each
   variant, by position in `variants_types`. Read it through `UnionType::get_variant_name()`.
 - Re-adding a type to `SchemaGenerator` now moves it to the end, so that a type nested by an earlier
   one can still become the root of a single-document render.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
 
 ## 0.20.3
 
