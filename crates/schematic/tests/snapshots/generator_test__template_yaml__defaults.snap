@@ -66,6 +66,7 @@ one:
   # This is another nested field.
   two:
     # An optional string.
+    # @env ENV_PREFIX_OPT
     opt: ""
 
 # This is a string.

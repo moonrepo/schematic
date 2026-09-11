@@ -157,8 +157,8 @@ impl schematic::Config for Example {
         use schematic::ConfigSetting;
         std::collections::BTreeMap::from_iter([
             ("enabled".into(), ConfigSetting::new("bool").env("ENABLED")),
-            ("name".into(), ConfigSetting::new("String")),
-            ("port".into(), ConfigSetting::new("Option<u16>")),
+            ("name".into(), ConfigSetting::new("String").env("EXAMPLE_NAME")),
+            ("port".into(), ConfigSetting::new("Option<u16>").env("EXAMPLE_PORT")),
             (
                 "nested".into(),
                 ConfigSetting::new("NestedConfig").nested(NestedConfig::settings()),
@@ -211,6 +211,7 @@ impl schematic::Schematic for Example {
                                         String,
                                     >(LiteralValue::String("abc".into())),
                             );
+                            field.env_var = Some("EXAMPLE_NAME".into());
                             field.optional = true;
                             field
                         },
@@ -221,6 +222,7 @@ impl schematic::Schematic for Example {
                             let mut field = SchemaField::new(
                                 schema.infer::<Option<u16>>(),
                             );
+                            field.env_var = Some("EXAMPLE_PORT".into());
                             field.nullable = true;
                             field
                         },

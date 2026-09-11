@@ -280,9 +280,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   keys _derived_ from a setting name get the prefix, and only when the container declares
   `env_prefix`. Deriving keys for every container would force `FromStr` on every setting, which
   breaks `Duration`, tuples, etc. A parent's `#[setting(nested, env_prefix)]` therefore only
-  overrides a child that declares one. `settings()` reports explicit keys only, and so does
-  `SchemaField.env_var` — which is why a derived key no longer shows up as an `@env` annotation in
-  a rendered template, where the old derive emitted one.
+  overrides a child that declares one. `settings()` and `SchemaField.env_var` report a derived key
+  with the container's *own* prefix (`Field::get_env_var_name`), ignoring any parent override,
+  because the override is only known at runtime and downstream consumers (rendered templates,
+  TypeScript `@env` tags) need the base key. A setting that never reads the environment, like a
+  collection without `parse_env`, reports nothing.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
   `merge` to change it.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,

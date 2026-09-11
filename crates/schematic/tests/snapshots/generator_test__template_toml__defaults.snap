@@ -64,4 +64,5 @@ opt = ""
 # This is another nested field.
 [one.two]
 # An optional string.
+# @env ENV_PREFIX_OPT
 opt = ""

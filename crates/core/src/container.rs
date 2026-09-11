@@ -1,7 +1,7 @@
 use crate::args::{
     PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
 };
-use crate::field::{EnvKey, Field};
+use crate::field::Field;
 use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string, validate_case_format};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
@@ -413,11 +413,9 @@ impl Container {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
                     let name = field.get_name_or_index();
-                    // Only explicit keys are known statically, as derived
-                    // keys depend on the prefix in effect at runtime
-                    let env_key = match field.get_env_var() {
-                        Some(EnvKey::Explicit(value)) => quote! { .env(#value) },
-                        _ => quote! {},
+                    let env_key = match field.get_env_var_name() {
+                        Some(value) => quote! { .env(#value) },
+                        None => quote! {},
                     };
                     let nested = if field.is_nested() {
                         let value = field.value.get_inner_type();

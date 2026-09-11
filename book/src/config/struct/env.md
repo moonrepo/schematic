@@ -72,10 +72,11 @@ struct AppConfig {
 }
 ```
 
-> Derived keys aren't known when the [schema](../../schema/index.md) is built, since the prefix in
-> effect depends on how the type is nested at runtime. Only explicit `#[setting(env)]` keys appear
-> in a generated [config template](../../schema/generator/template.md) or in
-> [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings).
+> The override is applied at runtime, so it isn't reflected in the
+> [schema](../../schema/index.md). A derived key appears in a generated
+> [config template](../../schema/generator/template.md) and in
+> [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings)
+> with the child's own prefix, as that is what the type reads on its own.
 
 ## Parsing values
 

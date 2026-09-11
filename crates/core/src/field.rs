@@ -165,6 +165,29 @@ impl Field {
         None
     }
 
+    /// The variable a setting is read from, as far as it's known at derive
+    /// time. An explicit `env` key is used as-is. A key derived from the
+    /// setting name is joined to the container's `env_prefix`, which is what
+    /// the type reads on its own. A parent `#[setting(nested, env_prefix)]`
+    /// can swap that prefix at runtime, and that override isn't reflected.
+    ///
+    /// Nothing is reported for a setting that never reads the environment,
+    /// like a nested config, or a collection with a derived key.
+    pub fn get_env_var_name(&self) -> Option<String> {
+        if self.is_nested() || !self.value.supports_env_value(self.args.parse_env.is_some()) {
+            return None;
+        }
+
+        match self.get_env_var()? {
+            EnvKey::Explicit(key) => Some(key),
+            EnvKey::Derived(key) => self
+                .container_args
+                .env_prefix
+                .as_ref()
+                .map(|prefix| format!("{prefix}{key}")),
+        }
+    }
+
     pub fn get_key(&self) -> TokenStream {
         self.ident
             .as_ref()
@@ -489,9 +512,7 @@ impl Field {
             statements.push(quote! { field.deprecated = Some(#deprecated.into()); });
         }
 
-        // Only explicit keys are known statically, as derived
-        // keys depend on the prefix in effect at runtime
-        if let Some(EnvKey::Explicit(env_var)) = self.get_env_var() {
+        if let Some(env_var) = self.get_env_var_name() {
             statements.push(quote! { field.env_var = Some(#env_var.into()); });
         }
 
