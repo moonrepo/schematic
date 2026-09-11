@@ -8,6 +8,13 @@ title: AnotherConfig
 
 Some comment.
 
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`enums`](#enums) | [`BasicEnum`](./BasicEnum.md) | An optional enum. |
+| [`opt`](#opt) | `string` | An optional string. |
+
 ## Properties
 
 ### `enums`

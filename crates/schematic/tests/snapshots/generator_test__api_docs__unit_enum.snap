@@ -8,6 +8,14 @@ title: BasicEnum
 
 Docblock comment.
 
+## Index
+
+| Variant | Type | Description |
+| --- | --- | --- |
+| [`foo`](#foo) | `"foo"` |  |
+| [`bar`](#bar) | `"bar"` |  |
+| [`baz`](#baz) | `"baz"` |  |
+
 ## Variants
 
 ### `foo`

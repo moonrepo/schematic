@@ -8,6 +8,13 @@ title: Targets
 
 Either a list of targets, or a map of targets to paths.
 
+## Index
+
+| Variant | Type | Description |
+| --- | --- | --- |
+| [`List`](#list) | `string[]` | A list of targets. |
+| [`Map`](#map) | `Record<string, string>` | A map of targets. |
+
 ## Variants
 
 ### `List`

@@ -719,6 +719,23 @@ mod api_docs {
     }
 
     #[test]
+    fn without_index() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                include_index: false,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(!output.contains("## Index"));
+        assert!(output.contains("## Properties"));
+    }
+
+    #[test]
     fn custom_link_extension() {
         let mut generator = SchemaGenerator::default();
         generator.add::<DocsConfig>();

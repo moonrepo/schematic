@@ -5,8 +5,9 @@
 #### 🚀 Updates
 
 - Added an `ApiDocsRenderer`, behind the `renderer_api_docs` feature, that renders a markdown API
-  documentation page for a type. Each property or variant is described with tags, its comment, and
-  a table of type information, and types referenced from the page are linked to their own pages.
+  documentation page for a type. An index summarizes every property or variant, each is then
+  described with tags, its comment, and a table of type information, and types referenced from the
+  page are linked to their own pages.
   The `render_tags` and `render_description` options take functions that customize how tags and
   descriptions are rendered.
 - Added `UnionType.variants_names`, which a union derived from an enum fills with the name of each

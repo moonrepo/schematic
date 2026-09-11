@@ -44,10 +44,11 @@ the type they document.
 
 ## Page structure
 
-A page starts with front matter that titles it after the type, followed by the type's description.
-A struct then lists its properties, and an enum lists its variants, headed by the variant name. A
-union that was built by hand has no variant names, so each of its variants is headed by its type
-instead. Types that are referenced from the page are listed at the end.
+A page starts with front matter that titles it after the type, followed by the type's description,
+and an index that summarizes every section to come, linking to each. A struct then lists its
+properties, and an enum lists its variants, headed by the variant name. A union that was built by
+hand has no variant names, so each of its variants is headed by its type instead. Types that are
+referenced from the page are listed at the end.
 
 ```markdown
 ---
@@ -55,6 +56,13 @@ title: ServerConfig
 ---
 
 Configures the HTTP server.
+
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`port`](#port) | `number` | The port to listen on. |
+| [`tls`](#tls) | [`TlsConfig`](./TlsConfig.md) | TLS settings, when serving over HTTPS. |
 
 ## Properties
 
@@ -116,6 +124,18 @@ rather than the file may want bare links instead, which the `link_extension` opt
 ApiDocsOptions {
 	// ...
 	link_extension: "".into(),
+}
+```
+
+### Index
+
+The index ahead of the properties or variants shows each one's type and the first paragraph of its
+description. Disable it with the `include_index` option.
+
+```rust
+ApiDocsOptions {
+	// ...
+	include_index: false,
 }
 ```
 

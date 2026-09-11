@@ -11,6 +11,24 @@ A config that exercises everything the docs can describe.
 - With a list item.
 - And another.
 
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`boolean`](#boolean) | `boolean` | An optional boolean. |
+| [`duration`](#duration) | `{ nanos: number, secs: number }` | An inline struct. |
+| [`ident`](#ident) | `string` | A constrained string. |
+| [`level`](#level) | [`BasicEnum`](./BasicEnum.md) | An enum, which carries its own default. |
+| [`list`](#list) | [`AnotherConfig`](./AnotherConfig.md)`[]` | A list of nested configs. |
+| [`map`](#map) | `Record<string, `[`BasicEnum`](./BasicEnum.md)`>` | A map of enums. |
+| [`name`](#name) | `string` | A string with a default and aliases. |
+| [`nested`](#nested) | [`AnotherConfig`](./AnotherConfig.md) | An optional nested config. |
+| [`nullable_items`](#nullable_items) | `(`[`BasicEnum`](./BasicEnum.md)` \| null)[]` | A list of nullable enums. |
+| [`old_name`](#old_name) | `string` | A deprecated field, use `name` instead. |
+| [`pair`](#pair) | `[string, number]` | A tuple of values. |
+| [`port`](#port) | `number` | A constrained integer. |
+| [`targets`](#targets) | [`Targets`](./Targets.md) | A union of a list or a map. |
+
 ## Properties
 
 ### `boolean`

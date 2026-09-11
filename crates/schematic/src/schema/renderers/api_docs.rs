@@ -90,6 +90,10 @@ pub struct ApiDocsOptions {
     /// Exclude field aliases from being rendered.
     pub exclude_aliases: bool,
 
+    /// Render an index of all properties or variants, linking to each
+    /// section, ahead of the sections themselves.
+    pub include_index: bool,
+
     /// File extension appended to the name of a referenced type when linking
     /// to its page, such as `.md`. Set to an empty string to link to the bare
     /// name, for documentation tools that route on the file name.
@@ -112,6 +116,7 @@ impl Default for ApiDocsOptions {
     fn default() -> Self {
         Self {
             exclude_aliases: false,
+            include_index: true,
             link_extension: ".md".into(),
             mark_struct_fields_required: true,
             render_description: Box::new(default_description_renderer),
@@ -248,6 +253,38 @@ where
     V: AsRef<str>,
 {
     values.into_iter().map(code).collect::<Vec<_>>().join(", ")
+}
+
+/// The anchor a heading is linked by, following the GitHub convention that
+/// most renderers share: lowercased, punctuation removed, spaces hyphenated.
+fn anchor(heading: &str) -> String {
+    heading
+        .to_lowercase()
+        .chars()
+        .filter(|ch| ch.is_alphanumeric() || *ch == ' ' || *ch == '-' || *ch == '_')
+        .map(|ch| if ch == ' ' { '-' } else { ch })
+        .collect()
+}
+
+/// The first paragraph of a description on a single line, for a table cell.
+fn summarize(description: &str) -> String {
+    description
+        .trim()
+        .split("\n\n")
+        .next()
+        .unwrap_or_default()
+        .lines()
+        .map(|line| line.trim())
+        .collect::<Vec<_>>()
+        .join(" ")
+        .replace('|', "\\|")
+}
+
+/// A row of the index that heads a page.
+struct IndexRow {
+    name: String,
+    ty: String,
+    description: Option<String>,
 }
 
 /// Remove `null` from a nullable schema, so that nullability is reported once
@@ -479,13 +516,49 @@ impl ApiDocsRenderer {
         rows
     }
 
+    /// Render the index heading a page, one row per section, each linking to
+    /// the section it summarizes.
+    fn render_index(&self, kind: &str, rows: &[IndexRow]) -> Option<String> {
+        if !self.options.include_index || rows.is_empty() {
+            return None;
+        }
+
+        let mut out = vec![
+            "## Index".to_owned(),
+            String::new(),
+            format!("| {kind} | Type | Description |"),
+            "| --- | --- | --- |".to_owned(),
+        ];
+
+        for row in rows {
+            out.push(format!(
+                "| [{}](#{}) | {} | {} |",
+                code(&row.name),
+                anchor(&row.name),
+                row.ty,
+                row.description
+                    .as_deref()
+                    .map(summarize)
+                    .unwrap_or_default(),
+            ));
+        }
+
+        Some(out.join("\n"))
+    }
+
+    /// Render a field's type, without the `null` its nullable tag reports.
+    fn render_field_type(&mut self, field: &SchemaField) -> RenderResult {
+        let schema = strip_null(&field.schema);
+        let expr = self.render_schema(&schema)?;
+
+        Ok(self.render_type_expression(&expr))
+    }
+
     /// Render the table describing a field's type: its shape, default,
     /// accepted values, and constraints.
     fn render_field_table(&mut self, field: &SchemaField) -> RenderResult {
         let schema = strip_null(&field.schema);
-        let expr = self.render_schema(&schema)?;
-
-        let mut rows = vec![("Type", self.render_type_expression(&expr))];
+        let mut rows = vec![("Type", self.render_field_type(field)?)];
 
         if let Some(default) = field.schema.get_default() {
             rows.push(("Default", code(lit_to_string(default))));
@@ -563,23 +636,49 @@ impl ApiDocsRenderer {
     }
 
     fn render_struct_page(&mut self, structure: &StructType) -> RenderResult {
-        let mut out = vec![];
+        let mut index = vec![];
+        let mut sections = vec![];
 
         for (name, field) in structure.sorted_fields() {
             if field.hidden {
                 continue;
             }
 
-            out.push(self.render_property(name, field)?);
+            index.push(IndexRow {
+                name: name.to_owned(),
+                ty: self.render_field_type(field)?,
+                description: field.comment.clone(),
+            });
+
+            sections.push(self.render_property(name, field)?);
         }
 
-        if out.is_empty() {
-            return Ok(String::new());
+        Ok(self.assemble_sections("Property", "## Properties", index, sections))
+    }
+
+    /// Assemble a page body from its index and sections, which is empty when
+    /// there are no sections to list.
+    fn assemble_sections(
+        &self,
+        kind: &str,
+        heading: &str,
+        index: Vec<IndexRow>,
+        sections: Vec<String>,
+    ) -> String {
+        if sections.is_empty() {
+            return String::new();
         }
 
-        out.insert(0, "## Properties".to_owned());
+        let mut out = vec![];
 
-        Ok(out.join("\n\n"))
+        if let Some(index) = self.render_index(kind, &index) {
+            out.push(index);
+        }
+
+        out.push(heading.to_owned());
+        out.extend(sections);
+
+        out.join("\n\n")
     }
 
     fn render_variant(
@@ -634,68 +733,84 @@ impl ApiDocsRenderer {
     }
 
     fn render_enum_page(&mut self, enu: &EnumType) -> RenderResult {
-        let mut out = vec![];
-
-        match &enu.variants {
-            Some(variants) => {
-                for (index, (name, variant)) in variants.iter().enumerate() {
-                    if variant.hidden {
-                        continue;
-                    }
-
-                    out.push(self.render_variant(
-                        name,
-                        variant,
-                        enu.default_index == Some(index),
-                    )?);
-                }
-            }
-            None => {
-                for (index, value) in enu.values.iter().enumerate() {
+        // Variants without names are their values
+        let variants = match &enu.variants {
+            Some(variants) => variants
+                .iter()
+                .map(|(name, variant)| (name.to_owned(), (**variant).clone()))
+                .collect::<Vec<_>>(),
+            None => enu
+                .values
+                .iter()
+                .map(|value| {
                     let name = match value {
                         LiteralValue::String(inner) => inner.to_owned(),
                         other => other.to_string(),
                     };
 
-                    out.push(self.render_variant(
-                        &name,
-                        &SchemaField::new(Schema::literal_value(value.clone())),
-                        enu.default_index == Some(index),
-                    )?);
-                }
-            }
+                    (name, SchemaField::new(Schema::literal_value(value.clone())))
+                })
+                .collect(),
         };
 
-        if out.is_empty() {
-            return Ok(String::new());
+        let mut index = vec![];
+        let mut sections = vec![];
+
+        for (position, (name, variant)) in variants.iter().enumerate() {
+            if variant.hidden {
+                continue;
+            }
+
+            let expr = self.render_schema(&variant.schema)?;
+
+            index.push(IndexRow {
+                name: name.to_owned(),
+                ty: self.render_type_expression(&expr),
+                description: variant
+                    .comment
+                    .clone()
+                    .or_else(|| variant.schema.description.clone()),
+            });
+
+            sections.push(self.render_variant(
+                name,
+                variant,
+                enu.default_index == Some(position),
+            )?);
         }
 
-        out.insert(0, "## Variants".to_owned());
-
-        Ok(out.join("\n\n"))
+        Ok(self.assemble_sections("Variant", "## Variants", index, sections))
     }
 
     /// A page for a union, such as an untagged enum, which lists each variant.
     /// A variant is headed by its name when the union was derived from an
     /// enum, and by its type otherwise.
     fn render_union_page(&mut self, uni: &UnionType) -> RenderResult {
-        let mut out = vec![];
+        let mut index = vec![];
+        let mut sections = vec![];
 
-        for (index, variant) in uni.variants_types.iter().enumerate() {
+        for (position, variant) in uni.variants_types.iter().enumerate() {
             // Reported through the page's nullable tag instead
             if variant.is_null() {
                 continue;
             }
 
             let expr = self.render_schema(variant)?;
-            let heading = match uni.get_variant_name(index) {
+            let heading = match uni.get_variant_name(position) {
                 Some(name) => name.to_owned(),
                 None => expr.to_string(),
             };
+
+            index.push(IndexRow {
+                name: heading.clone(),
+                ty: self.render_type_expression(&expr),
+                description: variant.description.clone(),
+            });
+
             let mut section = vec![format!("### {}", code(heading))];
             let mut tags = vec![];
 
-            if uni.default_index == Some(index) {
+            if uni.default_index == Some(position) {
                 tags.push(ApiDocsTag::Default);
             }
 
@@ -729,16 +844,10 @@ impl ApiDocsRenderer {
 
             section.push(self.render_table(rows));
 
-            out.push(section.join("\n\n"));
+            sections.push(section.join("\n\n"));
         }
 
-        if out.is_empty() {
-            return Ok(String::new());
-        }
-
-        out.insert(0, "## Variants".to_owned());
-
-        Ok(out.join("\n\n"))
+        Ok(self.assemble_sections("Variant", "## Variants", index, sections))
     }
 
     /// A page for a type that is neither a struct, an enum, nor a union, such

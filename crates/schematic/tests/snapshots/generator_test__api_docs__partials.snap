@@ -8,6 +8,39 @@ title: PartialGenConfig
 
 > **Deprecated**
 
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`boolean`](#boolean) | `boolean` |  |
+| [`date`](#date) | `string` |  |
+| [`datetime`](#datetime) | `string` |  |
+| [`decimal`](#decimal) | `string` |  |
+| [`enums`](#enums) | [`BasicEnum`](./BasicEnum.md) | This is a list of `enumerable` values. |
+| [`fallback_enum`](#fallback_enum) | [`FallbackEnum`](./FallbackEnum.md) |  |
+| [`flattened`](#flattened) | `Record<string, unknown>` | Flattened field... |
+| [`float32`](#float32) | `number` |  |
+| [`float64`](#float64) | `number` |  |
+| [`indexmap`](#indexmap) | `Record<string, string>` |  |
+| [`indexset`](#indexset) | `string[]` |  |
+| [`json_value`](#json_value) | `unknown` |  |
+| [`map`](#map) | `Record<string, number>` |  |
+| [`nested`](#nested) | [`PartialAnotherConfig`](./PartialAnotherConfig.md) | **Nested** field. |
+| [`number`](#number) | `number` |  |
+| [`path`](#path) | `string` |  |
+| [`regex`](#regex) | `string` |  |
+| [`rel_path`](#rel_path) | `string` |  |
+| [`string`](#string) | `string` |  |
+| [`time`](#time) | `string` |  |
+| [`toml_value`](#toml_value) | `unknown` |  |
+| [`url`](#url) | `string` |  |
+| [`uuid`](#uuid) | `string` |  |
+| [`vector`](#vector) | `string[]` | This is a list of strings. |
+| [`version`](#version) | `string` |  |
+| [`version2`](#version2) | `string` |  |
+| [`version_req`](#version_req) | `string` |  |
+| [`yaml_value`](#yaml_value) | `unknown` |  |
+
 ## Properties
 
 ### `boolean`

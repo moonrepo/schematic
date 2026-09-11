@@ -6,6 +6,15 @@ expression: "generate(generator, ApiDocsOptions::default())"
 title: FallbackEnum
 ---
 
+## Index
+
+| Variant | Type | Description |
+| --- | --- | --- |
+| [`foo`](#foo) | `"foo"` |  |
+| [`bar`](#bar) | `"bar"` |  |
+| [`baz`](#baz) | `"baz"` |  |
+| [`other`](#other) | `string` |  |
+
 ## Variants
 
 ### `foo`
