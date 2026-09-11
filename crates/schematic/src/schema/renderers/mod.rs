@@ -1,3 +1,6 @@
+#[cfg(feature = "renderer_api_docs")]
+pub mod api_docs;
+
 #[cfg(feature = "renderer_json_schema")]
 pub mod json_schema;
 

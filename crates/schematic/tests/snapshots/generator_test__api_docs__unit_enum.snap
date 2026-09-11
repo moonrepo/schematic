@@ -1,0 +1,39 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions::default())"
+---
+---
+title: BasicEnum
+---
+
+Docblock comment.
+
+## Index
+
+| Variant | Type | Description |
+| --- | --- | --- |
+| [`foo`](#foo) | `"foo"` |  |
+| [`bar`](#bar) | `"bar"` |  |
+| [`baz`](#baz) | `"baz"` |  |
+
+## Variants
+
+### `foo`
+
+> **Default**
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"foo"` |
+
+### `bar`
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"bar"` |
+
+### `baz`
+
+| Attribute | Value |
+| --- | --- |
+| Value | `"baz"` |

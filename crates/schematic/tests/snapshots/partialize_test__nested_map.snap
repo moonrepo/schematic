@@ -77,6 +77,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -106,7 +107,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                            pattern: None,
 🟩                                                        },
 🟩                                                    ),
-🟩                                                },
+⬛️                                                },
 🟩                                                max_length: None,
 🟩                                                min_length: None,
 🟩                                                required: None,
@@ -133,6 +134,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                                                default_index: None,
 🟩                                                                                partial: false,
 🟩                                                                                operator: AnyOf,
+🟩                                                                                variants_names: None,
 🟩                                                                                variants_types: [
 🟩                                                                                    Schema {
 🟩                                                                                        deprecated: None,
@@ -175,7 +177,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                            required: None,
 🟩                                                        },
 🟩                                                    ),
-⬛️                                                },
+🟩                                                },
 ⬛️                                            },
 🟥                                            partial: true,
 🟥                                            required: None,
@@ -219,6 +221,7 @@ expression: "create_diff::<NestedMap>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: true,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -282,6 +285,7 @@ expression: "create_diff::<NestedMap>()"
 🟩                                                                                default_index: None,
 🟩                                                                                partial: false,
 🟩                                                                                operator: AnyOf,
+🟩                                                                                variants_names: None,
 🟩                                                                                variants_types: [
 🟩                                                                                    Schema {
 🟩                                                                                        deprecated: None,

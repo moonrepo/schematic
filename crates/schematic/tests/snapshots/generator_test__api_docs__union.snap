@@ -1,0 +1,34 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions::default())"
+---
+---
+title: Targets
+---
+
+Either a list of targets, or a map of targets to paths.
+
+## Index
+
+| Variant | Type | Description |
+| --- | --- | --- |
+| [`List`](#list) | `string[]` | A list of targets. |
+| [`Map`](#map) | `Record<string, string>` | A map of targets. |
+
+## Variants
+
+### `List`
+
+A list of targets.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string[]` |
+
+### `Map`
+
+A map of targets.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `Record<string, string>` |

@@ -35,7 +35,7 @@
     - [Unknown](./schema/unknown.md)
   - [External types](./schema/external.md)
   - [Code generation](./schema/generator/index.md)
-    - [API documentation]()
+    - [API documentation](./schema/generator/api-docs.md)
     - [Config templates](./schema/generator/template.md)
     - [JSON schemas](./schema/generator/json-schema.md)
     - [TypeScript types](./schema/generator/typescript.md)

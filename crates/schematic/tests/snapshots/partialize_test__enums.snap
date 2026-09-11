@@ -62,6 +62,7 @@ expression: "create_diff::<Enums>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -97,31 +98,6 @@ expression: "create_diff::<Enums>()"
 🟥                                                    LiteralType {
 🟥                                                        value: String(
 🟥                                                            "b",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
-🟥                                        "c": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        value: String(
-🟥                                                            "c",
 🟥                                                        ),
 🟩                                                values: [
 🟩                                                    String(
@@ -223,16 +199,41 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
+🟥                                        "c": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        value: String(
+🟥                                                            "c",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
 🟩                                        ),
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -261,6 +262,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -437,6 +439,7 @@ expression: "create_diff::<Enums>()"
 🟩                                default_index: None,
 🟩                                partial: false,
 🟩                                operator: AnyOf,
+🟩                                variants_names: None,
 🟩                                variants_types: [
 🟩                                    Schema {
 🟩                                        deprecated: None,
@@ -655,15 +658,15 @@ expression: "create_diff::<Enums>()"
 🟥                                            write_only: false,
 🟥                                        },
 🟩                                        ),
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -692,6 +695,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: false,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -865,6 +869,13 @@ expression: "create_diff::<Enums>()"
 🟥                                partial: true,
 🟩                                partial: false,
 ⬛️                                operator: AnyOf,
+🟥                                variants_names: Some(
+🟥                                    [
+🟥                                        "A",
+🟥                                        "B",
+🟥                                    ],
+🟥                                ),
+🟩                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -897,6 +908,12 @@ expression: "create_diff::<Enums>()"
 🟩                                                default_index: None,
 🟩                                                partial: true,
 🟩                                                operator: AnyOf,
+🟩                                                variants_names: Some(
+🟩                                                    [
+🟩                                                        "A",
+🟩                                                        "B",
+🟩                                                    ],
+🟩                                                ),
 🟩                                                variants_types: [
 🟩                                                    Schema {
 🟩                                                        deprecated: None,
@@ -1065,6 +1082,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                default_index: None,
 ⬛️                                partial: true,
 ⬛️                                operator: AnyOf,
+⬛️                                variants_names: None,
 ⬛️                                variants_types: [
 ⬛️                                    Schema {
 ⬛️                                        deprecated: None,
@@ -1079,6 +1097,12 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                default_index: None,
 ⬛️                                                partial: true,
 ⬛️                                                operator: AnyOf,
+⬛️                                                variants_names: Some(
+⬛️                                                    [
+⬛️                                                        "A",
+⬛️                                                        "B",
+⬛️                                                    ],
+⬛️                                                ),
 ⬛️                                                variants_types: [
 ⬛️                                                    Schema {
 ⬛️                                                        deprecated: None,

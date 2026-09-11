@@ -202,12 +202,12 @@ impl schematic::Schematic for Example {
         use schematic::schema::*;
         schema
             .union(
-                UnionType::from_schemas(
+                UnionType::from_named_schemas(
                     [
-                        schema.infer::<bool>(),
-                        schema.infer::<usize>(),
-                        schema.infer_as_nested::<NestedConfig>(),
-                        schema.infer_as_nested::<Vec<NestedConfig>>(),
+                        ("Bool".into(), schema.infer::<bool>()),
+                        ("Number".into(), schema.infer::<usize>()),
+                        ("Nested".into(), schema.infer_as_nested::<NestedConfig>()),
+                        ("List".into(), schema.infer_as_nested::<Vec<NestedConfig>>()),
                     ],
                     Some(0usize),
                 ),

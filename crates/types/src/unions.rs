@@ -22,6 +22,12 @@ pub struct UnionType {
 
     pub operator: UnionOperator,
 
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub variants_names: Option<Vec<String>>,
+
     pub variants_types: Vec<Box<Schema>>,
 }
 
@@ -59,6 +65,29 @@ impl UnionType {
 
     pub fn has_null(&self) -> bool {
         self.variants_types.iter().any(|schema| schema.ty.is_null())
+    }
+
+    pub fn get_variant_name(&self, index: usize) -> Option<&String> {
+        self.variants_names.as_ref()?.get(index)
+    }
+
+    #[doc(hidden)]
+    pub fn from_named_schemas<I, V>(variants: I, default_index: Option<usize>) -> Self
+    where
+        I: IntoIterator<Item = (String, V)>,
+        V: Into<Schema>,
+    {
+        let (variants_names, variants_types) = variants
+            .into_iter()
+            .map(|(name, inner)| (name, Box::new(inner.into())))
+            .unzip();
+
+        UnionType {
+            default_index,
+            variants_names: Some(variants_names),
+            variants_types,
+            ..UnionType::default()
+        }
     }
 
     #[doc(hidden)]

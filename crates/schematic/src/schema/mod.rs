@@ -7,6 +7,10 @@ pub use indexmap;
 pub use renderer::*;
 pub use schematic_types::*;
 
+/// Renders markdown API documentation.
+#[cfg(feature = "renderer_api_docs")]
+pub use renderers::api_docs::{self, *};
+
 /// Renders JSON schemas.
 #[cfg(feature = "renderer_json_schema")]
 pub use renderers::json_schema::{self, *};

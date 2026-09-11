@@ -22,6 +22,11 @@ pub struct SchemaGenerator {
 impl SchemaGenerator {
     /// Add a [`Schema`] to be rendered, derived from the provided [`Schematic`].
     ///
+    /// The last type added is what renderers that produce a single document
+    /// treat as the root. Adding a type that is already present, because an
+    /// earlier type nested it, moves it to the end so that it becomes the
+    /// root.
+    ///
     /// # Panics
     ///
     /// If another type has already been added under the same schema name.
@@ -43,6 +48,12 @@ impl SchemaGenerator {
         }
 
         self.add_schema(&schema);
+
+        if let Some(name) = &schema.name
+            && let Some(index) = self.schemas.get_index_of(name)
+        {
+            self.schemas.move_index(index, self.schemas.len() - 1);
+        }
     }
 
     /// Add an explicit [`Schema`] to be rendered, and recursively add any nested schemas.

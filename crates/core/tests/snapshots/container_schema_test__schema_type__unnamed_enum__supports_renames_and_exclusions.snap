@@ -5,16 +5,25 @@ expression: pretty_body(container.impl_schematic_type())
 fn build_schema(mut schema: SchemaBuilder) -> Schema {
     schema
         .union(
-            UnionType::from_schemas(
+            UnionType::from_named_schemas(
                 [
-                    Schema::structure(
-                        StructType::new([("text".into(), schema.infer::<String>())]),
+                    (
+                        "text".into(),
+                        Schema::structure(
+                            StructType::new([("text".into(), schema.infer::<String>())]),
+                        ),
                     ),
-                    Schema::structure(
-                        StructType::new([("number".into(), schema.infer::<usize>())]),
+                    (
+                        "number".into(),
+                        Schema::structure(
+                            StructType::new([("number".into(), schema.infer::<usize>())]),
+                        ),
                     ),
-                    Schema::structure(
-                        StructType::new([("Last".into(), schema.infer::<bool>())]),
+                    (
+                        "Last".into(),
+                        Schema::structure(
+                            StructType::new([("Last".into(), schema.infer::<bool>())]),
+                        ),
                     ),
                 ],
                 Some(2usize),

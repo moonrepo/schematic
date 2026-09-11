@@ -1,0 +1,16 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "fs::read_to_string(dir.join(\"index.md\")).unwrap()"
+---
+---
+title: Index
+---
+
+## Types
+
+| Type | Kind | Description |
+| --- | --- | --- |
+| [`AnotherConfig`](./AnotherConfig.md) | Struct | Some comment. |
+| [`BasicEnum`](./BasicEnum.md) | Enum | Docblock comment. |
+| [`FallbackEnum`](./FallbackEnum.md) | Enum |  |
+| [`GenConfig`](./GenConfig.md) | Struct |  |

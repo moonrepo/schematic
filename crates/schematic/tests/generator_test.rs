@@ -1,10 +1,10 @@
 #![allow(dead_code, deprecated)]
 
 use indexmap::{IndexMap, IndexSet};
-use schematic::schema::{SchemaGenerator, TemplateOptions};
+use schematic::schema::{IntegerKind, IntegerType, SchemaGenerator, StringType, TemplateOptions};
 use schematic::*;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::PathBuf;
 
@@ -144,6 +144,89 @@ struct TemplateConfig {
     expand_object: HashMap<String, AnotherConfig>,
     expand_object_primitive: HashMap<String, usize>,
     empty_object: HashMap<String, usize>,
+}
+
+/// A port number, constrained to the registered range.
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+struct Port(u16);
+
+impl Schematic for Port {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.integer(IntegerType {
+            kind: IntegerKind::U16,
+            min: Some(1024),
+            max: Some(49151),
+            ..IntegerType::default()
+        })
+    }
+}
+
+/// A short identifier.
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+struct Ident(String);
+
+impl Schematic for Ident {
+    fn build_schema(mut schema: SchemaBuilder) -> Schema {
+        schema.string(StringType {
+            max_length: Some(32),
+            min_length: Some(1),
+            pattern: Some("^[a-z][a-z0-9-]*$".into()),
+            ..StringType::default()
+        })
+    }
+}
+
+/// Either a list of targets, or a map of targets to paths.
+#[derive(Clone, Config)]
+#[serde(untagged)]
+enum Targets {
+    /// A list of targets.
+    List(Vec<String>),
+    /// A map of targets.
+    Map(HashMap<String, String>),
+}
+
+/// A config that exercises everything the docs can describe.
+///
+/// - With a list item.
+/// - And another.
+#[derive(Clone, Config)]
+struct DocsConfig {
+    /// A string with a default and aliases.
+    #[serde(alias = "label", alias = "title")]
+    #[setting(default = "hello", env = "DOCS_NAME")]
+    name: String,
+    /// A constrained integer.
+    port: Port,
+    /// A constrained string.
+    ident: Option<Ident>,
+    /// An optional nested config.
+    #[setting(nested)]
+    nested: Option<AnotherConfig>,
+    /// A list of nested configs.
+    #[setting(nested)]
+    list: Vec<AnotherConfig>,
+    /// A map of enums.
+    map: HashMap<String, BasicEnum>,
+    /// An enum, which carries its own default.
+    level: BasicEnum,
+    /// A deprecated field, use `name` instead.
+    #[deprecated = "Use `name` instead."]
+    old_name: Option<String>,
+    /// A tuple of values.
+    pair: (String, u32),
+    /// An inline struct.
+    duration: std::time::Duration,
+    /// A union of a list or a map.
+    #[setting(nested)]
+    targets: Targets,
+    /// A list of nullable enums.
+    nullable_items: Vec<Option<BasicEnum>>,
+    /// An optional boolean.
+    #[serde(default)]
+    boolean: bool,
+    #[setting(skip)]
+    hidden: String,
 }
 
 fn create_generator() -> SchemaGenerator {
@@ -535,6 +618,370 @@ mod typescript {
             indent_char: "  ".into(),
             ..TypeScriptOptions::default()
         }));
+    }
+}
+
+#[cfg(feature = "renderer_api_docs")]
+mod api_docs {
+    use super::*;
+    use schematic::schema::api_docs::*;
+
+    fn generate(generator: SchemaGenerator, options: ApiDocsOptions) -> String {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("docs.md");
+
+        generator
+            .generate(&file, ApiDocsRenderer::new(options))
+            .unwrap();
+
+        fs::read_to_string(file).unwrap()
+    }
+
+    #[test]
+    fn defaults() {
+        assert_snapshot!(generate(create_generator(), ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn partials() {
+        let mut generator = create_generator();
+        generator.add::<PartialGenConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn all_field_shapes() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn template_config() {
+        assert_snapshot!(generate(
+            create_template_generator(),
+            ApiDocsOptions::default()
+        ));
+    }
+
+    #[test]
+    fn unit_enum() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<BasicEnum>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn fallback_enum() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<FallbackEnum>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn enum_table() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<FallbackEnum>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    // The table format only applies to unit enums, as union variants carry
+    // values that need a section to describe
+    #[test]
+    fn enum_table_leaves_unions_as_sections() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<Targets>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("## Index"));
+        assert!(output.contains("### `List`"));
+    }
+
+    #[test]
+    fn union() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<Targets>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    // A type nested by an earlier one is already in the generator, so adding
+    // it again has to make it the page that renders.
+    #[test]
+    fn readded_nested_type_becomes_the_page() {
+        let mut generator = create_generator();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(generator, ApiDocsOptions::default());
+
+        assert!(output.starts_with("---\ntitle: AnotherConfig\n---"));
+        assert_snapshot!(output);
+    }
+
+    #[test]
+    fn without_required_or_aliases() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                exclude_aliases: true,
+                mark_struct_fields_required: false,
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    #[test]
+    fn custom_frontmatter() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                frontmatter: BTreeMap::from_iter([
+                    ("sidebar_position".to_owned(), "2".to_owned()),
+                    ("description".to_owned(), "\"Another: config\"".to_owned()),
+                ]),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.starts_with(
+            "---\ntitle: AnotherConfig\ndescription: \"Another: config\"\nsidebar_position: 2\n---\n\nSome comment."
+        ));
+    }
+
+    #[test]
+    fn frontmatter_title_overrides_the_type_name() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                frontmatter: BTreeMap::from_iter([("title".to_owned(), "Another".to_owned())]),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.starts_with("---\ntitle: Another\n---\n"));
+        assert!(!output.contains("title: AnotherConfig"));
+    }
+
+    #[test]
+    fn without_index() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                include_index: false,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(!output.contains("## Index"));
+        assert!(output.contains("## Properties"));
+    }
+
+    // A documentation tool that ids headings its own way needs the index
+    // links to follow it
+    #[test]
+    fn custom_anchors() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                render_anchor: Box::new(|heading| format!("prop-{}", heading.replace('_', "-"))),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("| [`nullable_items`](#prop-nullable-items) |"));
+        assert!(!output.contains("](#nullable_items)"));
+    }
+
+    // The same function shapes inline links and the references list
+    #[test]
+    fn custom_links() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                render_link: Box::new(|name| {
+                    format!("<Link to=\"/docs/config/{name}\">{name}</Link>")
+                }),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(
+            output.contains(
+                "| Type | <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link> |"
+            )
+        );
+        assert!(output.contains("- <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link>"));
+        // A composite type stays one code span, and links its references beside it
+        assert!(output.contains(
+            "| Type | `AnotherConfig[]` |\n| References | <Link to=\"/docs/config/AnotherConfig\">AnotherConfig</Link> |"
+        ));
+        assert!(!output.contains(".md"));
+    }
+
+    #[test]
+    fn custom_tags_and_description() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocsConfig>();
+
+        assert_snapshot!(generate(
+            generator,
+            ApiDocsOptions {
+                render_tags: Box::new(|tags| {
+                    tags.iter()
+                        .map(|tag| match tag {
+                            ApiDocsTag::Deprecated(Some(message)) => {
+                                format!("<Badge>{tag}</Badge> {message}")
+                            }
+                            _ => format!("<Badge>{tag}</Badge>"),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                }),
+                render_description: Box::new(|description| {
+                    format!(":::note\n{}\n:::", description.trim())
+                }),
+                ..ApiDocsOptions::default()
+            }
+        ));
+    }
+
+    // An empty result from either function omits that block, rather than
+    // leaving a blank line where it would have been
+    #[test]
+    fn empty_tags_and_description_are_omitted() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AnotherConfig>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                render_tags: Box::new(|_| String::new()),
+                render_description: Box::new(|_| String::new()),
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(!output.contains("Nullable"));
+        assert!(!output.contains("Some comment."));
+        assert!(!output.contains("\n\n\n"));
+        assert!(output.contains("### `enums`\n\n| Attribute | Value |"));
+    }
+
+    #[test]
+    fn generate_all_writes_every_page_and_an_index() {
+        let sandbox = create_empty_sandbox();
+        let dir = sandbox.path().join("docs");
+
+        ApiDocsRenderer::default()
+            .generate_all(&create_generator(), &dir)
+            .unwrap();
+
+        let mut files = fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect::<Vec<_>>();
+        files.sort();
+
+        assert_eq!(
+            files,
+            vec![
+                "AnotherConfig.md",
+                "BasicEnum.md",
+                "FallbackEnum.md",
+                "GenConfig.md",
+                "index.md",
+            ]
+        );
+
+        // A page is the same as the one a single generate renders
+        let single = generate(create_generator(), ApiDocsOptions::default());
+
+        assert_eq!(
+            fs::read_to_string(dir.join("GenConfig.md")).unwrap(),
+            single
+        );
+        assert!(
+            fs::read_to_string(dir.join("AnotherConfig.md"))
+                .unwrap()
+                .starts_with("---\ntitle: AnotherConfig\n---")
+        );
+
+        assert_snapshot!(fs::read_to_string(dir.join("index.md")).unwrap());
+    }
+
+    #[test]
+    fn generate_all_without_index_page() {
+        let sandbox = create_empty_sandbox();
+        let dir = sandbox.path().join("docs");
+
+        ApiDocsRenderer::new(ApiDocsOptions {
+            index_page: None,
+            ..ApiDocsOptions::default()
+        })
+        .generate_all(&create_generator(), &dir)
+        .unwrap();
+
+        assert!(!dir.join("index.md").exists());
+        assert!(dir.join("GenConfig.md").exists());
+    }
+
+    #[test]
+    fn generate_all_errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+
+        let error = ApiDocsRenderer::default()
+            .generate_all(&SchemaGenerator::default(), sandbox.path().join("docs"))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
+    }
+
+    #[test]
+    fn errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("docs.md");
+
+        let error = SchemaGenerator::default()
+            .generate(&file, ApiDocsRenderer::default())
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
     }
 }
 
