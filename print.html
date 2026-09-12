@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-99cd6189.js";
+            window.path_to_searchindex_js = "searchindex-0182a076.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-44c352f9.js"></script>
@@ -605,9 +605,9 @@ It returns a map keyed by the serde name of each setting, or by position for unn
 <p>Each entry carries the setting’s <code>type_alias</code> (the Rust type as written), its <code>env_key</code>, and a
 <code>nested</code> map when the setting holds another <a href="#nesting">nested config</a>.</p>
 <blockquote>
-<p>Only an explicit <code>#[setting(env)]</code> populates <code>env_key</code>. A key derived from an
-<a href="#container-prefixes"><code>env_prefix</code></a> depends on the prefix in effect at runtime, so
-it isn’t known here.</p>
+<p>A key derived from an <a href="#container-prefixes"><code>env_prefix</code></a> is reported with the
+container’s own prefix. A parent’s <code>#[setting(nested, env_prefix)]</code> override is applied at
+runtime, so it isn’t reflected here.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="generics"><a class="header" href="#generics">Generics</a></h1>
@@ -990,7 +990,7 @@ struct AppConfig {
 	pub server: AppServerConfig,
 }
 <span class="boring">}</span></code></pre>
-<p>A parent can override the prefix a nested child uses, with <code>env_prefix</code> on the field itself. The
+<p>A parent can add a prefix for a nested child to read, with <code>env_prefix</code> on the field itself. The
 child must still declare an <code>env_prefix</code> of its own, as that is what opts its fields into being
 derived at all.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -1002,10 +1002,11 @@ struct AppConfig {
 }
 <span class="boring">}</span></code></pre>
 <blockquote>
-<p>Derived keys aren’t known when the <a href="#schemas">schema</a> is built, since the prefix in
-effect depends on how the type is nested at runtime. Only explicit <code>#[setting(env)]</code> keys appear
-in a generated <a href="#config-templates-experimental">config template</a> or in
-<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings"><code>Config::settings()</code></a>.</p>
+<p>The parent’s prefix is only known at runtime, so it isn’t reflected in the
+<a href="#schemas">schema</a>. A derived key appears in a generated
+<a href="#config-templates-experimental">config template</a> and in
+<a href="https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings"><code>Config::settings()</code></a>
+with the child’s own prefix, which always works.</p>
 </blockquote>
 <h2 id="parsing-values"><a class="header" href="#parsing-values">Parsing values</a></h2>
 <p>We also support parsing environment variables into the required type. For example, the variable may

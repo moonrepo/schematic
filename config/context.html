@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-99cd6189.js";
+            window.path_to_searchindex_js = "../searchindex-0182a076.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-44c352f9.js"></script>
@@ -241,9 +241,9 @@ It returns a map keyed by the serde name of each setting, or by position for unn
 <p>Each entry carries the setting’s <code>type_alias</code> (the Rust type as written), its <code>env_key</code>, and a
 <code>nested</code> map when the setting holds another <a href="./nested.html">nested config</a>.</p>
 <blockquote>
-<p>Only an explicit <code>#[setting(env)]</code> populates <code>env_key</code>. A key derived from an
-<a href="./struct/env.html#container-prefixes"><code>env_prefix</code></a> depends on the prefix in effect at runtime, so
-it isn’t known here.</p>
+<p>A key derived from an <a href="./struct/env.html#container-prefixes"><code>env_prefix</code></a> is reported with the
+container’s own prefix. A parent’s <code>#[setting(nested, env_prefix)]</code> override is applied at
+runtime, so it isn’t reflected here.</p>
 </blockquote>
 
                     </main>
