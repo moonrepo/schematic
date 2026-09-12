@@ -286,7 +286,9 @@ impl Field {
     /// container applies to every field, so it counts the same as one declared
     /// on the field itself.
     pub fn is_optional(&self) -> bool {
-        self.args.default.is_some() || self.serde_args.default || self.serde_container_args.default
+        self.args.default.is_some()
+            || self.serde_args.default.is_enabled()
+            || self.serde_container_args.default.is_enabled()
     }
 
     pub fn is_required(&self) -> bool {

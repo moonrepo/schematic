@@ -66,7 +66,7 @@ mod container {
             struct Example {}
         });
 
-        assert!(container.serde_args.default);
+        assert!(container.serde_args.default.is_enabled());
         assert!(container.serde_args.deny_unknown_fields);
     }
 

@@ -113,6 +113,34 @@ mod setting_serde {
                 "value"
             );
         }
+
+        #[test]
+        fn default() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(default)]
+                    a: String,
+                }
+            });
+            let field = container.inner.get_fields()[0];
+
+            assert!(field.serde_args.default.is_enabled());
+        }
+
+        #[test]
+        fn default_func() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(default = "default_value")]
+                    a: String,
+                }
+            });
+            let field = container.inner.get_fields()[0];
+
+            assert!(field.serde_args.default.is_enabled());
+        }
     }
 
     mod setting {

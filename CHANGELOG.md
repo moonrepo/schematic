@@ -11,6 +11,10 @@
 - Changed `#[setting(nested, env_prefix)]` to add a prefix instead of replacing the child's own.
   This allows both environment variables to work together.
 
+#### 🐞 Fixes
+
+- Fixed `#[serde(default = "func")]` not being parsed correctly.
+
 ## 0.20.4
 
 #### 🚀 Updates

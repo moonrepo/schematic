@@ -83,7 +83,7 @@ mod serde_container {
         })
         .unwrap();
 
-        assert!(container.default);
+        assert!(container.default.is_enabled());
         assert!(container.deny_unknown_fields);
     }
 
