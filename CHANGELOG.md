@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Restored `#[config(env_prefix)]` keys in `SchemaField.env_var` and `Config::settings()`, so they
+  appear again as `@env` annotations in generated templates and TypeScript. The key is the
+  container's own prefix joined to the setting name. A setting that never reads the environment,
+  like a collection without `parse_env`, reports no key.
+- Changed `#[setting(nested, env_prefix)]` to add a prefix instead of replacing the child's own.
+  This allows both environment variables to work together.
+
+#### 🐞 Fixes
+
+- Fixed `#[serde(default = "func")]` not being parsed correctly.
+
 ## 0.20.4
 
 #### 🚀 Updates

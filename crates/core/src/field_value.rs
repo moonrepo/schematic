@@ -195,10 +195,7 @@ impl FieldValue {
         // is bare or wrapped in a single `Option`, as other layers and
         // collections cannot be parsed from a string. Unless a `parse_env`
         // function is provided, which handles the conversion itself.
-        let layers = self.get_partial_layers();
-        let supported = field_args.parse_env.is_some()
-            || layers.is_empty()
-            || (layers.len() == 1 && self.is_outer_option_wrapped());
+        let supported = self.supports_env_value(field_args.parse_env.is_some());
 
         if let Some(nested_ident) = &self.nested_ident {
             if !supported {

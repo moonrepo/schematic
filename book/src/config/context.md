@@ -68,6 +68,6 @@ for (name, setting) in ExampleConfig::settings() {
 Each entry carries the setting's `type_alias` (the Rust type as written), its `env_key`, and a
 `nested` map when the setting holds another [nested config](./nested.md).
 
-> Only an explicit `#[setting(env)]` populates `env_key`. A key derived from an
-> [`env_prefix`](./struct/env.md#container-prefixes) depends on the prefix in effect at runtime, so
-> it isn't known here.
+> A key derived from an [`env_prefix`](./struct/env.md#container-prefixes) is reported with the
+> container's own prefix. A parent's `#[setting(nested, env_prefix)]` override is applied at
+> runtime, so it isn't reflected here.

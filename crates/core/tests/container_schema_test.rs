@@ -116,7 +116,7 @@ mod schema_type {
                     b: HashMap<String, String>,
                     #[setting(skip)]
                     c: usize,
-                    // Derived env keys are not statically known
+                    // Derived from the container prefix
                     d: usize,
                     #[setting(exclude)]
                     e: usize,

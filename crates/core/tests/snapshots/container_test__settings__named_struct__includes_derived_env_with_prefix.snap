@@ -5,10 +5,17 @@ expression: pretty(container.impl_full_settings())
 fn settings() -> schematic::ConfigSettingMap {
     use schematic::ConfigSetting;
     std::collections::BTreeMap::from_iter([
-        ("a".into(), ConfigSetting::new("String")),
+        ("a".into(), ConfigSetting::new("String").env("PREFIX_A")),
         ("b".into(), ConfigSetting::new("i32").env("B_VAR")),
         (
             "c".into(),
+            ConfigSetting::new("NestedExample").nested(NestedExample::settings()),
+        ),
+        ("d".into(), ConfigSetting::new("Vec<String>")),
+        ("e".into(), ConfigSetting::new("Vec<String>").env("PREFIX_E")),
+        ("eff".into(), ConfigSetting::new("Option<bool>").env("PREFIX_EFF")),
+        (
+            "g".into(),
             ConfigSetting::new("NestedExample").nested(NestedExample::settings()),
         ),
     ])

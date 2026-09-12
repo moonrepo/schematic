@@ -1,7 +1,7 @@
 use crate::args::{
     PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
 };
-use crate::field::{EnvKey, Field};
+use crate::field::Field;
 use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string, validate_case_format};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
@@ -413,11 +413,9 @@ impl Container {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
                     let name = field.get_name_or_index();
-                    // Only explicit keys are known statically, as derived
-                    // keys depend on the prefix in effect at runtime
-                    let env_key = match field.get_env_var() {
-                        Some(EnvKey::Explicit(value)) => quote! { .env(#value) },
-                        _ => quote! {},
+                    let env_key = match field.get_env_var_name() {
+                        Some(value) => quote! { .env(#value) },
+                        None => quote! {},
                     };
                     let nested = if field.is_nested() {
                         let value = field.value.get_inner_type();
@@ -1145,21 +1143,24 @@ impl Container {
 
         let internal = ImplResult::impl_use_internal(true);
 
-        let prefix_fallback = if let Some(env_prefix) = &self.args.env_prefix {
+        // A prefix passed in by a parent is read alongside the container's
+        // own, rather than replacing it, so that the keys reported in the
+        // schema and `settings()` always work
+        let own_prefix = if let Some(env_prefix) = &self.args.env_prefix {
             if env_prefix.is_empty() {
                 panic!("Attribute `env_prefix` cannot be empty.");
             }
 
-            quote! { prefix.or(Some(#env_prefix)) }
+            quote! { Some(#env_prefix) }
         } else {
-            quote! { prefix }
+            quote! { None }
         };
 
         quote! {
             fn env_values_with_prefix(prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
 
-                let mut env = EnvManager::new(#prefix_fallback);
+                let mut env = EnvManager::new(prefix, #own_prefix);
                 let mut partial = Self::default();
 
                 #inner

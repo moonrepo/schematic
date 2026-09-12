@@ -149,6 +149,15 @@ impl Value {
         self.layers.iter().any(|layer| layer.is_collection())
     }
 
+    /// Whether a value can be sourced from the environment. Only a bare
+    /// type, or one wrapped in a single `Option`, can be parsed from a
+    /// string, unless a `parse_env` function handles the conversion itself.
+    pub fn supports_env_value(&self, has_parse_env: bool) -> bool {
+        let layers = self.get_partial_layers();
+
+        has_parse_env || layers.is_empty() || (layers.len() == 1 && self.is_outer_option_wrapped())
+    }
+
     /// Whether the partial's outermost layer is an `Option`, in which case
     /// it doubles as the partial's own optionality.
     pub fn is_outer_option_wrapped(&self) -> bool {

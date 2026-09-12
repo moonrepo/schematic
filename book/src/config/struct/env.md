@@ -60,7 +60,7 @@ struct AppConfig {
 }
 ```
 
-A parent can override the prefix a nested child uses, with `env_prefix` on the field itself. The
+A parent can add a prefix for a nested child to read, with `env_prefix` on the field itself. The
 child must still declare an `env_prefix` of its own, as that is what opts its fields into being
 derived at all.
 
@@ -72,10 +72,11 @@ struct AppConfig {
 }
 ```
 
-> Derived keys aren't known when the [schema](../../schema/index.md) is built, since the prefix in
-> effect depends on how the type is nested at runtime. Only explicit `#[setting(env)]` keys appear
-> in a generated [config template](../../schema/generator/template.md) or in
-> [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings).
+> The parent's prefix is only known at runtime, so it isn't reflected in the
+> [schema](../../schema/index.md). A derived key appears in a generated
+> [config template](../../schema/generator/template.md) and in
+> [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings)
+> with the child's own prefix, which always works.
 
 ## Parsing values
 

@@ -280,9 +280,16 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   keys _derived_ from a setting name get the prefix, and only when the container declares
   `env_prefix`. Deriving keys for every container would force `FromStr` on every setting, which
   breaks `Duration`, tuples, etc. A parent's `#[setting(nested, env_prefix)]` therefore only
-  overrides a child that declares one. `settings()` reports explicit keys only, and so does
-  `SchemaField.env_var` — which is why a derived key no longer shows up as an `@env` annotation in
-  a rendered template, where the old derive emitted one.
+  applies to a child that declares one, and it *adds* a prefix rather than replacing the child's.
+  `EnvManager` reads the child's own prefix first and the parent's second, and that order is not
+  negotiable: the generated `finalize` re-reads `Self::env_values()` with no parent prefix and
+  merges it last, so a parent-first order would be silently undone whenever both variables are set.
+  (That is exactly what the old replace-the-prefix design did.) Making the parent win would need
+  the prefix threaded through `finalize`, which the maintainer rejected as new API. `settings()`
+  and `SchemaField.env_var` report the derived key with the container's *own* prefix
+  (`Field::get_env_var_name`), because the parent's is only known at runtime and the own key always
+  works. A setting that never reads the environment, like a collection without `parse_env`, reports
+  nothing.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
   `merge` to change it.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,

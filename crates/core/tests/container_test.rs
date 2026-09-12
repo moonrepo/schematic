@@ -66,7 +66,7 @@ mod container {
             struct Example {}
         });
 
-        assert!(container.serde_args.default);
+        assert!(container.serde_args.default.is_enabled());
         assert!(container.serde_args.deny_unknown_fields);
     }
 
@@ -165,7 +165,7 @@ mod settings {
         }
 
         #[test]
-        fn only_includes_explicit_env() {
+        fn includes_derived_env_with_prefix() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 #[config(env_prefix = "PREFIX_")]
@@ -175,6 +175,15 @@ mod settings {
                     b: i32,
                     #[setting(nested)]
                     c: NestedExample,
+                    // Never read from the environment, so no key
+                    d: Vec<String>,
+                    #[setting(parse_env = schematic::env::split_comma)]
+                    e: Vec<String>,
+                    #[setting(rename = "eff")]
+                    f: Option<bool>,
+                    // A nested override doesn't change the child's own keys
+                    #[setting(nested, env_prefix = "OVERRIDE_")]
+                    g: NestedExample,
                 }
             });
 

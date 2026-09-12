@@ -94,7 +94,7 @@ impl SerdeRenameArg {
 #[derive(Debug, Default, FromDeriveInput)]
 #[darling(default, allow_unknown_fields, attributes(serde))]
 pub struct SerdeContainerArgs {
-    pub default: bool,
+    pub default: SerdeDefaultArg,
     pub deny_unknown_fields: bool,
 
     // struct
@@ -115,7 +115,7 @@ pub struct SerdeContainerArgs {
 pub struct SerdeFieldArgs {
     #[darling(multiple)]
     pub alias: Vec<String>,
-    pub default: bool,
+    pub default: SerdeDefaultArg,
     pub flatten: bool,
     pub rename: Option<SerdeRenameArg>,
     pub skip: bool,
@@ -127,6 +127,45 @@ pub struct SerdeFieldArgs {
     // variant
     pub other: bool,
     pub untagged: bool,
+}
+
+// #[serde(default)]
+#[derive(Debug)]
+pub enum SerdeDefaultArg {
+    Bool(bool),
+    Func(String),
+}
+
+impl SerdeDefaultArg {
+    pub fn is_enabled(&self) -> bool {
+        match self {
+            SerdeDefaultArg::Bool(value) => *value,
+            SerdeDefaultArg::Func(_) => true,
+        }
+    }
+}
+
+impl Default for SerdeDefaultArg {
+    fn default() -> Self {
+        Self::Bool(false)
+    }
+}
+
+impl FromMeta for SerdeDefaultArg {
+    // #[setting(nested)]
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self::Bool(true))
+    }
+
+    // #[setting(nested = true)]
+    fn from_bool(value: bool) -> darling::Result<Self> {
+        Ok(Self::Bool(value))
+    }
+
+    // #[setting(nested = NestedConfig)]
+    fn from_string(value: &str) -> darling::Result<Self> {
+        Ok(Self::Func(value.to_string()))
+    }
 }
 
 // #[config(partial(derive(Other), serde(another)))]
