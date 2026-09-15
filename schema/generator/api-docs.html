@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0182a076.js";
+            window.path_to_searchindex_js = "../../searchindex-d8231b42.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-44c352f9.js"></script>
@@ -212,6 +212,19 @@ extension, along with an <a href="#index-page">index page</a>.</p>
 generator.add::&lt;RootConfig&gt;();
 
 ApiDocsRenderer::default().generate_all(&amp;generator, output_dir.join("config"))?;
+<span class="boring">}</span></code></pre>
+<p>The <code>file_extension</code> option changes the extension, for tools that expect another, such as MDX.
+Links are rendered separately, so pair it with a <a href="#custom-links"><code>render_link</code></a> that points at the
+same files, and an <code>index_page</code> if the index should match.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ApiDocsRenderer::new(ApiDocsOptions {
+	file_extension: "mdx".into(),
+	index_page: Some("index.mdx".into()),
+	render_link: Box::new(|name| format!("[`{name}`](./{name}.mdx)")),
+	..ApiDocsOptions::default()
+})
+.generate_all(&amp;generator, output_dir.join("config"))?;
 <span class="boring">}</span></code></pre>
 <p>To control each page individually, generate them one at a time. Adding a type that is already in
 the generator, because an earlier type nested it, moves it to the end, so add each one before
