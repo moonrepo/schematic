@@ -138,6 +138,11 @@ pub struct ApiDocsOptions {
     /// Exclude field aliases from being rendered.
     pub exclude_aliases: bool,
 
+    /// File extension of each type's page, written by
+    /// [`ApiDocsRenderer::generate_all`], without the leading dot. Links are
+    /// rendered separately, so a custom `render_link` should agree with it.
+    pub file_extension: String,
+
     /// Additional frontmatter entries, written as `key: value` lines after
     /// the title, in key order. Values are written verbatim, so quote them
     /// as the consuming tool expects. A `title` entry replaces the type name.
@@ -177,6 +182,7 @@ impl Default for ApiDocsOptions {
         Self {
             enum_format: ApiDocsEnumFormat::default(),
             exclude_aliases: false,
+            file_extension: "md".into(),
             frontmatter: BTreeMap::new(),
             include_index: true,
             index_page: Some("index.md".into()),
@@ -425,8 +431,8 @@ impl ApiDocsRenderer {
     }
 
     /// Render a page for every schema in the generator into the directory,
-    /// each named after its type with a `.md` extension, along with the
-    /// index page. Every schema is known to every page, so references link
+    /// each named after its type with the `file_extension` option, along with
+    /// the index page. Every schema is known to every page, so references link
     /// to each other the same as they do through [`SchemaGenerator::generate`].
     pub fn generate_all<P: AsRef<Path>>(
         &mut self,
@@ -449,8 +455,17 @@ impl ApiDocsRenderer {
             fs::write(output_dir.join(file_name), output).into_diagnostic()
         };
 
+        let extension = self
+            .options
+            .file_extension
+            .trim_start_matches('.')
+            .to_owned();
+
         for name in schemas.keys() {
-            write(format!("{name}.md"), self.render_page_of(schemas, name)?)?;
+            write(
+                format!("{name}.{extension}"),
+                self.render_page_of(schemas, name)?,
+            )?;
         }
 
         if let Some(index_page) = self.options.index_page.clone() {

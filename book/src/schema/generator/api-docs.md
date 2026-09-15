@@ -39,6 +39,20 @@ generator.add::<RootConfig>();
 ApiDocsRenderer::default().generate_all(&generator, output_dir.join("config"))?;
 ```
 
+The `file_extension` option changes the extension, for tools that expect another, such as MDX.
+Links are rendered separately, so pair it with a [`render_link`](#custom-links) that points at the
+same files, and an `index_page` if the index should match.
+
+```rust
+ApiDocsRenderer::new(ApiDocsOptions {
+	file_extension: "mdx".into(),
+	index_page: Some("index.mdx".into()),
+	render_link: Box::new(|name| format!("[`{name}`](./{name}.mdx)")),
+	..ApiDocsOptions::default()
+})
+.generate_all(&generator, output_dir.join("config"))?;
+```
+
 To control each page individually, generate them one at a time. Adding a type that is already in
 the generator, because an earlier type nested it, moves it to the end, so add each one before
 generating its file.

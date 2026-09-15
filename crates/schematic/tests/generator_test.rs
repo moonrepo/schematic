@@ -962,6 +962,24 @@ mod api_docs {
     }
 
     #[test]
+    fn generate_all_with_custom_file_extension() {
+        let sandbox = create_empty_sandbox();
+        let dir = sandbox.path().join("docs");
+
+        ApiDocsRenderer::new(ApiDocsOptions {
+            file_extension: ".mdx".into(),
+            index_page: Some("index.mdx".into()),
+            ..ApiDocsOptions::default()
+        })
+        .generate_all(&create_generator(), &dir)
+        .unwrap();
+
+        assert!(dir.join("GenConfig.mdx").exists());
+        assert!(dir.join("index.mdx").exists());
+        assert!(!dir.join("GenConfig.md").exists());
+    }
+
+    #[test]
     fn generate_all_errors_without_schemas() {
         let sandbox = create_empty_sandbox();
 

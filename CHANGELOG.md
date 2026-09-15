@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `ApiDocsOptions.file_extension` option, which sets the extension of each page written by
+  `ApiDocsRenderer::generate_all`. Defaults to `md`.
+
 ## 0.20.5
 
 #### 🚀 Updates
