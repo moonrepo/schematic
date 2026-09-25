@@ -13,6 +13,17 @@
   `PklSchemaRenderer::generate_all` writes every module into a directory, and the
   `mark_struct_fields_required` option renders every property as nullable, so that a config only
   outputs the settings it sets.
+- When the header of a `PklTemplateRenderer` amends or extends a module, lists and maps amend their
+  declared values instead, so that a template can amend the modules of `PklSchemaRenderer`.
+
+#### 🐞 Fixes
+
+- Fixed `PklTemplateRenderer` rendering Pkl that couldn't be evaluated. The module is no longer
+  wrapped in braces, comments use `//`, list items are created with `new`, lists and maps use
+  `new Listing {}` and `new Mapping {}`, property names are quoted when they aren't identifiers, and
+  strings are escaped. Floats keep their fraction, 2-tuples render as a `Pair`, and a `Duration` as
+  `0.s`. A commented out field comments out every line of its value, and the header is always
+  included, so that it can hold an `amends` clause.
 
 ## 0.20.6
 

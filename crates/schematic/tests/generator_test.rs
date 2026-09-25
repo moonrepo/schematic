@@ -431,6 +431,66 @@ mod template_json {
 mod template_pkl {
     use super::*;
     use schematic::schema::*;
+    use std::path::Path;
+    use std::time::Duration;
+
+    #[derive(Clone, Config)]
+    struct ValuesConfig {
+        #[setting(rename = "class")]
+        class_name: String,
+        #[setting(rename = "kebab-case")]
+        kebab_case: String,
+        output: Option<String>,
+        #[setting(default = "quote \" and \\(interpolation)")]
+        escaped: String,
+        #[setting(default = 1.0)]
+        float: f64,
+        pair: (String, u32),
+        triple: (String, u32, bool),
+        duration: Duration,
+        #[setting(nested)]
+        maybe: Option<AnotherConfig>,
+    }
+
+    fn write_template(
+        generator: &SchemaGenerator,
+        dir: &Path,
+        options: TemplateOptions,
+    ) -> PathBuf {
+        let file = dir.join("config.pkl");
+
+        generator
+            .generate(&file, PklTemplateRenderer::new(options))
+            .unwrap();
+
+        file
+    }
+
+    fn load<T: Config>(file: PathBuf) -> T {
+        ConfigLoader::<T>::new()
+            .file(file)
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    fn create_values_generator() -> SchemaGenerator {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<ValuesConfig>();
+        generator
+    }
+
+    fn assert_values(config: ValuesConfig) {
+        assert_eq!(config.class_name, "");
+        assert_eq!(config.kebab_case, "");
+        assert_eq!(config.escaped, "quote \" and \\(interpolation)");
+        assert_eq!(config.float, 1.0);
+        assert_eq!(config.pair, ("".into(), 0));
+        assert_eq!(config.triple, ("".into(), 0, false));
+        assert_eq!(config.duration, Duration::ZERO);
+        assert_eq!(config.maybe.unwrap().opt, Some("".into()));
+    }
 
     #[test]
     fn defaults() {
@@ -442,6 +502,198 @@ mod template_pkl {
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
+    #[test]
+    fn loads_the_template() {
+        let sandbox = create_empty_sandbox();
+
+        let config: TemplateConfig = load(write_template(
+            &create_template_generator(),
+            sandbox.path(),
+            create_template_options(),
+        ));
+
+        assert_eq!(config.string, "abc");
+        assert_eq!(config.float64, 1.23);
+        assert_eq!(config.expand_array.len(), 1);
+        assert_eq!(config.expand_array_primitive, vec![0]);
+        assert!(config.expand_object.contains_key("example"));
+        assert_eq!(config.expand_object_primitive.get("example"), Some(&0));
+        assert_eq!(config.nested.opt, Some("".into()));
+        assert!(config.vector.is_empty());
+    }
+
+    // Names that aren't identifiers are quoted, strings escaped, and floats
+    // keep their fraction, while tuples and durations use Pkl's own types
+    #[test]
+    fn renders_values_as_pkl() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_values_generator(),
+            sandbox.path(),
+            TemplateOptions::default(),
+        );
+        let output = fs::read_to_string(&file).unwrap();
+
+        assert!(output.contains("`class` = \"\""));
+        assert!(output.contains("`kebab-case` = \"\""));
+        assert!(output.contains("escaped = \"quote \\\" and \\\\(interpolation)\""));
+        assert!(output.contains("float = 1.0"));
+        assert!(output.contains("pair = Pair(\"\", 0)"));
+        assert!(output.contains("triple = new Listing {"));
+        assert!(output.contains("duration = 0.s"));
+        assert!(output.contains("maybe {"));
+        assert!(output.contains("// The `output` setting cannot be set"));
+
+        assert_values(load(file));
+    }
+
+    // Commenting out a field that spans several lines has to comment out every
+    // one of them, or the rest would still be read
+    #[test]
+    fn comments_out_every_line_of_a_field() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_template_generator(),
+            sandbox.path(),
+            TemplateOptions {
+                comment_fields: vec!["nested".into()],
+                ..TemplateOptions::default()
+            },
+        );
+        let output = fs::read_to_string(&file).unwrap();
+
+        assert!(output.contains("// nested {\n//   // An optional enum.\n//   enums = \"foo\""));
+        assert!(output.contains("\n// }\n"));
+
+        let config: TemplateConfig = load(file);
+
+        assert_eq!(config.nested.opt, None);
+    }
+
+    // An amends clause isn't a comment, so it's kept when comments aren't
+    #[test]
+    fn keeps_the_header_without_comments() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_values_generator(),
+            sandbox.path(),
+            TemplateOptions {
+                comments: false,
+                header: "amends \"ValuesConfig.pkl\"\n\n".into(),
+                ..TemplateOptions::default()
+            },
+        );
+
+        assert!(
+            fs::read_to_string(file)
+                .unwrap()
+                .starts_with("amends \"ValuesConfig.pkl\"\n\n")
+        );
+    }
+
+    // The template amends the modules of its own types, which type every
+    // property, so the two renderers have to agree
+    #[cfg(feature = "renderer_pkl_schema")]
+    mod amending_modules {
+        use super::*;
+
+        fn create_amending_options(module: &str) -> TemplateOptions {
+            TemplateOptions {
+                header: format!("amends \"{module}.pkl\"\n\n"),
+                ..create_template_options()
+            }
+        }
+
+        fn write_modules(generator: &SchemaGenerator, dir: &Path, options: PklSchemaOptions) {
+            PklSchemaRenderer::new(options)
+                .generate_all(generator, dir)
+                .unwrap();
+        }
+
+        // Lists and maps amend the values the modules declare, which gives
+        // the objects within them their declared type
+        #[test]
+        fn amends_lists_and_maps() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_template_generator();
+
+            write_modules(
+                &generator,
+                sandbox.path(),
+                PklSchemaOptions {
+                    mark_struct_fields_required: false,
+                    ..PklSchemaOptions::default()
+                },
+            );
+
+            let file = write_template(
+                &generator,
+                sandbox.path(),
+                create_amending_options("TemplateConfig"),
+            );
+
+            assert_snapshot!(fs::read_to_string(&file).unwrap());
+
+            let config: TemplateConfig = load(file);
+
+            assert_eq!(config.string, "abc");
+            assert_eq!(config.expand_array.len(), 1);
+            assert_eq!(config.expand_array[0].opt, Some("".into()));
+            assert_eq!(config.expand_array_primitive, vec![0]);
+            assert_eq!(
+                config.expand_object.get("example").unwrap().opt,
+                Some("".into())
+            );
+            assert_eq!(config.nested.opt, Some("".into()));
+            assert!(config.vector.is_empty());
+        }
+
+        // A template that sets every field satisfies the modules' required
+        // properties too
+        #[test]
+        fn amends_modules_with_required_fields() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_template_generator();
+
+            write_modules(&generator, sandbox.path(), PklSchemaOptions::default());
+
+            let file = write_template(
+                &generator,
+                sandbox.path(),
+                TemplateOptions {
+                    comment_fields: vec![],
+                    hide_fields: vec![],
+                    ..create_amending_options("TemplateConfig")
+                },
+            );
+
+            let config: TemplateConfig = load(file);
+
+            assert_eq!(config.expand_array.len(), 1);
+            assert_eq!(config.float32, 0.0);
+        }
+
+        #[test]
+        fn amends_values() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_values_generator();
+
+            write_modules(&generator, sandbox.path(), PklSchemaOptions::default());
+
+            assert_values(load(write_template(
+                &generator,
+                sandbox.path(),
+                TemplateOptions {
+                    header: "amends \"ValuesConfig.pkl\"\n\n".into(),
+                    ..TemplateOptions::default()
+                },
+            )));
+        }
     }
 }
 

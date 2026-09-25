@@ -1,14 +1,16 @@
 ---
 source: crates/schematic/tests/generator_test.rs
-expression: "fs::read_to_string(file).unwrap()"
+expression: "fs::read_to_string(&file).unwrap()"
 ---
+amends "TemplateConfig.pkl"
+
 // This is a boolean with a medium length description.
 // @env TEMPLATE_BOOLEAN
 boolean = false
 
-empty_array = new Listing {}
+empty_array {}
 
-empty_object = new Mapping {}
+empty_object {}
 
 // This is an enum with a medium length description and deprecated.
 // @deprecated Dont use enums!
@@ -16,7 +18,7 @@ empty_object = new Mapping {}
 enums = "foo"
 
 // This field is testing array expansion.
-expand_array = new Listing {
+expand_array {
   new {
     // An optional enum.
     enums = "foo"
@@ -26,12 +28,12 @@ expand_array = new Listing {
   }
 }
 
-expand_array_primitive = new Listing {
+expand_array_primitive {
   0
 }
 
 // This field is testing object expansion.
-expand_object = new Mapping {
+expand_object {
   ["example"] {
     // An optional enum.
     enums = "foo"
@@ -41,7 +43,7 @@ expand_object = new Mapping {
   }
 }
 
-expand_object_primitive = new Mapping {
+expand_object_primitive {
   ["example"] = 0
 }
 
@@ -56,7 +58,7 @@ fallback_enum = "foo"
 float64 = 1.23
 
 // This is a map of numbers.
-// map = new Mapping {}
+// map {}
 
 // This is a nested struct with its own fields.
 nested {
@@ -85,4 +87,4 @@ one {
 string = "abc"
 
 // This is a list of strings.
-vector = new Listing {}
+vector {}

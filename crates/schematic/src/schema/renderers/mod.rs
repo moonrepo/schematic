@@ -10,6 +10,12 @@ pub mod json_template;
 #[cfg(all(feature = "renderer_template", feature = "json"))]
 pub mod jsonc_template;
 
+#[cfg(any(
+    feature = "renderer_pkl_schema",
+    all(feature = "renderer_template", feature = "pkl")
+))]
+mod pkl;
+
 #[cfg(feature = "renderer_pkl_schema")]
 pub mod pkl_schema;
 

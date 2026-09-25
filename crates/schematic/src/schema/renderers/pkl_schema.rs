@@ -1,3 +1,4 @@
+use super::pkl::*;
 use crate::schema::{RenderResult, SchemaGenerator, SchemaRenderer};
 use convert_case::{Case, Casing};
 use indexmap::IndexMap;
@@ -8,53 +9,6 @@ use std::fmt;
 use std::fs;
 use std::mem;
 use std::path::Path;
-
-/// Words that Pkl reserves, which have to be quoted with backticks to be used
-/// as an identifier.
-const KEYWORDS: [&str; 42] = [
-    "abstract",
-    "amends",
-    "as",
-    "case",
-    "class",
-    "const",
-    "delete",
-    "else",
-    "extends",
-    "external",
-    "false",
-    "fixed",
-    "for",
-    "function",
-    "hidden",
-    "if",
-    "import",
-    "in",
-    "is",
-    "let",
-    "local",
-    "module",
-    "new",
-    "nothing",
-    "null",
-    "open",
-    "out",
-    "outer",
-    "override",
-    "protected",
-    "read",
-    "record",
-    "super",
-    "switch",
-    "this",
-    "throw",
-    "trace",
-    "true",
-    "typealias",
-    "unknown",
-    "vararg",
-    "when",
-];
 
 /// Types from Pkl's base module that rendered types refer to. An import or a
 /// class with one of these names would shadow it for the whole module.
@@ -219,42 +173,6 @@ fn bound_constraints(
     constraints
 }
 
-/// Render a float so that Pkl reads it as a `Float`, which requires a
-/// fraction or an exponent. `1` is an `Int`, and fails a `Float` type check.
-fn format_float(value: impl fmt::Debug) -> String {
-    let value = format!("{value:?}");
-
-    match value.as_str() {
-        "NaN" => value,
-        "inf" => "Infinity".into(),
-        "-inf" => "-Infinity".into(),
-        _ if value.contains(['.', 'e', 'E']) => value,
-        _ => format!("{value}.0"),
-    }
-}
-
-/// Render a string literal, escaping everything that would otherwise end it,
-/// or begin an escape or an interpolation.
-fn quote_string(value: &str) -> String {
-    let mut out = String::with_capacity(value.len() + 2);
-    out.push('"');
-
-    for ch in value.chars() {
-        match ch {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            ch if ch.is_control() => out.push_str(&format!("\\u{{{:x}}}", ch as u32)),
-            ch => out.push(ch),
-        };
-    }
-
-    out.push('"');
-    out
-}
-
 /// Render a regex pattern as a custom delimited string, in which backslashes
 /// are literal, so that the pattern reads as written.
 fn quote_pattern(pattern: &str) -> String {
@@ -273,64 +191,12 @@ fn quote_pattern(pattern: &str) -> String {
     format!("{pounds}\"{pattern}\"{pounds}")
 }
 
-/// Quote an identifier with backticks when it is not a legal one, such as a
-/// keyword, or a name that contains a hyphen.
-fn quote_identifier(name: &str) -> String {
-    let mut chars = name.chars();
-
-    let legal = chars
-        .next()
-        .is_some_and(|ch| ch.is_alphabetic() || ch == '_' || ch == '$')
-        && chars.all(|ch| ch.is_alphanumeric() || ch == '_' || ch == '$')
-        && name != "_"
-        && !KEYWORDS.contains(&name);
-
-    if legal {
-        name.to_owned()
-    } else {
-        format!("`{name}`")
-    }
-}
-
 /// Convert a field or variant name into a part of a class name.
 fn to_class_part(name: &str) -> String {
     name.to_case(Case::Pascal)
         .chars()
         .filter(|ch| ch.is_alphanumeric() || *ch == '_')
         .collect()
-}
-
-/// Remove `null` from a nullable schema that has a single other variant.
-fn unwrap_nullable(schema: &Schema) -> &Schema {
-    if let SchemaType::Union(uni) = &schema.ty
-        && uni.has_null()
-    {
-        let mut variants = uni
-            .variants_types
-            .iter()
-            .filter(|variant| !variant.is_null());
-
-        if let (Some(variant), None) = (variants.next(), variants.next()) {
-            return unwrap_nullable(variant);
-        }
-    }
-
-    schema
-}
-
-/// Return true if the struct is the shape of a `std::time::Duration`, which
-/// serde encodes as seconds and nanoseconds. A Pkl `Duration` is decoded into
-/// that same shape, so the native type can be used instead.
-fn is_duration(structure: &StructType) -> bool {
-    let has_field = |name: &str, kind: IntegerKind| {
-        structure.fields.get(name).is_some_and(|field| {
-            matches!(&unwrap_nullable(&field.schema).ty, SchemaType::Integer(integer) if integer.kind == kind)
-        })
-    };
-
-    structure.fields.len() == 2
-        && has_field("secs", IntegerKind::U64)
-        && has_field("nanos", IntegerKind::U32)
 }
 
 /// How a struct's module inherits the struct it flattens.

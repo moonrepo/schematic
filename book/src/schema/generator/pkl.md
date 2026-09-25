@@ -33,6 +33,9 @@ timeout = 30.s
 tags { "web"; "api" }
 ```
 
+To scaffold that config, render a [Pkl template](./template.md#pkl) with an `amends` clause in its
+header.
+
 Like a [JSON schema](./json-schema.md), rendering through `SchemaGenerator::generate()` produces a
 single document, which is the module of the _last type to be added to `SchemaGenerator`_. The
 modules it imports are not written, so prefer `generate_all()`.

@@ -59,6 +59,22 @@ PklTemplateRenderer::default();
 PklTemplateRenderer::new(TemplateOptions::default());
 ```
 
+A template can amend the [Pkl modules](./pkl.md) of its types, so that Pkl type checks it, by
+adding an `amends` clause to the `header` option. The modules then type every property, so lists and
+maps amend the values they're declared with, as in `tags { "web" }`, which gives the objects within
+them their declared type. Without one, lists and maps are created with `new Listing {}` and
+`new Mapping {}`.
+
+```rust
+PklTemplateRenderer::new(TemplateOptions {
+	header: "amends \"pkl/ServerConfig.pkl\"\n\n".into(),
+	..TemplateOptions::default()
+});
+```
+
+A module with required fields expects the template to set them, so render the modules with
+`mark_struct_fields_required` disabled when fields are hidden or commented out.
+
 ### TOML
 
 The
@@ -156,11 +172,11 @@ Would render the following formats:
 <td>
 
 ```pkl
-# The base URL to serve from.
+// The base URL to serve from.
 base_url = "/"
 
-# The default port to listen on.
-# @env PORT
+// The default port to listen on.
+// @env PORT
 port = 8080
 ```
 
