@@ -9,8 +9,7 @@ impl<'de, T> serde::Deserialize<'de> for PartialExample<T> {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = deserializer
-            .deserialize_any(schematic::serde_content::ValueVisitor)?;
+        let content = schematic::internal::buffer_untagged_content(deserializer)?;
         let mut errors: Vec<(&str, String)> = Vec::new();
         match <T as serde::Deserialize>::deserialize(
             schematic::serde_content::Deserializer::new(content.clone())
@@ -20,14 +19,10 @@ impl<'de, T> serde::Deserialize<'de> for PartialExample<T> {
             Ok(value) => return Ok(PartialExample::Value(value)),
             Err(error) => errors.push(("Value", error.to_string())),
         }
-        match <() as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
-            Ok(_) => return Ok(PartialExample::Nothing),
-            Err(error) => errors.push(("Nothing", error.to_string())),
+        if schematic::internal::is_null_content(&content) {
+            return Ok(PartialExample::Nothing);
         }
+        errors.push(("Nothing", "expected null".to_owned()));
         let mut message = format!(
             "failed to parse as any variant of {}:", stringify!(PartialExample)
         );

@@ -7,4 +7,4 @@ expression: "render_type::<Targets>()"
 module Targets
 
 /// Either a list of targets, or a map of targets to paths.
-typealias Targets = Listing<String>|Mapping<String, String>
+typealias Targets = Listing<String> | List<String> | Set<String> | Mapping<String, String> | Map<String, String>

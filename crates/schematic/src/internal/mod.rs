@@ -14,6 +14,51 @@ use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialC
 use schematic_types::Schema;
 use std::str::FromStr;
 
+// UNTAGGED ENUMS
+
+/// Buffer the content of an untagged enum, so that each of its variants can
+/// attempt to deserialize it. A format reports `null` as a unit, which
+/// `serde_content` deserializes as a present value, failing every `Option`
+/// within a variant, so a unit is buffered as none instead. Serde's own
+/// buffering does the same.
+pub fn buffer_untagged_content<'de, D>(
+    deserializer: D,
+) -> Result<serde_content::Value<'de>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde_content::Value;
+
+    fn nullify(value: Value<'_>) -> Value<'_> {
+        match value {
+            Value::Unit => Value::Option(None),
+            Value::Map(entries) => Value::Map(
+                entries
+                    .into_iter()
+                    .map(|(key, value)| (key, nullify(value)))
+                    .collect(),
+            ),
+            Value::Option(Some(inner)) => Value::Option(Some(Box::new(nullify(*inner)))),
+            Value::Seq(items) => Value::Seq(items.into_iter().map(nullify).collect()),
+            Value::Tuple(items) => Value::Tuple(items.into_iter().map(nullify).collect()),
+            other => other,
+        }
+    }
+
+    deserializer
+        .deserialize_any(serde_content::ValueVisitor)
+        .map(nullify)
+}
+
+/// Return true if the buffered content of an untagged enum is `null`, which a
+/// unit variant is represented as.
+pub fn is_null_content(content: &serde_content::Value<'_>) -> bool {
+    matches!(
+        content,
+        serde_content::Value::Unit | serde_content::Value::Option(None)
+    )
+}
+
 // CASING
 
 /// Normalize a string into the provided case, using the same format names as

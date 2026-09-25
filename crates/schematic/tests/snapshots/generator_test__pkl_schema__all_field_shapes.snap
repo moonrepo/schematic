@@ -27,10 +27,10 @@ ident: String(length.isBetween(1, 32), matches(Regex(#"^[a-z][a-z0-9-]*$"#)))?
 level: BasicEnum.BasicEnum
 
 /// A list of nested configs.
-list: Listing<AnotherConfig>
+list: *Listing<AnotherConfig> | List<AnotherConfig> | Set<AnotherConfig>
 
 /// A map of enums.
-map: Mapping<String, BasicEnum.BasicEnum>
+map: *Mapping<String, BasicEnum.BasicEnum> | Map<String, BasicEnum.BasicEnum>
 
 /// A string with a default and aliases.
 name: String = "hello"
@@ -39,7 +39,7 @@ name: String = "hello"
 nested: AnotherConfig?
 
 /// A list of nullable enums.
-nullable_items: Listing<BasicEnum.BasicEnum?>
+nullable_items: *Listing<BasicEnum.BasicEnum?> | List<BasicEnum.BasicEnum?> | Set<BasicEnum.BasicEnum?>
 
 /// A deprecated field, use `name` instead.
 @Deprecated { message = "Use `name` instead." }

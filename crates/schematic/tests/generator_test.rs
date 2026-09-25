@@ -1644,7 +1644,9 @@ mod pkl_schema {
         let output = render_type::<TreeConfig>();
 
         assert!(output.contains("import \"TreeConfig.pkl\""));
-        assert!(output.contains("children: Listing<TreeConfig>"));
+        assert!(
+            output.contains("children: *Listing<TreeConfig> | List<TreeConfig> | Set<TreeConfig>")
+        );
     }
 
     // Pkl rejects a type alias that refers to itself
@@ -1708,7 +1710,12 @@ mod pkl_schema {
         pub struct ServerConfig {
             #[setting(default = 8080)]
             port: u16,
+            #[setting(alias = "hostname")]
             host: Option<String>,
+            env: Option<HashMap<String, String>>,
+            affected: Option<ServerAffected>,
+            #[setting(nested)]
+            plugin: Option<ServerPluginConfig>,
             timeout: Option<Duration>,
             pair: Option<(String, u32)>,
             tags: Vec<String>,
@@ -1739,6 +1746,39 @@ mod pkl_schema {
         pub enum ServerTargets {
             List(Vec<String>),
             Map(HashMap<String, String>),
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+        pub struct ServerAffectedConfig {
+            #[serde(default)]
+            filter: Vec<String>,
+            flag: Option<bool>,
+            pass: String,
+        }
+
+        // Held by a setting that isn't nested, so it's deserialized in full
+        #[derive(Clone, Config, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+        #[serde(untagged)]
+        pub enum ServerAffected {
+            Enabled(bool),
+            #[setting(nested)]
+            Object(ServerAffectedConfig),
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        #[config(allow_unknown_fields)]
+        pub struct ServerPluginConfig {
+            version: Option<String>,
+            #[setting(flatten)]
+            config: HashMap<String, serde_json::Value>,
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        #[config(allow_unknown_fields)]
+        pub struct ServerPluginsConfig {
+            proto: Option<String>,
+            #[setting(flatten)]
+            plugins: HashMap<String, serde_json::Value>,
         }
 
         fn write_modules(dir: &Path, options: PklSchemaOptions) {
@@ -1850,6 +1890,178 @@ shared = "custom"
                 .unwrap();
 
             assert!(format!("{error:?}").contains("UInt16"));
+        }
+
+        fn write_layer_modules(dir: &Path) {
+            write_modules(
+                dir,
+                PklSchemaOptions {
+                    mark_struct_fields_required: false,
+                    ..PklSchemaOptions::default()
+                },
+            );
+        }
+
+        // A config may use the eager types of Pkl as well, which can be
+        // concatenated, unlike the amendable ones
+        #[test]
+        fn loads_lists_maps_and_sets() {
+            let sandbox = create_empty_sandbox();
+
+            write_layer_modules(sandbox.path());
+
+            let config = load(
+                sandbox.path(),
+                r#"
+tags = List("a") + List("b")
+labels = Map("x", "y")
+targets = Set("one", "two")
+env { ["KEY"] = "value" }
+"#,
+            );
+
+            assert_eq!(config.tags, vec!["a".to_owned(), "b".to_owned()]);
+            assert_eq!(
+                config.labels,
+                HashMap::from_iter([("x".to_owned(), "y".to_owned())])
+            );
+            assert_eq!(
+                config.targets,
+                Some(ServerTargets::List(vec!["one".into(), "two".into()]))
+            );
+            assert_eq!(
+                config.env,
+                Some(HashMap::from_iter([("KEY".to_owned(), "value".to_owned())]))
+            );
+        }
+
+        // An alias is hidden, so that serde doesn't receive both names, which
+        // it rejects as a duplicate, and the setting falls back to it
+        #[test]
+        fn falls_back_to_an_alias() {
+            let sandbox = create_empty_sandbox();
+
+            write_layer_modules(sandbox.path());
+
+            assert!(
+                fs::read_to_string(sandbox.path().join("ServerConfig.pkl"))
+                    .unwrap()
+                    .contains("host: String? = hostname\n\n/// An alias of `host`.\nhidden hostname: String?")
+            );
+
+            let config = load(sandbox.path(), r#"hostname = "localhost""#);
+
+            assert_eq!(config.host, Some("localhost".into()));
+        }
+
+        // A setting that isn't nested holds a full type, which can't take null
+        // for what isn't optional, so its module keeps the declared types
+        #[test]
+        fn loads_a_full_type() {
+            let sandbox = create_empty_sandbox();
+
+            write_layer_modules(sandbox.path());
+
+            let module =
+                fs::read_to_string(sandbox.path().join("ServerAffectedConfig.pkl")).unwrap();
+
+            assert!(module.contains("\nfilter: *Listing<String> | List<String> | Set<String>\n"));
+            assert!(module.contains("\nflag: Boolean?\n"));
+            assert!(module.contains("\npass: String"));
+
+            let config = load(
+                sandbox.path(),
+                r#"import "ServerAffectedConfig.pkl"
+
+affected = new ServerAffectedConfig { pass = "args" }
+"#,
+            );
+
+            assert_eq!(
+                config.affected,
+                Some(ServerAffected::Object(ServerAffectedConfig {
+                    filter: vec![],
+                    flag: None,
+                    pass: "args".into(),
+                }))
+            );
+        }
+
+        // A typed object only accepts the properties it declares, so a struct
+        // that collects others is a `Dynamic` where it's used
+        #[test]
+        fn loads_a_struct_that_collects_other_settings() {
+            let sandbox = create_empty_sandbox();
+
+            write_layer_modules(sandbox.path());
+
+            let module = fs::read_to_string(sandbox.path().join("ServerConfig.pkl")).unwrap();
+
+            assert!(module.contains("\nplugin: Dynamic?\n"));
+
+            let config = load(
+                sandbox.path(),
+                r#"plugin { version = "1.0"; manager = "pnpm" }"#,
+            );
+
+            assert_eq!(
+                config.plugin,
+                Some(ServerPluginConfig {
+                    version: Some("1.0".into()),
+                    config: HashMap::from_iter([(
+                        "manager".to_owned(),
+                        serde_json::Value::String("pnpm".into())
+                    )]),
+                })
+            );
+        }
+
+        // A module that amends another can't declare properties, but one that
+        // extends it can, so a config extends the module of such a struct
+        #[test]
+        fn extends_a_module_to_declare_other_settings() {
+            let sandbox = create_empty_sandbox();
+
+            let mut generator = SchemaGenerator::default();
+            generator.add::<ServerPluginsConfig>();
+
+            PklSchemaRenderer::new(PklSchemaOptions {
+                mark_struct_fields_required: false,
+                ..PklSchemaOptions::default()
+            })
+            .generate_all(&generator, sandbox.path())
+            .unwrap();
+
+            let module =
+                fs::read_to_string(sandbox.path().join("ServerPluginsConfig.pkl")).unwrap();
+
+            assert!(module.contains("\nopen module ServerPluginsConfig\n"));
+            assert!(module.contains("// Any other setting is collected by `plugins`."));
+
+            let file = sandbox.path().join("config.pkl");
+
+            fs::write(
+                &file,
+                r#"extends "ServerPluginsConfig.pkl"
+
+proto = "1.2.3"
+node { version = "20" }
+"#,
+            )
+            .unwrap();
+
+            let config = ConfigLoader::<ServerPluginsConfig>::new()
+                .file(file)
+                .unwrap()
+                .load()
+                .unwrap()
+                .config;
+
+            assert_eq!(config.proto, Some("1.2.3".into()));
+            assert_eq!(
+                config.plugins.get("node"),
+                Some(&serde_json::json!({ "version": "20" }))
+            );
         }
     }
 }

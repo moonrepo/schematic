@@ -357,3 +357,65 @@ fn generates_typescript() {
     assert!(file.exists());
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
+
+// Untagged variants are buffered before each is tried, and a format reports
+// `null` as a unit, which must still read as `None` within a variant
+mod nulls {
+    use super::*;
+
+    #[derive(Debug, Config, Eq, PartialEq)]
+    pub struct AffectedConfig {
+        filter: Vec<String>,
+        flag: Option<bool>,
+        pass: String,
+    }
+
+    #[derive(Debug, Config, Eq, PartialEq)]
+    #[serde(untagged)]
+    pub enum Affected {
+        Disabled,
+        Enabled(bool),
+        #[setting(nested)]
+        Object(AffectedConfig),
+    }
+
+    #[derive(Debug, Config, Eq, PartialEq)]
+    pub struct NullSettings {
+        #[setting(nested)]
+        affected: Option<Affected>,
+    }
+
+    fn load(code: &str) -> NullSettings {
+        ConfigLoader::<NullSettings>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    #[test]
+    fn reads_null_fields_of_a_variant_as_none() {
+        let config = load(r#"{ "affected": { "pass": "args", "filter": null, "flag": null } }"#);
+
+        assert_eq!(
+            config.affected,
+            Some(Affected::Object(AffectedConfig {
+                filter: vec![],
+                flag: None,
+                pass: "args".into(),
+            }))
+        );
+    }
+
+    #[test]
+    fn reads_null_as_a_unit_variant() {
+        let config = load(r#"{ "affected": null }"#);
+
+        assert_eq!(config.affected, None);
+
+        let partial = serde_json::from_str::<PartialAffected>("null").unwrap();
+
+        assert_eq!(partial, PartialAffected::Disabled);
+    }
+}

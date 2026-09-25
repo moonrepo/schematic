@@ -6,4 +6,4 @@ expression: "render_type::<FallbackEnum>()"
 
 module FallbackEnum
 
-typealias FallbackEnum = *"foo"|"bar"|"baz"|String
+typealias FallbackEnum = *"foo" | "bar" | "baz" | String

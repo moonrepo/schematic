@@ -607,10 +607,11 @@ impl Variant {
             }
             // Unit variants in untagged enums are represented as null
             Fields::Unit => quote! {
-                match <() as serde::Deserialize>::deserialize(#deserializer) {
-                    Ok(_) => return Ok(#partial_name::#name),
-                    Err(error) => errors.push((#name_string, error.to_string())),
+                if schematic::internal::is_null_content(&content) {
+                    return Ok(#partial_name::#name);
                 }
+
+                errors.push((#name_string, "expected null".to_owned()));
             },
         };
 
