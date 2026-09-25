@@ -4,8 +4,9 @@
 
 With our
 [`PklSchemaRenderer`](https://docs.rs/schematic/latest/schematic/schema/pkl_schema/struct.PklSchemaRenderer.html),
-you can generate [Pkl modules](https://pkl-lang.org/main/current/language-reference/index.html#modules)
-for all types that implement
+you can generate
+[Pkl modules](https://pkl-lang.org/main/current/language-reference/index.html#modules) for all types
+that implement
 [`Schematic`](https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html). Each struct
 and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
 can amend it and be type checked by Pkl itself.
@@ -115,32 +116,33 @@ only accepts the properties its type declares.
 ## Types
 
 Rust types are converted to their closest Pkl types, and constraints, such as a minimum or a
-pattern, become [type constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints).
+pattern, become
+[type constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints).
 
-| Rust | Pkl |
-| --- | --- |
-| `bool` | `Boolean` |
-| `i8`, `i16`, `i32` | `Int8`, `Int16`, `Int32` |
-| `i64`, `i128`, `isize` | `Int` |
-| `u8`, `u16`, `u32` | `UInt8`, `UInt16`, `UInt32` |
-| `u64`, `u128`, `usize` | `UInt` |
-| `f32`, `f64` | `Float` |
-| `char` | `Char` |
-| `String`, `PathBuf`, `Url`, ... | `String` |
-| `Vec<T>` | `Listing<T>` |
-| `HashSet<T>`, `BTreeSet<T>` | `Listing<T>(isDistinct)` |
-| `[T; N]` | `Listing<T>(length == N)` |
-| `HashMap<K, V>`, `BTreeMap<K, V>` | `Mapping<K, V>` |
-| `(A, B)` | `Pair<A, B>` |
-| `(A, B, C, ...)` | `Listing<A\|B\|C>(length == N)` |
-| `Option<T>` | `T?` |
-| `std::time::Duration` | `Duration` |
-| `serde_json::Value`, ... | `Any` |
-| Unit-only enum | `"a"\|"b"\|"c"` |
+| Rust                              | Pkl                             |
+| --------------------------------- | ------------------------------- |
+| `bool`                            | `Boolean`                       |
+| `i8`, `i16`, `i32`                | `Int8`, `Int16`, `Int32`        |
+| `i64`, `i128`, `isize`            | `Int`                           |
+| `u8`, `u16`, `u32`                | `UInt8`, `UInt16`, `UInt32`     |
+| `u64`, `u128`, `usize`            | `UInt`                          |
+| `f32`, `f64`                      | `Float`                         |
+| `char`                            | `Char`                          |
+| `String`, `PathBuf`, `Url`, ...   | `String`                        |
+| `Vec<T>`                          | `Listing<T>`                    |
+| `HashSet<T>`, `BTreeSet<T>`       | `Listing<T>(isDistinct)`        |
+| `[T; N]`                          | `Listing<T>(length == N)`       |
+| `HashMap<K, V>`, `BTreeMap<K, V>` | `Mapping<K, V>`                 |
+| `(A, B)`                          | `Pair<A, B>`                    |
+| `(A, B, C, ...)`                  | `Listing<A\|B\|C>(length == N)` |
+| `Option<T>`                       | `T?`                            |
+| `std::time::Duration`             | `Duration`                      |
+| `serde_json::Value`, ...          | `Any`                           |
+| Unit-only enum                    | `"a"\|"b"\|"c"`                 |
 
 `Pair` and `Duration` are decoded by the [Pkl format](../../config/experimental.md) into the same
-shapes as a Rust tuple and `Duration`, so `timeout = 30.s` loads as expected. Pkl's own JSON and YAML
-renderers can't output them without a converter, however.
+shapes as a Rust tuple and `Duration`, so `timeout = 30.s` loads as expected. Pkl's own JSON and
+YAML renderers can't output them without a converter, however.
 
 Arrays and maps are typed as `Listing` and `Mapping`, which a config can amend, such as
 `tags { "web" }`. A value created with `List()` or `Map()` doesn't pass that type check, so use
