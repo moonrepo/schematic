@@ -93,6 +93,7 @@ Learn more about [renderers](./generator/index.md).
 
 - `renderer_api_docs` - Enables markdown API documentation generation.
 - `renderer_json_schema` - Enables JSON schema generation.
+- `renderer_pkl_schema` - Enables Pkl module generation.
 - `renderer_template` - Enables config template generation.
 - `renderer_typescript` - Enables TypeScript types generation.
 

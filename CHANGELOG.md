@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `PklSchemaRenderer`, behind the `renderer_pkl_schema` feature, that renders a Pkl module
+  for every struct and enum, which a Pkl config can amend to be type checked. A struct's module
+  declares its fields as properties, while an enum's module declares a type alias, and Rust types
+  are converted to their Pkl counterparts, such as `u16` to `UInt16`, `Vec<T>` to `Listing<T>`, and
+  `Duration` to `Duration`, with constraints rendered as type constraints. A struct that flattens
+  another extends that struct's module, or amends it when it declares nothing else.
+  `PklSchemaRenderer::generate_all` writes every module into a directory, and the
+  `mark_struct_fields_required` option renders every property as nullable, so that a config only
+  outputs the settings it sets.
+
 ## 0.20.6
 
 #### 🚀 Updates

@@ -75,4 +75,5 @@ trait.
 - [API documentation](./api-docs.md)
 - [Config templates](./template.md)
 - [JSON schemas](./json-schema.md)
+- [Pkl modules](./pkl.md)
 - [TypeScript types](./typescript.md)

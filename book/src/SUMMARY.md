@@ -38,4 +38,5 @@
     - [API documentation](./schema/generator/api-docs.md)
     - [Config templates](./schema/generator/template.md)
     - [JSON schemas](./schema/generator/json-schema.md)
+    - [Pkl modules](./schema/generator/pkl.md)
     - [TypeScript types](./schema/generator/typescript.md)
