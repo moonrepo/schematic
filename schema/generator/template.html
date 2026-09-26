@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-d8231b42.js";
+            window.path_to_searchindex_js = "../../searchindex-65147b43.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-44c352f9.js"></script>
+        <script src="../../toc-dd859233.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -229,6 +229,20 @@ will render Pkl templates.</p>
 PklTemplateRenderer::default();
 PklTemplateRenderer::new(TemplateOptions::default());
 <span class="boring">}</span></code></pre>
+<p>A template can amend the <a href="./pkl.html">Pkl modules</a> of its types, so that Pkl type checks it, by
+adding an <code>amends</code> clause to the <code>header</code> option. The modules then type every property, so lists and
+maps amend the values they’re declared with, as in <code>tags { "web" }</code>, which gives the objects within
+them their declared type. Without one, lists and maps are created with <code>new Listing {}</code> and
+<code>new Mapping {}</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>PklTemplateRenderer::new(TemplateOptions {
+	header: "amends \"pkl/ServerConfig.pkl\"\n\n".into(),
+	..TemplateOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<p>A module with required fields expects the template to set them, so render the modules with
+<code>mark_struct_fields_required</code> disabled when fields are hidden or commented out.</p>
 <h3 id="toml"><a class="header" href="#toml">TOML</a></h3>
 <p>The
 <a href="https://docs.rs/schematic/latest/schematic/schema/toml_template/struct.TomlTemplateRenderer.html"><code>TomlTemplateRenderer</code></a>
@@ -309,11 +323,11 @@ struct ServerConfig {
 </code></pre>
 </td>
 <td>
-<pre><code class="language-pkl"># The base URL to serve from.
+<pre><code class="language-pkl">// The base URL to serve from.
 base_url = "/"
 
-# The default port to listen on.
-# @env PORT
+// The default port to listen on.
+// @env PORT
 port = 8080
 </code></pre>
 </td>

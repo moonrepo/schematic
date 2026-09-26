@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Tuples - Schematic</title>
+        <title>Pkl modules - Schematic</title>
 
 
         <!-- Custom HTML head -->
@@ -12,33 +12,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="../favicon-8114d1fc.png">
-        <link rel="stylesheet" href="../css/variables-8adf115d.css">
-        <link rel="stylesheet" href="../css/general-e96d0476.css">
-        <link rel="stylesheet" href="../css/chrome-d279d366.css">
-        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-e96d0476.css">
+        <link rel="stylesheet" href="../../css/chrome-d279d366.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-65147b43.js";
+            window.path_to_searchindex_js = "../../searchindex-65147b43.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-dd859233.js"></script>
+        <script src="../../toc-dd859233.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -105,7 +105,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
             </noscript>
             <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -140,7 +140,7 @@
                     <h1 class="menu-title">Schematic</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
                             <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
                         <a href="https://github.com/moonrepo/schematic" title="Git repository" aria-label="Git repository">
@@ -177,50 +177,200 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
-<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> can be used to represent a fixed list of heterogeneous values of a given
-type, as defined by <code>items_types</code>.</p>
+                        <h1 id="pkl-modules"><a class="header" href="#pkl-modules">Pkl modules</a></h1>
+<blockquote>
+<p>Requires the <code>renderer_pkl_schema</code> Cargo feature.</p>
+</blockquote>
+<p>With our
+<a href="https://docs.rs/schematic/latest/schematic/schema/pkl_schema/struct.PklSchemaRenderer.html"><code>PklSchemaRenderer</code></a>,
+you can generate <a href="https://pkl-lang.org/main/current/language-reference/index.html#modules">Pkl modules</a>
+for all types that implement
+<a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each struct
+and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
+can amend it and be type checked by Pkl itself.</p>
+<p>To utilize, instantiate a generator, add types to render, and generate a module for every type into
+a directory. Modules import each other by relative path, so they must stay together.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use schematic::{Schematic, Schema, SchemaBuilder, SchemaType, schema::{TupleType, IntegerKind}};
+</span>use schematic::schema::{SchemaGenerator, PklSchemaRenderer};
 
-impl Schematic for T {
-	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
-		schema.tuple(TupleType {
-			items_types: vec![
-				Box::new(schema.infer::&lt;String&gt;()),
-				Box::new(schema.infer::&lt;bool&gt;()),
-				Box::new(schema.nest().integer(IntegerType::new_kind(IntegerKind::U32))),
-			],
-			..TupleType::default()
-		})
-	}
+let mut generator = SchemaGenerator::default();
+generator.add::&lt;ServerConfig&gt;();
+
+PklSchemaRenderer::default().generate_all(&amp;generator, output_dir.join("pkl"))?;
+<span class="boring">}</span></code></pre>
+<p>Each module is named after its type with a <code>.pkl</code> extension, so the above writes <code>ServerConfig.pkl</code>,
+and a module for every type it nests. A config then amends the module of its root type.</p>
+<pre><code class="language-pkl">amends "pkl/ServerConfig.pkl"
+
+port = 3000
+timeout = 30.s
+tags { "web"; "api" }
+</code></pre>
+<p>To scaffold that config, render a <a href="./template.html#pkl">Pkl template</a> with an <code>amends</code> clause in its
+header.</p>
+<p>Like a <a href="./json-schema.html">JSON schema</a>, rendering through <code>SchemaGenerator::generate()</code> produces a
+single document, which is the module of the <em>last type to be added to <code>SchemaGenerator</code></em>. The
+modules it imports are not written, so prefer <code>generate_all()</code>.</p>
+<h2 id="module-structure"><a class="header" href="#module-structure">Module structure</a></h2>
+<p>A struct becomes a module that declares each of its fields as a property, with its doc comment and
+deprecation carried over. Fields are rendered in alphabetical order, and skipped fields are omitted.</p>
+<pre><code class="language-pkl">/// Configures the HTTP server.
+module ServerConfig
+
+import "LogLevel.pkl"
+import "TlsConfig.pkl"
+
+/// The level to log at.
+level: LogLevel.LogLevel
+
+/// The port to listen on.
+port: UInt16 = 8080
+
+/// TLS settings, when serving over HTTPS.
+tls: TlsConfig?
+</code></pre>
+<p>A module is a type, but it can’t be a union or a string, so every other type, such as an enum,
+becomes a module that declares a type alias of the same name. It is referenced as <code>Name.Name</code>. The
+default variant of an enum is marked with <code>*</code>, which makes it the default of any property of that
+type that isn’t nullable.</p>
+<pre><code class="language-pkl">/// The level to log at.
+typealias LogLevel = *"info"|"debug"|"error"
+</code></pre>
+<p>A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
+module it’s found in, named after its position, such as <code>ActionRun</code> for the <code>Run</code> variant of
+<code>Action</code>. A class is referenced from other modules as <code>Module.Class</code>.</p>
+<pre><code class="language-pkl">typealias Action = "Stop"|ActionRun
+
+class ActionRun {
+  Run: String
+}
+</code></pre>
+<h2 id="inheritance"><a class="header" href="#inheritance">Inheritance</a></h2>
+<p>A struct that flattens another struct with <code>#[serde(flatten)]</code> includes all of its fields, which is
+what extending a module does. Its module extends the module of the flattened struct, which is then
+declared <code>open</code>, as Pkl requires to extend it.</p>
+<pre><code class="language-pkl">open module BaseConfig
+
+shared: String = "shared"
+</code></pre>
+<pre><code class="language-pkl">module ServerConfig
+
+extends "BaseConfig.pkl"
+
+port: UInt16 = 8080
+</code></pre>
+<p>When the struct declares nothing but the flattened field, it has the same shape as the struct it
+flattens, so its module amends that module instead. Pkl can’t use a module that amends another as a
+type, so this only happens when no other type refers to the struct.</p>
+<p>A module can only extend one other, so any further flattened structs have their fields declared
+directly. A flattened map, which collects unknown keys, cannot be declared at all, as a Pkl object
+only accepts the properties its type declares.</p>
+<h2 id="types"><a class="header" href="#types">Types</a></h2>
+<p>Rust types are converted to their closest Pkl types, and constraints, such as a minimum or a
+pattern, become <a href="https://pkl-lang.org/main/current/language-reference/index.html#type-constraints">type constraints</a>.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Rust</th><th>Pkl</th></tr>
+</thead>
+<tbody>
+<tr><td><code>bool</code></td><td><code>Boolean</code></td></tr>
+<tr><td><code>i8</code>, <code>i16</code>, <code>i32</code></td><td><code>Int8</code>, <code>Int16</code>, <code>Int32</code></td></tr>
+<tr><td><code>i64</code>, <code>i128</code>, <code>isize</code></td><td><code>Int</code></td></tr>
+<tr><td><code>u8</code>, <code>u16</code>, <code>u32</code></td><td><code>UInt8</code>, <code>UInt16</code>, <code>UInt32</code></td></tr>
+<tr><td><code>u64</code>, <code>u128</code>, <code>usize</code></td><td><code>UInt</code></td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td><code>Float</code></td></tr>
+<tr><td><code>char</code></td><td><code>Char</code></td></tr>
+<tr><td><code>String</code>, <code>PathBuf</code>, <code>Url</code>, …</td><td><code>String</code></td></tr>
+<tr><td><code>Vec&lt;T&gt;</code></td><td><code>Listing&lt;T&gt;</code></td></tr>
+<tr><td><code>HashSet&lt;T&gt;</code>, <code>BTreeSet&lt;T&gt;</code></td><td><code>Listing&lt;T&gt;(isDistinct)</code></td></tr>
+<tr><td><code>[T; N]</code></td><td><code>Listing&lt;T&gt;(length == N)</code></td></tr>
+<tr><td><code>HashMap&lt;K, V&gt;</code>, <code>BTreeMap&lt;K, V&gt;</code></td><td><code>Mapping&lt;K, V&gt;</code></td></tr>
+<tr><td><code>(A, B)</code></td><td><code>Pair&lt;A, B&gt;</code></td></tr>
+<tr><td><code>(A, B, C, ...)</code></td><td><code>Listing&lt;A|B|C&gt;(length == N)</code></td></tr>
+<tr><td><code>Option&lt;T&gt;</code></td><td><code>T?</code></td></tr>
+<tr><td><code>std::time::Duration</code></td><td><code>Duration</code></td></tr>
+<tr><td><code>serde_json::Value</code>, …</td><td><code>Any</code></td></tr>
+<tr><td>Unit-only enum</td><td><code>"a"|"b"|"c"</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>Pair</code> and <code>Duration</code> are decoded by the <a href="../../config/experimental.html">Pkl format</a> into the same
+shapes as a Rust tuple and <code>Duration</code>, so <code>timeout = 30.s</code> loads as expected. Pkl’s own JSON and YAML
+renderers can’t output them without a converter, however.</p>
+<p>Arrays and maps are typed as <code>Listing</code> and <code>Mapping</code>, which a config can amend, such as
+<code>tags { "web" }</code>. A value created with <code>List()</code> or <code>Map()</code> doesn’t pass that type check, so use
+<code>new Listing {}</code> and <code>new Mapping {}</code> instead.</p>
+<p>A few things can’t be expressed in Pkl, and are rendered as close as possible:</p>
+<ul>
+<li>A setting named <code>output</code> can’t be declared by a module, as every module reserves it. It is left
+out, with a comment in its place.</li>
+<li>Pkl rejects a type alias that refers to itself, so a recursive enum refers to itself as <code>Any</code>. A
+recursive struct refers to its own module, which is fine.</li>
+<li>A tuple of more than two values can only be typed as a list of each of its types, so the position
+of each type isn’t checked.</li>
+</ul>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>Custom options can be passed to the renderer using
+<a href="https://docs.rs/schematic/latest/schematic/schema/pkl_schema/struct.PklSchemaOptions.html"><code>PklSchemaOptions</code></a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::PklSchemaOptions;
+
+PklSchemaRenderer::new(PklSchemaOptions {
+	// ...
+	..PklSchemaOptions::default()
+});
+<span class="boring">}</span></code></pre>
+<h3 id="indentation"><a class="header" href="#indentation">Indentation</a></h3>
+<p>The indentation of class properties can be customized using the <code>indent_char</code> option. By default
+this is 2 spaces.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>PklSchemaOptions {
+	// ...
+	indent_char: "\t".into(),
 }
 <span class="boring">}</span></code></pre>
-<p>If you’re only defining the <code>items_types</code> field, you can use the shorthand
-<a href="https://docs.rs/schematic/latest/schematic/struct.TupleType.html#method.new"><code>TupleType::new()</code></a>
-method. When using this approach, the <code>Box</code>s are automatically inserted for you.</p>
+<h3 id="required-fields"><a class="header" href="#required-fields">Required fields</a></h3>
+<p>By default, struct fields are rendered as they are declared. A field that isn’t optional has no
+default, so a config must set it, and a field with a default value renders it as the property’s
+default.</p>
+<p>Pkl outputs every property of a module, including the defaults a config didn’t set. A config is only
+one <a href="../../config/index.html">layer</a> of many however, so a default it outputs overrides the value of
+any layer beneath it, such as a config it <a href="../../config/struct/extend.html">extends</a>. Disable the
+<code>mark_struct_fields_required</code> option to render every property of a struct’s module as nullable,
+without a default, so that a config only outputs the settings it sets, and everything else falls
+back to the defaults of the Rust types.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>schema.tuple(TupleType::new([
-	schema.infer::&lt;String&gt;(),
-	schema.infer::&lt;bool&gt;(),
-	schema.nest().integer(IntegerType::new_kind(IntegerKind::U32)),
-]));
+</span>PklSchemaOptions {
+	// ...
+	mark_struct_fields_required: false,
+}
 <span class="boring">}</span></code></pre>
-<blockquote>
-<p>Automatically implemented for tuples of 0-12 length.</p>
-</blockquote>
+<pre><code class="language-pkl">// Enabled
+port: UInt16 = 8080
+host: String
+
+// Disabled
+port: UInt16?
+host: String?
+</code></pre>
+<p>Classes, such as the variants of an enum, are always rendered as declared, as their value is only
+valid in full. Rendering <a href="../../config/partial.html">partial types</a> has the same effect, as every
+field of a partial is optional, but names every module after its partial type.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../schema/struct.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../schema/generator/json-schema.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../schema/union.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../schema/generator/typescript.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -230,11 +380,11 @@ method. When using this approach, the <code>Box</code>s are automatically insert
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../schema/struct.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../schema/generator/json-schema.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../schema/union.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../schema/generator/typescript.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
@@ -254,13 +404,13 @@ method. When using this approach, the <code>Box</code>s are automatically insert
         </script>
 
 
-        <script src="../elasticlunr-ef4e11c1.min.js"></script>
-        <script src="../mark-09e88c2c.min.js"></script>
-        <script src="../searcher-09f2665d.js"></script>
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-09f2665d.js"></script>
 
-        <script src="../clipboard-1626706a.min.js"></script>
-        <script src="../highlight-abc7f01d.js"></script>
-        <script src="../book-609e4cb8.js"></script>
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-609e4cb8.js"></script>
 
         <!-- Custom JS scripts -->
 
