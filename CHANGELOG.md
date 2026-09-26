@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a `PklSchemaRenderer`, behind the `renderer_pkl_schema` feature, that renders a Pkl module
+  for every struct and enum, which a Pkl config can amend to be type checked. A struct's module
+  declares its fields as properties, while an enum's module declares a type alias, and Rust types
+  are converted to their Pkl counterparts, such as `u16` to `UInt16`, `Vec<T>` to `Listing<T>`, and
+  `Duration` to `Duration`, with constraints rendered as type constraints. A struct that flattens
+  another extends that struct's module, or amends it when it declares nothing else.
+  `PklSchemaRenderer::generate_all` writes every module into a directory, and the
+  `mark_struct_fields_required` option renders every property as nullable, so that a config only
+  outputs the settings it sets.
+- When the header of a `PklTemplateRenderer` amends or extends a module, lists and maps amend their
+  declared values instead, so that a template can amend the modules of `PklSchemaRenderer`.
+
+#### 🐞 Fixes
+
+- Fixed `PklTemplateRenderer` rendering Pkl that couldn't be evaluated. The module is no longer
+  wrapped in braces, comments use `//`, list items are created with `new`, lists and maps use
+  `new Listing {}` and `new Mapping {}`, property names are quoted when they aren't identifiers, and
+  strings are escaped. Floats keep their fraction, 2-tuples render as a `Pair`, and a `Duration` as
+  `0.s`. A commented out field comments out every line of its value, and the header is always
+  included, so that it can hold an `amends` clause.
+
 ## 0.20.6
 
 #### 🚀 Updates

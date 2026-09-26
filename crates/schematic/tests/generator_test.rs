@@ -431,6 +431,66 @@ mod template_json {
 mod template_pkl {
     use super::*;
     use schematic::schema::*;
+    use std::path::Path;
+    use std::time::Duration;
+
+    #[derive(Clone, Config)]
+    struct ValuesConfig {
+        #[setting(rename = "class")]
+        class_name: String,
+        #[setting(rename = "kebab-case")]
+        kebab_case: String,
+        output: Option<String>,
+        #[setting(default = "quote \" and \\(interpolation)")]
+        escaped: String,
+        #[setting(default = 1.0)]
+        float: f64,
+        pair: (String, u32),
+        triple: (String, u32, bool),
+        duration: Duration,
+        #[setting(nested)]
+        maybe: Option<AnotherConfig>,
+    }
+
+    fn write_template(
+        generator: &SchemaGenerator,
+        dir: &Path,
+        options: TemplateOptions,
+    ) -> PathBuf {
+        let file = dir.join("config.pkl");
+
+        generator
+            .generate(&file, PklTemplateRenderer::new(options))
+            .unwrap();
+
+        file
+    }
+
+    fn load<T: Config>(file: PathBuf) -> T {
+        ConfigLoader::<T>::new()
+            .file(file)
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    fn create_values_generator() -> SchemaGenerator {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<ValuesConfig>();
+        generator
+    }
+
+    fn assert_values(config: ValuesConfig) {
+        assert_eq!(config.class_name, "");
+        assert_eq!(config.kebab_case, "");
+        assert_eq!(config.escaped, "quote \" and \\(interpolation)");
+        assert_eq!(config.float, 1.0);
+        assert_eq!(config.pair, ("".into(), 0));
+        assert_eq!(config.triple, ("".into(), 0, false));
+        assert_eq!(config.duration, Duration::ZERO);
+        assert_eq!(config.maybe.unwrap().opt, Some("".into()));
+    }
 
     #[test]
     fn defaults() {
@@ -442,6 +502,198 @@ mod template_pkl {
             .unwrap();
 
         assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
+    #[test]
+    fn loads_the_template() {
+        let sandbox = create_empty_sandbox();
+
+        let config: TemplateConfig = load(write_template(
+            &create_template_generator(),
+            sandbox.path(),
+            create_template_options(),
+        ));
+
+        assert_eq!(config.string, "abc");
+        assert_eq!(config.float64, 1.23);
+        assert_eq!(config.expand_array.len(), 1);
+        assert_eq!(config.expand_array_primitive, vec![0]);
+        assert!(config.expand_object.contains_key("example"));
+        assert_eq!(config.expand_object_primitive.get("example"), Some(&0));
+        assert_eq!(config.nested.opt, Some("".into()));
+        assert!(config.vector.is_empty());
+    }
+
+    // Names that aren't identifiers are quoted, strings escaped, and floats
+    // keep their fraction, while tuples and durations use Pkl's own types
+    #[test]
+    fn renders_values_as_pkl() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_values_generator(),
+            sandbox.path(),
+            TemplateOptions::default(),
+        );
+        let output = fs::read_to_string(&file).unwrap();
+
+        assert!(output.contains("`class` = \"\""));
+        assert!(output.contains("`kebab-case` = \"\""));
+        assert!(output.contains("escaped = \"quote \\\" and \\\\(interpolation)\""));
+        assert!(output.contains("float = 1.0"));
+        assert!(output.contains("pair = Pair(\"\", 0)"));
+        assert!(output.contains("triple = new Listing {"));
+        assert!(output.contains("duration = 0.s"));
+        assert!(output.contains("maybe {"));
+        assert!(output.contains("// The `output` setting cannot be set"));
+
+        assert_values(load(file));
+    }
+
+    // Commenting out a field that spans several lines has to comment out every
+    // one of them, or the rest would still be read
+    #[test]
+    fn comments_out_every_line_of_a_field() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_template_generator(),
+            sandbox.path(),
+            TemplateOptions {
+                comment_fields: vec!["nested".into()],
+                ..TemplateOptions::default()
+            },
+        );
+        let output = fs::read_to_string(&file).unwrap();
+
+        assert!(output.contains("// nested {\n//   // An optional enum.\n//   enums = \"foo\""));
+        assert!(output.contains("\n// }\n"));
+
+        let config: TemplateConfig = load(file);
+
+        assert_eq!(config.nested.opt, None);
+    }
+
+    // An amends clause isn't a comment, so it's kept when comments aren't
+    #[test]
+    fn keeps_the_header_without_comments() {
+        let sandbox = create_empty_sandbox();
+
+        let file = write_template(
+            &create_values_generator(),
+            sandbox.path(),
+            TemplateOptions {
+                comments: false,
+                header: "amends \"ValuesConfig.pkl\"\n\n".into(),
+                ..TemplateOptions::default()
+            },
+        );
+
+        assert!(
+            fs::read_to_string(file)
+                .unwrap()
+                .starts_with("amends \"ValuesConfig.pkl\"\n\n")
+        );
+    }
+
+    // The template amends the modules of its own types, which type every
+    // property, so the two renderers have to agree
+    #[cfg(feature = "renderer_pkl_schema")]
+    mod amending_modules {
+        use super::*;
+
+        fn create_amending_options(module: &str) -> TemplateOptions {
+            TemplateOptions {
+                header: format!("amends \"{module}.pkl\"\n\n"),
+                ..create_template_options()
+            }
+        }
+
+        fn write_modules(generator: &SchemaGenerator, dir: &Path, options: PklSchemaOptions) {
+            PklSchemaRenderer::new(options)
+                .generate_all(generator, dir)
+                .unwrap();
+        }
+
+        // Lists and maps amend the values the modules declare, which gives
+        // the objects within them their declared type
+        #[test]
+        fn amends_lists_and_maps() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_template_generator();
+
+            write_modules(
+                &generator,
+                sandbox.path(),
+                PklSchemaOptions {
+                    mark_struct_fields_required: false,
+                    ..PklSchemaOptions::default()
+                },
+            );
+
+            let file = write_template(
+                &generator,
+                sandbox.path(),
+                create_amending_options("TemplateConfig"),
+            );
+
+            assert_snapshot!(fs::read_to_string(&file).unwrap());
+
+            let config: TemplateConfig = load(file);
+
+            assert_eq!(config.string, "abc");
+            assert_eq!(config.expand_array.len(), 1);
+            assert_eq!(config.expand_array[0].opt, Some("".into()));
+            assert_eq!(config.expand_array_primitive, vec![0]);
+            assert_eq!(
+                config.expand_object.get("example").unwrap().opt,
+                Some("".into())
+            );
+            assert_eq!(config.nested.opt, Some("".into()));
+            assert!(config.vector.is_empty());
+        }
+
+        // A template that sets every field satisfies the modules' required
+        // properties too
+        #[test]
+        fn amends_modules_with_required_fields() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_template_generator();
+
+            write_modules(&generator, sandbox.path(), PklSchemaOptions::default());
+
+            let file = write_template(
+                &generator,
+                sandbox.path(),
+                TemplateOptions {
+                    comment_fields: vec![],
+                    hide_fields: vec![],
+                    ..create_amending_options("TemplateConfig")
+                },
+            );
+
+            let config: TemplateConfig = load(file);
+
+            assert_eq!(config.expand_array.len(), 1);
+            assert_eq!(config.float32, 0.0);
+        }
+
+        #[test]
+        fn amends_values() {
+            let sandbox = create_empty_sandbox();
+            let generator = create_values_generator();
+
+            write_modules(&generator, sandbox.path(), PklSchemaOptions::default());
+
+            assert_values(load(write_template(
+                &generator,
+                sandbox.path(),
+                TemplateOptions {
+                    header: "amends \"ValuesConfig.pkl\"\n\n".into(),
+                    ..TemplateOptions::default()
+                },
+            )));
+        }
     }
 }
 
@@ -1000,6 +1252,605 @@ mod api_docs {
             .unwrap_err();
 
         assert!(error.to_string().contains("At least one type"));
+    }
+}
+
+#[cfg(feature = "renderer_pkl_schema")]
+mod pkl_schema {
+    use super::*;
+    use schematic::schema::pkl_schema::*;
+    use std::collections::{BTreeSet, HashSet};
+    use std::num::NonZeroU8;
+    use std::path::Path;
+    use std::time::Duration;
+
+    /// A base that other configs flatten.
+    #[derive(Clone, Config)]
+    pub struct BaseConfig {
+        /// A setting every config shares.
+        #[setting(default = "shared")]
+        shared: String,
+        count: Option<u32>,
+    }
+
+    /// Flattens the base, alongside settings of its own.
+    #[derive(Clone, Config)]
+    #[config(allow_unknown_fields)]
+    pub struct ExtendingConfig {
+        #[setting(flatten, nested)]
+        base: BaseConfig,
+        own: bool,
+    }
+
+    /// Flattens the base, and nothing else.
+    #[derive(Clone, Config)]
+    #[config(allow_unknown_fields)]
+    pub struct AmendingConfig {
+        #[setting(flatten, nested)]
+        base: BaseConfig,
+    }
+
+    /// Refers to a config that would otherwise amend its base.
+    #[derive(Clone, Config)]
+    pub struct UsesAmendingConfig {
+        #[setting(nested)]
+        amending: AmendingConfig,
+    }
+
+    #[derive(Clone, Config)]
+    pub struct TreeConfig {
+        name: String,
+        #[setting(nested)]
+        children: Vec<TreeConfig>,
+    }
+
+    /// A value, or a list of values.
+    #[derive(Clone, Schematic)]
+    #[serde(untagged)]
+    pub enum Expr {
+        Value(String),
+        List(Vec<Expr>),
+    }
+
+    #[derive(Clone, Config)]
+    pub struct ExternalTaggedConfig {
+        name: String,
+    }
+
+    #[derive(Clone, Config)]
+    enum ExternalTagged {
+        Foo,
+        Bar(bool),
+        /// A pair of values.
+        Baz(usize, String),
+        #[setting(nested)]
+        Qux(ExternalTaggedConfig),
+    }
+
+    #[derive(Clone, Config)]
+    #[serde(tag = "type")]
+    enum InternalTagged {
+        Foo,
+        #[setting(nested)]
+        Qux(ExternalTaggedConfig),
+    }
+
+    #[derive(Clone, Config)]
+    #[serde(tag = "type", content = "content")]
+    enum AdjacentTagged {
+        Foo,
+        Bar(bool),
+        #[setting(nested)]
+        Qux(ExternalTaggedConfig),
+    }
+
+    #[derive(Clone, Config)]
+    struct TaggedConfig {
+        #[setting(nested)]
+        external: ExternalTagged,
+        #[setting(nested)]
+        internal: Option<InternalTagged>,
+        #[setting(nested)]
+        adjacent: Option<AdjacentTagged>,
+    }
+
+    #[derive(Clone, Config)]
+    struct IdentifiersConfig {
+        #[setting(rename = "class")]
+        class_name: String,
+        #[setting(rename = "kebab-case")]
+        kebab_case: Option<String>,
+        #[setting(rename = "$schema")]
+        schema: Option<String>,
+        default: Option<String>,
+        output: Option<String>,
+    }
+
+    #[derive(
+        Clone, ConfigEnum, Debug, Default, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize,
+    )]
+    #[serde(rename_all = "kebab-case")]
+    pub enum KeyEnum {
+        #[default]
+        Alpha,
+        Beta,
+    }
+
+    /// Covers the conversion of each Rust type.
+    #[derive(Clone, Config)]
+    struct TypesConfig {
+        int8: i8,
+        int16: i16,
+        int32: i32,
+        int64: i64,
+        int128: i128,
+        isize: isize,
+        uint8: u8,
+        uint16: u16,
+        uint32: u32,
+        uint64: u64,
+        uint128: u128,
+        usize: usize,
+        non_zero: Option<NonZeroU8>,
+        #[setting(default = 1.0)]
+        float32: f32,
+        #[setting(default = 2.5)]
+        float64: f64,
+        character: char,
+        #[setting(default = "quote \" and backslash \\ and \\(interpolation)")]
+        escaped: String,
+        fixed_array: [String; 3],
+        set: HashSet<String>,
+        btree_set: BTreeSet<u8>,
+        pair: (String, u32),
+        triple: (String, u32, bool),
+        duration: Duration,
+        maybe_duration: Option<Duration>,
+        enum_map: HashMap<KeyEnum, String>,
+        nullable_items: Vec<Option<BasicEnum>>,
+        port: Port,
+        ident: Ident,
+        json: serde_json::Value,
+        #[setting(default = "bar")]
+        level: BasicEnum,
+        #[deprecated = "Use `level` instead."]
+        old_level: Option<BasicEnum>,
+    }
+
+    fn render(generator: SchemaGenerator, options: PklSchemaOptions) -> String {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("module.pkl");
+
+        generator
+            .generate(&file, PklSchemaRenderer::new(options))
+            .unwrap();
+
+        fs::read_to_string(file).unwrap()
+    }
+
+    fn render_type<T: Schematic>() -> String {
+        render_type_with::<T>(PklSchemaOptions::default())
+    }
+
+    fn render_type_with<T: Schematic>(options: PklSchemaOptions) -> String {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<T>();
+
+        render(generator, options)
+    }
+
+    /// Render every module in the generator, keyed by file name.
+    fn render_all(
+        generator: &SchemaGenerator,
+        options: PklSchemaOptions,
+    ) -> BTreeMap<String, String> {
+        let sandbox = create_empty_sandbox();
+
+        PklSchemaRenderer::new(options)
+            .generate_all(generator, sandbox.path())
+            .unwrap();
+
+        fs::read_dir(sandbox.path())
+            .unwrap()
+            .map(|entry| {
+                let path = entry.unwrap().path();
+
+                (
+                    path.file_name().unwrap().to_string_lossy().into_owned(),
+                    fs::read_to_string(path).unwrap(),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn defaults() {
+        assert_snapshot!(render(create_generator(), PklSchemaOptions::default()));
+    }
+
+    #[test]
+    fn partials() {
+        let mut generator = create_generator();
+        generator.add::<PartialGenConfig>();
+
+        assert_snapshot!(render(generator, PklSchemaOptions::default()));
+    }
+
+    #[test]
+    fn not_required() {
+        assert_snapshot!(render(
+            create_generator(),
+            PklSchemaOptions {
+                mark_struct_fields_required: false,
+                ..PklSchemaOptions::default()
+            }
+        ));
+    }
+
+    #[test]
+    fn all_field_shapes() {
+        assert_snapshot!(render_type::<DocsConfig>());
+    }
+
+    #[test]
+    fn rust_types() {
+        assert_snapshot!(render_type::<TypesConfig>());
+    }
+
+    #[test]
+    fn unit_enum() {
+        assert_snapshot!(render_type::<BasicEnum>());
+    }
+
+    #[test]
+    fn fallback_enum() {
+        assert_snapshot!(render_type::<FallbackEnum>());
+    }
+
+    #[test]
+    fn union() {
+        assert_snapshot!(render_type::<Targets>());
+    }
+
+    #[test]
+    fn tagged_enums() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert_snapshot!(
+            "tagged_enums_external",
+            modules.get("ExternalTagged.pkl").unwrap()
+        );
+        assert_snapshot!(
+            "tagged_enums_internal",
+            modules.get("InternalTagged.pkl").unwrap()
+        );
+        assert_snapshot!(
+            "tagged_enums_adjacent",
+            modules.get("AdjacentTagged.pkl").unwrap()
+        );
+    }
+
+    // A partial nullifies every field of the struct a variant holds, which
+    // includes the tag an internally tagged variant adds to it, but serde
+    // still requires the tag
+    #[test]
+    fn keeps_tags_of_partial_variants() {
+        let mut generator = SchemaGenerator::default();
+        // Registers the struct the variant holds without the tag
+        generator.add::<PartialTaggedConfig>();
+        generator.add::<PartialInternalTagged>();
+
+        let output = render(generator, PklSchemaOptions::default());
+
+        assert!(
+            output.contains(
+                "class PartialInternalTaggedQux {\n  name: String?\n\n  type: \"Qux\"\n}"
+            )
+        );
+    }
+
+    #[test]
+    fn quotes_identifiers() {
+        assert_snapshot!(render_type::<IdentifiersConfig>());
+    }
+
+    #[test]
+    fn indent_char() {
+        let output = render_type_with::<ExternalTagged>(PklSchemaOptions {
+            indent_char: "\t".into(),
+            ..PklSchemaOptions::default()
+        });
+
+        assert!(output.contains("class ExternalTaggedBar {\n\tBar: Boolean\n}"));
+    }
+
+    // A class holds a value, such as a variant's payload, which is only valid
+    // in full, so its properties keep their types, and a tag its default
+    #[test]
+    fn not_required_leaves_classes_as_declared() {
+        let output = render_type_with::<AdjacentTagged>(PklSchemaOptions {
+            mark_struct_fields_required: false,
+            ..PklSchemaOptions::default()
+        });
+
+        assert!(
+            output.contains("class AdjacentTaggedBar {\n  content: Boolean\n\n  type: \"Bar\"\n}")
+        );
+    }
+
+    // A struct that flattens another extends its module, which has to be
+    // open for that
+    #[test]
+    fn extends_a_flattened_struct() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<ExtendingConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert_snapshot!(modules.get("ExtendingConfig.pkl").unwrap());
+        assert!(
+            modules
+                .get("BaseConfig.pkl")
+                .unwrap()
+                .contains("\nopen module BaseConfig\n")
+        );
+    }
+
+    // With nothing of its own to declare, the struct is the same shape as the
+    // struct it flattens, so its module amends that one instead
+    #[test]
+    fn amends_a_flattened_struct_when_nothing_else_is_declared() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<AmendingConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert_snapshot!(modules.get("AmendingConfig.pkl").unwrap());
+        assert!(
+            modules
+                .get("BaseConfig.pkl")
+                .unwrap()
+                .contains("\nmodule BaseConfig\n")
+        );
+    }
+
+    // Pkl refuses to use a module that amends another as a type
+    #[test]
+    fn extends_instead_of_amending_when_used_as_a_type() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<UsesAmendingConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert!(
+            modules
+                .get("AmendingConfig.pkl")
+                .unwrap()
+                .contains("\nextends \"BaseConfig.pkl\"")
+        );
+        assert!(
+            modules
+                .get("BaseConfig.pkl")
+                .unwrap()
+                .contains("\nopen module BaseConfig\n")
+        );
+    }
+
+    #[test]
+    fn recursive_struct_imports_itself() {
+        let output = render_type::<TreeConfig>();
+
+        assert!(output.contains("import \"TreeConfig.pkl\""));
+        assert!(output.contains("children: Listing<TreeConfig>"));
+    }
+
+    // Pkl rejects a type alias that refers to itself
+    #[test]
+    fn recursive_union_breaks_the_cycle() {
+        assert_snapshot!(render_type::<Expr>());
+    }
+
+    #[test]
+    fn generate_all_writes_every_module() {
+        let modules = render_all(&create_generator(), PklSchemaOptions::default());
+
+        assert_eq!(
+            modules.keys().collect::<Vec<_>>(),
+            vec![
+                "AnotherConfig.pkl",
+                "BasicEnum.pkl",
+                "FallbackEnum.pkl",
+                "GenConfig.pkl",
+            ]
+        );
+
+        // A module is the same as the one a single generate renders
+        assert_eq!(
+            modules.get("GenConfig.pkl").unwrap(),
+            &render(create_generator(), PklSchemaOptions::default())
+        );
+    }
+
+    #[test]
+    fn generate_all_errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+
+        let error = PklSchemaRenderer::default()
+            .generate_all(&SchemaGenerator::default(), sandbox.path())
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
+    }
+
+    #[test]
+    fn errors_without_schemas() {
+        let sandbox = create_empty_sandbox();
+
+        let error = SchemaGenerator::default()
+            .generate(
+                sandbox.path().join("module.pkl"),
+                PklSchemaRenderer::default(),
+            )
+            .unwrap_err();
+
+        assert!(error.to_string().contains("At least one type"));
+    }
+
+    #[cfg(feature = "pkl")]
+    mod loading {
+        use super::*;
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        #[config(allow_unknown_fields)]
+        pub struct ServerConfig {
+            #[setting(default = 8080)]
+            port: u16,
+            host: Option<String>,
+            timeout: Option<Duration>,
+            pair: Option<(String, u32)>,
+            tags: Vec<String>,
+            labels: HashMap<String, String>,
+            level: BasicEnum,
+            #[setting(nested)]
+            nested: Option<ServerNestedConfig>,
+            #[setting(nested)]
+            targets: Option<ServerTargets>,
+            #[setting(flatten, nested)]
+            base: ServerBaseConfig,
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        pub struct ServerBaseConfig {
+            #[setting(default = "shared")]
+            shared: String,
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        pub struct ServerNestedConfig {
+            enabled: bool,
+            name: Option<String>,
+        }
+
+        #[derive(Clone, Config, Debug, PartialEq)]
+        #[serde(untagged)]
+        pub enum ServerTargets {
+            List(Vec<String>),
+            Map(HashMap<String, String>),
+        }
+
+        fn write_modules(dir: &Path, options: PklSchemaOptions) {
+            let mut generator = SchemaGenerator::default();
+            generator.add::<ServerConfig>();
+
+            PklSchemaRenderer::new(options)
+                .generate_all(&generator, dir)
+                .unwrap();
+        }
+
+        fn load(dir: &Path, config: &str) -> ServerConfig {
+            let file = dir.join("config.pkl");
+
+            fs::write(&file, format!("amends \"ServerConfig.pkl\"\n\n{config}")).unwrap();
+
+            ConfigLoader::<ServerConfig>::new()
+                .file(file)
+                .unwrap()
+                .load()
+                .unwrap()
+                .config
+        }
+
+        // Every property is nullable, so what the config leaves out falls
+        // back to the default, instead of being set by the module
+        #[test]
+        fn loads_a_config_that_amends_the_modules() {
+            let sandbox = create_empty_sandbox();
+
+            write_modules(
+                sandbox.path(),
+                PklSchemaOptions {
+                    mark_struct_fields_required: false,
+                    ..PklSchemaOptions::default()
+                },
+            );
+
+            let config = load(
+                sandbox.path(),
+                r#"
+timeout = 1500.ms
+pair = Pair("a", 1)
+tags { "a"; "b" }
+labels { ["x"] = "y" }
+level = "bar"
+nested { enabled = true }
+targets = new Listing { "one"; "two" }
+shared = "custom"
+"#,
+            );
+
+            assert_eq!(config.port, 8080);
+            assert_eq!(config.host, None);
+            assert_eq!(config.timeout, Some(Duration::from_millis(1500)));
+            assert_eq!(config.pair, Some(("a".into(), 1)));
+            assert_eq!(config.tags, vec!["a".to_owned(), "b".to_owned()]);
+            assert_eq!(
+                config.labels,
+                HashMap::from_iter([("x".to_owned(), "y".to_owned())])
+            );
+            assert_eq!(config.level, BasicEnum::Bar);
+            assert_eq!(
+                config.nested,
+                Some(ServerNestedConfig {
+                    enabled: true,
+                    name: None,
+                })
+            );
+            assert_eq!(
+                config.targets,
+                Some(ServerTargets::List(vec!["one".into(), "two".into()]))
+            );
+            assert_eq!(config.base.shared, "custom");
+        }
+
+        // A property's default is output by the module, and the enum's
+        // default variant comes from its type
+        #[test]
+        fn loads_the_defaults_of_required_fields() {
+            let sandbox = create_empty_sandbox();
+
+            write_modules(sandbox.path(), PklSchemaOptions::default());
+
+            let config = load(sandbox.path(), "");
+
+            assert_eq!(config.port, 8080);
+            assert_eq!(config.level, BasicEnum::Foo);
+            assert_eq!(config.base.shared, "shared");
+            assert!(config.tags.is_empty());
+        }
+
+        // A value outside the constraints of its type fails in Pkl, before it
+        // reaches serde
+        #[test]
+        fn rejects_a_value_of_the_wrong_type() {
+            let sandbox = create_empty_sandbox();
+
+            write_modules(sandbox.path(), PklSchemaOptions::default());
+
+            let file = sandbox.path().join("config.pkl");
+            fs::write(&file, "amends \"ServerConfig.pkl\"\n\nport = 70000\n").unwrap();
+
+            let error = ConfigLoader::<ServerConfig>::new()
+                .file(file)
+                .unwrap()
+                .load()
+                .err()
+                .unwrap();
+
+            assert!(format!("{error:?}").contains("UInt16"));
+        }
     }
 }
 

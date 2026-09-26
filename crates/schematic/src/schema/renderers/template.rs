@@ -1,3 +1,10 @@
+// Each format's renderer uses a different subset of these helpers, so a build
+// without every format leaves some unused
+#![cfg_attr(
+    not(all(feature = "json", feature = "pkl", feature = "toml", feature = "yaml")),
+    allow(dead_code)
+)]
+
 use crate::schema::RenderResult;
 use indexmap::IndexMap;
 use miette::miette;

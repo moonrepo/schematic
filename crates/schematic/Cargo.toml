@@ -97,6 +97,7 @@ yaml = ["dep:serde_norway", "schematic_types/serde_yaml_norway"]
 # Renderers
 renderer_api_docs = ["schema"]
 renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
+renderer_pkl_schema = ["schema"]
 renderer_template = ["schema"]
 renderer_typescript = ["schema"]
 
@@ -123,6 +124,7 @@ schematic = { path = ".", features = [
 	"pkl",
 	"renderer_api_docs",
 	"renderer_json_schema",
+	"renderer_pkl_schema",
 	"renderer_template",
 	"renderer_typescript",
 	"ron",
