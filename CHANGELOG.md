@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a `null` within a nested variant of an untagged enum failing to deserialize, even for an
+  `Option`. The variant's content is buffered to try each variant, which kept a `null` as a unit
+  value rather than none.
+
 ## 0.20.7
 
 #### 🚀 Updates
@@ -25,9 +33,6 @@
 
 #### 🐞 Fixes
 
-- Fixed a `null` within a nested variant of an untagged enum failing to deserialize, even for an
-  `Option`. The variant's content is buffered to try each variant, which kept a `null` as a unit
-  value rather than none.
 - Fixed `PklTemplateRenderer` rendering Pkl that couldn't be evaluated. The module is no longer
   wrapped in braces, comments use `//`, list items are created with `new`, lists and maps use
   `new Listing {}` and `new Mapping {}`, property names are quoted when they aren't identifiers, and
