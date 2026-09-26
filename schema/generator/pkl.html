@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-65147b43.js";
+            window.path_to_searchindex_js = "../../searchindex-7d33acd5.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-dd859233.js"></script>
@@ -183,8 +183,9 @@
 </blockquote>
 <p>With our
 <a href="https://docs.rs/schematic/latest/schematic/schema/pkl_schema/struct.PklSchemaRenderer.html"><code>PklSchemaRenderer</code></a>,
-you can generate <a href="https://pkl-lang.org/main/current/language-reference/index.html#modules">Pkl modules</a>
-for all types that implement
+you can generate
+<a href="https://pkl-lang.org/main/current/language-reference/index.html#modules">Pkl modules</a> for all types
+that implement
 <a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each struct
 and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
 can amend it and be type checked by Pkl itself.</p>
@@ -235,12 +236,12 @@ becomes a module that declares a type alias of the same name. It is referenced a
 default variant of an enum is marked with <code>*</code>, which makes it the default of any property of that
 type that isn’t nullable.</p>
 <pre><code class="language-pkl">/// The level to log at.
-typealias LogLevel = *"info"|"debug"|"error"
+typealias LogLevel = *"info" | "debug" | "error"
 </code></pre>
 <p>A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
 module it’s found in, named after its position, such as <code>ActionRun</code> for the <code>Run</code> variant of
 <code>Action</code>. A class is referenced from other modules as <code>Module.Class</code>.</p>
-<pre><code class="language-pkl">typealias Action = "Stop"|ActionRun
+<pre><code class="language-pkl">typealias Action = "Stop" | ActionRun
 
 class ActionRun {
   Run: String
@@ -264,11 +265,31 @@ port: UInt16 = 8080
 flattens, so its module amends that module instead. Pkl can’t use a module that amends another as a
 type, so this only happens when no other type refers to the struct.</p>
 <p>A module can only extend one other, so any further flattened structs have their fields declared
-directly. A flattened map, which collects unknown keys, cannot be declared at all, as a Pkl object
-only accepts the properties its type declares.</p>
+directly.</p>
+<h3 id="other-settings"><a class="header" href="#other-settings">Other settings</a></h3>
+<p>A flattened map collects every setting a struct doesn’t declare, such as the configuration of a
+plugin. A typed Pkl object only accepts the properties its type declares, so no type can hold such a
+struct. Wherever it’s used, it’s typed as <code>Dynamic</code> instead, which accepts any property.</p>
+<pre><code class="language-pkl">/// Configures a plugin.
+plugin: Dynamic?
+</code></pre>
+<pre><code class="language-pkl">plugin {
+  version = "1.0"
+  manager = "pnpm"
+}
+</code></pre>
+<p>Its module is declared <code>open</code>, with a comment naming the map. A config can’t declare new properties
+while amending a module, but it can while extending one, so a config of that struct extends its
+module.</p>
+<pre><code class="language-pkl">extends "pkl/PluginsConfig.pkl"
+
+registry = "https://registry.example.com"
+node { version = "20" }
+</code></pre>
 <h2 id="types"><a class="header" href="#types">Types</a></h2>
 <p>Rust types are converted to their closest Pkl types, and constraints, such as a minimum or a
-pattern, become <a href="https://pkl-lang.org/main/current/language-reference/index.html#type-constraints">type constraints</a>.</p>
+pattern, become
+<a href="https://pkl-lang.org/main/current/language-reference/index.html#type-constraints">type constraints</a>.</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -297,11 +318,31 @@ pattern, become <a href="https://pkl-lang.org/main/current/language-reference/in
 </table>
 </div>
 <p><code>Pair</code> and <code>Duration</code> are decoded by the <a href="../../config/experimental.html">Pkl format</a> into the same
-shapes as a Rust tuple and <code>Duration</code>, so <code>timeout = 30.s</code> loads as expected. Pkl’s own JSON and YAML
-renderers can’t output them without a converter, however.</p>
-<p>Arrays and maps are typed as <code>Listing</code> and <code>Mapping</code>, which a config can amend, such as
-<code>tags { "web" }</code>. A value created with <code>List()</code> or <code>Map()</code> doesn’t pass that type check, so use
-<code>new Listing {}</code> and <code>new Mapping {}</code> instead.</p>
+shapes as a Rust tuple and <code>Duration</code>, so <code>timeout = 30.s</code> loads as expected. Pkl’s own JSON and
+YAML renderers can’t output them without a converter, however.</p>
+<p>Pkl has two types of each collection: an amendable one, <code>Listing</code> and <code>Mapping</code>, and an eager one,
+<code>List</code>, <code>Set</code>, and <code>Map</code>, which can be concatenated. The Pkl format decodes them all the same, so a
+list or a map accepts either. The amendable type is marked as the default, so that a config can
+amend it, as in <code>tags { "web" }</code>, as well as assign an eager one, as in
+<code>tags = List("web") + shared</code>.</p>
+<p>A union with a struct among its variants, such as an untagged enum, has no default to amend, and Pkl
+can’t tell which struct a <code>new {}</code> creates. Create the struct by its module instead.</p>
+<pre><code class="language-pkl">import "pkl/TaskDependencyConfig.pkl"
+
+deps = List("build", new TaskDependencyConfig { target = "~:lint"; optional = true })
+</code></pre>
+<h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
+<p>Pkl outputs every property, and serde rejects a setting that’s given under both its name and an
+alias, so an alias is declared <code>hidden</code>, which Pkl doesn’t output. The setting falls back to its
+alias, so setting either one outputs the setting under its name.</p>
+<pre><code class="language-pkl">/// The default value of the variable.
+default: Boolean? = defaultValue
+
+/// An alias of `default`.
+hidden defaultValue: Boolean?
+</code></pre>
+<p>A setting that isn’t nullable would lose the default of its type by falling back, so only a nullable
+setting declares its aliases.</p>
 <p>A few things can’t be expressed in Pkl, and are rendered as close as possible:</p>
 <ul>
 <li>A setting named <code>output</code> can’t be declared by a module, as every module reserves it. It is left
@@ -358,9 +399,13 @@ host: String
 port: UInt16?
 host: String?
 </code></pre>
-<p>Classes, such as the variants of an enum, are always rendered as declared, as their value is only
-valid in full. Rendering <a href="../../config/partial.html">partial types</a> has the same effect, as every
-field of a partial is optional, but names every module after its partial type.</p>
+<p>This only applies to structs that are loaded as partials, which is what makes their settings
+optional. A struct that’s loaded in full, such as the value of a setting that isn’t nested, or a
+type that doesn’t derive <code>Config</code>, can’t take null for a field that isn’t an <code>Option</code>, so it’s
+always rendered as declared. Classes, such as the variants of an enum, are too, as their value is
+only valid in full.</p>
+<p>Rendering <a href="../../config/partial.html">partial types</a> has the same effect, as every field of a partial
+is optional, but names every module after its partial type.</p>
 
                     </main>
 
