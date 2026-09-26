@@ -8,7 +8,7 @@ module ExternalTagged
 
 import "ExternalTaggedConfig.pkl"
 
-typealias ExternalTagged = "Foo"|ExternalTaggedBar|ExternalTaggedBaz|ExternalTaggedQux
+typealias ExternalTagged = "Foo" | ExternalTaggedBar | ExternalTaggedBaz | ExternalTaggedQux
 
 class ExternalTaggedBar {
   Bar: Boolean

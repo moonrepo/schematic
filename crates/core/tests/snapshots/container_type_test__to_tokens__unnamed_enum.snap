@@ -23,8 +23,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = deserializer
-            .deserialize_any(schematic::serde_content::ValueVisitor)?;
+        let content = schematic::internal::buffer_untagged_content(deserializer)?;
         let mut errors: Vec<(&str, String)> = Vec::new();
         match <bool as serde::Deserialize>::deserialize(
             schematic::serde_content::Deserializer::new(content.clone())

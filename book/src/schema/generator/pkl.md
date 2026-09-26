@@ -4,8 +4,9 @@
 
 With our
 [`PklSchemaRenderer`](https://docs.rs/schematic/latest/schematic/schema/pkl_schema/struct.PklSchemaRenderer.html),
-you can generate [Pkl modules](https://pkl-lang.org/main/current/language-reference/index.html#modules)
-for all types that implement
+you can generate
+[Pkl modules](https://pkl-lang.org/main/current/language-reference/index.html#modules) for all types
+that implement
 [`Schematic`](https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html). Each struct
 and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
 can amend it and be type checked by Pkl itself.
@@ -69,7 +70,7 @@ type that isn't nullable.
 
 ```pkl
 /// The level to log at.
-typealias LogLevel = *"info"|"debug"|"error"
+typealias LogLevel = *"info" | "debug" | "error"
 ```
 
 A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
@@ -77,7 +78,7 @@ module it's found in, named after its position, such as `ActionRun` for the `Run
 `Action`. A class is referenced from other modules as `Module.Class`.
 
 ```pkl
-typealias Action = "Stop"|ActionRun
+typealias Action = "Stop" | ActionRun
 
 class ActionRun {
   Run: String
@@ -109,42 +110,99 @@ flattens, so its module amends that module instead. Pkl can't use a module that 
 type, so this only happens when no other type refers to the struct.
 
 A module can only extend one other, so any further flattened structs have their fields declared
-directly. A flattened map, which collects unknown keys, cannot be declared at all, as a Pkl object
-only accepts the properties its type declares.
+directly.
+
+### Other settings
+
+A flattened map collects every setting a struct doesn't declare, such as the configuration of a
+plugin. A typed Pkl object only accepts the properties its type declares, so no type can hold such a
+struct. Wherever it's used, it's typed as `Dynamic` instead, which accepts any property.
+
+```pkl
+/// Configures a plugin.
+plugin: Dynamic?
+```
+
+```pkl
+plugin {
+  version = "1.0"
+  manager = "pnpm"
+}
+```
+
+Its module is declared `open`, with a comment naming the map. A config can't declare new properties
+while amending a module, but it can while extending one, so a config of that struct extends its
+module.
+
+```pkl
+extends "pkl/PluginsConfig.pkl"
+
+registry = "https://registry.example.com"
+node { version = "20" }
+```
 
 ## Types
 
 Rust types are converted to their closest Pkl types, and constraints, such as a minimum or a
-pattern, become [type constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints).
+pattern, become
+[type constraints](https://pkl-lang.org/main/current/language-reference/index.html#type-constraints).
 
-| Rust | Pkl |
-| --- | --- |
-| `bool` | `Boolean` |
-| `i8`, `i16`, `i32` | `Int8`, `Int16`, `Int32` |
-| `i64`, `i128`, `isize` | `Int` |
-| `u8`, `u16`, `u32` | `UInt8`, `UInt16`, `UInt32` |
-| `u64`, `u128`, `usize` | `UInt` |
-| `f32`, `f64` | `Float` |
-| `char` | `Char` |
-| `String`, `PathBuf`, `Url`, ... | `String` |
-| `Vec<T>` | `Listing<T>` |
-| `HashSet<T>`, `BTreeSet<T>` | `Listing<T>(isDistinct)` |
-| `[T; N]` | `Listing<T>(length == N)` |
-| `HashMap<K, V>`, `BTreeMap<K, V>` | `Mapping<K, V>` |
-| `(A, B)` | `Pair<A, B>` |
-| `(A, B, C, ...)` | `Listing<A\|B\|C>(length == N)` |
-| `Option<T>` | `T?` |
-| `std::time::Duration` | `Duration` |
-| `serde_json::Value`, ... | `Any` |
-| Unit-only enum | `"a"\|"b"\|"c"` |
+| Rust                              | Pkl                             |
+| --------------------------------- | ------------------------------- |
+| `bool`                            | `Boolean`                       |
+| `i8`, `i16`, `i32`                | `Int8`, `Int16`, `Int32`        |
+| `i64`, `i128`, `isize`            | `Int`                           |
+| `u8`, `u16`, `u32`                | `UInt8`, `UInt16`, `UInt32`     |
+| `u64`, `u128`, `usize`            | `UInt`                          |
+| `f32`, `f64`                      | `Float`                         |
+| `char`                            | `Char`                          |
+| `String`, `PathBuf`, `Url`, ...   | `String`                        |
+| `Vec<T>`                          | `Listing<T>`                    |
+| `HashSet<T>`, `BTreeSet<T>`       | `Listing<T>(isDistinct)`        |
+| `[T; N]`                          | `Listing<T>(length == N)`       |
+| `HashMap<K, V>`, `BTreeMap<K, V>` | `Mapping<K, V>`                 |
+| `(A, B)`                          | `Pair<A, B>`                    |
+| `(A, B, C, ...)`                  | `Listing<A\|B\|C>(length == N)` |
+| `Option<T>`                       | `T?`                            |
+| `std::time::Duration`             | `Duration`                      |
+| `serde_json::Value`, ...          | `Any`                           |
+| Unit-only enum                    | `"a"\|"b"\|"c"`                 |
 
 `Pair` and `Duration` are decoded by the [Pkl format](../../config/experimental.md) into the same
-shapes as a Rust tuple and `Duration`, so `timeout = 30.s` loads as expected. Pkl's own JSON and YAML
-renderers can't output them without a converter, however.
+shapes as a Rust tuple and `Duration`, so `timeout = 30.s` loads as expected. Pkl's own JSON and
+YAML renderers can't output them without a converter, however.
 
-Arrays and maps are typed as `Listing` and `Mapping`, which a config can amend, such as
-`tags { "web" }`. A value created with `List()` or `Map()` doesn't pass that type check, so use
-`new Listing {}` and `new Mapping {}` instead.
+Pkl has two types of each collection: an amendable one, `Listing` and `Mapping`, and an eager one,
+`List`, `Set`, and `Map`, which can be concatenated. The Pkl format decodes them all the same, so a
+list or a map accepts either. The amendable type is marked as the default, so that a config can
+amend it, as in `tags { "web" }`, as well as assign an eager one, as in
+`tags = List("web") + shared`.
+
+A union with a struct among its variants, such as an untagged enum, has no default to amend, and Pkl
+can't tell which struct a `new {}` creates. Create the struct by its module instead.
+
+```pkl
+import "pkl/TaskDependencyConfig.pkl"
+
+deps = List("build", new TaskDependencyConfig { target = "~:lint"; optional = true })
+```
+
+### Aliases
+
+Pkl outputs every property, and serde rejects a setting that's given under both its name and an
+alias, so an alias is declared `hidden`, which Pkl doesn't output. The setting falls back to its
+alias, so setting either one outputs the setting under its name.
+
+```pkl
+/// The default value of the variable.
+default: Boolean? = defaultValue
+
+/// An alias of `default`.
+hidden defaultValue: Boolean?
+```
+
+A setting that isn't nullable would lose the default of its type by falling back, so only a nullable
+setting declares its aliases.
 
 A few things can't be expressed in Pkl, and are rendered as close as possible:
 
@@ -211,6 +269,11 @@ port: UInt16?
 host: String?
 ```
 
-Classes, such as the variants of an enum, are always rendered as declared, as their value is only
-valid in full. Rendering [partial types](../../config/partial.md) has the same effect, as every
-field of a partial is optional, but names every module after its partial type.
+This only applies to structs that are loaded as partials, which is what makes their settings
+optional. A struct that's loaded in full, such as the value of a setting that isn't nested, or a
+type that doesn't derive `Config`, can't take null for a field that isn't an `Option`, so it's
+always rendered as declared. Classes, such as the variants of an enum, are too, as their value is
+only valid in full.
+
+Rendering [partial types](../../config/partial.md) has the same effect, as every field of a partial
+is optional, but names every module after its partial type.

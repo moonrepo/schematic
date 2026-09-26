@@ -10,17 +10,17 @@ module TypesConfig
 import "BasicEnum.pkl"
 import "KeyEnum.pkl"
 
-btree_set: Listing<UInt8>(isDistinct)
+btree_set: *Listing<UInt8>(isDistinct) | List<UInt8>(isDistinct) | Set<UInt8>
 
 character: Char
 
 duration: Duration
 
-enum_map: Mapping<KeyEnum.KeyEnum, String>
+enum_map: *Mapping<KeyEnum.KeyEnum, String> | Map<KeyEnum.KeyEnum, String>
 
 escaped: String = "quote \" and backslash \\ and \\(interpolation)"
 
-fixed_array: Listing<String>(length == 3)
+fixed_array: *Listing<String>(length == 3) | List<String>(length == 3) | Set<String>(length == 3)
 
 float32: Float = 1.0
 
@@ -48,7 +48,7 @@ maybe_duration: Duration?
 
 non_zero: UInt8(this >= 1)?
 
-nullable_items: Listing<BasicEnum.BasicEnum?>
+nullable_items: *Listing<BasicEnum.BasicEnum?> | List<BasicEnum.BasicEnum?> | Set<BasicEnum.BasicEnum?>
 
 @Deprecated { message = "Use `level` instead." }
 old_level: BasicEnum.BasicEnum?
@@ -57,9 +57,9 @@ pair: Pair<String, UInt32>
 
 port: UInt16(isBetween(1024, 49151))
 
-set: Listing<String>(isDistinct)
+set: *Listing<String>(isDistinct) | List<String>(isDistinct) | Set<String>
 
-triple: Listing<String|UInt32|Boolean>(length == 3)
+triple: *Listing<String | UInt32 | Boolean>(length == 3) | List<String | UInt32 | Boolean>(length == 3)
 
 uint128: UInt
 

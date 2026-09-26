@@ -45,16 +45,16 @@ impl Default for PklSchemaOptions {
 /// that it can be added once, around a whole union, instead of per variant.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PklType {
-    value: String,
+    // Each type of a union, or the only type, and whether it's the default.
+    members: Vec<(String, bool)>,
     nullable: bool,
-    union: bool,
 }
 
 impl PklType {
     fn new(value: impl Into<String>) -> Self {
         Self {
-            value: value.into(),
-            ..Self::default()
+            members: vec![(value.into(), false)],
+            nullable: false,
         }
     }
 
@@ -65,65 +65,87 @@ impl PklType {
 
     /// Return true if the type is a union of types.
     pub fn is_union(&self) -> bool {
-        self.union
+        self.members.len() > 1
     }
 }
 
 impl fmt::Display for PklType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match (self.nullable, self.union) {
-            (true, true) => write!(f, "({})?", self.value),
-            (true, false) => write!(f, "{}?", self.value),
-            _ => write!(f, "{}", self.value),
+        let value = if self.is_union() {
+            self.members
+                .iter()
+                .map(|(value, is_default)| {
+                    if *is_default {
+                        format!("*{value}")
+                    } else {
+                        value.to_owned()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(" | ")
+        } else {
+            self.members[0].0.clone()
+        };
+
+        match (self.nullable, self.is_union()) {
+            (true, true) => write!(f, "({value})?"),
+            (true, false) => write!(f, "{value}?"),
+            _ => write!(f, "{value}"),
         }
     }
 }
 
-/// Join types into a union, marking the default variant with `*`. A single
-/// type is returned as is, as only a union can carry a default marker.
-fn join_union(members: Vec<(PklType, bool)>, nullable: bool) -> PklType {
+/// Join types into a union, marking the default variant with `*`. A variant
+/// that is itself a union is flattened into it, and only keeps its own default
+/// when it's the default variant, or the only one, as a union can only have
+/// one default.
+fn join_union(variants: Vec<(PklType, bool)>, nullable: bool) -> PklType {
     let mut nullable = nullable;
-    let mut variants: Vec<(PklType, bool)> = vec![];
+    let mut members: Vec<(String, bool)> = vec![];
+    let is_only = variants.len() == 1;
 
-    for (ty, is_default) in members {
+    for (ty, is_default) in variants {
         nullable = nullable || ty.nullable;
 
-        match variants
-            .iter_mut()
-            .find(|(other, _)| other.value == ty.value)
-        {
-            Some((_, other_default)) => *other_default = *other_default || is_default,
-            None => variants.push((ty, is_default)),
-        };
-    }
+        let is_union = ty.is_union();
 
-    match variants.len() {
-        0 => PklType {
-            value: if nullable { "Null" } else { "nothing" }.into(),
-            ..PklType::default()
-        },
-        1 => {
-            let (ty, _) = variants.remove(0);
+        for (value, is_inner_default) in ty.members {
+            let is_default = (is_default || is_only) && (!is_union || is_inner_default);
 
-            PklType { nullable, ..ty }
+            match members.iter_mut().find(|(other, _)| *other == value) {
+                Some((_, other_default)) => *other_default = *other_default || is_default,
+                None => members.push((value, is_default)),
+            };
         }
-        _ => PklType {
-            value: variants
-                .into_iter()
-                .map(|(ty, is_default)| {
-                    // A default marker applies to a single type, not a union
-                    if is_default && !ty.union {
-                        format!("*{}", ty.value)
-                    } else {
-                        ty.value
-                    }
-                })
-                .collect::<Vec<_>>()
-                .join("|"),
-            nullable,
-            union: true,
-        },
     }
+
+    // Merging duplicates can mark more than one
+    let mut marked = false;
+
+    for (_, is_default) in &mut members {
+        *is_default = *is_default && !marked;
+        marked = marked || *is_default;
+    }
+
+    if members.is_empty() {
+        return PklType::new(if nullable { "Null" } else { "nothing" });
+    }
+
+    PklType { members, nullable }
+}
+
+/// Join the types a collection accepts. Pkl has an amendable and an eager type
+/// of each, which a config may use either of, such as `tags { "a" }` and
+/// `tags = List("a")`. The amendable type is the default, as amending needs one.
+fn join_collection(types: Vec<PklType>) -> PklType {
+    join_union(
+        types
+            .into_iter()
+            .enumerate()
+            .map(|(index, ty)| (ty, index == 0))
+            .collect(),
+        false,
+    )
 }
 
 /// Add constraints to a type, such as `String(length <= 10)`.
@@ -232,6 +254,9 @@ struct ModuleContext {
     // Parts of the name given to a class declared at the current position.
     hints: Vec<String>,
 
+    // Whether the struct being rendered is deserialized as a full type.
+    full: bool,
+
     depth: usize,
 }
 
@@ -247,8 +272,13 @@ pub struct PklSchemaRenderer {
     // How each struct inherits from the struct it flattens, keyed by name.
     inheritance: HashMap<String, Inheritance>,
 
-    // Structs that another module extends, which must be declared `open`.
-    extended: HashSet<String>,
+    // Structs whose module must be declared `open`, as another module extends
+    // it, or a config has to, to declare the settings it collects.
+    open: HashSet<String>,
+
+    // Schemas deserialized as a full type somewhere, rather than as a partial,
+    // so a setting that isn't optional can't be null.
+    full: HashSet<String>,
 
     module: ModuleContext,
 }
@@ -296,17 +326,19 @@ impl PklSchemaRenderer {
     fn prepare(&mut self, schemas: IndexMap<String, Schema>) {
         self.schemas = schemas;
         self.inheritance.clear();
-        self.extended.clear();
+        self.open.clear();
 
         let mut referenced = HashSet::new();
 
         for (name, schema) in &self.schemas {
-            for reference in self.collect_references(schema) {
+            for (reference, _) in self.collect_references(schema) {
                 if reference != *name {
                     referenced.insert(reference);
                 }
             }
         }
+
+        self.full = self.find_full(&referenced);
 
         let mut inheritance = vec![];
 
@@ -319,9 +351,10 @@ impl PklSchemaRenderer {
                 continue;
             };
 
-            // A module that amends another cannot be used as a type, and
-            // cannot declare properties the other module lacks
+            // A module that amends another cannot be used as a type, cannot
+            // declare properties the other module lacks, and cannot be extended
             let amends = !referenced.contains(name)
+                && !self.is_open(structure)
                 && self.collect_properties(structure, Some(&field)).is_empty();
 
             inheritance.push((
@@ -334,17 +367,59 @@ impl PklSchemaRenderer {
             ));
         }
 
+        for (name, schema) in &self.schemas {
+            if let SchemaType::Struct(structure) = &schema.ty
+                && self.is_open(structure)
+            {
+                self.open.insert(name.to_owned());
+            }
+        }
+
         for (name, inherit) in inheritance {
             if !inherit.amends {
-                self.extended.insert(inherit.base.clone());
+                self.open.insert(inherit.base.clone());
             }
 
             self.inheritance.insert(name, inherit);
         }
     }
 
-    /// Names of the schemas a schema refers to, without following them.
-    fn collect_references(&self, schema: &Schema) -> Vec<String> {
+    /// Decide which schemas are deserialized as a full type somewhere. A type
+    /// that nothing refers to is a config's root, which is loaded as a
+    /// partial, as is a nested setting within a partial. Anything else is
+    /// full, including everything within a full type.
+    fn find_full(&self, referenced: &HashSet<String>) -> HashSet<String> {
+        let mut full = HashSet::new();
+        let mut seen = HashSet::new();
+        let mut queue = self
+            .schemas
+            .keys()
+            .filter(|name| !referenced.contains(*name))
+            .map(|name| (name.to_owned(), false))
+            .collect::<Vec<_>>();
+
+        while let Some((name, is_full)) = queue.pop() {
+            if !seen.insert((name.clone(), is_full)) {
+                continue;
+            }
+
+            if is_full {
+                full.insert(name.clone());
+            }
+
+            if let Some(schema) = self.schemas.get(&name) {
+                for (reference, is_partial) in self.collect_references(schema) {
+                    queue.push((reference, is_full || !is_partial));
+                }
+            }
+        }
+
+        full
+    }
+
+    /// Names of the schemas a schema refers to, without following them, and
+    /// whether each is referred to as a partial, such as a nested setting.
+    fn collect_references(&self, schema: &Schema) -> Vec<(String, bool)> {
         let mut references = vec![];
         let mut visit = |child: &Schema| self.collect_reference(child, &mut references);
 
@@ -384,11 +459,28 @@ impl PklSchemaRenderer {
         references
     }
 
-    fn collect_reference(&self, schema: &Schema, references: &mut Vec<String>) {
+    fn collect_reference(&self, schema: &Schema, references: &mut Vec<(String, bool)>) {
+        // Only a struct or a union can hold a partial. Anything else, such as
+        // a list, passes on how it's held.
+        let is_partial = match &schema.ty {
+            SchemaType::Struct(inner) => inner.partial,
+            SchemaType::Union(inner) => inner.partial,
+            SchemaType::Reference { partial, .. } => *partial,
+            _ => true,
+        };
+
         match (&schema.name, &schema.ty) {
-            (Some(name), _) if self.is_reference(name) => references.push(name.to_owned()),
-            (_, SchemaType::Reference { name, .. }) => references.push(name.to_owned()),
-            _ => references.extend(self.collect_references(schema)),
+            (Some(name), _) if self.is_reference(name) => {
+                references.push((name.to_owned(), is_partial))
+            }
+            (_, SchemaType::Reference { name, .. }) => {
+                references.push((name.to_owned(), is_partial))
+            }
+            _ => references.extend(
+                self.collect_references(schema)
+                    .into_iter()
+                    .map(|(name, is_inner_partial)| (name, is_partial && is_inner_partial)),
+            ),
         };
     }
 
@@ -407,7 +499,7 @@ impl PklSchemaRenderer {
 
         self.collect_references(schema)
             .into_iter()
-            .any(|reference| {
+            .any(|(reference, _)| {
                 !self.is_struct(&reference)
                     && (reference == to || self.reaches(&reference, to, visited))
             })
@@ -453,16 +545,9 @@ impl PklSchemaRenderer {
             }
 
             if field.flatten {
-                let schema = unwrap_nullable(&field.schema);
-                let schema = schema
-                    .name
-                    .as_ref()
-                    .and_then(|name| self.schemas.get(name))
-                    .unwrap_or(schema);
-
                 // A flattened map collects unknown keys, which a typed object
                 // cannot declare, so only a struct's fields are folded in
-                if let SchemaType::Struct(inner) = &schema.ty {
+                if let SchemaType::Struct(inner) = &self.resolve(&field.schema).ty {
                     properties.extend(self.collect_properties(inner, None));
                 }
 
@@ -473,6 +558,45 @@ impl PklSchemaRenderer {
         }
 
         properties
+    }
+
+    /// Names of the flattened fields that collect the settings a struct
+    /// doesn't declare, such as a map, including those of the structs it
+    /// flattens. The `inherited` field is left out, as its module says so.
+    fn collect_catch_alls(&self, structure: &StructType, inherited: Option<&str>) -> Vec<String> {
+        let mut names = vec![];
+
+        for (name, field) in structure.sorted_fields() {
+            if !field.flatten || field.hidden || inherited == Some(name.as_str()) {
+                continue;
+            }
+
+            match &self.resolve(&field.schema).ty {
+                SchemaType::Struct(inner) => names.extend(self.collect_catch_alls(inner, None)),
+                _ => names.push(name.to_owned()),
+            };
+        }
+
+        names
+    }
+
+    /// Return true if the struct collects settings it doesn't declare. A
+    /// typed object only accepts the properties it declares, so only a
+    /// `Dynamic` can hold such a struct, or a module that extends its module.
+    fn is_open(&self, structure: &StructType) -> bool {
+        !self.collect_catch_alls(structure, None).is_empty()
+    }
+
+    /// The schema a nullable schema holds, resolved to the schema it refers
+    /// to by name.
+    fn resolve<'a>(&'a self, schema: &'a Schema) -> &'a Schema {
+        let schema = unwrap_nullable(schema);
+
+        schema
+            .name
+            .as_ref()
+            .and_then(|name| self.schemas.get(name))
+            .unwrap_or(schema)
     }
 
     fn indent(&self) -> String {
@@ -493,6 +617,7 @@ impl PklSchemaRenderer {
         self.module = ModuleContext {
             name: name.to_owned(),
             alias: !schema.is_struct(),
+            full: self.full.contains(name),
             taken,
             // Already a type name, so kept as written
             hints: vec![
@@ -514,16 +639,20 @@ impl PklSchemaRenderer {
             clause.extend(self.render_description(schema.description.as_deref()));
             clause.extend(schema.deprecated.as_deref().map(render_deprecated));
 
-            let properties = self.collect_properties(
-                structure,
-                inheritance.as_ref().map(|inherit| inherit.field.as_str()),
-            );
+            let inherited = inheritance.as_ref().map(|inherit| inherit.field.as_str());
+            let properties = self.collect_properties(structure, inherited);
 
             self.module.properties = properties.keys().cloned().collect();
             self.module.taken.extend(properties.keys().cloned());
 
+            for name in self.collect_catch_alls(structure, inherited) {
+                members.push(format!(
+                    "// Any other setting is collected by `{name}`. It's accepted wherever this is\n// used, as a `Dynamic`, or by a module that extends this one."
+                ));
+            }
+
             for (name, field) in &properties {
-                members.push(self.render_property(name, field, true)?);
+                members.push(self.render_property(name, field, &properties, true)?);
             }
         } else {
             let ty = self.render_schema_without_reference(&schema)?;
@@ -537,7 +666,7 @@ impl PklSchemaRenderer {
 
         clause.push(format!(
             "{}module {}",
-            if self.extended.contains(name) {
+            if self.open.contains(name) {
                 "open "
             } else {
                 ""
@@ -600,13 +729,14 @@ impl PklSchemaRenderer {
             .unwrap_or_default()
     }
 
-    /// Render a property, with its documentation. A property of a module has
-    /// the module's own members to contend with, which a class property
-    /// doesn't.
+    /// Render a property, with its documentation and aliases. A property of a
+    /// module has the module's own members to contend with, which a class
+    /// property doesn't. The `siblings` are every property declared alongside.
     fn render_property(
         &mut self,
         name: &str,
         field: &SchemaField,
+        siblings: &BTreeMap<String, SchemaField>,
         in_module: bool,
     ) -> RenderResult {
         let indent = self.indent();
@@ -632,9 +762,10 @@ impl PklSchemaRenderer {
         if matches!(unwrap_nullable(&field.schema).ty, SchemaType::Literal(_)) {
             ty.nullable = false;
         }
-        // Only a config's own settings can be left out. A class holds a value,
-        // such as the payload of an enum variant, which serde needs in full.
-        else if in_module && !self.options.mark_struct_fields_required {
+        // Only a partial config's own settings can be left out. A class holds
+        // a value, such as the payload of an enum variant, which serde needs
+        // in full, and a full type can't take null for what isn't optional.
+        else if in_module && !self.module.full && !self.options.mark_struct_fields_required {
             ty.nullable = true;
         } else {
             ty.nullable = ty.nullable || field.nullable;
@@ -645,11 +776,40 @@ impl PklSchemaRenderer {
                 default = self.render_default(field);
 
                 // Pkl outputs every property, so one that may be omitted, but
-                // that has no value to fall back on, has to accept null
-                if default.is_none() && field.optional {
+                // that has no value to fall back on, has to accept null, which
+                // only a partial does
+                if default.is_none() && field.optional && !self.module.full {
                     ty.nullable = true;
                 }
             }
+        }
+
+        // Pkl outputs every property, and serde rejects a setting and its
+        // alias together, so an alias is hidden, and the setting falls back to
+        // it instead. A setting that isn't nullable would lose the default of
+        // its type by falling back, so only a nullable one has aliases.
+        let aliases = if ty.nullable && default.is_none() {
+            field
+                .aliases
+                .iter()
+                .filter(|alias| {
+                    *alias != name
+                        && !siblings.contains_key(*alias)
+                        && !(in_module && *alias == "output")
+                })
+                .collect::<Vec<_>>()
+        } else {
+            vec![]
+        };
+
+        if !aliases.is_empty() {
+            default = Some(
+                aliases
+                    .iter()
+                    .map(|alias| quote_identifier(alias))
+                    .collect::<Vec<_>>()
+                    .join(" ?? "),
+            );
         }
 
         let mut lines = self.render_description(field.comment.as_deref());
@@ -665,6 +825,12 @@ impl PklSchemaRenderer {
                 .map(|default| format!(" = {default}"))
                 .unwrap_or_default()
         ));
+
+        for alias in aliases {
+            lines.push(String::new());
+            lines.push(format!("{indent}/// An alias of `{name}`."));
+            lines.push(format!("{indent}hidden {}: {ty}", quote_identifier(alias)));
+        }
 
         Ok(lines.join("\n"))
     }
@@ -733,14 +899,21 @@ impl PklSchemaRenderer {
 
         let hints = mem::replace(&mut self.module.hints, vec![name.clone()]);
         let depth = mem::replace(&mut self.module.depth, 1);
+        // A struct is only a partial when it's held as one, such as a nested
+        // variant, and never within a full type
+        let is_full = self.module.full || !structure.partial;
+        let full = mem::replace(&mut self.module.full, is_full);
 
         let mut members = vec![];
 
-        for (property, field) in &self.collect_properties(structure, None) {
-            members.push(self.render_property(property, field, false)?);
+        let properties = self.collect_properties(structure, None);
+
+        for (property, field) in &properties {
+            members.push(self.render_property(property, field, &properties, false)?);
         }
 
         self.module.hints = hints;
+        self.module.full = full;
         self.module.depth = 0;
 
         let mut class = self.render_description(schema.description.as_deref());
@@ -824,9 +997,17 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             constraints.push("isDistinct".to_owned());
         }
 
-        constraints.extend(length_constraint(array.min_length, array.max_length));
+        let length = length_constraint(array.min_length, array.max_length);
 
-        Ok(constrain(format!("Listing<{items}>"), constraints))
+        constraints.extend(length.clone());
+
+        // A set is always distinct, and is decoded into a sequence, the same
+        // as a list
+        Ok(join_collection(vec![
+            constrain(format!("Listing<{items}>"), constraints.clone()),
+            constrain(format!("List<{items}>"), constraints),
+            constrain(format!("Set<{items}>"), length.into_iter().collect()),
+        ]))
     }
 
     fn render_boolean(
@@ -962,16 +1143,25 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
         let key = self.render_schema(&object.key_type)?;
         let value = self.render_schema(&object.value_type)?;
 
-        Ok(constrain(
-            format!("Mapping<{key}, {value}>"),
-            length_constraint(object.min_length, object.max_length)
-                .into_iter()
-                .collect(),
-        ))
+        let constraints: Vec<_> = length_constraint(object.min_length, object.max_length)
+            .into_iter()
+            .collect();
+
+        Ok(join_collection(vec![
+            constrain(format!("Mapping<{key}, {value}>"), constraints.clone()),
+            constrain(format!("Map<{key}, {value}>"), constraints),
+        ]))
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<PklType> {
         let is_struct = self.is_struct(reference);
+
+        if let Some(SchemaType::Struct(structure)) =
+            self.schemas.get(reference).map(|schema| &schema.ty)
+            && self.is_open(structure)
+        {
+            return Ok(PklType::new("Dynamic"));
+        }
 
         // Pkl rejects a type alias that refers back to itself, even through a
         // class it declares, so the cycle is broken with the widest type
@@ -1027,6 +1217,10 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             return Ok(PklType::new("Duration"));
         }
 
+        if self.is_open(structure) {
+            return Ok(PklType::new("Dynamic"));
+        }
+
         Ok(PklType::new(self.render_class(structure, schema)?))
     }
 
@@ -1043,13 +1237,13 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             return Ok(PklType::new(format!("Pair<{first}, {second}>")));
         }
 
-        let length = items.len();
+        let constraints = vec![format!("length == {}", items.len())];
         let items = join_union(items.into_iter().map(|item| (item, false)).collect(), false);
 
-        Ok(constrain(
-            format!("Listing<{items}>"),
-            vec![format!("length == {length}")],
-        ))
+        Ok(join_collection(vec![
+            constrain(format!("Listing<{items}>"), constraints.clone()),
+            constrain(format!("List<{items}>"), constraints),
+        ]))
     }
 
     fn render_union(&mut self, uni: &UnionType, _schema: &Schema) -> RenderResult<PklType> {

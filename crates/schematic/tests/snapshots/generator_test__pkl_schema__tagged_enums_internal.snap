@@ -6,7 +6,7 @@ expression: "modules.get(\"InternalTagged.pkl\").unwrap()"
 
 module InternalTagged
 
-typealias InternalTagged = InternalTaggedFoo|InternalTaggedQux
+typealias InternalTagged = InternalTaggedFoo | InternalTaggedQux
 
 class InternalTaggedFoo {
   type: "Foo"

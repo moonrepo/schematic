@@ -583,7 +583,7 @@ impl Container {
                     use serde::de::Error as _;
 
                     // Buffer the content so that we can attempt to deserialize it multiple times
-                    let content = deserializer.deserialize_any(schematic::serde_content::ValueVisitor)?;
+                    let content = schematic::internal::buffer_untagged_content(deserializer)?;
                     let mut errors: Vec<(&str, String)> = Vec::new();
 
                     #(#attempts)*

@@ -8,7 +8,7 @@ module AdjacentTagged
 
 import "ExternalTaggedConfig.pkl"
 
-typealias AdjacentTagged = AdjacentTaggedFoo|AdjacentTaggedBar|AdjacentTaggedQux
+typealias AdjacentTagged = AdjacentTaggedFoo | AdjacentTaggedBar | AdjacentTaggedQux
 
 class AdjacentTaggedFoo {
   type: "Foo"

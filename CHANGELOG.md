@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a `null` within a nested variant of an untagged enum failing to deserialize, even for an
+  `Option`. The variant's content is buffered to try each variant, which kept a `null` as a unit
+  value rather than none.
+
 ## 0.20.7
 
 #### 🚀 Updates
@@ -7,12 +15,19 @@
 - Added a `PklSchemaRenderer`, behind the `renderer_pkl_schema` feature, that renders a Pkl module
   for every struct and enum, which a Pkl config can amend to be type checked. A struct's module
   declares its fields as properties, while an enum's module declares a type alias, and Rust types
-  are converted to their Pkl counterparts, such as `u16` to `UInt16`, `Vec<T>` to `Listing<T>`, and
+  are converted to their Pkl counterparts, such as `u16` to `UInt16`, `Vec<T>` to a list, and
   `Duration` to `Duration`, with constraints rendered as type constraints. A struct that flattens
   another extends that struct's module, or amends it when it declares nothing else.
   `PklSchemaRenderer::generate_all` writes every module into a directory, and the
   `mark_struct_fields_required` option renders every property as nullable, so that a config only
   outputs the settings it sets.
+  - Lists and maps accept both of Pkl's types, such as `*Listing<T> | List<T> | Set<T>`, so that a
+    config can amend them or assign an eager value, like `List("a") + shared`.
+  - A struct that collects other settings through a flattened map is typed as `Dynamic` wherever
+    it's used, and its module is declared `open`, so that a config can extend it to declare them.
+  - An alias is declared as a `hidden` property that its setting falls back to.
+  - A struct that's deserialized in full, rather than as a partial, keeps its declared types, as it
+    can't take null for a field that isn't an `Option`.
 - When the header of a `PklTemplateRenderer` amends or extends a module, lists and maps amend their
   declared values instead, so that a template can amend the modules of `PklSchemaRenderer`.
 
