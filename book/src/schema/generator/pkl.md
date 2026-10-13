@@ -67,7 +67,8 @@ typealias LogLevel = *"info" | "debug" | "error"
 ```
 
 A `@since` line in a doc comment becomes a `@Since` annotation, which is how Pkl declares the
-version a member was added in, and a deprecation becomes a `@Deprecated` annotation.
+version a member was added in, and a deprecation, or a `@deprecated` line, becomes a `@Deprecated`
+annotation. Any other line that starts with `@` stays in the doc comment, after its description.
 
 A module is a type, but it can't be a union or a string, so every other type, such as an enum,
 becomes a type alias of the same name, which each module that uses it declares, after its

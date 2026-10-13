@@ -1,3 +1,4 @@
+use super::doc_tags::*;
 use crate::schema::SchemaGenerator;
 use crate::schema::{RenderResult, SchemaRenderer};
 use indexmap::IndexMap;
@@ -9,12 +10,18 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
-/// A tag describing how a type, property, or variant may be provided.
+/// A tag describing how a type, property, or variant may be provided. Besides
+/// those derived from the type, a line of a doc comment that starts with `@`,
+/// such as `@since 1.2.0`, is a tag, and is removed from the description.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ApiDocsTag {
+    /// A tag from a doc comment that has no variant of its own, such as
+    /// `@experimental`, with the text that follows its name, if any.
+    Custom { name: String, value: Option<String> },
     /// The default variant of an enum or union.
     Default,
-    /// Deprecated, with the deprecation message when one was given.
+    /// Deprecated, with the deprecation message when one was given. Also
+    /// declared by a `@deprecated` tag in a doc comment.
     Deprecated(Option<String>),
     /// A property whose keys are flattened into its parent.
     Flattened,
@@ -26,14 +33,18 @@ pub enum ApiDocsTag {
     Required,
     /// A property that is only serialized, never deserialized.
     ReadOnly,
+    /// The version it was added in, from a `@since` tag in a doc comment.
+    Since(String),
     /// A property that is only deserialized, never serialized.
     WriteOnly,
 }
 
 impl ApiDocsTag {
-    /// The human readable label of the tag.
-    pub fn label(&self) -> &'static str {
-        match self {
+    /// The human readable label of the tag. A custom tag is labelled by its
+    /// name, capitalized and with its separators as spaces.
+    pub fn label(&self) -> Cow<'_, str> {
+        Cow::Borrowed(match self {
+            Self::Custom { name, .. } => return Cow::Owned(to_label(name)),
             Self::Default => "Default",
             Self::Deprecated(_) => "Deprecated",
             Self::Flattened => "Flattened",
@@ -41,9 +52,31 @@ impl ApiDocsTag {
             Self::Optional => "Optional",
             Self::Required => "Required",
             Self::ReadOnly => "Read only",
+            Self::Since(_) => "Since",
             Self::WriteOnly => "Write only",
+        })
+    }
+
+    /// The text the tag carries, such as a deprecation message, or the
+    /// version of a `@since` tag.
+    pub fn value(&self) -> Option<&str> {
+        match self {
+            Self::Custom { value, .. } | Self::Deprecated(value) => value.as_deref(),
+            Self::Since(version) => Some(version),
+            _ => None,
         }
     }
+}
+
+/// Convert a tag's name into a label, such as `Read only` for `read-only`.
+fn to_label(name: &str) -> String {
+    let mut label = name.replace(['-', '_'], " ");
+
+    if let Some(first) = label.get_mut(0..1) {
+        first.make_ascii_uppercase();
+    }
+
+    label
 }
 
 impl fmt::Display for ApiDocsTag {
@@ -57,7 +90,8 @@ impl fmt::Display for ApiDocsTag {
 pub type ApiDocsTagsRenderer = Box<dyn Fn(&[ApiDocsTag]) -> String>;
 
 /// Renders the description of a type, property, or variant to markdown,
-/// from the doc comment as written. An empty result omits the description.
+/// from the doc comment as written, without its tags. An empty result omits
+/// the description.
 pub type ApiDocsDescriptionRenderer = Box<dyn Fn(&str) -> String>;
 
 /// Renders a link to a referenced type's page, from the type name, as a
@@ -91,20 +125,21 @@ pub fn default_anchor_renderer(heading: &str) -> String {
 }
 
 /// The default tags renderer, which renders a block quote of bold labels
-/// separated by a middle dot, such as `> **Required** · **Nullable**`. A
-/// deprecation message follows its label in parentheses.
+/// separated by a middle dot, such as `> **Required** · **Since** (1.2.0)`.
+/// The value of a tag, such as a deprecation message, follows its label in
+/// parentheses.
 pub fn default_tags_renderer(tags: &[ApiDocsTag]) -> String {
-    let tags = tags
-        .iter()
-        .map(|tag| match tag {
-            ApiDocsTag::Deprecated(Some(message)) => {
-                format!("**{}** ({})", tag.label(), message.trim())
-            }
-            _ => format!("**{}**", tag.label()),
-        })
-        .collect::<Vec<_>>();
+    let tags = tags.iter().map(render_label).collect::<Vec<_>>();
 
     format!("> {}", tags.join(" · "))
+}
+
+/// A tag's bold label, followed by its value in parentheses.
+fn render_label(tag: &ApiDocsTag) -> String {
+    match tag.value() {
+        Some(value) => format!("**{}** ({})", tag.label(), value.trim()),
+        None => format!("**{}**", tag.label()),
+    }
 }
 
 /// The default description renderer, which keeps a description as written,
@@ -168,11 +203,13 @@ pub struct ApiDocsOptions {
     pub render_link: ApiDocsLinkRenderer,
 
     /// Renders the description of a type, property, or variant. Receives the
-    /// doc comment as written. Defaults to [`default_description_renderer`].
+    /// doc comment as written, without its tags. Defaults to
+    /// [`default_description_renderer`].
     pub render_description: ApiDocsDescriptionRenderer,
 
     /// Renders the tags of a type, property, or variant. Receives the tags in
-    /// a fixed order, and is only called when there is at least one. Defaults
+    /// a fixed order, followed by those of the doc comment in the order they
+    /// were written, and is only called when there is at least one. Defaults
     /// to [`default_tags_renderer`].
     pub render_tags: ApiDocsTagsRenderer,
 }
@@ -359,6 +396,47 @@ fn summarize(description: &str) -> String {
         .replace('|', "\\|")
 }
 
+/// A doc comment, split into its description and its tags.
+struct Docs {
+    description: Option<String>,
+
+    // Declared by the type, or by a `@deprecated` tag
+    deprecated: Option<String>,
+
+    // Every other tag, which follows the tags derived from the type
+    tags: Vec<ApiDocsTag>,
+}
+
+impl Docs {
+    fn new(comment: Option<&str>, deprecated: Option<&str>) -> Self {
+        let (description, doc_tags) = split_doc_tags(comment.unwrap_or_default());
+        let mut docs = Self {
+            description: (!description.is_empty()).then_some(description),
+            deprecated: deprecated.map(|message| message.to_owned()),
+            tags: vec![],
+        };
+
+        for DocTag { name, value } in doc_tags {
+            match (name.as_str(), value) {
+                ("deprecated", value) => {
+                    if docs.deprecated.is_none() {
+                        docs.deprecated = Some(value.unwrap_or_default());
+                    }
+                }
+                ("since", Some(version)) => docs.tags.push(ApiDocsTag::Since(version)),
+                (_, value) => docs.tags.push(ApiDocsTag::Custom { name, value }),
+            };
+        }
+
+        docs
+    }
+}
+
+/// The description of a doc comment, without its tags.
+fn describe(comment: Option<&str>) -> Option<String> {
+    Docs::new(comment, None).description
+}
+
 /// A row of the index that heads a page.
 struct IndexRow {
     name: String,
@@ -505,8 +583,7 @@ impl ApiDocsRenderer {
             rows.push(format!(
                 "| {} | {kind} | {} |",
                 self.create_link(name),
-                schema
-                    .description
+                describe(schema.description.as_deref())
                     .as_deref()
                     .map(summarize)
                     .unwrap_or_default(),
@@ -606,35 +683,42 @@ impl ApiDocsRenderer {
         Some((self.options.render_description)(description)).filter(|out| !out.is_empty())
     }
 
-    /// The tags of an enum variant.
-    fn variant_tags(&self, variant: &SchemaField, is_default: bool) -> Vec<ApiDocsTag> {
+    /// The tags of an enum variant, and its description without them.
+    fn variant_docs(
+        &self,
+        variant: &SchemaField,
+        is_default: bool,
+    ) -> (Vec<ApiDocsTag>, Option<String>) {
+        let docs = Docs::new(
+            variant
+                .comment
+                .as_deref()
+                .or(variant.schema.description.as_deref()),
+            variant
+                .deprecated
+                .as_deref()
+                .or(variant.schema.deprecated.as_deref()),
+        );
         let mut tags = vec![];
 
         if is_default {
             tags.push(ApiDocsTag::Default);
         }
 
-        if let Some(deprecated) = variant
-            .deprecated
-            .as_deref()
-            .or(variant.schema.deprecated.as_deref())
-        {
+        if let Some(deprecated) = &docs.deprecated {
             tags.push(self.deprecated_tag(deprecated));
         }
 
-        tags
+        tags.extend(docs.tags);
+
+        (tags, docs.description)
     }
 
     /// Tags as a comma separated list of labels, for a table cell. A block
     /// quote from `render_tags` cannot sit inside a cell, so it isn't used.
     fn render_inline_tags(&self, tags: &[ApiDocsTag]) -> String {
         tags.iter()
-            .map(|tag| match tag {
-                ApiDocsTag::Deprecated(Some(message)) => {
-                    format!("**{}** ({})", tag.label(), message.trim())
-                }
-                _ => format!("**{}**", tag.label()),
-            })
+            .map(render_label)
             .collect::<Vec<_>>()
             .join(", ")
             .replace('|', "\\|")
@@ -831,6 +915,7 @@ impl ApiDocsRenderer {
 
     fn render_property(&mut self, name: &str, field: &SchemaField) -> RenderResult {
         let mut out = vec![format!("### {}", code(name))];
+        let docs = Docs::new(field.comment.as_deref(), field.deprecated.as_deref());
         let mut tags = vec![];
 
         let nullable = field.nullable || field.schema.is_nullable();
@@ -848,7 +933,7 @@ impl ApiDocsRenderer {
             tags.push(ApiDocsTag::Nullable);
         }
 
-        if let Some(deprecated) = &field.deprecated {
+        if let Some(deprecated) = &docs.deprecated {
             tags.push(self.deprecated_tag(deprecated));
         }
 
@@ -864,16 +949,18 @@ impl ApiDocsRenderer {
             tags.push(ApiDocsTag::Flattened);
         }
 
+        tags.extend(docs.tags);
+
         if let Some(tags) = self.render_tags(tags) {
             out.push(tags);
         }
 
-        if let Some(comment) = field
-            .comment
+        if let Some(description) = docs
+            .description
             .as_deref()
-            .and_then(|comment| self.render_description(comment))
+            .and_then(|description| self.render_description(description))
         {
-            out.push(comment);
+            out.push(description);
         }
 
         out.push(self.render_field_table(field)?);
@@ -893,7 +980,7 @@ impl ApiDocsRenderer {
             index.push(IndexRow {
                 name: name.to_owned(),
                 ty: self.render_field_type(field)?,
-                description: field.comment.clone(),
+                description: describe(field.comment.as_deref()),
             });
 
             sections.push(self.render_property(name, field)?);
@@ -934,18 +1021,17 @@ impl ApiDocsRenderer {
         is_default: bool,
     ) -> RenderResult {
         let mut out = vec![format!("### {}", code(name))];
+        let (tags, description) = self.variant_docs(variant, is_default);
 
-        if let Some(tags) = self.render_tags(self.variant_tags(variant, is_default)) {
+        if let Some(tags) = self.render_tags(tags) {
             out.push(tags);
         }
 
-        if let Some(comment) = variant
-            .comment
+        if let Some(description) = description
             .as_deref()
-            .or(variant.schema.description.as_deref())
-            .and_then(|comment| self.render_description(comment))
+            .and_then(|description| self.render_description(description))
         {
-            out.push(comment);
+            out.push(description);
         }
 
         // A unit variant is its value, while a fallback variant accepts a type
@@ -1003,10 +1089,12 @@ impl ApiDocsRenderer {
             index.push(IndexRow {
                 name: name.to_owned(),
                 ty: self.render_type_expression(&expr),
-                description: variant
-                    .comment
-                    .clone()
-                    .or_else(|| variant.schema.description.clone()),
+                description: describe(
+                    variant
+                        .comment
+                        .as_deref()
+                        .or(variant.schema.description.as_deref()),
+                ),
             });
 
             sections.push(self.render_variant(
@@ -1035,13 +1123,9 @@ impl ApiDocsRenderer {
             }
 
             let expr = self.render_schema(&variant.schema)?;
-            let tags = self.variant_tags(variant, enu.default_index == Some(position));
-            let description = variant
-                .comment
-                .as_deref()
-                .or(variant.schema.description.as_deref())
-                .map(summarize)
-                .unwrap_or_default();
+            let (tags, description) =
+                self.variant_docs(variant, enu.default_index == Some(position));
+            let description = description.as_deref().map(summarize).unwrap_or_default();
 
             rows.push(format!(
                 "| {} | {} | {} | {} |",
@@ -1081,10 +1165,15 @@ impl ApiDocsRenderer {
                 None => expr.to_string(),
             };
 
+            let docs = Docs::new(
+                variant.description.as_deref(),
+                variant.deprecated.as_deref(),
+            );
+
             index.push(IndexRow {
                 name: heading.clone(),
                 ty: self.render_type_expression(&expr),
-                description: variant.description.clone(),
+                description: docs.description.clone(),
             });
 
             let mut section = vec![format!("### {}", code(heading))];
@@ -1094,15 +1183,17 @@ impl ApiDocsRenderer {
                 tags.push(ApiDocsTag::Default);
             }
 
-            if let Some(deprecated) = &variant.deprecated {
+            if let Some(deprecated) = &docs.deprecated {
                 tags.push(self.deprecated_tag(deprecated));
             }
+
+            tags.extend(docs.tags);
 
             if let Some(tags) = self.render_tags(tags) {
                 section.push(tags);
             }
 
-            if let Some(description) = variant
+            if let Some(description) = docs
                 .description
                 .as_deref()
                 .and_then(|description| self.render_description(description))
@@ -1173,9 +1264,10 @@ impl ApiDocsRenderer {
 
     fn render_page(&mut self, name: &str, schema: &Schema) -> RenderResult {
         let mut out = vec![self.render_frontmatter(name)];
+        let docs = Docs::new(schema.description.as_deref(), schema.deprecated.as_deref());
         let mut tags = vec![];
 
-        if let Some(deprecated) = &schema.deprecated {
+        if let Some(deprecated) = &docs.deprecated {
             tags.push(self.deprecated_tag(deprecated));
         }
 
@@ -1183,11 +1275,13 @@ impl ApiDocsRenderer {
             tags.push(ApiDocsTag::Nullable);
         }
 
+        tags.extend(docs.tags);
+
         if let Some(tags) = self.render_tags(tags) {
             out.push(tags);
         }
 
-        if let Some(description) = schema
+        if let Some(description) = docs
             .description
             .as_deref()
             .and_then(|description| self.render_description(description))

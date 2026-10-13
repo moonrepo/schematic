@@ -229,6 +229,46 @@ struct DocsConfig {
     hidden: String,
 }
 
+/// A config with tags in its doc comments.
+///
+/// @since 1.0.0
+#[derive(Clone, Config)]
+struct TaggedDocsConfig {
+    /// Added after the config.
+    /// @since 1.2.0
+    /// @experimental
+    added: Option<String>,
+
+    /// Deprecated through its doc comment.
+    /// @deprecated Use `added` instead.
+    old: Option<String>,
+
+    /// Deprecated by both, where the attribute wins.
+    /// @deprecated Ignored.
+    #[deprecated = "Use `added`."]
+    older: Option<String>,
+
+    /// A line of an example that starts with `@` is kept.
+    ///
+    /// ```py
+    /// @decorator
+    /// ```
+    example: Option<String>,
+
+    level: TaggedDocsEnum,
+}
+
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
+    pub enum TaggedDocsEnum {
+        #[default]
+        Alpha,
+        /// Added later.
+        /// @since 1.1.0
+        Beta,
+    }
+);
+
 fn create_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
@@ -781,6 +821,22 @@ mod typescript {
         assert_snapshot!(generate(TypeScriptOptions::default()));
     }
 
+    // The tags of a doc comment join those derived from the type, after the
+    // description
+    #[test]
+    fn doc_comment_tags() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("types.ts");
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        generator
+            .generate(&file, TypeScriptRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
     #[test]
     fn partials() {
         let sandbox = create_empty_sandbox();
@@ -1133,6 +1189,60 @@ mod api_docs {
         ));
     }
 
+    // A line of a doc comment that starts with `@` is a tag, rather than part
+    // of the description
+    #[test]
+    fn doc_comment_tags() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn doc_comment_tags_in_enum_table() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsEnum>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("| `beta` | `\"beta\"` | **Since** (1.1.0) | Added later. |"));
+    }
+
+    #[test]
+    fn doc_comment_tags_left_out_of_index_page() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        let output = ApiDocsRenderer::default()
+            .render_index_page(&generator.schemas)
+            .unwrap();
+
+        assert!(output.contains(
+            "| [`TaggedDocsConfig`](./TaggedDocsConfig.md) | Struct | A config with tags in its doc comments. |"
+        ));
+    }
+
+    #[test]
+    fn labels_and_values_of_tags() {
+        let custom = ApiDocsTag::Custom {
+            name: "read_only-ish".into(),
+            value: Some("yes".into()),
+        };
+
+        assert_eq!(custom.label(), "Read only ish");
+        assert_eq!(custom.value(), Some("yes"));
+        assert_eq!(ApiDocsTag::Since("1.2.0".into()).value(), Some("1.2.0"));
+        assert_eq!(ApiDocsTag::Deprecated(None).value(), None);
+        assert_eq!(ApiDocsTag::Required.label(), "Required");
+    }
+
     // An empty result from either function omits that block, rather than
     // leaving a blank line where it would have been
     #[test]
@@ -1429,6 +1539,11 @@ mod pkl_schema {
         /// @since 1.1.0
         #[deprecated = "Use `added` instead."]
         removed: Option<SinceEnum>,
+        /// Deprecated through its doc comment, which Pkl has no annotation
+        /// for the rest of.
+        /// @deprecated Use `added` instead.
+        /// @experimental
+        tagged: Option<String>,
     }
 
     derive_enum!(

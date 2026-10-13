@@ -1,0 +1,81 @@
+---
+source: crates/schematic/tests/generator_test.rs
+expression: "generate(generator, ApiDocsOptions::default())"
+---
+---
+title: TaggedDocsConfig
+---
+
+> **Since** (1.0.0)
+
+A config with tags in its doc comments.
+
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`added`](#added) | `string` | Added after the config. |
+| [`example`](#example) | `string` | A line of an example that starts with `@` is kept. |
+| [`level`](#level) | [`TaggedDocsEnum`](./TaggedDocsEnum.md) |  |
+| [`old`](#old) | `string` | Deprecated through its doc comment. |
+| [`older`](#older) | `string` | Deprecated by both, where the attribute wins. |
+
+## Properties
+
+### `added`
+
+> **Nullable** · **Since** (1.2.0) · **Experimental**
+
+Added after the config.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `example`
+
+> **Nullable**
+
+A line of an example that starts with `@` is kept.
+
+```py
+@decorator
+```
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `level`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`TaggedDocsEnum`](./TaggedDocsEnum.md) |
+| Default | `"alpha"` |
+| Values | `"alpha"`, `"beta"` |
+
+### `old`
+
+> **Nullable** · **Deprecated** (Use `added` instead.)
+
+Deprecated through its doc comment.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+### `older`
+
+> **Nullable** · **Deprecated** (Use `added`.)
+
+Deprecated by both, where the attribute wins.
+
+| Attribute | Value |
+| --- | --- |
+| Type | `string` |
+
+## References
+
+- [`TaggedDocsEnum`](./TaggedDocsEnum.md)

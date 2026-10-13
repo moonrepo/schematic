@@ -1,6 +1,13 @@
 #[cfg(feature = "renderer_api_docs")]
 pub mod api_docs;
 
+#[cfg(any(
+    feature = "renderer_api_docs",
+    feature = "renderer_pkl_schema",
+    feature = "renderer_typescript"
+))]
+mod doc_tags;
+
 #[cfg(feature = "renderer_json_schema")]
 pub mod json_schema;
 

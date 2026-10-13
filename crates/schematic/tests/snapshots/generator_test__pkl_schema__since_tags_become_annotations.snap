@@ -17,6 +17,12 @@ added: String?
 @Deprecated { message = "Use `added` instead." }
 removed: SinceEnum?
 
+/// Deprecated through its doc comment, which Pkl has no annotation
+/// for the rest of.
+/// @experimental
+@Deprecated { message = "Use `added` instead." }
+tagged: String?
+
 /// Values of a setting.
 @Since { version = "1.1.0" }
 typealias SinceEnum = "alpha"

@@ -1,3 +1,4 @@
+use super::doc_tags::*;
 use super::pkl::*;
 use crate::schema::{RenderResult, SchemaGenerator, SchemaRenderer};
 use convert_case::{Case, Casing};
@@ -910,30 +911,42 @@ impl PklSchemaRenderer {
     }
 
     /// Render a doc comment, keeping the lines as written, followed by the
-    /// annotations of a member. Pkl declares when a member was added with an
-    /// annotation, so a `@since` tag in the doc comment becomes one.
+    /// annotations of a member. Pkl declares when a member was added and
+    /// deprecated with annotations, so the `@since` and `@deprecated` tags of
+    /// the doc comment become those, while any other tag stays in it.
     fn render_docs(&self, description: Option<&str>, deprecated: Option<&str>) -> Vec<String> {
         let indent = self.indent();
-        let (description, versions) = split_since(description.unwrap_or_default());
+        let (description, tags) = split_doc_tags(description.unwrap_or_default());
+        let mut deprecated = deprecated.map(|message| message.to_owned());
+        let mut doc_lines = description.lines().map(str::to_owned).collect::<Vec<_>>();
+        let mut annotations = vec![];
 
-        let mut lines = description
-            .trim()
-            .lines()
+        for tag in tags {
+            match (tag.name.as_str(), &tag.value) {
+                ("since", Some(version)) => annotations.push(format!(
+                    "{indent}@Since {{ version = {} }}",
+                    quote_string(version)
+                )),
+                ("deprecated", value) if deprecated.is_none() => {
+                    deprecated = Some(value.clone().unwrap_or_default());
+                }
+                ("deprecated", _) => {}
+                _ => doc_lines.push(tag.to_line()),
+            };
+        }
+
+        let mut lines = doc_lines
+            .iter()
             .map(|line| match line.trim() {
                 "" => format!("{indent}///"),
                 line => format!("{indent}/// {line}"),
             })
             .collect::<Vec<_>>();
 
-        for version in versions {
-            lines.push(format!(
-                "{indent}@Since {{ version = {} }}",
-                quote_string(&version)
-            ));
-        }
+        lines.extend(annotations);
 
         if let Some(deprecated) = deprecated {
-            lines.push(format!("{indent}{}", render_deprecated(deprecated)));
+            lines.push(format!("{indent}{}", render_deprecated(&deprecated)));
         }
 
         lines
@@ -1155,24 +1168,6 @@ impl PklSchemaRenderer {
 
         ident
     }
-}
-
-/// Split the `@since` tags out of a description, returning the description
-/// without them, and the version of each.
-fn split_since(description: &str) -> (String, Vec<String>) {
-    let mut lines = vec![];
-    let mut versions = vec![];
-
-    for line in description.lines() {
-        match line.trim().strip_prefix("@since") {
-            Some(version) if version.starts_with(char::is_whitespace) => {
-                versions.push(version.trim().to_owned());
-            }
-            _ => lines.push(line),
-        };
-    }
-
-    (lines.join("\n"), versions)
 }
 
 fn render_deprecated(message: &str) -> String {
