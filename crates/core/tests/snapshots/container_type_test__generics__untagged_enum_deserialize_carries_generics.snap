@@ -11,24 +11,21 @@ impl<'de, T> serde::Deserialize<'de> for PartialExample<T> {
         use serde::de::Error as _;
         let content = schematic::internal::buffer_untagged_content(deserializer)?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match <T as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
+        match schematic::internal::deserialize_untagged_variant::<T>(&content) {
             Ok(value) => return Ok(PartialExample::Value(value)),
-            Err(error) => errors.push(("Value", error.to_string())),
+            Err(error) => errors.push(("Value", error)),
         }
         if schematic::internal::is_null_content(&content) {
             return Ok(PartialExample::Nothing);
         }
         errors.push(("Nothing", "expected null".to_owned()));
-        let mut message = format!(
-            "failed to parse as any variant of {}:", stringify!(PartialExample)
-        );
-        for (variant, error) in &errors {
-            message.push_str(&format!("\n- {variant}: {error}"));
-        }
-        Err(D::Error::custom(message))
+        Err(
+            D::Error::custom(
+                schematic::internal::untagged_error_message(
+                    stringify!(PartialExample),
+                    &errors,
+                ),
+            ),
+        )
     }
 }

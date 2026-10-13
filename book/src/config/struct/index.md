@@ -96,6 +96,17 @@ enum Host {
 The derive registers `serde` as a helper attribute, so this is accepted even when the type derives
 only [`Config`][config] and not `Serialize` or `Deserialize`.
 
+When a value matches none of an untagged enum's variants, the error lists why each one failed,
+rather than serde's "data did not match any variant". Each starts with the path to the setting that
+failed within the variant, and a nested untagged enum lists its own variants beneath the one that
+holds it.
+
+```
+failed to parse as any variant of PartialHost:
+- Local: expected null
+- Remote: port: expected a 16-bit unsigned integer, found "abc"
+```
+
 > A unit-only enum is always externally tagged, no matter what you set. Marking one `untagged`
 > would leave its variants deserializable only from `null`.
 

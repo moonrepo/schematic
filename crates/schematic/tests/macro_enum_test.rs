@@ -118,6 +118,24 @@ enum Untagged {
 }
 
 #[derive(Config)]
+#[serde(untagged)]
+enum UntaggedInner {
+    Flag(bool),
+    #[setting(nested)]
+    Config(SomeConfig),
+}
+
+#[derive(Config)]
+#[serde(untagged)]
+enum UntaggedOuter {
+    Number(usize),
+    #[setting(nested)]
+    Inner(UntaggedInner),
+    #[setting(nested)]
+    List(Vec<SomeConfig>),
+}
+
+#[derive(Config)]
 enum ExternalTagged {
     Foo,
     Bar(bool),
@@ -245,6 +263,51 @@ fn untagged_enum_deserialize_error_shows_all_variants() {
         error.contains("TupleOfStruct"),
         "Error should mention 'TupleOfStruct' variant, got: {}",
         error
+    );
+}
+
+fn untagged_outer_error(value: serde_json::Value) -> String {
+    serde_json::from_value::<PartialUntaggedOuter>(value)
+        .unwrap_err()
+        .to_string()
+}
+
+#[test]
+fn untagged_enum_deserialize_error_indents_nested_variants() {
+    assert_eq!(
+        untagged_outer_error(serde_json::json!({ "foo": 1 })),
+        r#"failed to parse as any variant of PartialUntaggedOuter:
+- Number: expected a 64-bit unsigned integer, found a map
+- Inner: failed to parse as any variant of PartialUntaggedInner:
+  - Flag: expected a boolean, found a map
+  - Config: foo: expected a string, found 1
+- List: expected a sequence, found a map"#
+    );
+}
+
+#[test]
+fn untagged_enum_deserialize_error_includes_path_within_variant() {
+    assert_eq!(
+        untagged_outer_error(serde_json::json!([{ "foo": "a" }, { "bar": 1.5 }])),
+        r#"failed to parse as any variant of PartialUntaggedOuter:
+- Number: expected a 64-bit unsigned integer, found a list
+- Inner: failed to parse as any variant of PartialUntaggedInner:
+  - Flag: expected a boolean, found a list
+  - Config: expected an object-like struct named PartialSomeConfig, found a list
+- List: [1].bar: expected a 64-bit unsigned integer, found 1.5"#
+    );
+}
+
+#[test]
+fn untagged_enum_deserialize_error_shows_scalar_values() {
+    assert_eq!(
+        untagged_outer_error(serde_json::json!("str")),
+        r#"failed to parse as any variant of PartialUntaggedOuter:
+- Number: expected a 64-bit unsigned integer, found "str"
+- Inner: failed to parse as any variant of PartialUntaggedInner:
+  - Flag: expected a boolean, found "str"
+  - Config: expected an object-like struct named PartialSomeConfig, found "str"
+- List: expected a sequence, found "str""#
     );
 }
 

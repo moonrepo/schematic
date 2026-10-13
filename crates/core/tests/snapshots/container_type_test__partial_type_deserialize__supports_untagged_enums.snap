@@ -11,53 +11,39 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         use serde::de::Error as _;
         let content = schematic::internal::buffer_untagged_content(deserializer)?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match <bool as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
+        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
             Ok(value) => return Ok(PartialExample::A(value)),
-            Err(error) => errors.push(("A", error.to_string())),
+            Err(error) => errors.push(("A", error)),
         }
-        match <(
-            usize,
-            String,
-        ) as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
+        match schematic::internal::deserialize_untagged_variant::<
+            (usize, String),
+        >(&content) {
             Ok(value) => return Ok(PartialExample::B(value.0, value.1)),
-            Err(error) => errors.push(("bb", error.to_string())),
+            Err(error) => errors.push(("bb", error)),
         }
-        match <<NestedConfig as schematic::Config>::Partial as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
+        match schematic::internal::deserialize_untagged_variant::<
+            <NestedConfig as schematic::Config>::Partial,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::C(value)),
-            Err(error) => errors.push(("C", error.to_string())),
+            Err(error) => errors.push(("C", error)),
         }
-        match <Option<
-            Vec<<NestedConfig as schematic::Config>::Partial>,
-        > as serde::Deserialize>::deserialize(
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable(),
-        ) {
+        match schematic::internal::deserialize_untagged_variant::<
+            Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::D(value)),
-            Err(error) => errors.push(("D", error.to_string())),
+            Err(error) => errors.push(("D", error)),
         }
         if schematic::internal::is_null_content(&content) {
             return Ok(PartialExample::E);
         }
         errors.push(("E", "expected null".to_owned()));
-        let mut message = format!(
-            "failed to parse as any variant of {}:", stringify!(PartialExample)
-        );
-        for (variant, error) in &errors {
-            message.push_str(&format!("\n- {variant}: {error}"));
-        }
-        Err(D::Error::custom(message))
+        Err(
+            D::Error::custom(
+                schematic::internal::untagged_error_message(
+                    stringify!(PartialExample),
+                    &errors,
+                ),
+            ),
+        )
     }
 }

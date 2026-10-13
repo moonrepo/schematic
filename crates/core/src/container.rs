@@ -590,16 +590,10 @@ impl Container {
                     #(#attempts)*
 
                     // All variants failed, so combine the errors into a single message
-                    let mut message = format!(
-                        "failed to parse as any variant of {}:",
-                        stringify!(#partial_name)
-                    );
-
-                    for (variant, error) in &errors {
-                        message.push_str(&format!("\n- {variant}: {error}"));
-                    }
-
-                    Err(D::Error::custom(message))
+                    Err(D::Error::custom(schematic::internal::untagged_error_message(
+                        stringify!(#partial_name),
+                        &errors,
+                    )))
                 }
             }
         }

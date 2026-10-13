@@ -59,6 +59,101 @@ pub fn is_null_content(content: &serde_content::Value<'_>) -> bool {
     )
 }
 
+/// Deserialize the buffered content of an untagged enum as the value of one
+/// of its variants. On failure, the error is prefixed with the path to the
+/// setting that failed within the variant, as the path the loader reports
+/// ends at the enum itself.
+pub fn deserialize_untagged_variant<'de, T>(
+    content: &serde_content::Value<'de>,
+) -> Result<T, String>
+where
+    T: serde::Deserialize<'de>,
+{
+    use serde_path_to_error::Segment;
+
+    let deserializer = serde_content::Deserializer::new(content.clone())
+        .coerce_numbers()
+        .human_readable();
+
+    serde_path_to_error::deserialize(deserializer).map_err(|error| {
+        let message = describe_content_error(error.inner());
+
+        // Mirrors how `serde_path_to_error` itself displays an error
+        if error
+            .path()
+            .iter()
+            .all(|segment| matches!(segment, Segment::Unknown))
+        {
+            message
+        } else {
+            format!("{}: {message}", error.path())
+        }
+    })
+}
+
+/// Combine the errors of every variant of an untagged enum into a single
+/// message, as serde's own discards them. Each error is indented beneath its
+/// variant, so that a nested untagged enum lists its variants beneath the
+/// variant that holds it, rather than alongside.
+pub fn untagged_error_message(name: &str, errors: &[(&str, String)]) -> String {
+    let mut message = format!("failed to parse as any variant of {name}:");
+
+    for (variant, error) in errors {
+        message.push_str("\n- ");
+        message.push_str(variant);
+        message.push_str(": ");
+        message.push_str(&error.replace('\n', "\n  "));
+    }
+
+    message
+}
+
+fn describe_content_error(error: &serde_content::Error) -> String {
+    match error.kind() {
+        // Displayed by `serde_content` with a "failed to deserialize" prefix,
+        // and the found value in full, which for a map is the entire input
+        serde_content::ErrorKind::Unexpected { found, expected } => {
+            format!("expected {expected}, found {}", describe_found(found))
+        }
+        _ => error.to_string(),
+    }
+}
+
+/// Describe a found value the way it was written in the source, so a scalar
+/// shows its value (without the Rust type suffix `serde_content` adds), and a
+/// collection only its kind.
+fn describe_found(found: &serde_content::Found) -> String {
+    use serde_content::{Found, Number};
+
+    match found {
+        Found::Unit | Found::Option(None) => "null".into(),
+        Found::Option(Some(inner)) => describe_found(inner),
+        Found::Bool(value) => value.to_string(),
+        Found::Number(number) => match number {
+            Number::I8(value) => value.to_string(),
+            Number::U8(value) => value.to_string(),
+            Number::I16(value) => value.to_string(),
+            Number::U16(value) => value.to_string(),
+            Number::I32(value) => value.to_string(),
+            Number::U32(value) => value.to_string(),
+            Number::I64(value) => value.to_string(),
+            Number::U64(value) => value.to_string(),
+            Number::I128(value) => value.to_string(),
+            Number::U128(value) => value.to_string(),
+            // Debug keeps the decimal point, so `1.0` isn't shown as `1`
+            Number::F32(value) => format!("{value:?}"),
+            Number::F64(value) => format!("{value:?}"),
+            _ => "a number".into(),
+        },
+        Found::Char(value) => format!("{:?}", value.to_string()),
+        Found::String(value) | Found::Identifier(value) => format!("{value:?}"),
+        Found::Bytes(_) => "bytes".into(),
+        Found::Seq(_) | Found::Tuple(_) => "a list".into(),
+        Found::Map(_) | Found::Struct { .. } => "a map".into(),
+        Found::Enum { .. } => "an enum variant".into(),
+    }
+}
+
 // CASING
 
 /// Normalize a string into the provided case, using the same format names as

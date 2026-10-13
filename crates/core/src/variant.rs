@@ -571,12 +571,6 @@ impl Variant {
         let name = &self.ident;
         let name_string = self.get_name();
 
-        let deserializer = quote! {
-            schematic::serde_content::Deserializer::new(content.clone())
-                .coerce_numbers()
-                .human_readable()
-        };
-
         res.value = match &self.fields {
             Fields::Named(_) => panic!("Enums with named fields are not supported!"),
             Fields::Unnamed(_) => {
@@ -590,9 +584,9 @@ impl Variant {
                     let ty = &types[0];
 
                     quote! {
-                        match <#ty as serde::Deserialize>::deserialize(#deserializer) {
+                        match schematic::internal::deserialize_untagged_variant::<#ty>(&content) {
                             Ok(value) => return Ok(#partial_name::#name(value)),
-                            Err(error) => errors.push((#name_string, error.to_string())),
+                            Err(error) => errors.push((#name_string, error)),
                         }
                     }
                 } else {
@@ -600,9 +594,9 @@ impl Variant {
                     let indexes = (0..types.len()).map(Index::from).collect::<Vec<_>>();
 
                     quote! {
-                        match <(#(#types),*) as serde::Deserialize>::deserialize(#deserializer) {
+                        match schematic::internal::deserialize_untagged_variant::<(#(#types),*)>(&content) {
                             Ok(value) => return Ok(#partial_name::#name(#(value.#indexes),*)),
-                            Err(error) => errors.push((#name_string, error.to_string())),
+                            Err(error) => errors.push((#name_string, error)),
                         }
                     }
                 }

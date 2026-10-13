@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated the error for an untagged enum that matches none of its variants, which lists why each
+  variant failed, to be easier to read.
+  - A nested untagged enum lists its variants indented beneath the variant that holds it, rather
+    than alongside the outer enum's own.
+  - A variant's error starts with the path to the setting that failed within it, such as
+    `- Remote: port: expected a 16-bit unsigned integer, found "abc"`.
+  - A found value is shown as written, so a number reads `1` rather than `1u64`, and a map or list
+    reads `a map` or `a sequence` rather than repeating the whole input for every variant.
+
 ## 0.20.10
 
 #### 🚀 Updates
