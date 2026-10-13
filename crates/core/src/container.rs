@@ -26,7 +26,8 @@ pub struct ContainerArgs {
     pub before_parse: Option<String>,
     pub context: Option<ExprPath>,
     pub env_prefix: Option<String>,
-    pub partial: Option<PartialArg>,
+    #[darling(multiple)]
+    pub partial: Vec<PartialArg>,
 
     // serde
     pub rename: Option<SerdeRenameArg>,
@@ -215,8 +216,9 @@ impl Container {
             }
         }
 
-        // Then apply any user-provided partial attributes
-        if let Some(partial) = &self.args.partial {
+        // Then apply any user-provided partial attributes, in the order
+        // declared, as `partial(...)` may be repeated
+        for partial in &self.args.partial {
             attrs.extend(partial.get_attributes());
         }
 
@@ -245,12 +247,11 @@ impl Container {
     }
 
     fn has_partial_serde_bound(&self) -> bool {
-        self.args.partial.as_ref().is_some_and(|partial| {
-            partial
-                .get_attributes()
-                .iter()
-                .any(|attr| attr.to_string().contains("bound"))
-        })
+        self.args
+            .partial
+            .iter()
+            .flat_map(PartialArg::get_attributes)
+            .any(|attr| attr.to_string().contains("bound"))
     }
 
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {

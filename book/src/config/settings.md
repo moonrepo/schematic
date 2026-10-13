@@ -50,7 +50,7 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 - `null` _(enum only)_ - Marks the variant as representing `null`, so it is never tagged.
 - `parse_env` _(struct only)_ - Parses the [environment variable](./struct/env.md) value using a
   function. Requires either `env`, or an `env_prefix` on the container.
-- `partial` - Forwards attributes to the field on the [partial](./partial.md).
+- `partial` - Forwards attributes to the field on the [partial](./partial.md). May be repeated.
 - `required` - Marks the setting as [required](./struct/validate.md#required-settings), so that
   loading fails when no source provides a value, instead of falling back to a default.
 - `transform` - Defines a function to use for [transforming values](./struct/transform.md).

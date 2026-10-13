@@ -170,6 +170,9 @@ impl FromMeta for SerdeDefaultArg {
 
 // #[config(partial(derive(Other), serde(another)))]
 // #[setting(partial(serde(another)))]
+//
+// May be repeated, either within one attribute or across several, and
+// each occurrence is collected in the order declared.
 #[derive(Debug, Default)]
 pub struct PartialArg {
     meta: Vec<NestedMeta>,

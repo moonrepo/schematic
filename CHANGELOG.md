@@ -14,6 +14,9 @@
 
 #### 🐞 Fixes
 
+- Fixed `#[config(partial(...))]` and `#[setting(partial(...))]` panicking with a duplicate field
+  error when repeated, either within one attribute or across several. Every occurrence is now
+  forwarded to the partial, in the order declared.
 - Fixed the required settings of a nested config going unchecked when no source provided the nested
   config at all, and it declared no default values of its own.
 

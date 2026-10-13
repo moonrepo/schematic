@@ -23,7 +23,8 @@ pub struct FieldArgs {
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
     pub parse_env: Option<ExprPath>,
-    pub partial: Option<PartialArg>,
+    #[darling(multiple)]
+    pub partial: Vec<PartialArg>,
     pub required: bool,
     pub transform: Option<ExprPath>,
     pub validate: Option<crate::args::ValidateArg>,
@@ -346,8 +347,9 @@ impl Field {
             }
         }
 
-        // Then apply any user-provided partial attributes
-        if let Some(partial) = &self.args.partial {
+        // Then apply any user-provided partial attributes, in the order
+        // declared, as `partial(...)` may be repeated
+        for partial in &self.args.partial {
             attrs.extend(partial.get_attributes());
         }
 

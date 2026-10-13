@@ -1004,3 +1004,77 @@ mod required {
         assert!(inner.fields["other"].optional);
     }
 }
+
+// `partial(...)` may be repeated, within one attribute or across several,
+// and every occurrence is forwarded to the partial in the order declared.
+// https://github.com/moonrepo/schematic/issues/187
+mod repeated_partial {
+    use super::*;
+
+    #[derive(Debug, Config)]
+    #[config(partial(derive(Eq)))]
+    #[config(partial(serde(rename_all = "UPPERCASE")))]
+    pub struct Repeated {
+        #[setting(partial(serde(alias = "nom")), partial(serde(alias = "nombre")))]
+        name: String,
+        #[setting(partial(serde(alias = "c")))]
+        #[setting(partial(serde(alias = "cnt")))]
+        count: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub enum RepeatedVariant {
+        #[setting(partial(serde(alias = "a")))]
+        #[setting(partial(serde(alias = "alpha")))]
+        A(String),
+        B(bool),
+    }
+
+    fn load(code: &str) -> Repeated {
+        ConfigLoader::<Repeated>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    #[test]
+    fn applies_every_container_occurrence() {
+        fn is_eq<T: Eq>() {}
+
+        is_eq::<PartialRepeated>();
+
+        let config = load(r#"{ "NAME": "a", "COUNT": 1 }"#);
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.count, 1);
+    }
+
+    #[test]
+    fn applies_every_field_occurrence() {
+        let config = load(r#"{ "nom": "a", "c": 1 }"#);
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.count, 1);
+
+        let config = load(r#"{ "nombre": "b", "cnt": 2 }"#);
+
+        assert_eq!(config.name, "b");
+        assert_eq!(config.count, 2);
+    }
+
+    #[test]
+    fn applies_every_variant_occurrence() {
+        for code in [r#"{ "a": "x" }"#, r#"{ "alpha": "x" }"#] {
+            let config = ConfigLoader::<RepeatedVariant>::new()
+                .code(code, "code.json")
+                .unwrap()
+                .load()
+                .unwrap()
+                .config;
+
+            assert!(matches!(config, RepeatedVariant::A(value) if value == "x"));
+        }
+    }
+}

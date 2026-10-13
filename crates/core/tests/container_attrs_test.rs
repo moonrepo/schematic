@@ -256,6 +256,56 @@ mod partial_attrs {
         assert_snapshot!(pretty_attrs(container.get_partial_attributes()));
     }
 
+    // https://github.com/moonrepo/schematic/issues/187
+    #[test]
+    fn appends_repeated_partial_attrs() {
+        let combined = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(partial(derive(Other), command(about = "Blah")))]
+            struct Example {
+                a: bool,
+            }
+        });
+        let separate = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(partial(derive(Other)))]
+            #[config(partial(command(about = "Blah")))]
+            struct Example {
+                a: bool,
+            }
+        });
+        let repeated = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(partial(derive(Other)), partial(command(about = "Blah")))]
+            struct Example {
+                a: bool,
+            }
+        });
+
+        let expected = pretty_attrs(combined.get_partial_attributes());
+
+        assert_eq!(pretty_attrs(separate.get_partial_attributes()), expected);
+        assert_eq!(pretty_attrs(repeated.get_partial_attributes()), expected);
+        assert_snapshot!(expected);
+    }
+
+    #[test]
+    fn detects_a_serde_bound_in_any_partial() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(partial(derive(Other)))]
+            #[config(partial(serde(bound(deserialize = "T: Custom"))))]
+            struct Example<T> {
+                a: T,
+            }
+        });
+
+        let attrs = pretty_attrs(container.get_partial_attributes());
+
+        assert!(attrs.contains("T: Custom"), "{attrs}");
+        assert!(!attrs.contains("DeserializeOwned"), "{attrs}");
+    }
+
     #[test]
     fn orders_serde_then_inherited_then_partial() {
         let container = Container::from(parse_quote! {
