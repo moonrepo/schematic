@@ -808,3 +808,273 @@ mod generics {
         assert!(config.value);
     }
 }
+
+// A required setting has no default, so it must be provided by a layer,
+// either a source or the environment, or the final validation fails.
+mod required {
+    use super::*;
+    use schematic::{SchemaBuilder, SchemaType};
+
+    #[derive(Debug, Config)]
+    pub struct Required {
+        #[setting(required)]
+        name: String,
+        #[setting(required)]
+        list: Vec<String>,
+        #[setting(required)]
+        maybe: Option<String>,
+        other: String,
+    }
+
+    fn load(code: &str) -> Result<Required, String> {
+        ConfigLoader::<Required>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn errors_when_missing() {
+        assert_eq!(
+            load("{}").unwrap_err(),
+            "Failed to validate Required. \n  name: this setting is required\n  list: this setting is required\n  maybe: this setting is required"
+        );
+    }
+
+    #[test]
+    fn errors_when_null() {
+        assert_eq!(
+            load(r#"{ "name": null, "list": [], "maybe": "a" }"#).unwrap_err(),
+            "Failed to validate Required. \n  name: this setting is required"
+        );
+    }
+
+    // Present is enough, even when empty, as with serde
+    #[test]
+    fn loads_when_provided() {
+        let config = load(r#"{ "name": "", "list": [], "maybe": "a" }"#).unwrap();
+
+        assert_eq!(config.name, "");
+        assert!(config.list.is_empty());
+        assert_eq!(config.maybe.as_deref(), Some("a"));
+        assert_eq!(config.other, "");
+    }
+
+    // Each layer is validated on its own, but only the merged result must
+    // provide the setting
+    #[test]
+    fn may_be_provided_by_any_layer() {
+        let result = ConfigLoader::<Required>::new()
+            .code(r#"{ "name": "a" }"#, "one.json")
+            .unwrap()
+            .code(r#"{ "list": ["b"], "maybe": "c" }"#, "two.json")
+            .unwrap()
+            .load()
+            .unwrap();
+
+        assert_eq!(result.config.name, "a");
+        assert_eq!(result.config.list, vec!["b".to_string()]);
+    }
+
+    #[test]
+    fn still_implements_default() {
+        let config = Required::default();
+
+        assert_eq!(config.name, "");
+        assert!(config.list.is_empty());
+        assert_eq!(config.maybe, None);
+    }
+
+    #[derive(Debug, Config)]
+    pub struct FromEnv {
+        #[setting(required, env = "SCHEMATIC_MACROS_REQUIRED_TOKEN")]
+        token: String,
+    }
+
+    #[test]
+    fn may_be_provided_by_the_environment() {
+        assert!(ConfigLoader::<FromEnv>::new().load().is_err());
+
+        unsafe { std::env::set_var("SCHEMATIC_MACROS_REQUIRED_TOKEN", "secret") };
+
+        let result = ConfigLoader::<FromEnv>::new().load();
+
+        unsafe { std::env::remove_var("SCHEMATIC_MACROS_REQUIRED_TOKEN") };
+
+        assert_eq!(result.unwrap().config.token, "secret");
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Grandchild {
+        #[setting(required)]
+        name: String,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Child {
+        #[setting(required)]
+        name: String,
+        #[setting(nested)]
+        inner: Grandchild,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        one: Child,
+        #[setting(nested)]
+        boxed: Box<Child>,
+        #[setting(nested)]
+        maybe: Option<Child>,
+        #[setting(nested)]
+        many: Vec<Child>,
+    }
+
+    fn load_parent(code: &str) -> Result<Parent, String> {
+        ConfigLoader::<Parent>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    // A bare nested config exists in the full type whether or not a layer
+    // provided it, so its settings are required either way, while an
+    // optional or collected config is only checked when present
+    #[test]
+    fn checks_a_bare_nested_config_no_layer_provided() {
+        assert_eq!(
+            load_parent("{}").unwrap_err(),
+            "Failed to validate Parent. \n  one.name: this setting is required\n  one.inner.name: this setting is required\n  boxed.name: this setting is required\n  boxed.inner.name: this setting is required"
+        );
+    }
+
+    #[test]
+    fn checks_nested_configs_that_are_present() {
+        assert_eq!(
+            load_parent(
+                r#"{
+                    "one": { "name": "a", "inner": { "name": "b" } },
+                    "boxed": { "name": "c", "inner": { "name": "d" } },
+                    "maybe": { "inner": { "name": "e" } },
+                    "many": [{ "name": "f", "inner": { "name": "g" } }, { "name": "h", "inner": {} }]
+                }"#
+            )
+            .unwrap_err(),
+            "Failed to validate Parent. \n  maybe.name: this setting is required\n  many[1].inner.name: this setting is required"
+        );
+    }
+
+    #[test]
+    fn loads_nested_configs_when_provided() {
+        let config = load_parent(
+            r#"{
+                "one": { "name": "a", "inner": { "name": "b" } },
+                "boxed": { "name": "c", "inner": { "name": "d" } }
+            }"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.one.name, "a");
+        assert_eq!(config.one.inner.name, "b");
+        assert_eq!(config.boxed.inner.name, "d");
+        assert!(config.maybe.is_none());
+    }
+
+    #[derive(Debug, Config)]
+    #[serde(default)]
+    pub struct ContainerDefault {
+        #[setting(required)]
+        name: String,
+        other: String,
+    }
+
+    #[test]
+    fn is_never_optional_in_the_schema() {
+        let schema = SchemaBuilder::build_root::<ContainerDefault>();
+
+        let SchemaType::Struct(inner) = schema.ty else {
+            panic!("expected a struct");
+        };
+
+        assert!(!inner.fields["name"].optional);
+        assert!(inner.fields["other"].optional);
+    }
+}
+
+// `partial(...)` may be repeated, within one attribute or across several,
+// and every occurrence is forwarded to the partial in the order declared.
+// https://github.com/moonrepo/schematic/issues/187
+mod repeated_partial {
+    use super::*;
+
+    #[derive(Debug, Config)]
+    #[config(partial(derive(Eq)))]
+    #[config(partial(serde(rename_all = "UPPERCASE")))]
+    pub struct Repeated {
+        #[setting(partial(serde(alias = "nom")), partial(serde(alias = "nombre")))]
+        name: String,
+        #[setting(partial(serde(alias = "c")))]
+        #[setting(partial(serde(alias = "cnt")))]
+        count: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub enum RepeatedVariant {
+        #[setting(partial(serde(alias = "a")))]
+        #[setting(partial(serde(alias = "alpha")))]
+        A(String),
+        B(bool),
+    }
+
+    fn load(code: &str) -> Repeated {
+        ConfigLoader::<Repeated>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    #[test]
+    fn applies_every_container_occurrence() {
+        fn is_eq<T: Eq>() {}
+
+        is_eq::<PartialRepeated>();
+
+        let config = load(r#"{ "NAME": "a", "COUNT": 1 }"#);
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.count, 1);
+    }
+
+    #[test]
+    fn applies_every_field_occurrence() {
+        let config = load(r#"{ "nom": "a", "c": 1 }"#);
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.count, 1);
+
+        let config = load(r#"{ "nombre": "b", "cnt": 2 }"#);
+
+        assert_eq!(config.name, "b");
+        assert_eq!(config.count, 2);
+    }
+
+    #[test]
+    fn applies_every_variant_occurrence() {
+        for code in [r#"{ "a": "x" }"#, r#"{ "alpha": "x" }"#] {
+            let config = ConfigLoader::<RepeatedVariant>::new()
+                .code(code, "code.json")
+                .unwrap()
+                .load()
+                .unwrap()
+                .config;
+
+            assert!(matches!(config, RepeatedVariant::A(value) if value == "x"));
+        }
+    }
+}

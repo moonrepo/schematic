@@ -71,3 +71,21 @@ struct ExampleConfig {
 	port: usize
 }
 ```
+
+Each item within `partial()` is forwarded as its own attribute, and `partial()` itself may be
+repeated, so the following are equivalent. Attributes are forwarded in the order they're declared.
+
+```rust
+#[derive(Config)]
+#[config(partial(derive(clap::Parser), command(about = "Example")))]
+struct ExampleConfig {
+	//
+}
+
+#[derive(Config)]
+#[config(partial(derive(clap::Parser)))]
+#[config(partial(command(about = "Example")))]
+struct ExampleConfig {
+	//
+}
+```

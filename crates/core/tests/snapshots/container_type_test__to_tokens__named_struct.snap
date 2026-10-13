@@ -117,6 +117,12 @@ impl schematic::PartialConfig for PartialExample {
         }
         if let Some(setting) = &self.nested {
             validate.nested("nested", setting);
+        } else if finalizing {
+            validate
+                .nested(
+                    "nested",
+                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+                );
         }
         if let Some(setting) = &self.list {
             validate.nested_list("list", setting.iter().map(Some));

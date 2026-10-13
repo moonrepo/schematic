@@ -294,6 +294,14 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `merge` to change it.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,
   replace, or manager-wrapped).
+- **`required` works on any struct setting, and still needs `Default`.** A required setting is left
+  out of `default_values`, so its partial stays `None` until a source or env provides it, and the
+  finalizing `validate` pass reports it. `from_partial` keeps `unwrap_or_default()`, because it is
+  public and infallible, `impl Default` is emitted for every config, and the check vanishes without
+  the `validate` feature — dropping the `T: Default` bound would need all three revisited. A bare
+  nested setting that no layer provided is validated as an empty partial when finalizing, since
+  `from_partial` builds one anyway; without that, a child whose `default_values` is `Ok(None)` hid
+  its required settings.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a
   `Result`, and silently returning wrong values is worse.
 - **Validation error paths use serde names** (renames honored) for fields and variants; variants use

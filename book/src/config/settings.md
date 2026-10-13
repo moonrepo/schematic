@@ -6,8 +6,9 @@ Settings are the individual fields of a [`Config` struct](./struct/index.md) or 
 ## Third-party types
 
 A setting that isn't wrapped in `Option` falls back to `Default::default()` when the config provides
-no value and no [default value](./struct/default.md) is declared, so every required setting has to
-implement `Default`. Plenty of third-party types don't, and being foreign, can't be given it.
+no value and no [default value](./struct/default.md) is declared, so every such setting has to
+implement `Default`, even one marked [`required`](./struct/validate.md#required-settings). Plenty of
+third-party types don't, and being foreign, can't be given it.
 
 For the two we support directly, we provide a newtype that does:
 
@@ -49,9 +50,9 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 - `null` _(enum only)_ - Marks the variant as representing `null`, so it is never tagged.
 - `parse_env` _(struct only)_ - Parses the [environment variable](./struct/env.md) value using a
   function. Requires either `env`, or an `env_prefix` on the container.
-- `partial` - Forwards attributes to the field on the [partial](./partial.md).
-- `required` - Marks the field as required. This is useful for `Option` types that do not support
-  `Default`, but require a value.
+- `partial` - Forwards attributes to the field on the [partial](./partial.md). May be repeated.
+- `required` - Marks the setting as [required](./struct/validate.md#required-settings), so that
+  loading fails when no source provides a value, instead of falling back to a default.
 - `transform` - Defines a function to use for [transforming values](./struct/transform.md).
 - `validate` - Defines a function to use for [validating values](./struct/validate.md).
 

@@ -13,7 +13,7 @@ mod container_partial {
             struct Example {}
         });
 
-        assert!(container.args.partial.is_some());
-        assert_debug_snapshot!(container.args.partial.as_ref().unwrap());
+        assert_eq!(container.args.partial.len(), 1);
+        assert_debug_snapshot!(&container.args.partial[0]);
     }
 }

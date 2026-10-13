@@ -23,7 +23,8 @@ pub struct FieldArgs {
     pub merge: Option<ExprPath>,
     pub nested: Option<NestedArg>,
     pub parse_env: Option<ExprPath>,
-    pub partial: Option<PartialArg>,
+    #[darling(multiple)]
+    pub partial: Vec<PartialArg>,
     pub required: bool,
     pub transform: Option<ExprPath>,
     pub validate: Option<crate::args::ValidateArg>,
@@ -117,8 +118,16 @@ impl Field {
             }
         }
 
-        if self.is_required() && !self.value.is_outer_option_wrapped() {
-            panic!("Cannot use `required` with non-optional settings.");
+        if self.is_required() {
+            if self.args.default.is_some() || self.serde_args.default.is_enabled() {
+                panic!("Cannot use `required` with `default`, as the setting always has a value.");
+            }
+
+            if self.is_bare_nested() {
+                panic!(
+                    "Cannot use `required` with a non-optional `nested` setting, as it always exists. Mark the settings within it as required instead."
+                );
+            }
         }
     }
 
@@ -276,19 +285,25 @@ impl Field {
             .is_some_and(|nested| nested.is_nested())
     }
 
+    /// Whether the setting is a nested config held directly, rather than in
+    /// an `Option` or a collection, so that the full type always holds one.
+    pub fn is_bare_nested(&self) -> bool {
+        self.is_nested() && self.value.get_partial_layers().is_empty()
+    }
+
     /// Whether the setting accepts a `null` value.
     pub fn is_nullable(&self) -> bool {
         self.value.is_outer_option_wrapped()
     }
 
-    /// Whether the setting can be omitted, because a default is provided.
     /// Whether the setting may be omitted from the input. A `default` on the
     /// container applies to every field, so it counts the same as one declared
-    /// on the field itself.
+    /// on the field itself, unless the field is required.
     pub fn is_optional(&self) -> bool {
-        self.args.default.is_some()
-            || self.serde_args.default.is_enabled()
-            || self.serde_container_args.default.is_enabled()
+        !self.is_required()
+            && (self.args.default.is_some()
+                || self.serde_args.default.is_enabled()
+                || self.serde_container_args.default.is_enabled())
     }
 
     pub fn is_required(&self) -> bool {
@@ -332,8 +347,9 @@ impl Field {
             }
         }
 
-        // Then apply any user-provided partial attributes
-        if let Some(partial) = &self.args.partial {
+        // Then apply any user-provided partial attributes, in the order
+        // declared, as `partial(...)` may be repeated
+        for partial in &self.args.partial {
             attrs.extend(partial.get_attributes());
         }
 
@@ -675,12 +691,27 @@ impl Field {
             };
         }
 
+        // A bare nested config still exists in the full type when no layer
+        // provided one, built from an empty partial, so validate that when
+        // finalizing, otherwise the settings it requires go unchecked
+        let missing = if self.is_bare_nested() {
+            let ty = self.value.get_partial_type();
+
+            quote! {
+                else if finalizing {
+                    validate.nested(#key_string, &<#ty as Default>::default());
+                }
+            }
+        } else {
+            quote! {}
+        };
+
         let mut has_outer = has_inner;
         let mut outer = if has_inner {
             quote! {
                 if let Some(setting) = &self.#key {
                     #inner
-                }
+                } #missing
             }
         } else {
             quote! {}

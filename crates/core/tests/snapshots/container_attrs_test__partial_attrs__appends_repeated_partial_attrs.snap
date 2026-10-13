@@ -1,0 +1,7 @@
+---
+source: crates/core/tests/container_attrs_test.rs
+expression: expected
+---
+# [serde (default , deny_unknown_fields)]
+# [derive (Other)]
+# [command (about = "Blah")]
