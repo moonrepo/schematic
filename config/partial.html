@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e6dc8867.js";
+            window.path_to_searchindex_js = "../searchindex-2194cd20.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-dd859233.js"></script>
@@ -240,6 +240,23 @@ struct ExampleConfig {
 struct ExampleConfig {
 	#[setting(partial(as_ref))]
 	port: usize
+}
+<span class="boring">}</span></code></pre>
+<p>Each item within <code>partial()</code> is forwarded as its own attribute, and <code>partial()</code> itself may be
+repeated, so the following are equivalent. Attributes are forwarded in the order they’re declared.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(clap::Parser), command(about = "Example")))]
+struct ExampleConfig {
+	//
+}
+
+#[derive(Config)]
+#[config(partial(derive(clap::Parser)))]
+#[config(partial(command(about = "Example")))]
+struct ExampleConfig {
+	//
 }
 <span class="boring">}</span></code></pre>
 

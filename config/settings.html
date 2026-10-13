@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-e6dc8867.js";
+            window.path_to_searchindex_js = "../searchindex-2194cd20.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-dd859233.js"></script>
@@ -182,8 +182,9 @@
 <a href="./struct/index.html"><code>Config</code> enum</a>, and can be annotated with the optional <code>#[setting]</code> attribute.</p>
 <h2 id="third-party-types"><a class="header" href="#third-party-types">Third-party types</a></h2>
 <p>A setting that isn’t wrapped in <code>Option</code> falls back to <code>Default::default()</code> when the config provides
-no value and no <a href="./struct/default.html">default value</a> is declared, so every required setting has to
-implement <code>Default</code>. Plenty of third-party types don’t, and being foreign, can’t be given it.</p>
+no value and no <a href="./struct/default.html">default value</a> is declared, so every such setting has to
+implement <code>Default</code>, even one marked <a href="./struct/validate.html#required-settings"><code>required</code></a>. Plenty of
+third-party types don’t, and being foreign, can’t be given it.</p>
 <p>For the two we support directly, we provide a newtype that does:</p>
 <div class="table-wrapper">
 <table>
@@ -228,9 +229,9 @@ effect without the <code>schema</code> Cargo feature.</li>
 <li><code>null</code> <em>(enum only)</em> - Marks the variant as representing <code>null</code>, so it is never tagged.</li>
 <li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="./struct/env.html">environment variable</a> value using a
 function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container.</li>
-<li><code>partial</code> - Forwards attributes to the field on the <a href="./partial.html">partial</a>.</li>
-<li><code>required</code> - Marks the field as required. This is useful for <code>Option</code> types that do not support
-<code>Default</code>, but require a value.</li>
+<li><code>partial</code> - Forwards attributes to the field on the <a href="./partial.html">partial</a>. May be repeated.</li>
+<li><code>required</code> - Marks the setting as <a href="./struct/validate.html#required-settings">required</a>, so that
+loading fails when no source provides a value, instead of falling back to a default.</li>
 <li><code>transform</code> - Defines a function to use for <a href="./struct/transform.html">transforming values</a>.</li>
 <li><code>validate</code> - Defines a function to use for <a href="./struct/validate.html">validating values</a>.</li>
 </ul>

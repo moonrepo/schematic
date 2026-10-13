@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-e6dc8867.js";
+            window.path_to_searchindex_js = "searchindex-2194cd20.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-dd859233.js"></script>
@@ -343,8 +343,9 @@ struct AppConfig {}
 <a href="#structs--enums"><code>Config</code> enum</a>, and can be annotated with the optional <code>#[setting]</code> attribute.</p>
 <h2 id="third-party-types"><a class="header" href="#third-party-types">Third-party types</a></h2>
 <p>A setting that isn’t wrapped in <code>Option</code> falls back to <code>Default::default()</code> when the config provides
-no value and no <a href="#default-values">default value</a> is declared, so every required setting has to
-implement <code>Default</code>. Plenty of third-party types don’t, and being foreign, can’t be given it.</p>
+no value and no <a href="#default-values">default value</a> is declared, so every such setting has to
+implement <code>Default</code>, even one marked <a href="#required-settings"><code>required</code></a>. Plenty of
+third-party types don’t, and being foreign, can’t be given it.</p>
 <p>For the two we support directly, we provide a newtype that does:</p>
 <div class="table-wrapper">
 <table>
@@ -389,9 +390,9 @@ effect without the <code>schema</code> Cargo feature.</li>
 <li><code>null</code> <em>(enum only)</em> - Marks the variant as representing <code>null</code>, so it is never tagged.</li>
 <li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="#environment-variables">environment variable</a> value using a
 function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container.</li>
-<li><code>partial</code> - Forwards attributes to the field on the <a href="#partials">partial</a>.</li>
-<li><code>required</code> - Marks the field as required. This is useful for <code>Option</code> types that do not support
-<code>Default</code>, but require a value.</li>
+<li><code>partial</code> - Forwards attributes to the field on the <a href="#partials">partial</a>. May be repeated.</li>
+<li><code>required</code> - Marks the setting as <a href="#required-settings">required</a>, so that
+loading fails when no source provides a value, instead of falling back to a default.</li>
 <li><code>transform</code> - Defines a function to use for <a href="#transforming-values">transforming values</a>.</li>
 <li><code>validate</code> - Defines a function to use for <a href="#validation-rules">validating values</a>.</li>
 </ul>
@@ -490,6 +491,23 @@ struct ExampleConfig {
 struct ExampleConfig {
 	#[setting(partial(as_ref))]
 	port: usize
+}
+<span class="boring">}</span></code></pre>
+<p>Each item within <code>partial()</code> is forwarded as its own attribute, and <code>partial()</code> itself may be
+repeated, so the following are equivalent. Attributes are forwarded in the order they’re declared.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(partial(derive(clap::Parser), command(about = "Example")))]
+struct ExampleConfig {
+	//
+}
+
+#[derive(Config)]
+#[config(partial(derive(clap::Parser)))]
+#[config(partial(command(about = "Example")))]
+struct ExampleConfig {
+	//
 }
 <span class="boring">}</span></code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -782,7 +800,8 @@ would leave its variants deserializable only from <code>null</code>.</p>
 <li>The first is applied through the <a href="#partials">partial configuration</a>, is defined with the
 <code>#[setting]</code> attribute, and is the first layer to be merged.</li>
 <li>The second is on the <a href="#configuration">final configuration</a> itself, and uses the <code>Default</code> trait to
-generate the final value if none was provided. This acts more like a fallback.</li>
+generate the final value if none was provided. This acts more like a fallback. To fail instead,
+mark the setting as <a href="#required-settings">required</a>.</li>
 </ul>
 <p>To define a default value, use the <code>#[setting(default)]</code> attribute. The <code>default</code> attribute field
 accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
@@ -1211,6 +1230,36 @@ enum Entry {
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
 some functions are factories which can be called to produce a validator.</p>
 </blockquote>
+<h2 id="required-settings"><a class="header" href="#required-settings">Required settings</a></h2>
+<p>Every setting in a <a href="#partials">partial configuration</a> is optional, so a setting that no source
+provides falls back to its <a href="#default-values">default value</a>, or to <code>Default::default()</code> when it has
+none. To fail instead, as serde does for a missing field, mark the setting with
+<code>#[setting(required)]</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(required)]
+	pub name: String,
+
+	#[setting(required, env = "APP_TOKEN")]
+	pub token: String,
+
+	#[setting(required)]
+	pub port: Option&lt;usize&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A required setting has no default value, and is checked by the final validation pass, once every
+source and <a href="#environment-variables">environment variable</a> has been merged. Any one of them may provide it, so each
+source is free to omit it. A <code>null</code> counts as missing, while an empty value, like <code>""</code> or <code>[]</code>, does
+not.</p>
+<p>When the setting is wrapped in <code>Option</code>, the value must be <code>Some</code>, but the field stays an <code>Option</code>
+in the final configuration. A setting that isn’t wrapped still has to implement <code>Default</code>, which
+<code>AppConfig::default()</code> falls back to.</p>
+<p>A required setting can’t declare a <code>default</code>, as it would always have a value. Nor can a
+<a href="#nesting">nested config</a> that isn’t wrapped in <code>Option</code>, as one always exists in the final
+configuration. Mark the settings within it as required instead, which are then checked even when no
+source provided the nested config at all.</p>
 <h2 id="validate-handler-function"><a class="header" href="#validate-handler-function">Validate handler function</a></h2>
 <p>You can also define your own function for validating values, also known as a validator.</p>
 <p>When defining a custom validate function, the value to check is passed as the first argument, the

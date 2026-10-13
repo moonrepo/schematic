@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-e6dc8867.js";
+            window.path_to_searchindex_js = "../../searchindex-2194cd20.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-dd859233.js"></script>
@@ -231,6 +231,36 @@ enum Entry {
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
 some functions are factories which can be called to produce a validator.</p>
 </blockquote>
+<h2 id="required-settings"><a class="header" href="#required-settings">Required settings</a></h2>
+<p>Every setting in a <a href="../partial.html">partial configuration</a> is optional, so a setting that no source
+provides falls back to its <a href="./default.html">default value</a>, or to <code>Default::default()</code> when it has
+none. To fail instead, as serde does for a missing field, mark the setting with
+<code>#[setting(required)]</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(required)]
+	pub name: String,
+
+	#[setting(required, env = "APP_TOKEN")]
+	pub token: String,
+
+	#[setting(required)]
+	pub port: Option&lt;usize&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A required setting has no default value, and is checked by the final validation pass, once every
+source and <a href="./env.html">environment variable</a> has been merged. Any one of them may provide it, so each
+source is free to omit it. A <code>null</code> counts as missing, while an empty value, like <code>""</code> or <code>[]</code>, does
+not.</p>
+<p>When the setting is wrapped in <code>Option</code>, the value must be <code>Some</code>, but the field stays an <code>Option</code>
+in the final configuration. A setting that isn’t wrapped still has to implement <code>Default</code>, which
+<code>AppConfig::default()</code> falls back to.</p>
+<p>A required setting can’t declare a <code>default</code>, as it would always have a value. Nor can a
+<a href="../nested.html">nested config</a> that isn’t wrapped in <code>Option</code>, as one always exists in the final
+configuration. Mark the settings within it as required instead, which are then checked even when no
+source provided the nested config at all.</p>
 <h2 id="validate-handler-function"><a class="header" href="#validate-handler-function">Validate handler function</a></h2>
 <p>You can also define your own function for validating values, also known as a validator.</p>
 <p>When defining a custom validate function, the value to check is passed as the first argument, the

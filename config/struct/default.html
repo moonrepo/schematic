@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-e6dc8867.js";
+            window.path_to_searchindex_js = "../../searchindex-2194cd20.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-dd859233.js"></script>
@@ -183,7 +183,8 @@
 <li>The first is applied through the <a href="../partial.html">partial configuration</a>, is defined with the
 <code>#[setting]</code> attribute, and is the first layer to be merged.</li>
 <li>The second is on the <a href="../index.html">final configuration</a> itself, and uses the <code>Default</code> trait to
-generate the final value if none was provided. This acts more like a fallback.</li>
+generate the final value if none was provided. This acts more like a fallback. To fail instead,
+mark the setting as <a href="./validate.html#required-settings">required</a>.</li>
 </ul>
 <p>To define a default value, use the <code>#[setting(default)]</code> attribute. The <code>default</code> attribute field
 accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
