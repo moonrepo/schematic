@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `#[setting(required)]` to support any struct setting, not just those wrapped in `Option`.
+  A required setting has no default value, so loading fails with "this setting is required" when no
+  source or environment variable provides it, instead of falling back to `Default::default()`.
+  - A required setting is never marked optional in a schema, even when the container declares
+    `#[serde(default)]`.
+  - Combining `required` with `default`, or with a nested config that isn't wrapped in `Option`, now
+    panics, as the setting would always have a value.
+
+#### 🐞 Fixes
+
+- Fixed the required settings of a nested config going unchecked when no source provided the nested
+  config at all, and it declared no default values of its own.
+
 ## 0.20.9
 
 #### 🚀 Updates

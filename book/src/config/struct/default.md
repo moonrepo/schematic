@@ -5,7 +5,8 @@ In Schematic, there are 2 forms of default values:
 - The first is applied through the [partial configuration](../partial.md), is defined with the
   `#[setting]` attribute, and is the first layer to be merged.
 - The second is on the [final configuration](../index.md) itself, and uses the `Default` trait to
-  generate the final value if none was provided. This acts more like a fallback.
+  generate the final value if none was provided. This acts more like a fallback. To fail instead,
+  mark the setting as [required](./validate.md#required-settings).
 
 To define a default value, use the `#[setting(default)]` attribute. The `default` attribute field
 accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct

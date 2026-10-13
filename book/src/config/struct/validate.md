@@ -56,6 +56,41 @@ enum Entry {
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
 > some functions are factories which can be called to produce a validator.
 
+## Required settings
+
+Every setting in a [partial configuration](../partial.md) is optional, so a setting that no source
+provides falls back to its [default value](./default.md), or to `Default::default()` when it has
+none. To fail instead, as serde does for a missing field, mark the setting with
+`#[setting(required)]`.
+
+```rust
+#[derive(Config)]
+struct AppConfig {
+	#[setting(required)]
+	pub name: String,
+
+	#[setting(required, env = "APP_TOKEN")]
+	pub token: String,
+
+	#[setting(required)]
+	pub port: Option<usize>,
+}
+```
+
+A required setting has no default value, and is checked by the final validation pass, once every
+source and [environment variable](./env.md) has been merged. Any one of them may provide it, so each
+source is free to omit it. A `null` counts as missing, while an empty value, like `""` or `[]`, does
+not.
+
+When the setting is wrapped in `Option`, the value must be `Some`, but the field stays an `Option`
+in the final configuration. A setting that isn't wrapped still has to implement `Default`, which
+`AppConfig::default()` falls back to.
+
+A required setting can't declare a `default`, as it would always have a value. Nor can a
+[nested config](../nested.md) that isn't wrapped in `Option`, as one always exists in the final
+configuration. Mark the settings within it as required instead, which are then checked even when no
+source provided the nested config at all.
+
 ## Validate handler function
 
 You can also define your own function for validating values, also known as a validator.

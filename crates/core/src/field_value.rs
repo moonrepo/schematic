@@ -70,8 +70,10 @@ impl FieldValue {
     pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
         let outer_option = self.is_outer_option_wrapped();
 
-        // Optional settings default to `None`, unless a value is provided
-        if outer_option && field_args.default.is_none() {
+        // Optional settings default to `None`, unless a value is provided,
+        // and required settings have no default at all, so that the partial
+        // stays empty until a layer provides a value
+        if (outer_option && field_args.default.is_none()) || field_args.required {
             return ImplResult::skipped();
         };
 

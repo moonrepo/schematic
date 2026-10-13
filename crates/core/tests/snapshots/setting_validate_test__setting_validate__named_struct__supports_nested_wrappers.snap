@@ -12,12 +12,24 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.a {
         validate.nested("a", setting);
+    } else if finalizing {
+        validate
+            .nested(
+                "a",
+                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+            );
     }
     if let Some(setting) = &self.b {
         validate.nested("b", setting);
     }
     if let Some(setting) = &self.c {
         validate.nested("c", setting);
+    } else if finalizing {
+        validate
+            .nested(
+                "c",
+                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+            );
     }
     if let Some(setting) = &self.d {
         validate.nested_list("d", setting.iter().map(Some));
