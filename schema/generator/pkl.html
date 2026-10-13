@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-7d33acd5.js";
+            window.path_to_searchindex_js = "../../searchindex-e6dc8867.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-dd859233.js"></script>
@@ -187,8 +187,8 @@ you can generate
 <a href="https://pkl-lang.org/main/current/language-reference/index.html#modules">Pkl modules</a> for all types
 that implement
 <a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each struct
-and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
-can amend it and be type checked by Pkl itself.</p>
+becomes its own module, and each enum a type alias, with its Rust types converted to Pkl types, so
+that a Pkl config can amend it and be type checked by Pkl itself.</p>
 <p>To utilize, instantiate a generator, add types to render, and generate a module for every type into
 a directory. Modules import each other by relative path, so they must stay together.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -201,7 +201,7 @@ generator.add::&lt;ServerConfig&gt;();
 PklSchemaRenderer::default().generate_all(&amp;generator, output_dir.join("pkl"))?;
 <span class="boring">}</span></code></pre>
 <p>Each module is named after its type with a <code>.pkl</code> extension, so the above writes <code>ServerConfig.pkl</code>,
-and a module for every type it nests. A config then amends the module of its root type.</p>
+and a module for every struct it nests. A config then amends the module of its root type.</p>
 <pre><code class="language-pkl">amends "pkl/ServerConfig.pkl"
 
 port = 3000
@@ -219,25 +219,38 @@ deprecation carried over. Fields are rendered in alphabetical order, and skipped
 <pre><code class="language-pkl">/// Configures the HTTP server.
 module ServerConfig
 
-import "LogLevel.pkl"
 import "TlsConfig.pkl"
 
 /// The level to log at.
-level: LogLevel.LogLevel
+level: LogLevel
 
 /// The port to listen on.
+@Since { version = "1.2.0" }
 port: UInt16 = 8080
 
 /// TLS settings, when serving over HTTPS.
 tls: TlsConfig?
-</code></pre>
-<p>A module is a type, but it can’t be a union or a string, so every other type, such as an enum,
-becomes a module that declares a type alias of the same name. It is referenced as <code>Name.Name</code>. The
-default variant of an enum is marked with <code>*</code>, which makes it the default of any property of that
-type that isn’t nullable.</p>
-<pre><code class="language-pkl">/// The level to log at.
+
+/// The level to log at.
 typealias LogLevel = *"info" | "debug" | "error"
 </code></pre>
+<p>A <code>@since</code> line in a doc comment becomes a <code>@Since</code> annotation, which is how Pkl declares the
+version a member was added in, and a deprecation, or a <code>@deprecated</code> line, becomes a <code>@Deprecated</code>
+annotation. Any other line that starts with <code>@</code> stays in the doc comment, after its description.</p>
+<p>A module is a type, but it can’t be a union or a string, so every other type, such as an enum,
+becomes a type alias of the same name, which each module that uses it declares, after its
+properties. An alias that only another alias uses is declared alongside that one. The default
+variant of an enum is marked with <code>*</code>, which makes it the default of any property of that type that
+isn’t nullable.</p>
+<p>An alias is declared by a module of its own instead, referenced as <code>Name.Name</code>, when no other module
+can declare it:</p>
+<ul>
+<li>It’s a type that was added to the generator, rather than one that a struct nests.</li>
+<li>It declares classes, and more than one module uses it. A class is a distinct type in each module
+that declares it.</li>
+<li>It refers to a module that uses it, as a module can’t refer to itself by name.</li>
+<li>It shares its name with a property, or with one of Pkl’s base types, such as <code>Duration</code>.</li>
+</ul>
 <p>A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
 module it’s found in, named after its position, such as <code>ActionRun</code> for the <code>Run</code> variant of
 <code>Action</code>. A class is referenced from other modules as <code>Module.Class</code>.</p>
@@ -320,16 +333,19 @@ pattern, become
 <p><code>Pair</code> and <code>Duration</code> are decoded by the <a href="../../config/experimental.html">Pkl format</a> into the same
 shapes as a Rust tuple and <code>Duration</code>, so <code>timeout = 30.s</code> loads as expected. Pkl’s own JSON and
 YAML renderers can’t output them without a converter, however.</p>
-<p>Pkl has two types of each collection: an amendable one, <code>Listing</code> and <code>Mapping</code>, and an eager one,
-<code>List</code>, <code>Set</code>, and <code>Map</code>, which can be concatenated. The Pkl format decodes them all the same, so a
-list or a map accepts either. The amendable type is marked as the default, so that a config can
-amend it, as in <code>tags { "web" }</code>, as well as assign an eager one, as in
-<code>tags = List("web") + shared</code>.</p>
+<p>Configuration is data, so lists and maps are typed as Pkl’s amendable objects, <code>Listing</code> and
+<code>Mapping</code>, which a config amends, as in <code>tags { "web" }</code>. Pkl’s eager collections, <code>List</code>, <code>Set</code>,
+and <code>Map</code>, are for computing values, such as concatenating two lists, and aren’t accepted where an
+object is. Convert one with <code>toListing()</code> or <code>toMapping()</code>.</p>
+<pre><code class="language-pkl">local shared = List("api")
+
+tags = (List("web") + shared).toListing()
+</code></pre>
 <p>A union with a struct among its variants, such as an untagged enum, has no default to amend, and Pkl
 can’t tell which struct a <code>new {}</code> creates. Create the struct by its module instead.</p>
 <pre><code class="language-pkl">import "pkl/TaskDependencyConfig.pkl"
 
-deps = List("build", new TaskDependencyConfig { target = "~:lint"; optional = true })
+deps { "build"; new TaskDependencyConfig { target = "~:lint"; optional = true } }
 </code></pre>
 <h3 id="aliases"><a class="header" href="#aliases">Aliases</a></h3>
 <p>Pkl outputs every property, and serde rejects a setting that’s given under both its name and an

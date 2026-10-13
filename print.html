@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-7d33acd5.js";
+            window.path_to_searchindex_js = "searchindex-e6dc8867.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-dd859233.js"></script>
@@ -2707,6 +2707,21 @@ TLS settings, when serving over HTTPS.
 <p>The tags after a name describe how a property may be provided: whether it is required or optional,
 nullable, deprecated (with the deprecation message when there is one), read only, write only, or
 flattened into its parent. Enum variants are tagged with whether they are the default.</p>
+<p>A line of a doc comment that starts with <code>@</code> is a tag too, and is left out of the description. A
+<code>@since</code> line declares the version it was added in, a <code>@deprecated</code> line deprecates it (unless it’s
+deprecated already), and any other, such as <code>@experimental</code>, is labelled by its name. These follow
+the tags above, in the order they were written. A line within a fenced code block is never a tag.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Enables the cache.
+/// @since 1.2.0
+/// @experimental
+cache: bool,
+<span class="boring">}</span></code></pre>
+<pre><code class="language-md">&gt; **Required** · **Since** (1.2.0) · **Experimental**
+
+Enables the cache.
+</code></pre>
 <p>The table describes the type itself: its shape, default value, accepted values, constraints such as
 minimums and patterns, aliases, and the environment variable it can be set with.</p>
 <h2 id="options"><a class="header" href="#options">Options</a></h2>
@@ -2817,8 +2832,9 @@ required. This is enabled by default.</p>
 <p>Tags are rendered by the <code>render_tags</code> function, which receives the tags of a type, property, or
 variant as a list of
 <a href="https://docs.rs/schematic/latest/schematic/schema/api_docs/enum.ApiDocsTag.html"><code>ApiDocsTag</code></a>
-values, and returns markdown. The default renders a block quote of bold labels, but a documentation
-site may prefer its own components.</p>
+values, and returns markdown. The default renders a block quote of bold labels, with the value a tag
+carries, such as a deprecation message or a version, in parentheses after its label. A
+documentation site may prefer its own components.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use schematic::schema::ApiDocsTag;
@@ -2827,9 +2843,9 @@ ApiDocsOptions {
 	// ...
 	render_tags: Box::new(|tags| {
 		tags.iter()
-			.map(|tag| match tag {
-				ApiDocsTag::Deprecated(Some(message)) =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt; {message}"),
-				_ =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt;"),
+			.map(|tag| match tag.value() {
+				Some(value) =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt; {value}"),
+				None =&gt; format!("&lt;Badge&gt;{tag}&lt;/Badge&gt;"),
 			})
 			.collect::&lt;Vec&lt;_&gt;&gt;()
 			.join(" ")
@@ -2840,8 +2856,8 @@ ApiDocsOptions {
 tags entirely.</p>
 <h3 id="custom-descriptions"><a class="header" href="#custom-descriptions">Custom descriptions</a></h3>
 <p>Descriptions are rendered by the <code>render_description</code> function, which receives the doc comment as
-written and returns markdown. The default keeps the comment as is, only trimming each line. Use this
-to wrap descriptions in a component, or to rewrite links.</p>
+written, without its tags, and returns markdown. The default keeps the comment as is, only trimming
+each line. Use this to wrap descriptions in a component, or to rewrite links.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>ApiDocsOptions {
@@ -3324,8 +3340,8 @@ you can generate
 <a href="https://pkl-lang.org/main/current/language-reference/index.html#modules">Pkl modules</a> for all types
 that implement
 <a href="https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html"><code>Schematic</code></a>. Each struct
-and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
-can amend it and be type checked by Pkl itself.</p>
+becomes its own module, and each enum a type alias, with its Rust types converted to Pkl types, so
+that a Pkl config can amend it and be type checked by Pkl itself.</p>
 <p>To utilize, instantiate a generator, add types to render, and generate a module for every type into
 a directory. Modules import each other by relative path, so they must stay together.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -3338,7 +3354,7 @@ generator.add::&lt;ServerConfig&gt;();
 PklSchemaRenderer::default().generate_all(&amp;generator, output_dir.join("pkl"))?;
 <span class="boring">}</span></code></pre>
 <p>Each module is named after its type with a <code>.pkl</code> extension, so the above writes <code>ServerConfig.pkl</code>,
-and a module for every type it nests. A config then amends the module of its root type.</p>
+and a module for every struct it nests. A config then amends the module of its root type.</p>
 <pre><code class="language-pkl">amends "pkl/ServerConfig.pkl"
 
 port = 3000
@@ -3356,25 +3372,38 @@ deprecation carried over. Fields are rendered in alphabetical order, and skipped
 <pre><code class="language-pkl">/// Configures the HTTP server.
 module ServerConfig
 
-import "LogLevel.pkl"
 import "TlsConfig.pkl"
 
 /// The level to log at.
-level: LogLevel.LogLevel
+level: LogLevel
 
 /// The port to listen on.
+@Since { version = "1.2.0" }
 port: UInt16 = 8080
 
 /// TLS settings, when serving over HTTPS.
 tls: TlsConfig?
-</code></pre>
-<p>A module is a type, but it can’t be a union or a string, so every other type, such as an enum,
-becomes a module that declares a type alias of the same name. It is referenced as <code>Name.Name</code>. The
-default variant of an enum is marked with <code>*</code>, which makes it the default of any property of that
-type that isn’t nullable.</p>
-<pre><code class="language-pkl">/// The level to log at.
+
+/// The level to log at.
 typealias LogLevel = *"info" | "debug" | "error"
 </code></pre>
+<p>A <code>@since</code> line in a doc comment becomes a <code>@Since</code> annotation, which is how Pkl declares the
+version a member was added in, and a deprecation, or a <code>@deprecated</code> line, becomes a <code>@Deprecated</code>
+annotation. Any other line that starts with <code>@</code> stays in the doc comment, after its description.</p>
+<p>A module is a type, but it can’t be a union or a string, so every other type, such as an enum,
+becomes a type alias of the same name, which each module that uses it declares, after its
+properties. An alias that only another alias uses is declared alongside that one. The default
+variant of an enum is marked with <code>*</code>, which makes it the default of any property of that type that
+isn’t nullable.</p>
+<p>An alias is declared by a module of its own instead, referenced as <code>Name.Name</code>, when no other module
+can declare it:</p>
+<ul>
+<li>It’s a type that was added to the generator, rather than one that a struct nests.</li>
+<li>It declares classes, and more than one module uses it. A class is a distinct type in each module
+that declares it.</li>
+<li>It refers to a module that uses it, as a module can’t refer to itself by name.</li>
+<li>It shares its name with a property, or with one of Pkl’s base types, such as <code>Duration</code>.</li>
+</ul>
 <p>A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
 module it’s found in, named after its position, such as <code>ActionRun</code> for the <code>Run</code> variant of
 <code>Action</code>. A class is referenced from other modules as <code>Module.Class</code>.</p>
@@ -3457,16 +3486,19 @@ pattern, become
 <p><code>Pair</code> and <code>Duration</code> are decoded by the <a href="#experimental">Pkl format</a> into the same
 shapes as a Rust tuple and <code>Duration</code>, so <code>timeout = 30.s</code> loads as expected. Pkl’s own JSON and
 YAML renderers can’t output them without a converter, however.</p>
-<p>Pkl has two types of each collection: an amendable one, <code>Listing</code> and <code>Mapping</code>, and an eager one,
-<code>List</code>, <code>Set</code>, and <code>Map</code>, which can be concatenated. The Pkl format decodes them all the same, so a
-list or a map accepts either. The amendable type is marked as the default, so that a config can
-amend it, as in <code>tags { "web" }</code>, as well as assign an eager one, as in
-<code>tags = List("web") + shared</code>.</p>
+<p>Configuration is data, so lists and maps are typed as Pkl’s amendable objects, <code>Listing</code> and
+<code>Mapping</code>, which a config amends, as in <code>tags { "web" }</code>. Pkl’s eager collections, <code>List</code>, <code>Set</code>,
+and <code>Map</code>, are for computing values, such as concatenating two lists, and aren’t accepted where an
+object is. Convert one with <code>toListing()</code> or <code>toMapping()</code>.</p>
+<pre><code class="language-pkl">local shared = List("api")
+
+tags = (List("web") + shared).toListing()
+</code></pre>
 <p>A union with a struct among its variants, such as an untagged enum, has no default to amend, and Pkl
 can’t tell which struct a <code>new {}</code> creates. Create the struct by its module instead.</p>
 <pre><code class="language-pkl">import "pkl/TaskDependencyConfig.pkl"
 
-deps = List("build", new TaskDependencyConfig { target = "~:lint"; optional = true })
+deps { "build"; new TaskDependencyConfig { target = "~:lint"; optional = true } }
 </code></pre>
 <h3 id="aliases-1"><a class="header" href="#aliases-1">Aliases</a></h3>
 <p>Pkl outputs every property, and serde rejects a setting that’s given under both its name and an
