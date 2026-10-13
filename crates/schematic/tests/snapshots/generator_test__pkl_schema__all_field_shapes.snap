@@ -11,8 +11,6 @@ expression: "render_type::<DocsConfig>()"
 module DocsConfig
 
 import "AnotherConfig.pkl"
-import "BasicEnum.pkl"
-import "Targets.pkl"
 
 /// An optional boolean.
 boolean: Boolean?
@@ -24,13 +22,13 @@ duration: Duration
 ident: String(length.isBetween(1, 32), matches(Regex(#"^[a-z][a-z0-9-]*$"#)))?
 
 /// An enum, which carries its own default.
-level: BasicEnum.BasicEnum
+level: BasicEnum
 
 /// A list of nested configs.
-list: *Listing<AnotherConfig> | List<AnotherConfig> | Set<AnotherConfig>
+list: Listing<AnotherConfig>
 
 /// A map of enums.
-map: *Mapping<String, BasicEnum.BasicEnum> | Map<String, BasicEnum.BasicEnum>
+map: Mapping<String, BasicEnum>
 
 /// A string with a default and aliases.
 name: String = "hello"
@@ -39,7 +37,7 @@ name: String = "hello"
 nested: AnotherConfig?
 
 /// A list of nullable enums.
-nullable_items: *Listing<BasicEnum.BasicEnum?> | List<BasicEnum.BasicEnum?> | Set<BasicEnum.BasicEnum?>
+nullable_items: Listing<BasicEnum?>
 
 /// A deprecated field, use `name` instead.
 @Deprecated { message = "Use `name` instead." }
@@ -52,4 +50,10 @@ pair: Pair<String, UInt32>
 port: UInt16(isBetween(1024, 49151))
 
 /// A union of a list or a map.
-targets: Targets.Targets
+targets: Targets
+
+/// Docblock comment.
+typealias BasicEnum = *"foo" | "bar" | "baz"
+
+/// Either a list of targets, or a map of targets to paths.
+typealias Targets = Listing<String> | Mapping<String, String>

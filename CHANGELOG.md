@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `PklSchemaRenderer` to type lists and maps as Pkl's amendable `Listing` and `Mapping`
+  only, as Pkl recommends for configuration data, instead of a union that also accepted `List`,
+  `Set`, and `Map`. A config that assigns an eager value, such as `tags = List("a") + shared`, has
+  to convert it with `toListing()` or `toMapping()`.
+- Updated `PklSchemaRenderer` to declare an enum's type alias in each module that uses it, so that
+  it's referenced as `Name` rather than `Name.Name`, and to no longer write a module for it. An
+  alias keeps a module of its own when it was added to the generator itself, or when no module can
+  declare it, such as one that declares classes and is used by more than one module.
+- Updated `PklSchemaRenderer` to render a `@since` line in a doc comment as a `@Since` annotation.
+
 ## 0.20.8
 
 #### 🐞 Fixes

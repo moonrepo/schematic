@@ -4,7 +4,7 @@ use convert_case::{Case, Casing};
 use indexmap::IndexMap;
 use miette::{IntoDiagnostic, miette};
 use schematic_types::*;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::fs;
 use std::mem;
@@ -134,20 +134,6 @@ fn join_union(variants: Vec<(PklType, bool)>, nullable: bool) -> PklType {
     PklType { members, nullable }
 }
 
-/// Join the types a collection accepts. Pkl has an amendable and an eager type
-/// of each, which a config may use either of, such as `tags { "a" }` and
-/// `tags = List("a")`. The amendable type is the default, as amending needs one.
-fn join_collection(types: Vec<PklType>) -> PklType {
-    join_union(
-        types
-            .into_iter()
-            .enumerate()
-            .map(|(index, ty)| (ty, index == 0))
-            .collect(),
-        false,
-    )
-}
-
 /// Add constraints to a type, such as `String(length <= 10)`.
 fn constrain(base: impl Into<String>, constraints: Vec<String>) -> PklType {
     let base = base.into();
@@ -213,6 +199,14 @@ fn quote_pattern(pattern: &str) -> String {
     format!("{pounds}\"{pattern}\"{pounds}")
 }
 
+/// Convert a schema's name into the start of a class name. It's already a type
+/// name, so it's kept as written.
+fn to_type_name(name: &str) -> String {
+    name.chars()
+        .filter(|ch| ch.is_alphanumeric() || *ch == '_')
+        .collect()
+}
+
 /// Convert a field or variant name into a part of a class name.
 fn to_class_part(name: &str) -> String {
     name.to_case(Case::Pascal)
@@ -236,8 +230,11 @@ struct Inheritance {
 struct ModuleContext {
     name: String,
 
-    // Whether the module declares a type alias, rather than properties.
-    alias: bool,
+    // The type alias being declared, if any, rather than a property.
+    alias: Option<String>,
+
+    // Type aliases the module refers to, whether it declares them or not.
+    aliases: BTreeSet<String>,
 
     // The identifier each imported schema is known by, keyed by its name.
     imports: BTreeMap<String, String>,
@@ -260,14 +257,18 @@ struct ModuleContext {
     depth: usize,
 }
 
-/// Renders a Pkl module for every struct and enum in a schema. A struct
-/// becomes a module that declares its fields as properties, and anything else
-/// becomes a module that declares a type alias. Modules refer to each other
-/// through imports, and a struct that flattens another extends its module.
+/// Renders a Pkl module for every struct in a schema, which declares its
+/// fields as properties. Anything else, such as an enum, becomes a type alias,
+/// declared by each module that uses it. Modules refer to each other through
+/// imports, and a struct that flattens another extends its module.
 #[derive(Default)]
 pub struct PklSchemaRenderer {
     options: PklSchemaOptions,
     schemas: IndexMap<String, Schema>,
+
+    // The modules that declare each type alias, keyed by its name. An alias
+    // that is declared by a module of its own names only itself.
+    declared_in: HashMap<String, BTreeSet<String>>,
 
     // How each struct inherits from the struct it flattens, keyed by name.
     inheritance: HashMap<String, Inheritance>,
@@ -307,11 +308,15 @@ impl PklSchemaRenderer {
             ));
         }
 
-        self.prepare(generator.schemas.clone());
+        self.prepare(generator.schemas.clone(), None)?;
 
         fs::create_dir_all(output_dir).into_diagnostic()?;
 
         for name in generator.schemas.keys() {
+            if !self.has_module(name) {
+                continue;
+            }
+
             let mut output = self.render_module(name)?;
             output.push('\n');
 
@@ -322,9 +327,16 @@ impl PklSchemaRenderer {
     }
 
     /// Learn every schema, and decide how each struct inherits the struct it
-    /// flattens, which depends on how the other schemas use it.
-    fn prepare(&mut self, schemas: IndexMap<String, Schema>) {
+    /// flattens, and which modules declare each type alias, which depends on
+    /// how the other schemas use them. The `root` is the module to render on
+    /// its own, if any, which always declares its alias itself.
+    fn prepare(
+        &mut self,
+        schemas: IndexMap<String, Schema>,
+        root: Option<&str>,
+    ) -> miette::Result<()> {
         self.schemas = schemas;
+        self.declared_in.clear();
         self.inheritance.clear();
         self.open.clear();
 
@@ -382,6 +394,177 @@ impl PklSchemaRenderer {
 
             self.inheritance.insert(name, inherit);
         }
+
+        self.declared_in = self.find_declarations(&referenced, root)?;
+
+        Ok(())
+    }
+
+    /// Decide which modules declare each type alias. Each module that uses an
+    /// alias declares it, so that it reads as `Name` there, rather than as
+    /// `Name.Name` from a module that declares nothing else. An alias that
+    /// only another alias uses is declared wherever that one is, and one that
+    /// nothing uses, but that isn't a root either, isn't declared at all.
+    fn find_declarations(
+        &mut self,
+        referenced: &HashSet<String>,
+        root: Option<&str>,
+    ) -> miette::Result<HashMap<String, BTreeSet<String>>> {
+        // Render every module as it would be without any aliases moved, to
+        // learn which aliases each one refers to
+        let mut users: HashMap<String, BTreeSet<String>> = HashMap::new();
+        let mut declares_classes = HashSet::new();
+
+        for name in self.schemas.keys().cloned().collect::<Vec<_>>() {
+            self.render_module(&name)?;
+
+            for alias in mem::take(&mut self.module.aliases) {
+                users.entry(alias).or_default().insert(name.clone());
+            }
+
+            if !self.module.classes.is_empty() {
+                declares_classes.insert(name);
+            }
+        }
+
+        let mut declared_in = HashMap::new();
+
+        // A type that nothing refers to was added for a module of its own
+        let roots = self
+            .schemas
+            .keys()
+            .filter(|name| !referenced.contains(*name) || root == Some(name.as_str()))
+            .cloned()
+            .collect::<HashSet<_>>();
+
+        for name in self.schemas.keys() {
+            if !self.is_struct(name) {
+                self.find_declaration(
+                    name,
+                    &roots,
+                    &users,
+                    &declares_classes,
+                    &mut declared_in,
+                    &mut HashSet::new(),
+                );
+            }
+        }
+
+        Ok(declared_in)
+    }
+
+    /// The modules that declare a type alias, which are those that declare
+    /// the aliases and structs that use it.
+    fn find_declaration(
+        &self,
+        name: &str,
+        roots: &HashSet<String>,
+        users: &HashMap<String, BTreeSet<String>>,
+        declares_classes: &HashSet<String>,
+        declared_in: &mut HashMap<String, BTreeSet<String>>,
+        visiting: &mut HashSet<String>,
+    ) -> BTreeSet<String> {
+        if self.is_struct(name) {
+            return BTreeSet::from([name.to_owned()]);
+        }
+
+        if let Some(modules) = declared_in.get(name) {
+            return modules.clone();
+        }
+
+        let own = BTreeSet::from([name.to_owned()]);
+
+        // An alias that its users lead back to is still being decided, so its
+        // own module declares it as well
+        if !visiting.insert(name.to_owned()) {
+            return own;
+        }
+
+        // An alias named after a base type would shadow it for the whole
+        // module, and Pkl rejects an alias that refers to itself, which only
+        // its own module breaks the cycle of
+        let modules = if roots.contains(name)
+            || BASE_TYPES.contains(&name)
+            || self.reaches(name, name, &mut HashSet::new())
+        {
+            own
+        } else {
+            let mut modules = BTreeSet::new();
+
+            for user in users.get(name).into_iter().flatten() {
+                modules.extend(self.find_declaration(
+                    user,
+                    roots,
+                    users,
+                    declares_classes,
+                    declared_in,
+                    visiting,
+                ));
+            }
+
+            // A class is a distinct type in each module that declares it, so
+            // an alias that declares one isn't repeated. And a module can't
+            // refer to itself by name, nor declare a member twice.
+            if (modules.len() > 1 && declares_classes.contains(name))
+                || modules.iter().any(|module| {
+                    self.reaches(name, module, &mut HashSet::new())
+                        || self.collect_members(module).contains(name)
+                })
+            {
+                own
+            } else {
+                modules
+            }
+        };
+
+        declared_in.insert(name.to_owned(), modules.clone());
+
+        modules
+    }
+
+    /// Return true if the schema is rendered as a module of its own, which a
+    /// struct always is, while a type alias may be declared by others instead.
+    fn has_module(&self, name: &str) -> bool {
+        self.is_struct(name)
+            || self
+                .declared_in
+                .get(name)
+                .is_none_or(|modules| modules.contains(name))
+    }
+
+    /// Names of the type aliases that a module declares, other than its own.
+    fn collect_declared_aliases(&self, module: &str) -> BTreeSet<String> {
+        self.declared_in
+            .iter()
+            .filter(|(name, modules)| *name != module && modules.contains(module))
+            .map(|(name, _)| name.to_owned())
+            .collect()
+    }
+
+    /// Names of the properties of a struct's module, including those of the
+    /// modules it inherits from.
+    fn collect_members(&self, module: &str) -> HashSet<String> {
+        let mut members = HashSet::new();
+        let mut next = Some(module.to_owned());
+
+        while let Some(module) = next.take() {
+            let Some(SchemaType::Struct(structure)) =
+                self.schemas.get(&module).map(|schema| &schema.ty)
+            else {
+                break;
+            };
+
+            let inherit = self.inheritance.get(&module);
+
+            members.extend(
+                self.collect_properties(structure, inherit.map(|inherit| inherit.field.as_str()))
+                    .into_keys(),
+            );
+
+            next = inherit.map(|inherit| inherit.base.clone());
+        }
+
+        members
     }
 
     /// Decide which schemas are deserialized as a full type somewhere. A type
@@ -484,10 +667,10 @@ impl PklSchemaRenderer {
         };
     }
 
-    /// Return true if the type alias `from` refers to the type alias `to`,
+    /// Return true if the type alias `from` refers to the schema `to`,
     /// directly or through other type aliases, or through the classes they
     /// declare. A struct's module is a class of its own, which Pkl resolves
-    /// lazily, so a reference to one never forms a cycle.
+    /// lazily, so a reference to one never forms a cycle, and isn't followed.
     fn reaches(&self, from: &str, to: &str, visited: &mut HashSet<String>) -> bool {
         if !visited.insert(from.to_owned()) {
             return false;
@@ -500,8 +683,8 @@ impl PklSchemaRenderer {
         self.collect_references(schema)
             .into_iter()
             .any(|(reference, _)| {
-                !self.is_struct(&reference)
-                    && (reference == to || self.reaches(&reference, to, visited))
+                reference == to
+                    || (!self.is_struct(&reference) && self.reaches(&reference, to, visited))
             })
     }
 
@@ -616,15 +799,9 @@ impl PklSchemaRenderer {
 
         self.module = ModuleContext {
             name: name.to_owned(),
-            alias: !schema.is_struct(),
             full: self.full.contains(name),
             taken,
-            // Already a type name, so kept as written
-            hints: vec![
-                name.chars()
-                    .filter(|ch| ch.is_alphanumeric() || *ch == '_')
-                    .collect(),
-            ],
+            hints: vec![to_type_name(name)],
             ..ModuleContext::default()
         };
 
@@ -636,8 +813,9 @@ impl PklSchemaRenderer {
         let mut clause = vec![];
 
         if let SchemaType::Struct(structure) = &schema.ty {
-            clause.extend(self.render_description(schema.description.as_deref()));
-            clause.extend(schema.deprecated.as_deref().map(render_deprecated));
+            clause.extend(
+                self.render_docs(schema.description.as_deref(), schema.deprecated.as_deref()),
+            );
 
             let inherited = inheritance.as_ref().map(|inherit| inherit.field.as_str());
             let properties = self.collect_properties(structure, inherited);
@@ -655,13 +833,13 @@ impl PklSchemaRenderer {
                 members.push(self.render_property(name, field, &properties, true)?);
             }
         } else {
-            let ty = self.render_schema_without_reference(&schema)?;
-            let mut alias = self.render_description(schema.description.as_deref());
+            members.push(self.render_alias(name, &schema)?);
+        }
 
-            alias.extend(schema.deprecated.as_deref().map(render_deprecated));
-            alias.push(format!("typealias {} = {ty}", quote_identifier(name)));
-
-            members.push(alias.join("\n"));
+        for alias in self.collect_declared_aliases(name) {
+            if let Some(schema) = self.schemas.get(&alias).cloned() {
+                members.push(self.render_alias(&alias, &schema)?);
+            }
         }
 
         clause.push(format!(
@@ -705,28 +883,60 @@ impl PklSchemaRenderer {
         }
 
         sections.extend(members);
-        sections.extend(mem::take(&mut self.module.classes));
+        sections.extend(self.module.classes.iter().cloned());
 
         Ok(sections.join("\n\n"))
     }
 
-    /// Render a doc comment, keeping the lines as written.
-    fn render_description(&self, description: Option<&str>) -> Vec<String> {
-        let indent = self.indent();
+    /// Render the declaration of a type alias, with its documentation. Its
+    /// classes are named after it, wherever it's declared.
+    fn render_alias(&mut self, name: &str, schema: &Schema) -> RenderResult {
+        let alias = self.module.alias.replace(name.to_owned());
+        let hints = mem::replace(&mut self.module.hints, vec![to_type_name(name)]);
+        let full = mem::replace(&mut self.module.full, self.full.contains(name));
 
-        description
-            .map(str::trim)
-            .filter(|description| !description.is_empty())
-            .map(|description| {
-                description
-                    .lines()
-                    .map(|line| match line.trim() {
-                        "" => format!("{indent}///"),
-                        line => format!("{indent}/// {line}"),
-                    })
-                    .collect()
+        let ty = self.render_schema_without_reference(schema);
+
+        self.module.alias = alias;
+        self.module.hints = hints;
+        self.module.full = full;
+
+        let mut lines =
+            self.render_docs(schema.description.as_deref(), schema.deprecated.as_deref());
+
+        lines.push(format!("typealias {} = {}", quote_identifier(name), ty?));
+
+        Ok(lines.join("\n"))
+    }
+
+    /// Render a doc comment, keeping the lines as written, followed by the
+    /// annotations of a member. Pkl declares when a member was added with an
+    /// annotation, so a `@since` tag in the doc comment becomes one.
+    fn render_docs(&self, description: Option<&str>, deprecated: Option<&str>) -> Vec<String> {
+        let indent = self.indent();
+        let (description, versions) = split_since(description.unwrap_or_default());
+
+        let mut lines = description
+            .trim()
+            .lines()
+            .map(|line| match line.trim() {
+                "" => format!("{indent}///"),
+                line => format!("{indent}/// {line}"),
             })
-            .unwrap_or_default()
+            .collect::<Vec<_>>();
+
+        for version in versions {
+            lines.push(format!(
+                "{indent}@Since {{ version = {} }}",
+                quote_string(&version)
+            ));
+        }
+
+        if let Some(deprecated) = deprecated {
+            lines.push(format!("{indent}{}", render_deprecated(deprecated)));
+        }
+
+        lines
     }
 
     /// Render a property, with its documentation and aliases. A property of a
@@ -812,11 +1022,7 @@ impl PklSchemaRenderer {
             );
         }
 
-        let mut lines = self.render_description(field.comment.as_deref());
-
-        if let Some(deprecated) = &field.deprecated {
-            lines.push(format!("{indent}{}", render_deprecated(deprecated)));
-        }
+        let mut lines = self.render_docs(field.comment.as_deref(), field.deprecated.as_deref());
 
         lines.push(format!(
             "{indent}{}: {ty}{}",
@@ -916,8 +1122,8 @@ impl PklSchemaRenderer {
         self.module.full = full;
         self.module.depth = 0;
 
-        let mut class = self.render_description(schema.description.as_deref());
-        class.extend(schema.deprecated.as_deref().map(render_deprecated));
+        let mut class =
+            self.render_docs(schema.description.as_deref(), schema.deprecated.as_deref());
 
         class.push(if members.is_empty() {
             format!("class {name}")
@@ -949,6 +1155,24 @@ impl PklSchemaRenderer {
 
         ident
     }
+}
+
+/// Split the `@since` tags out of a description, returning the description
+/// without them, and the version of each.
+fn split_since(description: &str) -> (String, Vec<String>) {
+    let mut lines = vec![];
+    let mut versions = vec![];
+
+    for line in description.lines() {
+        match line.trim().strip_prefix("@since") {
+            Some(version) if version.starts_with(char::is_whitespace) => {
+                versions.push(version.trim().to_owned());
+            }
+            _ => lines.push(line),
+        };
+    }
+
+    (lines.join("\n"), versions)
 }
 
 fn render_deprecated(message: &str) -> String {
@@ -997,17 +1221,11 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             constraints.push("isDistinct".to_owned());
         }
 
-        let length = length_constraint(array.min_length, array.max_length);
+        constraints.extend(length_constraint(array.min_length, array.max_length));
 
-        constraints.extend(length.clone());
-
-        // A set is always distinct, and is decoded into a sequence, the same
-        // as a list
-        Ok(join_collection(vec![
-            constrain(format!("Listing<{items}>"), constraints.clone()),
-            constrain(format!("List<{items}>"), constraints),
-            constrain(format!("Set<{items}>"), length.into_iter().collect()),
-        ]))
+        // Configuration is data, which Pkl declares with its amendable object
+        // types, rather than its eager `List` and `Set`
+        Ok(constrain(format!("Listing<{items}>"), constraints))
     }
 
     fn render_boolean(
@@ -1147,10 +1365,7 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             .into_iter()
             .collect();
 
-        Ok(join_collection(vec![
-            constrain(format!("Mapping<{key}, {value}>"), constraints.clone()),
-            constrain(format!("Map<{key}, {value}>"), constraints),
-        ]))
+        Ok(constrain(format!("Mapping<{key}, {value}>"), constraints))
     }
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<PklType> {
@@ -1165,12 +1380,23 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
 
         // Pkl rejects a type alias that refers back to itself, even through a
         // class it declares, so the cycle is broken with the widest type
-        if self.module.alias
+        if let Some(alias) = &self.module.alias
             && !is_struct
-            && (reference == self.module.name
-                || self.reaches(reference, &self.module.name, &mut HashSet::new()))
+            && (reference == alias || self.reaches(reference, alias, &mut HashSet::new()))
         {
             return Ok(PklType::new("Any"));
+        }
+
+        if !is_struct {
+            self.module.aliases.insert(reference.to_owned());
+
+            if self
+                .declared_in
+                .get(reference)
+                .is_some_and(|modules| modules.contains(&self.module.name))
+            {
+                return Ok(PklType::new(quote_identifier(reference)));
+            }
         }
 
         let ident = self.import(reference);
@@ -1240,10 +1466,7 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
         let constraints = vec![format!("length == {}", items.len())];
         let items = join_union(items.into_iter().map(|item| (item, false)).collect(), false);
 
-        Ok(join_collection(vec![
-            constrain(format!("Listing<{items}>"), constraints.clone()),
-            constrain(format!("List<{items}>"), constraints),
-        ]))
+        Ok(constrain(format!("Listing<{items}>"), constraints))
     }
 
     fn render_union(&mut self, uni: &UnionType, _schema: &Schema) -> RenderResult<PklType> {
@@ -1288,7 +1511,7 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
             ));
         };
 
-        self.prepare(schemas);
+        self.prepare(schemas, Some(&name))?;
         self.render_module(&name)
     }
 }

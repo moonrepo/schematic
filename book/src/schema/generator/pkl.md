@@ -8,8 +8,8 @@ you can generate
 [Pkl modules](https://pkl-lang.org/main/current/language-reference/index.html#modules) for all types
 that implement
 [`Schematic`](https://docs.rs/schematic/latest/schematic/schema/trait.Schematic.html). Each struct
-and enum becomes its own module, with its Rust types converted to Pkl types, so that a Pkl config
-can amend it and be type checked by Pkl itself.
+becomes its own module, and each enum a type alias, with its Rust types converted to Pkl types, so
+that a Pkl config can amend it and be type checked by Pkl itself.
 
 To utilize, instantiate a generator, add types to render, and generate a module for every type into
 a directory. Modules import each other by relative path, so they must stay together.
@@ -24,7 +24,7 @@ PklSchemaRenderer::default().generate_all(&generator, output_dir.join("pkl"))?;
 ```
 
 Each module is named after its type with a `.pkl` extension, so the above writes `ServerConfig.pkl`,
-and a module for every type it nests. A config then amends the module of its root type.
+and a module for every struct it nests. A config then amends the module of its root type.
 
 ```pkl
 amends "pkl/ServerConfig.pkl"
@@ -50,28 +50,39 @@ deprecation carried over. Fields are rendered in alphabetical order, and skipped
 /// Configures the HTTP server.
 module ServerConfig
 
-import "LogLevel.pkl"
 import "TlsConfig.pkl"
 
 /// The level to log at.
-level: LogLevel.LogLevel
+level: LogLevel
 
 /// The port to listen on.
+@Since { version = "1.2.0" }
 port: UInt16 = 8080
 
 /// TLS settings, when serving over HTTPS.
 tls: TlsConfig?
-```
 
-A module is a type, but it can't be a union or a string, so every other type, such as an enum,
-becomes a module that declares a type alias of the same name. It is referenced as `Name.Name`. The
-default variant of an enum is marked with `*`, which makes it the default of any property of that
-type that isn't nullable.
-
-```pkl
 /// The level to log at.
 typealias LogLevel = *"info" | "debug" | "error"
 ```
+
+A `@since` line in a doc comment becomes a `@Since` annotation, which is how Pkl declares the
+version a member was added in, and a deprecation becomes a `@Deprecated` annotation.
+
+A module is a type, but it can't be a union or a string, so every other type, such as an enum,
+becomes a type alias of the same name, which each module that uses it declares, after its
+properties. An alias that only another alias uses is declared alongside that one. The default
+variant of an enum is marked with `*`, which makes it the default of any property of that type that
+isn't nullable.
+
+An alias is declared by a module of its own instead, referenced as `Name.Name`, when no other module
+can declare it:
+
+- It's a type that was added to the generator, rather than one that a struct nests.
+- It declares classes, and more than one module uses it. A class is a distinct type in each module
+  that declares it.
+- It refers to a module that uses it, as a module can't refer to itself by name.
+- It shares its name with a property, or with one of Pkl's base types, such as `Duration`.
 
 A struct without a name of its own, such as a variant of a tagged enum, becomes a class in the
 module it's found in, named after its position, such as `ActionRun` for the `Run` variant of
@@ -172,11 +183,16 @@ pattern, become
 shapes as a Rust tuple and `Duration`, so `timeout = 30.s` loads as expected. Pkl's own JSON and
 YAML renderers can't output them without a converter, however.
 
-Pkl has two types of each collection: an amendable one, `Listing` and `Mapping`, and an eager one,
-`List`, `Set`, and `Map`, which can be concatenated. The Pkl format decodes them all the same, so a
-list or a map accepts either. The amendable type is marked as the default, so that a config can
-amend it, as in `tags { "web" }`, as well as assign an eager one, as in
-`tags = List("web") + shared`.
+Configuration is data, so lists and maps are typed as Pkl's amendable objects, `Listing` and
+`Mapping`, which a config amends, as in `tags { "web" }`. Pkl's eager collections, `List`, `Set`,
+and `Map`, are for computing values, such as concatenating two lists, and aren't accepted where an
+object is. Convert one with `toListing()` or `toMapping()`.
+
+```pkl
+local shared = List("api")
+
+tags = (List("web") + shared).toListing()
+```
 
 A union with a struct among its variants, such as an untagged enum, has no default to amend, and Pkl
 can't tell which struct a `new {}` creates. Create the struct by its module instead.
@@ -184,7 +200,7 @@ can't tell which struct a `new {}` creates. Create the struct by its module inst
 ```pkl
 import "pkl/TaskDependencyConfig.pkl"
 
-deps = List("build", new TaskDependencyConfig { target = "~:lint"; optional = true })
+deps { "build"; new TaskDependencyConfig { target = "~:lint"; optional = true } }
 ```
 
 ### Aliases
