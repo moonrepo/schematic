@@ -229,6 +229,46 @@ struct DocsConfig {
     hidden: String,
 }
 
+/// A config with tags in its doc comments.
+///
+/// @since 1.0.0
+#[derive(Clone, Config)]
+struct TaggedDocsConfig {
+    /// Added after the config.
+    /// @since 1.2.0
+    /// @experimental
+    added: Option<String>,
+
+    /// Deprecated through its doc comment.
+    /// @deprecated Use `added` instead.
+    old: Option<String>,
+
+    /// Deprecated by both, where the attribute wins.
+    /// @deprecated Ignored.
+    #[deprecated = "Use `added`."]
+    older: Option<String>,
+
+    /// A line of an example that starts with `@` is kept.
+    ///
+    /// ```py
+    /// @decorator
+    /// ```
+    example: Option<String>,
+
+    level: TaggedDocsEnum,
+}
+
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
+    pub enum TaggedDocsEnum {
+        #[default]
+        Alpha,
+        /// Added later.
+        /// @since 1.1.0
+        Beta,
+    }
+);
+
 fn create_generator() -> SchemaGenerator {
     let mut generator = SchemaGenerator::default();
     generator.add::<GenConfig>();
@@ -781,6 +821,22 @@ mod typescript {
         assert_snapshot!(generate(TypeScriptOptions::default()));
     }
 
+    // The tags of a doc comment join those derived from the type, after the
+    // description
+    #[test]
+    fn doc_comment_tags() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("types.ts");
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        generator
+            .generate(&file, TypeScriptRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
+
     #[test]
     fn partials() {
         let sandbox = create_empty_sandbox();
@@ -1133,6 +1189,60 @@ mod api_docs {
         ));
     }
 
+    // A line of a doc comment that starts with `@` is a tag, rather than part
+    // of the description
+    #[test]
+    fn doc_comment_tags() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        assert_snapshot!(generate(generator, ApiDocsOptions::default()));
+    }
+
+    #[test]
+    fn doc_comment_tags_in_enum_table() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsEnum>();
+
+        let output = generate(
+            generator,
+            ApiDocsOptions {
+                enum_format: ApiDocsEnumFormat::Table,
+                ..ApiDocsOptions::default()
+            },
+        );
+
+        assert!(output.contains("| `beta` | `\"beta\"` | **Since** (1.1.0) | Added later. |"));
+    }
+
+    #[test]
+    fn doc_comment_tags_left_out_of_index_page() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<TaggedDocsConfig>();
+
+        let output = ApiDocsRenderer::default()
+            .render_index_page(&generator.schemas)
+            .unwrap();
+
+        assert!(output.contains(
+            "| [`TaggedDocsConfig`](./TaggedDocsConfig.md) | Struct | A config with tags in its doc comments. |"
+        ));
+    }
+
+    #[test]
+    fn labels_and_values_of_tags() {
+        let custom = ApiDocsTag::Custom {
+            name: "read_only-ish".into(),
+            value: Some("yes".into()),
+        };
+
+        assert_eq!(custom.label(), "Read only ish");
+        assert_eq!(custom.value(), Some("yes"));
+        assert_eq!(ApiDocsTag::Since("1.2.0".into()).value(), Some("1.2.0"));
+        assert_eq!(ApiDocsTag::Deprecated(None).value(), None);
+        assert_eq!(ApiDocsTag::Required.label(), "Required");
+    }
+
     // An empty result from either function omits that block, rather than
     // leaving a blank line where it would have been
     #[test]
@@ -1417,6 +1527,96 @@ mod pkl_schema {
         old_level: Option<BasicEnum>,
     }
 
+    /// A config that was added in a later version.
+    /// @since 1.0.0
+    #[derive(Clone, Config)]
+    struct SinceConfig {
+        /// Added after the config.
+        ///
+        /// @since 1.2.0
+        added: Option<String>,
+        /// Added, and then deprecated.
+        /// @since 1.1.0
+        #[deprecated = "Use `added` instead."]
+        removed: Option<SinceEnum>,
+        /// Deprecated through its doc comment, which Pkl has no annotation
+        /// for the rest of.
+        /// @deprecated Use `added` instead.
+        /// @experimental
+        tagged: Option<String>,
+    }
+
+    derive_enum!(
+        /// Values of a setting.
+        /// @since 1.1.0
+        #[derive(ConfigEnum, Default)]
+        pub enum SinceEnum {
+            #[default]
+            Alpha,
+        }
+    );
+
+    /// Declares an enum that the config it nests declares as well.
+    #[derive(Clone, Config)]
+    struct SharesAliasConfig {
+        level: BasicEnum,
+        #[setting(nested)]
+        nested: SharedAliasConfig,
+    }
+
+    #[derive(Clone, Config)]
+    struct SharedAliasConfig {
+        levels: Vec<BasicEnum>,
+    }
+
+    /// A tagged enum declares classes, so it can't be repeated.
+    #[derive(Clone, Config)]
+    struct SharesClassesConfig {
+        #[setting(nested)]
+        tagged: AdjacentTagged,
+        #[setting(nested)]
+        nested: SharedClassesConfig,
+    }
+
+    #[derive(Clone, Config)]
+    struct SharedClassesConfig {
+        #[setting(nested)]
+        tagged: Option<AdjacentTagged>,
+    }
+
+    /// A property that shares its name with the enum.
+    #[derive(Clone, Config)]
+    struct CollidesConfig {
+        #[setting(rename = "BasicEnum")]
+        level: BasicEnum,
+    }
+
+    /// An enum that holds another, which is only used through it.
+    #[derive(Clone, Schematic)]
+    #[serde(untagged)]
+    pub enum Outer {
+        Level(BasicEnum),
+        Name(String),
+    }
+
+    #[derive(Clone, Schematic)]
+    pub struct OuterConfig {
+        value: Outer,
+    }
+
+    /// A union that holds the struct that uses it.
+    #[derive(Clone, Schematic)]
+    #[serde(untagged)]
+    pub enum NodeRef {
+        Name(String),
+        Nodes(Vec<NodeConfig>),
+    }
+
+    #[derive(Clone, Schematic)]
+    pub struct NodeConfig {
+        child: Option<NodeRef>,
+    }
+
     fn render(generator: SchemaGenerator, options: PklSchemaOptions) -> String {
         let sandbox = create_empty_sandbox();
         let file = sandbox.path().join("module.pkl");
@@ -1519,18 +1719,12 @@ mod pkl_schema {
 
         let modules = render_all(&generator, PklSchemaOptions::default());
 
-        assert_snapshot!(
-            "tagged_enums_external",
-            modules.get("ExternalTagged.pkl").unwrap()
+        // Each enum is only used by the config, which declares them all
+        assert_eq!(
+            modules.keys().collect::<Vec<_>>(),
+            vec!["ExternalTaggedConfig.pkl", "TaggedConfig.pkl"]
         );
-        assert_snapshot!(
-            "tagged_enums_internal",
-            modules.get("InternalTagged.pkl").unwrap()
-        );
-        assert_snapshot!(
-            "tagged_enums_adjacent",
-            modules.get("AdjacentTagged.pkl").unwrap()
-        );
+        assert_snapshot!(modules.get("TaggedConfig.pkl").unwrap());
     }
 
     // A partial nullifies every field of the struct a variant holds, which
@@ -1644,9 +1838,7 @@ mod pkl_schema {
         let output = render_type::<TreeConfig>();
 
         assert!(output.contains("import \"TreeConfig.pkl\""));
-        assert!(
-            output.contains("children: *Listing<TreeConfig> | List<TreeConfig> | Set<TreeConfig>")
-        );
+        assert!(output.contains("children: Listing<TreeConfig>"));
     }
 
     // Pkl rejects a type alias that refers to itself
@@ -1656,17 +1848,102 @@ mod pkl_schema {
     }
 
     #[test]
-    fn generate_all_writes_every_module() {
-        let modules = render_all(&create_generator(), PklSchemaOptions::default());
+    fn since_tags_become_annotations() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<SinceConfig>();
+
+        assert_snapshot!(render(generator, PklSchemaOptions::default()));
+    }
+
+    // Each module that uses an enum declares it, rather than importing a
+    // module that declares nothing else
+    #[test]
+    fn declares_an_alias_in_each_module_that_uses_it() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<SharesAliasConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
 
         assert_eq!(
             modules.keys().collect::<Vec<_>>(),
-            vec![
-                "AnotherConfig.pkl",
-                "BasicEnum.pkl",
-                "FallbackEnum.pkl",
-                "GenConfig.pkl",
-            ]
+            vec!["SharedAliasConfig.pkl", "SharesAliasConfig.pkl"]
+        );
+
+        for module in modules.values() {
+            assert!(module.contains("\ntypealias BasicEnum = *\"foo\" | \"bar\" | \"baz\""));
+            assert!(!module.contains("import \"BasicEnum.pkl\""));
+        }
+
+        assert!(modules["SharedAliasConfig.pkl"].contains("\nlevels: Listing<BasicEnum>\n"));
+    }
+
+    // An alias that only another alias uses goes wherever that one does
+    #[test]
+    fn declares_an_alias_where_the_alias_using_it_is() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<OuterConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+        let module = &modules["OuterConfig.pkl"];
+
+        assert_eq!(modules.len(), 1);
+        assert!(module.contains("\nvalue: Outer = \"foo\"\n"));
+        assert!(module.contains("\ntypealias Outer = BasicEnum | String\n"));
+        assert!(module.contains("\ntypealias BasicEnum = "));
+    }
+
+    // A class is a distinct type in each module that declares it, so the
+    // alias that declares it keeps a module of its own
+    #[test]
+    fn keeps_a_module_for_a_shared_alias_with_classes() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<SharesClassesConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert!(modules["AdjacentTagged.pkl"].contains("\nclass AdjacentTaggedBar {"));
+
+        for name in ["SharesClassesConfig.pkl", "SharedClassesConfig.pkl"] {
+            assert!(modules[name].contains("import \"AdjacentTagged.pkl\""));
+            assert!(modules[name].contains(": AdjacentTagged.AdjacentTagged"));
+        }
+    }
+
+    // Pkl rejects a module that declares two members of the same name
+    #[test]
+    fn keeps_a_module_for_an_alias_named_like_a_property() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<CollidesConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert!(modules.contains_key("BasicEnum.pkl"));
+        assert!(modules["CollidesConfig.pkl"].contains("\nBasicEnum: BasicEnumModule.BasicEnum\n"));
+    }
+
+    // A module can't refer to itself by name, so an alias that refers to
+    // the struct that uses it is declared by a module of its own
+    #[test]
+    fn keeps_a_module_for_an_alias_that_refers_to_its_user() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<NodeConfig>();
+
+        let modules = render_all(&generator, PklSchemaOptions::default());
+
+        assert!(
+            modules["NodeRef.pkl"].contains("\ntypealias NodeRef = String | Listing<NodeConfig>\n")
+        );
+        assert!(modules["NodeConfig.pkl"].contains("\nchild: NodeRef.NodeRef?\n"));
+    }
+
+    #[test]
+    fn generate_all_writes_every_module() {
+        let modules = render_all(&create_generator(), PklSchemaOptions::default());
+
+        // The enums are declared by the config that uses them
+        assert_eq!(
+            modules.keys().collect::<Vec<_>>(),
+            vec!["AnotherConfig.pkl", "GenConfig.pkl"]
         );
 
         // A module is the same as the one a single generate renders
@@ -1733,6 +2010,7 @@ mod pkl_schema {
         pub struct ServerBaseConfig {
             #[setting(default = "shared")]
             shared: String,
+            base_level: Option<BasicEnum>,
         }
 
         #[derive(Clone, Config, Debug, PartialEq)]
@@ -1828,6 +2106,7 @@ level = "bar"
 nested { enabled = true }
 targets = new Listing { "one"; "two" }
 shared = "custom"
+base_level = "baz"
 "#,
             );
 
@@ -1853,6 +2132,31 @@ shared = "custom"
                 Some(ServerTargets::List(vec!["one".into(), "two".into()]))
             );
             assert_eq!(config.base.shared, "custom");
+            assert_eq!(config.base.base_level, Some(BasicEnum::Baz));
+        }
+
+        // A module that extends another declares the aliases it uses again,
+        // which Pkl allows, as a module may override what it inherits
+        #[test]
+        fn declares_an_alias_that_the_extended_module_declares() {
+            let sandbox = create_empty_sandbox();
+
+            write_layer_modules(sandbox.path());
+
+            for name in ["ServerConfig.pkl", "ServerBaseConfig.pkl"] {
+                assert!(
+                    fs::read_to_string(sandbox.path().join(name))
+                        .unwrap()
+                        .contains("\ntypealias BasicEnum = ")
+                );
+            }
+
+            assert!(!sandbox.path().join("BasicEnum.pkl").exists());
+
+            let config = load(sandbox.path(), "level = \"baz\"\nbase_level = \"bar\"");
+
+            assert_eq!(config.level, BasicEnum::Baz);
+            assert_eq!(config.base.base_level, Some(BasicEnum::Bar));
         }
 
         // A property's default is output by the module, and the enum's
@@ -1902,10 +2206,10 @@ shared = "custom"
             );
         }
 
-        // A config may use the eager types of Pkl as well, which can be
-        // concatenated, unlike the amendable ones
+        // Lists and maps are typed as Pkl's amendable objects, which an eager
+        // value, such as a concatenated list, converts into
         #[test]
-        fn loads_lists_maps_and_sets() {
+        fn loads_converted_lists_and_maps() {
             let sandbox = create_empty_sandbox();
 
             write_layer_modules(sandbox.path());
@@ -1913,9 +2217,9 @@ shared = "custom"
             let config = load(
                 sandbox.path(),
                 r#"
-tags = List("a") + List("b")
-labels = Map("x", "y")
-targets = Set("one", "two")
+tags = (List("a") + List("b")).toListing()
+labels = Map("x", "y").toMapping()
+targets = Set("one", "two").toListing()
 env { ["KEY"] = "value" }
 "#,
             );
@@ -1965,7 +2269,7 @@ env { ["KEY"] = "value" }
             let module =
                 fs::read_to_string(sandbox.path().join("ServerAffectedConfig.pkl")).unwrap();
 
-            assert!(module.contains("\nfilter: *Listing<String> | List<String> | Set<String>\n"));
+            assert!(module.contains("\nfilter: Listing<String>\n"));
             assert!(module.contains("\nflag: Boolean?\n"));
             assert!(module.contains("\npass: String"));
 

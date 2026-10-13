@@ -1,3 +1,4 @@
+use super::doc_tags::*;
 use crate::schema::{RenderResult, SchemaRenderer};
 use convert_case::{Case, Casing};
 use indexmap::IndexMap;
@@ -309,22 +310,35 @@ impl TypeScriptRenderer {
         }
     }
 
+    /// Wrap a value in a JSDoc comment of its description, and its tags. The
+    /// tags of the description follow those derived from the type, so that
+    /// they're all together after the description, and a `@deprecated` tag
+    /// is only kept if the type isn't deprecated itself.
     fn wrap_in_comment(
         &self,
         comment: Option<&String>,
-        tags: Vec<String>,
+        mut tags: Vec<String>,
         value: String,
     ) -> String {
         let indent = self.indent();
         let mut lines = vec![];
 
         if let Some(comment) = comment {
-            lines.extend(
-                comment
-                    .trim()
-                    .split('\n')
-                    .map(|c| c.trim().to_owned())
-                    .collect::<Vec<_>>(),
+            let (description, doc_tags) = split_doc_tags(comment);
+
+            if !description.is_empty() {
+                lines.extend(description.split('\n').map(|c| c.trim().to_owned()));
+            }
+
+            let is_deprecated = tags
+                .iter()
+                .any(|tag| tag == "@deprecated" || tag.starts_with("@deprecated "));
+
+            tags.extend(
+                doc_tags
+                    .into_iter()
+                    .filter(|tag| !(is_deprecated && tag.name == "deprecated"))
+                    .map(|tag| tag.to_line()),
             );
         }
 

@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `PklSchemaRenderer` to type lists and maps as Pkl's amendable `Listing` and `Mapping`
+  only, as Pkl recommends for configuration data, instead of a union that also accepted `List`,
+  `Set`, and `Map`. A config that assigns an eager value, such as `tags = List("a") + shared`, has
+  to convert it with `toListing()` or `toMapping()`.
+- Updated `PklSchemaRenderer` to declare an enum's type alias in each module that uses it, so that
+  it's referenced as `Name` rather than `Name.Name`, and to no longer write a module for it. An
+  alias keeps a module of its own when it was added to the generator itself, or when no module can
+  declare it, such as one that declares classes and is used by more than one module.
+- Updated `PklSchemaRenderer` to render a `@since` line in a doc comment as a `@Since` annotation,
+  and a `@deprecated` line as a `@Deprecated` annotation, unless the type is deprecated already.
+- Updated `ApiDocsRenderer` to render the lines of a doc comment that start with `@`, such as
+  `@since 1.2.0`, as tags rather than as part of the description, index, or summary.
+  - Added `ApiDocsTag::Since` for a `@since` tag, and `ApiDocsTag::Custom` for any other, such as
+    `@experimental`, labelled by its name. A `@deprecated` tag is an `ApiDocsTag::Deprecated`.
+  - Added `ApiDocsTag::value`, the text a tag carries, which the default tags renderer shows in
+    parentheses after the label.
+  - Changed `ApiDocsTag::label` to return a `Cow<str>`, as a custom tag's label is derived from its
+    name.
+- Updated `TypeScriptRenderer` to move the tags of a doc comment after its description, alongside
+  the tags it derives from the type, such as `@default`, and to only keep a `@deprecated` tag when
+  the type isn't deprecated already.
+
 ## 0.20.8
 
 #### 🐞 Fixes

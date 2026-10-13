@@ -7,20 +7,17 @@ expression: "render_type::<TypesConfig>()"
 /// Covers the conversion of each Rust type.
 module TypesConfig
 
-import "BasicEnum.pkl"
-import "KeyEnum.pkl"
-
-btree_set: *Listing<UInt8>(isDistinct) | List<UInt8>(isDistinct) | Set<UInt8>
+btree_set: Listing<UInt8>(isDistinct)
 
 character: Char
 
 duration: Duration
 
-enum_map: *Mapping<KeyEnum.KeyEnum, String> | Map<KeyEnum.KeyEnum, String>
+enum_map: Mapping<KeyEnum, String>
 
 escaped: String = "quote \" and backslash \\ and \\(interpolation)"
 
-fixed_array: *Listing<String>(length == 3) | List<String>(length == 3) | Set<String>(length == 3)
+fixed_array: Listing<String>(length == 3)
 
 float32: Float = 1.0
 
@@ -42,24 +39,24 @@ isize: Int
 
 json: Any
 
-level: BasicEnum.BasicEnum = "bar"
+level: BasicEnum = "bar"
 
 maybe_duration: Duration?
 
 non_zero: UInt8(this >= 1)?
 
-nullable_items: *Listing<BasicEnum.BasicEnum?> | List<BasicEnum.BasicEnum?> | Set<BasicEnum.BasicEnum?>
+nullable_items: Listing<BasicEnum?>
 
 @Deprecated { message = "Use `level` instead." }
-old_level: BasicEnum.BasicEnum?
+old_level: BasicEnum?
 
 pair: Pair<String, UInt32>
 
 port: UInt16(isBetween(1024, 49151))
 
-set: *Listing<String>(isDistinct) | List<String>(isDistinct) | Set<String>
+set: Listing<String>(isDistinct)
 
-triple: *Listing<String | UInt32 | Boolean>(length == 3) | List<String | UInt32 | Boolean>(length == 3)
+triple: Listing<String | UInt32 | Boolean>(length == 3)
 
 uint128: UInt
 
@@ -72,3 +69,8 @@ uint64: UInt
 uint8: UInt8
 
 usize: UInt
+
+/// Docblock comment.
+typealias BasicEnum = *"foo" | "bar" | "baz"
+
+typealias KeyEnum = *"alpha" | "beta"

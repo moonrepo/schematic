@@ -156,6 +156,24 @@ The tags after a name describe how a property may be provided: whether it is req
 nullable, deprecated (with the deprecation message when there is one), read only, write only, or
 flattened into its parent. Enum variants are tagged with whether they are the default.
 
+A line of a doc comment that starts with `@` is a tag too, and is left out of the description. A
+`@since` line declares the version it was added in, a `@deprecated` line deprecates it (unless it's
+deprecated already), and any other, such as `@experimental`, is labelled by its name. These follow
+the tags above, in the order they were written. A line within a fenced code block is never a tag.
+
+```rust
+/// Enables the cache.
+/// @since 1.2.0
+/// @experimental
+cache: bool,
+```
+
+```md
+> **Required** · **Since** (1.2.0) · **Experimental**
+
+Enables the cache.
+```
+
 The table describes the type itself: its shape, default value, accepted values, constraints such as
 minimums and patterns, aliases, and the environment variable it can be set with.
 
@@ -284,8 +302,9 @@ ApiDocsOptions {
 Tags are rendered by the `render_tags` function, which receives the tags of a type, property, or
 variant as a list of
 [`ApiDocsTag`](https://docs.rs/schematic/latest/schematic/schema/api_docs/enum.ApiDocsTag.html)
-values, and returns markdown. The default renders a block quote of bold labels, but a documentation
-site may prefer its own components.
+values, and returns markdown. The default renders a block quote of bold labels, with the value a tag
+carries, such as a deprecation message or a version, in parentheses after its label. A
+documentation site may prefer its own components.
 
 ```rust
 use schematic::schema::ApiDocsTag;
@@ -294,9 +313,9 @@ ApiDocsOptions {
 	// ...
 	render_tags: Box::new(|tags| {
 		tags.iter()
-			.map(|tag| match tag {
-				ApiDocsTag::Deprecated(Some(message)) => format!("<Badge>{tag}</Badge> {message}"),
-				_ => format!("<Badge>{tag}</Badge>"),
+			.map(|tag| match tag.value() {
+				Some(value) => format!("<Badge>{tag}</Badge> {value}"),
+				None => format!("<Badge>{tag}</Badge>"),
 			})
 			.collect::<Vec<_>>()
 			.join(" ")
@@ -310,8 +329,8 @@ tags entirely.
 ### Custom descriptions
 
 Descriptions are rendered by the `render_description` function, which receives the doc comment as
-written and returns markdown. The default keeps the comment as is, only trimming each line. Use this
-to wrap descriptions in a component, or to rewrite links.
+written, without its tags, and returns markdown. The default keeps the comment as is, only trimming
+each line. Use this to wrap descriptions in a component, or to rewrite links.
 
 ```rust
 ApiDocsOptions {
