@@ -12,10 +12,19 @@
     variant".
   - `ConfigEnum` now supports untagged tuple variants, which `FromStr` parses with the inner type's
     own `FromStr` after every named value, so the setting can be read from an environment variable.
+- Updated `#[setting(default)]` on an enum variant that holds a single value to accept that value,
+  like `#[setting(default = true)]`, which marks the variant as the default and is what it holds. It
+  accepts anything a setting's `default` does, including a handler function, and a literal is
+  recorded as the default in schemas.
+  - Previously a value only marked the variant, which held the default of its type, so
+    `#[setting(default = true)] Enabled(bool)` now defaults to `Enabled(true)`, not
+    `Enabled(false)`. A unit variant still takes a boolean.
 
 #### 🐞 Fixes
 
 - Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
+- Fixed the TypeScript renderer dropping the doc comment and deprecation of a type exported as an
+  alias, like a union.
 
 ## 0.20.11
 

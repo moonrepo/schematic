@@ -140,6 +140,9 @@ TypeScript type `'local' | 'remote' | boolean`. The named values are matched fir
 variant in the order declared, which serde requires to come last. An untagged unit variant is
 written as `null`.
 
+To default to a value rather than a name, provide it on the untagged variant, like
+`#[setting(default = true)]`. See [default values](./default.md#enum-variants).
+
 When a value matches none of them, the error lists the named values together, followed by each
 untagged variant.
 

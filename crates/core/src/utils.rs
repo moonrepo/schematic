@@ -214,6 +214,30 @@ pub fn extract_deprecated(attrs: &[Attribute]) -> Option<String> {
     None
 }
 
+/// Convert a literal from an attribute into a schema `LiteralValue`, for the
+/// literals a schema can represent.
+pub fn impl_literal_value(lit: &Lit) -> Option<TokenStream> {
+    Some(match lit {
+        Lit::Str(v) => quote! { LiteralValue::String(#v.into()) },
+        Lit::Int(v) => {
+            if v.suffix().starts_with('u') {
+                quote! { LiteralValue::Uint(#v) }
+            } else {
+                quote! { LiteralValue::Int(#v) }
+            }
+        }
+        Lit::Float(v) => {
+            if v.suffix() == "f32" {
+                quote! { LiteralValue::F32(#v) }
+            } else {
+                quote! { LiteralValue::F64(#v) }
+            }
+        }
+        Lit::Bool(v) => quote! { LiteralValue::Bool(#v) },
+        _ => return None,
+    })
+}
+
 pub fn to_type_string(ts: TokenStream) -> String {
     format!("{ts}")
         .replace(" :: ", "::")

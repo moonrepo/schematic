@@ -309,6 +309,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   nested setting that no layer provided is validated as an empty partial when finalizing, since
   `from_partial` builds one anyway; without that, a child whose `default_values` is `Ok(None)` hid
   its required settings.
+- **A variant's `default` value lives in `default_values`, not the partial's `Default`.**
+  `#[setting(default = value)]` on a variant holding a single value marks it as the default and is
+  what `default_values` puts in it (`Variant::impl_partial_default_values`), which is what the full
+  type's `Default` goes through. The partial's own `Default` holds the type default, like the empty
+  partial of a struct, since it has no context for a handler and can't return a string conversion's
+  error. A unit variant's `default = bool` still only marks it, as it always has.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a
   `Result`, and silently returning wrong values is worse.
 - **Validation error paths use serde names** (renames honored) for fields and variants; variants use

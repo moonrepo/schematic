@@ -37,8 +37,8 @@ string, so the wrapper works without the upstream crate's `serde` feature.
 
 The following fields are supported for the `#[setting]` field/variant attribute:
 
-- `default` - Sets the [default value](./struct/default.md). On an enum variant, this is a marker
-  that takes no value, and names the variant the partial defaults to.
+- `default` - Sets the [default value](./struct/default.md). On an enum variant, it names the
+  variant the partial defaults to, and on a variant holding a value, can also provide that value.
 - `env` _(struct only)_ - Sets the [environment variable](./struct/env.md) to receive a value from.
 - `env_prefix` _(struct only)_ - Overrides the [environment variable](./struct/env.md#container-prefixes)
   prefix of the nested config this field holds. Requires `nested`.

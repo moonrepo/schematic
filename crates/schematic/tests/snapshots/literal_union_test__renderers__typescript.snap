@@ -6,7 +6,11 @@ expression: "render(\"types.ts\", TypeScriptRenderer::default())"
 
 /* eslint-disable */
 
+/** When to cache. */
 export type Cache = 'local' | 'remote' | boolean;
+
+/** Whether to compress. */
+export type Compress = 'fast' | 'best' | boolean;
 
 /** How many threads to use. */
 export type Threads = 'auto' | 'off' | number;
@@ -14,6 +18,8 @@ export type Threads = 'auto' | 'off' | number;
 export interface LiteralConfig {
 	cache: Cache;
 	cache_opt: Cache | null;
+	/** @default true */
+	compress: Compress;
 	/**
 	 * @default 'auto'
 	 * @type {'auto' | 'off' | number}

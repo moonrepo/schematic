@@ -12,6 +12,7 @@ title: LiteralConfig
 | --- | --- | --- |
 | [`cache`](#cache) | [`Cache`](./Cache.md) |  |
 | [`cache_opt`](#cache_opt) | [`Cache`](./Cache.md) |  |
+| [`compress`](#compress) | [`Compress`](./Compress.md) |  |
 | [`threads`](#threads) | [`Threads`](./Threads.md) |  |
 | [`threads_opt`](#threads_opt) | [`Threads`](./Threads.md) |  |
 
@@ -32,6 +33,15 @@ title: LiteralConfig
 | Attribute | Value |
 | --- | --- |
 | Type | [`Cache`](./Cache.md) |
+
+### `compress`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Compress`](./Compress.md) |
+| Default | `true` |
 
 ### `threads`
 
@@ -56,4 +66,5 @@ title: LiteralConfig
 ## References
 
 - [`Cache`](./Cache.md)
+- [`Compress`](./Compress.md)
 - [`Threads`](./Threads.md)

@@ -1290,4 +1290,155 @@ mod literal_union {
             "Failed to parse Settings. mode: failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found \"qux\"\n- enabled: expected a boolean, found \"qux\" at line 1 column 17"
         );
     }
+
+    #[derive(Debug, Config, PartialEq)]
+    #[serde(rename_all = "kebab-case")]
+    pub enum Toggle {
+        Local,
+        Remote,
+        #[serde(untagged)]
+        #[setting(default = true)]
+        Enabled(bool),
+    }
+
+    // A value marks the variant as the default, and is what it holds
+    #[test]
+    fn defaults_to_an_untagged_value() {
+        assert_eq!(Toggle::default(), Toggle::Enabled(true));
+    }
+
+    // Like the empty partial of a struct, the partial's `Default` holds the
+    // default of each type, and `default_values` applies the value
+    #[test]
+    fn leaves_the_value_out_of_the_partial_default() {
+        assert_eq!(PartialToggle::default(), PartialToggle::Enabled(false));
+        assert_eq!(
+            PartialToggle::default_values(&()).unwrap(),
+            Some(PartialToggle::Enabled(true))
+        );
+    }
+
+    #[derive(Debug, Config)]
+    pub struct ToggleSettings {
+        #[setting(nested)]
+        toggle: Toggle,
+    }
+
+    #[test]
+    fn loads_the_default_value() {
+        let load = |codes: &[&str]| {
+            let mut loader = ConfigLoader::<ToggleSettings>::new();
+
+            for code in codes {
+                loader.code(*code, "code.json").unwrap();
+            }
+
+            loader.load().unwrap().config.toggle
+        };
+
+        assert_eq!(load(&[]), Toggle::Enabled(true));
+        assert_eq!(load(&[r#"{ "toggle": "local" }"#]), Toggle::Local);
+        assert_eq!(load(&[r#"{ "toggle": false }"#]), Toggle::Enabled(false));
+    }
+
+    #[test]
+    fn records_the_default_value_in_the_schema() {
+        use schematic::SchemaBuilder;
+        use schematic::schema::LiteralValue;
+
+        assert_eq!(
+            SchemaBuilder::build_root::<Toggle>().get_default(),
+            Some(&LiteralValue::Bool(true))
+        );
+    }
+}
+
+// A variant holding a value takes `#[setting(default = value)]`, which
+// accepts what a setting's does.
+mod variant_default_values {
+    use super::*;
+    use schematic::DefaultValueResult;
+
+    fn some_count(_: &()) -> DefaultValueResult<usize> {
+        Ok(Some(3))
+    }
+
+    fn no_count(_: &()) -> DefaultValueResult<usize> {
+        Ok(None)
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Text {
+        #[setting(default = "abc")]
+        Value(String),
+        Other(usize),
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Counted {
+        #[setting(default = some_count)]
+        Count(usize),
+        Other(bool),
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Uncounted {
+        #[setting(default = no_count)]
+        Count(usize),
+        Other(bool),
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Wrapped {
+        #[setting(default = 5)]
+        Maybe(Option<usize>),
+        Other(bool),
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Listed {
+        #[setting(default = vec![1, 2])]
+        List(Vec<usize>),
+        Other(bool),
+    }
+
+    #[test]
+    fn converts_a_string() {
+        assert_eq!(Text::default(), Text::Value("abc".into()));
+    }
+
+    #[test]
+    fn calls_a_handler_function() {
+        assert_eq!(Counted::default(), Counted::Count(3));
+    }
+
+    // As with a setting, `None` falls back to the default of the type
+    #[test]
+    fn falls_back_when_a_handler_returns_none() {
+        assert_eq!(Uncounted::default(), Uncounted::Count(0));
+    }
+
+    #[test]
+    fn wraps_the_value_in_its_option() {
+        assert_eq!(Wrapped::default(), Wrapped::Maybe(Some(5)));
+    }
+
+    #[test]
+    fn writes_a_collection_whole() {
+        assert_eq!(Listed::default(), Listed::List(vec![1, 2]));
+    }
+
+    // A unit variant has no value, so a boolean marks it, as before
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Units {
+        #[setting(default = false)]
+        First,
+        #[setting(default = true)]
+        Second,
+    }
+
+    #[test]
+    fn marks_a_unit_variant_with_a_boolean() {
+        assert_eq!(Units::default(), Units::Second);
+    }
 }

@@ -1,22 +1,28 @@
 #[cfg(feature = "schema")]
 use crate::args::SerdeTagFormat;
-use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{
+    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg, VariantDefaultArg,
+};
 use crate::container::ContainerArgs;
 use crate::utils::{
     ImplResult, format_case, get_meta_path, get_renamed_value, is_inheritable_attribute,
 };
+use crate::value::path_names_a_value;
 use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as NativeVariant};
+use syn::{
+    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Ident, Index, Lit,
+    Variant as NativeVariant,
+};
 
 // #[setting()], #[schema()], #[variant()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema, variant))]
 pub struct VariantArgs {
-    pub default: bool,
+    pub default: Option<VariantDefaultArg>,
     pub exclude: bool,
     pub fallback: bool,
     pub merge: Option<ExprPath>,
@@ -36,6 +42,18 @@ pub struct VariantArgs {
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
     pub untagged: bool,
+}
+
+/// Return the value of a boolean literal, which is all
+/// the `default` of a unit variant accepts.
+fn as_bool_literal(expr: &Expr) -> Option<bool> {
+    match expr {
+        Expr::Lit(ExprLit {
+            lit: Lit::Bool(value),
+            ..
+        }) => Some(value.value),
+        _ => None,
+    }
 }
 
 #[derive(Debug)]
@@ -113,6 +131,12 @@ impl Variant {
                 panic!("Cannot use `required` with unit variants.");
             }
 
+            if let Some(VariantDefaultArg::Value(expr)) = &self.args.default
+                && as_bool_literal(expr).is_none()
+            {
+                panic!("Cannot use a `default` value with unit variants, as they hold no value.");
+            }
+
             #[cfg(feature = "validate")]
             if self.args.validate.is_some() {
                 panic!("Cannot use `validate` with unit variants.");
@@ -120,6 +144,18 @@ impl Variant {
         } else {
             if self.args.null {
                 panic!("Can only use `null` with unit variants.");
+            }
+
+            if self.get_default_value().is_some() {
+                if self.values.len() > 1 {
+                    panic!(
+                        "Can only use a `default` value with variants that hold a single value."
+                    );
+                }
+
+                if self.is_nested() {
+                    panic!("Cannot use a `default` value with `nested`.");
+                }
             }
         }
     }
@@ -150,12 +186,31 @@ impl Variant {
         }
     }
 
+    /// Whether this is the default variant, marked with `#[setting(default)]`,
+    /// or the standard `#[default]`. A variant holding a value is also marked
+    /// by providing that value, while a unit variant takes a boolean.
     pub fn is_default(&self) -> bool {
-        self.args.default
+        let marked = match &self.args.default {
+            Some(VariantDefaultArg::Marked) => true,
+            Some(VariantDefaultArg::Value(expr)) => {
+                !self.is_unit_variant() || as_bool_literal(expr).unwrap_or_default()
+            }
+            None => false,
+        };
+
+        marked
             || self
                 .attrs
                 .iter()
                 .any(|attr| get_meta_path(&attr.meta).is_ident("default"))
+    }
+
+    /// The value this variant holds by default, from `#[setting(default = value)]`.
+    pub fn get_default_value(&self) -> Option<&Expr> {
+        match &self.args.default {
+            Some(VariantDefaultArg::Value(expr)) if !self.is_unit_variant() => Some(expr),
+            _ => None,
+        }
     }
 
     /// Whether this variant absorbs any value that no other variant matches.
@@ -394,7 +449,7 @@ impl Variant {
     /// enum is tagged.
     #[cfg(feature = "schema")]
     pub fn impl_schema_type(&self, tag_format: &SerdeTagFormat) -> TokenStream {
-        use crate::utils::{extract_comment, extract_deprecated};
+        use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
         let name = self.get_name();
         let nested = self.is_nested();
@@ -412,10 +467,18 @@ impl Variant {
                         let ty = &field.ty;
 
                         if nested {
-                            quote! { schema.infer_as_nested::<#ty>() }
-                        } else {
-                            quote! { schema.infer::<#ty>() }
+                            return quote! { schema.infer_as_nested::<#ty>() };
                         }
+
+                        // Literal defaults are rendered within the schema, and
+                        // only a variant holding a single value has one
+                        if let Some(Expr::Lit(lit)) = self.get_default_value()
+                            && let Some(value) = impl_literal_value(&lit.lit)
+                        {
+                            return quote! { schema.infer_with_default::<#ty>(#value) };
+                        }
+
+                        quote! { schema.infer::<#ty>() }
                     })
                     .collect::<Vec<_>>();
 
@@ -590,6 +653,9 @@ impl Variant {
         res
     }
 
+    /// Generate this variant holding the default of each of its types, for
+    /// the partial's `Default`. Like the empty partial of a struct, this
+    /// leaves out any `default` value, which `default_values` applies.
     pub fn impl_partial_default_value(&self) -> ImplResult {
         let mut res = ImplResult::default();
         let name = &self.ident;
@@ -610,6 +676,38 @@ impl Variant {
             Fields::Unit => quote! { #name },
         };
 
+        res
+    }
+
+    /// Generate this variant holding its `default` value, for the partial's
+    /// `default_values`. Without one, it holds the default of its type.
+    pub fn impl_partial_default_values(&self) -> ImplResult {
+        let Some(expr) = self.get_default_value() else {
+            return self.impl_partial_default_value();
+        };
+
+        let mut res = ImplResult::default();
+        let name = &self.ident;
+
+        let value = match expr {
+            // Handler functions return an optional value,
+            // falling back to the default of its type
+            Expr::Path(func) if !path_names_a_value(&func.path) => {
+                res.requires_internal = true;
+
+                quote! { handle_default_result(#func(context))?.unwrap_or_default() }
+            }
+            // A variant has no partial `Option` of its own, so every layer applies
+            expr => {
+                let value = &self.values[0];
+                let default = value.impl_default_value(expr, &value.get_partial_layers());
+
+                res.requires_internal = default.requires_internal;
+                default.value
+            }
+        };
+
+        res.value = quote! { #name(#value) };
         res
     }
 

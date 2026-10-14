@@ -2,7 +2,37 @@ use crate::args::NestedArg;
 use crate::utils::{ImplResult, to_type_string};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
-use syn::{GenericArgument, Ident, PathArguments, PathSegment, Type, parse_quote};
+use syn::{Expr, GenericArgument, Ident, Lit, Path, PathArguments, PathSegment, Type, parse_quote};
+
+/// Whether a path names a value -- an enum variant, unit struct, or constant --
+/// rather than a function to hand the context to.
+///
+/// Both arrive as a bare `Expr::Path`, and nothing at derive time can resolve
+/// which one it is, so this leans on Rust's naming conventions: a function is
+/// `snake_case`, while everything that names a value is `PascalCase` or
+/// `SCREAMING_SNAKE_CASE`. A handler that ignored that would already be earning
+/// a `non_snake_case` warning of its own.
+pub fn path_names_a_value(path: &Path) -> bool {
+    path.segments
+        .last()
+        .and_then(|segment| segment.ident.to_string().chars().next())
+        .is_some_and(|char| char.is_uppercase())
+}
+
+pub fn wrap_layer(layer: &Layer, value: TokenStream) -> TokenStream {
+    match layer {
+        Layer::Arc => quote! { Arc::new(#value) },
+        Layer::Box => quote! { Box::new(#value) },
+        Layer::Option => quote! { Some(#value) },
+        Layer::Rc => quote! { Rc::new(#value) },
+        // Collections reset to empty, discarding the inner value
+        Layer::Map(name) | Layer::Set(name) | Layer::Vec(name) | Layer::Unknown(name) => {
+            let collection = format_ident!("{name}");
+
+            quote! { #collection::default() }
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Layer {
@@ -147,6 +177,55 @@ impl Value {
 
     pub fn is_collection(&self) -> bool {
         self.layers.iter().any(|layer| layer.is_collection())
+    }
+
+    /// Generate an explicit default value from `#[setting(default = value)]`,
+    /// wrapped with the provided layers. A value is written up to the
+    /// outermost collection, so only the layers outside of it are applied.
+    /// Handler functions are left to the caller, as what they return
+    /// differs between a setting and a variant.
+    pub fn impl_default_value(&self, expr: &Expr, layers: &[&Layer]) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        let mut value = match expr {
+            Expr::Array(_)
+            | Expr::Call(_)
+            | Expr::Macro(_)
+            | Expr::Path(_)
+            | Expr::Struct(_)
+            | Expr::Tuple(_) => {
+                quote! { #expr }
+            }
+            Expr::Lit(lit) => match &lit.lit {
+                Lit::Str(string) => {
+                    let ty = self.get_inner_type();
+                    res.requires_internal = true;
+
+                    quote! {
+                        handle_default_result(#ty::try_from(#string))?
+                    }
+                }
+                other => quote! { #other },
+            },
+            invalid => {
+                panic!(
+                    "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, tuples, structs, paths, or calls."
+                );
+            }
+        };
+
+        let outer = layers
+            .iter()
+            .position(|layer| layer.is_collection())
+            .map(|index| &layers[..index])
+            .unwrap_or(layers);
+
+        for layer in outer.iter().rev() {
+            value = wrap_layer(layer, value);
+        }
+
+        res.value = value;
+        res
     }
 
     /// Whether a value can be sourced from the environment. Only a bare

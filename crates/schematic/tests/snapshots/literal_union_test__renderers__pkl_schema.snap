@@ -10,12 +10,17 @@ cache: Cache
 
 cache_opt: Cache?
 
+compress: Compress
+
 threads: Threads
 
 threads_opt: Threads?
 
 /// When to cache.
 typealias Cache = "local" | *"remote" | Boolean
+
+/// Whether to compress.
+typealias Compress = "fast" | "best" | *Boolean
 
 /// How many threads to use.
 typealias Threads = *"auto" | "off" | UInt32

@@ -355,6 +355,24 @@ mod schema_type {
             assert_snapshot!(pretty_body(container.impl_schematic_type()));
         }
 
+        // A literal default is recorded on the value it belongs to, which is
+        // where a union reads the default of its default variant from
+        #[test]
+        fn supports_literal_union_default_values() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all = "kebab-case")]
+                enum Example {
+                    Alpha,
+                    #[serde(untagged)]
+                    #[setting(default = true)]
+                    Flag(bool),
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
         #[test]
         fn supports_variant_untagged() {
             // A single variant can opt out of the container's tagging

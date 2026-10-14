@@ -17,6 +17,17 @@ pub enum Cache {
     Enabled(bool),
 }
 
+/// Whether to compress.
+#[derive(Clone, Config, Debug, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum Compress {
+    Fast,
+    Best,
+    #[serde(untagged)]
+    #[setting(default = true)]
+    Enabled(bool),
+}
+
 derive_enum!(
     /// How many threads to use.
     #[derive(ConfigEnum, Default)]
@@ -35,6 +46,8 @@ pub struct LiteralConfig {
     cache: Cache,
     #[setting(nested)]
     cache_opt: Option<Cache>,
+    #[setting(nested)]
+    compress: Compress,
     threads: Threads,
     threads_opt: Option<Threads>,
 }
@@ -54,6 +67,7 @@ fn uses_the_default_variants() {
 
     assert_eq!(config.cache, Cache::Remote);
     assert_eq!(config.cache_opt, None);
+    assert_eq!(config.compress, Compress::Enabled(true));
     assert_eq!(config.threads, Threads::Auto);
     assert_eq!(config.threads_opt, None);
 }

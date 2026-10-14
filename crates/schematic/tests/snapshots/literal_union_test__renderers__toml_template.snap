@@ -6,6 +6,8 @@ cache = "remote"
 
 cache_opt = "remote"
 
+compress = true
+
 # @values "auto" | "off"
 threads = "auto"
 

@@ -52,7 +52,10 @@ since a name breaking those conventions would already be earning a compiler lint
 > A handler function that must keep a non-conventional name can be reached through a `snake_case`
 > wrapper, or called directly with `default = my_wrapper()` when it needs no context.
 
-For enums, the `default` field takes no value, and simply marks which variant to use as the default.
+### Enum variants
+
+For enums, the `default` field marks which variant to use as the default. A unit variant holds no
+value, so `default` takes none, or a boolean.
 
 ```rust
 #[derive(Config)]
@@ -62,6 +65,25 @@ enum Host {
 	Remote(HostConfig),
 }
 ```
+
+A variant that holds a single value can take a value as well, which marks it as the default and is
+what it holds. It accepts anything a setting's `default` does, including a
+[handler function](#handler-function) that returns the value. Without one, the variant holds the
+default of its type.
+
+```rust
+#[derive(Config)]
+enum Compress {
+	Fast,
+	Best,
+	#[serde(untagged)]
+	#[setting(default = true)]
+	Enabled(bool),
+}
+```
+
+> A value can't be provided for a variant holding several values, or a
+> [nested](../nested.md) configuration, which sources its defaults from its own settings.
 
 ## Handler function
 

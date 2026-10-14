@@ -1149,7 +1149,7 @@ impl Container {
 
                 match default_variants.first() {
                     Some(default_variant) => {
-                        let res = default_variant.impl_partial_default_value();
+                        let res = default_variant.impl_partial_default_values();
 
                         if res.requires_internal {
                             requires_internal = true;
