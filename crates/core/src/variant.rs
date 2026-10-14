@@ -1,22 +1,28 @@
 #[cfg(feature = "schema")]
 use crate::args::SerdeTagFormat;
-use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{
+    NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg, VariantDefaultArg,
+};
 use crate::container::ContainerArgs;
 use crate::utils::{
     ImplResult, format_case, get_meta_path, get_renamed_value, is_inheritable_attribute,
 };
+use crate::value::path_names_a_value;
 use crate::variant_value::VariantValue;
 use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, ExprPath, Fields, FieldsUnnamed, Ident, Index, Variant as NativeVariant};
+use syn::{
+    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Ident, Index, Lit,
+    Variant as NativeVariant,
+};
 
 // #[setting()], #[schema()], #[variant()]
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema, variant))]
 pub struct VariantArgs {
-    pub default: bool,
+    pub default: Option<VariantDefaultArg>,
     pub exclude: bool,
     pub fallback: bool,
     pub merge: Option<ExprPath>,
@@ -36,6 +42,18 @@ pub struct VariantArgs {
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
     pub untagged: bool,
+}
+
+/// Return the value of a boolean literal, which is all
+/// the `default` of a unit variant accepts.
+fn as_bool_literal(expr: &Expr) -> Option<bool> {
+    match expr {
+        Expr::Lit(ExprLit {
+            lit: Lit::Bool(value),
+            ..
+        }) => Some(value.value),
+        _ => None,
+    }
 }
 
 #[derive(Debug)]
@@ -113,6 +131,12 @@ impl Variant {
                 panic!("Cannot use `required` with unit variants.");
             }
 
+            if let Some(VariantDefaultArg::Value(expr)) = &self.args.default
+                && as_bool_literal(expr).is_none()
+            {
+                panic!("Cannot use a `default` value with unit variants, as they hold no value.");
+            }
+
             #[cfg(feature = "validate")]
             if self.args.validate.is_some() {
                 panic!("Cannot use `validate` with unit variants.");
@@ -120,6 +144,18 @@ impl Variant {
         } else {
             if self.args.null {
                 panic!("Can only use `null` with unit variants.");
+            }
+
+            if self.get_default_value().is_some() {
+                if self.values.len() > 1 {
+                    panic!(
+                        "Can only use a `default` value with variants that hold a single value."
+                    );
+                }
+
+                if self.is_nested() {
+                    panic!("Cannot use a `default` value with `nested`.");
+                }
             }
         }
     }
@@ -150,17 +186,50 @@ impl Variant {
         }
     }
 
+    /// Whether this is the default variant, marked with `#[setting(default)]`,
+    /// or the standard `#[default]`. A variant holding a value is also marked
+    /// by providing that value, while a unit variant takes a boolean.
     pub fn is_default(&self) -> bool {
-        self.args.default
+        let marked = match &self.args.default {
+            Some(VariantDefaultArg::Marked) => true,
+            Some(VariantDefaultArg::Value(expr)) => {
+                !self.is_unit_variant() || as_bool_literal(expr).unwrap_or_default()
+            }
+            None => false,
+        };
+
+        marked
             || self
                 .attrs
                 .iter()
                 .any(|attr| get_meta_path(&attr.meta).is_ident("default"))
     }
 
+    /// The value this variant holds by default, from `#[setting(default = value)]`.
+    pub fn get_default_value(&self) -> Option<&Expr> {
+        match &self.args.default {
+            Some(VariantDefaultArg::Value(expr)) if !self.is_unit_variant() => Some(expr),
+            _ => None,
+        }
+    }
+
     /// Whether this variant absorbs any value that no other variant matches.
     pub fn is_fallback(&self) -> bool {
         self.args.fallback
+    }
+
+    /// Whether this variant is represented by its value alone, even when
+    /// the enum is tagged.
+    pub fn is_untagged(&self) -> bool {
+        self.args.untagged || self.serde_args.untagged
+    }
+
+    /// Whether serde never deserializes into this variant.
+    pub fn is_skipped_deserializing(&self) -> bool {
+        self.args.skip
+            || self.serde_args.skip
+            || self.args.skip_deserializing
+            || self.serde_args.skip_deserializing
     }
 
     /// Aliases can be provided by both attributes, so combine them.
@@ -176,29 +245,45 @@ impl Variant {
         aliases
     }
 
-    /// Validate this variant within a `ConfigEnum`, which only models a list
-    /// of named string values.
+    /// Validate this variant within a `ConfigEnum`, which models a list of
+    /// named string values, optionally widened by variants that hold a value.
     pub fn validate_config_enum(&self) {
-        if self.is_fallback() {
-            match &self.fields {
-                Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
-                Fields::Unnamed(_) => {
-                    panic!("Only 1 unnamed field is supported for `fallback`.");
-                }
-                _ => {
-                    panic!("Only unnamed tuple variants are supported for `fallback`.");
-                }
-            };
-        } else if !self.is_unit_variant() {
-            panic!("Only unit variants are supported, unless marked as `fallback`.");
-        }
+        let kind = if self.is_fallback() {
+            "fallback"
+        } else if self.is_untagged() {
+            "untagged"
+        } else {
+            if !self.is_unit_variant() {
+                panic!(
+                    "Only unit variants are supported, unless marked as `fallback` or `untagged`."
+                );
+            }
+
+            return;
+        };
+
+        match &self.fields {
+            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
+            Fields::Unnamed(_) => {
+                panic!("Only 1 unnamed field is supported for `{kind}`.");
+            }
+            _ => {
+                panic!("Only unnamed tuple variants are supported for `{kind}`.");
+            }
+        };
+    }
+
+    /// Whether this variant holds a value within a `ConfigEnum`, rather
+    /// than being one of its named values.
+    fn is_config_enum_value_variant(&self) -> bool {
+        self.is_fallback() || self.is_untagged()
     }
 
     /// An expression that constructs this variant, for `ConfigEnum::variants`.
     pub fn impl_config_enum_value(&self) -> TokenStream {
         let name = &self.ident;
 
-        if self.is_fallback() {
+        if self.is_config_enum_value_variant() {
             quote! { Self::#name(Default::default()) }
         } else {
             quote! { Self::#name }
@@ -206,13 +291,13 @@ impl Variant {
     }
 
     /// A match arm that formats this variant back into its string value.
-    /// Each arm writes for itself, so that a fallback holding a generic type
+    /// Each arm writes for itself, so that a variant holding a generic type
     /// can go through `Display` rather than having to be a `&str`.
     pub fn impl_config_enum_display(&self) -> TokenStream {
         let name = &self.ident;
 
-        if self.is_fallback() {
-            return quote! { Self::#name(fallback) => write!(f, "{fallback}"), };
+        if self.is_config_enum_value_variant() {
+            return quote! { Self::#name(inner) => write!(f, "{inner}"), };
         }
 
         let value = self.get_name();
@@ -220,25 +305,46 @@ impl Variant {
         quote! { Self::#name => f.write_str(#value), }
     }
 
-    /// A match arm that parses a string into this variant. A fallback absorbs
-    /// anything left over, so it must be matched last.
+    /// A match arm that parses a string into this named variant.
     pub fn impl_config_enum_from_str(&self) -> TokenStream {
         let name = &self.ident;
-
-        if self.is_fallback() {
-            return quote! {
-                fallback => Self::#name(
-                    fallback.try_into().map_err(|_| {
-                        schematic::ConfigError::EnumInvalidFallback(fallback.to_string())
-                    })?
-                ),
-            };
-        }
-
         let value = self.get_name();
         let aliases = self.get_aliases();
 
         quote! { #value #(| #aliases)* => Self::#name, }
+    }
+
+    /// An expression that converts a value no other variant matched into
+    /// this fallback.
+    pub fn impl_config_enum_fallback(&self, value: &Ident) -> TokenStream {
+        let name = &self.ident;
+
+        quote! {
+            Self::#name(
+                #value.try_into().map_err(|_| {
+                    schematic::ConfigError::EnumInvalidFallback(#value.to_string())
+                })?
+            )
+        }
+    }
+
+    /// A statement that attempts to parse the input into this untagged
+    /// variant, returning it on success. The input is parsed as written,
+    /// since `before_parse` only exists to normalize named values.
+    pub fn impl_config_enum_parse_untagged(&self, input: &Ident) -> TokenStream {
+        let name = &self.ident;
+
+        let Fields::Unnamed(fields) = &self.fields else {
+            unreachable!("Validated by `validate_config_enum`.");
+        };
+
+        let ty = &fields.unnamed[0].ty;
+
+        quote! {
+            if let Ok(inner) = <#ty as std::str::FromStr>::from_str(#input) {
+                return Ok(Self::#name(inner));
+            }
+        }
     }
 
     pub fn is_excluded(&self) -> bool {
@@ -326,7 +432,7 @@ impl Variant {
             }
         }
 
-        if self.args.untagged || self.serde_args.untagged {
+        if self.is_untagged() {
             meta.push(quote! { untagged });
         }
 
@@ -343,15 +449,13 @@ impl Variant {
     /// enum is tagged.
     #[cfg(feature = "schema")]
     pub fn impl_schema_type(&self, tag_format: &SerdeTagFormat) -> TokenStream {
-        use crate::utils::{extract_comment, extract_deprecated};
+        use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
         let name = self.get_name();
         let nested = self.is_nested();
 
         // Untagged variants are represented by their value alone
-        let untagged = matches!(tag_format, SerdeTagFormat::Untagged)
-            || self.args.untagged
-            || self.serde_args.untagged;
+        let untagged = matches!(tag_format, SerdeTagFormat::Untagged) || self.is_untagged();
 
         let inner = match &self.fields {
             Fields::Named(_) => panic!("Enums with named fields are not supported!"),
@@ -363,10 +467,18 @@ impl Variant {
                         let ty = &field.ty;
 
                         if nested {
-                            quote! { schema.infer_as_nested::<#ty>() }
-                        } else {
-                            quote! { schema.infer::<#ty>() }
+                            return quote! { schema.infer_as_nested::<#ty>() };
                         }
+
+                        // Literal defaults are rendered within the schema, and
+                        // only a variant holding a single value has one
+                        if let Some(Expr::Lit(lit)) = self.get_default_value()
+                            && let Some(value) = impl_literal_value(&lit.lit)
+                        {
+                            return quote! { schema.infer_with_default::<#ty>(#value) };
+                        }
+
+                        quote! { schema.infer::<#ty>() }
                     })
                     .collect::<Vec<_>>();
 
@@ -541,6 +653,9 @@ impl Variant {
         res
     }
 
+    /// Generate this variant holding the default of each of its types, for
+    /// the partial's `Default`. Like the empty partial of a struct, this
+    /// leaves out any `default` value, which `default_values` applies.
     pub fn impl_partial_default_value(&self) -> ImplResult {
         let mut res = ImplResult::default();
         let name = &self.ident;
@@ -564,10 +679,49 @@ impl Variant {
         res
     }
 
+    /// Generate this variant holding its `default` value, for the partial's
+    /// `default_values`. Without one, it holds the default of its type.
+    pub fn impl_partial_default_values(&self) -> ImplResult {
+        let Some(expr) = self.get_default_value() else {
+            return self.impl_partial_default_value();
+        };
+
+        let mut res = ImplResult::default();
+        let name = &self.ident;
+
+        let value = match expr {
+            // Handler functions return an optional value,
+            // falling back to the default of its type
+            Expr::Path(func) if !path_names_a_value(&func.path) => {
+                res.requires_internal = true;
+
+                quote! { handle_default_result(#func(context))?.unwrap_or_default() }
+            }
+            // A variant has no partial `Option` of its own, so every layer applies
+            expr => {
+                let value = &self.values[0];
+                let default = value.impl_default_value(expr, &value.get_partial_layers());
+
+                res.requires_internal = default.requires_internal;
+                default.value
+            }
+        };
+
+        res.value = quote! { #name(#value) };
+        res
+    }
+
     /// Generate a deserialization attempt for this variant, for use within
     /// untagged enums, where each variant is tried in order.
     pub fn impl_partial_type_deserialize(&self, partial_name: &Ident) -> ImplResult {
         let mut res = ImplResult::default();
+
+        if self.is_skipped_deserializing() {
+            res.no_value = true;
+
+            return res;
+        }
+
         let name = &self.ident;
         let name_string = self.get_name();
 
@@ -609,6 +763,28 @@ impl Variant {
 
                 errors.push((#name_string, "expected null".to_owned()));
             },
+        };
+
+        res
+    }
+
+    /// Generate a match arm for this unit variant, for use within literal
+    /// unions, where a tagged unit is written as its name.
+    pub fn impl_partial_type_deserialize_literal(&self, partial_name: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        if self.is_skipped_deserializing() {
+            res.no_value = true;
+
+            return res;
+        }
+
+        let name = &self.ident;
+        let value = self.get_name();
+        let aliases = self.get_aliases();
+
+        res.value = quote! {
+            Some(#value #(| #aliases)*) => return Ok(#partial_name::#name),
         };
 
         res

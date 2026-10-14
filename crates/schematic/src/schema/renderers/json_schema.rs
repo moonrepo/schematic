@@ -617,17 +617,14 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
 
     fn render_union(&mut self, uni: &UnionType, schema: &Schema) -> RenderResult<JsonSchema> {
         let mut items = vec![];
-        let mut default = None;
 
         for item in &uni.variants_types {
             items.push(self.render_schema(item)?.to_value());
-
-            if default.is_none()
-                && let Some(def) = item.get_default()
-            {
-                default = Some(lit_to_value(def));
-            }
         }
+
+        // Prefers the default variant, which may be a unit with no default
+        // of its own, over the first variant that has one
+        let default = schema.get_default().map(lit_to_value);
 
         let mut map = self.create_metadata_from_schema(schema);
 

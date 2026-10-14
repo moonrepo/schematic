@@ -1,44 +1,14 @@
 use crate::args::NestedArg;
 use crate::field::{EnvKey, FieldArgs};
 use crate::utils::ImplResult;
-use crate::value::{Layer, Value};
+use crate::value::{Layer, Value, path_names_a_value, wrap_layer};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::ops::Deref;
-use syn::{Expr, Lit, Path, Type};
+use syn::{Expr, Type};
 
 #[derive(Debug)]
 pub struct FieldValue(Value);
-
-/// Whether a path names a value -- an enum variant, unit struct, or constant --
-/// rather than a function to hand the context to.
-///
-/// Both arrive as a bare `Expr::Path`, and nothing at derive time can resolve
-/// which one it is, so this leans on Rust's naming conventions: a function is
-/// `snake_case`, while everything that names a value is `PascalCase` or
-/// `SCREAMING_SNAKE_CASE`. A handler that ignored that would already be earning
-/// a `non_snake_case` warning of its own.
-fn path_names_a_value(path: &Path) -> bool {
-    path.segments
-        .last()
-        .and_then(|segment| segment.ident.to_string().chars().next())
-        .is_some_and(|char| char.is_uppercase())
-}
-
-fn wrap_layer(layer: &Layer, value: TokenStream) -> TokenStream {
-    match layer {
-        Layer::Arc => quote! { Arc::new(#value) },
-        Layer::Box => quote! { Box::new(#value) },
-        Layer::Option => quote! { Some(#value) },
-        Layer::Rc => quote! { Rc::new(#value) },
-        // Collections reset to empty, discarding the inner value
-        Layer::Map(name) | Layer::Set(name) | Layer::Vec(name) | Layer::Unknown(name) => {
-            let collection = format_ident!("{name}");
-
-            quote! { #collection::default() }
-        }
-    }
-}
 
 fn wrap_default_layers(layers: &[&Layer], mut value: TokenStream) -> TokenStream {
     for layer in layers.iter().rev() {
@@ -123,46 +93,11 @@ impl FieldValue {
                 res.requires_internal = true;
                 res.value = quote! { handle_default_result(#func(context))? };
             }
-            // Explicit defaults provide the value up to the outermost
-            // collection, so only wrap with the layers outside of it
             Some(expr) => {
-                let mut value = match expr {
-                    Expr::Array(_)
-                    | Expr::Call(_)
-                    | Expr::Macro(_)
-                    | Expr::Path(_)
-                    | Expr::Struct(_)
-                    | Expr::Tuple(_) => {
-                        quote! { #expr }
-                    }
-                    Expr::Lit(lit) => match &lit.lit {
-                        Lit::Str(string) => {
-                            let ty = self.get_inner_type();
-                            res.requires_internal = true;
+                let default = self.impl_default_value(expr, &layers);
+                let value = default.value;
 
-                            quote! {
-                                handle_default_result(#ty::try_from(#string))?
-                            }
-                        }
-                        other => quote! { #other },
-                    },
-                    invalid => {
-                        panic!(
-                            "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, tuples, structs, paths, or calls."
-                        );
-                    }
-                };
-
-                let outer = layers
-                    .iter()
-                    .position(|layer| layer.is_collection())
-                    .map(|index| &layers[..index])
-                    .unwrap_or(&layers[..]);
-
-                for layer in outer.iter().rev() {
-                    value = wrap_layer(layer, value);
-                }
-
+                res.requires_internal = default.requires_internal;
                 res.value = quote! { Some(#value) };
             }
             // Otherwise fallback to the type default

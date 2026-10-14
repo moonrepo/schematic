@@ -66,6 +66,7 @@ And the following for serde compatibility:
 
 - `alias`
 - `rename` - Overrides (explicitly sets) the string value used for parsing and formatting.
+- `untagged` - Marks the variant as [holding a value](./untagged.md), rather than being named.
 
 ## Deriving common traits
 

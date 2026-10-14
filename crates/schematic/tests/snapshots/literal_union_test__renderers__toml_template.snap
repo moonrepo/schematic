@@ -1,0 +1,14 @@
+---
+source: crates/schematic/tests/literal_union_test.rs
+expression: "render(\"config.toml\", TomlTemplateRenderer::new(TemplateOptions::default()))"
+---
+cache = "remote"
+
+cache_opt = "remote"
+
+compress = true
+
+# @values "auto" | "off"
+threads = "auto"
+
+threads_opt = "auto"

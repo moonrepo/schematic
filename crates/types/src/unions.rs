@@ -71,6 +71,17 @@ impl UnionType {
         self.variants_names.as_ref()?.get(index)
     }
 
+    /// Return the default of the variant at `default_index`. A unit variant
+    /// is a literal, which has no default of its own, as it is the value.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        let variant = self.variants_types.get(self.default_index?)?;
+
+        match &variant.ty {
+            SchemaType::Literal(lit) => Some(&lit.value),
+            _ => variant.get_default(),
+        }
+    }
+
     #[doc(hidden)]
     pub fn from_named_schemas<I, V>(variants: I, default_index: Option<usize>) -> Self
     where

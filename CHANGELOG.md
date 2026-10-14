@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for literal unions, a setting that accepts a few named values or a value of another
+  type, like `"local" | "remote" | boolean`. Mark the variants that hold a value with
+  `#[serde(untagged)]`, and leave the enum itself tagged.
+  - A `Config` enum written this way lists the named values it expected when nothing matches, such
+    as `- expected one of "local", "remote", found "qux"`, instead of serde's "data did not match any
+    variant".
+  - `ConfigEnum` now supports untagged tuple variants, which `FromStr` parses with the inner type's
+    own `FromStr` after every named value, so the setting can be read from an environment variable.
+- Updated `#[setting(default)]` on an enum variant that holds a single value to accept that value,
+  like `#[setting(default = true)]`, which marks the variant as the default and is what it holds. It
+  accepts anything a setting's `default` does, including a handler function, and a literal is
+  recorded as the default in schemas.
+  - Previously a value only marked the variant, which held the default of its type, so
+    `#[setting(default = true)] Enabled(bool)` now defaults to `Enabled(true)`, not
+    `Enabled(false)`. A unit variant still takes a boolean.
+
+#### 🐞 Fixes
+
+- Fixed a nested setting holding collections of collections, like `HashMap<String, Vec<T>>`,
+  failing to compile when validating. Every collection now extends the path an item is reported at,
+  such as `groups.name[0]`.
+- Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
+- Fixed the TypeScript renderer dropping the doc comment and deprecation of a type exported as an
+  alias, like a union.
+- Fixed a union whose default is a unit variant, like `#[setting(default)]` on a unit variant of a
+  `Config` enum, reporting no default in TypeScript, JSON schemas, and API docs.
+  - JSON schemas now use the default variant of a union, rather than the first variant with a
+    default of its own.
+
 ## 0.20.11
 
 #### 🚀 Updates

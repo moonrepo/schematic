@@ -125,7 +125,14 @@ impl schematic::PartialConfig for PartialExample {
                 );
         }
         if let Some(setting) = &self.list {
-            validate.nested_list("list", setting.iter().map(Some));
+            {
+                let path = validate.key_path("list");
+                let item = setting;
+                for (index, item) in item.iter().enumerate() {
+                    let path = path.join_index(index);
+                    validate.nested_at(path, item);
+                }
+            }
         }
         if !validate.errors.is_empty() {
             return Err(validate.errors);

@@ -12,24 +12,66 @@ fn validate_with_path(
     let mut validate = ValidateManager::new(context, finalizing, path);
     if let Some(setting) = &self.a {
         validate.check("a", setting, self, |v, d, c, f| func_ref(v, d, c, f));
-        validate.nested_list("a", setting.iter().map(Some));
+        {
+            let path = validate.key_path("a");
+            let item = setting;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if let Some(setting) = &self.b {
         validate.check("b", setting, self, |v, d, c, f| func_ref(v, d, c, f));
-        validate.nested_map("b", setting.iter().map(|(key, value)| (key, Some(value))));
+        {
+            let path = validate.key_path("b");
+            let item = setting;
+            for (key, item) in item {
+                let path = path.join_key(key);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if let Some(setting) = &self.c {
         validate.check("c", setting, self, |v, d, c, f| func_ref(v, d, c, f));
-        validate.nested_list("c", setting.iter().map(Some));
+        {
+            let path = validate.key_path("c");
+            let item = setting;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if let Some(setting) = &self.d {
-        validate.nested_list("d", setting.iter().map(Some));
+        {
+            let path = validate.key_path("d");
+            let item = setting;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if let Some(setting) = &self.e {
-        validate.nested_map("e", setting.iter().map(|(key, value)| (key, Some(value))));
+        {
+            let path = validate.key_path("e");
+            let item = setting;
+            for (key, item) in item {
+                let path = path.join_key(key);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if let Some(setting) = &self.f {
-        validate.nested_list("f", setting.iter().map(Some));
+        {
+            let path = validate.key_path("f");
+            let item = setting;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

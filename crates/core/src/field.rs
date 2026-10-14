@@ -456,8 +456,7 @@ impl Field {
     /// wrapped in a `SchemaField` keyed by name, otherwise the bare schema
     /// is returned, for use within tuples.
     pub fn impl_schema_type(&self, as_field: bool) -> TokenStream {
-        use crate::utils::{extract_comment, extract_deprecated};
-        use syn::Lit;
+        use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
         let ty = &self.value.ty;
 
@@ -470,26 +469,10 @@ impl Field {
         };
 
         // Literal defaults are rendered within the schema
-        if let Some(Expr::Lit(lit)) = &self.args.default {
-            let value = match &lit.lit {
-                Lit::Str(v) => Some(quote! { LiteralValue::String(#v.into()) }),
-                Lit::Int(v) => Some(if v.suffix().starts_with('u') {
-                    quote! { LiteralValue::Uint(#v) }
-                } else {
-                    quote! { LiteralValue::Int(#v) }
-                }),
-                Lit::Float(v) => Some(if v.suffix() == "f32" {
-                    quote! { LiteralValue::F32(#v) }
-                } else {
-                    quote! { LiteralValue::F64(#v) }
-                }),
-                Lit::Bool(v) => Some(quote! { LiteralValue::Bool(#v) }),
-                _ => None,
-            };
-
-            if let Some(value) = value {
-                schema = quote! { schema.infer_with_default::<#ty>(#value) };
-            }
+        if let Some(Expr::Lit(lit)) = &self.args.default
+            && let Some(value) = impl_literal_value(&lit.lit)
+        {
+            schema = quote! { schema.infer_with_default::<#ty>(#value) };
         }
 
         let comment = extract_comment(&self.attrs);

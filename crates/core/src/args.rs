@@ -251,6 +251,28 @@ impl FromMeta for NestedArg {
     }
 }
 
+// #[setting(default)]
+// #[setting(default = true)]
+// #[setting(default = value)]
+//
+// A unit variant has no value, so `default = bool` only marks it as the
+// default or not. A variant holding a value takes the value instead.
+#[derive(Debug)]
+pub enum VariantDefaultArg {
+    Marked,
+    Value(Expr),
+}
+
+impl FromMeta for VariantDefaultArg {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Self::Marked)
+    }
+
+    fn from_expr(expr: &Expr) -> darling::Result<Self> {
+        Ok(Self::Value(expr.to_owned()))
+    }
+}
+
 // #[setting(validate)]
 #[derive(Debug)]
 pub struct ValidateArg(Expr);

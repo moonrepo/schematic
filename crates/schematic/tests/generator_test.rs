@@ -927,6 +927,38 @@ mod typescript {
             ..TypeScriptOptions::default()
         }));
     }
+
+    /// A value, or a list of values.
+    #[derive(Clone, Schematic)]
+    #[serde(untagged)]
+    pub enum DocumentedUnion {
+        Value(String),
+        List(Vec<String>),
+    }
+
+    #[derive(Clone, Schematic)]
+    #[serde(untagged)]
+    #[deprecated = "Use a list."]
+    pub enum DeprecatedUnion {
+        Value(String),
+        List(Vec<String>),
+    }
+
+    // A union is exported as a type alias, which keeps the doc comment and
+    // deprecation of its type, as an enum or interface does
+    #[test]
+    fn union_comments() {
+        let sandbox = create_empty_sandbox();
+        let file = sandbox.path().join("types.ts");
+        let mut generator = SchemaGenerator::default();
+        generator.add::<DocumentedUnion>();
+        generator.add::<DeprecatedUnion>();
+        generator
+            .generate(&file, TypeScriptRenderer::default())
+            .unwrap();
+
+        assert_snapshot!(fs::read_to_string(file).unwrap());
+    }
 }
 
 #[cfg(feature = "renderer_api_docs")]

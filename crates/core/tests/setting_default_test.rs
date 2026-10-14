@@ -370,7 +370,7 @@ mod setting_default {
 
             let variants = container.inner.get_variants();
 
-            assert!(variants[1].args.default);
+            assert!(variants[1].is_default());
         }
     }
 
@@ -393,7 +393,143 @@ mod setting_default {
 
             let variants = container.inner.get_variants();
 
-            assert!(variants[1].args.default);
+            assert!(variants[1].is_default());
+        }
+    }
+
+    // A variant holding a value takes the value as its default
+    mod variant_values {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    Foo,
+                    #[serde(untagged)]
+                    #[setting(default = true)]
+                    Bar(bool),
+                }
+            });
+
+            assert!(container.inner.get_variants()[1].is_default());
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
+        // The partial's `Default` is the empty partial, so holds no value
+        #[test]
+        fn leaves_the_partial_default_empty() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    Foo,
+                    #[setting(default = true)]
+                    Bar(bool),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type_default()));
+        }
+
+        #[test]
+        fn converts_a_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = "abc")]
+                    Foo(String),
+                    Bar(bool),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
+        #[test]
+        fn calls_a_handler_function() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = default_count)]
+                    Foo(usize),
+                    Bar(bool),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
+        #[test]
+        fn wraps_with_each_layer() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = 5)]
+                    Foo(Box<Option<usize>>),
+                    Bar(bool),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
+        // A unit holds no value, so a boolean marks it, or doesn't
+        #[test]
+        fn marks_a_unit_variant_with_a_boolean() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = false)]
+                    Foo,
+                    #[setting(default = true)]
+                    Bar,
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(!variants[0].is_default());
+            assert!(variants[1].is_default());
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Cannot use a `default` value with unit variants, as they hold no value."
+        )]
+        fn errors_for_a_unit_value() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = "foo")]
+                    Foo,
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Can only use a `default` value with variants that hold a single value."
+        )]
+        fn errors_for_multiple_values() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = (1, true))]
+                    Foo(usize, bool),
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use a `default` value with `nested`.")]
+        fn errors_for_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested, default = NestedConfig {})]
+                    Foo(NestedConfig),
+                }
+            });
         }
     }
 }

@@ -32,7 +32,14 @@ fn validate_with_path(
             );
     }
     if let Some(setting) = &self.d {
-        validate.nested_list("d", setting.iter().map(Some));
+        {
+            let path = validate.key_path("d");
+            let item = setting;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
+        }
     }
     if !validate.errors.is_empty() {
         return Err(validate.errors);

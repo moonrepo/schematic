@@ -1,0 +1,156 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PartialExample {
+    A,
+    B,
+    #[serde(untagged)]
+    Flag(bool),
+}
+#[automatically_derived]
+impl Default for PartialExample {
+    fn default() -> Self {
+        Self::B
+    }
+}
+#[automatically_derived]
+impl<'de> serde::Deserialize<'de> for PartialExample {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let mut errors: Vec<(&str, String)> = Vec::new();
+        match schematic::internal::literal_content(&content) {
+            Some("a") => return Ok(PartialExample::A),
+            Some("b") => return Ok(PartialExample::B),
+            _ => {
+                errors
+                    .push((
+                        "",
+                        schematic::internal::literal_error_message(&["a", "b"], &content),
+                    ))
+            }
+        }
+        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
+            Ok(value) => return Ok(PartialExample::Flag(value)),
+            Err(error) => errors.push(("flag", error)),
+        }
+        Err(
+            D::Error::custom(
+                schematic::internal::untagged_error_message(
+                    stringify!(PartialExample),
+                    &errors,
+                ),
+            ),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::PartialConfig for PartialExample {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Ok(Some(Self::B))
+    }
+    fn finalize(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        Ok(self)
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        *self = next;
+        Ok(())
+    }
+    fn validate_with_path(
+        &self,
+        context: &Self::Context,
+        finalizing: bool,
+        path: schematic::Path,
+    ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+        use schematic::internal::*;
+        let mut validate = ValidateManager::new(context, finalizing, path);
+        match self {
+            Self::Flag(pa) => {}
+            _ => {}
+        };
+        if !validate.errors.is_empty() {
+            return Err(validate.errors);
+        }
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl schematic::Config for Example {
+    type Partial = PartialExample;
+    fn from_partial(partial: Self::Partial) -> Self {
+        match partial {
+            PartialExample::A => Self::A,
+            PartialExample::B => Self::B,
+            PartialExample::Flag(pa) => Self::Flag(pa),
+        }
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            ("a".into(), ConfigSetting::new("")),
+            ("b".into(), ConfigSetting::new("")),
+            ("flag".into(), ConfigSetting::new("bool")),
+        ])
+    }
+}
+#[automatically_derived]
+impl Default for Example {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .union(
+                UnionType::from_named_schemas(
+                    [
+                        (
+                            "a".into(),
+                            Schema::literal_value(LiteralValue::String("a".into())),
+                        ),
+                        (
+                            "b".into(),
+                            Schema::literal_value(LiteralValue::String("b".into())),
+                        ),
+                        ("flag".into(), schema.infer::<bool>()),
+                    ],
+                    Some(1usize),
+                ),
+            )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {
+    fn schema_name() -> Option<String> {
+        Some("PartialExample".into())
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}

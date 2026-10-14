@@ -55,6 +55,13 @@ the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (
 `fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
 variant and infers the fallback's inner type as a string, as the old derive did.
 
+A `ConfigEnum` may also hold `#[serde(untagged)]` single-field tuple variants, which is how it models
+a literal union like `"auto" | "off" | number`. `FromStr` tries the named values, then each untagged
+variant through the inner type's own `FromStr`, then the fallback. Untagged variants parse the input
+as written, not after `before_parse`, which would uppercase `true` into something `bool` rejects. Its schema goes through the same `Unit` path as a fallback, so the
+non-literal variant sits inside an `EnumType`. Deserializing is still the user's own serde derive,
+so a mismatch gets serde's "did not match any variant" message, not the itemized one below.
+
 **Casing has no default.** The old derive applied `camelCase` to struct fields and `kebab-case` to
 enum variants. Core applies nothing — a name is used exactly as written, so Rust's `snake_case` is
 what ships unless `rename_all` says otherwise. This was the single largest source of churn when the
@@ -302,6 +309,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   nested setting that no layer provided is validated as an empty partial when finalizing, since
   `from_partial` builds one anyway; without that, a child whose `default_values` is `Ok(None)` hid
   its required settings.
+- **A variant's `default` value lives in `default_values`, not the partial's `Default`.**
+  `#[setting(default = value)]` on a variant holding a single value marks it as the default and is
+  what `default_values` puts in it (`Variant::impl_partial_default_values`), which is what the full
+  type's `Default` goes through. The partial's own `Default` holds the type default, like the empty
+  partial of a struct, since it has no context for a handler and can't return a string conversion's
+  error. A unit variant's `default = bool` still only marks it, as it always has.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a
   `Result`, and silently returning wrong values is worse.
 - **Validation error paths use serde names** (renames honored) for fields and variants; variants use
@@ -344,6 +357,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   partial schema claims `{"type": null}` is valid.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
+- A **literal union** (`Container::is_literal_union`) is an externally tagged `Config` enum whose
+  tagged variants are all units and which has at least one untagged variant: `"a" | "b" | boolean`.
+  Its partial gets the same hand-written `Deserialize` as an untagged enum, matching the unit names
+  (and aliases) as one group, then each untagged variant in order, so the error lists the expected
+  names. A tagged variant that holds a value is written as a map, so any such enum keeps serde's
+  derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
 - `StructType.partial` means "refers to a partial config type", **not** "has been partialized".
@@ -359,6 +378,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
   (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
   `variants`; always read it back through `EnumType::get_default`, never `values[index]`.
+- A union's unit variant is a `Literal`, which reports no default of its own, so a renderer reads a
+  union's default through `UnionType::get_default` (or `Schema::get_default`), which resolves the
+  literal at `default_index`. Don't make `Literal` report its value as a default instead: every
+  literal-typed field, including the tag of an internally tagged variant, would claim one.
 - `Schema` no longer derefs to `SchemaType` — the accessors it needs (`get_default`, `is_null`,
   `add_field`, …) are forwarded explicitly. Reach for `schema.ty` when you want the type itself.
 - `schema_name` must be unique per type; `SchemaGenerator::add` panics on a collision because schemas

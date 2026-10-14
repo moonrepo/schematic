@@ -157,6 +157,24 @@ mod setting_validate {
 
             assert_snapshot!(pretty(container.impl_partial_validate()));
         }
+        // Each collection extends the path, so a map of lists reports an item
+        // at `a.key[0]`
+        #[test]
+        fn supports_collections_of_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested = Input)]
+                    a: HashMap<String, Vec<Input>>,
+                    #[setting(nested)]
+                    b: Vec<Vec<NestedConfig>>,
+                    #[setting(nested)]
+                    c: Option<Vec<Option<NestedConfig>>>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
     }
 
     mod unnamed_struct {

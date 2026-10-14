@@ -398,6 +398,64 @@ mod partial_type_deserialize {
 
         assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
     }
+
+    // Named units are matched together, then each untagged variant in order
+    #[test]
+    fn supports_literal_unions() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(rename_all = "kebab-case")]
+            enum Example {
+                #[serde(alias = "a")]
+                Alpha,
+                #[setting(rename = "bb")]
+                Beta,
+                #[serde(skip_deserializing)]
+                Gamma,
+                #[serde(untagged)]
+                Flag(bool),
+                #[setting(untagged)]
+                Pair(usize, String),
+                #[serde(untagged)]
+                Missing,
+            }
+        });
+
+        assert!(container.is_literal_union());
+        assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
+    }
+
+    // A tagged variant holding a value is written as a map,
+    // which serde's derive already handles
+    #[test]
+    fn skips_unions_with_tagged_values() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A,
+                B(String),
+                #[serde(untagged)]
+                C(bool),
+            }
+        });
+
+        assert!(!container.is_literal_union());
+        assert!(container.impl_partial_type_deserialize().is_empty());
+    }
+
+    // The units are what make it a union of literals
+    #[test]
+    fn skips_enums_without_untagged_variants() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A,
+                B(String),
+            }
+        });
+
+        assert!(!container.is_literal_union());
+    }
 }
 
 mod schematic {
@@ -490,6 +548,24 @@ mod to_tokens {
                 #[setting(default)]
                 B,
                 C,
+            }
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    // The partial derives `Serialize` but not `Deserialize`
+    #[test]
+    fn literal_union() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(rename_all = "kebab-case")]
+            pub enum Example {
+                A,
+                #[setting(default)]
+                B,
+                #[serde(untagged)]
+                Flag(bool),
             }
         });
 

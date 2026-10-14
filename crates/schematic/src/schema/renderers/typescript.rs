@@ -79,6 +79,15 @@ pub struct TypeScriptRenderer {
     references: HashSet<String>,
 }
 
+/// A `@deprecated` tag for an exported type, when it's deprecated.
+fn deprecated_tags(schema: &Schema) -> Vec<String> {
+    match &schema.deprecated {
+        Some(deprecated) if deprecated.is_empty() => vec!["@deprecated".to_owned()],
+        Some(deprecated) => vec![format!("@deprecated {deprecated}")],
+        None => vec![],
+    }
+}
+
 impl TypeScriptRenderer {
     pub fn new(options: TypeScriptOptions) -> Self {
         Self {
@@ -129,9 +138,15 @@ impl TypeScriptRenderer {
         Ok(format!("export type {name} = {value};"))
     }
 
+    /// Export any other type, like a union, as an alias of its value.
+    fn export_alias_type(&mut self, name: &str, schema: &Schema, value: String) -> RenderResult {
+        let output = self.export_type_alias(name, value)?;
+
+        Ok(self.wrap_in_comment(schema.description.as_ref(), deprecated_tags(schema), output))
+    }
+
     fn export_enum_type(&mut self, name: &str, enu: &EnumType, schema: &Schema) -> RenderResult {
         let value = self.render_enum(enu, schema)?;
-        let mut tags = vec![];
 
         let output = if self.is_string_union_enum(enu) {
             self.export_type_alias(name, value)?
@@ -145,20 +160,10 @@ impl TypeScriptRenderer {
             }
         };
 
-        if let Some(deprecated) = &schema.deprecated {
-            tags.push(if deprecated.is_empty() {
-                "@deprecated".to_owned()
-            } else {
-                format!("@deprecated {deprecated}")
-            });
-        }
-
-        Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
+        Ok(self.wrap_in_comment(schema.description.as_ref(), deprecated_tags(schema), output))
     }
 
     fn export_object_type(&mut self, name: &str, schema: &Schema, value: String) -> RenderResult {
-        let mut tags = vec![];
-
         let output = if matches!(self.options.object_format, ObjectFormat::Interface)
             && value.starts_with('{')
             && value.ends_with('}')
@@ -168,15 +173,7 @@ impl TypeScriptRenderer {
             self.export_type_alias(name, value)?
         };
 
-        if let Some(deprecated) = &schema.deprecated {
-            tags.push(if deprecated.is_empty() {
-                "@deprecated".to_owned()
-            } else {
-                format!("@deprecated {deprecated}")
-            });
-        }
-
-        Ok(self.wrap_in_comment(schema.description.as_ref(), tags, output))
+        Ok(self.wrap_in_comment(schema.description.as_ref(), deprecated_tags(schema), output))
     }
 
     fn export_object_types(
@@ -614,7 +611,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 }
                 _ => {
                     let out = self.render_schema_without_reference(schema)?;
-                    outputs.push(self.export_type_alias(name, out)?);
+                    outputs.push(self.export_alias_type(name, schema, out)?);
                 }
             };
         }
