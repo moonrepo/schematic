@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-fad066ba.js";
+            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-dd859233.js"></script>
+        <script src="../../toc-774c0fcb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -278,6 +278,48 @@ holds it.</p>
 <p>A unit-only enum is always externally tagged, no matter what you set. Marking one <code>untagged</code>
 would leave its variants deserializable only from <code>null</code>.</p>
 </blockquote>
+<h3 id="literal-unions"><a class="header" href="#literal-unions">Literal unions</a></h3>
+<p>A setting that accepts a few named values, or a value of another type, like
+<code>"local" | "remote" | boolean</code>, is known as a literal union. Leave the enum externally tagged, so that
+each unit variant is written as its name, and mark every variant that holds a value with
+<code>#[serde(untagged)]</code>, so that it’s written as that value alone.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[serde(rename_all = "kebab-case")]
+enum Cache {
+	Local,
+	#[setting(default)]
+	Remote,
+	#[serde(untagged)]
+	Enabled(bool),
+}
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub cache: Cache,
+}
+<span class="boring">}</span></code></pre>
+<p>With the above, <code>cache</code> accepts <code>"local"</code>, <code>"remote"</code>, <code>true</code>, or <code>false</code>, and generates the
+TypeScript type <code>'local' | 'remote' | boolean</code>. The named values are matched first, then each untagged
+variant in the order declared, which serde requires to come last. An untagged unit variant is
+written as <code>null</code>.</p>
+<p>To default to a value rather than a name, provide it on the untagged variant, like
+<code>#[setting(default = true)]</code>. See <a href="./default.html#enum-variants">default values</a>.</p>
+<p>When a value matches none of them, the error lists the named values together, followed by each
+untagged variant.</p>
+<pre><code>failed to parse as any variant of PartialCache:
+- expected one of "local", "remote", found "qux"
+- enabled: expected a boolean, found "qux"
+</code></pre>
+<blockquote>
+<p>Only mark the variants as <code>untagged</code>, not the enum. An untagged enum writes its unit variants as
+<code>null</code>, so they would no longer be named.</p>
+</blockquote>
+<p>A literal union that holds only scalars, and should be settable through an
+<a href="./env.html">environment variable</a>, can derive <a href="../enum/untagged.html"><code>ConfigEnum</code></a> instead, which
+implements <code>FromStr</code> for it.</p>
 
                     </main>
 

@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-fad066ba.js";
+            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-dd859233.js"></script>
+        <script src="../../toc-774c0fcb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -233,7 +233,9 @@ since a name breaking those conventions would already be earning a compiler lint
 <p>A handler function that must keep a non-conventional name can be reached through a <code>snake_case</code>
 wrapper, or called directly with <code>default = my_wrapper()</code> when it needs no context.</p>
 </blockquote>
-<p>For enums, the <code>default</code> field takes no value, and simply marks which variant to use as the default.</p>
+<h3 id="enum-variants"><a class="header" href="#enum-variants">Enum variants</a></h3>
+<p>For enums, the <code>default</code> field marks which variant to use as the default. A unit variant holds no
+value, so <code>default</code> takes none, or a boolean.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
@@ -243,6 +245,25 @@ enum Host {
 	Remote(HostConfig),
 }
 <span class="boring">}</span></code></pre>
+<p>A variant that holds a single value can take a value as well, which marks it as the default and is
+what it holds. It accepts anything a setting’s <code>default</code> does, including a
+<a href="#handler-function">handler function</a> that returns the value. Without one, the variant holds the
+default of its type.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Compress {
+	Fast,
+	Best,
+	#[serde(untagged)]
+	#[setting(default = true)]
+	Enabled(bool),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>A value can’t be provided for a variant holding several values, or a
+<a href="../nested.html">nested</a> configuration, which sources its defaults from its own settings.</p>
+</blockquote>
 <h2 id="handler-function"><a class="header" href="#handler-function">Handler function</a></h2>
 <p>If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the <a href="../context.html">context</a> as the first argument, and can

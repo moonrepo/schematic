@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-fad066ba.js";
+            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-dd859233.js"></script>
+        <script src="../toc-774c0fcb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -216,8 +216,8 @@ optional don’t need one either, since an <code>Option</code> setting defaults 
 <h2 id="attribute-fields"><a class="header" href="#attribute-fields">Attribute fields</a></h2>
 <p>The following fields are supported for the <code>#[setting]</code> field/variant attribute:</p>
 <ul>
-<li><code>default</code> - Sets the <a href="./struct/default.html">default value</a>. On an enum variant, this is a marker
-that takes no value, and names the variant the partial defaults to.</li>
+<li><code>default</code> - Sets the <a href="./struct/default.html">default value</a>. On an enum variant, it names the
+variant the partial defaults to, and on a variant holding a value, can also provide that value.</li>
 <li><code>env</code> <em>(struct only)</em> - Sets the <a href="./struct/env.html">environment variable</a> to receive a value from.</li>
 <li><code>env_prefix</code> <em>(struct only)</em> - Overrides the <a href="./struct/env.html#container-prefixes">environment variable</a>
 prefix of the nested config this field holds. Requires <code>nested</code>.</li>

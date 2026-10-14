@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-fad066ba.js";
+            window.path_to_searchindex_js = "searchindex-b83e5ab1.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-dd859233.js"></script>
+        <script src="toc-774c0fcb.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -377,8 +377,8 @@ optional don’t need one either, since an <code>Option</code> setting defaults 
 <h2 id="attribute-fields"><a class="header" href="#attribute-fields">Attribute fields</a></h2>
 <p>The following fields are supported for the <code>#[setting]</code> field/variant attribute:</p>
 <ul>
-<li><code>default</code> - Sets the <a href="#default-values">default value</a>. On an enum variant, this is a marker
-that takes no value, and names the variant the partial defaults to.</li>
+<li><code>default</code> - Sets the <a href="#default-values">default value</a>. On an enum variant, it names the
+variant the partial defaults to, and on a variant holding a value, can also provide that value.</li>
 <li><code>env</code> <em>(struct only)</em> - Sets the <a href="#environment-variables">environment variable</a> to receive a value from.</li>
 <li><code>env_prefix</code> <em>(struct only)</em> - Overrides the <a href="#container-prefixes">environment variable</a>
 prefix of the nested config this field holds. Requires <code>nested</code>.</li>
@@ -801,6 +801,48 @@ holds it.</p>
 <p>A unit-only enum is always externally tagged, no matter what you set. Marking one <code>untagged</code>
 would leave its variants deserializable only from <code>null</code>.</p>
 </blockquote>
+<h3 id="literal-unions"><a class="header" href="#literal-unions">Literal unions</a></h3>
+<p>A setting that accepts a few named values, or a value of another type, like
+<code>"local" | "remote" | boolean</code>, is known as a literal union. Leave the enum externally tagged, so that
+each unit variant is written as its name, and mark every variant that holds a value with
+<code>#[serde(untagged)]</code>, so that it’s written as that value alone.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[serde(rename_all = "kebab-case")]
+enum Cache {
+	Local,
+	#[setting(default)]
+	Remote,
+	#[serde(untagged)]
+	Enabled(bool),
+}
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub cache: Cache,
+}
+<span class="boring">}</span></code></pre>
+<p>With the above, <code>cache</code> accepts <code>"local"</code>, <code>"remote"</code>, <code>true</code>, or <code>false</code>, and generates the
+TypeScript type <code>'local' | 'remote' | boolean</code>. The named values are matched first, then each untagged
+variant in the order declared, which serde requires to come last. An untagged unit variant is
+written as <code>null</code>.</p>
+<p>To default to a value rather than a name, provide it on the untagged variant, like
+<code>#[setting(default = true)]</code>. See <a href="#enum-variants">default values</a>.</p>
+<p>When a value matches none of them, the error lists the named values together, followed by each
+untagged variant.</p>
+<pre><code>failed to parse as any variant of PartialCache:
+- expected one of "local", "remote", found "qux"
+- enabled: expected a boolean, found "qux"
+</code></pre>
+<blockquote>
+<p>Only mark the variants as <code>untagged</code>, not the enum. An untagged enum writes its unit variants as
+<code>null</code>, so they would no longer be named.</p>
+</blockquote>
+<p>A literal union that holds only scalars, and should be settable through an
+<a href="#environment-variables">environment variable</a>, can derive <a href="#untagged-variants"><code>ConfigEnum</code></a> instead, which
+implements <code>FromStr</code> for it.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="default-values"><a class="header" href="#default-values">Default values</a></h1>
 <p>In Schematic, there are 2 forms of default values:</p>
@@ -858,7 +900,9 @@ since a name breaking those conventions would already be earning a compiler lint
 <p>A handler function that must keep a non-conventional name can be reached through a <code>snake_case</code>
 wrapper, or called directly with <code>default = my_wrapper()</code> when it needs no context.</p>
 </blockquote>
-<p>For enums, the <code>default</code> field takes no value, and simply marks which variant to use as the default.</p>
+<h3 id="enum-variants"><a class="header" href="#enum-variants">Enum variants</a></h3>
+<p>For enums, the <code>default</code> field marks which variant to use as the default. A unit variant holds no
+value, so <code>default</code> takes none, or a boolean.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
@@ -868,6 +912,25 @@ enum Host {
 	Remote(HostConfig),
 }
 <span class="boring">}</span></code></pre>
+<p>A variant that holds a single value can take a value as well, which marks it as the default and is
+what it holds. It accepts anything a setting’s <code>default</code> does, including a
+<a href="#handler-function">handler function</a> that returns the value. Without one, the variant holds the
+default of its type.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Compress {
+	Fast,
+	Best,
+	#[serde(untagged)]
+	#[setting(default = true)]
+	Enabled(bool),
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>A value can’t be provided for a variant holding several values, or a
+<a href="#nesting">nested</a> configuration, which sources its defaults from its own settings.</p>
+</blockquote>
 <h2 id="handler-function"><a class="header" href="#handler-function">Handler function</a></h2>
 <p>If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the <a href="#context">context</a> as the first argument, and can
@@ -1409,6 +1472,7 @@ enum ExampleEnum {
 <ul>
 <li><code>alias</code></li>
 <li><code>rename</code> - Overrides (explicitly sets) the string value used for parsing and formatting.</li>
+<li><code>untagged</code> - Marks the variant as <a href="#untagged-variants">holding a value</a>, rather than being named.</li>
 </ul>
 <h2 id="deriving-common-traits"><a class="header" href="#deriving-common-traits">Deriving common traits</a></h2>
 <p>All enums (not just unit-only enums) typically support the same derived traits, like <code>Clone</code>, <code>Eq</code>,
@@ -1476,6 +1540,46 @@ enum Value {
 </span><span class="boring">fn main() {
 </span>let qux = Value::from_str("qux")?; // Value::Other("qux")
 <span class="boring">}</span></code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="untagged-variants"><a class="header" href="#untagged-variants">Untagged variants</a></h1>
+<p>A setting that accepts a few named values, or a value of another type, like <code>"auto" | "off" | number</code>,
+is known as a literal union. To model one, mark each variant that holds a value with
+<code>#[serde(untagged)]</code>, so that serde reads it as that value alone.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>derive_enum!(
+	#[derive(ConfigEnum, Default)]
+	enum Threads {
+		#[default]
+		Auto,
+		Off,
+		#[serde(untagged)]
+		Count(u32),
+	}
+);
+<span class="boring">}</span></code></pre>
+<p>Parsing from a string matches the named values first, then attempts each untagged variant in the
+order declared, using the inner type’s <code>FromStr</code>. Formatting writes the inner value with <code>Display</code>.
+This is what allows the setting to be read from an
+<a href="#environment-variables">environment variable</a>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let auto = Threads::from_str("auto")?; // Threads::Auto
+let count = Threads::from_str("8")?; // Threads::Count(8)
+<span class="boring">}</span></code></pre>
+<p>However, this pattern does have a few caveats:</p>
+<ul>
+<li>An untagged variant must be a tuple variant with a single field.</li>
+<li>The field type must implement <code>Default</code>, <code>Display</code>, and <code>FromStr</code>.</li>
+<li>Untagged variants are attempted before the <a href="#fallback-variant">fallback variant</a>, if there is one.</li>
+<li>The input is parsed as written, without the <code>before_parse</code> transform, which only exists to
+normalize named values.</li>
+<li>serde requires untagged variants to come after every other variant.</li>
+</ul>
+<blockquote>
+<p>A literal union with a variant that holds a nested configuration can derive
+<a href="#literal-unions"><code>Config</code></a> instead.</p>
+</blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="experimental"><a class="header" href="#experimental">Experimental</a></h1>
 <h2 id="pkl-configuration-format--v017"><a class="header" href="#pkl-configuration-format--v017">Pkl configuration format (&gt;= v0.17)</a></h2>
