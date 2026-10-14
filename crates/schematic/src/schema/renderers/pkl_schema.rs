@@ -1088,10 +1088,7 @@ impl PklSchemaRenderer {
 
         match &schema.ty {
             SchemaType::Enum(enu) => enu.get_default(),
-            SchemaType::Union(uni) => uni
-                .default_index
-                .and_then(|index| uni.variants_types.get(index))
-                .and_then(|variant| variant.get_default()),
+            SchemaType::Union(uni) => uni.get_default(),
             _ => None,
         }
     }

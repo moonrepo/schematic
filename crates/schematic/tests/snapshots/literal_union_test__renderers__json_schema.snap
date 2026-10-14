@@ -15,9 +15,15 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
   ],
   "properties": {
     "cache": {
-      "$ref": "#/definitions/Cache"
+      "default": "remote",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Cache"
+        }
+      ]
     },
     "cache_opt": {
+      "default": "remote",
       "anyOf": [
         {
           "$ref": "#/definitions/Cache"
@@ -59,6 +65,7 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
   "definitions": {
     "Cache": {
       "title": "Cache",
+      "default": "remote",
       "description": "When to cache.",
       "anyOf": [
         {

@@ -378,6 +378,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - `EnumType.values` is a *derived subset* of `EnumType.variants` — variants with a non-literal schema
   (`#[setting(null)]`) contribute no value, so the two differ in length. `default_index` indexes
   `variants`; always read it back through `EnumType::get_default`, never `values[index]`.
+- A union's unit variant is a `Literal`, which reports no default of its own, so a renderer reads a
+  union's default through `UnionType::get_default` (or `Schema::get_default`), which resolves the
+  literal at `default_index`. Don't make `Literal` report its value as a default instead: every
+  literal-typed field, including the tag of an internally tagged variant, would claim one.
 - `Schema` no longer derefs to `SchemaType` — the accessors it needs (`get_default`, `is_null`,
   `add_field`, …) are forwarded explicitly. Reach for `schema.ty` when you want the type itself.
 - `schema_name` must be unique per type; `SchemaGenerator::add` panics on a collision because schemas

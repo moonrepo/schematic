@@ -168,6 +168,69 @@ mod defaults {
         assert_eq!(inner.variants_types[1].get_default(), Some(&value));
     }
 
+    // A unit variant is a literal, which is its value rather than holding a
+    // default, so the union resolves it. The literal itself still reports
+    // none, or every literal-typed field and tag would claim a default.
+    #[test]
+    fn gets_a_unit_default_variant_of_a_union() {
+        let schema = Schema::union(UnionType::from_schemas(
+            [
+                Schema::literal_value(LiteralValue::String("a".into())),
+                Schema::literal_value(LiteralValue::String("b".into())),
+                Schema::boolean(BooleanType::default()),
+            ],
+            Some(1),
+        ));
+
+        assert_eq!(
+            schema.get_default(),
+            Some(&LiteralValue::String("b".into()))
+        );
+
+        let SchemaType::Union(inner) = &schema.ty else {
+            panic!("expected a union");
+        };
+
+        assert_eq!(inner.variants_types[1].get_default(), None);
+    }
+
+    #[test]
+    fn prefers_the_default_variant_of_a_union_over_another_default() {
+        let mut first = Schema::string(StringType::default());
+        first.set_default(LiteralValue::String("x".into()));
+
+        let schema = Schema::union(UnionType::from_schemas(
+            [
+                first,
+                Schema::literal_value(LiteralValue::String("b".into())),
+            ],
+            Some(1),
+        ));
+
+        assert_eq!(
+            schema.get_default(),
+            Some(&LiteralValue::String("b".into()))
+        );
+    }
+
+    // Without a default variant, such as for `Option<T>`, the first variant
+    // with a default of its own is used
+    #[test]
+    fn falls_back_to_a_variant_default_without_a_default_variant() {
+        let mut flag = Schema::boolean(BooleanType::default());
+        flag.set_default(LiteralValue::Bool(true));
+
+        let schema = Schema::union(UnionType::from_schemas(
+            [
+                Schema::literal_value(LiteralValue::String("a".into())),
+                flag,
+            ],
+            None,
+        ));
+
+        assert_eq!(schema.get_default(), Some(&LiteralValue::Bool(true)));
+    }
+
     #[test]
     fn sets_and_gets_on_an_enum() {
         let mut schema = Schema::enumerable(EnumType::new([

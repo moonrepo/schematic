@@ -16,7 +16,9 @@ export type Compress = 'fast' | 'best' | boolean;
 export type Threads = 'auto' | 'off' | number;
 
 export interface LiteralConfig {
+	/** @default 'remote' */
 	cache: Cache;
+	/** @default 'remote' */
 	cache_opt: Cache | null;
 	/** @default true */
 	compress: Compress;

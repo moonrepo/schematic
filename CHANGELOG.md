@@ -25,6 +25,10 @@
 - Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
 - Fixed the TypeScript renderer dropping the doc comment and deprecation of a type exported as an
   alias, like a union.
+- Fixed a union whose default is a unit variant, like `#[setting(default)]` on a unit variant of a
+  `Config` enum, reporting no default in TypeScript, JSON schemas, and API docs.
+  - JSON schemas now use the default variant of a union, rather than the first variant with a
+    default of its own.
 
 ## 0.20.11
 

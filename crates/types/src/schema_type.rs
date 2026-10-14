@@ -54,10 +54,8 @@ impl SchemaType {
             SchemaType::Integer(inner) => inner.default.as_ref(),
             SchemaType::String(inner) => inner.default.as_ref(),
             SchemaType::Union(inner) => {
-                if let Some(index) = &inner.default_index
-                    && let Some(value) = inner.variants_types.get(*index)
-                {
-                    return value.get_default();
+                if inner.default_index.is_some() {
+                    return inner.get_default();
                 }
 
                 for variant in &inner.variants_types {

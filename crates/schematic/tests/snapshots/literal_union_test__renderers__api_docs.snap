@@ -25,6 +25,7 @@ title: LiteralConfig
 | Attribute | Value |
 | --- | --- |
 | Type | [`Cache`](./Cache.md) |
+| Default | `"remote"` |
 
 ### `cache_opt`
 
@@ -33,6 +34,7 @@ title: LiteralConfig
 | Attribute | Value |
 | --- | --- |
 | Type | [`Cache`](./Cache.md) |
+| Default | `"remote"` |
 
 ### `compress`
 
