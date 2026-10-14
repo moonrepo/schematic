@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.20.11"
+version = "0.20.12"
 dependencies = [
  "chrono",
  "convert_case",
@@ -1653,7 +1653,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_core"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "convert_case",
  "darling",
@@ -1667,7 +1667,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.20.10"
+version = "0.20.11"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1682,7 +1682,7 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.12.10"
+version = "0.12.11"
 dependencies = [
  "chrono",
  "indexmap",
@@ -2078,7 +2078,7 @@ checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
 
 [[package]]
 name = "test_app"
-version = "0.19.10"
+version = "0.19.11"
 dependencies = [
  "chrono",
  "miette",
