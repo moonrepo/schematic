@@ -110,4 +110,50 @@ failed to parse as any variant of PartialHost:
 > A unit-only enum is always externally tagged, no matter what you set. Marking one `untagged`
 > would leave its variants deserializable only from `null`.
 
+### Literal unions
+
+A setting that accepts a few named values, or a value of another type, like
+`"local" | "remote" | boolean`, is known as a literal union. Leave the enum externally tagged, so that
+each unit variant is written as its name, and mark every variant that holds a value with
+`#[serde(untagged)]`, so that it's written as that value alone.
+
+```rust
+#[derive(Config)]
+#[serde(rename_all = "kebab-case")]
+enum Cache {
+	Local,
+	#[setting(default)]
+	Remote,
+	#[serde(untagged)]
+	Enabled(bool),
+}
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub cache: Cache,
+}
+```
+
+With the above, `cache` accepts `"local"`, `"remote"`, `true`, or `false`, and generates the
+TypeScript type `'local' | 'remote' | boolean`. The named values are matched first, then each untagged
+variant in the order declared, which serde requires to come last. An untagged unit variant is
+written as `null`.
+
+When a value matches none of them, the error lists the named values together, followed by each
+untagged variant.
+
+```
+failed to parse as any variant of PartialCache:
+- expected one of "local", "remote", found "qux"
+- enabled: expected a boolean, found "qux"
+```
+
+> Only mark the variants as `untagged`, not the enum. An untagged enum writes its unit variants as
+> `null`, so they would no longer be named.
+
+A literal union that holds only scalars, and should be settable through an
+[environment variable](./env.md), can derive [`ConfigEnum`](../enum/untagged.md) instead, which
+implements `FromStr` for it.
+
 [config]: https://docs.rs/schematic/latest/schematic/trait.Config.html

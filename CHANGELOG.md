@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added support for literal unions, a setting that accepts a few named values or a value of another
+  type, like `"local" | "remote" | boolean`. Mark the variants that hold a value with
+  `#[serde(untagged)]`, and leave the enum itself tagged.
+  - A `Config` enum written this way lists the named values it expected when nothing matches, such
+    as `- expected one of "local", "remote", found "qux"`, instead of serde's "data did not match any
+    variant".
+  - `ConfigEnum` now supports untagged tuple variants, which `FromStr` parses with the inner type's
+    own `FromStr` after every named value, so the setting can be read from an environment variable.
+
+#### 🐞 Fixes
+
+- Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
+
 ## 0.20.11
 
 #### 🚀 Updates

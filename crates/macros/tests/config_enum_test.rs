@@ -450,3 +450,161 @@ mod generics {
         ));
     }
 }
+
+// An untagged variant widens a `ConfigEnum` with a value of its own, like
+// `"on" | "off" | number`. serde reads it from the variant's own
+// `#[serde(untagged)]`, and `FromStr` parses it after every named value.
+mod untagged {
+    use super::*;
+    use schematic::ConfigLoader;
+
+    #[derive(
+        Clone, Debug, Default, PartialEq, ConfigEnum, serde::Deserialize, serde::Serialize,
+    )]
+    #[serde(rename_all = "kebab-case")]
+    enum Threads {
+        #[default]
+        Auto,
+        Off,
+        #[serde(untagged)]
+        Count(u32),
+    }
+
+    #[test]
+    fn parses_named_values() {
+        assert_eq!(Threads::from_str("auto").unwrap(), Threads::Auto);
+        assert_eq!(Threads::from_str("off").unwrap(), Threads::Off);
+    }
+
+    #[test]
+    fn parses_untagged_values() {
+        assert_eq!(Threads::from_str("8").unwrap(), Threads::Count(8));
+    }
+
+    #[test]
+    fn errors_when_nothing_matches() {
+        assert!(matches!(
+            Threads::from_str("-1"),
+            Err(ConfigError::EnumUnknownVariant(value)) if value == "-1"
+        ));
+    }
+
+    #[test]
+    fn formats_from_the_inner_value() {
+        assert_eq!(Threads::Count(8).to_string(), "8");
+        assert_eq!(Threads::Off.to_string(), "off");
+    }
+
+    #[test]
+    fn round_trips() {
+        for value in [Threads::Auto, Threads::Count(4)] {
+            assert_eq!(Threads::from_str(&value.to_string()).unwrap(), value);
+        }
+    }
+
+    // As with a fallback, the variant holds a default value
+    #[test]
+    fn variants_includes_a_default_value() {
+        assert_eq!(
+            Threads::variants(),
+            vec![Threads::Auto, Threads::Off, Threads::Count(0)]
+        );
+    }
+
+    // serde and `FromStr` agree on what each value is
+    #[test]
+    fn deserializes_consistently() {
+        assert_eq!(
+            serde_json::from_str::<Threads>(r#""off""#).unwrap(),
+            Threads::Off
+        );
+        assert_eq!(
+            serde_json::from_str::<Threads>("8").unwrap(),
+            Threads::Count(8)
+        );
+        assert_eq!(serde_json::to_string(&Threads::Count(8)).unwrap(), "8");
+    }
+
+    // Untagged variants are attempted in order, before the fallback
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    enum Ordered {
+        Known,
+        #[variant(untagged)]
+        Flag(bool),
+        #[variant(untagged)]
+        Count(u32),
+        #[variant(fallback)]
+        Other(String),
+    }
+
+    #[test]
+    fn attempts_untagged_values_before_the_fallback() {
+        assert_eq!(Ordered::from_str("Known").unwrap(), Ordered::Known);
+        assert_eq!(Ordered::from_str("true").unwrap(), Ordered::Flag(true));
+        assert_eq!(Ordered::from_str("3").unwrap(), Ordered::Count(3));
+        assert_eq!(
+            Ordered::from_str("other").unwrap(),
+            Ordered::Other("other".into())
+        );
+    }
+
+    // `before_parse` normalizes the input matched against named values, and
+    // untagged values are parsed as written, so `true` isn't uppercased into
+    // something `bool` rejects
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "UPPERCASE", rename_all = "UPPERCASE")]
+    enum Normalized {
+        Info,
+        #[variant(untagged)]
+        Flag(bool),
+    }
+
+    #[test]
+    fn parses_untagged_values_as_written() {
+        assert_eq!(Normalized::from_str("info").unwrap(), Normalized::Info);
+        assert_eq!(
+            Normalized::from_str("true").unwrap(),
+            Normalized::Flag(true)
+        );
+    }
+
+    #[derive(Debug, schematic_macros::Config)]
+    pub struct Settings {
+        #[setting(env = "SCHEMATIC_MACROS_UNTAGGED_THREADS")]
+        threads: Threads,
+    }
+
+    // `FromStr` is what makes an untagged value usable as an env var
+    #[test]
+    fn reads_from_the_environment() {
+        assert_eq!(Settings::default().threads, Threads::Auto);
+
+        unsafe { std::env::set_var("SCHEMATIC_MACROS_UNTAGGED_THREADS", "12") };
+
+        let result = ConfigLoader::<Settings>::new().load();
+
+        unsafe { std::env::remove_var("SCHEMATIC_MACROS_UNTAGGED_THREADS") };
+
+        assert_eq!(result.unwrap().config.threads, Threads::Count(12));
+    }
+
+    #[test]
+    fn builds_a_schema_with_the_value_type() {
+        let schema = SchemaBuilder::build_root::<Threads>();
+        let SchemaType::Enum(inner) = &schema.ty else {
+            panic!("expected an enum, got {:?}", schema.ty);
+        };
+        let variants = inner.variants.as_ref().unwrap();
+
+        assert!(matches!(variants["auto"].schema.ty, SchemaType::Literal(_)));
+        assert!(matches!(
+            variants["count"].schema.ty,
+            SchemaType::Integer(_)
+        ));
+        assert_eq!(inner.values.len(), 2);
+        assert_eq!(
+            schema.get_default(),
+            Some(&schematic::schema::LiteralValue::String("auto".into()))
+        );
+    }
+}

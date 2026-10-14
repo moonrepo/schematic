@@ -163,6 +163,20 @@ impl Variant {
         self.args.fallback
     }
 
+    /// Whether this variant is represented by its value alone, even when
+    /// the enum is tagged.
+    pub fn is_untagged(&self) -> bool {
+        self.args.untagged || self.serde_args.untagged
+    }
+
+    /// Whether serde never deserializes into this variant.
+    pub fn is_skipped_deserializing(&self) -> bool {
+        self.args.skip
+            || self.serde_args.skip
+            || self.args.skip_deserializing
+            || self.serde_args.skip_deserializing
+    }
+
     /// Aliases can be provided by both attributes, so combine them.
     pub fn get_aliases(&self) -> Vec<&String> {
         let mut aliases = vec![];
@@ -176,29 +190,45 @@ impl Variant {
         aliases
     }
 
-    /// Validate this variant within a `ConfigEnum`, which only models a list
-    /// of named string values.
+    /// Validate this variant within a `ConfigEnum`, which models a list of
+    /// named string values, optionally widened by variants that hold a value.
     pub fn validate_config_enum(&self) {
-        if self.is_fallback() {
-            match &self.fields {
-                Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
-                Fields::Unnamed(_) => {
-                    panic!("Only 1 unnamed field is supported for `fallback`.");
-                }
-                _ => {
-                    panic!("Only unnamed tuple variants are supported for `fallback`.");
-                }
-            };
-        } else if !self.is_unit_variant() {
-            panic!("Only unit variants are supported, unless marked as `fallback`.");
-        }
+        let kind = if self.is_fallback() {
+            "fallback"
+        } else if self.is_untagged() {
+            "untagged"
+        } else {
+            if !self.is_unit_variant() {
+                panic!(
+                    "Only unit variants are supported, unless marked as `fallback` or `untagged`."
+                );
+            }
+
+            return;
+        };
+
+        match &self.fields {
+            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
+            Fields::Unnamed(_) => {
+                panic!("Only 1 unnamed field is supported for `{kind}`.");
+            }
+            _ => {
+                panic!("Only unnamed tuple variants are supported for `{kind}`.");
+            }
+        };
+    }
+
+    /// Whether this variant holds a value within a `ConfigEnum`, rather
+    /// than being one of its named values.
+    fn is_config_enum_value_variant(&self) -> bool {
+        self.is_fallback() || self.is_untagged()
     }
 
     /// An expression that constructs this variant, for `ConfigEnum::variants`.
     pub fn impl_config_enum_value(&self) -> TokenStream {
         let name = &self.ident;
 
-        if self.is_fallback() {
+        if self.is_config_enum_value_variant() {
             quote! { Self::#name(Default::default()) }
         } else {
             quote! { Self::#name }
@@ -206,13 +236,13 @@ impl Variant {
     }
 
     /// A match arm that formats this variant back into its string value.
-    /// Each arm writes for itself, so that a fallback holding a generic type
+    /// Each arm writes for itself, so that a variant holding a generic type
     /// can go through `Display` rather than having to be a `&str`.
     pub fn impl_config_enum_display(&self) -> TokenStream {
         let name = &self.ident;
 
-        if self.is_fallback() {
-            return quote! { Self::#name(fallback) => write!(f, "{fallback}"), };
+        if self.is_config_enum_value_variant() {
+            return quote! { Self::#name(inner) => write!(f, "{inner}"), };
         }
 
         let value = self.get_name();
@@ -220,25 +250,46 @@ impl Variant {
         quote! { Self::#name => f.write_str(#value), }
     }
 
-    /// A match arm that parses a string into this variant. A fallback absorbs
-    /// anything left over, so it must be matched last.
+    /// A match arm that parses a string into this named variant.
     pub fn impl_config_enum_from_str(&self) -> TokenStream {
         let name = &self.ident;
-
-        if self.is_fallback() {
-            return quote! {
-                fallback => Self::#name(
-                    fallback.try_into().map_err(|_| {
-                        schematic::ConfigError::EnumInvalidFallback(fallback.to_string())
-                    })?
-                ),
-            };
-        }
-
         let value = self.get_name();
         let aliases = self.get_aliases();
 
         quote! { #value #(| #aliases)* => Self::#name, }
+    }
+
+    /// An expression that converts a value no other variant matched into
+    /// this fallback.
+    pub fn impl_config_enum_fallback(&self, value: &Ident) -> TokenStream {
+        let name = &self.ident;
+
+        quote! {
+            Self::#name(
+                #value.try_into().map_err(|_| {
+                    schematic::ConfigError::EnumInvalidFallback(#value.to_string())
+                })?
+            )
+        }
+    }
+
+    /// A statement that attempts to parse the input into this untagged
+    /// variant, returning it on success. The input is parsed as written,
+    /// since `before_parse` only exists to normalize named values.
+    pub fn impl_config_enum_parse_untagged(&self, input: &Ident) -> TokenStream {
+        let name = &self.ident;
+
+        let Fields::Unnamed(fields) = &self.fields else {
+            unreachable!("Validated by `validate_config_enum`.");
+        };
+
+        let ty = &fields.unnamed[0].ty;
+
+        quote! {
+            if let Ok(inner) = <#ty as std::str::FromStr>::from_str(#input) {
+                return Ok(Self::#name(inner));
+            }
+        }
     }
 
     pub fn is_excluded(&self) -> bool {
@@ -326,7 +377,7 @@ impl Variant {
             }
         }
 
-        if self.args.untagged || self.serde_args.untagged {
+        if self.is_untagged() {
             meta.push(quote! { untagged });
         }
 
@@ -349,9 +400,7 @@ impl Variant {
         let nested = self.is_nested();
 
         // Untagged variants are represented by their value alone
-        let untagged = matches!(tag_format, SerdeTagFormat::Untagged)
-            || self.args.untagged
-            || self.serde_args.untagged;
+        let untagged = matches!(tag_format, SerdeTagFormat::Untagged) || self.is_untagged();
 
         let inner = match &self.fields {
             Fields::Named(_) => panic!("Enums with named fields are not supported!"),
@@ -568,6 +617,13 @@ impl Variant {
     /// untagged enums, where each variant is tried in order.
     pub fn impl_partial_type_deserialize(&self, partial_name: &Ident) -> ImplResult {
         let mut res = ImplResult::default();
+
+        if self.is_skipped_deserializing() {
+            res.no_value = true;
+
+            return res;
+        }
+
         let name = &self.ident;
         let name_string = self.get_name();
 
@@ -609,6 +665,28 @@ impl Variant {
 
                 errors.push((#name_string, "expected null".to_owned()));
             },
+        };
+
+        res
+    }
+
+    /// Generate a match arm for this unit variant, for use within literal
+    /// unions, where a tagged unit is written as its name.
+    pub fn impl_partial_type_deserialize_literal(&self, partial_name: &Ident) -> ImplResult {
+        let mut res = ImplResult::default();
+
+        if self.is_skipped_deserializing() {
+            res.no_value = true;
+
+            return res;
+        }
+
+        let name = &self.ident;
+        let value = self.get_name();
+        let aliases = self.get_aliases();
+
+        res.value = quote! {
+            Some(#value #(| #aliases)*) => return Ok(#partial_name::#name),
         };
 
         res

@@ -1,0 +1,116 @@
+---
+source: crates/core/tests/derive_config_enum_test.rs
+expression: pretty(output.to_token_stream())
+---
+#[automatically_derived]
+impl schematic::ConfigEnum for Example {
+    fn variants() -> Vec<Example> {
+        vec![
+            Self::Known, Self::Flag(Default::default()), Self::Count(Default::default()),
+            Self::Other(Default::default())
+        ]
+    }
+}
+#[automatically_derived]
+impl std::str::FromStr for Example {
+    type Err = schematic::ConfigError;
+    fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+        let input = value;
+        let value = schematic::internal::format_case(value, "lowercase");
+        let value = value.as_str();
+        Ok(
+            match value {
+                "Known" => Self::Known,
+                unknown => {
+                    if let Ok(inner) = <bool as std::str::FromStr>::from_str(input) {
+                        return Ok(Self::Flag(inner));
+                    }
+                    if let Ok(inner) = <u32 as std::str::FromStr>::from_str(input) {
+                        return Ok(Self::Count(inner));
+                    }
+                    Self::Other(
+                        unknown
+                            .try_into()
+                            .map_err(|_| {
+                                schematic::ConfigError::EnumInvalidFallback(
+                                    unknown.to_string(),
+                                )
+                            })?,
+                    )
+                }
+            },
+        )
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<String> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: String) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(&value)
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<&String> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: &String) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(value)
+    }
+}
+#[automatically_derived]
+impl std::convert::TryFrom<&str> for Example {
+    type Error = schematic::ConfigError;
+    fn try_from(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+        std::str::FromStr::from_str(value)
+    }
+}
+#[automatically_derived]
+impl std::fmt::Display for Example {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Known => f.write_str("Known"),
+            Self::Flag(inner) => write!(f, "{inner}"),
+            Self::Count(inner) => write!(f, "{inner}"),
+            Self::Other(inner) => write!(f, "{inner}"),
+        }
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .enumerable(
+                EnumType::from_schemas(
+                    [
+                        Schema {
+                            name: Some("Known".into()),
+                            ty: Schema::literal_value(
+                                    LiteralValue::String("Known".into()),
+                                )
+                                .ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("Flag".into()),
+                            ty: schema.infer::<bool>().ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("Count".into()),
+                            ty: schema.infer::<u32>().ty,
+                            ..Default::default()
+                        },
+                        Schema {
+                            name: Some("Other".into()),
+                            ty: schema.infer::<String>().ty,
+                            ..Default::default()
+                        },
+                    ],
+                    None,
+                ),
+            )
+    }
+}

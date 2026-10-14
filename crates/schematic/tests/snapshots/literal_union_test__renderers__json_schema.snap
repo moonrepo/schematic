@@ -1,0 +1,82 @@
+---
+source: crates/schematic/tests/literal_union_test.rs
+expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LiteralConfig",
+  "type": "object",
+  "required": [
+    "cache",
+    "cache_opt",
+    "threads",
+    "threads_opt"
+  ],
+  "properties": {
+    "cache": {
+      "$ref": "#/definitions/Cache"
+    },
+    "cache_opt": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Cache"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "threads": {
+      "default": "auto",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Threads"
+        }
+      ]
+    },
+    "threads_opt": {
+      "default": "auto",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Threads"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Cache": {
+      "title": "Cache",
+      "description": "When to cache.",
+      "anyOf": [
+        {
+          "const": "local"
+        },
+        {
+          "const": "remote"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "Threads": {
+      "title": "Threads",
+      "description": "How many threads to use.",
+      "anyOf": [
+        {
+          "const": "auto"
+        },
+        {
+          "const": "off"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    }
+  }
+}

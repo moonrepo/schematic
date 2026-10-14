@@ -55,6 +55,13 @@ the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (
 `fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
 variant and infers the fallback's inner type as a string, as the old derive did.
 
+A `ConfigEnum` may also hold `#[serde(untagged)]` single-field tuple variants, which is how it models
+a literal union like `"auto" | "off" | number`. `FromStr` tries the named values, then each untagged
+variant through the inner type's own `FromStr`, then the fallback. Untagged variants parse the input
+as written, not after `before_parse`, which would uppercase `true` into something `bool` rejects. Its schema goes through the same `Unit` path as a fallback, so the
+non-literal variant sits inside an `EnumType`. Deserializing is still the user's own serde derive,
+so a mismatch gets serde's "did not match any variant" message, not the itemized one below.
+
 **Casing has no default.** The old derive applied `camelCase` to struct fields and `kebab-case` to
 enum variants. Core applies nothing — a name is used exactly as written, so Rust's `snake_case` is
 what ships unless `rename_all` says otherwise. This was the single largest source of churn when the
@@ -344,6 +351,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   partial schema claims `{"type": null}` is valid.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
+- A **literal union** (`Container::is_literal_union`) is an externally tagged `Config` enum whose
+  tagged variants are all units and which has at least one untagged variant: `"a" | "b" | boolean`.
+  Its partial gets the same hand-written `Deserialize` as an untagged enum, matching the unit names
+  (and aliases) as one group, then each untagged variant in order, so the error lists the expected
+  names. A tagged variant that holds a value is written as a map, so any such enum keeps serde's
+  derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
 - `StructType.partial` means "refers to a partial config type", **not** "has been partialized".

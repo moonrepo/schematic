@@ -91,17 +91,58 @@ where
     })
 }
 
+/// Return the buffered content of a literal union as a string, which a
+/// named unit variant is written as.
+pub fn literal_content<'a>(content: &'a serde_content::Value<'_>) -> Option<&'a str> {
+    match content {
+        serde_content::Value::String(value) => Some(value),
+        _ => None,
+    }
+}
+
+/// Describe why the buffered content of a literal union matched none of
+/// its named values.
+pub fn literal_error_message(values: &[&str], content: &serde_content::Value<'_>) -> String {
+    use serde_content::{ErrorKind, Expected, Unexpected};
+
+    let expected = match values {
+        [value] => format!("{value:?}"),
+        _ => format!(
+            "one of {}",
+            values
+                .iter()
+                .map(|value| format!("{value:?}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    };
+
+    // `serde_content` only exposes what it found through an error
+    match content.clone().unexpected(Expected::String).kind() {
+        ErrorKind::Unexpected { found, .. } => {
+            format!("expected {expected}, found {}", describe_found(found))
+        }
+        _ => format!("expected {expected}"),
+    }
+}
+
 /// Combine the errors of every variant of an untagged enum into a single
 /// message, as serde's own discards them. Each error is indented beneath its
 /// variant, so that a nested untagged enum lists its variants beneath the
-/// variant that holds it, rather than alongside.
+/// variant that holds it, rather than alongside. An error without a variant
+/// stands for several, like the named values of a literal union, and lists
+/// them itself.
 pub fn untagged_error_message(name: &str, errors: &[(&str, String)]) -> String {
     let mut message = format!("failed to parse as any variant of {name}:");
 
     for (variant, error) in errors {
         message.push_str("\n- ");
-        message.push_str(variant);
-        message.push_str(": ");
+
+        if !variant.is_empty() {
+            message.push_str(variant);
+            message.push_str(": ");
+        }
+
         message.push_str(&error.replace('\n', "\n  "));
     }
 

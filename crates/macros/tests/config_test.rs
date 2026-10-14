@@ -1078,3 +1078,216 @@ mod repeated_partial {
         }
     }
 }
+
+// A literal union, like `"foo" | "bar" | boolean`: externally tagged, so a
+// unit variant is written as its name, with every variant that holds a value
+// untagged, so it's written as that value alone. The partial deserializes it
+// by hand, so a mismatch lists what was expected.
+mod literal_union {
+    use super::*;
+
+    #[derive(Debug, Config, PartialEq)]
+    #[serde(rename_all = "kebab-case")]
+    pub enum Mode {
+        #[serde(alias = "f")]
+        Foo,
+        #[setting(default)]
+        Bar,
+        Baz,
+        #[serde(untagged)]
+        Enabled(bool),
+    }
+
+    fn parse(code: &str) -> Result<PartialMode, String> {
+        serde_json::from_str(code).map_err(|error| error.to_string())
+    }
+
+    #[test]
+    fn deserializes_named_values() {
+        assert_eq!(parse(r#""foo""#).unwrap(), PartialMode::Foo);
+        assert_eq!(parse(r#""f""#).unwrap(), PartialMode::Foo);
+        assert_eq!(parse(r#""baz""#).unwrap(), PartialMode::Baz);
+    }
+
+    #[test]
+    fn deserializes_untagged_values() {
+        assert_eq!(parse("true").unwrap(), PartialMode::Enabled(true));
+        assert_eq!(parse("false").unwrap(), PartialMode::Enabled(false));
+    }
+
+    // Serialize is still derived, and writes what deserialize reads
+    #[test]
+    fn round_trips() {
+        for partial in [PartialMode::Foo, PartialMode::Enabled(true)] {
+            let code = serde_json::to_string(&partial).unwrap();
+
+            assert_eq!(parse(&code).unwrap(), partial);
+        }
+
+        assert_eq!(
+            serde_json::to_string(&PartialMode::Bar).unwrap(),
+            r#""bar""#
+        );
+        assert_eq!(
+            serde_json::to_string(&PartialMode::Enabled(false)).unwrap(),
+            "false"
+        );
+    }
+
+    #[test]
+    fn lists_the_named_values_on_failure() {
+        assert_eq!(
+            parse(r#""qux""#).unwrap_err(),
+            "failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found \"qux\"\n- enabled: expected a boolean, found \"qux\""
+        );
+
+        assert_eq!(
+            parse("1").unwrap_err(),
+            "failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found 1\n- enabled: expected a boolean, found 1"
+        );
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Single {
+        Auto,
+        #[serde(untagged)]
+        Count(usize),
+    }
+
+    #[test]
+    fn names_a_single_value_on_its_own() {
+        assert_eq!(
+            serde_json::from_str::<PartialSingle>(r#""auto-ish""#)
+                .unwrap_err()
+                .to_string(),
+            "failed to parse as any variant of PartialSingle:\n- expected \"Auto\", found \"auto-ish\"\n- Count: expected a 64-bit unsigned integer, found \"auto-ish\""
+        );
+    }
+
+    // Untagged variants are attempted in order, after every named value, so
+    // a string catch-all doesn't shadow them
+    #[derive(Debug, Config, PartialEq)]
+    pub enum CatchAll {
+        Known,
+        #[serde(untagged)]
+        Missing,
+        #[serde(untagged)]
+        Other(String),
+    }
+
+    #[test]
+    fn matches_named_values_before_untagged_ones() {
+        assert_eq!(
+            serde_json::from_str::<PartialCatchAll>(r#""Known""#).unwrap(),
+            PartialCatchAll::Known
+        );
+        assert_eq!(
+            serde_json::from_str::<PartialCatchAll>(r#""other""#).unwrap(),
+            PartialCatchAll::Other("other".into())
+        );
+    }
+
+    // An untagged unit is `null`, as it is to serde
+    #[test]
+    fn deserializes_an_untagged_unit_from_null() {
+        assert_eq!(
+            serde_json::from_str::<PartialCatchAll>("null").unwrap(),
+            PartialCatchAll::Missing
+        );
+    }
+
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Skipped {
+        Shown,
+        #[serde(skip_deserializing)]
+        Hidden,
+        #[serde(untagged)]
+        Count(usize),
+    }
+
+    #[test]
+    fn never_deserializes_a_skipped_variant() {
+        assert_eq!(
+            serde_json::from_str::<PartialSkipped>(r#""Hidden""#)
+                .unwrap_err()
+                .to_string(),
+            "failed to parse as any variant of PartialSkipped:\n- expected \"Shown\", found \"Hidden\"\n- Count: expected a 64-bit unsigned integer, found \"Hidden\""
+        );
+    }
+
+    // A tagged variant that holds a value is written as a map, so the enum
+    // isn't a literal union, and serde's derive is kept
+    #[derive(Debug, Config, PartialEq)]
+    pub enum Mixed {
+        Unit,
+        Tagged(String),
+        #[serde(untagged)]
+        Untagged(bool),
+    }
+
+    #[test]
+    fn keeps_the_derive_when_a_tagged_variant_holds_a_value() {
+        assert_eq!(
+            serde_json::from_str::<PartialMixed>(r#"{ "Tagged": "a" }"#).unwrap(),
+            PartialMixed::Tagged("a".into())
+        );
+        assert_eq!(
+            serde_json::from_str::<PartialMixed>("true").unwrap(),
+            PartialMixed::Untagged(true)
+        );
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Settings {
+        #[setting(nested)]
+        mode: Mode,
+        #[setting(nested)]
+        maybe: Option<Mode>,
+    }
+
+    fn load(codes: &[&str]) -> Result<Settings, String> {
+        let mut loader = ConfigLoader::<Settings>::new();
+
+        for code in codes {
+            loader.code(*code, "code.json").unwrap();
+        }
+
+        loader
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn loads_through_the_loader() {
+        let config = load(&[]).unwrap();
+
+        assert_eq!(config.mode, Mode::Bar);
+        assert_eq!(config.maybe, None);
+
+        let config = load(&[r#"{ "mode": true, "maybe": "baz" }"#]).unwrap();
+
+        assert_eq!(config.mode, Mode::Enabled(true));
+        assert_eq!(config.maybe, Some(Mode::Baz));
+    }
+
+    // A later layer replaces the value, whichever form either is written in
+    #[test]
+    fn replaces_across_layers() {
+        let config = load(&[r#"{ "mode": "foo" }"#, r#"{ "mode": false }"#]).unwrap();
+
+        assert_eq!(config.mode, Mode::Enabled(false));
+
+        let config = load(&[r#"{ "mode": true }"#, r#"{ "mode": "baz" }"#]).unwrap();
+
+        assert_eq!(config.mode, Mode::Baz);
+    }
+
+    #[test]
+    fn reports_the_setting_that_failed() {
+        assert_eq!(
+            load(&[r#"{ "mode": "qux" }"#]).unwrap_err(),
+            "Failed to parse Settings. mode: failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found \"qux\"\n- enabled: expected a boolean, found \"qux\" at line 1 column 17"
+        );
+    }
+}

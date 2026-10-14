@@ -75,6 +75,27 @@ mod rendering {
         assert_snapshot!(pretty(output.to_token_stream()));
     }
 
+    // Untagged variants parse the input as written, after every named
+    // value and before the fallback
+    #[test]
+    fn supports_untagged_variants() {
+        let output = config_enum(parse_quote! {
+            #[derive(ConfigEnum)]
+            #[config(before_parse = "lowercase")]
+            enum Example {
+                Known,
+                #[serde(untagged)]
+                Flag(bool),
+                #[variant(untagged)]
+                Count(u32),
+                #[variant(fallback)]
+                Other(String),
+            }
+        });
+
+        assert_snapshot!(pretty(output.to_token_stream()));
+    }
+
     #[test]
     fn supports_a_default() {
         let output = config_enum(parse_quote! {
@@ -131,6 +152,33 @@ mod validation {
                 Known,
                 #[variant(fallback)]
                 Other,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Only 1 unnamed field is supported for `untagged`")]
+    fn rejects_a_multi_field_untagged() {
+        render(parse_quote! {
+            #[derive(ConfigEnum)]
+            enum Example {
+                Known,
+                #[serde(untagged)]
+                Pair(bool, usize),
+            }
+        });
+    }
+
+    // An untagged unit is `null` to serde, which no string parses into
+    #[test]
+    #[should_panic(expected = "Only unnamed tuple variants are supported for `untagged`")]
+    fn rejects_a_unit_untagged() {
+        render(parse_quote! {
+            #[derive(ConfigEnum)]
+            enum Example {
+                Known,
+                #[serde(untagged)]
+                Missing,
             }
         });
     }

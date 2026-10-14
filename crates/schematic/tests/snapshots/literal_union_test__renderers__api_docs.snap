@@ -1,0 +1,59 @@
+---
+source: crates/schematic/tests/literal_union_test.rs
+expression: "render(\"docs.md\", ApiDocsRenderer::default())"
+---
+---
+title: LiteralConfig
+---
+
+## Index
+
+| Property | Type | Description |
+| --- | --- | --- |
+| [`cache`](#cache) | [`Cache`](./Cache.md) |  |
+| [`cache_opt`](#cache_opt) | [`Cache`](./Cache.md) |  |
+| [`threads`](#threads) | [`Threads`](./Threads.md) |  |
+| [`threads_opt`](#threads_opt) | [`Threads`](./Threads.md) |  |
+
+## Properties
+
+### `cache`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Cache`](./Cache.md) |
+
+### `cache_opt`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Cache`](./Cache.md) |
+
+### `threads`
+
+> **Required**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Threads`](./Threads.md) |
+| Default | `"auto"` |
+| Values | `"auto"`, `"off"` |
+
+### `threads_opt`
+
+> **Nullable**
+
+| Attribute | Value |
+| --- | --- |
+| Type | [`Threads`](./Threads.md) |
+| Default | `"auto"` |
+| Values | `"auto"`, `"off"` |
+
+## References
+
+- [`Cache`](./Cache.md)
+- [`Threads`](./Threads.md)

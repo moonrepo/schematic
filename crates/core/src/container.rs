@@ -197,6 +197,31 @@ impl Container {
         ) && self.serde_args.untagged
     }
 
+    /// Whether the partial enum is a literal union, like `"a" | "b" | boolean`.
+    /// It's externally tagged, so a unit variant is written as its name, and
+    /// any variant holding a value is untagged, so is written as that value
+    /// alone. Serde's own failure to match such an enum doesn't say what it
+    /// expected, so it's deserialized like an untagged enum instead.
+    pub fn is_literal_union(&self) -> bool {
+        let ContainerInner::UnnamedEnum { variants } = &self.inner else {
+            return false;
+        };
+
+        matches!(self.get_tag_format(), SerdeTagFormat::External)
+            && variants.iter().any(|variant| variant.is_untagged())
+            && variants.iter().all(|variant| {
+                variant.is_untagged()
+                    || variant.is_unit_variant()
+                    || variant.is_skipped_deserializing()
+            })
+    }
+
+    /// Whether the partial enum implements `Deserialize` manually,
+    /// rather than deriving it.
+    fn has_manual_deserialize(&self) -> bool {
+        self.is_untagged() || self.is_literal_union()
+    }
+
     pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
         let mut attrs = vec![];
 
@@ -499,9 +524,9 @@ impl Container {
                 ) #where_clause;
             },
             ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
-                // Untagged enums implement `Deserialize` manually,
-                // and all enums implement `Default` manually
-                let derives = if self.is_untagged() {
+                // Untagged enums and literal unions implement `Deserialize`
+                // manually, and all enums implement `Default` manually
+                let derives = if self.has_manual_deserialize() {
                     quote! { Clone, Debug, PartialEq, serde::Serialize }
                 } else {
                     quote! { Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize }
@@ -551,18 +576,29 @@ impl Container {
         }
     }
 
-    /// Generate a `Deserialize` implementation for untagged partial enums,
-    /// that attempts each variant in order, and reports all errors on failure,
-    /// as the derived implementation loses this information.
+    /// Generate a `Deserialize` implementation for untagged partial enums and
+    /// literal unions, that attempts each variant in order, and reports all
+    /// errors on failure, as the derived implementation loses this information.
     pub fn impl_partial_type_deserialize(&self) -> TokenStream {
-        if !self.is_untagged() {
+        if !self.has_manual_deserialize() {
             return quote! {};
         }
 
         let partial_name = self.get_partial_ident();
+        let literal_union = self.is_literal_union();
         let mut attempts = vec![];
 
+        // Like serde, a literal union matches its named values before
+        // attempting any untagged variant
+        if literal_union {
+            attempts.push(self.impl_partial_type_deserialize_literals(&partial_name));
+        }
+
         for variant in self.inner.get_variants() {
+            if literal_union && !variant.is_untagged() {
+                continue;
+            }
+
             let res = variant.impl_partial_type_deserialize(&partial_name);
 
             if !res.no_value {
@@ -599,6 +635,41 @@ impl Container {
         }
     }
 
+    /// Generate a match of the buffered content against the name of every
+    /// tagged unit variant in a literal union. The names fail together, as a
+    /// single error listing each, rather than one error per variant.
+    fn impl_partial_type_deserialize_literals(&self, partial_name: &Ident) -> TokenStream {
+        let mut arms = vec![];
+        let mut names = vec![];
+
+        for variant in self.inner.get_variants() {
+            if variant.is_untagged() {
+                continue;
+            }
+
+            let res = variant.impl_partial_type_deserialize_literal(partial_name);
+
+            if !res.no_value {
+                arms.push(res.value);
+                names.push(variant.get_name());
+            }
+        }
+
+        if arms.is_empty() {
+            return quote! {};
+        }
+
+        quote! {
+            match schematic::internal::literal_content(&content) {
+                #(#arms)*
+                _ => errors.push(("", schematic::internal::literal_error_message(
+                    &[#(#names),*],
+                    &content,
+                ))),
+            }
+        }
+    }
+
     /// Generate `Schematic` implementations for both types, which are
     /// required by the `Config` and `PartialConfig` traits.
     pub fn impl_schematic(&self) -> TokenStream {
@@ -620,10 +691,13 @@ impl Container {
             panic!("Only enums are supported.");
         };
 
+        let input = format_ident!("input");
+        let unknown = format_ident!("unknown");
         let mut values = vec![];
         let mut display_arms = vec![];
         let mut from_str_arms = vec![];
-        let mut fallback_arm = None;
+        let mut untagged_attempts = vec![];
+        let mut fallback = None;
 
         for variant in variants {
             variant.validate_config_enum();
@@ -632,26 +706,34 @@ impl Container {
             display_arms.push(variant.impl_config_enum_display());
 
             // A fallback absorbs anything left over, so it has to be matched
-            // after every named value
+            // after every named value, and after every untagged variant
             if variant.is_fallback() {
-                if fallback_arm.is_some() {
+                if fallback.is_some() {
                     panic!("Only 1 fallback variant is supported.");
                 }
 
-                fallback_arm = Some(variant.impl_config_enum_from_str());
+                fallback = Some(variant.impl_config_enum_fallback(&unknown));
+            } else if variant.is_untagged() {
+                untagged_attempts.push(variant.impl_config_enum_parse_untagged(&input));
             } else {
                 from_str_arms.push(variant.impl_config_enum_from_str());
             }
         }
 
         // Without a fallback, an unknown value is an error
-        let fallback_arm = fallback_arm.unwrap_or_else(|| {
+        let fallback = fallback.unwrap_or_else(|| {
             quote! {
-                unknown => {
-                    return Err(schematic::ConfigError::EnumUnknownVariant(unknown.to_owned()));
-                }
+                return Err(schematic::ConfigError::EnumUnknownVariant(#unknown.to_owned()));
             }
         });
+
+        // Untagged variants parse the input as written, so it's kept
+        // before `before_parse` normalizes it
+        let keep_input = if untagged_attempts.is_empty() {
+            quote! {}
+        } else {
+            quote! { let #input = value; }
+        };
 
         let name = &self.ident;
         let before_parse = self.impl_config_enum_before_parse();
@@ -672,11 +754,15 @@ impl Container {
                 type Err = schematic::ConfigError;
 
                 fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
+                    #keep_input
                     #before_parse
 
                     Ok(match value {
                         #(#from_str_arms)*
-                        #fallback_arm
+                        #unknown => {
+                            #(#untagged_attempts)*
+                            #fallback
+                        }
                     })
                 }
             }

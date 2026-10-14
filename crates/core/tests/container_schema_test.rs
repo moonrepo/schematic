@@ -335,6 +335,26 @@ mod schema_type {
             assert_snapshot!(pretty_body(container.impl_schematic_type()));
         }
 
+        // A literal union: named units, then values written as themselves
+        #[test]
+        fn supports_literal_unions() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all = "kebab-case")]
+                enum Example {
+                    Alpha,
+                    #[setting(default)]
+                    Beta,
+                    #[serde(untagged)]
+                    Flag(bool),
+                    #[serde(untagged)]
+                    Missing,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
         #[test]
         fn supports_variant_untagged() {
             // A single variant can opt out of the container's tagging
