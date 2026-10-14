@@ -1442,3 +1442,59 @@ mod variant_default_values {
         assert_eq!(Units::default(), Units::Second);
     }
 }
+
+// A nested setting may hold collections of collections, which finalize,
+// merge, and validate all walk, like moon's map of file groups to inputs
+mod nested_collections {
+    use super::*;
+
+    #[derive(Debug, Config, PartialEq)]
+    pub struct Item {
+        #[setting(required)]
+        name: String,
+        #[setting(default = 1)]
+        weight: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Groups {
+        #[setting(nested = Item)]
+        groups: HashMap<String, Vec<Item>>,
+        #[setting(nested)]
+        grid: Vec<Vec<Item>>,
+    }
+
+    fn load(code: &str) -> Result<Groups, String> {
+        ConfigLoader::<Groups>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn finalizes_every_item() {
+        let config =
+            load(r#"{ "groups": { "a": [{ "name": "x" }] }, "grid": [[{ "name": "y" }]] }"#)
+                .unwrap();
+
+        assert_eq!(
+            config.groups["a"],
+            vec![Item {
+                name: "x".into(),
+                weight: 1
+            }]
+        );
+        assert_eq!(config.grid[0][0].weight, 1);
+    }
+
+    #[test]
+    fn reports_an_item_at_its_path() {
+        assert_eq!(
+            load(r#"{ "groups": { "a": [{ "name": "x" }, {}] }, "grid": [[], [{}]] }"#)
+                .unwrap_err(),
+            "Failed to validate Groups. \n  groups.a[1].name: this setting is required\n  grid[1][0].name: this setting is required"
+        );
+    }
+}

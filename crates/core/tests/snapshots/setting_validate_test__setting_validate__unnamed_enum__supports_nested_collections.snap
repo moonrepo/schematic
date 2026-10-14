@@ -13,37 +13,65 @@ fn validate_with_path(
     match self {
         Self::A(pa) => {
             validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
-            validate.nested_variant_list("A", 0usize, pa.iter().map(Some));
+            {
+                let path = validate.variant_path("A", 0usize);
+                let item = pa;
+                for (index, item) in item.iter().enumerate() {
+                    let path = path.join_index(index);
+                    validate.nested_at(path, item);
+                }
+            }
         }
         Self::B(pa) => {
             validate.check_variant("B", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
-            validate
-                .nested_variant_map(
-                    "B",
-                    0usize,
-                    pa.iter().map(|(key, value)| (key, Some(value))),
-                );
+            {
+                let path = validate.variant_path("B", 0usize);
+                let item = pa;
+                for (key, item) in item {
+                    let path = path.join_key(key);
+                    validate.nested_at(path, item);
+                }
+            }
         }
         Self::C(pa) => {
             validate.check_variant("C", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
             if let Some(pa) = pa {
-                validate.nested_variant_list("C", 0usize, pa.iter().map(Some));
+                {
+                    let path = validate.variant_path("C", 0usize);
+                    let item = pa;
+                    for (index, item) in item.iter().enumerate() {
+                        let path = path.join_index(index);
+                        validate.nested_at(path, item);
+                    }
+                }
             }
         }
         Self::D(pa) => {
-            validate.nested_variant_list("D", 0usize, pa.iter().map(Some));
+            let path = validate.variant_path("D", 0usize);
+            let item = pa;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
         }
         Self::E(pa) => {
-            validate
-                .nested_variant_map(
-                    "E",
-                    0usize,
-                    pa.iter().map(|(key, value)| (key, Some(value))),
-                );
+            let path = validate.variant_path("E", 0usize);
+            let item = pa;
+            for (key, item) in item {
+                let path = path.join_key(key);
+                validate.nested_at(path, item);
+            }
         }
         Self::F(pa) => {
             if let Some(pa) = pa {
-                validate.nested_variant_list("F", 0usize, pa.iter().map(Some));
+                {
+                    let path = validate.variant_path("F", 0usize);
+                    let item = pa;
+                    for (index, item) in item.iter().enumerate() {
+                        let path = path.join_index(index);
+                        validate.nested_at(path, item);
+                    }
+                }
             }
         }
         _ => {}

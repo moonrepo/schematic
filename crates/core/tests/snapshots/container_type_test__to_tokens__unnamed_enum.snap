@@ -132,7 +132,12 @@ impl schematic::PartialConfig for PartialExample {
                 validate.nested_variant("Nested", 0usize, pa);
             }
             Self::List(pa) => {
-                validate.nested_variant_list("List", 0usize, pa.iter().map(Some));
+                let path = validate.variant_path("List", 0usize);
+                let item = pa;
+                for (index, item) in item.iter().enumerate() {
+                    let path = path.join_index(index);
+                    validate.nested_at(path, item);
+                }
             }
             _ => {}
         };

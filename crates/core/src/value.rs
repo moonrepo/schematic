@@ -493,10 +493,11 @@ impl Value {
         variant: bool,
         optional: bool,
     ) -> ImplResult {
-        let prefix = if variant { "nested_variant" } else { "nested" };
-        let nested = format_ident!("{prefix}");
-        let nested_list = format_ident!("{prefix}_list");
-        let nested_map = format_ident!("{prefix}_map");
+        let nested = if variant {
+            format_ident!("nested_variant")
+        } else {
+            format_ident!("nested")
+        };
 
         // Wrappers don't exist in the partial, so only the structural
         // layers need to be traversed
@@ -507,60 +508,37 @@ impl Value {
             layers.remove(0);
         }
 
-        // Nested `Option`s cannot be validated, as the inner value may not exist
-        if layers.first().is_some_and(|layer| **layer == Layer::Option) {
+        // Nested `Option`s cannot be validated, as the inner value may not
+        // exist, and an unknown collection cannot be iterated
+        if layers.first().is_some_and(|layer| **layer == Layer::Option)
+            || layers
+                .iter()
+                .any(|layer| matches!(layer, Layer::Unknown(_)))
+        {
             return ImplResult::skipped();
         }
 
-        // Then unwrap each layer, from the outermost to the innermost,
-        // stopping at the first collection
-        let mut setting = quote! { #setting_var };
-        let mut value = None;
+        let mut value = if layers.iter().any(|layer| layer.is_collection()) {
+            impl_partial_validate_nested_items(target, setting_var, variant, &layers)
+        } else {
+            // A single value is validated at the setting's own path
+            let mut setting = quote! { #setting_var };
 
-        for (index, layer) in layers.iter().enumerate() {
-            match layer {
-                Layer::Arc | Layer::Box | Layer::Rc => {
-                    setting = quote! { #setting.as_ref() };
-                }
-                Layer::Map(_) | Layer::Set(_) | Layer::Vec(_) => {
-                    // An item may itself be optional, as in `Vec<Option<T>>`,
-                    // and a `None` has nothing to validate. Items are handed
-                    // over as `Option`s either way, so that a missing one
-                    // still holds its position in the reported path.
-                    let optional_items = layers
-                        .get(index + 1)
-                        .is_some_and(|layer| **layer == Layer::Option);
+            for layer in &layers {
+                match layer {
+                    Layer::Arc | Layer::Box | Layer::Rc => {
+                        setting = quote! { #setting.as_ref() };
+                    }
+                    _ => {
+                        return ImplResult::skipped();
+                    }
+                };
+            }
 
-                    value = Some(if matches!(layer, Layer::Map(_)) {
-                        let items = if optional_items {
-                            quote! { #setting.iter().map(|(key, value)| (key, value.as_ref())) }
-                        } else {
-                            quote! { #setting.iter().map(|(key, value)| (key, Some(value))) }
-                        };
-
-                        quote! { validate.#nested_map(#target, #items); }
-                    } else {
-                        let items = if optional_items {
-                            quote! { #setting.iter().map(|item| item.as_ref()) }
-                        } else {
-                            quote! { #setting.iter().map(Some) }
-                        };
-
-                        quote! { validate.#nested_list(#target, #items); }
-                    });
-                    break;
-                }
-                Layer::Option | Layer::Unknown(_) => {
-                    return ImplResult::skipped();
-                }
-            };
-        }
-
-        let mut value = value.unwrap_or_else(|| {
             quote! {
                 validate.#nested(#target, #setting);
             }
-        });
+        };
 
         // The outermost `Option` is a real value, so unwrap it
         if outer_option && !optional {
@@ -574,6 +552,65 @@ impl Value {
         ImplResult {
             value,
             ..Default::default()
+        }
+    }
+}
+
+/// Generate a validation of every item within a collection of nested
+/// configurations. Each layer is unwrapped from the innermost outwards, as
+/// finalizing and merging do, so that any number of collections can be
+/// nested, and each collection extends the path an item is reported at, like
+/// `groups.name[0]` for a map of lists. An item that is `None` is skipped,
+/// but still holds its position.
+#[cfg(feature = "validate")]
+fn impl_partial_validate_nested_items(
+    target: &TokenStream,
+    setting_var: &Ident,
+    variant: bool,
+    layers: &[&Layer],
+) -> TokenStream {
+    let mut value = quote! {
+        validate.nested_at(path, item);
+    };
+
+    for layer in layers.iter().rev() {
+        value = match layer {
+            Layer::Arc | Layer::Box | Layer::Rc => quote! {
+                let item = item.as_ref();
+                #value
+            },
+            Layer::Option => quote! {
+                if let Some(item) = item {
+                    #value
+                }
+            },
+            Layer::Map(_) => quote! {
+                for (key, item) in item {
+                    let path = path.join_key(key);
+                    #value
+                }
+            },
+            Layer::Set(_) | Layer::Vec(_) => quote! {
+                for (index, item) in item.iter().enumerate() {
+                    let path = path.join_index(index);
+                    #value
+                }
+            },
+            Layer::Unknown(_) => unreachable!("Skipped by the caller."),
+        };
+    }
+
+    let path = if variant {
+        quote! { validate.variant_path(#target) }
+    } else {
+        quote! { validate.key_path(#target) }
+    };
+
+    quote! {
+        {
+            let path = #path;
+            let item = #setting_var;
+            #value
         }
     }
 }

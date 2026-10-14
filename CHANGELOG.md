@@ -22,6 +22,9 @@
 
 #### 🐞 Fixes
 
+- Fixed a nested setting holding collections of collections, like `HashMap<String, Vec<T>>`,
+  failing to compile when validating. Every collection now extends the path an item is reported at,
+  such as `groups.name[0]`.
 - Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
 - Fixed the TypeScript renderer dropping the doc comment and deprecation of a type exported as an
   alias, like a union.

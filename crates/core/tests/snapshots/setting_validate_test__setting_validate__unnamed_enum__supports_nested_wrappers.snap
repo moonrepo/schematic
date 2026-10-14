@@ -24,11 +24,23 @@ fn validate_with_path(
         }
         Self::D(pa) => {
             if let Some(pa) = pa {
-                validate.nested_variant_list("D", 0usize, pa.iter().map(Some));
+                {
+                    let path = validate.variant_path("D", 0usize);
+                    let item = pa;
+                    for (index, item) in item.iter().enumerate() {
+                        let path = path.join_index(index);
+                        validate.nested_at(path, item);
+                    }
+                }
             }
         }
         Self::E(pa) => {
-            validate.nested_variant_list("E", 0usize, pa.iter().map(Some));
+            let path = validate.variant_path("E", 0usize);
+            let item = pa;
+            for (index, item) in item.iter().enumerate() {
+                let path = path.join_index(index);
+                validate.nested_at(path, item);
+            }
         }
         _ => {}
     };

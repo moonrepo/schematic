@@ -84,115 +84,23 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_at(self.variant_path(variant, index), value);
     }
 
-    fn nested_at<S: PartialConfig<Context = Ctx>>(&mut self, path: Path, value: &S) {
-        if let Err(errors) = value.validate_with_path(self.context, self.finalizing, path) {
-            self.errors.extend(errors);
-        }
+    /// The path of a setting, which a nested collection extends for each of
+    /// its items.
+    pub fn key_path(&self, key: &str) -> Path {
+        self.path.join_key(key)
     }
 
-    fn variant_path(&self, variant: &str, index: usize) -> Path {
+    /// The path of a value within a variant, which a nested collection
+    /// extends for each of its items.
+    pub fn variant_path(&self, variant: &str, index: usize) -> Path {
         self.path.join_variant(variant).join_index(index)
     }
 
-    pub fn nested_list<
-        'v,
-        I: IntoIterator<Item = Option<&'v S>>,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        key: &str,
-        list: I,
-    ) {
-        self.nested_list_at(self.path.join_key(key), list);
-    }
-
-    pub fn nested_variant_list<
-        'v,
-        I: IntoIterator<Item = Option<&'v S>>,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        variant: &str,
-        index: usize,
-        list: I,
-    ) {
-        self.nested_list_at(self.variant_path(variant, index), list);
-    }
-
-    // Items arrive as `Option`s so that a `Vec<Option<T>>` works like a
-    // `Vec<T>`. A missing item is skipped but still consumes its index,
-    // otherwise every later item would be reported at the wrong position.
-    fn nested_list_at<
-        'v,
-        I: IntoIterator<Item = Option<&'v S>>,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        path: Path,
-        list: I,
-    ) {
-        for (i, item) in list.into_iter().enumerate() {
-            let Some(item) = item else {
-                continue;
-            };
-
-            if let Err(errors) =
-                item.validate_with_path(self.context, self.finalizing, path.join_index(i))
-            {
-                self.errors.extend(errors);
-            }
-        }
-    }
-
-    pub fn nested_map<
-        'v,
-        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
-        K: std::fmt::Display + 'v,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        key: &str,
-        map: I,
-    ) {
-        self.nested_map_at(self.path.join_key(key), map);
-    }
-
-    pub fn nested_variant_map<
-        'v,
-        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
-        K: std::fmt::Display + 'v,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        variant: &str,
-        index: usize,
-        map: I,
-    ) {
-        self.nested_map_at(self.variant_path(variant, index), map);
-    }
-
-    // A map key is only required to be `Display`, as that is all a path
-    // segment needs, so keys like `usize` work the same as `String`
-    fn nested_map_at<
-        'v,
-        I: IntoIterator<Item = (&'v K, Option<&'v S>)>,
-        K: std::fmt::Display + 'v,
-        S: PartialConfig<Context = Ctx> + 'v,
-    >(
-        &mut self,
-        path: Path,
-        map: I,
-    ) {
-        for (sub_key, value) in map.into_iter() {
-            let Some(value) = value else {
-                continue;
-            };
-
-            if let Err(errors) =
-                value.validate_with_path(self.context, self.finalizing, path.join_key(sub_key))
-            {
-                self.errors.extend(errors);
-            }
+    /// Validate a nested configuration at the provided path, like an item
+    /// within a nested collection.
+    pub fn nested_at<S: PartialConfig<Context = Ctx>>(&mut self, path: Path, value: &S) {
+        if let Err(errors) = value.validate_with_path(self.context, self.finalizing, path) {
+            self.errors.extend(errors);
         }
     }
 }
