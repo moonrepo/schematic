@@ -65,6 +65,15 @@ generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
 generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 ```
 
+To keep the output in memory instead, such as to compare it, or write it somewhere other than a
+file, call
+[`SchemaGenerator::render()`](https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.render),
+which returns it as a string.
+
+```rust
+let output = generator.render(CustomRenderer::default())?;
+```
+
 ## Renderers
 
 The following built-in renderers are available, but custom renderers can be created as well by
@@ -77,3 +86,39 @@ trait.
 - [JSON schemas](./json-schema.md)
 - [Pkl modules](./pkl.md)
 - [TypeScript types](./typescript.md)
+
+### Custom renderers
+
+A custom renderer implements `is_reference`, which says whether a named type is rendered by
+reference, and `render`, which renders every collected schema. Each `render_*` method, one per type,
+defaults to an error naming the renderer and the type, so only the types a renderer supports need
+implementing.
+
+```rust
+use schematic::schema::{RenderResult, Schema, SchemaRenderer, StringType, StructType};
+
+struct CustomRenderer;
+
+impl SchemaRenderer for CustomRenderer {
+	fn is_reference(&self, _name: &str) -> bool {
+		false
+	}
+
+	fn render_string(&mut self, _string: &StringType, _schema: &Schema) -> RenderResult {
+		Ok("string".into())
+	}
+
+	fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult {
+		// ...
+	}
+
+	fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
+		// ...
+	}
+}
+```
+
+A renderer whose types render to something other than a string, like the JSON schema renderer, sets
+the trait's type parameter, as in `SchemaRenderer<schemars::Schema>`, while `render` always returns
+a string. A helper that takes any renderer is generic over both, like
+`fn emit<O, R: SchemaRenderer<O>>(renderer: R)`.

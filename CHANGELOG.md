@@ -19,6 +19,15 @@
   nested config's own, like `fn(&AppContext) -> &PluginContext`, so a config with another context,
   such as one from a library, can be nested. `schematic::context::unit` passes `()`, for a config
   without a context. It's also supported on enum variants.
+- Added `SchemaGenerator::render`, which returns the rendered output as a string, rather than
+  writing it to a file like `generate`.
+- Updated `SchemaRenderer`'s `render_*` methods to default to an error naming the renderer and the
+  type, so a custom renderer only implements the types it supports.
+- Updated every schema type except `LiteralType` to default each of its fields when deserialized
+  with `schema_serde`, so a hand-written schema only needs the fields it sets. A missing schema is
+  `Unknown`, so an `ArrayType` without `items_type` holds any value, and an `IntegerType` or
+  `FloatType` without `kind` is a `usize` or `f32`. A literal still requires its value.
+  Serialization is unchanged.
 - Updated `#[setting(nested)]` to be accepted on a value of an enum variant, like
   `Both(#[setting(nested)] Child, bool)`, so a variant can hold a nested config alongside plain
   values. Previously it could only mark the whole variant, and panicked on any value that wasn't a

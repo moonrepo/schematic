@@ -55,16 +55,15 @@ except `PklFormat`. It stores rpkl's `EvaluatorOptions`, whose client readers ar
 options. The fix would be `PklFormat::new` taking a `Fn() -> EvaluatorOptions + Send + Sync`
 factory, which was declined, so the loader stays as it is. Revisit if rpkl bounds its readers.
 
-**C8. Custom renderers can't reuse built-in helpers** 📖 · low
+**C8. Custom renderers can't reuse built-in helpers** · partly fixed on `0.21-compose`
 
-- `schema::renderers` is private. `TemplateContext`, the `template::render_*` helpers,
-  `split_doc_tags` and Pkl quoting are unreachable.
-- `SchemaRenderer` has 15 required methods and no default impls.
-- `SchemaGenerator::generate` only writes files.
-- `JsonSchemaRenderer` is `SchemaRenderer<schemars::Schema>`, so a helper generic over
-  `SchemaRenderer<String>` can't take it.
-- With `schema_serde`, several fields lack `serde(default)`, so hand-authored schemas must spell
-  them out.
+Built: `SchemaGenerator::render` returns the output as a string; `SchemaRenderer`'s `render_*`
+methods default to an "unsupported" error, so a custom renderer implements only what it needs; and
+every schema type but `LiteralType` has a container-level `serde(default)` under `schema_serde`. The book's generator page documents custom
+renderers, including being generic over the output type `O`.
+
+Not built, by decision: making `split_doc_tags` and the template helpers public, as they'd become
+API to keep stable.
 
 **C9. `#[setting(skip)]` fields still require `T: Schematic`** ✅ · med
 

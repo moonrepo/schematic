@@ -409,6 +409,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   (and aliases) as one group, then each untagged variant in order, so the error lists the expected
   names. A tagged variant that holds a value is written as a map, so any such enum keeps serde's
   derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
+- With `schema_serde`, every shape struct (and `Schema`, `SchemaField`) has a container-level
+  `serde(default)`, so hand-written schema JSON may leave any field out, and field-level attributes
+  only carry `skip_serializing_if`. `LiteralType` is the exception, as `LiteralValue` has no default.
+  A new field on a shape needs a `Default` that is a valid schema, as an absent one takes it.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
 - A literal `#[setting(default)]` is recorded in `SchemaField.default`, never in the schema of the
