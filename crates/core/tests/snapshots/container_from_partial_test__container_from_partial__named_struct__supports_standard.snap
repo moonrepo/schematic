@@ -13,7 +13,7 @@ fn from_partial(partial: Self::Partial) -> Self {
         g: partial.g,
         h: {
             let data = partial.h.unwrap_or_default();
-            Box::new(data)
+            std::boxed::Box::new(data)
         },
     }
 }

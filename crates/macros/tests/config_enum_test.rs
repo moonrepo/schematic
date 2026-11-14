@@ -92,6 +92,45 @@ mod casing {
         assert_eq!(Renamed::Explicit.to_string(), "custom");
     }
 
+    // Names follow serde's casing exactly, which splits before every
+    // uppercase letter, so an acronym is not kept as one word
+    #[derive(Clone, Debug, PartialEq, ConfigEnum, serde::Deserialize, serde::Serialize)]
+    #[serde(rename_all = "kebab-case")]
+    enum Platform {
+        MacOS,
+        HTTPServer,
+        Linux,
+    }
+
+    #[test]
+    fn matches_serde_for_acronyms() {
+        for variant in Platform::variants() {
+            let serialized = serde_json::to_string(&variant).unwrap();
+
+            assert_eq!(format!("\"{variant}\""), serialized);
+            assert_eq!(
+                Platform::from_str(serialized.trim_matches('"')).unwrap(),
+                variant
+            );
+        }
+
+        assert_eq!(Platform::MacOS.to_string(), "mac-o-s");
+        assert_eq!(Platform::HTTPServer.to_string(), "h-t-t-p-server");
+    }
+
+    #[allow(non_camel_case_types)]
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(rename_all = "SCREAMING-KEBAB-CASE")]
+    enum r#Raw {
+        r#Type,
+    }
+
+    #[test]
+    fn strips_raw_identifiers() {
+        assert_eq!(Raw::Type.to_string(), "TYPE");
+        assert_eq!(Raw::from_str("TYPE").unwrap(), Raw::Type);
+    }
+
     #[test]
     fn accepts_aliases_when_parsing() {
         assert_eq!(Renamed::from_str("Aliased").unwrap(), Renamed::Aliased);
@@ -200,6 +239,27 @@ mod before_parse {
         for input in ["very-high", "very_high", "veryHigh"] {
             assert_eq!(Pascal::from_str(input).unwrap(), Pascal::VeryHigh);
         }
+    }
+
+    // The input is normalized with an acronym kept whole, so the identifier
+    // normalized the same way is matched, alongside serde's own name
+    #[derive(Clone, Debug, PartialEq, ConfigEnum)]
+    #[config(before_parse = "kebab-case", rename_all = "kebab-case")]
+    enum Acronym {
+        MacOS,
+    }
+
+    #[test]
+    fn matches_acronyms_loosely() {
+        for input in ["MacOS", "mac-os", "mac-o-s", "MAC_OS"] {
+            assert_eq!(
+                Acronym::from_str(input).unwrap(),
+                Acronym::MacOS,
+                "`{input}` did not normalize"
+            );
+        }
+
+        assert_eq!(Acronym::MacOS.to_string(), "mac-o-s");
     }
 
     // Digit boundaries are preserved, matching the derive-time helper

@@ -3,7 +3,7 @@ use crate::field::{EnvKey, FieldArgs};
 use crate::utils::ImplResult;
 use crate::value::{Layer, Value, path_names_a_value, wrap_layer};
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::quote;
 use std::ops::Deref;
 use syn::{Expr, Type};
 
@@ -33,8 +33,8 @@ impl Deref for FieldValue {
 }
 
 impl FieldValue {
-    pub fn new(ty: Type, nested_arg: Option<&NestedArg>) -> Self {
-        FieldValue(Value::new(ty, nested_arg))
+    pub fn new(ty: Type, nested_arg: Option<&NestedArg>, self_ty: &Type) -> Self {
+        FieldValue(Value::new(ty, nested_arg, self_ty))
     }
 
     pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
@@ -59,12 +59,13 @@ impl FieldValue {
         }
 
         // Nested configs source their defaults from the inner partial
-        if let Some(nested_ident) = &self.nested_ident {
+        if let Some(partial) = self.get_nested_partial_type() {
             if field_args.default.is_some() {
                 panic!("Cannot use `default` with `nested`.");
             }
 
-            let ident = format_ident!("Partial{}", nested_ident);
+            let defaults =
+                quote! { <#partial as schematic::PartialConfig>::default_values(context)? };
 
             res.value = if self.is_collection() {
                 // Collections of nested configs start empty
@@ -72,7 +73,7 @@ impl FieldValue {
 
                 quote! { Some(#value) }
             } else if layers.is_empty() {
-                quote! { #ident::default_values(context)? }
+                defaults
             } else {
                 // Wrap the inner partial with each layer
                 let mut value = quote! { inner };
@@ -81,7 +82,7 @@ impl FieldValue {
                     value = wrap_layer(layer, value);
                 }
 
-                quote! { #ident::default_values(context)?.map(|inner| #value) }
+                quote! { #defaults.map(|inner| #value) }
             };
 
             return res;
@@ -134,7 +135,7 @@ impl FieldValue {
         // function is provided, which handles the conversion itself.
         let supported = self.supports_env_value(field_args.parse_env.is_some());
 
-        if let Some(nested_ident) = &self.nested_ident {
+        if let Some(partial) = self.get_nested_partial_type() {
             if !supported {
                 if field_args.env_prefix.is_some() {
                     panic!("Cannot use `env_prefix` with collections or wrapped types.");
@@ -143,7 +144,7 @@ impl FieldValue {
                 return ImplResult::skipped();
             }
 
-            let ident = format_ident!("Partial{}", nested_ident);
+            let ident = quote! { <#partial as schematic::PartialConfig> };
 
             res.value = if let Some(env_prefix) = &field_args.env_prefix {
                 if env_prefix.is_empty() {

@@ -306,6 +306,15 @@ pub struct SchemaField {
 
     pub schema: Schema,
 
+    /// The default of this field, which takes precedence over a default
+    /// within its schema. Kept apart, as the schema of a named type is shared
+    /// by every field that uses it.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub default: Option<LiteralValue>,
+
     #[cfg_attr(
         feature = "serde",
         serde(default, skip_serializing_if = "Option::is_none")
@@ -343,6 +352,11 @@ impl SchemaField {
             schema: schema.into(),
             ..Default::default()
         }
+    }
+
+    /// Return the field's own default, or otherwise the default of its schema.
+    pub fn get_default(&self) -> Option<&LiteralValue> {
+        self.default.as_ref().or_else(|| self.schema.get_default())
     }
 }
 

@@ -31,11 +31,13 @@ impl schematic::PartialConfig for PartialExample {
         Ok(
             Some(Self {
                 enabled: Some(true),
-                name: Some(handle_default_result(String::try_from("abc"))?),
-                nested: PartialNestedConfig::default_values(context)?,
-                list: Some(Vec::default()),
-                extends: Some(Vec::default()),
-                map: Some(HashMap::default()),
+                name: Some((&&DefaultString::<String>::new()).parse_default("abc")?),
+                nested: <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?,
+                list: Some(Default::default()),
+                extends: Some(Default::default()),
+                map: Some(Default::default()),
                 ..Default::default()
             }),
         )
@@ -49,7 +51,10 @@ impl schematic::PartialConfig for PartialExample {
         partial.enabled = env.get("ENABLED")?;
         partial.name = env.get_prefixed("NAME")?;
         partial.port = env.get_prefixed("PORT")?;
-        partial.nested = env.nested(PartialNestedConfig::env_values()?)?;
+        partial.nested = env
+            .nested(
+                <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+            )?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
     fn extends_from(&self) -> Option<schematic::ExtendsFrom> {
@@ -71,13 +76,17 @@ impl schematic::PartialConfig for PartialExample {
             partial.nested = Some(layer.finalize(context)?);
         }
         if let Some(layer) = partial.list {
-            partial.list = Some({
-                let mut list = Vec::default();
-                for layer in layer {
-                    list.push(layer.finalize(context)?);
-                }
-                list
-            });
+            partial.list = Some(
+                layer
+                    .into_iter()
+                    .map(|layer| layer.finalize(context))
+                    .collect::<
+                        std::result::Result<
+                            Vec<<NestedConfig as schematic::Config>::Partial>,
+                            schematic::ConfigError,
+                        >,
+                    >()?,
+            );
         }
         if let Some(layer) = partial.map {
             partial.map = Some(transform_map(layer, context)?);
@@ -150,17 +159,13 @@ impl schematic::Config for Example {
             port: partial.port,
             nested: {
                 let data = partial.nested.unwrap_or_default();
-                NestedConfig::from_partial(data)
+                <NestedConfig as schematic::Config>::from_partial(data)
             },
             list: {
                 let data = partial.list.unwrap_or_default();
-                {
-                    let mut list = Vec::default();
-                    for data in data {
-                        list.push(NestedConfig::from_partial(data));
-                    }
-                    list
-                }
+                data.into_iter()
+                    .map(|data| <NestedConfig as schematic::Config>::from_partial(data))
+                    .collect()
             },
             extends: Default::default(),
             map: partial.map.unwrap_or_default(),
@@ -174,11 +179,15 @@ impl schematic::Config for Example {
             ("port".into(), ConfigSetting::new("Option<u16>").env("EXAMPLE_PORT")),
             (
                 "nested".into(),
-                ConfigSetting::new("NestedConfig").nested(NestedConfig::settings()),
+                schematic::internal::with_nested_settings::<
+                    NestedConfig,
+                >(ConfigSetting::new("NestedConfig")),
             ),
             (
                 "list".into(),
-                ConfigSetting::new("Vec<NestedConfig>").nested(NestedConfig::settings()),
+                schematic::internal::with_nested_settings::<
+                    NestedConfig,
+                >(ConfigSetting::new("Vec<NestedConfig>")),
             ),
             ("extends".into(), ConfigSetting::new("Vec<String>")),
             ("map".into(), ConfigSetting::new("HashMap<String, usize>")),
@@ -207,10 +216,9 @@ impl schematic::Schematic for Example {
                     (
                         "enabled".into(),
                         {
-                            let mut field = SchemaField::new(
-                                schema.infer_with_default::<bool>(LiteralValue::Bool(true)),
-                            );
+                            let mut field = SchemaField::new(schema.infer::<bool>());
                             field.env_var = Some("ENABLED".into());
+                            field.default = Some(LiteralValue::Bool(true));
                             field.optional = true;
                             field
                         },
@@ -218,13 +226,9 @@ impl schematic::Schematic for Example {
                     (
                         "name".into(),
                         {
-                            let mut field = SchemaField::new(
-                                schema
-                                    .infer_with_default::<
-                                        String,
-                                    >(LiteralValue::String("abc".into())),
-                            );
+                            let mut field = SchemaField::new(schema.infer::<String>());
                             field.env_var = Some("EXAMPLE_NAME".into());
+                            field.default = Some(LiteralValue::String("abc".into()));
                             field.optional = true;
                             field
                         },

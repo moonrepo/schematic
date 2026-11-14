@@ -29,14 +29,14 @@ fn validate_with_path(
         }
         Self::A(pa) => {
             validate.check_variant("A", (pa), self, |v, d, c, f| func_ref(v, d, c, f));
-            if [pa].iter().any(|v| v.is_none()) {
+            if pa.is_none() {
                 validate.required_variant("A");
             }
         }
         Self::B(pa, pb) => {
             validate
                 .check_variant("B", (pa, pb), self, |v, d, c, f| func_ref(v, d, c, f));
-            if [pa, pb].iter().any(|v| v.is_none()) {
+            if pa.is_none() || pb.is_none() {
                 validate.required_variant("B");
             }
         }

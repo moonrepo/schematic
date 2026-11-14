@@ -25,6 +25,13 @@ pub enum ConfigError {
     #[error("Unknown enum variant {}.", .0.style(Style::Id))]
     EnumUnknownVariant(String),
 
+    #[diagnostic(code(config::extends::cycle))]
+    #[error(
+        "Unable to extend, as the sources form a cycle: {}.",
+        .0.iter().map(|location| location.style(Style::File)).collect::<Vec<_>>().join(" → ")
+    )]
+    ExtendsCycle(Vec<String>),
+
     #[diagnostic(code(config::extends::no_source_code))]
     #[error("Unable to extend, expected a file path or secure URL.")]
     ExtendsFromNoCode,

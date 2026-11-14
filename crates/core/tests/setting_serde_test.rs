@@ -141,6 +141,51 @@ mod setting_serde {
 
             assert!(field.serde_args.default.is_enabled());
         }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `#[serde(with)]` or `#[serde(deserialize_with)]`")]
+        fn errors_for_with() {
+            use quote::ToTokens;
+
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(with = "humantime_serde")]
+                    a: std::time::Duration,
+                }
+            })
+            .to_token_stream();
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `#[serde(with)]` or `#[serde(deserialize_with)]`")]
+        fn errors_for_deserialize_with() {
+            use quote::ToTokens;
+
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(deserialize_with = "parse")]
+                    a: String,
+                }
+            })
+            .to_token_stream();
+        }
+
+        #[test]
+        fn allows_with_when_the_partial_has_its_own() {
+            use quote::ToTokens;
+
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(with = "humantime_serde")]
+                    #[setting(partial(serde(with = "humantime_serde::option")))]
+                    a: std::time::Duration,
+                }
+            })
+            .to_token_stream();
+        }
     }
 
     mod setting {

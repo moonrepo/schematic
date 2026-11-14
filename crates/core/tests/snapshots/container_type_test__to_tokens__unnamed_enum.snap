@@ -73,13 +73,15 @@ impl schematic::PartialConfig for PartialExample {
                 Self::List(pa) => {
                     Self::List(
                         transform_list(
-                            {
-                                let mut list = Vec::default();
-                                for pa in pa {
-                                    list.push(pa.finalize(context)?);
-                                }
-                                list
-                            },
+                            pa
+                                .into_iter()
+                                .map(|pa| pa.finalize(context))
+                                .collect::<
+                                    std::result::Result<
+                                        Vec<<NestedConfig as schematic::Config>::Partial>,
+                                        schematic::ConfigError,
+                                    >,
+                                >()?,
                             context,
                         )?,
                     )
@@ -154,15 +156,16 @@ impl schematic::Config for Example {
         match partial {
             PartialExample::Bool(pa) => Self::Bool(pa),
             PartialExample::Number(pa) => Self::Number(pa),
-            PartialExample::Nested(pa) => Self::Nested(NestedConfig::from_partial(pa)),
+            PartialExample::Nested(pa) => {
+                Self::Nested(<NestedConfig as schematic::Config>::from_partial(pa))
+            }
             PartialExample::List(pa) => {
-                Self::List({
-                    let mut list = Vec::default();
-                    for pa in pa {
-                        list.push(NestedConfig::from_partial(pa));
-                    }
-                    list
-                })
+                Self::List(
+                    pa
+                        .into_iter()
+                        .map(|pa| <NestedConfig as schematic::Config>::from_partial(pa))
+                        .collect(),
+                )
             }
         }
     }

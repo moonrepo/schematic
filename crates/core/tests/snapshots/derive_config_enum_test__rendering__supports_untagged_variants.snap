@@ -20,7 +20,7 @@ impl std::str::FromStr for Example {
         let value = value.as_str();
         Ok(
             match value {
-                "Known" => Self::Known,
+                "Known" | "known" => Self::Known,
                 unknown => {
                     if let Ok(inner) = <bool as std::str::FromStr>::from_str(input) {
                         return Ok(Self::Flag(inner));

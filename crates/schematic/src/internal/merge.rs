@@ -44,4 +44,19 @@ impl<'a, Ctx> MergeManager<'a, Ctx> {
             Ok(Some(p))
         })
     }
+
+    /// Merge a nested config that holds its own type, which is kept
+    /// in a `Box` within the partial.
+    pub fn nested_boxed<T: PartialConfig<Context = Ctx>>(
+        self,
+        prev: &mut Option<Box<T>>,
+        next: Option<Box<T>>,
+    ) -> Result<Self, MergeError> {
+        self.apply_with(prev, next, |mut p, n, ctx| {
+            p.merge(ctx, *n)
+                .map_err(|error| MergeError(error.to_string()))?;
+
+            Ok(Some(p))
+        })
+    }
 }

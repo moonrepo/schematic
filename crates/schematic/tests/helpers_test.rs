@@ -37,3 +37,46 @@ mod ext {
         );
     }
 }
+
+mod urls {
+    use schematic::helpers::{is_secure_url, is_url_like};
+
+    #[test]
+    fn secure_for_https() {
+        assert!(is_secure_url("https://domain.com/config.yml"));
+        assert!(is_secure_url("HTTPS://domain.com/config.yml"));
+    }
+
+    #[test]
+    fn secure_for_local_http() {
+        assert!(is_secure_url("http://localhost/config.yml"));
+        assert!(is_secure_url("http://localhost:3000/config.yml"));
+        assert!(is_secure_url("http://127.0.0.1:3000/config.yml"));
+        assert!(is_secure_url("http://[::1]:3000/config.yml"));
+        assert!(is_secure_url("http://user@localhost/config.yml"));
+    }
+
+    #[test]
+    fn insecure_for_remote_http() {
+        assert!(!is_secure_url("http://domain.com/config.yml"));
+        assert!(!is_secure_url("http://evil.example/c.yml?h=127.0.0.1"));
+        assert!(!is_secure_url("http://evil.example/localhost/c.yml"));
+        assert!(!is_secure_url("http://localhost.evil.example/c.yml"));
+        assert!(!is_secure_url("http://127.0.0.1.nip.io/c.yml"));
+        assert!(!is_secure_url("http://localhost@evil.example/c.yml"));
+    }
+
+    #[test]
+    fn insecure_without_scheme() {
+        assert!(!is_secure_url("domain.com/config.yml"));
+        assert!(!is_secure_url("127.0.0.1/config.yml"));
+        assert!(!is_secure_url("ftp://127.0.0.1/config.yml"));
+    }
+
+    #[test]
+    fn url_like_requires_www_dot() {
+        assert!(is_url_like("www.domain.com/config.yml"));
+        assert!(!is_url_like("www/config.yml"));
+        assert!(!is_url_like("wwwroot/config.yml"));
+    }
+}

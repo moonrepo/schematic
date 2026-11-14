@@ -9,7 +9,7 @@ fn default_values(
         Some(Self {
             b: Some(Default::default()),
             c: Some(Default::default()),
-            e: Some(Vec::default()),
+            e: Some(Default::default()),
             ..Default::default()
         }),
     )

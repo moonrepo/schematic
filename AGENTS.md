@@ -68,8 +68,13 @@ what ships unless `rename_all` says otherwise. This was the single largest sourc
 rewrite landed, and it is why so many fixtures and snapshots in `crates/schematic/tests` are
 snake_case. When `rename_all`
 is set, `Field::get_name` and `Variant::get_name` apply it via `format_case`, so schemas,
-`settings()`, and validation paths agree with what serde accepts. Env keys deliberately skip the
-casing and stay derived from the Rust name (or an explicit `rename`).
+`settings()`, and validation paths agree with what serde accepts. `format_case` is a port of serde's
+own `RenameRule`, not `convert_case`: serde splits a variant before every uppercase letter, so
+`MacOS` is `mac-o-s` in kebab case, and anything else disagrees with what serde deserializes.
+`before_parse` still normalizes input with `convert_case`, which keeps an acronym whole, so a
+`ConfigEnum` with it also matches the identifier normalized that way (`format_loose_case`). Env keys
+deliberately skip the casing and stay derived from the Rust name (or an explicit `rename`). Raw
+identifiers are unrawed everywhere a name is derived, so `r#type` is `type`.
 
 **All three derives support generics**, where the old derive supported them only on `Schematic`.
 `Container` carries `input.generics`, and every emitted item threads them
@@ -129,8 +134,11 @@ Key invariants:
   `Option<T>`, not `Option<Option<T>>`.
 - **Enum variant payloads get no synthetic `Option`** — `A(bool)` stays `A(bool)`.
 - **Wrapper types (`Box`/`Arc`/`Rc`) are stripped from the partial** and re-applied in
-  `from_partial`. This is why partials don't need serde's `rc` feature. Exception: kept when the
-  inner type is unsized (`Box<str>`, `Arc<str>`, `Box<[T]>`).
+  `from_partial`. This is why partials don't need serde's `rc` feature. Exceptions: kept when the
+  inner type is unsized (`Box<str>`, `Box<Path>`, `Box<[T]>`, …), and a `Box` is kept around a
+  nested config that holds the container itself (`Option<Box<Self>>`, `Value::keep_box`), as the
+  partial would otherwise have an infinite size. `Self` within a setting is replaced by the
+  container's type before analysis, as within the partial it would mean the partial.
 
 ## The derive pipeline in `core`
 
@@ -185,6 +193,14 @@ Arc<Vec<Option<NestedConfig>>>  →  layers: [Arc, Vec, Option], inner: NestedCo
 - `is_outer_option_wrapped()` — computed on the _partial_ view, so `Box<Option<T>>` correctly
   collapses to one `Option`.
 - `strip_wrappers` — false when a wrapper holds an unsized type.
+- `keep_box` — true for a nested config holding the container itself, which keeps its `Box`.
+
+Collections are rebuilt with `.into_iter().map(..).collect()`, never by naming the collection type,
+so any `FromIterator` collection works and a fully qualified path resolves. A layer that isn't a
+known collection (`Layer::Unknown`) panics at derive time when it has to be rebuilt, rather than
+emitting `Default::default()` and silently emptying it. Nested configs are always called through
+`<T as schematic::Config>` and `<<T as Config>::Partial as PartialConfig>`, never `PartialT`, so
+they resolve by the path they were written as.
 
 Codegen walks these layers to build nested expressions. Each walker composes inside-out, so position
 is respected without special-casing:
@@ -365,6 +381,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
+- A literal `#[setting(default)]` is recorded in `SchemaField.default`, never in the schema of the
+  field's type, because a named type's schema is registered once and shared by every field that
+  uses it, so a field default there leaks to the others. Renderers read
+  `SchemaField::get_default`. For the same reason a nullable union doesn't report the default of a
+  named type it holds (`Option<Mode>` has no default), and `partialize_schema` copies a field's
+  default onto it before making it nullable.
 - `StructType.partial` means "refers to a partial config type", **not** "has been partialized".
   `Schema::nullify()` moves a schema's name into the union variant it creates — surprising when
   asserting on partial schemas.

@@ -126,7 +126,9 @@ fn extends_from_chain_in_order_using_both_enum() {
         .unwrap();
 
     assert_eq!(result.config.extends, ExtendsFrom::default());
-    assert_eq!(result.config.value, vec![3, 2, 3, 2, 4, 1]);
+
+    // Both `list1.yml` and `string1.yml` extend `string2.yml`, which is only loaded once
+    assert_eq!(result.config.value, vec![3, 2, 2, 4, 1]);
 
     assert_eq!(
         result
@@ -142,10 +144,6 @@ fn extends_from_chain_in_order_using_both_enum() {
             },
             Source::File {
                 path: root.join("./list1.yml"),
-                required: true,
-            },
-            Source::File {
-                path: root.join("./string2.yml"),
                 required: true,
             },
             Source::File {
@@ -193,6 +191,73 @@ fn extends_from_optional() {
             // Source::EnvVars,
         ]
     );
+}
+
+#[test]
+fn errors_on_cycle() {
+    let root = get_fixture_path("extending");
+
+    let error = ConfigLoader::<ExtendsEnum>::new()
+        .set_root(&root)
+        .file(root.join("cycle-a.yml"))
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    let ConfigError::ExtendsCycle(chain) = &error else {
+        panic!("expected a cycle error, received {error:?}");
+    };
+
+    assert_eq!(
+        chain,
+        &["cycle-a.yml", "cycle-b.yml", "cycle-c.yml", "cycle-a.yml"]
+    );
+}
+
+#[test]
+fn errors_on_self_extend() {
+    let sandbox = starbase_sandbox::create_empty_sandbox();
+    sandbox.create_file("self.yml", "extends: ./self.yml\nvalue: [1]");
+
+    let error = ConfigLoader::<ExtendsEnum>::new()
+        .file(sandbox.path().join("self.yml"))
+        .unwrap()
+        .load()
+        .err()
+        .unwrap();
+
+    assert!(matches!(error, ConfigError::ExtendsCycle(_)));
+}
+
+#[test]
+fn loads_a_source_extended_twice_once() {
+    let root = get_fixture_path("extending");
+
+    let result = ConfigLoader::<ExtendsEnum>::new()
+        .file(root.join("diamond.yml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    // The base comes first, as the lowest precedence of both that extend it
+    assert_eq!(result.config.value, vec![4, 2, 3, 1]);
+    assert_eq!(result.layers.len(), 4);
+}
+
+#[test]
+fn skips_an_extended_source_that_was_added_to_the_loader() {
+    let root = get_fixture_path("extending");
+
+    let result = ConfigLoader::<ExtendsEnum>::new()
+        .file(root.join("diamond-base.yml"))
+        .unwrap()
+        .file(root.join("diamond-left.yml"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.value, vec![4, 2]);
 }
 
 #[cfg(feature = "renderer_json_schema")]

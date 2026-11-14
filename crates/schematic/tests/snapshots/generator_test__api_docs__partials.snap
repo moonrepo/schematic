@@ -15,7 +15,7 @@ title: PartialGenConfig
 | [`boolean`](#boolean) | `boolean` |  |
 | [`date`](#date) | `string` |  |
 | [`datetime`](#datetime) | `string` |  |
-| [`decimal`](#decimal) | `string` |  |
+| [`decimal`](#decimal) | `string \| number` |  |
 | [`enums`](#enums) | [`BasicEnum`](./BasicEnum.md) | This is a list of `enumerable` values. |
 | [`fallback_enum`](#fallback_enum) | [`FallbackEnum`](./FallbackEnum.md) |  |
 | [`flattened`](#flattened) | `Record<string, unknown>` | Flattened field... |
@@ -67,7 +67,6 @@ title: PartialGenConfig
 | Attribute | Value |
 | --- | --- |
 | Type | `string` |
-| Format | `date-time` |
 
 ### `decimal`
 
@@ -75,8 +74,7 @@ title: PartialGenConfig
 
 | Attribute | Value |
 | --- | --- |
-| Type | `string` |
-| Format | `decimal` |
+| Type | `string \| number` |
 
 ### `enums`
 
@@ -141,6 +139,7 @@ Flattened field...
 | Attribute | Value |
 | --- | --- |
 | Type | `string[]` |
+| Unique items | `true` |
 
 ### `json_value`
 
@@ -218,7 +217,6 @@ Flattened field...
 | Attribute | Value |
 | --- | --- |
 | Type | `string` |
-| Format | `time` |
 
 ### `toml_value`
 

@@ -249,7 +249,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "number"
         },
         {
-          "$ref": "#/definitions/SomeConfig"
+          "type": "object",
+          "required": [
+            "bar",
+            "foo",
+            "type"
+          ],
+          "properties": {
+            "bar": {
+              "type": "number"
+            },
+            "foo": {
+              "type": "string"
+            },
+            "type": {
+              "const": "Qux"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -450,7 +467,40 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "number"
         },
         {
-          "$ref": "#/definitions/PartialSomeConfig"
+          "type": "object",
+          "properties": {
+            "bar": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "foo": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "const": "Qux"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },

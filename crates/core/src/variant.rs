@@ -5,7 +5,8 @@ use crate::args::{
 };
 use crate::container::ContainerArgs;
 use crate::utils::{
-    ImplResult, format_case, get_meta_path, get_renamed_value, is_inheritable_attribute,
+    ImplResult, format_case, format_loose_case, get_meta_path, get_renamed_value,
+    is_inheritable_attribute,
 };
 use crate::value::path_names_a_value;
 use crate::variant_value::VariantValue;
@@ -13,8 +14,9 @@ use darling::FromAttributes;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
+use syn::ext::IdentExt;
 use syn::{
-    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Ident, Index, Lit,
+    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Ident, Index, Lit, Type,
     Variant as NativeVariant,
 };
 
@@ -77,6 +79,7 @@ impl Variant {
         variant: NativeVariant,
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
+        self_ty: &Type,
     ) -> Variant {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap();
         let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap();
@@ -91,12 +94,12 @@ impl Variant {
                 Fields::Named(fields) => fields
                     .named
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref()))
+                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
                     .collect(),
                 Fields::Unnamed(fields) => fields
                     .unnamed
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref()))
+                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
                     .collect(),
                 Fields::Unit => vec![],
             },
@@ -175,7 +178,7 @@ impl Variant {
             return name;
         }
 
-        let name = self.ident.to_string();
+        let name = self.get_name_original();
 
         match get_renamed_value(
             self.container_args.rename_all.as_ref(),
@@ -184,6 +187,12 @@ impl Variant {
             Some(format) => format_case(&format, &name, true),
             None => name,
         }
+    }
+
+    /// The Rust name of this variant, without the `r#` of a raw identifier,
+    /// as serde strips it too.
+    pub fn get_name_original(&self) -> String {
+        self.ident.unraw().to_string()
     }
 
     /// Whether this is the default variant, marked with `#[setting(default)]`,
@@ -309,7 +318,20 @@ impl Variant {
     pub fn impl_config_enum_from_str(&self) -> TokenStream {
         let name = &self.ident;
         let value = self.get_name();
-        let aliases = self.get_aliases();
+        let mut aliases = self.get_aliases().into_iter().cloned().collect::<Vec<_>>();
+
+        // `before_parse` normalizes the input with a conversion that keeps an
+        // acronym whole, while the name follows serde and splits it, so the
+        // identifier as that conversion sees it is matched as well
+        if let Some(format) = &self.container_args.before_parse
+            && self.get_name_renamed().is_none()
+        {
+            let loose = format_loose_case(format, &self.get_name_original());
+
+            if loose != value && !aliases.contains(&loose) {
+                aliases.push(loose);
+            }
+        }
 
         quote! { #value #(| #aliases)* => Self::#name, }
     }
@@ -570,10 +592,17 @@ impl Variant {
                             ]))
                         }
                     } else {
+                        // The tag makes it a different shape to the type it holds,
+                        // so it's no longer that named type, which a renderer
+                        // would otherwise reference without the tag
                         wrap(quote! {
                             {
                                 let mut item = #inner;
-                                item.ty.add_field(#tag, SchemaField::new(#name_literal));
+
+                                if item.ty.add_field(#tag, SchemaField::new(#name_literal)) {
+                                    item.name = None;
+                                }
+
                                 item
                             }
                         })
@@ -683,7 +712,7 @@ impl Variant {
     /// `default_values`. Without one, it holds the default of its type.
     pub fn impl_partial_default_values(&self) -> ImplResult {
         let Some(expr) = self.get_default_value() else {
-            return self.impl_partial_default_value();
+            return self.impl_partial_nested_default_values();
         };
 
         let mut res = ImplResult::default();
@@ -709,6 +738,32 @@ impl Variant {
 
         res.value = quote! { #name(#value) };
         res
+    }
+
+    /// Generate this variant holding the default of each of its types, where
+    /// a bare nested config holds the default values of its own settings,
+    /// as it would once finalized.
+    fn impl_partial_nested_default_values(&self) -> ImplResult {
+        let Fields::Unnamed(_) = &self.fields else {
+            return self.impl_partial_default_value();
+        };
+
+        let name = &self.ident;
+        let fields = self
+            .values
+            .iter()
+            .map(|value| match value.get_nested_partial_type() {
+                Some(partial) if value.get_partial_layers().is_empty() => quote! {
+                    <#partial as schematic::PartialConfig>::default_values(context)?.unwrap_or_default()
+                },
+                _ => quote! { Default::default() },
+            })
+            .collect::<Vec<_>>();
+
+        ImplResult {
+            value: quote! { #name(#(#fields),*) },
+            ..Default::default()
+        }
     }
 
     /// Generate a deserialization attempt for this variant, for use within
@@ -1002,8 +1057,9 @@ impl Variant {
             }
 
             if self.is_required() {
+                // Each value is checked on its own, as they may differ in type
                 statements.push(quote! {
-                    if [#(#outer_names),*].iter().any(|v| v.is_none()) {
+                    if #(#outer_names.is_none())||* {
                         validate.required_variant(#name_string);
                     }
                 });

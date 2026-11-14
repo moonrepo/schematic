@@ -58,7 +58,15 @@ impl SchemaType {
                     return inner.get_default();
                 }
 
+                // A named type's default belongs to the type, not to what
+                // holds it, so `Option<T>` doesn't report the default of `T`
+                let nullable = inner.has_null();
+
                 for variant in &inner.variants_types {
+                    if nullable && variant.name.is_some() {
+                        continue;
+                    }
+
                     if let Some(value) = variant.get_default() {
                         return Some(value);
                     }

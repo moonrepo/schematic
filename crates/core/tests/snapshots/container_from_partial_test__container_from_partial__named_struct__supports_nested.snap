@@ -6,26 +6,28 @@ fn from_partial(partial: Self::Partial) -> Self {
     Self {
         a: {
             let data = partial.a.unwrap_or_default();
-            NestedConfig::from_partial(data)
+            <NestedConfig as schematic::Config>::from_partial(data)
         },
         b: {
             let data = partial.b.unwrap_or_default();
-            CustomConfig::from_partial(data)
+            <CustomConfig as schematic::Config>::from_partial(data)
         },
         c: {
             let data = partial.c;
             match data {
-                Some(data) => Some(NestedConfig::from_partial(data)),
+                Some(data) => {
+                    Some(<NestedConfig as schematic::Config>::from_partial(data))
+                }
                 None => None,
             }
         },
         d: {
             let data = partial.d.unwrap_or_default();
-            Arc::new(CustomConfig::from_partial(data))
+            std::sync::Arc::new(<CustomConfig as schematic::Config>::from_partial(data))
         },
         e: {
             let data = partial.e.unwrap_or_default();
-            Box::new(NestedConfig::from_partial(data))
+            std::boxed::Box::new(<NestedConfig as schematic::Config>::from_partial(data))
         },
     }
 }

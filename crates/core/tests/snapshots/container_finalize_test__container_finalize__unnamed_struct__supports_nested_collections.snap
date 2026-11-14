@@ -15,24 +15,33 @@ fn finalize(
         partial.merge(context, layer)?;
     }
     if let Some(layer) = partial.0 {
-        partial.0 = Some({
-            let mut list = Vec::default();
-            for layer in layer {
-                list.push(layer.finalize(context)?);
-            }
-            list
-        });
+        partial.0 = Some(
+            layer
+                .into_iter()
+                .map(|layer| layer.finalize(context))
+                .collect::<
+                    std::result::Result<
+                        Vec<<NestedConfig as schematic::Config>::Partial>,
+                        schematic::ConfigError,
+                    >,
+                >()?,
+        );
     }
     if let Some(layer) = partial.1 {
         partial.1 = Some(
             transform_config(
-                {
-                    let mut map = HashMap::default();
-                    for (key, layer) in layer {
-                        map.insert(key, layer.finalize(context)?);
-                    }
-                    map
-                },
+                layer
+                    .into_iter()
+                    .map(|(key, layer)| Ok((key, layer.finalize(context)?)))
+                    .collect::<
+                        std::result::Result<
+                            HashMap<
+                                String,
+                                <CustomConfig as schematic::Config>::Partial,
+                            >,
+                            schematic::ConfigError,
+                        >,
+                    >()?,
                 context,
             )?,
         );
@@ -40,13 +49,15 @@ fn finalize(
     if let Some(layer) = partial.2 {
         partial.2 = Some(
             transform_config(
-                {
-                    let mut set = BTreeSet::default();
-                    for layer in layer {
-                        set.insert(layer.finalize(context)?);
-                    }
-                    set
-                },
+                layer
+                    .into_iter()
+                    .map(|layer| layer.finalize(context))
+                    .collect::<
+                        std::result::Result<
+                            BTreeSet<<NestedConfig as schematic::Config>::Partial>,
+                            schematic::ConfigError,
+                        >,
+                    >()?,
                 context,
             )?,
         );

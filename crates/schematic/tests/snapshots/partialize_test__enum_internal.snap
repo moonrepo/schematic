@@ -48,6 +48,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
+⬛️                                    default: None,
 ⬛️                                    deprecated: None,
 ⬛️                                    env_var: None,
 ⬛️                                    flatten: false,
@@ -96,10 +97,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                Schema {
 ⬛️                    deprecated: None,
 ⬛️                    description: None,
-⬛️                    name: Some(
-🟥                        "Basic",
-🟩                        "PartialBasic",
-⬛️                    ),
+⬛️                    name: None,
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
@@ -155,6 +153,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
+⬛️                                    default: None,
 ⬛️                                    deprecated: None,
 ⬛️                                    env_var: None,
 ⬛️                                    flatten: false,
@@ -211,6 +210,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
+⬛️                                    default: None,
 ⬛️                                    deprecated: None,
 ⬛️                                    env_var: None,
 ⬛️                                    flatten: false,

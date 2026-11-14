@@ -13,11 +13,7 @@ export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
 /** Some comment. */
 export interface AnotherConfig {
-	/**
-	 * An optional enum.
-	 *
-	 * @default 'foo'
-	 */
+	/** An optional enum. */
 	enums?: BasicEnum | null | undefined;
 	/** An optional string. */
 	opt?: string | null | undefined;
@@ -30,7 +26,7 @@ export interface GenConfigBase {
 	boolean?: boolean | undefined;
 	date?: string | undefined;
 	datetime?: string | undefined;
-	decimal?: string | undefined;
+	decimal?: string | number | undefined;
 	/**
 	 * This is a list of `enumerable` values.
 	 *

@@ -7,9 +7,13 @@ fn default_values(
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     Ok(
         Some(Self {
-            a: PartialNestedConfig::default_values(context)?,
-            b: PartialCustomConfig::default_values(context)?,
-            c: Some(Vec::default()),
+            a: <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                context,
+            )?,
+            b: <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                context,
+            )?,
+            c: Some(Default::default()),
         }),
     )
 }

@@ -88,36 +88,62 @@ impl Schematic for () {
 }
 
 impl<T: Schematic> Schematic for &T {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
 impl<T: Schematic> Schematic for &mut T {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
+// Wrappers forward the name, so that a named type is a reference wherever
+// it's used, and a recursive type through a wrapper is detected as a cycle
 impl<T: Schematic + ?Sized> Schematic for Box<T> {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
 impl<T: Schematic + ?Sized> Schematic for Rc<T> {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
 impl<T: Schematic + ?Sized> Schematic for Arc<T> {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }
 }
 
 impl<T: Schematic + ToOwned + ?Sized> Schematic for Cow<'_, T> {
+    fn schema_name() -> Option<String> {
+        T::schema_name()
+    }
+
     fn build_schema(schema: SchemaBuilder) -> Schema {
         T::build_schema(schema)
     }

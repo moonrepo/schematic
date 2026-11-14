@@ -124,6 +124,10 @@ pub struct SerdeFieldArgs {
     pub skip_serializing: bool,
     pub skip_serializing_if: Option<String>,
 
+    // Never forwarded to the partial, as the partial holds an `Option`
+    pub deserialize_with: Option<String>,
+    pub with: Option<String>,
+
     // variant
     pub other: bool,
     pub untagged: bool,

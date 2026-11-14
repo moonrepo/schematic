@@ -8,7 +8,10 @@ use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visibility};
+use syn::ext::IdentExt;
+use syn::{
+    Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Type, Visibility, parse_quote,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ContainerMacro {
@@ -54,13 +57,21 @@ impl Container {
         let args = Rc::new(ContainerArgs::from_derive_input(&input).unwrap());
         let serde_args = Rc::new(SerdeContainerArgs::from_derive_input(&input).unwrap());
 
+        // Replaces `Self` within settings, as it means the partial within the partial
+        let self_ty: Type = {
+            let ident = &input.ident;
+            let (_, ty_generics, _) = input.generics.split_for_impl();
+
+            parse_quote! { #ident #ty_generics }
+        };
+
         let inner = match input.data {
             Data::Struct(data) => match data.fields {
                 Fields::Named(fields) => ContainerInner::NamedStruct {
                     fields: fields
                         .named
                         .into_iter()
-                        .map(|data| Field::new(data, args.clone(), serde_args.clone()))
+                        .map(|data| Field::new(data, args.clone(), serde_args.clone(), &self_ty))
                         .collect(),
                 },
                 Fields::Unnamed(fields) => ContainerInner::UnnamedStruct {
@@ -69,7 +80,8 @@ impl Container {
                         .into_iter()
                         .enumerate()
                         .map(|(index, data)| {
-                            let mut field = Field::new(data, args.clone(), serde_args.clone());
+                            let mut field =
+                                Field::new(data, args.clone(), serde_args.clone(), &self_ty);
                             field.index = index;
                             field
                         })
@@ -87,7 +99,7 @@ impl Container {
                 let variants = data
                     .variants
                     .into_iter()
-                    .map(|data| Variant::new(data, args.clone(), serde_args.clone()))
+                    .map(|data| Variant::new(data, args.clone(), serde_args.clone(), &self_ty))
                     .collect::<Vec<_>>();
 
                 if all_unit {
@@ -139,7 +151,7 @@ impl Container {
             return name.into();
         }
 
-        self.ident.to_string()
+        self.ident.unraw().to_string()
     }
 
     /// Generics for a type *declaration*, which keeps bounds and defaults.
@@ -443,19 +455,23 @@ impl Container {
                         Some(value) => quote! { .env(#value) },
                         None => quote! {},
                     };
-                    let nested = if field.is_nested() {
-                        let value = field.value.get_inner_type();
-                        quote! { .nested(#value::settings()) }
-                    } else {
-                        quote! {}
-                    };
                     let type_alias = to_type_string(field.value.ty.to_token_stream());
+                    let setting = quote! {
+                        ConfigSetting::new(#type_alias)
+                            #env_key
+                    };
+
+                    // Nested settings are guarded, as a recursive config
+                    // would otherwise never stop collecting them
+                    let setting = match field.value.get_nested_type() {
+                        Some(ty) => quote! {
+                            schematic::internal::with_nested_settings::<#ty>(#setting)
+                        },
+                        None => setting,
+                    };
 
                     settings.push(quote! {
-                        (#name.into(), ConfigSetting::new(#type_alias)
-                            #env_key
-                            #nested
-                        ),
+                        (#name.into(), #setting),
                     });
                 }
             }
@@ -911,7 +927,10 @@ impl Container {
     pub fn impl_schematic_partial(&self) -> TokenStream {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
-        let partial_schema_name = self.impl_schematic_name_for(partial_name.to_string());
+        // Named after the full type's schema, as a reference to it is
+        // partialized into `Partial` + that name, which honours a rename
+        let partial_schema_name =
+            self.impl_schematic_name_for(format!("Partial{}", self.get_name()));
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
@@ -1001,7 +1020,8 @@ impl Container {
                 let mut named_types = vec![];
 
                 for variant in variants {
-                    if variant.is_excluded() {
+                    // Serde rejects a variant it never deserializes
+                    if variant.is_excluded() || variant.is_skipped_deserializing() {
                         continue;
                     }
 
@@ -1281,7 +1301,7 @@ impl Container {
         if extendable.len() > 1 {
             let names = extendable
                 .iter()
-                .map(|field| field.get_name_original().to_string())
+                .map(|field| field.get_name_original())
                 .collect::<Vec<_>>();
 
             panic!(

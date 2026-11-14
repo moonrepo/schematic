@@ -94,7 +94,7 @@ impl PklTemplateRenderer {
                 } else {
                     let value = self.render_schema(self.ctx.validate_schema_variant(
                         self.ctx.get_stack_value().as_ref(),
-                        &field.schema,
+                        &get_field_schema(field),
                     ))?;
 
                     out.push(self.create_field(field, assign(&quote_identifier(name), &value)));

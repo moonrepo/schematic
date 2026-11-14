@@ -1498,3 +1498,479 @@ mod nested_collections {
         );
     }
 }
+
+mod raw_identifiers {
+    use super::*;
+    use std::env;
+
+    #[derive(Debug, Config)]
+    #[config(env_prefix = "RAW_IDENT_")]
+    pub struct Raw {
+        r#type: String,
+        #[setting(validate = schematic::validate::not_empty)]
+        r#ref: String,
+    }
+
+    #[test]
+    fn strips_the_raw_prefix_from_names() {
+        let settings = Raw::settings();
+
+        assert_eq!(
+            settings.keys().map(String::as_str).collect::<Vec<_>>(),
+            vec!["ref", "type"]
+        );
+        assert_eq!(settings["type"].env_key.as_deref(), Some("RAW_IDENT_TYPE"));
+    }
+
+    #[test]
+    fn reads_the_unprefixed_env_var() {
+        unsafe { env::set_var("RAW_IDENT_TYPE", "foo") };
+
+        let result = ConfigLoader::<Raw>::new()
+            .code(r#"{ "ref": "bar" }"#, "code.json")
+            .unwrap()
+            .load();
+
+        unsafe { env::remove_var("RAW_IDENT_TYPE") };
+
+        let config = result.unwrap().config;
+
+        assert_eq!(config.r#type, "foo");
+        assert_eq!(config.r#ref, "bar");
+    }
+
+    #[test]
+    fn reports_the_unprefixed_name_when_validating() {
+        let error = ConfigLoader::<Raw>::new()
+            .code(r#"{ "ref": "" }"#, "code.json")
+            .unwrap()
+            .load()
+            .err()
+            .unwrap();
+
+        assert!(error.to_full_string().contains("  ref: "));
+    }
+}
+
+mod suffixed_defaults {
+    use super::*;
+    use schematic::schema::{LiteralValue, SchemaType};
+
+    #[derive(Debug, Config)]
+    pub struct Suffixed {
+        #[setting(default = 5u8)]
+        small: u8,
+        #[setting(default = 5i32)]
+        signed: i32,
+        #[setting(default = 1.5f32)]
+        float: f32,
+    }
+
+    #[test]
+    fn uses_the_value() {
+        let config = Suffixed::default();
+
+        assert_eq!(config.small, 5);
+        assert_eq!(config.signed, 5);
+        assert_eq!(config.float, 1.5);
+    }
+
+    #[test]
+    fn records_the_default_in_the_schema() {
+        let schema = schematic::SchemaBuilder::build_root::<Suffixed>();
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(
+            inner.fields["small"].get_default(),
+            Some(&LiteralValue::UInt(5))
+        );
+        assert_eq!(
+            inner.fields["signed"].get_default(),
+            Some(&LiteralValue::Int(5))
+        );
+    }
+}
+
+mod renamed_partial_schema {
+    use super::*;
+    use schematic::Schematic;
+
+    #[derive(Debug, Config)]
+    #[serde(rename = "Kid")]
+    pub struct Child {
+        name: String,
+    }
+
+    #[test]
+    fn names_the_partial_after_the_rename() {
+        assert_eq!(Child::schema_name().as_deref(), Some("Kid"));
+        assert_eq!(PartialChild::schema_name().as_deref(), Some("PartialKid"));
+    }
+}
+
+mod layers {
+    use super::*;
+    use std::collections::{LinkedList, VecDeque};
+    use std::net::IpAddr;
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct Item {
+        #[setting(default = 1)]
+        weight: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Collections {
+        #[setting(nested)]
+        deque: VecDeque<Item>,
+        #[setting(nested)]
+        linked: LinkedList<Item>,
+        arcs: VecDeque<std::sync::Arc<String>>,
+    }
+
+    #[test]
+    fn keeps_items_of_any_known_collection() {
+        let config = ConfigLoader::<Collections>::new()
+            .code(
+                r#"{ "deque": [{ "weight": 2 }, {}], "linked": [{}], "arcs": ["a"] }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(
+            config.deque,
+            VecDeque::from([Item { weight: 2 }, Item { weight: 1 }])
+        );
+        assert_eq!(config.linked, LinkedList::from([Item { weight: 1 }]));
+        assert_eq!(
+            config.arcs,
+            VecDeque::from([std::sync::Arc::new("a".into())])
+        );
+    }
+
+    // Nothing is imported by name, so every path resolves as written
+    #[allow(clippy::vec_box)]
+    #[derive(Debug, Config)]
+    pub struct Qualified {
+        name: std::sync::Arc<String>,
+        shared: std::rc::Rc<String>,
+        #[setting(nested)]
+        map: std::collections::BTreeMap<String, Item>,
+        #[setting(nested)]
+        list: std::vec::Vec<std::boxed::Box<Item>>,
+    }
+
+    #[test]
+    fn resolves_qualified_paths() {
+        let config = ConfigLoader::<Qualified>::new()
+            .code(
+                r#"{ "name": "a", "shared": "b", "map": { "x": {} }, "list": [{}] }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(*config.name, "a");
+        assert_eq!(*config.shared, "b");
+        assert_eq!(config.map["x"].weight, 1);
+        assert_eq!(config.list[0].weight, 1);
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Unsized {
+        #[setting(default = "abc")]
+        name: Box<str>,
+        #[setting(default = "def")]
+        maybe: Option<Box<str>>,
+        list: Vec<Box<str>>,
+    }
+
+    #[test]
+    fn keeps_wrappers_of_unsized_types() {
+        let config = ConfigLoader::<Unsized>::new()
+            .code(r#"{ "list": ["x"] }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(&*config.name, "abc");
+        assert_eq!(config.maybe.as_deref(), Some("def"));
+        assert_eq!(config.list, vec![Box::from("x")]);
+    }
+
+    #[derive(Debug, Config)]
+    pub struct ParsedDefaults {
+        #[setting(default = "127.0.0.1")]
+        host: Option<IpAddr>,
+        #[setting(default = "127.0.0.1:8080")]
+        addr: Option<std::net::SocketAddr>,
+    }
+
+    #[test]
+    fn parses_a_string_default_that_has_no_try_from() {
+        let config = ParsedDefaults::default();
+
+        assert_eq!(config.host, Some("127.0.0.1".parse::<IpAddr>().unwrap()));
+        assert_eq!(config.addr, Some("127.0.0.1:8080".parse().unwrap()));
+    }
+}
+
+mod recursion {
+    use super::*;
+
+    #[derive(Debug, Config, PartialEq)]
+    pub struct Linked {
+        #[setting(validate = schematic::validate::not_empty)]
+        name: String,
+        #[setting(nested)]
+        next: Option<Box<Self>>,
+    }
+
+    fn load(code: &str) -> Result<Linked, String> {
+        ConfigLoader::<Linked>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn loads_a_boxed_self() {
+        let config =
+            load(r#"{ "name": "a", "next": { "name": "b", "next": { "name": "c" } } }"#).unwrap();
+
+        assert_eq!(config.next.as_ref().unwrap().name, "b");
+        assert_eq!(config.next.unwrap().next.unwrap().name, "c");
+    }
+
+    #[test]
+    fn merges_a_boxed_self() {
+        let config = ConfigLoader::<Linked>::new()
+            .code(r#"{ "name": "a", "next": { "name": "b" } }"#, "a.json")
+            .unwrap()
+            .code(r#"{ "next": { "next": { "name": "c" } } }"#, "b.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        let next = config.next.unwrap();
+
+        assert_eq!(next.name, "b");
+        assert_eq!(next.next.unwrap().name, "c");
+    }
+
+    #[test]
+    fn validates_a_boxed_self() {
+        assert!(
+            load(r#"{ "name": "a", "next": { "name": "" } }"#)
+                .unwrap_err()
+                .contains("next.name: ")
+        );
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Tree {
+        #[setting(nested)]
+        children: Vec<Tree>,
+        #[setting(nested)]
+        linked: Option<Linked>,
+    }
+
+    #[test]
+    fn collects_settings_without_recursing_forever() {
+        let settings = Tree::settings();
+
+        // A config's settings are collected once within itself, and the
+        // setting that would repeat them again is left without any
+        let children = settings["children"].nested.as_ref().unwrap();
+
+        assert!(children.contains_key("linked"));
+        assert!(children["children"].nested.is_none());
+
+        let linked = settings["linked"].nested.as_ref().unwrap();
+
+        assert!(linked.contains_key("name"));
+        assert!(linked["next"].nested.is_none());
+    }
+}
+
+mod nested_from_another_module {
+    use super::*;
+
+    mod child {
+        use super::*;
+
+        #[derive(Debug, Config)]
+        pub struct Child {
+            #[setting(default = "x")]
+            pub name: String,
+        }
+    }
+
+    // Neither `Child` nor `PartialChild` is imported
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        child: child::Child,
+        #[setting(nested)]
+        children: Vec<child::Child>,
+    }
+
+    #[test]
+    fn resolves_the_nested_type_by_path() {
+        let config = ConfigLoader::<Parent>::new()
+            .code(r#"{ "children": [{}] }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.child.name, "x");
+        assert_eq!(config.children[0].name, "x");
+        assert!(
+            Parent::settings()["child"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("name")
+        );
+    }
+}
+
+mod variant_fixes {
+    use super::*;
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct FileSource {
+        #[setting(default = "a.txt")]
+        path: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub enum Source {
+        #[setting(default, nested)]
+        File(FileSource),
+        Url(String),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        source: Source,
+    }
+
+    #[test]
+    fn defaults_a_nested_variant_to_its_default_values() {
+        assert_eq!(
+            Source::default(),
+            Source::File(FileSource {
+                path: "a.txt".into()
+            })
+        );
+        assert_eq!(Parent::default().source, Source::default());
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub enum Pair {
+        #[setting(required)]
+        Both(Option<String>, Option<u32>),
+    }
+
+    #[test]
+    fn requires_values_of_different_types() {
+        let error = ConfigLoader::<Holder>::new()
+            .code(r#"{ "pair": { "Both": ["a", null] } }"#, "code.json")
+            .unwrap()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string();
+
+        assert!(
+            error.contains("pair.Both: this setting is required"),
+            "{error}"
+        );
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Holder {
+        #[setting(nested)]
+        pair: Option<Pair>,
+    }
+}
+
+mod flattened_validation {
+    use super::*;
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct Common {
+        #[setting(validate = schematic::validate::not_empty)]
+        label: String,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Flattened {
+        own: bool,
+        #[setting(nested)]
+        #[serde(flatten)]
+        common: Common,
+    }
+
+    #[test]
+    fn reports_at_the_path_written() {
+        let error = ConfigLoader::<Flattened>::new()
+            .code(r#"{ "own": true, "label": "" }"#, "code.json")
+            .unwrap()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string();
+
+        assert!(error.contains("\n  label: "), "{error}");
+        assert!(!error.contains("common"), "{error}");
+    }
+}
+
+mod serde_default_function {
+    use super::*;
+
+    fn default_port() -> u16 {
+        8080
+    }
+
+    fn default_host() -> Option<String> {
+        Some("localhost".into())
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Server {
+        #[serde(default = "default_port")]
+        port: u16,
+        #[serde(default = "default_host")]
+        host: Option<String>,
+    }
+
+    #[test]
+    fn uses_the_function_as_the_default() {
+        let config = ConfigLoader::<Server>::new()
+            .code("{}", "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.port, 8080);
+        assert_eq!(config.host.as_deref(), Some("localhost"));
+        assert_eq!(Server::default().port, 8080);
+    }
+}

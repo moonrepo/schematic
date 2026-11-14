@@ -11,7 +11,7 @@ fn default_values(
                 Some(Default::default()),
                 Some(Default::default()),
                 None,
-                Some(Vec::default()),
+                Some(Default::default()),
                 Some(10),
                 Some(10),
                 Some(Default::default()),

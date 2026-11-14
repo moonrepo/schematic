@@ -66,6 +66,23 @@ impl Default for TemplateOptions {
     }
 }
 
+/// The schema to render a field's value from. A field's own default is kept
+/// apart from the schema of its type, so it's applied to a copy, which is no
+/// longer the named type, as that would be rendered from its definition.
+pub fn get_field_schema(field: &SchemaField) -> std::borrow::Cow<'_, Schema> {
+    if let Some(default) = &field.default {
+        let mut schema = field.schema.clone();
+
+        if schema.set_default(default.clone()) {
+            schema.name = None;
+
+            return std::borrow::Cow::Owned(schema);
+        }
+    }
+
+    std::borrow::Cow::Borrowed(&field.schema)
+}
+
 pub fn lit_to_string(lit: &LiteralValue) -> String {
     match lit {
         LiteralValue::Bool(inner) => inner.to_string(),
@@ -73,7 +90,58 @@ pub fn lit_to_string(lit: &LiteralValue) -> String {
         LiteralValue::F64(inner) => inner.to_string(),
         LiteralValue::Int(inner) => inner.to_string(),
         LiteralValue::UInt(inner) => inner.to_string(),
-        LiteralValue::String(inner) => format!("\"{inner}\""),
+        LiteralValue::String(inner) => quote_json_string(inner),
+    }
+}
+
+/// Quote a string with the escapes that JSON, YAML double-quoted strings,
+/// and TOML basic strings all share.
+pub fn quote_json_string(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+
+    quoted.push('"');
+
+    for ch in value.chars() {
+        match ch {
+            '"' => quoted.push_str("\\\""),
+            '\\' => quoted.push_str("\\\\"),
+            '\n' => quoted.push_str("\\n"),
+            '\r' => quoted.push_str("\\r"),
+            '\t' => quoted.push_str("\\t"),
+            ch if ch.is_control() => quoted.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => quoted.push(ch),
+        }
+    }
+
+    quoted.push('"');
+    quoted
+}
+
+/// The variant of a union that a template renders, which is its default,
+/// otherwise its non-null type, otherwise its first.
+pub fn get_rendered_variant(uni: &UnionType) -> Option<&Schema> {
+    if let Some(variant) = uni
+        .default_index
+        .and_then(|index| uni.variants_types.get(index))
+    {
+        return Some(variant);
+    }
+
+    if uni.has_null()
+        && let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null())
+    {
+        return Some(variant);
+    }
+
+    uni.variants_types.first().map(|variant| &**variant)
+}
+
+/// Whether a value renders as a struct, as the variant of a union does when
+/// it's the one a template renders.
+pub fn is_nested_value(schema: &SchemaType) -> bool {
+    match schema {
+        SchemaType::Union(uni) => get_rendered_variant(uni).is_some_and(|v| is_nested_value(&v.ty)),
+        other => is_nested_type(other),
     }
 }
 
@@ -364,24 +432,10 @@ pub fn render_union(
     uni: &UnionType,
     mut render: impl FnMut(&Schema) -> RenderResult,
 ) -> RenderResult {
-    if let Some(index) = &uni.default_index {
-        if let Some(variant) = uni.variants_types.get(*index) {
-            return render(variant);
-        }
+    match get_rendered_variant(uni) {
+        Some(variant) => render(variant),
+        None => render_null(),
     }
-
-    // We have a nullable type, so render the non-null value
-    if uni.has_null() {
-        if let Some(variant) = uni.variants_types.iter().find(|v| !v.is_null()) {
-            return render(variant);
-        }
-    }
-
-    if let Some(variant) = uni.variants_types.first() {
-        return render(variant);
-    }
-
-    render_null()
 }
 
 pub fn render_unknown() -> RenderResult {

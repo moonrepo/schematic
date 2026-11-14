@@ -6,35 +6,31 @@ fn from_partial(partial: Self::Partial) -> Self {
     Self {
         a: {
             let data = partial.a.unwrap_or_default();
-            {
-                let mut list = Vec::default();
-                for data in data {
-                    list.push(NestedConfig::from_partial(data));
-                }
-                list
-            }
+            data.into_iter()
+                .map(|data| <NestedConfig as schematic::Config>::from_partial(data))
+                .collect()
         },
         b: {
             let data = partial.b.unwrap_or_default();
-            {
-                let mut map = HashMap::default();
-                for (key, data) in data {
-                    map.insert(key, CustomConfig::from_partial(data));
-                }
-                map
-            }
+            data.into_iter()
+                .map(|(key, data)| (
+                    key,
+                    <CustomConfig as schematic::Config>::from_partial(data),
+                ))
+                .collect()
         },
         c: {
             let data = partial.c;
             match data {
                 Some(data) => {
-                    Some({
-                        let mut set = BTreeSet::default();
-                        for data in data {
-                            set.insert(NestedConfig::from_partial(data));
-                        }
-                        set
-                    })
+                    Some(
+                        data
+                            .into_iter()
+                            .map(|data| <NestedConfig as schematic::Config>::from_partial(
+                                data,
+                            ))
+                            .collect(),
+                    )
                 }
                 None => None,
             }

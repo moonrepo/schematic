@@ -2,7 +2,7 @@ use super::{Validator, map_err};
 pub use garde::rules::range::Bounds;
 use std::fmt::Display;
 
-/// Validate a numeric value is between the provided bounds (non-inclusive).
+/// Validate a numeric value is between the provided bounds, inclusive of both.
 pub fn in_range<T: Bounds + Display + 'static, D, C>(
     min: T::Size,
     max: T::Size,

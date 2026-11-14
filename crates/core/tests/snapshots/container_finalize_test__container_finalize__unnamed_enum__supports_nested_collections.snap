@@ -9,24 +9,33 @@ fn finalize(
     Ok(
         match self {
             Self::A(pa) => {
-                Self::A({
-                    let mut list = Vec::default();
-                    for pa in pa {
-                        list.push(pa.finalize(context)?);
-                    }
-                    list
-                })
+                Self::A(
+                    pa
+                        .into_iter()
+                        .map(|pa| pa.finalize(context))
+                        .collect::<
+                            std::result::Result<
+                                Vec<<NestedConfig as schematic::Config>::Partial>,
+                                schematic::ConfigError,
+                            >,
+                        >()?,
+                )
             }
             Self::B(pa) => {
                 Self::B(
                     transform_config(
-                        {
-                            let mut map = HashMap::default();
-                            for (key, pa) in pa {
-                                map.insert(key, pa.finalize(context)?);
-                            }
-                            map
-                        },
+                        pa
+                            .into_iter()
+                            .map(|(key, pa)| Ok((key, pa.finalize(context)?)))
+                            .collect::<
+                                std::result::Result<
+                                    HashMap<
+                                        String,
+                                        <CustomConfig as schematic::Config>::Partial,
+                                    >,
+                                    schematic::ConfigError,
+                                >,
+                            >()?,
                         context,
                     )?,
                 )
@@ -36,13 +45,17 @@ fn finalize(
                     transform_config(
                         match pa {
                             Some(pa) => {
-                                Some({
-                                    let mut set = BTreeSet::default();
-                                    for pa in pa {
-                                        set.insert(pa.finalize(context)?);
-                                    }
-                                    set
-                                })
+                                Some(
+                                    pa
+                                        .into_iter()
+                                        .map(|pa| pa.finalize(context))
+                                        .collect::<
+                                            std::result::Result<
+                                                BTreeSet<<NestedConfig as schematic::Config>::Partial>,
+                                                schematic::ConfigError,
+                                            >,
+                                        >()?,
+                                )
                             }
                             None => None,
                         },

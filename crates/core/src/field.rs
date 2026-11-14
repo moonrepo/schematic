@@ -1,4 +1,6 @@
-use crate::args::{NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg};
+use crate::args::{
+    NestedArg, PartialArg, SerdeContainerArgs, SerdeDefaultArg, SerdeFieldArgs, SerdeRenameArg,
+};
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::{
@@ -8,7 +10,8 @@ use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident};
+use syn::ext::IdentExt;
+use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident, Type};
 
 // #[schema()], #[setting()]
 #[derive(Debug, FromAttributes, Default)]
@@ -82,6 +85,7 @@ impl Field {
         field: NativeField,
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
+        self_ty: &Type,
     ) -> Self {
         let args = FieldArgs::from_attributes(&field.attrs).unwrap();
         let serde_args = SerdeFieldArgs::from_attributes(&field.attrs).unwrap();
@@ -94,7 +98,7 @@ impl Field {
             modifiers: field.modifiers,
             serde_args,
             serde_container_args,
-            value: FieldValue::new(field.ty, args.nested.as_ref()),
+            value: FieldValue::new(field.ty, args.nested.as_ref(), self_ty),
             args,
         };
 
@@ -116,6 +120,13 @@ impl Field {
             if self.args.parse_env.is_some() && self.get_env_var().is_none() {
                 panic!("Cannot use `parse_env` without `env` or a container `env_prefix`.");
             }
+        }
+
+        // Every default of a config that always holds itself holds itself again
+        if self.value.keep_box && !self.value.is_outer_option_wrapped() {
+            panic!(
+                "A setting that holds its own type must be optional, like `Option<Box<Self>>`, as its default would never end."
+            );
         }
 
         if self.is_required() {
@@ -166,7 +177,7 @@ impl Field {
             // an explicit rename).
             let name = self
                 .get_name_renamed()
-                .unwrap_or_else(|| self.get_name_original().to_string());
+                .unwrap_or_else(|| self.get_name_original());
 
             return Some(EnvKey::Derived(name.to_uppercase()));
         }
@@ -223,7 +234,7 @@ impl Field {
             return name;
         }
 
-        let name = self.get_name_original().to_string();
+        let name = self.get_name_original();
 
         match get_renamed_value(
             self.container_args.rename_all.as_ref(),
@@ -234,10 +245,14 @@ impl Field {
         }
     }
 
-    pub fn get_name_original(&self) -> &Ident {
+    /// The Rust name of this setting, without the `r#` of a raw identifier,
+    /// as serde strips it too.
+    pub fn get_name_original(&self) -> String {
         self.ident
             .as_ref()
             .expect("Name only usable on named fields!")
+            .unraw()
+            .to_string()
     }
 
     /// Return the name that identifies this setting to users, which is the
@@ -428,6 +443,22 @@ impl Field {
 // Only used for partials!
 impl ToTokens for Field {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        // A custom deserializer reads the setting's own type, but the partial
+        // holds an `Option` of it, so the function can't be forwarded. Without
+        // one of its own, the partial would silently use the type's default
+        // encoding instead.
+        if let Some(func) = self
+            .serde_args
+            .with
+            .as_ref()
+            .or(self.serde_args.deserialize_with.as_ref())
+            && self.args.partial.is_empty()
+        {
+            panic!(
+                "Cannot use `#[serde(with)]` or `#[serde(deserialize_with)]` (`{func}`) on a setting, as the partial holds an `Option` of its type. Provide one for the partial with `#[setting(partial(serde(with = ...)))]`, like a module's `option` variant."
+            );
+        }
+
         let attrs = self.get_partial_attributes();
         let ty = self.get_partial_type();
 
@@ -468,18 +499,22 @@ impl Field {
             quote! { schema.infer::<#ty>() }
         };
 
-        // Literal defaults are rendered within the schema
-        if let Some(Expr::Lit(lit)) = &self.args.default
-            && let Some(value) = impl_literal_value(&lit.lit)
-        {
-            schema = quote! { schema.infer_with_default::<#ty>(#value) };
-        }
+        // Literal defaults are recorded on the field, rather than within the
+        // schema of its type, which a named type shares with other fields
+        let default = match &self.args.default {
+            Some(Expr::Lit(lit)) => impl_literal_value(&lit.lit),
+            _ => None,
+        };
 
         let comment = extract_comment(&self.attrs);
         let deprecated = extract_deprecated(&self.attrs);
 
-        // Tuple items only support a description
+        // Tuple items only support a description, so a default stays in the schema
         if !as_field {
+            if let Some(value) = &default {
+                schema = quote! { schema.infer_with_default::<#ty>(#value) };
+            }
+
             return match comment {
                 Some(comment) => quote! {
                     {
@@ -517,9 +552,20 @@ impl Field {
             statements.push(quote! { field.env_var = Some(#env_var.into()); });
         }
 
+        if let Some(value) = default {
+            statements.push(quote! { field.default = Some(#value); });
+        }
+
         for (name, enabled) in [
             ("flatten", self.is_flatten()),
-            ("hidden", self.is_skipped()),
+            // Serde rejects a setting it never deserializes, so it's hidden
+            // like a skipped one
+            (
+                "hidden",
+                self.is_skipped()
+                    || self.args.skip_deserializing
+                    || self.serde_args.skip_deserializing,
+            ),
             ("nullable", self.is_nullable()),
             ("optional", self.is_optional()),
         ] {
@@ -592,6 +638,31 @@ impl Field {
     }
 
     pub fn impl_partial_default_value(&self) -> ImplResult {
+        // A serde default function returns the setting's full type, which is
+        // what the partial holds, unless it has nested configs or wrappers
+        if self.args.default.is_none()
+            && let SerdeDefaultArg::Func(func) = &self.serde_args.default
+        {
+            if self.value.requires_from_partial_mapping() {
+                panic!(
+                    "Cannot use `#[serde(default = \"{func}\")]` with nested configs or wrapper types, use `#[setting(default)]` instead."
+                );
+            }
+
+            let func: ExprPath = syn::parse_str(func).unwrap_or_else(|_| {
+                panic!("Invalid `#[serde(default)]` function path `{func}`.");
+            });
+
+            return ImplResult {
+                value: if self.value.is_outer_option_wrapped() {
+                    quote! { #func() }
+                } else {
+                    quote! { Some(#func()) }
+                },
+                ..Default::default()
+            };
+        }
+
         self.value.impl_partial_default_value(&self.args)
     }
 
@@ -661,11 +732,21 @@ impl Field {
 
         if self.is_nested() {
             let setting_var = format_ident!("setting");
-            // The `if let` below consumes the partial's `Option`
-            let nested_value = self
-                .value
-                .impl_partial_validate_nested(&quote! { #key_string }, &setting_var, false, true)
-                .value;
+            // The `if let` below consumes the partial's `Option`.
+            // A flattened config's settings are written alongside this
+            // config's own, so they're reported at the same path.
+            let nested_value = if self.is_flatten() && self.is_bare_nested() {
+                quote! { validate.flattened(#setting_var); }
+            } else {
+                self.value
+                    .impl_partial_validate_nested(
+                        &quote! { #key_string },
+                        &setting_var,
+                        false,
+                        true,
+                    )
+                    .value
+            };
 
             has_inner = true;
             inner = quote! {
@@ -680,9 +761,17 @@ impl Field {
         let missing = if self.is_bare_nested() {
             let ty = self.value.get_partial_type();
 
-            quote! {
-                else if finalizing {
-                    validate.nested(#key_string, &<#ty as Default>::default());
+            if self.is_flatten() {
+                quote! {
+                    else if finalizing {
+                        validate.flattened(&<#ty as Default>::default());
+                    }
+                }
+            } else {
+                quote! {
+                    else if finalizing {
+                        validate.nested(#key_string, &<#ty as Default>::default());
+                    }
                 }
             }
         } else {

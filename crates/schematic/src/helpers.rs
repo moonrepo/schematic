@@ -10,19 +10,38 @@ pub fn is_file_like(value: &str) -> bool {
         || value.contains('.')
 }
 
-/// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www`.
+/// Returns true if the value looks like a URL, by checking for `http://`, `https://`, or `www.`.
 pub fn is_url_like(value: &str) -> bool {
-    value.starts_with("https://") || value.starts_with("http://") || value.starts_with("www")
+    value.starts_with("https://") || value.starts_with("http://") || value.starts_with("www.")
 }
 
-/// Returns true if the value is a secure URL, by checking for `https://`. This check can be
-/// bypassed for localhost URLs.
+/// Returns true if the value is a secure URL, by checking for an `https://` scheme. A plain
+/// `http://` URL is only allowed when its host is the local machine, either `localhost`,
+/// `127.0.0.1`, or `[::1]`.
 pub fn is_secure_url(value: &str) -> bool {
-    if value.contains("127.0.0.1") || value.contains("//localhost") {
+    let Some((scheme, rest)) = value.split_once("://") else {
+        return false;
+    };
+
+    if scheme.eq_ignore_ascii_case("https") {
         return true;
     }
 
-    value.starts_with("https://")
+    if !scheme.eq_ignore_ascii_case("http") {
+        return false;
+    }
+
+    // The authority ends at the path, query, or fragment, and may include credentials
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    let host_and_port = authority.rsplit('@').next().unwrap_or_default();
+
+    let host = if let Some(ipv6) = host_and_port.strip_prefix('[') {
+        ipv6.split(']').next().unwrap_or_default()
+    } else {
+        host_and_port.split(':').next().unwrap_or_default()
+    };
+
+    host.eq_ignore_ascii_case("localhost") || host == "127.0.0.1" || host == "::1"
 }
 
 /// Strip a leading BOM from the string.

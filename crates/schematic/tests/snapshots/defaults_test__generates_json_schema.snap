@@ -23,43 +23,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "$ref": "#/definitions/NativeDefaults"
     },
     "nested_boxed": {
-      "type": "object",
-      "required": [
-        "boolean",
-        "boxed",
-        "float32",
-        "float64",
-        "number",
-        "string",
-        "vector"
-      ],
-      "properties": {
-        "boolean": {
-          "type": "boolean"
-        },
-        "boxed": {
-          "type": "string"
-        },
-        "float32": {
-          "type": "number"
-        },
-        "float64": {
-          "type": "number"
-        },
-        "number": {
-          "type": "number"
-        },
-        "string": {
-          "type": "string"
-        },
-        "vector": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
+      "$ref": "#/definitions/NativeDefaults"
     },
     "nested_map": {
       "type": "object",
@@ -73,43 +37,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "nested_map_boxed": {
       "type": "object",
       "additionalProperties": {
-        "type": "object",
-        "required": [
-          "boolean",
-          "boxed",
-          "float32",
-          "float64",
-          "number",
-          "string",
-          "vector"
-        ],
-        "properties": {
-          "boolean": {
-            "type": "boolean"
-          },
-          "boxed": {
-            "type": "string"
-          },
-          "float32": {
-            "type": "number"
-          },
-          "float64": {
-            "type": "number"
-          },
-          "number": {
-            "type": "number"
-          },
-          "string": {
-            "type": "string"
-          },
-          "vector": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "additionalProperties": false
+        "$ref": "#/definitions/NativeDefaults"
       },
       "propertyNames": {
         "type": "string"
@@ -120,43 +48,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "additionalProperties": {
         "anyOf": [
           {
-            "type": "object",
-            "required": [
-              "boolean",
-              "boxed",
-              "float32",
-              "float64",
-              "number",
-              "string",
-              "vector"
-            ],
-            "properties": {
-              "boolean": {
-                "type": "boolean"
-              },
-              "boxed": {
-                "type": "string"
-              },
-              "float32": {
-                "type": "number"
-              },
-              "float64": {
-                "type": "number"
-              },
-              "number": {
-                "type": "number"
-              },
-              "string": {
-                "type": "string"
-              },
-              "vector": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/definitions/NativeDefaults"
           },
           {
             "type": "null"
@@ -180,43 +72,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "nested_opt_boxed": {
       "anyOf": [
         {
-          "type": "object",
-          "required": [
-            "boolean",
-            "boxed",
-            "float32",
-            "float64",
-            "number",
-            "string",
-            "vector"
-          ],
-          "properties": {
-            "boolean": {
-              "type": "boolean"
-            },
-            "boxed": {
-              "type": "string"
-            },
-            "float32": {
-              "type": "number"
-            },
-            "float64": {
-              "type": "number"
-            },
-            "number": {
-              "type": "number"
-            },
-            "string": {
-              "type": "string"
-            },
-            "vector": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/NativeDefaults"
         },
         {
           "type": "null"
@@ -232,43 +88,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "nested_vec_boxed": {
       "type": "array",
       "items": {
-        "type": "object",
-        "required": [
-          "boolean",
-          "boxed",
-          "float32",
-          "float64",
-          "number",
-          "string",
-          "vector"
-        ],
-        "properties": {
-          "boolean": {
-            "type": "boolean"
-          },
-          "boxed": {
-            "type": "string"
-          },
-          "float32": {
-            "type": "number"
-          },
-          "float64": {
-            "type": "number"
-          },
-          "number": {
-            "type": "number"
-          },
-          "string": {
-            "type": "string"
-          },
-          "vector": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "additionalProperties": false
+        "$ref": "#/definitions/NativeDefaults"
       }
     },
     "nested_vec_opt_boxed": {
@@ -276,43 +96,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "items": {
         "anyOf": [
           {
-            "type": "object",
-            "required": [
-              "boolean",
-              "boxed",
-              "float32",
-              "float64",
-              "number",
-              "string",
-              "vector"
-            ],
-            "properties": {
-              "boolean": {
-                "type": "boolean"
-              },
-              "boxed": {
-                "type": "string"
-              },
-              "float32": {
-                "type": "number"
-              },
-              "float64": {
-                "type": "number"
-              },
-              "number": {
-                "type": "number"
-              },
-              "string": {
-                "type": "string"
-              },
-              "vector": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            },
-            "additionalProperties": false
+            "$ref": "#/definitions/NativeDefaults"
           },
           {
             "type": "null"

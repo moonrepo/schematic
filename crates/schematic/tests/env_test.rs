@@ -300,6 +300,23 @@ fn own_prefix_takes_precedence_over_parent_prefix() {
     assert_eq!(result.config.nested.number, 1);
 }
 
+#[test]
+#[serial]
+fn own_prefix_takes_precedence_when_reading_with_parent_prefix() {
+    reset_vars();
+
+    unsafe {
+        env::set_var("ENV_STRING", "own");
+        env::set_var("OVERRIDE_STRING", "parent");
+    };
+
+    let partial = PartialEnvVarsPrefixed::env_values_with_prefix(Some("OVERRIDE_"));
+
+    unsafe { env::remove_var("OVERRIDE_STRING") };
+
+    assert_eq!(partial.unwrap().unwrap().string.unwrap(), "own");
+}
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {

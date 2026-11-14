@@ -5,6 +5,11 @@ priorities, and the quick wins.
 
 **C1. Nested configs are referenced by bare identifier** ✅ · high
 
+> **Partly fixed on `0.21-bugs`:** nested configs are now called through `<T as Config>` by the
+> path they were written as, so `child::Child`, a config from another module, and `Self` work.
+> Generic nested configs, like `Wrapper<String>`, still don't, as the layer walk descends into the
+> last type argument.
+
 - **Cause:** codegen emits `format_ident!("Partial{}", ident)::default_values` and
   `#ident::from_partial`, while the partial *type* correctly uses `<path as Config>::Partial`.
 - **Effects:**

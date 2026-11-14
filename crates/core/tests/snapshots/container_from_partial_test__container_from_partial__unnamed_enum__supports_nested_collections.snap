@@ -5,34 +5,36 @@ expression: pretty(container.impl_full_from_partial())
 fn from_partial(partial: Self::Partial) -> Self {
     match partial {
         PartialExample::A(pa) => {
-            Self::A({
-                let mut list = Vec::default();
-                for pa in pa {
-                    list.push(NestedConfig::from_partial(pa));
-                }
-                list
-            })
+            Self::A(
+                pa
+                    .into_iter()
+                    .map(|pa| <NestedConfig as schematic::Config>::from_partial(pa))
+                    .collect(),
+            )
         }
         PartialExample::B(pa) => {
-            Self::B({
-                let mut map = HashMap::default();
-                for (key, pa) in pa {
-                    map.insert(key, CustomConfig::from_partial(pa));
-                }
-                map
-            })
+            Self::B(
+                pa
+                    .into_iter()
+                    .map(|(key, pa)| (
+                        key,
+                        <CustomConfig as schematic::Config>::from_partial(pa),
+                    ))
+                    .collect(),
+            )
         }
         PartialExample::C(pa) => {
             Self::C(
                 match pa {
                     Some(pa) => {
-                        Some({
-                            let mut set = BTreeSet::default();
-                            for pa in pa {
-                                set.insert(NestedConfig::from_partial(pa));
-                            }
-                            set
-                        })
+                        Some(
+                            pa
+                                .into_iter()
+                                .map(|pa| <NestedConfig as schematic::Config>::from_partial(
+                                    pa,
+                                ))
+                                .collect(),
+                        )
                     }
                     None => None,
                 },
