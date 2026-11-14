@@ -11,13 +11,17 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                         "Text".into(),
                         {
                             let mut item = schema.infer::<String>();
-                            item.ty
+                            if item
+                                .ty
                                 .add_field(
                                     "type",
                                     SchemaField::new(
                                         Schema::literal_value(LiteralValue::String("Text".into())),
                                     ),
-                                );
+                                )
+                            {
+                                item.name = None;
+                            }
                             item
                         },
                     ),

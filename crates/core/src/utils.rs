@@ -47,9 +47,91 @@ pub fn validate_case_format(attr: &str, format: &str) {
     }
 }
 
+/// Apply a serde `rename_all` casing to a field or variant name, exactly as
+/// serde does (a port of `RenameRule::apply_to_field` and `apply_to_variant`).
+/// A variant is split before every uppercase letter, so `MacOS` becomes
+/// `mac-o-s` in kebab case, which is what serde will accept.
 pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
     validate_case_format("rename_all", format);
 
+    if is_variant {
+        format_variant_case(format, value)
+    } else {
+        format_field_case(format, value)
+    }
+}
+
+fn format_variant_case(format: &str, variant: &str) -> String {
+    match format {
+        "PascalCase" => variant.to_owned(),
+        "lowercase" => variant.to_ascii_lowercase(),
+        "UPPERCASE" => variant.to_ascii_uppercase(),
+        "camelCase" => match variant.chars().next() {
+            Some(first) => first.to_ascii_lowercase().to_string() + &variant[first.len_utf8()..],
+            None => String::new(),
+        },
+        "snake_case" => {
+            let mut snake = String::new();
+
+            for (i, ch) in variant.char_indices() {
+                if i > 0 && ch.is_uppercase() {
+                    snake.push('_');
+                }
+
+                snake.push(ch.to_ascii_lowercase());
+            }
+
+            snake
+        }
+        "SCREAMING_SNAKE_CASE" => format_variant_case("snake_case", variant).to_ascii_uppercase(),
+        "kebab-case" => format_variant_case("snake_case", variant).replace('_', "-"),
+        "SCREAMING-KEBAB-CASE" => {
+            format_variant_case("SCREAMING_SNAKE_CASE", variant).replace('_', "-")
+        }
+        _ => unreachable!("Validated above."),
+    }
+}
+
+fn format_field_case(format: &str, field: &str) -> String {
+    match format {
+        "lowercase" | "snake_case" => field.to_owned(),
+        "UPPERCASE" | "SCREAMING_SNAKE_CASE" => field.to_ascii_uppercase(),
+        "PascalCase" => {
+            let mut pascal = String::new();
+            let mut capitalize = true;
+
+            for ch in field.chars() {
+                if ch == '_' {
+                    capitalize = true;
+                } else if capitalize {
+                    pascal.push(ch.to_ascii_uppercase());
+                    capitalize = false;
+                } else {
+                    pascal.push(ch);
+                }
+            }
+
+            pascal
+        }
+        "camelCase" => {
+            let pascal = format_field_case("PascalCase", field);
+
+            match pascal.chars().next() {
+                Some(first) => first.to_ascii_lowercase().to_string() + &pascal[first.len_utf8()..],
+                None => String::new(),
+            }
+        }
+        "kebab-case" => field.replace('_', "-"),
+        "SCREAMING-KEBAB-CASE" => field.to_ascii_uppercase().replace('_', "-"),
+        _ => unreachable!("Validated above."),
+    }
+}
+
+/// Convert a name the way `schematic::internal::format_case` converts input at
+/// runtime for `#[config(before_parse)]`. That conversion treats an acronym as
+/// one word, unlike serde, so `MacOS` becomes `mac-os` rather than `mac-o-s`,
+/// and matching it as well keeps loosely cased input parsing.
+pub fn format_loose_case(format: &str, value: &str) -> String {
     let case = match format {
         "lowercase" => return value.to_lowercase(),
         "UPPERCASE" => return value.to_uppercase(),
@@ -59,16 +141,10 @@ pub fn format_case(format: &str, value: &str, is_variant: bool) -> String {
         "SCREAMING_SNAKE_CASE" => Case::UpperSnake,
         "kebab-case" => Case::Kebab,
         "SCREAMING-KEBAB-CASE" => Case::UpperKebab,
-        _ => unreachable!("Validated above."),
+        _ => return value.to_owned(),
     };
 
     value
-        .from_case(if is_variant {
-            Case::Pascal
-        } else {
-            Case::Snake
-        })
-        // Keeps `field2` from becoming `field_2`
         .remove_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
         .to_case(case)
 }
@@ -220,10 +296,14 @@ pub fn impl_literal_value(lit: &Lit) -> Option<TokenStream> {
     Some(match lit {
         Lit::Str(v) => quote! { LiteralValue::String(#v.into()) },
         Lit::Int(v) => {
+            // The suffix types the setting, not the literal, which is
+            // always an `isize` or `usize`, so it is dropped
+            let unsuffixed = syn::LitInt::new(v.base10_digits(), v.span());
+
             if v.suffix().starts_with('u') {
-                quote! { LiteralValue::Uint(#v) }
+                quote! { LiteralValue::UInt(#unsuffixed) }
             } else {
-                quote! { LiteralValue::Int(#v) }
+                quote! { LiteralValue::Int(#unsuffixed) }
             }
         }
         Lit::Float(v) => {

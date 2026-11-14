@@ -23,7 +23,6 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
       ]
     },
     "cache_opt": {
-      "default": "remote",
       "anyOf": [
         {
           "$ref": "#/definitions/Cache"
@@ -50,7 +49,6 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
       ]
     },
     "threads_opt": {
-      "default": "auto",
       "anyOf": [
         {
           "$ref": "#/definitions/Threads"

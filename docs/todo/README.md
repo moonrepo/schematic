@@ -28,72 +28,42 @@ The probe crates were throwaway. Each ✅ item gives enough of a scenario to reb
 
 ## Top priorities
 
-Ordered by user impact per unit of work.
+Ordered by user impact per unit of work. Every bug was fixed on `0.21-bugs`.
 
-1. **Fix nested defaults and env being applied once per nesting level (B1).** Non-idempotent merges
-   such as `append_vec` duplicate default values.
-2. **Fix extends cycles aborting the process (B2).** A typo in `extends` kills the CLI with a stack
-   overflow.
-3. **Fix collections of nested configs silently emptied (B20).** `VecDeque<Child>` and similar types
-   load as empty.
-4. **Resolve nested types by full path (C1).** This unblocks nesting a config from another module,
-   generic nested configs, and `Self`.
-5. **Fix recursion end to end (B8, B9, B13, B14).** `Box`/`Rc`/`Arc` lose `schema_name`, `settings()`
-   overflows, and the JSON Schema root `$ref` dangles.
-6. **Fix variant `rename_all` casing disagreeing with serde (B5).** `MacOS` ↔ `mac-o-s`.
-7. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
+1. **Resolve generic nested configs by full type (C1).** Nesting by path and `Self` now work, but
+   `#[setting(nested)] inner: Wrapper<String>` still doesn't.
+2. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
    `Debug` dump of the darling error.
-8. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
+3. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
    errors have no span, and validation is blamed on the last file.
-9. **Close the schema fidelity gaps that make generated schemas reject valid config (B14–B17).**
-   Flattened structs, the internal-tag `$ref`, non-string map keys, `Unknown` excluding `null`, and
-   TypeScript keys that aren't valid identifiers.
-10. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
-    in-memory layer, the merge helpers moon wrote, and a runtime merge strategy (#175).
+4. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
+   in-memory layer, the merge helpers moon wrote, and a runtime merge strategy (#175).
 
 ## Quick wins
 
-Each item is trivial or a few lines, and every one is confirmed except where marked:
+Each item is trivial or a few lines, and every one is confirmed:
 
-1. Forward `schema_name` in `Box`/`Rc`/`Arc`/`Cow`/`&`/`&mut` impls (B13).
-2. Fix `LiteralValue::Uint` → `UInt` and unsuffix the integer (B12).
-3. Swap the `EnvManager` prefix order (B4).
-4. Change `EnvManager.count` to a `bool` 📖.
-5. `unraw()` identifiers (B6).
-6. Enable RON `IMPLICIT_SOME` (B3).
-7. Map TOML syntax errors to `ParserError` (X3).
-8. Parse the host in `is_secure_url` (B7).
-9. Require `www.` in `is_url_like`.
-10. Report darling errors with `write_errors()` (X1).
-11. Emit `||` for `required` on multi-value variants.
-12. Validate a flattened nested config at the current path.
-13. Add `Path`/`OsStr`/`CStr` to the unsized types.
-14. Use `get_name()` in the partial's `schema_name`.
-15. Make JSON `Unknown` → `{}`.
-16. Fix the JSONC trailing comma and empty-struct panic.
-17. Treat JSON whitespace or comment-only files as empty.
-18. Fall back to `type_name` for the loader name (X6).
-19. Add `Debug` for `ConfigLoadResult`.
-20. Skip schema inference for `skip` fields (C9).
-21. Fix the merge built-in bounds and add generic hashers (G2).
-22. Fix the `in_range` doc and the book feature names.
+1. Map TOML syntax errors to `ParserError` (X3).
+2. Report darling errors with `write_errors()` (X1).
+3. Fall back to `type_name` for the loader name (X6).
+4. Add `Debug` for `ConfigLoadResult`.
+5. Skip schema inference for `skip` fields (C9).
+6. Fix the merge built-in bounds and add generic hashers (G2).
+7. Fix the book feature names.
 
 ## Larger changes worth sequencing together
 
-- **C1 + C2 + B20 + B9:** keep the full nested `syn::Type`, emit qualified paths, and use one
-  `collect()`-based layer walker. This fixes cross-module, generic and `Self` nesting, unknown
-  collections, and qualified wrapper paths in one pass.
-- **B8 + B13 + B14 + B9:** recursion end to end, across `settings()`, schema names, the JSON root
-  ref and `Box<Self>`.
-- **B18 + G5:** a schema-fidelity pass:
-  - add `SchemaField.default` and `SchemaField.required`, and `StructType.deny_unknown_fields`;
-  - add `transparent` and `skip_deserializing`;
+- **C1 + C2:** keep the full nested `syn::Type` for a generic nested config, and fold the two
+  remaining layer walkers (`impl_full_from_partial_value`, `impl_partial_finalize_nested`) into one.
+- **G5:** a schema-fidelity pass, building on `SchemaField.default`:
+  - add `SchemaField.required` and `StructType.deny_unknown_fields`;
+  - add `transparent`;
   - add integer ranges;
   - optionally, validator-derived constraints.
 
   It touches every renderer, so do it as one change with snapshot review.
-- **B19 + G6 + B17:** a renderer-validity pass. Run each template and the TS output through a real
-  parser (toml, serde_norway, a TS checker) in tests, so validity is asserted, not just snapshotted.
+- **G6:** inline flattened fields in templates. `renderer_fixes_test.rs` already parses each template
+  with a real parser, so extend it rather than relying on snapshots.
 - **X3–X7 + G4:** error location and provenance.
 - **G1–G3:** loader and merge additions. They are independent and additive; G3 should start with
   the scalar-only newtype.

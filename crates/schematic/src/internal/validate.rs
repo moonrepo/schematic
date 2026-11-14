@@ -75,6 +75,12 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_at(self.path.join_key(key), value);
     }
 
+    /// Validate a nested configuration whose settings are flattened into
+    /// this one, so its settings are reported at this path, as written.
+    pub fn flattened<S: PartialConfig<Context = Ctx>>(&mut self, value: &S) {
+        self.nested_at(self.path.clone(), value);
+    }
+
     pub fn nested_variant<S: PartialConfig<Context = Ctx>>(
         &mut self,
         variant: &str,

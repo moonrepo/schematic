@@ -42,7 +42,13 @@ where
         if let Some(layer) = Self::env_values()? {
             partial.merge(context, layer)?;
         }
-        Ok(partial)
+        partial.finalize_nested(context)
+    }
+    fn finalize_nested(
+        self,
+        _context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        Ok(self)
     }
     fn merge(
         &mut self,

@@ -40,7 +40,26 @@ impl TomlTemplateRenderer {
 
             let comment = self.ctx.create_field_comment(field);
 
-            match &mut field.schema.ty {
+            // A union is rendered as one of its variants, which is a table
+            // when it's a struct, like an optional struct, or an adjacently
+            // tagged variant, as TOML can't write one inline after a key
+            let ty = match &mut field.schema.ty {
+                SchemaType::Union(uni) => {
+                    let index = get_rendered_variant(uni).and_then(|variant| {
+                        uni.variants_types
+                            .iter()
+                            .position(|other| std::ptr::eq(&**other, variant))
+                    });
+
+                    match index.and_then(|index| uni.variants_types.get_mut(index)) {
+                        Some(variant) => &mut variant.ty,
+                        None => &mut field.schema.ty,
+                    }
+                }
+                other => other,
+            };
+
+            match ty {
                 SchemaType::Array(array) => {
                     let items_type = self
                         .ctx
@@ -179,14 +198,18 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
             self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!(
-                    "{} = {}",
-                    name,
-                    self.render_schema(self.ctx.validate_schema_variant(
-                        self.ctx.get_stack_value().as_ref(),
-                        &field.schema
-                    ))?
-                );
+                let value = self.render_schema(self.ctx.validate_schema_variant(
+                    self.ctx.get_stack_value().as_ref(),
+                    &get_field_schema(field),
+                ))?;
+
+                // TOML has no null, so a setting without a value is left
+                // commented out, for a user to fill in
+                let prop = if value == "null" {
+                    format!("# {name} =")
+                } else {
+                    format!("{name} = {value}")
+                };
 
                 out.push(self.ctx.create_field(field, prop));
             }
@@ -209,8 +232,9 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
         render_union(uni, |schema| self.render_schema(schema))
     }
 
+    // TOML has no null, so any value is an empty table
     fn render_unknown(&mut self, _schema: &Schema) -> RenderResult<String> {
-        render_unknown()
+        Ok("{}".into())
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {

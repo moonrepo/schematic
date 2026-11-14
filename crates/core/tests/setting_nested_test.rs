@@ -473,3 +473,86 @@ mod setting_nested {
         }
     }
 }
+
+mod audit_fixes {
+    use quote::ToTokens;
+    use schematic_core::container::Container;
+    use syn::parse_quote;
+
+    fn partial_type(input: syn::DeriveInput) -> String {
+        let container = Container::from(input);
+        let field = container.inner.get_fields()[0];
+
+        field.value.get_partial_type().to_token_stream().to_string()
+    }
+
+    #[test]
+    fn keeps_the_wrapper_of_unsized_types() {
+        for ty in ["Path", "OsStr", "CStr"] {
+            let ty: syn::Type = syn::parse_str(&format!("Box<{ty}>")).unwrap();
+
+            assert_eq!(
+                partial_type(parse_quote! {
+                    #[derive(Config)]
+                    struct Example {
+                        a: #ty,
+                    }
+                })
+                .replace(' ', ""),
+                ty.to_token_stream().to_string().replace(' ', "")
+            );
+        }
+    }
+
+    #[test]
+    fn keeps_the_box_of_a_recursive_config() {
+        assert_eq!(
+            partial_type(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    next: Option<Box<Self>>,
+                }
+            })
+            .replace(' ', ""),
+            "Option<Box<<ExampleasConfig>::Partial>>".replace("asConfig", "asschematic::Config")
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "must be wrapped in a `Box` or a collection")]
+    fn errors_for_a_recursive_config_without_a_box() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(nested)]
+                next: Option<Self>,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "must be optional, like `Option<Box<Self>>`")]
+    fn errors_for_a_recursive_config_that_isnt_optional() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(nested)]
+                next: Box<Self>,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "is not a known collection")]
+    fn errors_for_an_unknown_collection_of_nested_configs() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(nested)]
+                items: Custom<Child>,
+            }
+        })
+        .to_token_stream();
+    }
+}

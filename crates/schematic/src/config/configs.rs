@@ -55,6 +55,16 @@ pub trait PartialConfig:
         Ok(self)
     }
 
+    /// Internal use only, use [`finalize`] instead.
+    ///
+    /// Finalize a partial nested within another, whose [`finalize`] has already merged this
+    /// partial's default values and environment variables, as they're part of its own. They are
+    /// not applied again, so a merge that isn't idempotent, like appending, applies them once.
+    #[doc(hidden)]
+    fn finalize_nested(self, context: &Self::Context) -> Result<Self, ConfigError> {
+        self.finalize(context)
+    }
+
     /// Merge another partial configuration into this one and clone values when applicable. The
     /// following merge strategies are applied:
     ///

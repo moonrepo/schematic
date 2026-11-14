@@ -18,7 +18,7 @@ fn validate_with_path(
             validate.nested_variant("bb", 0usize, pa);
         }
         Self::C(pa) => {
-            if [pa].iter().any(|v| v.is_none()) {
+            if pa.is_none() {
                 validate.required_variant("cc");
             }
         }

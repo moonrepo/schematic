@@ -78,7 +78,7 @@ expression: "fs::read_to_string(file).unwrap()"
     "two": {
       // An optional string.
       // @env ENV_PREFIX_OPT
-      "opt": "",
+      "opt": ""
     }
   },
 

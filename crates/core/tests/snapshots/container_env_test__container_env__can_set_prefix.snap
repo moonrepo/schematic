@@ -11,11 +11,25 @@ fn env_values_with_prefix(
     partial.a = env.get("OVERRIDE")?;
     partial.b = env.get_prefixed("B")?;
     partial.c = env.get_prefixed("C")?;
-    partial.d = env.nested(PartialNestedConfig::env_values()?)?;
-    partial.e = env.nested(PartialCustomConfig::env_values()?)?;
+    partial.d = env
+        .nested(
+            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+        )?;
+    partial.e = env
+        .nested(
+            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+        )?;
     partial.f = env
-        .nested(PartialNestedConfig::env_values_with_prefix(Some("NESTED_"))?)?;
+        .nested(
+            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                Some("NESTED_"),
+            )?,
+        )?;
     partial.g = env
-        .nested(PartialCustomConfig::env_values_with_prefix(Some("NESTED_"))?)?;
+        .nested(
+            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                Some("NESTED_"),
+            )?,
+        )?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

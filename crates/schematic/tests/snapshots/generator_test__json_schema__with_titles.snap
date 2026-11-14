@@ -47,13 +47,19 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "datetime": {
       "title": "datetime",
-      "type": "string",
-      "format": "date-time"
+      "type": "string"
     },
     "decimal": {
       "title": "decimal",
-      "type": "string",
-      "format": "decimal"
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "decimal"
+        },
+        {
+          "type": "number"
+        }
+      ]
     },
     "enums": {
       "title": "enums",
@@ -99,7 +105,8 @@ expression: "fs::read_to_string(file).unwrap()"
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         {
           "type": "null"
@@ -107,15 +114,7 @@ expression: "fs::read_to_string(file).unwrap()"
       ]
     },
     "json_value": {
-      "title": "json_value",
-      "type": [
-        "boolean",
-        "object",
-        "array",
-        "number",
-        "string",
-        "integer"
-      ]
+      "title": "json_value"
     },
     "map": {
       "title": "map",
@@ -161,22 +160,12 @@ expression: "fs::read_to_string(file).unwrap()"
     },
     "time": {
       "title": "time",
-      "type": "string",
-      "format": "time"
+      "type": "string"
     },
     "toml_value": {
       "title": "toml_value",
       "anyOf": [
-        {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
+        {},
         {
           "type": "null"
         }
@@ -227,27 +216,10 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string"
     },
     "yaml_value": {
-      "title": "yaml_value",
-      "type": [
-        "boolean",
-        "object",
-        "array",
-        "number",
-        "string",
-        "integer"
-      ]
+      "title": "yaml_value"
     }
   },
-  "additionalProperties": {
-    "type": [
-      "boolean",
-      "object",
-      "array",
-      "number",
-      "string",
-      "integer"
-    ]
-  },
+  "additionalProperties": {},
   "definitions": {
     "AnotherConfig": {
       "description": "Some comment.",
@@ -260,7 +232,6 @@ expression: "fs::read_to_string(file).unwrap()"
         "enums": {
           "title": "enums",
           "description": "An optional enum.",
-          "default": "foo",
           "anyOf": [
             {
               "$ref": "#/definitions/BasicEnum"

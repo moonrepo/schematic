@@ -21,7 +21,7 @@ export const enum BasicEnum {
 export const enum Test {
 	FOO,
 	bAr,
-	b-a-z,
+	'b-a-z',
 }
 
 export type OtherEnum = 'Foo' | 'Bar' | 'Baz' | string;

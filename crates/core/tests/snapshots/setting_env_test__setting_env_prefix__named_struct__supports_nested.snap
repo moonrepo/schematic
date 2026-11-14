@@ -8,9 +8,25 @@ fn env_values_with_prefix(
     use schematic::internal::*;
     let mut env = EnvManager::new(prefix, None);
     let mut partial = Self::default();
-    partial.a = env.nested(PartialNestedConfig::env_values()?)?;
-    partial.b = env.nested(PartialCustomConfig::env_values()?)?;
-    partial.c = env.nested(PartialNestedConfig::env_values_with_prefix(Some("PRE_"))?)?;
-    partial.d = env.nested(PartialCustomConfig::env_values_with_prefix(Some("PRE_"))?)?;
+    partial.a = env
+        .nested(
+            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+        )?;
+    partial.b = env
+        .nested(
+            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+        )?;
+    partial.c = env
+        .nested(
+            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                Some("PRE_"),
+            )?,
+        )?;
+    partial.d = env
+        .nested(
+            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                Some("PRE_"),
+            )?,
+        )?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

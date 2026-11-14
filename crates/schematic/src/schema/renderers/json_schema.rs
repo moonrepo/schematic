@@ -72,6 +72,10 @@ impl Default for JsonSchemaOptions {
 pub struct JsonSchemaRenderer {
     options: JsonSchemaOptions,
     references: HashSet<String>,
+    /// The root schema is the document itself, so a reference to it is `#`.
+    root: Option<String>,
+    /// Definitions that a `$ref` was rendered for.
+    referenced: HashSet<String>,
 }
 
 fn clean_comment(comment: String, allow_newlines: bool) -> String {
@@ -141,8 +145,9 @@ fn inject_markdown_descriptions(json: &mut Value) -> RenderResult<()> {
 fn lit_to_value(lit: &LiteralValue) -> Value {
     match lit {
         LiteralValue::Bool(inner) => Value::Bool(*inner),
-        LiteralValue::F32(inner) => Value::Number(Number::from_f64(*inner as f64).unwrap()),
-        LiteralValue::F64(inner) => Value::Number(Number::from_f64(*inner).unwrap()),
+        // JSON has no NaN or infinity, so those have no value
+        LiteralValue::F32(inner) => number(*inner as f64).unwrap_or(Value::Null),
+        LiteralValue::F64(inner) => number(*inner).unwrap_or(Value::Null),
         LiteralValue::Int(inner) => Value::Number(Number::from(*inner)),
         LiteralValue::UInt(inner) => Value::Number(Number::from(*inner)),
         LiteralValue::String(inner) => Value::String(inner.to_owned()),
@@ -165,11 +170,87 @@ fn count(value: usize) -> Value {
     Value::Number(Number::from(value))
 }
 
+/// Insert a value at a path of keys, creating each object along the way.
+fn insert_nested(root: &mut Map<String, Value>, parents: &[&str], key: &str, value: Value) {
+    let mut map = root;
+
+    for parent in parents {
+        map = match map
+            .entry(parent.to_string())
+            .or_insert_with(|| Value::Object(Map::new()))
+        {
+            Value::Object(inner) => inner,
+            _ => return,
+        };
+    }
+
+    map.insert(key.to_owned(), value);
+}
+
 impl JsonSchemaRenderer {
+    /// A map key is always written as a string, so describe the string that
+    /// a key of its type is written as, or nothing when it can't be.
+    fn render_property_names(&mut self, key: &Schema) -> RenderResult<Option<Value>> {
+        let mut map = Map::new();
+
+        match &key.ty {
+            SchemaType::Integer(integer) => {
+                map.insert("type".into(), Value::String("string".into()));
+                map.insert(
+                    "pattern".into(),
+                    Value::String(if integer.kind.is_unsigned() {
+                        "^\\d+$".into()
+                    } else {
+                        "^-?\\d+$".into()
+                    }),
+                );
+            }
+            SchemaType::Float(_) => {
+                map.insert("type".into(), Value::String("string".into()));
+                map.insert(
+                    "pattern".into(),
+                    Value::String("^-?\\d+(\\.\\d+)?([eE][+-]?\\d+)?$".into()),
+                );
+            }
+            SchemaType::Boolean(_) => {
+                map.insert("type".into(), Value::String("string".into()));
+                map.insert(
+                    "enum".into(),
+                    Value::Array(vec![
+                        Value::String("true".into()),
+                        Value::String("false".into()),
+                    ]),
+                );
+            }
+            SchemaType::String(_)
+            | SchemaType::Enum(_)
+            | SchemaType::Literal(_)
+            | SchemaType::Reference { .. } => {
+                return Ok(Some(self.render_schema(key)?.to_value()));
+            }
+            // A union of strings is still a string, otherwise it's unknown
+            SchemaType::Union(uni)
+                if uni.variants_types.iter().all(|variant| {
+                    matches!(
+                        variant.ty,
+                        SchemaType::String(_) | SchemaType::Enum(_) | SchemaType::Literal(_)
+                    )
+                }) =>
+            {
+                return Ok(Some(self.render_schema(key)?.to_value()));
+            }
+            _ => return Ok(None),
+        };
+
+        Ok(Some(Value::Object(map)))
+    }
+
     pub fn new(options: JsonSchemaOptions) -> Self {
         Self {
             options,
             references: HashSet::default(),
+            root: None,
+            referenced: HashSet::default(),
         }
     }
 
@@ -231,7 +312,7 @@ impl JsonSchemaRenderer {
             );
         }
 
-        if let Some(default) = field.schema.get_default() {
+        if let Some(default) = field.get_default() {
             map.insert("default".into(), lit_to_value(default));
         }
 
@@ -259,7 +340,8 @@ impl JsonSchemaRenderer {
 
 impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     fn is_reference(&self, name: &str) -> bool {
-        self.references.contains(name)
+        // Inlined unless it's a cycle, which is always a reference
+        !self.options.inline_subschemas && self.references.contains(name)
     }
 
     fn render_array(&mut self, array: &ArrayType, schema: &Schema) -> RenderResult<JsonSchema> {
@@ -485,9 +567,12 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             "additionalProperties".into(),
             self.render_schema(&object.value_type)?.to_value(),
         );
-        map.insert(
-            "propertyNames".into(),
-            self.render_schema(&object.key_type)?.to_value(),
+        // Keys are always strings in JSON, so a key of another type is
+        // described by the string it's written as
+        insert_some(
+            &mut map,
+            "propertyNames",
+            self.render_property_names(&object.key_type)?,
         );
 
         Ok(JsonSchema::from(map))
@@ -495,6 +580,12 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
 
     fn render_reference(&mut self, reference: &str, _schema: &Schema) -> RenderResult<JsonSchema> {
         // Note: Don't add metadata as it causes nested schema references!
+        if self.root.as_deref() == Some(reference) {
+            return Ok(JsonSchema::new_ref("#".into()));
+        }
+
+        self.referenced.insert(reference.to_owned());
+
         Ok(JsonSchema::new_ref(format!(
             "{}{}",
             self.options.definitions_path, reference
@@ -545,13 +636,39 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
                 if let Some(schema) = field.schema.get_nonnull_schema() {
                     let flattened = self.render_schema_without_reference(schema)?;
 
-                    if matches!(schema.ty, SchemaType::Object(_))
-                        && let Some(inner) = flattened.as_object()
-                        && let Some(value) = inner.get("additionalProperties")
-                    {
-                        additional_properties = Some(value.to_owned());
-                    } else {
-                        additional_properties = Some(flattened.to_value());
+                    match (&schema.ty, flattened.as_object()) {
+                        // A flattened struct's settings are written alongside
+                        // this struct's own, so they're merged in
+                        (SchemaType::Struct(_), Some(inner)) => {
+                            if let Some(Value::Object(props)) = inner.get("properties") {
+                                for (key, value) in props {
+                                    properties.insert(key.to_owned(), value.to_owned());
+                                }
+                            }
+
+                            if let Some(Value::Array(names)) = inner.get("required") {
+                                required.extend(
+                                    names
+                                        .iter()
+                                        .filter_map(|name| name.as_str().map(String::from)),
+                                );
+                            }
+
+                            // Only when it collects unknown keys of its own
+                            if let Some(value) = inner.get("additionalProperties")
+                                && value != &Value::Bool(false)
+                            {
+                                additional_properties = Some(value.to_owned());
+                            }
+                        }
+                        (SchemaType::Object(_), Some(inner))
+                            if inner.contains_key("additionalProperties") =>
+                        {
+                            additional_properties = inner.get("additionalProperties").cloned();
+                        }
+                        _ => {
+                            additional_properties = Some(flattened.to_value());
+                        }
                     }
                 }
 
@@ -608,7 +725,20 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         let mut map = self.create_metadata_from_schema(schema);
 
         map.insert("type".into(), Value::String("array".into()));
-        map.insert("items".into(), Value::Array(items));
+
+        // Draft 2020-12 renamed the positional form of `items`
+        if self
+            .options
+            .meta_schema
+            .as_deref()
+            .is_some_and(|meta| meta.contains("2020-12"))
+        {
+            map.insert("prefixItems".into(), Value::Array(items));
+            map.insert("items".into(), Value::Bool(false));
+        } else {
+            map.insert("items".into(), Value::Array(items));
+        }
+
         map.insert("maxItems".into(), count(tuple.items_types.len()));
         map.insert("minItems".into(), count(tuple.items_types.len()));
 
@@ -657,23 +787,13 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     }
 
     fn render_unknown(&mut self, schema: &Schema) -> RenderResult<JsonSchema> {
-        let mut map = self.create_metadata_from_schema(schema);
-
-        map.insert(
-            "type".into(),
-            Value::Array(
-                ["boolean", "object", "array", "number", "string", "integer"]
-                    .into_iter()
-                    .map(|ty| Value::String(ty.into()))
-                    .collect(),
-            ),
-        );
-
-        Ok(JsonSchema::from(map))
+        // Without a `type`, any value is accepted, `null` included
+        Ok(JsonSchema::from(self.create_metadata_from_schema(schema)))
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
         self.references = HashSet::from_iter(schemas.keys().cloned());
+        self.root = schemas.keys().last().cloned();
 
         let mut root = Map::new();
 
@@ -700,9 +820,28 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             }
         }
 
+        // Inlined subschemas only need a definition when a cycle references it
+        if self.options.inline_subschemas {
+            definitions.retain(|name, _| self.referenced.contains(name));
+        }
+
         if !definitions.is_empty() {
-            root.insert(
-                "definitions".into(),
+            // Definitions live wherever references point to, like
+            // `#/definitions/` or `#/$defs/`
+            let mut segments = self
+                .options
+                .definitions_path
+                .trim_start_matches('#')
+                .split('/')
+                .filter(|segment| !segment.is_empty())
+                .collect::<Vec<_>>();
+
+            let key = segments.pop().unwrap_or("definitions");
+
+            insert_nested(
+                &mut root,
+                &segments,
+                key,
                 Value::Object(definitions.into_iter().collect()),
             );
         }

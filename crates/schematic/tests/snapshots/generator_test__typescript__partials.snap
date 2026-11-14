@@ -13,11 +13,7 @@ export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 
 /** Some comment. */
 export interface AnotherConfig {
-	/**
-	 * An optional enum.
-	 *
-	 * @default 'foo'
-	 */
+	/** An optional enum. */
 	enums: BasicEnum | null;
 	/** An optional string. */
 	opt: string | null;
@@ -30,7 +26,7 @@ export interface GenConfigBase {
 	boolean: boolean;
 	date: string;
 	datetime: string;
-	decimal: string;
+	decimal: string | number;
 	/**
 	 * This is a list of `enumerable` values.
 	 *
@@ -73,11 +69,7 @@ export type GenConfig = GenConfigBase & GenConfigFlattened;
 
 /** Some comment. */
 export interface PartialAnotherConfig {
-	/**
-	 * An optional enum.
-	 *
-	 * @default 'foo'
-	 */
+	/** An optional enum. */
 	enums?: BasicEnum | null;
 	/** An optional string. */
 	opt?: string | null;
@@ -90,7 +82,7 @@ export interface PartialGenConfigBase {
 	boolean?: boolean | null;
 	date?: string | null;
 	datetime?: string | null;
-	decimal?: string | null;
+	decimal?: string | number | null;
 	/**
 	 * This is a list of `enumerable` values.
 	 *

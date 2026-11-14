@@ -3,7 +3,7 @@ use crate::config::{HandlerError, ParseEnvResult};
 use std::str::FromStr;
 
 pub struct EnvManager {
-    count: u8,
+    found: bool,
     /// Prefixes to apply to derived keys, in order of precedence. The
     /// container's own prefix comes first, then the one a parent passed
     /// in with `#[setting(nested, env_prefix)]`. The container's own must
@@ -15,8 +15,8 @@ pub struct EnvManager {
 impl EnvManager {
     pub fn new<T: AsRef<str>>(override_prefix: Option<T>, prefix: Option<T>) -> Self {
         Self {
-            count: 0,
-            prefixes: vec![override_prefix, prefix]
+            found: false,
+            prefixes: vec![prefix, override_prefix]
                 .into_iter()
                 .flatten()
                 .map(|pre| pre.as_ref().to_string())
@@ -26,7 +26,7 @@ impl EnvManager {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.count == 0
+        !self.found
     }
 
     /// Get a variable using the exact key, ignoring the prefix.
@@ -79,7 +79,7 @@ impl EnvManager {
             return parser(value)
                 .inspect(|inner| {
                     if inner.is_some() {
-                        self.count += 1;
+                        self.found = true;
                     }
                 })
                 .map_err(|error| {
@@ -92,7 +92,7 @@ impl EnvManager {
 
     pub fn nested<T>(&mut self, partial: Option<T>) -> ParseEnvResult<T> {
         if partial.is_some() {
-            self.count += 1;
+            self.found = true;
         }
 
         Ok(partial)

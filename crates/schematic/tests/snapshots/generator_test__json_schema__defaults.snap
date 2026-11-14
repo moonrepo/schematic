@@ -45,12 +45,18 @@ expression: "fs::read_to_string(file).unwrap()"
       "format": "date"
     },
     "datetime": {
-      "type": "string",
-      "format": "date-time"
+      "type": "string"
     },
     "decimal": {
-      "type": "string",
-      "format": "decimal"
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "decimal"
+        },
+        {
+          "type": "number"
+        }
+      ]
     },
     "enums": {
       "description": "This is a list of `enumerable` values.",
@@ -90,23 +96,15 @@ expression: "fs::read_to_string(file).unwrap()"
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "uniqueItems": true
         },
         {
           "type": "null"
         }
       ]
     },
-    "json_value": {
-      "type": [
-        "boolean",
-        "object",
-        "array",
-        "number",
-        "string",
-        "integer"
-      ]
-    },
+    "json_value": {},
     "map": {
       "type": "object",
       "additionalProperties": {
@@ -143,21 +141,11 @@ expression: "fs::read_to_string(file).unwrap()"
       "type": "string"
     },
     "time": {
-      "type": "string",
-      "format": "time"
+      "type": "string"
     },
     "toml_value": {
       "anyOf": [
-        {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
+        {},
         {
           "type": "null"
         }
@@ -201,27 +189,9 @@ expression: "fs::read_to_string(file).unwrap()"
     "version_req": {
       "type": "string"
     },
-    "yaml_value": {
-      "type": [
-        "boolean",
-        "object",
-        "array",
-        "number",
-        "string",
-        "integer"
-      ]
-    }
+    "yaml_value": {}
   },
-  "additionalProperties": {
-    "type": [
-      "boolean",
-      "object",
-      "array",
-      "number",
-      "string",
-      "integer"
-    ]
-  },
+  "additionalProperties": {},
   "definitions": {
     "AnotherConfig": {
       "title": "AnotherConfig",
@@ -234,7 +204,6 @@ expression: "fs::read_to_string(file).unwrap()"
       "properties": {
         "enums": {
           "description": "An optional enum.",
-          "default": "foo",
           "anyOf": [
             {
               "$ref": "#/definitions/BasicEnum"

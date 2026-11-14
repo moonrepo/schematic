@@ -34,7 +34,7 @@ expression: "fs::read_to_string(file).unwrap()"
   "number": 0,
   "one": {
     "two": {
-      "opt": "",
+      "opt": ""
     }
   },
   "string": "abc",
