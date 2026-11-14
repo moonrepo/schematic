@@ -29,14 +29,19 @@ pub trait PartialConfig:
     /// the variable fails to parse or cast into the correct type, an error is returned.
     #[cfg(feature = "env")]
     fn env_values() -> Result<Option<Self>, ConfigError> {
-        Self::env_values_with_prefix(None)
+        Ok(None)
     }
 
     /// Internal use only, use [`env_values`] instead.
+    ///
+    /// Return environment variable values with a prefix, from a parent's
+    /// `#[setting(nested, env_prefix)]`, applied to keys derived from setting
+    /// names. A hand-written partial reads keys of its own, which a parent's
+    /// prefix doesn't apply to, so this defaults to [`env_values`].
     #[cfg(feature = "env")]
     #[doc(hidden)]
     fn env_values_with_prefix(_prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
-        Ok(None)
+        Self::env_values()
     }
 
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns

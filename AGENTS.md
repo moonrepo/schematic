@@ -444,6 +444,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema
   reject valid config. `OsString` is why there is still no impl for it: it encodes as
   `{"Unix": [bytes]}`, not a string.
+- A parent must reach a nested config through a method a hand-written `PartialConfig` would
+  override, not only the hidden ones the derive implements. Nested validation goes through the
+  public `validate` (re-pathing its errors), the hidden `env_values_with_prefix` defaults to
+  `env_values`, and `finalize_nested` defaults to `finalize`. Don't make a public method's default
+  call a hidden one whose default calls it back, as a partial overriding neither would recurse.
 - A nested config receives its parent's context, as the managers require `Context = Ctx`, unless
   `#[setting(nested, context = func)]` maps it (`Value::context_fn`). Then every call that hands a
   context to the child goes through `func(context)`, and the managers' `*_with` methods take it

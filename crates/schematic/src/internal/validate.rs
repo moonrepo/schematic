@@ -1,4 +1,4 @@
-use crate::config::{PartialConfig, Path, ValidateError, ValidateResult};
+use crate::config::{ConfigError, PartialConfig, Path, ValidateError, ValidateResult};
 
 pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
@@ -132,14 +132,31 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
 
     /// Validate a nested configuration at the provided path, with a
     /// context of its own.
+    ///
+    /// This goes through the public `validate`, which a hand-written partial
+    /// overrides, rather than the hidden `validate_with_path` that a derived
+    /// one does, so that either is validated when nested. Its errors are then
+    /// moved under the path, and any other error is reported at the path.
     pub fn nested_at_with<S: PartialConfig>(
         &mut self,
         path: Path,
         value: &S,
         context: &S::Context,
     ) {
-        if let Err(errors) = value.validate_with_path(context, self.finalizing, path) {
-            self.errors.extend(errors);
+        match value.validate(context, self.finalizing) {
+            Ok(()) => {}
+            Err(ConfigError::Validator { error, .. }) => {
+                self.errors.extend(
+                    error
+                        .errors
+                        .into_iter()
+                        .map(|error| error.prepend_path(path.clone())),
+                );
+            }
+            Err(error) => {
+                self.errors
+                    .push(ValidateError::new(error.to_string()).prepend_path(path));
+            }
         }
     }
 }

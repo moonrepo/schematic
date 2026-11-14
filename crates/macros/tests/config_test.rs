@@ -2497,3 +2497,141 @@ mod nested_context {
         assert_eq!(config.plugin.name, "");
     }
 }
+
+// A hand-written partial overrides the documented methods, not the hidden
+// ones a derived partial does, and is still validated and read from the
+// environment when nested within a derived config.
+mod hand_written_nested {
+    use super::*;
+    use schematic::{ConfigError, HandlerError, Schematic};
+    use std::env;
+
+    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, Serialize)]
+    #[serde(default)]
+    pub struct PartialLevel {
+        pub level: Option<u8>,
+    }
+
+    impl Schematic for PartialLevel {}
+
+    impl PartialConfig for PartialLevel {
+        type Context = ();
+
+        fn merge(&mut self, _: &(), next: Self) -> Result<(), ConfigError> {
+            if next.level.is_some() {
+                self.level = next.level;
+            }
+
+            Ok(())
+        }
+
+        fn validate(&self, _: &(), _: bool) -> Result<(), ConfigError> {
+            if self.level.unwrap_or_default() > 5 {
+                return Err(ConfigError::Handler(Box::new(HandlerError::new(
+                    "level too high",
+                ))));
+            }
+
+            Ok(())
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    pub struct Level {
+        pub level: u8,
+    }
+
+    impl Schematic for Level {}
+
+    impl ConfigTrait for Level {
+        type Partial = PartialLevel;
+
+        fn from_partial(partial: PartialLevel) -> Self {
+            Level {
+                level: partial.level.unwrap_or_default(),
+            }
+        }
+    }
+
+    #[derive(Debug, Config)]
+    pub struct UsesLevel {
+        #[setting(nested)]
+        bare: Level,
+        #[setting(nested)]
+        maybe: Option<Level>,
+        #[setting(nested)]
+        list: Vec<Level>,
+    }
+
+    // Reads the environment itself, as its own type, since tests run in
+    // parallel and share the process environment
+    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, Serialize)]
+    #[serde(default)]
+    pub struct PartialEnvLevel {
+        pub level: Option<u8>,
+    }
+
+    impl Schematic for PartialEnvLevel {}
+
+    impl PartialConfig for PartialEnvLevel {
+        type Context = ();
+
+        fn env_values() -> Result<Option<Self>, ConfigError> {
+            Ok(env::var("HAND_LEVEL").ok().map(|value| PartialEnvLevel {
+                level: value.parse().ok(),
+            }))
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    pub struct EnvLevel {
+        pub level: u8,
+    }
+
+    impl Schematic for EnvLevel {}
+
+    impl ConfigTrait for EnvLevel {
+        type Partial = PartialEnvLevel;
+
+        fn from_partial(partial: PartialEnvLevel) -> Self {
+            EnvLevel {
+                level: partial.level.unwrap_or_default(),
+            }
+        }
+    }
+
+    #[derive(Debug, Config)]
+    pub struct PrefixesLevel {
+        #[setting(nested, env_prefix = "HAND_PARENT_")]
+        level: EnvLevel,
+    }
+
+    #[test]
+    fn validates_a_hand_written_partial_when_nested() {
+        let error = ConfigLoader::<UsesLevel>::new()
+            .code(
+                r#"{ "bare": { "level": 9 }, "maybe": { "level": 7 }, "list": [{}, { "level": 6 }] }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string();
+
+        assert!(error.contains("bare: level too high"), "{error}");
+        assert!(error.contains("maybe: level too high"), "{error}");
+        assert!(error.contains("list[1]: level too high"), "{error}");
+    }
+
+    #[test]
+    fn reads_its_own_environment_under_a_parent_prefix() {
+        unsafe { env::set_var("HAND_LEVEL", "3") };
+
+        let config = ConfigLoader::<PrefixesLevel>::new().load();
+
+        unsafe { env::remove_var("HAND_LEVEL") };
+
+        assert_eq!(config.unwrap().config.level.level, 3);
+    }
+}

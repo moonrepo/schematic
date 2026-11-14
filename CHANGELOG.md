@@ -42,6 +42,14 @@
 
 ##### Config
 
+- Fixed a hand-written `PartialConfig` being skipped when nested within a derived config. Its
+  `validate` was never called, as a parent called the hidden method that derived partials implement
+  instead, and its `env_values` was ignored under a parent's `#[setting(nested, env_prefix)]`.
+  - Nested configs are now validated through `validate`, with its errors reported under the
+    setting's path, and any other error it returns reported at that path.
+  - The hidden `env_values_with_prefix` now defaults to `env_values`, and `env_values` defaults to
+    none, so a hand-written partial that implemented only `env_values_with_prefix` must implement
+    `env_values` too.
 - Fixed the default values and environment variables of a nested config being applied again by
   every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
   defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
