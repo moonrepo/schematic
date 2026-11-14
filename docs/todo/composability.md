@@ -40,10 +40,12 @@ derives them on a struct holding one. `book/src/config/settings.md` ("Required t
 that every setting's type must implement the partial's derives, and points at the newtype pattern
 `RegexSetting` uses.
 
-**C6. Multi-value variants can't mix nested and plain positions** ✅ · low
+**C6. Multi-value variants can't mix nested and plain positions** · fixed on `0.21-compose`
 
-- `#[setting(nested)] Both(Child, bool)` panics on `bool`.
-- Fix: read `#[setting(nested)]` from each tuple field's own attributes.
+`#[setting(nested)]` (and `context`) may be put on a value of a variant, like
+`Both(#[setting(nested)] Child, bool)`, which marks that value alone. Each value is merged,
+finalized, validated, and given a schema by its own shape. Marking both a variant and one of its
+values panics.
 
 **C7. `ConfigLoader` is neither `Send` nor `Sync`** ✅ · low-med
 

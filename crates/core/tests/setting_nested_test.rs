@@ -476,7 +476,7 @@ mod setting_nested {
 
 mod audit_fixes {
     use quote::ToTokens;
-    use schematic_core::container::Container;
+    use schematic_core::container::{Container, ContainerInner};
     use syn::parse_quote;
 
     fn partial_type(input: syn::DeriveInput) -> String {
@@ -582,5 +582,34 @@ mod audit_fixes {
                 value: String,
             }
         });
+    }
+
+    #[test]
+    #[should_panic(expected = "Cannot use `nested` on both a variant and its values")]
+    fn errors_for_nested_on_a_variant_and_its_value() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                #[setting(nested)]
+                Both(#[setting(nested)] Child, bool),
+            }
+        });
+    }
+
+    #[test]
+    fn allows_nested_on_a_single_variant_value() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                Both(#[setting(nested)] Child, bool),
+            }
+        });
+
+        let ContainerInner::UnnamedEnum { variants } = &container.inner else {
+            panic!();
+        };
+
+        assert!(variants[0].values[0].nested);
+        assert!(!variants[0].values[1].nested);
     }
 }

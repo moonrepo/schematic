@@ -19,6 +19,10 @@
   nested config's own, like `fn(&AppContext) -> &PluginContext`, so a config with another context,
   such as one from a library, can be nested. `schematic::context::unit` passes `()`, for a config
   without a context. It's also supported on enum variants.
+- Updated `#[setting(nested)]` to be accepted on a value of an enum variant, like
+  `Both(#[setting(nested)] Child, bool)`, so a variant can hold a nested config alongside plain
+  values. Previously it could only mark the whole variant, and panicked on any value that wasn't a
+  config. It also takes `context` there.
 - Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including
   within an `Option` or a collection, and a type parameter that is a config itself. Previously the
   derive looked inside the type arguments for the config, and panicked on `String`.

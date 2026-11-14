@@ -2635,3 +2635,110 @@ mod hand_written_nested {
         assert_eq!(config.unwrap().config.level.level, 3);
     }
 }
+
+// A variant can hold a nested config alongside plain values, by marking the
+// value itself rather than the whole variant.
+mod mixed_variant_values {
+    use super::*;
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct Child {
+        #[setting(default = 1)]
+        level: usize,
+        #[setting(validate = schematic::validate::not_empty)]
+        name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub enum Mixed {
+        Both(#[setting(nested)] Child, bool),
+        Plain(String),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Holder {
+        #[setting(nested)]
+        value: Option<Mixed>,
+    }
+
+    fn load(sources: &[&str]) -> Result<Holder, String> {
+        let mut loader = ConfigLoader::<Holder>::new();
+
+        for (index, code) in sources.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn finalizes_only_the_nested_value() {
+        let config = load(&[r#"{ "value": { "Both": [{ "name": "a" }, true] } }"#]).unwrap();
+
+        assert_eq!(
+            config.value,
+            Some(Mixed::Both(
+                Child {
+                    level: 1,
+                    name: "a".into()
+                },
+                true
+            ))
+        );
+    }
+
+    #[test]
+    fn merges_the_nested_value_and_replaces_the_plain_one() {
+        let config = load(&[
+            r#"{ "value": { "Both": [{ "name": "a", "level": 5 }, true] } }"#,
+            r#"{ "value": { "Both": [{ "name": "b" }, false] } }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(
+            config.value,
+            Some(Mixed::Both(
+                Child {
+                    level: 5,
+                    name: "b".into()
+                },
+                false
+            ))
+        );
+    }
+
+    #[test]
+    fn validates_the_nested_value_at_its_position() {
+        let error = load(&[r#"{ "value": { "Both": [{ "name": "" }, true] } }"#]).unwrap_err();
+
+        assert!(error.contains("value.Both[0].name: "), "{error}");
+    }
+
+    #[test]
+    fn marks_only_the_nested_value_as_partial_in_the_schema() {
+        use schematic::{SchemaBuilder, SchemaType};
+
+        let schema = SchemaBuilder::build_root::<Mixed>();
+        let SchemaType::Union(union) = &schema.ty else {
+            panic!("{schema:?}");
+        };
+
+        let SchemaType::Struct(both) = &union.variants_types[0].ty else {
+            panic!();
+        };
+
+        let SchemaType::Tuple(values) = &both.fields["Both"].schema.ty else {
+            panic!();
+        };
+
+        let SchemaType::Struct(child) = &values.items_types[0].ty else {
+            panic!();
+        };
+
+        assert!(child.partial);
+        assert!(matches!(values.items_types[1].ty, SchemaType::Boolean(_)));
+    }
+}
