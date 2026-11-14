@@ -33,11 +33,12 @@ override of either `validate` or the hidden `validate_with_path` is validated wh
 hidden `env_values_with_prefix` defaults to `env_values` (and `env_values` to none, with the derive
 implementing both), so a hand-written partial's own env is read under a parent `env_prefix`.
 
-**C5. The partial always derives `PartialEq` and `Debug`** ✅ · low-med
+**C5. The partial always derives `PartialEq` and `Debug`** · documented on `0.21-compose`
 
-- `PartialConfig` doesn't require either, but a setting type without them (a `ConfigEnum` without
-  `PartialEq`, `regex::Regex`) fails at the derive. `partial(derive(..))` can only add derives.
-- Fix: document the requirement, or drop the two derives (breaking for code comparing partials).
+Kept as is, by decision: dropping either would break code that compares or prints partials, or
+derives them on a struct holding one. `book/src/config/settings.md` ("Required traits") now states
+that every setting's type must implement the partial's derives, and points at the newtype pattern
+`RegexSetting` uses.
 
 **C6. Multi-value variants can't mix nested and plain positions** ✅ · low
 
