@@ -3,31 +3,13 @@
 From the 2026-11-14 audit. See [README.md](README.md) for the legend, the ID scheme, the top
 priorities, and the quick wins.
 
-**C1. Nested configs are referenced by bare identifier** ✅ · high
+**C1. Nested configs are referenced by bare identifier** · fixed on `0.21-bugs` and `0.21-compose`
 
-> **Partly fixed on `0.21-bugs`:** nested configs are now called through `<T as Config>` by the
-> path they were written as, so `child::Child`, a config from another module, and `Self` work.
-> Generic nested configs, like `Wrapper<String>`, still don't, as the layer walk descends into the
-> last type argument.
-
-- **Cause:** codegen emits `format_ident!("Partial{}", ident)::default_values` and
-  `#ident::from_partial`, while the partial *type* correctly uses `<path as Config>::Partial`.
-- **Effects:**
-  - `use child::Child;` plus `#[setting(nested)] child: Child` fails with "cannot find type
-    `PartialChild`", so users must also import the partial.
-  - `child: child::Child` fails.
-  - `Option<Box<Self>>` produces 19 errors.
-  - Generic nested configs fail. `#[setting(nested)] inner: Wrapper<String>` panics with "must be a
-    `Config` type, received `Wrapper<String>`", because the layer walk descends into the last generic
-    argument. `inner: T` emits `PartialT`.
-- **Where:** `field_value.rs:67`, `:146`, `value.rs:260`, `:716-721`, `:769`, `container.rs:448`.
-- **Fix:**
-  - Stop the layer walk at the first non-layer segment and keep that whole `syn::Type`.
-  - Emit fully qualified calls: `<#ty as schematic::Config>::from_partial(..)` and
-    `<<#ty as Config>::Partial as PartialConfig>::default_values(..)`.
-  - Substitute `Self`.
-- **Cost:** no new impls. This was a limitation of the old derive too, and it is the most common
-  composability snag.
+Nested configs are called through `<T as Config>` by the path they're written as, so a config from
+another module and `Self` work (`0.21-bugs`). Generic nested configs, like `Wrapper<String>`, and a
+type parameter that is a config work too (`0.21-compose`), as the layer walk stops at the first type
+that isn't a layer. A type parameter still needs the partial's derive bounds, as std's derives
+bound every parameter; see `book/src/config/generics.md`.
 
 **C2. One layer walker instead of three** 📖 · med (maintainability, enables B20 and qualified
 paths)

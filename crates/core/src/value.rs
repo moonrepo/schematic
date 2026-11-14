@@ -183,7 +183,11 @@ impl Value {
     }
 
     pub fn extract_type_information(&mut self) {
-        extract_type_information(&self.ty, &mut self.layers, |ty, segment| {
+        // A nested config may be generic, like `Wrapper<String>`, so the walk
+        // stops at the first type that isn't a layer, and that's the config
+        let nested = self.nested;
+
+        extract_type_information(&self.ty, &mut self.layers, nested, |ty, segment| {
             self.inner_ty = Some(ty.to_owned());
 
             if self.nested && self.nested_ident.is_none() {
@@ -821,6 +825,9 @@ fn strip_wrapper_types(ty: &Type, keep_box: bool) -> Type {
     Type::Path(ty_path)
 }
 
+/// Replace the nested config within a type with its partial, walking the same
+/// layers that `extract_type_information` does, so that a generic config like
+/// `Wrapper<String>` is replaced as a whole.
 fn replace_nested_type(ty: &Type, nested_ident: &Ident) -> Type {
     // We don't need to traverse other types, just paths
     let Type::Path(ty_path) = ty else {
@@ -829,40 +836,36 @@ fn replace_nested_type(ty: &Type, nested_ident: &Ident) -> Type {
 
     let last_segment = ty_path.path.segments.last().unwrap();
 
-    match &last_segment.arguments {
-        // We've reached the final segment, so replace it if it matches
-        PathArguments::None => {
-            if last_segment.ident == *nested_ident {
-                parse_quote! { <#ty_path as schematic::Config>::Partial }
-            } else {
-                ty.clone()
-            }
-        }
+    // A layer holds the config, so drill into it
+    if let PathArguments::AngleBracketed(_) = &last_segment.arguments
+        && is_layer_segment(last_segment)
+    {
+        let mut ty_path = ty_path.clone();
+        let last_segment = ty_path.path.segments.last_mut().unwrap();
 
-        // Attempt to drill deeper down
-        PathArguments::AngleBracketed(_) => {
-            let mut ty_path = ty_path.clone();
-            let last_segment = ty_path.path.segments.last_mut().unwrap();
-
-            if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
-                for arg in args.args.iter_mut() {
-                    if let GenericArgument::Type(inner_ty) = arg {
-                        *inner_ty = replace_nested_type(inner_ty, nested_ident);
-                    }
+        if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
+            for arg in args.args.iter_mut() {
+                if let GenericArgument::Type(inner_ty) = arg {
+                    *inner_ty = replace_nested_type(inner_ty, nested_ident);
                 }
             }
-
-            Type::Path(ty_path)
         }
 
-        // What to do here, anything?
-        PathArguments::Parenthesized(_) => ty.clone(),
+        return Type::Path(ty_path);
     }
+
+    // Otherwise this is the config itself
+    if last_segment.ident == *nested_ident {
+        return parse_quote! { <#ty_path as schematic::Config>::Partial };
+    }
+
+    ty.clone()
 }
 
 fn extract_type_information(
     ty: &Type,
     layers: &mut Vec<Layer>,
+    stop_at_unknown: bool,
     mut on_last: impl FnMut(&Type, &PathSegment),
 ) {
     // We don't need to traverse other types, just paths
@@ -880,18 +883,33 @@ fn extract_type_information(
             on_last(ty, last_segment);
         }
 
+        // A generic that isn't a layer is the type itself, when asked
+        PathArguments::AngleBracketed(_) if stop_at_unknown && !is_layer_segment(last_segment) => {
+            on_last(ty, last_segment);
+        }
+
         // Attempt to drill deeper down
         PathArguments::AngleBracketed(args) => {
             extract_layer(last_segment, layers);
 
             if let Some(GenericArgument::Type(inner_ty)) = args.args.last() {
-                extract_type_information(inner_ty, layers, on_last);
+                extract_type_information(inner_ty, layers, stop_at_unknown, on_last);
             }
         }
 
         // What to do here, anything?
         PathArguments::Parenthesized(_) => {}
     };
+}
+
+/// Whether a generic type is a layer the derive walks through, a wrapper,
+/// an `Option`, or a known collection, rather than a type of its own.
+fn is_layer_segment(segment: &PathSegment) -> bool {
+    let mut layers = vec![];
+
+    extract_layer(segment, &mut layers);
+
+    !matches!(layers.first(), Some(Layer::Unknown(_)))
 }
 
 fn extract_layer(last_segment: &PathSegment, layers: &mut Vec<Layer>) {

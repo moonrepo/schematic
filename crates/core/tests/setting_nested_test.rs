@@ -543,14 +543,30 @@ mod audit_fixes {
         });
     }
 
+    // A generic type that isn't a known layer is the nested config itself
+    #[test]
+    fn treats_a_generic_as_the_nested_config() {
+        assert_eq!(
+            partial_type(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    inner: Vec<Wrapper<String>>,
+                }
+            })
+            .replace(' ', ""),
+            "Vec<<Wrapper<String>asschematic::Config>::Partial>"
+        );
+    }
+
+    // A wrapper the partial strips has to be rebuilt within it
     #[test]
     #[should_panic(expected = "is not a known collection")]
-    fn errors_for_an_unknown_collection_of_nested_configs() {
+    fn errors_for_an_unknown_collection_of_wrappers() {
         Container::from(parse_quote! {
             #[derive(Config)]
             struct Example {
-                #[setting(nested)]
-                items: Custom<Child>,
+                items: Custom<std::sync::Arc<String>>,
             }
         })
         .to_token_stream();

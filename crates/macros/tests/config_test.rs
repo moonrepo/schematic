@@ -669,8 +669,8 @@ mod generics {
 
     #[derive(Debug, Config)]
     pub struct Wrapper<T: Setting> {
-        inner: T,
-        label: String,
+        pub inner: T,
+        pub label: String,
     }
 
     #[test]
@@ -2218,5 +2218,140 @@ mod applied_once {
         };
 
         assert_eq!(child.list, vec!["d", "f"]);
+    }
+}
+
+mod generic_nested {
+    use super::generics::{Setting, Wrapper};
+    use super::*;
+
+    #[derive(Debug, Config)]
+    pub struct Holder {
+        #[setting(nested)]
+        bare: Wrapper<String>,
+        #[setting(nested)]
+        maybe: Option<Wrapper<u8>>,
+        #[setting(nested)]
+        list: Vec<Wrapper<bool>>,
+        #[setting(nested)]
+        map: HashMap<String, Wrapper<usize>>,
+        #[setting(nested = Wrapper)]
+        explicit: Wrapper<String>,
+    }
+
+    #[test]
+    fn loads_generic_nested_configs() {
+        let config = ConfigLoader::<Holder>::new()
+            .code(
+                r#"{
+                    "bare": { "inner": "a", "label": "b" },
+                    "maybe": { "inner": 1 },
+                    "list": [{ "inner": true }],
+                    "map": { "k": { "inner": 2 } },
+                    "explicit": { "label": "e" }
+                }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.bare.inner, "a");
+        assert_eq!(config.bare.label, "b");
+        assert_eq!(config.maybe.unwrap().inner, 1);
+        assert!(config.list[0].inner);
+        assert_eq!(config.map["k"].inner, 2);
+        assert_eq!(config.explicit.label, "e");
+    }
+
+    #[test]
+    fn references_their_schemas_by_instantiation() {
+        let schema = schematic::SchemaBuilder::build_root::<Holder>();
+        let schematic::SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(
+            inner.fields["bare"].schema.name.as_deref(),
+            Some("WrapperString")
+        );
+        assert_eq!(
+            inner.fields["explicit"].schema.name.as_deref(),
+            Some("WrapperString")
+        );
+    }
+
+    #[test]
+    fn collects_their_settings() {
+        let settings = Holder::settings();
+
+        assert!(
+            settings["bare"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("inner")
+        );
+        assert!(
+            settings["maybe"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("label")
+        );
+    }
+
+    // A type parameter can be the nested config itself. The partial's derives
+    // bound every type parameter, so it needs the same bounds as any other,
+    // its partial is debugged and compared like any setting, and it shares
+    // the parent's context.
+    #[derive(Debug, Config)]
+    pub struct Outer<C: ConfigTrait + Setting>
+    where
+        C::Partial: std::fmt::Debug + PartialEq + PartialConfig<Context = ()>,
+    {
+        #[setting(nested)]
+        inner: C,
+        name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize, serde::Deserialize)]
+    pub struct Inner {
+        inner: String,
+    }
+
+    #[test]
+    fn nests_a_type_parameter() {
+        let config = ConfigLoader::<Outer<Inner>>::new()
+            .code(r#"{ "inner": { "inner": "x" }, "name": "n" }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.inner.inner, "x");
+        assert_eq!(config.name, "n");
+    }
+
+    // A generic config that holds itself through a `Box`
+    #[derive(Debug, Config)]
+    pub struct Tree<T: Setting> {
+        value: T,
+        #[setting(nested)]
+        next: Option<Box<Tree<T>>>,
+    }
+
+    #[test]
+    fn nests_a_generic_self() {
+        let config = ConfigLoader::<Tree<u8>>::new()
+            .code(r#"{ "value": 1, "next": { "value": 2 } }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.value, 1);
+        assert_eq!(config.next.unwrap().value, 2);
     }
 }

@@ -15,6 +15,9 @@
   `FromStr`, like `IpAddr` and `SocketAddr`, when it doesn't implement `TryFrom<&str>`.
 - Updated `#[setting(nested)]` to resolve the nested config by the path it was written as, so a
   config from another module, like `child::Child`, no longer needs its partial imported.
+- Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including
+  within an `Option` or a collection, and a type parameter that is a config itself. Previously the
+  derive looked inside the type arguments for the config, and panicked on `String`.
 - Updated `#[setting(nested)]` to support a config that holds its own type, like
   `next: Option<Box<Self>>`, which keeps the `Box` in the partial. Without a `Box` or a collection,
   the derive panics, as the type would have an infinite size.
