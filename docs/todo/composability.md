@@ -11,15 +11,12 @@ type parameter that is a config work too (`0.21-compose`), as the layer walk sto
 that isn't a layer. A type parameter still needs the partial's derive bounds, as std's derives
 bound every parameter; see `book/src/config/generics.md`.
 
-**C2. One layer walker instead of three** 📖 · med (maintainability, enables B20 and qualified
-paths)
+**C2. One layer walker instead of three** · fixed on `0.21-compose`
 
-- **Today:** the same `Option`/`Map`/`Set`/`Vec`/`Unknown` match is written out three times: in
-  `wrap_layer`, `impl_full_from_partial_value` and `impl_partial_finalize_nested` (`value.rs:22`,
-  `:257-330`, `:332-427`).
-- **Fix:** one `map_layers(layers, value, f)` helper using `.into_iter().map(..).collect()`. It works
-  for any `FromIterator` collection, drops the name heuristics, and stops emitting `Vec::default()`
-  and `Arc::new` by bare name.
+`wrap_layer` no longer names collections (`0.21-bugs`), and `impl_full_from_partial_value` and
+`impl_partial_finalize_nested` now share `map_layers`, so a layer kind is handled in one place. The
+generated code is unchanged; every core snapshot is identical. Validation still walks on its own,
+as it borrows rather than rebuilds.
 
 **C3. A library config can't be nested in an app config with a different `Context`** ✅ · med
 

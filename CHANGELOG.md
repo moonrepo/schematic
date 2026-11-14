@@ -29,6 +29,11 @@
 - Updated `JsonSchemaRenderer` to put definitions where `definitions_path` points, such as
   `#/$defs/`, and to render a tuple with `prefixItems` when the meta schema is draft 2020-12.
 
+#### ⚙️ Internal
+
+- Merged the code that rebuilds a setting through its layers, when converting a partial into a full
+  config and when finalizing nested configs, into one helper. Generated code is unchanged.
+
 #### 🐞 Fixes
 
 ##### Config

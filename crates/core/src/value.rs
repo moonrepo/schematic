@@ -375,54 +375,29 @@ impl Value {
     /// Generate the value for the final configuration, by converting nested
     /// partials and re-applying any wrappers that the partial stripped.
     pub fn impl_full_from_partial_value(&self, data_var: &Ident) -> ImplResult {
-        let mut res = ImplResult::default();
-        let mut value = match self.get_nested_type() {
+        let value = match self.get_nested_type() {
             Some(config) => quote! { <#config as schematic::Config>::from_partial(#data_var) },
             None => quote! { #data_var },
         };
 
-        // Then wrap with each layer, from the innermost to the outermost.
-        // Wrappers are constructed here, as they don't exist in the partial.
-        for layer in self.layers.iter().rev() {
-            if layer.is_wrapper() && !self.strip_wrappers {
-                continue;
-            }
+        // Every layer of the full type is rebuilt. A wrapper the partial
+        // stripped is constructed, while one it kept is unwrapped first, and
+        // one around an unsized type is used as-is.
+        let steps = self
+            .layers
+            .iter()
+            .filter(|layer| !layer.is_wrapper() || self.strip_wrappers)
+            .map(|layer| LayerStep {
+                layer,
+                ty: None,
+                unwrap: self.keep_box && *layer == Layer::Box,
+            })
+            .collect::<Vec<_>>();
 
-            value = match layer {
-                // Kept in the partial, so it's unwrapped first
-                Layer::Box if self.keep_box => quote! {
-                    {
-                        let #data_var = *#data_var;
-                        std::boxed::Box::new(#value)
-                    }
-                },
-                Layer::Arc => quote! { std::sync::Arc::new(#value) },
-                Layer::Rc => quote! { std::rc::Rc::new(#value) },
-                Layer::Box => quote! { std::boxed::Box::new(#value) },
-                Layer::Option => quote! {
-                    match #data_var {
-                        Some(#data_var) => Some(#value),
-                        None => None
-                    }
-                },
-                Layer::Map(_) => quote! {
-                    #data_var
-                        .into_iter()
-                        .map(|(key, #data_var)| (key, #value))
-                        .collect()
-                },
-                Layer::Set(_) | Layer::Vec(_) => quote! {
-                    #data_var
-                        .into_iter()
-                        .map(|#data_var| #value)
-                        .collect()
-                },
-                Layer::Unknown(name) => panic_unknown_collection(name, &self.ty_string),
-            };
+        ImplResult {
+            value: map_layers(data_var, &steps, value, None, &self.ty_string),
+            ..Default::default()
         }
-
-        res.value = value;
-        res
     }
 
     /// Generate the finalization of a nested config, within the partial.
@@ -439,21 +414,17 @@ impl Value {
         skip_outer_option: bool,
         boundary: bool,
     ) -> ImplResult {
-        let mut res = ImplResult::default();
         let skips_option = skip_outer_option && self.is_outer_option_wrapped();
-        let in_collection = self.is_collection();
 
-        let mut value;
-
-        // The finalize call itself, while nothing wraps it, so that a
-        // collection maps over it directly rather than `Ok(...?)`
-        let mut result = None;
-
-        if boundary || in_collection {
-            value = quote! { #layer_var.finalize(context)? };
-            result = Some(quote! { #layer_var.finalize(context) });
+        // The innermost value, and the `Result` it unwraps, when a collection
+        // can map over that directly rather than `Ok(...?)`
+        let (value, result) = if boundary || self.is_collection() {
+            (
+                quote! { #layer_var.finalize(context)? },
+                Some(quote! { #layer_var.finalize(context) }),
+            )
         } else if skips_option && let Some(partial) = self.get_nested_partial_type() {
-            value = quote! {
+            let value = quote! {
                 {
                     let mut base = <#partial as schematic::PartialConfig>::default_values(context)?
                         .unwrap_or_default();
@@ -461,84 +432,39 @@ impl Value {
                     base.finalize_nested(context)?
                 }
             };
-        } else {
-            value = quote! { #layer_var.finalize_nested(context)? };
-        }
 
-        // Wrappers don't exist in the partial, and the first `Option` layer is
-        // represented by the partial's own `Option`, so skip it when the
-        // caller has already unwrapped it
+            (value, None)
+        } else {
+            (quote! { #layer_var.finalize_nested(context)? }, None)
+        };
+
+        // Wrappers stripped from the partial don't exist in it, and the first
+        // `Option` layer is the partial's own, so it's skipped when the caller
+        // has already unwrapped it. Every remaining layer is rebuilt, and as
+        // finalizing can fail, collections collect into a `Result` of the type
+        // at that layer, which is named, as a `transform` may be generic.
         let mut layers = self.get_partial_layers();
         let mut layer_types = self.get_partial_layer_types();
 
-        if skip_outer_option && self.is_outer_option_wrapped() {
+        if skips_option {
             layers.remove(0);
             layer_types.remove(0);
         }
 
-        // Then wrap with each layer. Finalizing can fail, so collections
-        // are collected into a `Result`, which is unwrapped after. The type
-        // is named, as a `transform` may be generic over what it receives.
-        for (layer, layer_ty) in layers.iter().zip(layer_types.iter()).rev() {
-            // What each item of a collection is mapped to, which is the
-            // `Result` itself when it is one, rather than `Ok(...?)`
-            let item = result.take().unwrap_or_else(|| quote! { Ok(#value) });
+        let steps = layers
+            .into_iter()
+            .zip(layer_types)
+            .map(|(layer, ty)| LayerStep {
+                layer,
+                ty: Some(ty),
+                unwrap: true,
+            })
+            .collect::<Vec<_>>();
 
-            value = match layer {
-                Layer::Arc => quote! {
-                    {
-                        let #layer_var = std::sync::Arc::unwrap_or_clone(#layer_var);
-                        std::sync::Arc::new(#value)
-                    }
-                },
-                Layer::Rc => quote! {
-                    {
-                        let #layer_var = std::rc::Rc::unwrap_or_clone(#layer_var);
-                        std::rc::Rc::new(#value)
-                    }
-                },
-                Layer::Box => quote! {
-                    {
-                        let #layer_var = *#layer_var;
-                        std::boxed::Box::new(#value)
-                    }
-                },
-                Layer::Option => quote! {
-                    match #layer_var {
-                        Some(#layer_var) => Some(#value),
-                        None => None
-                    }
-                },
-                Layer::Map(_) => {
-                    let collected = quote! {
-                        #layer_var
-                            .into_iter()
-                            .map(|(key, #layer_var)| Ok((key, #value)))
-                            .collect::<std::result::Result<#layer_ty, schematic::ConfigError>>()
-                    };
-
-                    result = Some(collected.clone());
-
-                    quote! { #collected? }
-                }
-                Layer::Set(_) | Layer::Vec(_) => {
-                    let collected = quote! {
-                        #layer_var
-                            .into_iter()
-                            .map(|#layer_var| #item)
-                            .collect::<std::result::Result<#layer_ty, schematic::ConfigError>>()
-                    };
-
-                    result = Some(collected.clone());
-
-                    quote! { #collected? }
-                }
-                Layer::Unknown(name) => panic_unknown_collection(name, &self.ty_string),
-            };
+        ImplResult {
+            value: map_layers(layer_var, &steps, value, result, &self.ty_string),
+            ..Default::default()
         }
-
-        res.value = value;
-        res
     }
 
     /// Generate a merge for a nested configuration.
@@ -940,6 +866,118 @@ fn extract_layer(last_segment: &PathSegment, layers: &mut Vec<Layer>) {
     };
 
     layers.push(layer);
+}
+
+/// A layer that `map_layers` rebuilds a value through.
+struct LayerStep<'a> {
+    layer: &'a Layer,
+    /// The type at this layer, which a collection collects into when mapping
+    /// its items can fail. Without one, mapping is infallible.
+    ty: Option<Type>,
+    /// Whether the value already holds this wrapper, so it's unwrapped
+    /// before being rebuilt, rather than only constructed.
+    unwrap: bool,
+}
+
+/// Map a value through each layer, from the innermost outward, rebuilding each
+/// layer around the value within it. Collections are rebuilt with `collect`,
+/// so any `FromIterator` collection works without being named.
+///
+/// When the steps carry a type, mapping is fallible: the innermost `value`
+/// uses `?`, and `result`, when given, is the `Result` it unwraps, which a
+/// collection maps over directly rather than `Ok(...?)`.
+fn map_layers(
+    var: &Ident,
+    steps: &[LayerStep],
+    mut value: TokenStream,
+    mut result: Option<TokenStream>,
+    ty_string: &str,
+) -> TokenStream {
+    for step in steps.iter().rev() {
+        let fallible_ty = step.ty.as_ref();
+
+        value = match step.layer {
+            Layer::Arc | Layer::Box | Layer::Rc => {
+                let (wrapper, unwrapped) = match step.layer {
+                    Layer::Arc => (
+                        quote! { std::sync::Arc },
+                        quote! { std::sync::Arc::unwrap_or_clone(#var) },
+                    ),
+                    Layer::Rc => (
+                        quote! { std::rc::Rc },
+                        quote! { std::rc::Rc::unwrap_or_clone(#var) },
+                    ),
+                    _ => (quote! { std::boxed::Box }, quote! { *#var }),
+                };
+
+                if step.unwrap {
+                    quote! {
+                        {
+                            let #var = #unwrapped;
+                            #wrapper::new(#value)
+                        }
+                    }
+                } else {
+                    quote! { #wrapper::new(#value) }
+                }
+            }
+            Layer::Option => quote! {
+                match #var {
+                    Some(#var) => Some(#value),
+                    None => None
+                }
+            },
+            Layer::Map(_) => match fallible_ty {
+                Some(ty) => {
+                    let collected = quote! {
+                        #var
+                            .into_iter()
+                            .map(|(key, #var)| Ok((key, #value)))
+                            .collect::<std::result::Result<#ty, schematic::ConfigError>>()
+                    };
+
+                    result = Some(collected.clone());
+
+                    quote! { #collected? }
+                }
+                None => quote! {
+                    #var
+                        .into_iter()
+                        .map(|(key, #var)| (key, #value))
+                        .collect()
+                },
+            },
+            Layer::Set(_) | Layer::Vec(_) => match fallible_ty {
+                Some(ty) => {
+                    let item = result.take().unwrap_or_else(|| quote! { Ok(#value) });
+                    let collected = quote! {
+                        #var
+                            .into_iter()
+                            .map(|#var| #item)
+                            .collect::<std::result::Result<#ty, schematic::ConfigError>>()
+                    };
+
+                    result = Some(collected.clone());
+
+                    quote! { #collected? }
+                }
+                None => quote! {
+                    #var
+                        .into_iter()
+                        .map(|#var| #value)
+                        .collect()
+                },
+            },
+            Layer::Unknown(name) => panic_unknown_collection(name, ty_string),
+        };
+
+        // Only a collection's own result can be mapped over by the next
+        if !step.layer.is_collection() {
+            result = None;
+        }
+    }
+
+    value
 }
 
 /// Panic for a type that wraps a nested config, or a wrapper the partial

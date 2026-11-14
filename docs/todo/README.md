@@ -51,8 +51,6 @@ Each item is trivial or a few lines, and every one is confirmed:
 
 ## Larger changes worth sequencing together
 
-- **C2:** fold the two remaining layer walkers (`impl_full_from_partial_value`,
-  `impl_partial_finalize_nested`) into one.
 - **G5:** a schema-fidelity pass, building on `SchemaField.default`:
   - add `SchemaField.required` and `StructType.deny_unknown_fields`;
   - add `transparent`;

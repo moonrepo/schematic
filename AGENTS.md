@@ -236,6 +236,13 @@ is respected without special-casing:
 `Vec<Arc<Nested>>` wraps each item; `Arc<Vec<Nested>>` wraps the whole loop — both fall out of the
 same code.
 
+The first two rebuild a value through its layers, and share one helper for it, `map_layers` in
+`value.rs`, which each calls with a list of `LayerStep`s. A step's `unwrap` says whether the value
+already holds that wrapper (the partial kept it, so it's unwrapped and rebuilt) or not (the partial
+stripped it, so it's only constructed), and its `ty` makes mapping fallible: collections then
+collect into a `Result` of that type, as finalizing can fail. Add a layer kind there, once, rather
+than in each walker. Merging and validating don't rebuild anything, so they walk on their own.
+
 ## Testing
 
 ### The critical caveat
