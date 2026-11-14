@@ -444,6 +444,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema
   reject valid config. `OsString` is why there is still no impl for it: it encodes as
   `{"Unix": [bytes]}`, not a string.
+- A nested config receives its parent's context, as the managers require `Context = Ctx`, unless
+  `#[setting(nested, context = func)]` maps it (`Value::context_fn`). Then every call that hands a
+  context to the child goes through `func(context)`, and the managers' `*_with` methods take it
+  explicitly. Keep the two paths in step: a new call that passes `context` to a nested config must
+  use `Value::get_nested_context` / `get_nested_method`, or a mapped config gets the wrong type.
 - `StructType.fields` is an `IndexMap` so the *model* keeps declaration order, but renderers iterate
   `StructType::sorted_fields()` so *output* stays alphabetical. Both halves are deliberate: the model
   preserves what the user wrote, the generated file stays stable no matter how the type is ordered.

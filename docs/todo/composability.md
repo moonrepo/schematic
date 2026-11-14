@@ -18,15 +18,13 @@ bound every parameter; see `book/src/config/generics.md`.
 generated code is unchanged; every core snapshot is identical. Validation still walks on its own,
 as it borrows rather than rebuilds.
 
-**C3. A library config can't be nested in an app config with a different `Context`** ✅ · med
+**C3. A library config can't be nested in an app config with a different `Context`** · fixed on
+`0.21-compose`
 
-- **Scenario:** a library exports `LibConfig` with `Context = ()`, and the app has
-  `#[config(context = AppCtx)]` and nests it. This fails with E0308 "expected `&()`, found
-  `&AppCtx`".
-- **Where:** `internal/merge.rs:35` and `internal/validate.rs:74`, `:101` require `Context = Ctx`.
-- **Simplest fix:** `#[setting(nested, context = default)]`, which passes `&Default::default()` for
-  the child's context. A mapping fn (`fn(&Parent) -> &Child`) is the bigger version. Ask before
-  building, since it changes what `finalize`, `merge` and `validate` pass.
+`#[setting(nested, context = func)]` takes a `fn(&Parent) -> &Child` that maps the parent's context
+for every call that passes one to the nested config (defaults, finalize, merge, validate).
+`schematic::context::unit` covers a child with `Context = ()`. Code without a `context` is
+unchanged; the managers gained `_with` variants that take the child's context.
 
 **C4. A hand-written `PartialConfig` is silently skipped when nested** ✅ · med
 

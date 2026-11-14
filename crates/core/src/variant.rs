@@ -24,6 +24,7 @@ use syn::{
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema, variant))]
 pub struct VariantArgs {
+    pub context: Option<ExprPath>,
     pub default: Option<VariantDefaultArg>,
     pub exclude: bool,
     pub fallback: bool,
@@ -94,12 +95,26 @@ impl Variant {
                 Fields::Named(fields) => fields
                     .named
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
+                    .map(|field| {
+                        VariantValue::new(
+                            field.ty.clone(),
+                            args.nested.as_ref(),
+                            self_ty,
+                            args.context.clone(),
+                        )
+                    })
                     .collect(),
                 Fields::Unnamed(fields) => fields
                     .unnamed
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
+                    .map(|field| {
+                        VariantValue::new(
+                            field.ty.clone(),
+                            args.nested.as_ref(),
+                            self_ty,
+                            args.context.clone(),
+                        )
+                    })
                     .collect(),
                 Fields::Unit => vec![],
             },

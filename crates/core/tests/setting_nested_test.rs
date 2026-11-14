@@ -571,4 +571,16 @@ mod audit_fixes {
         })
         .to_token_stream();
     }
+
+    #[test]
+    #[should_panic(expected = "Cannot use `context` without `nested`.")]
+    fn errors_for_a_context_without_nested() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(context = schematic::context::unit)]
+                value: String,
+            }
+        });
+    }
 }

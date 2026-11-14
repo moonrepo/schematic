@@ -5,7 +5,7 @@ use crate::value::{Layer, Value, path_names_a_value, wrap_layer};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::ops::Deref;
-use syn::{Expr, Type};
+use syn::{Expr, ExprPath, Type};
 
 #[derive(Debug)]
 pub struct FieldValue(Value);
@@ -33,8 +33,13 @@ impl Deref for FieldValue {
 }
 
 impl FieldValue {
-    pub fn new(ty: Type, nested_arg: Option<&NestedArg>, self_ty: &Type) -> Self {
-        FieldValue(Value::new(ty, nested_arg, self_ty))
+    pub fn new(
+        ty: Type,
+        nested_arg: Option<&NestedArg>,
+        self_ty: &Type,
+        context_fn: Option<ExprPath>,
+    ) -> Self {
+        FieldValue(Value::new(ty, nested_arg, self_ty).with_context(context_fn))
     }
 
     pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
@@ -64,8 +69,9 @@ impl FieldValue {
                 panic!("Cannot use `default` with `nested`.");
             }
 
+            let context = self.get_nested_context();
             let defaults =
-                quote! { <#partial as schematic::PartialConfig>::default_values(context)? };
+                quote! { <#partial as schematic::PartialConfig>::default_values(#context)? };
 
             res.value = if self.is_collection() {
                 // Collections of nested configs start empty

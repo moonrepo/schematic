@@ -44,6 +44,36 @@ let result = ConfigLoader::<ExampleConfig>::new()
 > Refer to the [default values](./struct/default.md), [merge strategies](./struct/merge.md), and
 > [validation rules](./struct/validate.md) sections for more information on how to use context.
 
+## Nested configs with another context
+
+A [nested config](./nested.md) receives its parent's context, so by default it must declare the
+same one. A config from a library can't know an application's context, so the `context` field of
+`#[setting(nested)]` maps the parent's context to the nested config's own, with a function from a
+reference to one to a reference to the other.
+
+```rust
+#[derive(Config)]
+#[config(context = AppContext)]
+struct AppConfig {
+	// A library config, whose context is `()`
+	#[setting(nested, context = schematic::context::unit)]
+	pub lib: LibConfig,
+
+	// A config whose context is part of the application's
+	#[setting(nested, context = plugin_context)]
+	pub plugin: PluginConfig,
+}
+
+fn plugin_context(context: &AppContext) -> &PluginContext {
+	&context.plugin
+}
+```
+
+The mapped context is what the nested config's own default values, merge strategies, and validation
+rules receive. `schematic::context::unit` passes `()`, whatever the parent's context. A
+`Default` of the parent, which has no context to map, gives each nested config the `Default` of its
+own context instead.
+
 ## Metadata
 
 Alongside the configuration itself, the derive records a little metadata about each

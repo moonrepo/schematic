@@ -2,7 +2,10 @@ use crate::args::NestedArg;
 use crate::utils::{ImplResult, to_type_string};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{Expr, GenericArgument, Ident, Lit, Path, PathArguments, PathSegment, Type, parse_quote};
+use syn::{
+    Expr, ExprPath, GenericArgument, Ident, Lit, Path, PathArguments, PathSegment, Type,
+    parse_quote,
+};
 
 /// Whether a path names a value -- an enum variant, unit struct, or constant --
 /// rather than a function to hand the context to.
@@ -71,6 +74,9 @@ pub struct Value {
     /// itself, like `Option<Box<Self>>`, is kept in the partial. Stripping it
     /// would give the partial an infinite size.
     pub keep_box: bool,
+    /// A function from `#[setting(nested, context)]` that maps the parent's
+    /// context to the nested config's own, which may be a different type.
+    pub context_fn: Option<ExprPath>,
     /// Whether wrapper layers are stripped from the partial. Disabled when a
     /// wrapper contains an unsized type, like `Box<str>`, as the inner value
     /// cannot exist on its own.
@@ -110,6 +116,7 @@ impl Value {
         }
 
         let mut value = Value {
+            context_fn: None,
             inner_ty: None,
             keep_box: false,
             nested,
@@ -122,6 +129,37 @@ impl Value {
         value.extract_type_information();
         value.detect_recursion(self_ty);
         value
+    }
+
+    /// Set the function that maps the parent's context to the nested config's.
+    pub fn with_context(mut self, context_fn: Option<ExprPath>) -> Self {
+        if context_fn.is_some() && !self.nested {
+            panic!("Cannot use `context` without `nested`.");
+        }
+
+        self.context_fn = context_fn;
+        self
+    }
+
+    /// The context a nested config receives, which is the parent's own,
+    /// unless `#[setting(nested, context)]` maps it to another.
+    pub fn get_nested_context(&self) -> TokenStream {
+        match &self.context_fn {
+            Some(func) => quote! { #func(context) },
+            None => quote! { context },
+        }
+    }
+
+    /// A manager method that passes a nested config its context, with the
+    /// extra argument it takes, as only a mapped context is passed explicitly.
+    fn get_nested_method(&self, name: &str) -> (Ident, TokenStream) {
+        match &self.context_fn {
+            Some(func) => (
+                quote::format_ident!("{name}_with"),
+                quote! { , #func(context) },
+            ),
+            None => (quote::format_ident!("{name}"), quote! {}),
+        }
     }
 
     /// A nested config holding the container itself needs a level of
@@ -418,24 +456,25 @@ impl Value {
 
         // The innermost value, and the `Result` it unwraps, when a collection
         // can map over that directly rather than `Ok(...?)`
+        let context = self.get_nested_context();
         let (value, result) = if boundary || self.is_collection() {
             (
-                quote! { #layer_var.finalize(context)? },
-                Some(quote! { #layer_var.finalize(context) }),
+                quote! { #layer_var.finalize(#context)? },
+                Some(quote! { #layer_var.finalize(#context) }),
             )
         } else if skips_option && let Some(partial) = self.get_nested_partial_type() {
             let value = quote! {
                 {
-                    let mut base = <#partial as schematic::PartialConfig>::default_values(context)?
+                    let mut base = <#partial as schematic::PartialConfig>::default_values(#context)?
                         .unwrap_or_default();
-                    base.merge(context, #layer_var)?;
-                    base.finalize_nested(context)?
+                    base.merge(#context, #layer_var)?;
+                    base.finalize_nested(#context)?
                 }
             };
 
             (value, None)
         } else {
-            (quote! { #layer_var.finalize_nested(context)? }, None)
+            (quote! { #layer_var.finalize_nested(#context)? }, None)
         };
 
         // Wrappers stripped from the partial don't exist in it, and the first
@@ -500,12 +539,16 @@ impl Value {
         }
 
         let manager = optional || outer_option;
+        let context = self.get_nested_context();
+        let (nested, nested_context) = self.get_nested_method("nested");
+        let (nested_boxed, _) = self.get_nested_method("nested_boxed");
+
         res.requires_internal = manager;
         res.value = match (manager, boxed) {
-            (true, true) => quote! { .nested_boxed(#prev, #next)? },
-            (true, false) => quote! { .nested(#prev, #next)? },
-            (false, true) => quote! { #prev.merge(context, *#next)?; },
-            (false, false) => quote! { #prev.merge(context, #next)?; },
+            (true, true) => quote! { .#nested_boxed(#prev, #next #nested_context)? },
+            (true, false) => quote! { .#nested(#prev, #next #nested_context)? },
+            (false, true) => quote! { #prev.merge(#context, *#next)?; },
+            (false, false) => quote! { #prev.merge(#context, #next)?; },
         };
 
         res
@@ -538,11 +581,8 @@ impl Value {
         variant: bool,
         optional: bool,
     ) -> ImplResult {
-        let nested = if variant {
-            quote::format_ident!("nested_variant")
-        } else {
-            quote::format_ident!("nested")
-        };
+        let (nested, nested_context) =
+            self.get_nested_method(if variant { "nested_variant" } else { "nested" });
 
         // Wrappers don't exist in the partial, so only the structural
         // layers need to be traversed
@@ -564,7 +604,15 @@ impl Value {
         }
 
         let mut value = if layers.iter().any(|layer| layer.is_collection()) {
-            impl_partial_validate_nested_items(target, setting_var, variant, &layers)
+            let (nested_at, nested_context) = self.get_nested_method("nested_at");
+
+            impl_partial_validate_nested_items(
+                target,
+                setting_var,
+                variant,
+                &layers,
+                quote! { validate.#nested_at(path, item #nested_context); },
+            )
         } else {
             // A single value is validated at the setting's own path
             let mut setting = quote! { #setting_var };
@@ -581,7 +629,7 @@ impl Value {
             }
 
             quote! {
-                validate.#nested(#target, #setting);
+                validate.#nested(#target, #setting #nested_context);
             }
         };
 
@@ -613,10 +661,9 @@ fn impl_partial_validate_nested_items(
     setting_var: &Ident,
     variant: bool,
     layers: &[&Layer],
+    validate_item: TokenStream,
 ) -> TokenStream {
-    let mut value = quote! {
-        validate.nested_at(path, item);
-    };
+    let mut value = validate_item;
 
     for layer in layers.iter().rev() {
         value = match layer {

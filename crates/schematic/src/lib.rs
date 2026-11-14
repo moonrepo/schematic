@@ -5,6 +5,10 @@ pub mod helpers;
 #[cfg(feature = "config")]
 mod config;
 
+/// Built-in `context` functions, for `#[setting(nested, context)]`.
+#[cfg(feature = "config")]
+pub mod context;
+
 /// Built-in `parse_env` functions.
 #[cfg(all(feature = "config", feature = "env"))]
 pub mod env;

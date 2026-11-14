@@ -15,6 +15,10 @@
   `FromStr`, like `IpAddr` and `SocketAddr`, when it doesn't implement `TryFrom<&str>`.
 - Updated `#[setting(nested)]` to resolve the nested config by the path it was written as, so a
   config from another module, like `child::Child`, no longer needs its partial imported.
+- Added a `context` field to `#[setting(nested)]`, a function that maps the parent's context to the
+  nested config's own, like `fn(&AppContext) -> &PluginContext`, so a config with another context,
+  such as one from a library, can be nested. `schematic::context::unit` passes `()`, for a config
+  without a context. It's also supported on enum variants.
 - Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including
   within an `Option` or a collection, and a type parameter that is a config itself. Previously the
   derive looked inside the type arguments for the config, and panicked on `String`.

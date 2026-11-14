@@ -2355,3 +2355,145 @@ mod generic_nested {
         assert_eq!(config.next.unwrap().value, 2);
     }
 }
+
+// A nested config whose context differs from its parent's, such as one
+// from a library, which can't know the application's context.
+mod nested_context {
+    use super::*;
+    use schematic::{DefaultValueResult, ValidateError, ValidateResult};
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct LibConfig {
+        #[setting(default = 1)]
+        level: usize,
+        #[setting(merge = schematic::merge::append_vec)]
+        tags: Vec<String>,
+    }
+
+    #[derive(Default)]
+    pub struct PluginContext {
+        name: String,
+        max: usize,
+    }
+
+    fn default_name(context: &PluginContext) -> DefaultValueResult<String> {
+        Ok(Some(context.name.clone()))
+    }
+
+    fn below_max<D>(value: &usize, _: &D, context: &PluginContext, _: bool) -> ValidateResult {
+        if *value > context.max {
+            return Err(ValidateError::new(format!(
+                "must be at most {}",
+                context.max
+            )));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(context = PluginContext)]
+    pub struct PluginConfig {
+        #[setting(default = default_name)]
+        name: String,
+        #[setting(validate = below_max)]
+        size: usize,
+    }
+
+    #[derive(Default)]
+    pub struct AppContext {
+        plugin: PluginContext,
+    }
+
+    fn plugin_context(context: &AppContext) -> &PluginContext {
+        &context.plugin
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(context = AppContext)]
+    pub enum Source {
+        #[setting(nested, context = schematic::context::unit)]
+        Lib(LibConfig),
+        Url(String),
+    }
+
+    #[derive(Debug, Config)]
+    #[config(context = AppContext)]
+    pub struct AppConfig {
+        #[setting(nested, context = schematic::context::unit)]
+        lib: LibConfig,
+        #[setting(nested, context = schematic::context::unit)]
+        maybe: Option<LibConfig>,
+        #[setting(nested, context = schematic::context::unit)]
+        libs: Vec<LibConfig>,
+        #[setting(nested, context = plugin_context)]
+        plugin: PluginConfig,
+        #[setting(nested)]
+        source: Option<Source>,
+    }
+
+    fn app_context() -> AppContext {
+        AppContext {
+            plugin: PluginContext {
+                name: "from context".into(),
+                max: 10,
+            },
+        }
+    }
+
+    fn load(sources: &[&str]) -> Result<AppConfig, String> {
+        let mut loader = ConfigLoader::<AppConfig>::new();
+
+        for (index, code) in sources.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load_with_context(&app_context())
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn nests_a_config_with_a_unit_context() {
+        let config = load(&[
+            r#"{ "lib": { "tags": ["a"] }, "maybe": {}, "libs": [{ "level": 3 }] }"#,
+            r#"{ "lib": { "tags": ["b"] }, "source": { "Lib": {} } }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(config.lib.level, 1);
+        assert_eq!(config.lib.tags, vec!["a", "b"]);
+        assert_eq!(config.maybe.unwrap().level, 1);
+        assert_eq!(config.libs[0].level, 3);
+        assert_eq!(
+            config.source,
+            Some(Source::Lib(LibConfig {
+                level: 1,
+                tags: vec![]
+            }))
+        );
+    }
+
+    #[test]
+    fn maps_the_parent_context_for_defaults() {
+        let config = load(&["{}"]).unwrap();
+
+        assert_eq!(config.plugin.name, "from context");
+    }
+
+    #[test]
+    fn maps_the_parent_context_for_validation() {
+        let error = load(&[r#"{ "plugin": { "size": 11 } }"#]).unwrap_err();
+
+        assert!(error.contains("plugin.size: must be at most 10"), "{error}");
+    }
+
+    #[test]
+    fn defaults_without_a_context() {
+        let config = AppConfig::default();
+
+        assert_eq!(config.lib.level, 1);
+        assert_eq!(config.plugin.name, "");
+    }
+}

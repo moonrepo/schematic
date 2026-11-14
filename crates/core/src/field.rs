@@ -17,6 +17,7 @@ use syn::{Attribute, Expr, ExprPath, Field as NativeField, FieldModifiers, Ident
 #[derive(Debug, FromAttributes, Default)]
 #[darling(default, attributes(schema, setting))]
 pub struct FieldArgs {
+    pub context: Option<ExprPath>,
     #[darling(with = preserve_str_literal, map = "Some")]
     pub default: Option<Expr>,
     pub env: Option<String>,
@@ -98,7 +99,12 @@ impl Field {
             modifiers: field.modifiers,
             serde_args,
             serde_container_args,
-            value: FieldValue::new(field.ty, args.nested.as_ref(), self_ty),
+            value: FieldValue::new(
+                field.ty,
+                args.nested.as_ref(),
+                self_ty,
+                args.context.clone(),
+            ),
             args,
         };
 
@@ -736,7 +742,10 @@ impl Field {
             // A flattened config's settings are written alongside this
             // config's own, so they're reported at the same path.
             let nested_value = if self.is_flatten() && self.is_bare_nested() {
-                quote! { validate.flattened(#setting_var); }
+                match &self.args.context {
+                    Some(func) => quote! { validate.flattened_with(#setting_var, #func(context)); },
+                    None => quote! { validate.flattened(#setting_var); },
+                }
             } else {
                 self.value
                     .impl_partial_validate_nested(
@@ -761,16 +770,29 @@ impl Field {
         let missing = if self.is_bare_nested() {
             let ty = self.value.get_partial_type();
 
+            let (flattened, nested, context) = match &self.args.context {
+                Some(func) => (
+                    format_ident!("flattened_with"),
+                    format_ident!("nested_with"),
+                    quote! { , #func(context) },
+                ),
+                None => (
+                    format_ident!("flattened"),
+                    format_ident!("nested"),
+                    quote! {},
+                ),
+            };
+
             if self.is_flatten() {
                 quote! {
                     else if finalizing {
-                        validate.flattened(&<#ty as Default>::default());
+                        validate.#flattened(&<#ty as Default>::default() #context);
                     }
                 }
             } else {
                 quote! {
                     else if finalizing {
-                        validate.nested(#key_string, &<#ty as Default>::default());
+                        validate.#nested(#key_string, &<#ty as Default>::default() #context);
                     }
                 }
             }
