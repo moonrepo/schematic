@@ -47,10 +47,13 @@ that every setting's type must implement the partial's derives, and points at th
 finalized, validated, and given a schema by its own shape. Marking both a variant and one of its
 values panics.
 
-**C7. `ConfigLoader` is neither `Send` nor `Sync`** ✅ · low-med
+**C7. `ConfigLoader` is neither `Send` nor `Sync`** · won't fix, by decision
 
-- The trait objects lack `+ Send + Sync`, so a loader can't live in shared state or a reload task.
-- Fix: add the bounds. Mildly breaking for non-`Send` custom formats or cachers.
+Adding `+ Send + Sync` to formats and cachers (and `PhantomData<fn() -> T>`) works for every built-in
+except `PklFormat`. It stores rpkl's `EvaluatorOptions`, whose client readers are
+`Arc<dyn PklModuleReader>` with no `Send` bound, so no `PklFormat` is `Send`, even with default
+options. The fix would be `PklFormat::new` taking a `Fn() -> EvaluatorOptions + Send + Sync`
+factory, which was declined, so the loader stays as it is. Revisit if rpkl bounds its readers.
 
 **C8. Custom renderers can't reuse built-in helpers** 📖 · low
 
