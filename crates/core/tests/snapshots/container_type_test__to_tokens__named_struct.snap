@@ -72,8 +72,15 @@ impl schematic::PartialConfig for PartialExample {
         if let Some(layer) = Self::env_values()? {
             partial.merge(context, layer)?;
         }
+        partial.finalize_nested(context)
+    }
+    fn finalize_nested(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = self;
         if let Some(layer) = partial.nested {
-            partial.nested = Some(layer.finalize(context)?);
+            partial.nested = Some(layer.finalize_nested(context)?);
         }
         if let Some(layer) = partial.list {
             partial.list = Some(
@@ -152,6 +159,15 @@ impl schematic::PartialConfig for PartialExample {
 #[automatically_derived]
 impl schematic::Config for Example {
     type Partial = PartialExample;
+    fn default_partial() -> Self::Partial {
+        let mut partial = <Self::Partial as schematic::PartialConfig>::default_values(
+                &Default::default(),
+            )
+            .expect("Failed to generate default values.")
+            .unwrap_or_default();
+        partial.nested = Some(<NestedConfig as schematic::Config>::default_partial());
+        partial
+    }
     fn from_partial(partial: Self::Partial) -> Self {
         Self {
             enabled: partial.enabled.unwrap_or_default(),

@@ -14,6 +14,13 @@ fn finalize(
     if let Some(layer) = Self::env_values()? {
         partial.merge(context, layer)?;
     }
+    partial.finalize_nested(context)
+}
+fn finalize_nested(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    let mut partial = self;
     if let Some(layer) = partial.0 {
         partial.0 = Some(
             layer

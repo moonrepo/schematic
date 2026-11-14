@@ -28,18 +28,15 @@ The probe crates were throwaway. Each ✅ item gives enough of a scenario to reb
 
 ## Top priorities
 
-Ordered by user impact per unit of work. The bugs were fixed on `0.21-bugs`, except B1, which needs
-a decision (see [bugs.md](bugs.md)).
+Ordered by user impact per unit of work. Every bug was fixed on `0.21-bugs`.
 
-1. **Decide how to fix nested defaults and env being applied once per nesting level (B1).**
-   Non-idempotent merges such as `append_vec` duplicate default values.
-2. **Resolve generic nested configs by full type (C1).** Nesting by path and `Self` now work, but
+1. **Resolve generic nested configs by full type (C1).** Nesting by path and `Self` now work, but
    `#[setting(nested)] inner: Wrapper<String>` still doesn't.
-3. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
+2. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
    `Debug` dump of the darling error.
-4. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
+3. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
    errors have no span, and validation is blamed on the last file.
-5. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
+4. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
    in-memory layer, the merge helpers moon wrote, and a runtime merge strategy (#175).
 
 ## Quick wins

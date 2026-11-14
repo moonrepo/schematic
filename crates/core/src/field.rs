@@ -699,7 +699,7 @@ impl Field {
             // The `if let` below consumes the partial's `Option`, which is
             // the first `Option` layer when the type is optional
             self.value
-                .impl_partial_finalize_nested(&format_ident!("layer"), true)
+                .impl_partial_finalize_nested(&format_ident!("layer"), true, false)
                 .value
         } else {
             quote! { layer }

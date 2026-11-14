@@ -1974,3 +1974,249 @@ mod serde_default_function {
         assert_eq!(Server::default().port, 8080);
     }
 }
+
+// Default values and environment variables are applied once, wherever a
+// config is nested, which a merge that appends would otherwise repeat.
+mod applied_once {
+    use super::*;
+    use schematic::merge::append_vec;
+    use std::env;
+
+    fn add_tag(mut value: Vec<String>, _: &()) -> schematic::TransformResult<Vec<String>> {
+        value.push("t".into());
+        Ok(value)
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct Child {
+        #[setting(default = vec!["d".to_owned()], merge = append_vec)]
+        list: Vec<String>,
+        #[setting(transform = add_tag)]
+        tags: Vec<String>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        child: Child,
+        #[setting(nested)]
+        maybe: Option<Child>,
+        #[setting(nested)]
+        items: Vec<Child>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Grandparent {
+        #[setting(nested)]
+        parent: Parent,
+    }
+
+    fn load<T: ConfigTrait>(code: &str) -> T {
+        ConfigLoader::<T>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config
+    }
+
+    #[test]
+    fn applies_defaults_of_a_nested_config_once() {
+        let config = load::<Parent>(r#"{ "child": { "list": ["f"] } }"#);
+
+        assert_eq!(config.child.list, vec!["d", "f"]);
+        assert_eq!(config.child.tags, vec!["t"]);
+    }
+
+    #[test]
+    fn applies_defaults_once_at_any_depth() {
+        let config = load::<Grandparent>(r#"{ "parent": { "child": { "list": ["f"] } } }"#);
+
+        assert_eq!(config.parent.child.list, vec!["d", "f"]);
+        assert_eq!(config.parent.child.tags, vec!["t"]);
+    }
+
+    #[test]
+    fn matches_default_without_sources() {
+        let config = load::<Grandparent>("{}");
+
+        assert_eq!(config.parent.child.list, vec!["d"]);
+        assert_eq!(Grandparent::default().parent.child.list, vec!["d"]);
+    }
+
+    #[test]
+    fn applies_defaults_of_an_optional_config_once() {
+        let config = load::<Grandparent>(r#"{ "parent": { "maybe": { "list": ["f"] } } }"#);
+        let maybe = config.parent.maybe.unwrap();
+
+        assert_eq!(maybe.list, vec!["d", "f"]);
+        assert_eq!(maybe.tags, vec!["t"]);
+    }
+
+    #[test]
+    fn applies_defaults_of_each_item_once() {
+        let config = load::<Grandparent>(r#"{ "parent": { "items": [{}, { "list": ["f"] }] } }"#);
+
+        assert_eq!(config.parent.items[0].list, vec!["d"]);
+        assert_eq!(config.parent.items[1].list, vec!["d", "f"]);
+        assert_eq!(config.parent.items[1].tags, vec!["t"]);
+    }
+
+    // Each test that reads the environment has its own types and prefixes,
+    // as tests run in parallel and share the process environment
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(env_prefix = "ONCE_ENV_")]
+    pub struct EnvChild {
+        #[setting(default = vec!["d".to_owned()], merge = append_vec, parse_env = schematic::env::split_comma)]
+        list: Vec<String>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct EnvParent {
+        #[setting(nested)]
+        child: EnvChild,
+        #[setting(nested)]
+        maybe: Option<EnvChild>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct EnvGrandparent {
+        #[setting(nested)]
+        parent: EnvParent,
+    }
+
+    #[test]
+    fn applies_environment_variables_once() {
+        unsafe { env::set_var("ONCE_ENV_LIST", "e") };
+
+        let config = ConfigLoader::<EnvGrandparent>::new()
+            .code(
+                r#"{ "parent": { "child": { "list": ["f"] }, "maybe": {} } }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load();
+
+        unsafe { env::remove_var("ONCE_ENV_LIST") };
+
+        let config = config.unwrap().config;
+
+        assert_eq!(config.parent.child.list, vec!["d", "f", "e"]);
+        assert_eq!(config.parent.maybe.unwrap().list, vec!["d", "e"]);
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(env_prefix = "ONCE_OWN_A_")]
+    pub struct OwnChildA {
+        #[setting(default = vec!["d".to_owned()], merge = append_vec, parse_env = schematic::env::split_comma)]
+        list: Vec<String>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct PrefixedParentA {
+        #[setting(nested, env_prefix = "ONCE_PARENT_A_")]
+        child: OwnChildA,
+    }
+
+    #[test]
+    fn applies_an_own_prefix_once_and_over_a_parent_prefix() {
+        unsafe {
+            env::set_var("ONCE_OWN_A_LIST", "own");
+            env::set_var("ONCE_PARENT_A_LIST", "parent");
+        };
+
+        let config = ConfigLoader::<PrefixedParentA>::new().load();
+
+        unsafe {
+            env::remove_var("ONCE_OWN_A_LIST");
+            env::remove_var("ONCE_PARENT_A_LIST");
+        };
+
+        assert_eq!(config.unwrap().config.child.list, vec!["d", "own"]);
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(env_prefix = "ONCE_OWN_B_")]
+    pub struct OwnChildB {
+        #[setting(default = vec!["d".to_owned()], merge = append_vec, parse_env = schematic::env::split_comma)]
+        list: Vec<String>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct PrefixedParentB {
+        #[setting(nested, env_prefix = "ONCE_PARENT_B_")]
+        child: OwnChildB,
+    }
+
+    #[test]
+    fn reads_a_parent_prefix_when_the_own_is_missing() {
+        unsafe { env::set_var("ONCE_PARENT_B_LIST", "parent") };
+
+        let config = ConfigLoader::<PrefixedParentB>::new().load();
+
+        unsafe { env::remove_var("ONCE_PARENT_B_LIST") };
+
+        assert_eq!(config.unwrap().config.child.list, vec!["d", "parent"]);
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub enum Source {
+        #[setting(default, nested)]
+        File(Child),
+        Url(String),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HasSource {
+        #[setting(nested)]
+        source: Source,
+    }
+
+    #[test]
+    fn applies_defaults_of_a_default_variant_once() {
+        let config = load::<HasSource>(r#"{ "source": { "File": { "list": ["f"] } } }"#);
+
+        assert_eq!(
+            config.source,
+            Source::File(Child {
+                list: vec!["d".into(), "f".into()],
+                tags: vec!["t".into()],
+            })
+        );
+
+        let config = load::<HasSource>("{}");
+
+        // `Default` holds the same defaults, though it runs no transforms
+        let Source::File(default) = HasSource::default().source else {
+            panic!();
+        };
+
+        assert_eq!(default.list, vec!["d"]);
+        assert_eq!(
+            config.source,
+            Source::File(Child {
+                list: vec!["d".into()],
+                tags: vec!["t".into()],
+            })
+        );
+    }
+
+    #[test]
+    fn applies_defaults_of_a_variant_switched_back_to() {
+        let config = ConfigLoader::<HasSource>::new()
+            .code(r#"{ "source": { "Url": "x" } }"#, "a.json")
+            .unwrap()
+            .code(r#"{ "source": { "File": { "list": ["f"] } } }"#, "b.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        let Source::File(child) = config.source else {
+            panic!();
+        };
+
+        assert_eq!(child.list, vec!["d", "f"]);
+    }
+}

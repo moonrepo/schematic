@@ -14,17 +14,31 @@ fn finalize(
     if let Some(layer) = Self::env_values()? {
         partial.merge(context, layer)?;
     }
+    partial.finalize_nested(context)
+}
+fn finalize_nested(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    let mut partial = self;
     if let Some(layer) = partial.0 {
-        partial.0 = Some(layer.finalize(context)?);
+        partial.0 = Some(layer.finalize_nested(context)?);
     }
     if let Some(layer) = partial.1 {
-        partial.1 = Some(transform_config(layer.finalize(context)?, context)?);
+        partial.1 = Some(transform_config(layer.finalize_nested(context)?, context)?);
     }
     if let Some(layer) = partial.2 {
-        partial.2 = Some(layer.finalize(context)?);
+        partial.2 = Some({
+            let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?
+                .unwrap_or_default();
+            base.merge(context, layer)?;
+            base.finalize_nested(context)?
+        });
     }
     if let Some(layer) = partial.3 {
-        partial.3 = Some(transform_config(layer.finalize(context)?, context)?);
+        partial.3 = Some(transform_config(layer.finalize_nested(context)?, context)?);
     }
     Ok(partial)
 }

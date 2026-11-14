@@ -30,6 +30,12 @@
 
 ##### Config
 
+- Fixed the default values and environment variables of a nested config being applied again by
+  every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
+  defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
+  of nesting. They're now applied once, by the outermost config. Items of a nested collection, and
+  the value of an enum variant, are still finalized in full, as nothing above them applies their
+  defaults.
 - Fixed `rename_all` casing an enum variant differently to serde when it holds consecutive
   capitals, as serde splits before every one. `MacOS` in kebab case is now `mac-o-s`, like serde
   accepts, rather than `mac-os`, which is what `Display`, `FromStr`, and schemas used before. A
@@ -45,8 +51,9 @@
   `127.0.0.1`, or `[::1]`, and an `HTTPS://` scheme is matched case insensitively.
 - Fixed a value starting with `www`, like `www/base.json`, being treated as a URL. It must now start
   with `www.`.
-- Fixed a nested config's own `env_prefix` not taking precedence over one passed down by
-  `#[setting(nested, env_prefix)]` when reading environment variables directly.
+- Fixed a nested config's own `env_prefix` being read after one passed down by
+  `#[setting(nested, env_prefix)]`, rather than before it, so that the parent's variable won when
+  both were set.
 - Fixed `Config::settings()` overflowing the stack for a config that holds its own type. A nested
   config already being collected is left without its settings.
 - Fixed a field-level `#[serde(default = "fn")]` being ignored when loading, while still marking

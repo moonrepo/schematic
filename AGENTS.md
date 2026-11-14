@@ -128,6 +128,27 @@ Runtime flow: each source is parsed into a partial layer, layers are combined wi
 runs per-setting transforms and nested finalization, and finally `validate` runs before
 `from_partial` produces the full type. Precedence, lowest to highest: defaults → files → env.
 
+**Defaults and env are applied once, by the outermost config.** A struct's `default_values` and
+`env_values` already contain those of its bare and optional nested configs, so the derived
+`finalize` merges them and then calls the hidden `PartialConfig::finalize_nested`, which runs
+transforms and finalizes each nested config *without* re-applying its own defaults or env. Before
+this, every level re-applied them, and a merge like `append_vec` repeated them. Per kind of nested
+setting:
+
+- **Bare** (`child: Child`): `child.finalize_nested(..)`.
+- **Optional** (`Option<Child>`): a parent's defaults leave it `None`, so its `default_values` are
+  merged under it, then `finalize_nested`. Its env already came through the parent's env layer.
+- **Collection items** and **enum variant values** are boundaries: nothing above them applied their
+  defaults or env (collections aren't in `default_values`, and an enum reads no env), so they get a
+  full `finalize`. This is also what lets each item read the environment.
+- The trait default of `finalize_nested` is `finalize`, so a hand-written partial behaves as before.
+
+Because a variant's value is finalized in full, an enum's `default_values` holds its default variant
+with the *type* default of a nested config, not its defaults, or they'd be applied twice. `Default`
+still gets them: derived configs override `Config::default_partial` to call
+`<T as Config>::default_partial()` for each bare nested config, which recurses into the default
+variant of an enum.
+
 Key invariants:
 
 - A setting's **outer `Option` doubles as the partial's `Option`** — `Option<T>` becomes
@@ -304,11 +325,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `env_prefix`. Deriving keys for every container would force `FromStr` on every setting, which
   breaks `Duration`, tuples, etc. A parent's `#[setting(nested, env_prefix)]` therefore only
   applies to a child that declares one, and it *adds* a prefix rather than replacing the child's.
-  `EnvManager` reads the child's own prefix first and the parent's second, and that order is not
-  negotiable: the generated `finalize` re-reads `Self::env_values()` with no parent prefix and
-  merges it last, so a parent-first order would be silently undone whenever both variables are set.
-  (That is exactly what the old replace-the-prefix design did.) Making the parent win would need
-  the prefix threaded through `finalize`, which the maintainer rejected as new API. `settings()`
+  `EnvManager` reads the child's own prefix first and the parent's second, and that order is what
+  makes the child's own prefix win: a nested config doesn't re-read the environment in
+  `finalize_nested`, so the parent's env layer, read through `EnvManager`, is the only read. (The
+  old replace-the-prefix design let the parent win.) Making the parent win would need the order
+  flipped, which the maintainer rejected. `settings()`
   and `SchemaField.env_var` report the derived key with the container's *own* prefix
   (`Field::get_env_var_name`), because the parent's is only known at runtime and the own key always
   works. A setting that never reads the environment, like a collection without `parse_env`, reports
@@ -328,7 +349,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - **A variant's `default` value lives in `default_values`, not the partial's `Default`.**
   `#[setting(default = value)]` on a variant holding a single value marks it as the default and is
   what `default_values` puts in it (`Variant::impl_partial_default_values`), which is what the full
-  type's `Default` goes through. The partial's own `Default` holds the type default, like the empty
+  type's `Default` goes through. A default variant holding a bare nested config is the exception:
+  it holds that config's type default there, and its defaults come through `default_partial` (see
+  the runtime flow above). The partial's own `Default` holds the type default, like the empty
   partial of a struct, since it has no context for a handler and can't return a string conversion's
   error. A unit variant's `default = bool` still only marks it, as it always has.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a

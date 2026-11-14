@@ -712,7 +712,7 @@ impl Variant {
     /// `default_values`. Without one, it holds the default of its type.
     pub fn impl_partial_default_values(&self) -> ImplResult {
         let Some(expr) = self.get_default_value() else {
-            return self.impl_partial_nested_default_values();
+            return self.impl_partial_default_value();
         };
 
         let mut res = ImplResult::default();
@@ -740,30 +740,32 @@ impl Variant {
         res
     }
 
-    /// Generate this variant holding the default of each of its types, where
-    /// a bare nested config holds the default values of its own settings,
-    /// as it would once finalized.
-    fn impl_partial_nested_default_values(&self) -> ImplResult {
-        let Fields::Unnamed(_) = &self.fields else {
-            return self.impl_partial_default_value();
-        };
+    /// Generate this variant as the default partial of the full type, for
+    /// [`Config::default_partial`]. A bare nested config holds its own default
+    /// partial, which isn't part of `default_values`, as finalizing the
+    /// variant applies it. Returns nothing when no value is nested, as the
+    /// provided method already matches.
+    pub fn impl_full_default_partial(&self, partial_name: &Ident) -> Option<TokenStream> {
+        if self.get_default_value().is_some() || !matches!(self.fields, Fields::Unnamed(_)) {
+            return None;
+        }
 
+        let mut nested = false;
         let name = &self.ident;
         let fields = self
             .values
             .iter()
-            .map(|value| match value.get_nested_partial_type() {
-                Some(partial) if value.get_partial_layers().is_empty() => quote! {
-                    <#partial as schematic::PartialConfig>::default_values(context)?.unwrap_or_default()
-                },
+            .map(|value| match value.get_nested_type() {
+                Some(ty) if value.get_partial_layers().is_empty() => {
+                    nested = true;
+
+                    quote! { <#ty as schematic::Config>::default_partial() }
+                }
                 _ => quote! { Default::default() },
             })
             .collect::<Vec<_>>();
 
-        ImplResult {
-            value: quote! { #name(#(#fields),*) },
-            ..Default::default()
-        }
+        nested.then(|| quote! { #partial_name::#name(#(#fields),*) })
     }
 
     /// Generate a deserialization attempt for this variant, for use within
@@ -865,8 +867,12 @@ impl Variant {
                             .map(|(i, o)| {
                                 let value = if self.is_nested() {
                                     // Variant values have no partial `Option`
-                                    // wrapper, so walk all layers
-                                    self.values[i].impl_partial_finalize_nested(o, false).value
+                                    // wrapper, so walk all layers. An enum
+                                    // reads no environment of its own, so a
+                                    // value is finalized in full.
+                                    self.values[i]
+                                        .impl_partial_finalize_nested(o, false, true)
+                                        .value
                                 } else {
                                     quote! { #o }
                                 };

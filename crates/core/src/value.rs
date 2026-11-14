@@ -421,17 +421,45 @@ impl Value {
         res
     }
 
+    /// Generate the finalization of a nested config, within the partial.
+    ///
+    /// The config is finalized in full, applying its own default values and
+    /// environment variables, when it's an item of a collection, or `boundary`
+    /// is true, as nothing above it has applied them. Otherwise its parent's
+    /// `finalize` has merged them, as part of its own, so it's finalized as
+    /// nested. An optional config is left `None` by its parent's defaults, so
+    /// its default values are merged under it first.
     pub fn impl_partial_finalize_nested(
         &self,
         layer_var: &Ident,
         skip_outer_option: bool,
+        boundary: bool,
     ) -> ImplResult {
         let mut res = ImplResult::default();
-        let mut value = quote! { #layer_var.finalize(context)? };
+        let skips_option = skip_outer_option && self.is_outer_option_wrapped();
+        let in_collection = self.is_collection();
+
+        let mut value;
 
         // The finalize call itself, while nothing wraps it, so that a
         // collection maps over it directly rather than `Ok(...?)`
-        let mut result = Some(quote! { #layer_var.finalize(context) });
+        let mut result = None;
+
+        if boundary || in_collection {
+            value = quote! { #layer_var.finalize(context)? };
+            result = Some(quote! { #layer_var.finalize(context) });
+        } else if skips_option && let Some(partial) = self.get_nested_partial_type() {
+            value = quote! {
+                {
+                    let mut base = <#partial as schematic::PartialConfig>::default_values(context)?
+                        .unwrap_or_default();
+                    base.merge(context, #layer_var)?;
+                    base.finalize_nested(context)?
+                }
+            };
+        } else {
+            value = quote! { #layer_var.finalize_nested(context)? };
+        }
 
         // Wrappers don't exist in the partial, and the first `Option` layer is
         // represented by the partial's own `Option`, so skip it when the

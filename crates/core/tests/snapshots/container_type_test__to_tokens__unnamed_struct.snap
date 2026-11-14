@@ -42,8 +42,22 @@ impl schematic::PartialConfig for PartialExample {
         if let Some(layer) = Self::env_values()? {
             partial.merge(context, layer)?;
         }
+        partial.finalize_nested(context)
+    }
+    fn finalize_nested(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = self;
         if let Some(layer) = partial.1 {
-            partial.1 = Some(layer.finalize(context)?);
+            partial.1 = Some({
+                let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                        context,
+                    )?
+                    .unwrap_or_default();
+                base.merge(context, layer)?;
+                base.finalize_nested(context)?
+            });
         }
         Ok(partial)
     }
