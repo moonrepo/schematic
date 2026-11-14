@@ -564,13 +564,11 @@ impl Field {
 
         for (name, enabled) in [
             ("flatten", self.is_flatten()),
-            // Serde rejects a setting it never deserializes, so it's hidden
-            // like a skipped one
+            // Serde rejects a setting it never deserializes, but still writes
+            // it, so it's hidden rather than left out like a skipped one
             (
                 "hidden",
-                self.is_skipped()
-                    || self.args.skip_deserializing
-                    || self.serde_args.skip_deserializing,
+                self.args.skip_deserializing || self.serde_args.skip_deserializing,
             ),
             ("nullable", self.is_nullable()),
             ("optional", self.is_optional()),

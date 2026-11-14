@@ -65,12 +65,11 @@ renderers, including being generic over the output type `O`.
 Not built, by decision: making `split_doc_tags` and the template helpers public, as they'd become
 API to keep stable.
 
-**C9. `#[setting(skip)]` fields still require `T: Schematic`** ✅ · med
+**C9. `#[setting(skip)]` fields still require `T: Schematic`** · fixed on `0.21-compose`
 
-- They are hidden, but still `infer`red and registered (exported as unused TS types and
-  definitions).
-- Where: `container.rs:946`.
-- Fix: treat `skip` like `exclude` in schema codegen.
+A skipped field (`#[setting(skip)]` or `#[serde(skip)]`) is now filtered out of the schema with
+excluded ones, so its type isn't inferred or registered. `skip_deserializing` fields stay hidden,
+as they're still written.
 
 **C10. Dependencies pulled in without `config`** ✅ · low
 

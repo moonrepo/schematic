@@ -31,15 +31,6 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     },
                 ),
                 (
-                    "c".into(),
-                    {
-                        let mut field = SchemaField::new(schema.infer::<usize>());
-                        field.env_var = Some("APP_C".into());
-                        field.hidden = true;
-                        field
-                    },
-                ),
-                (
                     "d".into(),
                     {
                         let mut field = SchemaField::new(schema.infer::<usize>());

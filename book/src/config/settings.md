@@ -71,8 +71,9 @@ And the following for serde compatibility:
 - `alias`
 - `flatten`
 - `rename`
-- `skip`
-- `skip_deserializing`
+- `skip` - Also left out of the generated [schema](../schema/index.md), as it's never read or
+  written, so its type needn't implement `Schematic`.
+- `skip_deserializing` - Hidden in the generated schema, as it's written but never read.
 - `skip_serializing`
 - `skip_serializing_if` - Only honored from `#[setting]`, and written against the partial's
   `Option`. The `#[serde]` form is left for the full type, whose field is not wrapped.

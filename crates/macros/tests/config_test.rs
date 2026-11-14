@@ -2742,3 +2742,47 @@ mod mixed_variant_values {
         assert!(matches!(values.items_types[1].ty, SchemaType::Boolean(_)));
     }
 }
+
+// A skipped setting is never read or written, so its type needn't have a schema
+mod skipped_without_schema {
+    use super::*;
+    use schematic::{SchemaBuilder, SchemaType};
+
+    // Implements what the partial derives, but not `Schematic` or serde
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct Runtime {
+        handle: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct WithRuntime {
+        name: String,
+        #[setting(skip)]
+        runtime: Runtime,
+        #[serde(skip)]
+        other: Runtime,
+    }
+
+    #[test]
+    fn leaves_it_out_of_the_schema() {
+        let schema = SchemaBuilder::build_root::<WithRuntime>();
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(inner.fields.keys().collect::<Vec<_>>(), vec!["name"]);
+    }
+
+    #[test]
+    fn still_loads() {
+        let config = ConfigLoader::<WithRuntime>::new()
+            .code(r#"{ "name": "a" }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.runtime, Runtime::default());
+    }
+}

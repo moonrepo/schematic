@@ -53,6 +53,12 @@
 
 #### 🐞 Fixes
 
+##### Schema
+
+- Fixed a skipped setting, with `#[setting(skip)]` or `#[serde(skip)]`, requiring its type to
+  implement `Schematic`, and registering that type's schema. It's now left out of the schema like an
+  excluded one, rather than hidden, as it's never read or written.
+
 ##### Config
 
 - Fixed a hand-written `PartialConfig` being skipped when nested within a derived config. Its

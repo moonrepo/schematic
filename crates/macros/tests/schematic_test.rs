@@ -374,3 +374,21 @@ mod container_serde_default {
         );
     }
 }
+
+mod skipped {
+    use super::*;
+
+    pub struct NotSchematic;
+
+    #[derive(Schematic)]
+    struct WithSkipped {
+        name: String,
+        #[serde(skip)]
+        handle: NotSchematic,
+    }
+
+    #[test]
+    fn leaves_skipped_fields_out() {
+        assert_eq!(field_names(&build::<WithSkipped>()), vec!["name"]);
+    }
+}
