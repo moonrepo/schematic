@@ -1,0 +1,4 @@
+extends:
+  - ./diamond-left.yml
+  - ./diamond-right.yml
+value: [1]

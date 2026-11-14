@@ -22,7 +22,7 @@ impl Source {
     /// Create a new source with the provided value. Will attempt to infer the
     /// type of source based on characters within the value:
     ///
-    /// - Will be a URL, if the value starts with `http://`, `https://`, or `www`.
+    /// - Will be a URL, if the value starts with `http://`, `https://`, or `www.`.
     /// - Will be a file, if the file ends in an extension, or contains path separators.
     /// - Otherwise will be an error.
     pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {

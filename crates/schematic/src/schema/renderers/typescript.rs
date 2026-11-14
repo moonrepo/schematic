@@ -71,6 +71,43 @@ pub struct TypeScriptOptions {
     pub property_format: PropertyFormat,
 }
 
+/// Quote a string as a TypeScript string literal.
+fn quote_string(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+
+    quoted.push('\'');
+
+    for ch in value.chars() {
+        match ch {
+            '\'' => quoted.push_str("\\'"),
+            '\\' => quoted.push_str("\\\\"),
+            '\n' => quoted.push_str("\\n"),
+            '\r' => quoted.push_str("\\r"),
+            '\t' => quoted.push_str("\\t"),
+            other => quoted.push(other),
+        }
+    }
+
+    quoted.push('\'');
+    quoted
+}
+
+/// Quote a property or enum member name when it isn't a valid identifier,
+/// like `kebab-case` names.
+fn quote_property(name: &str) -> String {
+    let mut chars = name.chars();
+    let is_identifier = chars
+        .next()
+        .is_some_and(|ch| ch.is_ascii_alphabetic() || ch == '_' || ch == '$')
+        && chars.all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '$');
+
+    if is_identifier {
+        name.to_owned()
+    } else {
+        quote_string(name)
+    }
+}
+
 /// Renders TypeScript types from a schema.
 #[derive(Default)]
 pub struct TypeScriptRenderer {
@@ -213,7 +250,15 @@ impl TypeScriptRenderer {
         // and then create a parent type alias thats an intersection
         // of all the extended types
         else {
-            let base_name = format!("{name}Base");
+            // A flattened field may already be named like the base, such as
+            // a `base` field, so the base takes the first name that's free
+            let mut base_name = format!("{name}Base");
+            let mut suffix = 1;
+
+            while extends.contains(&base_name) {
+                suffix += 1;
+                base_name = format!("{name}Base{suffix}");
+            }
 
             outputs.push(self.export_object_type(&base_name, schema, value)?);
 
@@ -271,6 +316,7 @@ impl TypeScriptRenderer {
                 continue;
             }
 
+            let name = quote_property(name);
             let field = if matches!(self.options.enum_format, EnumFormat::ValuedEnum) {
                 format!(
                     "{}{} = {},",
@@ -303,7 +349,7 @@ impl TypeScriptRenderer {
             LiteralValue::F64(inner) => inner.to_string(),
             LiteralValue::Int(inner) => inner.to_string(),
             LiteralValue::UInt(inner) => inner.to_string(),
-            LiteralValue::String(inner) => format!("'{inner}'"),
+            LiteralValue::String(inner) => quote_string(inner),
         }
     }
 
@@ -450,7 +496,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         if let Some(values) = &string.enum_values {
             return Ok(values
                 .iter()
-                .map(|v| format!("'{v}'"))
+                .map(|v| quote_string(v))
                 .collect::<Vec<_>>()
                 .join(" | "));
         }
@@ -470,7 +516,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
                 return Ok(());
             }
 
-            let mut row = format!("{indent}{name}");
+            let mut row = format!("{indent}{}", quote_property(name));
 
             if field.optional
                 || field.aliases.iter().any(|alias| name == alias)
@@ -501,7 +547,7 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
 
             let mut tags = vec![];
 
-            if let Some(default) = field.schema.get_default() {
+            if let Some(default) = field.get_default() {
                 tags.push(format!("@default {}", self.lit_to_string(default)));
             }
 

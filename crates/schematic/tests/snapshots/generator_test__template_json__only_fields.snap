@@ -8,5 +8,5 @@ expression: "fs::read_to_string(file).unwrap()"
   // "float32": 0.0,
 
   // This is a string.
-  "string": "abc",
+  "string": "abc"
 }

@@ -34,7 +34,6 @@ title: LiteralConfig
 | Attribute | Value |
 | --- | --- |
 | Type | [`Cache`](./Cache.md) |
-| Default | `"remote"` |
 
 ### `compress`
 
@@ -62,7 +61,6 @@ title: LiteralConfig
 | Attribute | Value |
 | --- | --- |
 | Type | [`Threads`](./Threads.md) |
-| Default | `"auto"` |
 | Values | `"auto"`, `"off"` |
 
 ## References

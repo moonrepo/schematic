@@ -830,16 +830,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         }
       },
-      "additionalProperties": {
-        "type": [
-          "boolean",
-          "object",
-          "array",
-          "number",
-          "string",
-          "integer"
-        ]
-      }
+      "additionalProperties": {}
     },
     "Serde": {
       "title": "Serde",
@@ -1011,16 +1002,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           }
         }
       },
-      "additionalProperties": {
-        "type": [
-          "boolean",
-          "object",
-          "array",
-          "number",
-          "string",
-          "integer"
-        ]
-      }
+      "additionalProperties": {}
     }
   }
 }

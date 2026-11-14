@@ -890,7 +890,7 @@ impl ApiDocsRenderer {
         let expr = self.render_schema(&schema)?;
         let mut rows = self.type_rows("Type", &expr);
 
-        if let Some(default) = field.schema.get_default() {
+        if let Some(default) = field.get_default() {
             rows.push(("Default", code(lit_to_string(default))));
         }
 

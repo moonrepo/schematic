@@ -22,7 +22,7 @@ impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
         content: &str,
         _cache_path: Option<&Path>,
     ) -> Result<T, ConfigError> {
-        let mut content = String::from(if content.is_empty() { "{}" } else { content });
+        let mut content = String::from(content);
 
         json_strip_comments::strip(&mut content).map_err(|error| {
             ConfigError::JsonStripCommentsFailed {
@@ -30,6 +30,11 @@ impl<T: DeserializeOwned> SourceFormat<T> for JsonFormat {
                 error: Box::new(error),
             }
         })?;
+
+        // A file of only whitespace or comments is empty, like it is for other formats
+        if content.trim().is_empty() {
+            content = String::from("{}");
+        }
 
         let de = &mut serde_json::Deserializer::from_str(&content);
 

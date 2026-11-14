@@ -12,7 +12,7 @@ fn default_values(
             b: Some(10),
             c: Some(vec![1, 2, 3]),
             d: Some(vec![1, 2, 3]),
-            e: Some(handle_default_result(String::try_from("abc"))?),
+            e: Some((&&DefaultString::<String>::new()).parse_default("abc")?),
         }),
     )
 }

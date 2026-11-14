@@ -68,8 +68,13 @@ what ships unless `rename_all` says otherwise. This was the single largest sourc
 rewrite landed, and it is why so many fixtures and snapshots in `crates/schematic/tests` are
 snake_case. When `rename_all`
 is set, `Field::get_name` and `Variant::get_name` apply it via `format_case`, so schemas,
-`settings()`, and validation paths agree with what serde accepts. Env keys deliberately skip the
-casing and stay derived from the Rust name (or an explicit `rename`).
+`settings()`, and validation paths agree with what serde accepts. `format_case` is a port of serde's
+own `RenameRule`, not `convert_case`: serde splits a variant before every uppercase letter, so
+`MacOS` is `mac-o-s` in kebab case, and anything else disagrees with what serde deserializes.
+`before_parse` still normalizes input with `convert_case`, which keeps an acronym whole, so a
+`ConfigEnum` with it also matches the identifier normalized that way (`format_loose_case`). Env keys
+deliberately skip the casing and stay derived from the Rust name (or an explicit `rename`). Raw
+identifiers are unrawed everywhere a name is derived, so `r#type` is `type`.
 
 **All three derives support generics**, where the old derive supported them only on `Schematic`.
 `Container` carries `input.generics`, and every emitted item threads them
@@ -123,14 +128,38 @@ Runtime flow: each source is parsed into a partial layer, layers are combined wi
 runs per-setting transforms and nested finalization, and finally `validate` runs before
 `from_partial` produces the full type. Precedence, lowest to highest: defaults → files → env.
 
+**Defaults and env are applied once, by the outermost config.** A struct's `default_values` and
+`env_values` already contain those of its bare and optional nested configs, so the derived
+`finalize` merges them and then calls the hidden `PartialConfig::finalize_nested`, which runs
+transforms and finalizes each nested config *without* re-applying its own defaults or env. Before
+this, every level re-applied them, and a merge like `append_vec` repeated them. Per kind of nested
+setting:
+
+- **Bare** (`child: Child`): `child.finalize_nested(..)`.
+- **Optional** (`Option<Child>`): a parent's defaults leave it `None`, so its `default_values` are
+  merged under it, then `finalize_nested`. Its env already came through the parent's env layer.
+- **Collection items** and **enum variant values** are boundaries: nothing above them applied their
+  defaults or env (collections aren't in `default_values`, and an enum reads no env), so they get a
+  full `finalize`. This is also what lets each item read the environment.
+- The trait default of `finalize_nested` is `finalize`, so a hand-written partial behaves as before.
+
+Because a variant's value is finalized in full, an enum's `default_values` holds its default variant
+with the *type* default of a nested config, not its defaults, or they'd be applied twice. `Default`
+still gets them: derived configs override `Config::default_partial` to call
+`<T as Config>::default_partial()` for each bare nested config, which recurses into the default
+variant of an enum.
+
 Key invariants:
 
 - A setting's **outer `Option` doubles as the partial's `Option`** — `Option<T>` becomes
   `Option<T>`, not `Option<Option<T>>`.
 - **Enum variant payloads get no synthetic `Option`** — `A(bool)` stays `A(bool)`.
 - **Wrapper types (`Box`/`Arc`/`Rc`) are stripped from the partial** and re-applied in
-  `from_partial`. This is why partials don't need serde's `rc` feature. Exception: kept when the
-  inner type is unsized (`Box<str>`, `Arc<str>`, `Box<[T]>`).
+  `from_partial`. This is why partials don't need serde's `rc` feature. Exceptions: kept when the
+  inner type is unsized (`Box<str>`, `Box<Path>`, `Box<[T]>`, …), and a `Box` is kept around a
+  nested config that holds the container itself (`Option<Box<Self>>`, `Value::keep_box`), as the
+  partial would otherwise have an infinite size. `Self` within a setting is replaced by the
+  container's type before analysis, as within the partial it would mean the partial.
 
 ## The derive pipeline in `core`
 
@@ -185,6 +214,14 @@ Arc<Vec<Option<NestedConfig>>>  →  layers: [Arc, Vec, Option], inner: NestedCo
 - `is_outer_option_wrapped()` — computed on the _partial_ view, so `Box<Option<T>>` correctly
   collapses to one `Option`.
 - `strip_wrappers` — false when a wrapper holds an unsized type.
+- `keep_box` — true for a nested config holding the container itself, which keeps its `Box`.
+
+Collections are rebuilt with `.into_iter().map(..).collect()`, never by naming the collection type,
+so any `FromIterator` collection works and a fully qualified path resolves. A layer that isn't a
+known collection (`Layer::Unknown`) panics at derive time when it has to be rebuilt, rather than
+emitting `Default::default()` and silently emptying it. Nested configs are always called through
+`<T as schematic::Config>` and `<<T as Config>::Partial as PartialConfig>`, never `PartialT`, so
+they resolve by the path they were written as.
 
 Codegen walks these layers to build nested expressions. Each walker composes inside-out, so position
 is respected without special-casing:
@@ -288,11 +325,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `env_prefix`. Deriving keys for every container would force `FromStr` on every setting, which
   breaks `Duration`, tuples, etc. A parent's `#[setting(nested, env_prefix)]` therefore only
   applies to a child that declares one, and it *adds* a prefix rather than replacing the child's.
-  `EnvManager` reads the child's own prefix first and the parent's second, and that order is not
-  negotiable: the generated `finalize` re-reads `Self::env_values()` with no parent prefix and
-  merges it last, so a parent-first order would be silently undone whenever both variables are set.
-  (That is exactly what the old replace-the-prefix design did.) Making the parent win would need
-  the prefix threaded through `finalize`, which the maintainer rejected as new API. `settings()`
+  `EnvManager` reads the child's own prefix first and the parent's second, and that order is what
+  makes the child's own prefix win: a nested config doesn't re-read the environment in
+  `finalize_nested`, so the parent's env layer, read through `EnvManager`, is the only read. (The
+  old replace-the-prefix design let the parent win.) Making the parent win would need the order
+  flipped, which the maintainer rejected. `settings()`
   and `SchemaField.env_var` report the derived key with the container's *own* prefix
   (`Field::get_env_var_name`), because the parent's is only known at runtime and the own key always
   works. A setting that never reads the environment, like a collection without `parse_env`, reports
@@ -312,7 +349,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - **A variant's `default` value lives in `default_values`, not the partial's `Default`.**
   `#[setting(default = value)]` on a variant holding a single value marks it as the default and is
   what `default_values` puts in it (`Variant::impl_partial_default_values`), which is what the full
-  type's `Default` goes through. The partial's own `Default` holds the type default, like the empty
+  type's `Default` goes through. A default variant holding a bare nested config is the exception:
+  it holds that config's type default there, and its defaults come through `default_partial` (see
+  the runtime flow above). The partial's own `Default` holds the type default, like the empty
   partial of a struct, since it has no context for a handler and can't return a string conversion's
   error. A unit variant's `default = bool` still only marks it, as it always has.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a
@@ -365,6 +404,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
+- A literal `#[setting(default)]` is recorded in `SchemaField.default`, never in the schema of the
+  field's type, because a named type's schema is registered once and shared by every field that
+  uses it, so a field default there leaks to the others. Renderers read
+  `SchemaField::get_default`. For the same reason a nullable union doesn't report the default of a
+  named type it holds (`Option<Mode>` has no default), and `partialize_schema` copies a field's
+  default onto it before making it nullable.
 - `StructType.partial` means "refers to a partial config type", **not** "has been partialized".
   `Schema::nullify()` moves a schema's name into the union variant it creates — surprising when
   asserting on partial schemas.

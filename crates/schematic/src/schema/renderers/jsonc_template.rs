@@ -112,11 +112,14 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
 
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
         let mut out = vec![];
-        let last_index = structure.fields.len() - 1;
 
         self.ctx.depth += 1;
 
-        for (index, (name, field)) in structure.sorted_fields().into_iter().enumerate() {
+        // Only fields that are rendered are separated by commas, so that
+        // a hidden or flattened field last doesn't leave a trailing one
+        let mut fields = vec![];
+
+        for (name, field) in structure.sorted_fields() {
             if field.flatten {
                 continue;
             }
@@ -124,18 +127,28 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
             self.ctx.push_stack(name);
 
             if !self.ctx.is_hidden(field) {
-                let prop = format!(
-                    "\"{}\": {}{}",
-                    name,
-                    self.render_schema(self.ctx.validate_schema_variant(
-                        self.ctx.get_stack_value().as_ref(),
-                        &field.schema
-                    ))?,
-                    if index == last_index { "" } else { "," }
-                );
-
-                out.push(self.ctx.create_field(field, prop));
+                fields.push((name, field));
             }
+
+            self.ctx.pop_stack();
+        }
+
+        let last_index = fields.len().saturating_sub(1);
+
+        for (index, (name, field)) in fields.into_iter().enumerate() {
+            self.ctx.push_stack(name);
+
+            let prop = format!(
+                "{}: {}{}",
+                quote_json_string(name),
+                self.render_schema(self.ctx.validate_schema_variant(
+                    self.ctx.get_stack_value().as_ref(),
+                    &get_field_schema(field)
+                ))?,
+                if index == last_index { "" } else { "," }
+            );
+
+            out.push(self.ctx.create_field(field, prop));
 
             self.ctx.pop_stack();
         }

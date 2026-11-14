@@ -13,7 +13,4 @@ priorities, and the quick wins.
 - **Book JSON env strings:** `book/src/config/struct/env.md:84` mentions them, but no helper exists.
 - **Book struct syntax:** `book/src/schema/index.md` struct examples use `pub name: String;`.
 - **Book chrono types:** `book/src/schema/external.md` lists chrono types that have no serde support.
-- **`in_range` docs:** they say non-inclusive, but it's inclusive.
 - **README formats:** the README implies formats work out of the box (X10).
-- **`AGENTS.md` on `EnvManager`:** it says `EnvManager` reads own-first. The doc is right and the
-  code is wrong (B4).

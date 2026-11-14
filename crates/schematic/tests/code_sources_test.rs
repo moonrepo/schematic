@@ -118,6 +118,47 @@ vector: [x, y, z]
     assert_eq!(result.config.vector, vec!["x", "y", "z"]);
 }
 
+#[test]
+fn supports_ron_without_some() {
+    let a = r#"(string: "foo", number: 1, vector: ["a"])"#;
+
+    let result = ConfigLoader::<Config>::new()
+        .code(a, "code.ron")
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "foo");
+    assert_eq!(result.config.number, 1);
+    assert_eq!(result.config.vector, vec!["a"]);
+}
+
+#[test]
+fn supports_ron_with_some() {
+    let a = r#"(string: Some("foo"))"#;
+
+    let result = ConfigLoader::<Config>::new()
+        .code(a, "code.ron")
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(result.config.string, "foo");
+}
+
+#[test]
+fn supports_json_of_only_whitespace_or_comments() {
+    for code in ["", "  \n", "// comment\n", "/* comment */"] {
+        let result = ConfigLoader::<Config>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .unwrap();
+
+        assert_eq!(result.config.string, "");
+    }
+}
+
 #[cfg(feature = "renderer_json_schema")]
 #[test]
 fn generates_json_schema() {

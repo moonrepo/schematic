@@ -20,16 +20,24 @@ impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
         content: &str,
         _cache_path: Option<&Path>,
     ) -> Result<T, ConfigError> {
-        let de = &mut ron::Deserializer::from_str(content).map_err(|error| ParserError {
-            content: NamedSource::new(source.get_file_name(), content.to_owned()),
-            path: String::new(),
-            span: Some(create_span(
-                content,
-                error.span.start.line,
-                error.span.start.col,
-            )),
-            message: error.to_string(),
-        })?;
+        // Every setting in a partial is an `Option`, which RON would otherwise
+        // require to be written as `Some(..)`
+        let options = ron::Options::default()
+            .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
+
+        let de =
+            &mut ron::Deserializer::from_str_with_options(content, &options).map_err(|error| {
+                ParserError {
+                    content: NamedSource::new(source.get_file_name(), content.to_owned()),
+                    path: String::new(),
+                    span: Some(create_span(
+                        content,
+                        error.span.start.line,
+                        error.span.start.col,
+                    )),
+                    message: error.to_string(),
+                }
+            })?;
 
         let result: T = serde_path_to_error::deserialize(de).map_err(|error| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),

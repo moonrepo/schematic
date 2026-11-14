@@ -24,7 +24,10 @@ impl schematic::PartialConfig for PartialExample {
         use schematic::internal::*;
         let mut env = EnvManager::new(prefix, None);
         let mut partial = Self::default();
-        partial.1 = env.nested(PartialNestedConfig::env_values()?)?;
+        partial.1 = env
+            .nested(
+                <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+            )?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
     fn finalize(
@@ -39,8 +42,22 @@ impl schematic::PartialConfig for PartialExample {
         if let Some(layer) = Self::env_values()? {
             partial.merge(context, layer)?;
         }
+        partial.finalize_nested(context)
+    }
+    fn finalize_nested(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        let mut partial = self;
         if let Some(layer) = partial.1 {
-            partial.1 = Some(layer.finalize(context)?);
+            partial.1 = Some({
+                let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                        context,
+                    )?
+                    .unwrap_or_default();
+                base.merge(context, layer)?;
+                base.finalize_nested(context)?
+            });
         }
         Ok(partial)
     }
@@ -81,7 +98,9 @@ impl schematic::Config for Example {
             {
                 let data = partial.1;
                 match data {
-                    Some(data) => Some(NestedConfig::from_partial(data)),
+                    Some(data) => {
+                        Some(<NestedConfig as schematic::Config>::from_partial(data))
+                    }
                     None => None,
                 }
             },
@@ -93,8 +112,9 @@ impl schematic::Config for Example {
             ("0".into(), ConfigSetting::new("usize")),
             (
                 "1".into(),
-                ConfigSetting::new("Option<NestedConfig>")
-                    .nested(NestedConfig::settings()),
+                schematic::internal::with_nested_settings::<
+                    NestedConfig,
+                >(ConfigSetting::new("Option<NestedConfig>")),
             ),
         ])
     }

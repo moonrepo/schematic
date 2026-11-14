@@ -4,16 +4,28 @@ expression: pretty(container.impl_full_from_partial())
 ---
 fn from_partial(partial: Self::Partial) -> Self {
     match partial {
-        PartialExample::A(pa) => Self::A(NestedConfig::from_partial(pa)),
-        PartialExample::B(pa) => Self::B(CustomConfig::from_partial(pa)),
+        PartialExample::A(pa) => {
+            Self::A(<NestedConfig as schematic::Config>::from_partial(pa))
+        }
+        PartialExample::B(pa) => {
+            Self::B(<CustomConfig as schematic::Config>::from_partial(pa))
+        }
         PartialExample::C(pa) => {
             Self::C(
                 match pa {
-                    Some(pa) => Some(NestedConfig::from_partial(pa)),
+                    Some(pa) => {
+                        Some(<NestedConfig as schematic::Config>::from_partial(pa))
+                    }
                     None => None,
                 },
             )
         }
-        PartialExample::D(pa) => Self::D(Arc::new(CustomConfig::from_partial(pa))),
+        PartialExample::D(pa) => {
+            Self::D(
+                std::sync::Arc::new(
+                    <CustomConfig as schematic::Config>::from_partial(pa),
+                ),
+            )
+        }
     }
 }

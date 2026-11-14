@@ -1,0 +1,2 @@
+extends: ./cycle-c.yml
+value: [2]

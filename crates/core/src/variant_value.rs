@@ -15,7 +15,7 @@ impl Deref for VariantValue {
 }
 
 impl VariantValue {
-    pub fn new(ty: Type, nested_arg: Option<&NestedArg>) -> Self {
-        VariantValue(Value::new(ty, nested_arg))
+    pub fn new(ty: Type, nested_arg: Option<&NestedArg>, self_ty: &Type) -> Self {
+        VariantValue(Value::new(ty, nested_arg, self_ty))
     }
 }

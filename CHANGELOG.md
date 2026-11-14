@@ -1,5 +1,117 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `ConfigError::ExtendsCycle`, returned when the sources a config extends form a cycle, such
+  as `a.json` extending `b.json` which extends `a.json`, rather than overflowing the stack. It lists
+  every source in the cycle.
+- Added `SchemaField.default`, the default of a field, which takes precedence over a default within
+  the schema of its type. `SchemaField::get_default` returns either. A literal
+  `#[setting(default)]` is now recorded here, rather than in the schema of the field's type, which a
+  named type shares with every field that uses it.
+- Updated a string literal `#[setting(default)]` to also accept a type that only implements
+  `FromStr`, like `IpAddr` and `SocketAddr`, when it doesn't implement `TryFrom<&str>`.
+- Updated `#[setting(nested)]` to resolve the nested config by the path it was written as, so a
+  config from another module, like `child::Child`, no longer needs its partial imported.
+- Updated `#[setting(nested)]` to support a config that holds its own type, like
+  `next: Option<Box<Self>>`, which keeps the `Box` in the partial. Without a `Box` or a collection,
+  the derive panics, as the type would have an infinite size.
+- Updated `#[setting(nested)]` to support any collection that `collect` can build, including
+  `VecDeque`, `LinkedList`, and `BinaryHeap`. A type the derive can't rebuild now panics, rather
+  than silently emptying it.
+- Updated `JsonSchemaRenderer` to honour `inline_subschemas`, which was accepted but ignored. Named
+  types are rendered in place, and only the target of a cycle remains a definition.
+- Updated `JsonSchemaRenderer` to put definitions where `definitions_path` points, such as
+  `#/$defs/`, and to render a tuple with `prefixItems` when the meta schema is draft 2020-12.
+
+#### 🐞 Fixes
+
+##### Config
+
+- Fixed the default values and environment variables of a nested config being applied again by
+  every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
+  defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
+  of nesting. They're now applied once, by the outermost config. Items of a nested collection, and
+  the value of an enum variant, are still finalized in full, as nothing above them applies their
+  defaults.
+- Fixed `rename_all` casing an enum variant differently to serde when it holds consecutive
+  capitals, as serde splits before every one. `MacOS` in kebab case is now `mac-o-s`, like serde
+  accepts, rather than `mac-os`, which is what `Display`, `FromStr`, and schemas used before. A
+  `ConfigEnum` with `before_parse` still parses the loosely cased form.
+- Fixed a raw identifier, like `r#type`, keeping its `r#` in the setting's name, env var,
+  validation path, and schema.
+- Fixed a source extended more than once, like a base that two other sources extend, being loaded
+  once for each of them. It's now loaded once, where it's first extended.
+- Fixed RON sources requiring every setting to be written as `Some(..)`.
+- Fixed a JSON source of only whitespace or comments failing to parse, while an empty one passed.
+- Fixed `is_secure_url` accepting a plain HTTP URL that only mentioned `localhost` or `127.0.0.1`,
+  such as in its query string. Plain HTTP is now only allowed when the host itself is `localhost`,
+  `127.0.0.1`, or `[::1]`, and an `HTTPS://` scheme is matched case insensitively.
+- Fixed a value starting with `www`, like `www/base.json`, being treated as a URL. It must now start
+  with `www.`.
+- Fixed a nested config's own `env_prefix` being read after one passed down by
+  `#[setting(nested, env_prefix)]`, rather than before it, so that the parent's variable won when
+  both were set.
+- Fixed `Config::settings()` overflowing the stack for a config that holds its own type. A nested
+  config already being collected is left without its settings.
+- Fixed a field-level `#[serde(default = "fn")]` being ignored when loading, while still marking
+  the setting optional in schemas. The function is now its default.
+- Fixed `#[serde(with)]` and `#[serde(deserialize_with)]` on a setting being silently dropped from
+  the partial, which then used the type's default encoding. These now panic, unless the partial is
+  given its own with `#[setting(partial(serde(...)))]`, as the partial holds an `Option`.
+- Fixed `Default` of an enum whose default variant holds a nested config skipping that config's
+  default values.
+- Fixed `#[setting(required)]` on a variant holding values of different types failing to compile.
+- Fixed the validation path of a flattened nested config naming the field that holds it, which
+  isn't in the input, rather than the settings as they're written.
+- Fixed a wrapper around `Path`, `OsStr`, or `CStr`, like `Box<Path>`, being stripped from the
+  partial, which left an unsized type.
+- Fixed a string literal default converting into the innermost type of a setting, rather than the
+  type it's written as, such as `str` for `Box<str>`.
+- Fixed the partial's schema name ignoring a container `rename`.
+- Fixed fully qualified paths, like `std::sync::Arc<String>` or
+  `std::collections::BTreeMap<String, Child>`, failing to compile without a `use`.
+- Fixed `validate::in_range` being documented as non-inclusive, as it includes both bounds.
+
+##### Schema
+
+- Fixed a suffixed integer default, like `#[setting(default = 5u8)]`, failing to compile with the
+  `schema` feature.
+- Fixed `Box`, `Rc`, `Arc`, `Cow`, `&T`, and `&mut T` not forwarding the name of the type they hold,
+  which inlined a named type rather than referencing it, and overflowed the stack for a recursive
+  type.
+- Fixed an internally tagged variant that holds a named type losing its tag, and adding the tag to
+  that type's own definition when it was registered there first.
+- Fixed `Option<T>` reporting the default of `T`, such as an enum's default variant, when the
+  setting itself has none.
+- Fixed a `default` on one setting changing the default of its named type for every other setting.
+- Fixed a field that serde never deserializes, with `skip_deserializing`, or such a variant, being
+  included in schemas.
+- Fixed `JsonSchemaRenderer` referencing the root type with a definition that doesn't exist, which
+  is now `#`.
+- Fixed `JsonSchemaRenderer` rendering a flattened struct as `additionalProperties`, rather than
+  merging its properties.
+- Fixed `JsonSchemaRenderer` rendering the keys of a map with non-string keys, like
+  `HashMap<u32, _>`, as numbers, which no JSON key is. They're now strings with a pattern.
+- Fixed `JsonSchemaRenderer` rejecting `null` for an unknown value, like `serde_json::Value`.
+- Fixed `JsonSchemaRenderer` panicking on a NaN or infinite default.
+- Fixed `TypeScriptRenderer` emitting a property or enum member name that isn't an identifier, like
+  `kebab-case`, without quotes, and not escaping strings.
+- Fixed `TypeScriptRenderer` declaring a flattened field and the base type of its struct with the
+  same name, when the field is named `base`.
+- Fixed `TomlTemplateRenderer` rendering an optional nested struct inline rather than as a table,
+  and rendering `null`, which TOML doesn't have.
+- Fixed `YamlTemplateRenderer` rendering a struct variant of a union, like an adjacently tagged
+  enum, on the same line as its key.
+- Fixed the template renderers not escaping strings.
+- Fixed `JsonTemplateRenderer` and `JsoncTemplateRenderer` leaving a trailing comma when the last
+  field is hidden or flattened, and panicking on an empty struct.
+- Fixed the schemas of `chrono::Duration`, `NaiveDateTime`, `NaiveTime`, `rust_decimal::Decimal`,
+  `indexmap::IndexSet`, and the `Number` types of `serde_json`, `serde_yaml`, and `serde_norway` to
+  match what serde accepts.
+
 ## 0.20.12
 
 #### 🚀 Updates

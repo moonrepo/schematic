@@ -18,7 +18,7 @@ date: String?
 
 datetime: String?
 
-decimal: String?
+decimal: (String | Float)?
 
 /// This is a list of `enumerable` values.
 enums: BasicEnum?
@@ -31,7 +31,7 @@ float64: Float?
 
 indexmap: Mapping<String, String>?
 
-indexset: Listing<String>?
+indexset: Listing<String>(isDistinct)?
 
 json_value: Any?
 

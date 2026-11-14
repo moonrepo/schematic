@@ -8,7 +8,10 @@ use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
-use syn::{Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Visibility};
+use syn::ext::IdentExt;
+use syn::{
+    Attribute, Data, DeriveInput, ExprPath, Fields, Generics, Ident, Type, Visibility, parse_quote,
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ContainerMacro {
@@ -54,13 +57,21 @@ impl Container {
         let args = Rc::new(ContainerArgs::from_derive_input(&input).unwrap());
         let serde_args = Rc::new(SerdeContainerArgs::from_derive_input(&input).unwrap());
 
+        // Replaces `Self` within settings, as it means the partial within the partial
+        let self_ty: Type = {
+            let ident = &input.ident;
+            let (_, ty_generics, _) = input.generics.split_for_impl();
+
+            parse_quote! { #ident #ty_generics }
+        };
+
         let inner = match input.data {
             Data::Struct(data) => match data.fields {
                 Fields::Named(fields) => ContainerInner::NamedStruct {
                     fields: fields
                         .named
                         .into_iter()
-                        .map(|data| Field::new(data, args.clone(), serde_args.clone()))
+                        .map(|data| Field::new(data, args.clone(), serde_args.clone(), &self_ty))
                         .collect(),
                 },
                 Fields::Unnamed(fields) => ContainerInner::UnnamedStruct {
@@ -69,7 +80,8 @@ impl Container {
                         .into_iter()
                         .enumerate()
                         .map(|(index, data)| {
-                            let mut field = Field::new(data, args.clone(), serde_args.clone());
+                            let mut field =
+                                Field::new(data, args.clone(), serde_args.clone(), &self_ty);
                             field.index = index;
                             field
                         })
@@ -87,7 +99,7 @@ impl Container {
                 let variants = data
                     .variants
                     .into_iter()
-                    .map(|data| Variant::new(data, args.clone(), serde_args.clone()))
+                    .map(|data| Variant::new(data, args.clone(), serde_args.clone(), &self_ty))
                     .collect::<Vec<_>>();
 
                 if all_unit {
@@ -139,7 +151,7 @@ impl Container {
             return name.into();
         }
 
-        self.ident.to_string()
+        self.ident.unraw().to_string()
     }
 
     /// Generics for a type *declaration*, which keeps bounds and defaults.
@@ -352,6 +364,7 @@ impl Container {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
 
+        let default_partial_method = self.impl_full_default_partial();
         let from_partial_method = self.impl_full_from_partial();
         let settings_method = self.impl_full_settings();
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
@@ -361,6 +374,7 @@ impl Container {
             impl #impl_generics schematic::Config for #base_name #ty_generics #where_clause {
                 type Partial = #partial_name #ty_generics;
 
+                #default_partial_method
                 #from_partial_method
                 #settings_method
             }
@@ -372,6 +386,68 @@ impl Container {
                         <Self as schematic::Config>::default_partial()
                     )
                 }
+            }
+        }
+    }
+
+    /// Generate `default_partial`, which `Default` is built from, when a nested
+    /// config's default partial isn't the same as its default values. A
+    /// nested enum leaves the config its default variant holds to be applied
+    /// when it's finalized, so each bare nested config takes its own default
+    /// partial instead, which recurses into it.
+    pub fn impl_full_default_partial(&self) -> TokenStream {
+        let partial_name = self.get_partial_ident();
+
+        let inner = match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
+                let rows = fields
+                    .iter()
+                    .filter(|field| field.is_bare_nested())
+                    .filter_map(|field| {
+                        let key = field.get_key();
+                        let ty = field.value.get_nested_type()?;
+
+                        Some(quote! {
+                            partial.#key = Some(<#ty as schematic::Config>::default_partial());
+                        })
+                    })
+                    .collect::<Vec<_>>();
+
+                if rows.is_empty() {
+                    return quote! {};
+                }
+
+                quote! {
+                    let mut partial = <Self::Partial as schematic::PartialConfig>::default_values(
+                        &Default::default(),
+                    )
+                    .expect("Failed to generate default values.")
+                    .unwrap_or_default();
+
+                    #(#rows)*
+
+                    partial
+                }
+            }
+            ContainerInner::UnnamedEnum { variants } => {
+                let Some(value) = variants
+                    .iter()
+                    .find(|variant| variant.is_default())
+                    .and_then(|variant| variant.impl_full_default_partial(&partial_name))
+                else {
+                    return quote! {};
+                };
+
+                value
+            }
+            ContainerInner::UnitEnum { .. } => {
+                return quote! {};
+            }
+        };
+
+        quote! {
+            fn default_partial() -> Self::Partial {
+                #inner
             }
         }
     }
@@ -443,19 +519,23 @@ impl Container {
                         Some(value) => quote! { .env(#value) },
                         None => quote! {},
                     };
-                    let nested = if field.is_nested() {
-                        let value = field.value.get_inner_type();
-                        quote! { .nested(#value::settings()) }
-                    } else {
-                        quote! {}
-                    };
                     let type_alias = to_type_string(field.value.ty.to_token_stream());
+                    let setting = quote! {
+                        ConfigSetting::new(#type_alias)
+                            #env_key
+                    };
+
+                    // Nested settings are guarded, as a recursive config
+                    // would otherwise never stop collecting them
+                    let setting = match field.value.get_nested_type() {
+                        Some(ty) => quote! {
+                            schematic::internal::with_nested_settings::<#ty>(#setting)
+                        },
+                        None => setting,
+                    };
 
                     settings.push(quote! {
-                        (#name.into(), ConfigSetting::new(#type_alias)
-                            #env_key
-                            #nested
-                        ),
+                        (#name.into(), #setting),
                     });
                 }
             }
@@ -911,7 +991,10 @@ impl Container {
     pub fn impl_schematic_partial(&self) -> TokenStream {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
-        let partial_schema_name = self.impl_schematic_name_for(partial_name.to_string());
+        // Named after the full type's schema, as a reference to it is
+        // partialized into `Partial` + that name, which honours a rename
+        let partial_schema_name =
+            self.impl_schematic_name_for(format!("Partial{}", self.get_name()));
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
         quote! {
@@ -1001,7 +1084,8 @@ impl Container {
                 let mut named_types = vec![];
 
                 for variant in variants {
-                    if variant.is_excluded() {
+                    // Serde rejects a variant it never deserializes
+                    if variant.is_excluded() || variant.is_skipped_deserializing() {
                         continue;
                     }
 
@@ -1281,7 +1365,7 @@ impl Container {
         if extendable.len() > 1 {
             let names = extendable
                 .iter()
-                .map(|field| field.get_name_original().to_string())
+                .map(|field| field.get_name_original())
                 .collect::<Vec<_>>();
 
             panic!(
@@ -1307,7 +1391,9 @@ impl Container {
     pub fn impl_partial_finalize(&self) -> TokenStream {
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                let mut statements = vec![];
+                // Only pushed to with the `env` feature
+                #[allow(unused_mut)]
+                let mut statements: Vec<TokenStream> = vec![];
 
                 #[cfg(feature = "env")]
                 {
@@ -1318,27 +1404,54 @@ impl Container {
                     });
                 }
 
+                let mut nested_statements = vec![];
+
                 for field in fields {
                     let res = field.impl_partial_finalize();
 
                     if !res.no_value {
-                        statements.push(res.value);
+                        nested_statements.push(res.value);
                     }
                 }
 
-                quote! {
-                    let mut partial = Self::default();
+                // The default values and environment variables of nested configs
+                // are part of this config's own, so they're merged once, here,
+                // and the nested configs are finalized without applying them again
+                let finalize_nested = if nested_statements.is_empty() {
+                    quote! {
+                        fn finalize_nested(self, _context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
+                            Ok(self)
+                        }
+                    }
+                } else {
+                    quote! {
+                        fn finalize_nested(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
+                            let mut partial = self;
 
-                    if let Some(layer) = Self::default_values(context)? {
-                        partial.merge(context, layer)?;
+                            #(#nested_statements)*
+
+                            Ok(partial)
+                        }
+                    }
+                };
+
+                return quote! {
+                    fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
+                        let mut partial = Self::default();
+
+                        if let Some(layer) = Self::default_values(context)? {
+                            partial.merge(context, layer)?;
+                        }
+
+                        partial.merge(context, self)?;
+
+                        #(#statements)*
+
+                        partial.finalize_nested(context)
                     }
 
-                    partial.merge(context, self)?;
-
-                    #(#statements)*
-
-                    Ok(partial)
-                }
+                    #finalize_nested
+                };
             }
             ContainerInner::UnnamedEnum { variants } => {
                 let mut statements = vec![];

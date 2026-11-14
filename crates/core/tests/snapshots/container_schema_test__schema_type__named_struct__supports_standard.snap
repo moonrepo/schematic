@@ -18,12 +18,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 (
                     "c".into(),
                     {
-                        let mut field = SchemaField::new(
-                            schema
-                                .infer_with_default::<
-                                    String,
-                                >(LiteralValue::String("abc".into())),
-                        );
+                        let mut field = SchemaField::new(schema.infer::<String>());
+                        field.default = Some(LiteralValue::String("abc".into()));
                         field.optional = true;
                         field
                     },
@@ -31,9 +27,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 (
                     "d".into(),
                     {
-                        let mut field = SchemaField::new(
-                            schema.infer_with_default::<usize>(LiteralValue::Int(10)),
-                        );
+                        let mut field = SchemaField::new(schema.infer::<usize>());
+                        field.default = Some(LiteralValue::Int(10));
                         field.optional = true;
                         field
                     },
@@ -41,9 +36,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 (
                     "e".into(),
                     {
-                        let mut field = SchemaField::new(
-                            schema.infer_with_default::<f32>(LiteralValue::F64(1.5)),
-                        );
+                        let mut field = SchemaField::new(schema.infer::<f32>());
+                        field.default = Some(LiteralValue::F64(1.5));
                         field.optional = true;
                         field
                     },
@@ -51,9 +45,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 (
                     "f".into(),
                     {
-                        let mut field = SchemaField::new(
-                            schema.infer_with_default::<bool>(LiteralValue::Bool(true)),
-                        );
+                        let mut field = SchemaField::new(schema.infer::<bool>());
+                        field.default = Some(LiteralValue::Bool(true));
                         field.optional = true;
                         field
                     },

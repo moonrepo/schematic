@@ -12,7 +12,11 @@ macro_rules! impl_set {
     ($type:ty) => {
         impl<T: Schematic, S> Schematic for $type {
             fn build_schema(mut schema: SchemaBuilder) -> Schema {
-                schema.array(ArrayType::new(schema.infer::<T>()))
+                schema.array(ArrayType {
+                    items_type: Box::new(schema.infer::<T>()),
+                    unique: Some(true),
+                    ..ArrayType::default()
+                })
             }
         }
     };
@@ -70,14 +74,26 @@ mod chrono_feature {
 
     impl_with_tz!(chrono::Date<Tz>, "date");
     impl_with_tz!(chrono::DateTime<Tz>, "date-time");
-    impl_string_format!(chrono::Duration, "duration");
     impl_string_format!(chrono::Days, "duration");
     impl_string_format!(chrono::Months, "duration");
     impl_string_format!(chrono::IsoWeek, "date");
     impl_string_format!(chrono::NaiveWeek, "date");
     impl_string_format!(chrono::NaiveDate, "date");
-    impl_string_format!(chrono::NaiveDateTime, "date-time");
-    impl_string_format!(chrono::NaiveTime, "time");
+
+    // These have no offset, which the `date-time` and `time` formats
+    // require, so they're plain strings, like `2024-01-02T03:04:05`
+    impl_string!(chrono::NaiveDateTime);
+    impl_string!(chrono::NaiveTime);
+
+    // Serialized as a tuple of seconds and nanoseconds, not a string
+    impl Schematic for chrono::Duration {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.tuple(TupleType::new([
+                schema.infer::<i64>(),
+                schema.infer::<i32>(),
+            ]))
+        }
+    }
 }
 
 #[cfg(feature = "indexmap")]
@@ -108,7 +124,18 @@ mod relative_path_feature {
 mod rust_decimal_feature {
     use super::*;
 
-    impl_string_format!(rust_decimal::Decimal, "decimal");
+    // Serialized as a string, while a number is also accepted
+    impl Schematic for rust_decimal::Decimal {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.union(UnionType::new_any([
+                Schema::string(StringType {
+                    format: Some("decimal".into()),
+                    ..StringType::default()
+                }),
+                Schema::float(FloatType::new_kind(FloatKind::F64)),
+            ]))
+        }
+    }
 }
 
 #[cfg(feature = "semver")]
@@ -125,10 +152,10 @@ mod serde_json_feature {
 
     impl_unknown!(serde_json::Value);
 
-    // This isn't accurate since we can't access the `N` enum
+    // Either an integer or a float, which a float type describes
     impl Schematic for serde_json::Number {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.integer(IntegerType::new_kind(IntegerKind::I64))
+            schema.float(FloatType::new_kind(FloatKind::F64))
         }
     }
 
@@ -172,10 +199,10 @@ mod serde_yaml_feature {
 
     impl_unknown!(serde_yaml::Value);
 
-    // This isn't accurate since we can't access the `N` enum
+    // Either an integer or a float, which a float type describes
     impl Schematic for serde_yaml::Number {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.integer(IntegerType::new_kind(IntegerKind::I64))
+            schema.float(FloatType::new_kind(FloatKind::F64))
         }
     }
 
@@ -195,10 +222,10 @@ mod serde_yaml_normay_feature {
 
     impl_unknown!(serde_norway::Value);
 
-    // This isn't accurate since we can't access the `N` enum
+    // Either an integer or a float, which a float type describes
     impl Schematic for serde_norway::Number {
         fn build_schema(mut schema: SchemaBuilder) -> Schema {
-            schema.integer(IntegerType::new_kind(IntegerKind::I64))
+            schema.float(FloatType::new_kind(FloatKind::F64))
         }
     }
 

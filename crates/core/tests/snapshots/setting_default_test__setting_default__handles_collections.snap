@@ -7,11 +7,11 @@ fn default_values(
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     Ok(
         Some(Self {
-            a: Some(HashMap::default()),
-            b: Some(Vec::default()),
-            c: Some(BTreeSet::default()),
-            d: Some(CustomVec::default()),
-            e: Some(UnknownCollection::default()),
+            a: Some(Default::default()),
+            b: Some(Default::default()),
+            c: Some(Default::default()),
+            d: Some(Default::default()),
+            e: Some(Default::default()),
         }),
     )
 }

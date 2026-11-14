@@ -130,21 +130,24 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
                 continue;
             }
 
-            let is_nested = is_nested_type(&field.schema.ty);
+            // A union rendering a struct variant, like an adjacently tagged
+            // enum, is a mapping too, which can't share the key's line
+            let is_nested = is_nested_value(&field.schema.ty);
 
             if is_nested {
                 self.ctx.depth += 1;
             }
 
-            let value = self.render_schema(
-                self.ctx
-                    .validate_schema_variant(self.ctx.get_stack_value().as_ref(), &field.schema),
-            )?;
+            let value = self.render_schema(self.ctx.validate_schema_variant(
+                self.ctx.get_stack_value().as_ref(),
+                &get_field_schema(field),
+            ))?;
 
             let prop = format!(
                 "{}:{}{}",
                 name,
-                if value.contains('\n') || is_nested {
+                // An empty struct is written inline, as `{}`
+                if value.contains('\n') || (is_nested && value != "{}") {
                     "\n"
                 } else {
                     " "

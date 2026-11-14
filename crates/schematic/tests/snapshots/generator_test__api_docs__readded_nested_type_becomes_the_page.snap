@@ -26,7 +26,6 @@ An optional enum.
 | Attribute | Value |
 | --- | --- |
 | Type | [`BasicEnum`](./BasicEnum.md) |
-| Default | `"foo"` |
 | Values | `"foo"`, `"bar"`, `"baz"` |
 
 ### `opt`

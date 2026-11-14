@@ -10,7 +10,9 @@ pub use merge::*;
 #[cfg(feature = "validate")]
 pub use validate::*;
 
-use crate::config::{ConfigError, HandlerError, MergeError, MergeResult, PartialConfig};
+use crate::config::{
+    Config, ConfigError, ConfigSetting, HandlerError, MergeError, MergeResult, PartialConfig,
+};
 use schematic_types::Schema;
 use std::str::FromStr;
 
@@ -195,6 +197,34 @@ fn describe_found(found: &serde_content::Found) -> String {
     }
 }
 
+// SETTINGS
+
+/// Attach the settings of a nested config to its setting. A config that
+/// holds its own type, directly or through another config, would otherwise
+/// collect settings forever, so a config already being collected on this
+/// thread is left without them.
+pub fn with_nested_settings<T: Config>(setting: ConfigSetting) -> ConfigSetting {
+    use std::cell::RefCell;
+
+    thread_local! {
+        static COLLECTING: RefCell<Vec<&'static str>> = const { RefCell::new(vec![]) };
+    }
+
+    let name = std::any::type_name::<T>();
+
+    if COLLECTING.with_borrow(|stack| stack.contains(&name)) {
+        return setting;
+    }
+
+    COLLECTING.with_borrow_mut(|stack| stack.push(name));
+
+    let nested = T::settings();
+
+    COLLECTING.with_borrow_mut(|stack| stack.pop());
+
+    setting.nested(nested)
+}
+
 // CASING
 
 /// Normalize a string into the provided case, using the same format names as
@@ -230,6 +260,50 @@ pub fn format_case(value: &str, format: &str) -> String {
 }
 
 // DEFAULT VALUES
+
+/// Converts a string literal default into the setting's type, through
+/// `TryFrom<&str>` when it's implemented, and `FromStr` otherwise, so that
+/// types like `IpAddr` that only parse can take a string default. Which one
+/// applies is picked at compile time, by calling `parse_default` on
+/// `&&DefaultString<T>`, where the `TryFrom` impl matches first.
+pub struct DefaultString<T>(std::marker::PhantomData<T>);
+
+impl<T> DefaultString<T> {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+
+pub trait DefaultStringViaTryFrom<T> {
+    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError>;
+}
+
+impl<T> DefaultStringViaTryFrom<T> for &DefaultString<T>
+where
+    T: TryFrom<&'static str>,
+    <T as TryFrom<&'static str>>::Error: std::fmt::Display,
+{
+    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError> {
+        T::try_from(value).map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
+    }
+}
+
+pub trait DefaultStringViaFromStr<T> {
+    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError>;
+}
+
+impl<T> DefaultStringViaFromStr<T> for DefaultString<T>
+where
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Display,
+{
+    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError> {
+        value
+            .parse()
+            .map_err(|error: T::Err| ConfigError::InvalidDefaultValue(error.to_string()))
+    }
+}
 
 pub fn handle_default_result<T, E: std::error::Error>(
     result: Result<T, E>,
@@ -330,6 +404,13 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                 update_name(true);
 
                 for field in inner.fields.values_mut() {
+                    // Once nullable, the default of a named type within is no
+                    // longer reported, as it belongs to the type, so the
+                    // default it had as a setting is kept on the field
+                    if field.default.is_none() && !field.schema.is_nullable() {
+                        field.default = field.schema.get_default().cloned();
+                    }
+
                     field.optional = true;
                     field.nullable = true;
                     field.schema.nullify();

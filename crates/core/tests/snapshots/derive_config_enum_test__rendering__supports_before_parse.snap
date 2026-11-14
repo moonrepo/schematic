@@ -16,7 +16,7 @@ impl std::str::FromStr for Example {
         let value = value.as_str();
         Ok(
             match value {
-                "Info" => Self::Info,
+                "Info" | "info" => Self::Info,
                 unknown => {
                     return Err(
                         schematic::ConfigError::EnumUnknownVariant(unknown.to_owned()),

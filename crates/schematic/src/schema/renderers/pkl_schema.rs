@@ -1057,7 +1057,7 @@ impl PklSchemaRenderer {
     /// Render the default value of a field, unless its type already defaults
     /// to that value, such as an enum marking its default variant.
     fn render_default(&self, field: &SchemaField) -> Option<String> {
-        let default = field.schema.get_default()?;
+        let default = field.get_default()?;
 
         if self.get_marked_default(&field.schema) == Some(default) {
             return None;

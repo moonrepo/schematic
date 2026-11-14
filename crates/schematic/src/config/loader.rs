@@ -9,6 +9,7 @@ use super::layer::Layer;
 use super::source::{Source, SourceFormat};
 use serde::Serialize;
 use std::borrow::Cow;
+use std::collections::HashSet;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -24,6 +25,34 @@ pub struct ConfigLoadResult<T: Config> {
 
     /// Partial layers, in order of declaration and extension.
     pub layers: Vec<Layer<T>>,
+}
+
+/// Tracks the sources being loaded, so that an `extends` cycle is an error rather
+/// than infinite recursion, and a source extended more than once is only loaded once.
+#[derive(Default)]
+struct SourceTracker {
+    /// Sources currently being loaded, from the outermost inward,
+    /// as a key and the location to report in an error.
+    stack: Vec<(String, String)>,
+
+    /// Keys of every source loaded so far.
+    loaded: HashSet<String>,
+}
+
+impl SourceTracker {
+    fn key(source: &Source) -> Option<String> {
+        match source {
+            Source::Code { .. } => None,
+            Source::File { path, .. } => Some(
+                fs::canonicalize(path)
+                    .unwrap_or_else(|_| path.to_path_buf())
+                    .to_string_lossy()
+                    .into_owned(),
+            ),
+            #[cfg(feature = "url")]
+            Source::Url { url } => Some(url.to_owned()),
+        }
+    }
 }
 
 /// A system for loading configuration from multiple sources in multiple formats,
@@ -135,7 +164,8 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         trace!(config = &self.name, "Loading configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context)?;
+        let layers =
+            self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
@@ -164,7 +194,8 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<T::Partial, ConfigError> {
         trace!(config = &self.name, "Loading partial configuration");
 
-        let layers = self.parse_into_layers(&self.sources, context)?;
+        let layers =
+            self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
         let partial = self.merge_layers(&layers, context)?;
 
         Ok(partial)
@@ -195,6 +226,7 @@ impl<T: Config> ConfigLoader<T> {
         context: &<T::Partial as PartialConfig>::Context,
         parent_source: &Source,
         extends_from: &ExtendsFrom,
+        tracker: &mut SourceTracker,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut sources = vec![];
 
@@ -228,7 +260,7 @@ impl<T: Config> ConfigLoader<T> {
             }
         };
 
-        self.parse_into_layers(&sources, context)
+        self.parse_into_layers(&sources, context, tracker, true)
     }
 
     fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
@@ -275,10 +307,46 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         sources_to_parse: &[Source],
         #[allow(unused_variables)] context: &<T::Partial as PartialConfig>::Context,
+        tracker: &mut SourceTracker,
+        extended: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
 
         for source in sources_to_parse {
+            let key = SourceTracker::key(source);
+
+            // Sources added to the loader are always loaded, while extended
+            // sources are checked for cycles, and are only loaded once
+            if extended && let Some(key) = &key {
+                if let Some(index) = tracker.stack.iter().position(|(k, _)| k == key) {
+                    let mut chain = tracker.stack[index..]
+                        .iter()
+                        .map(|(_, location)| location.to_owned())
+                        .collect::<Vec<_>>();
+
+                    chain.push(self.get_location(source).to_owned());
+
+                    return Err(ConfigError::ExtendsCycle(chain));
+                }
+
+                if tracker.loaded.contains(key) {
+                    trace!(
+                        config = &self.name,
+                        source = source.as_str(),
+                        "Skipping source that was already loaded"
+                    );
+
+                    continue;
+                }
+            }
+
+            if let Some(key) = &key {
+                tracker.loaded.insert(key.to_owned());
+                tracker
+                    .stack
+                    .push((key.to_owned(), self.get_location(source).to_owned()));
+            }
+
             trace!(
                 config = &self.name,
                 source = source.as_str(),
@@ -300,7 +368,16 @@ impl<T: Config> ConfigLoader<T> {
 
             #[cfg(feature = "extends")]
             if let Some(extends_from) = partial.extends_from() {
-                layers.extend(self.extend_additional_layers(context, source, &extends_from)?);
+                layers.extend(self.extend_additional_layers(
+                    context,
+                    source,
+                    &extends_from,
+                    tracker,
+                )?);
+            }
+
+            if key.is_some() {
+                tracker.stack.pop();
             }
 
             layers.push(Layer {
