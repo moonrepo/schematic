@@ -71,10 +71,13 @@ A skipped field (`#[setting(skip)]` or `#[serde(skip)]`) is now filtered out of 
 excluded ones, so its type isn't inferred or registered. `skip_deserializing` fields stay hidden,
 as they're still written.
 
-**C10. Dependencies pulled in without `config`** ✅ · low
+**C10. Dependencies pulled in without `config`** · fixed on `0.21-compose`
 
-- A schema-only build pulls miette, serde-content, thiserror and tracing.
-- `env`, `extends`, `validate`, `url`, `json` and `type_regex` without `config` compile deps that do
-  nothing.
-- `validate` pulls garde with `regex` even for users who only write custom validators.
-- Fix: gate these behind `config`.
+`miette`, `serde`, `serde-content`, `thiserror` and `tracing` are optional, enabled by `config`
+(and `miette` by `schema`), and `convert_case` moved from `schema` to the TypeScript and Pkl
+renderers. `env`, `extends`, `url` and `validate` enable `config`. A featureless build compiles 22
+crates instead of 40, and a schema-only one 29 instead of 42.
+
+Not changed: `validate` still enables garde's `regex`, which `validate::regex` needs. Making it
+optional would need a feature of its own that `validate` doesn't include, which breaks any build that
+uses `validate::regex` with `default-features = false`.

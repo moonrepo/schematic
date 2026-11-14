@@ -48,6 +48,13 @@
 
 #### ⚙️ Internal
 
+- Made `miette`, `serde`, `serde-content`, `thiserror`, and `tracing` optional, so they're only
+  compiled with the `config` feature (and `miette` with `schema`), and `convert_case` only with
+  `config` or the TypeScript and Pkl renderers. A build without features compiles 22 crates rather
+  than 40, and one with only `schema`, 29 rather than 42.
+- Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only apply
+  to configs, and compiled their dependencies for nothing without it.
+
 - Merged the code that rebuilds a setting through its layers, when converting a partial into a full
   config and when finalizing nested configs, into one helper. Generated code is unchanged.
 

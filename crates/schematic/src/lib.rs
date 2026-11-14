@@ -43,4 +43,5 @@ pub use schematic_macros::*;
 pub use schematic_types::{Schema, SchemaBuilder, SchemaType, Schematic};
 
 // Re-export serde_content for use in macros
+#[cfg(feature = "config")]
 pub use serde_content;
