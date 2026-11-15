@@ -2,10 +2,6 @@
 
 > Requires the `env` Cargo feature, which is enabled by default.
 
-> Not supported for enums, so `env_prefix` on an enum, or `env` on a field of a named variant,
-> fails to compile. A nested config that a variant holds still reads its own, once the variant has
-> been picked.
-
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.
 
@@ -79,6 +75,46 @@ struct AppConfig {
 > [config template](../../schema/generator/template.md) and in
 > [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings)
 > with the child's own prefix, which always works.
+
+## Enums
+
+The fields of a [named variant](./index.md#enum-variants) read environment variables like a
+struct's, with `env`, `parse_env`, and an `env_prefix` on the enum, which derives a key for each
+field.
+
+```rust
+#[derive(Config)]
+#[config(env_prefix = "AUTH_")]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Auth {
+	#[setting(default)]
+	None,
+	Token {
+		// AUTH_TOKEN
+		token: String,
+	},
+	Basic {
+		// AUTH_USER
+		user: String,
+		#[setting(env = "AUTH_PASSWORD")]
+		password: String,
+	},
+}
+```
+
+A variable can't pick a variant, it only fills one in. The variables are read once a source, or
+the default, has picked the variant, and they're merged over its fields as the last layer, as for a
+struct. So with `type = "basic"` in a file, `AUTH_TOKEN` does nothing. Variants may share a derived
+key, like a `path` in each, as only one is ever picked.
+
+A nested config that a variant holds reads its own variables, whether the variant is named or holds
+it as a value.
+
+> The variables of a variant aren't a layer of their own, so `ConfigLoadResult.layers` doesn't
+> include them, as with the items of a nested collection.
+
+A parent's `#[setting(nested, env_prefix)]` doesn't reach an enum, since its variables are only read
+once a variant has been picked, without the parent. Setting one on an enum fails to compile.
 
 ## Parsing values
 

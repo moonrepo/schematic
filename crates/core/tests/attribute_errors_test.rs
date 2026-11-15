@@ -125,6 +125,19 @@ mod enums {
         });
     }
 
+    // A named variant's settings derive keys with it, as a struct's do
+    #[test]
+    fn accepts_env_prefix_on_a_config_with_named_variants() {
+        config(parse_quote! {
+            #[derive(Config)]
+            #[config(env_prefix = "APP_")]
+            enum Example {
+                A(String),
+                B { b: String },
+            }
+        });
+    }
+
     #[test]
     #[should_panic(expected = "Cannot use `env_prefix` on a `ConfigEnum` enum")]
     fn errors_for_env_prefix_on_a_config_enum() {
@@ -256,6 +269,35 @@ mod env_prefix {
                 child: Child,
                 #[setting(nested)]
                 other: Other,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_checks()));
+    }
+
+    // A tuple struct's setting is labeled by its position
+    #[test]
+    fn asserts_an_unnamed_setting_derives_keys() {
+        let container = config(parse_quote! {
+            #[derive(Config)]
+            struct Example(#[setting(nested, env_prefix = "CHILD_")] Child);
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_checks()));
+    }
+
+    // A named variant's settings are checked too, labeled by their variant
+    #[test]
+    fn asserts_a_variant_setting_derives_keys() {
+        let container = config(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A {
+                    #[setting(nested, env_prefix = "CHILD_")]
+                    child: Child,
+                    #[setting(nested)]
+                    other: Other,
+                },
             }
         });
 

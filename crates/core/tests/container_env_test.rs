@@ -103,4 +103,73 @@ mod container_env {
 
         assert_snapshot!(pretty(container.impl_partial_env_values()));
     }
+
+    mod named_enum {
+        use super::*;
+
+        // A named variant's settings derive keys with the enum's prefix, as a
+        // struct's do, and read them when it's finalized, so the environment
+        // layer holds no variant
+        #[test]
+        fn can_set_prefix() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PREFIX_")]
+                #[serde(rename_all_fields = "camelCase")]
+                enum Example {
+                    #[setting(default)]
+                    Off,
+                    Plain(String),
+                    A {
+                        #[setting(env = "OVERRIDE")]
+                        a: String,
+                        long_name: bool,
+                        #[setting(rename = "renamed")]
+                        c: usize,
+                        d: Vec<String>,
+                        #[setting(nested)]
+                        e: NestedConfig,
+                    },
+                    B {
+                        #[setting(default = 3)]
+                        c: usize,
+                        #[setting(required)]
+                        f: Option<String>,
+                    },
+                }
+            });
+
+            assert!(container.impl_partial_env_values().is_empty());
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Cannot use `env_prefix` on a `Config` enum without named variants"
+        )]
+        fn errors_without_named_variants() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PREFIX_")]
+                enum Example {
+                    A(String),
+                    B,
+                }
+            })
+            .validate_attributes();
+        }
+
+        #[test]
+        #[should_panic(expected = "Attribute `env_prefix` cannot be empty.")]
+        fn errors_if_empty() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "")]
+                enum Example {
+                    A { a: String },
+                }
+            })
+            .validate_attributes();
+        }
+    }
 }

@@ -13,17 +13,22 @@ export interface Retry {
 
 /** Where to load from. */
 export type Source = {
+	/** @env SOURCE_FORMAT */
 	format?: string | null;
 	/**
 	 * The file to read.
 	 *
 	 * @default 'config.json'
+	 * @env SOURCE_PATH
 	 */
 	path?: string;
 	type: 'file';
 } | {
+	/** @env SOURCE_ADDRESS */
 	address: string;
 	retry: Retry;
+	/** @env SOURCE_URL_TOKEN */
+	token?: string | null;
 	type: 'url';
 };
 

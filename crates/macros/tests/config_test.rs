@@ -3526,4 +3526,128 @@ mod named_variant_env {
             }
         );
     }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_RETRY_")]
+    pub struct Retry {
+        #[setting(default = 3)]
+        attempts: u8,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_SRC_")]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Source {
+        #[setting(default)]
+        File {
+            #[setting(default = "config.json")]
+            path: String,
+            #[setting(
+                default = vec!["d".to_owned()],
+                merge = append_vec,
+                parse_env = schematic::env::split_comma
+            )]
+            tags: Vec<String>,
+        },
+        Url {
+            #[setting(required)]
+            address: Option<String>,
+            #[setting(env = "NV_URL_TOKEN")]
+            token: Option<String>,
+            // Shares `NV_SRC_PATH` with `File`, as only one is ever picked
+            path: Option<String>,
+            #[setting(nested, env_prefix = "NV_URL_RETRY_")]
+            retry: Retry,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Sources {
+        #[setting(nested)]
+        source: Source,
+        #[setting(nested)]
+        items: Vec<Source>,
+    }
+
+    // A variant's settings read the variables they derive from the enum's
+    // prefix, or name, over every source, but only within the variant that a
+    // source or the default picked
+    #[test]
+    fn reads_the_env_of_the_picked_variant() {
+        unsafe {
+            env::set_var("NV_SRC_PATH", "env.json");
+            env::set_var("NV_SRC_TAGS", "e");
+            env::set_var("NV_SRC_ADDRESS", "addr");
+            env::set_var("NV_URL_TOKEN", "tok");
+            env::set_var("NV_URL_RETRY_ATTEMPTS", "7");
+        };
+
+        let file = load::<Source>(r#"{ "type": "file", "tags": ["f"] }"#);
+        let url = load::<Source>(r#"{ "type": "url" }"#);
+        let default = ConfigLoader::<Source>::new().load();
+        let parent = load::<Sources>(r#"{ "items": [{ "type": "url" }, { "type": "file" }] }"#);
+
+        unsafe {
+            env::remove_var("NV_SRC_PATH");
+            env::remove_var("NV_SRC_TAGS");
+            env::remove_var("NV_SRC_ADDRESS");
+            env::remove_var("NV_URL_TOKEN");
+            env::remove_var("NV_URL_RETRY_ATTEMPTS");
+        };
+
+        let file_from_env = |tags: &[&str]| Source::File {
+            path: "env.json".into(),
+            tags: tags.iter().map(|tag| tag.to_string()).collect(),
+        };
+        // `address` is required, which the environment satisfies, and the
+        // parent's prefix reaches the nested config
+        let url_from_env = Source::Url {
+            address: Some("addr".into()),
+            token: Some("tok".into()),
+            path: Some("env.json".into()),
+            retry: Retry { attempts: 7 },
+        };
+
+        // Each merged once, over the default and the source
+        assert_eq!(file.unwrap(), file_from_env(&["d", "f", "e"]));
+        assert_eq!(url.unwrap(), url_from_env);
+        assert_eq!(default.unwrap().config, file_from_env(&["d", "e"]));
+
+        let parent = parent.unwrap();
+
+        assert_eq!(parent.source, file_from_env(&["d", "e"]));
+        assert_eq!(parent.items, vec![url_from_env, file_from_env(&["d", "e"])]);
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_REQ_")]
+    pub enum RequiredSource {
+        #[setting(default)]
+        Url {
+            #[setting(required)]
+            address: Option<String>,
+        },
+    }
+
+    // Without the variable, a required setting is still reported
+    #[test]
+    fn reports_a_required_setting_the_env_leaves_out() {
+        let error = load::<RequiredSource>(r#"{ "Url": {} }"#).unwrap_err();
+
+        assert!(error.contains("Url.address"), "{error}");
+    }
+
+    #[test]
+    fn lists_the_env_of_each_variant() {
+        let settings = Source::settings();
+        let url = settings["url"].nested.as_ref().unwrap();
+        let file = settings["file"].nested.as_ref().unwrap();
+
+        assert_eq!(url["address"].env_key.as_deref(), Some("NV_SRC_ADDRESS"));
+        assert_eq!(url["token"].env_key.as_deref(), Some("NV_URL_TOKEN"));
+        assert_eq!(url["path"].env_key.as_deref(), Some("NV_SRC_PATH"));
+        assert_eq!(file["path"].env_key.as_deref(), Some("NV_SRC_PATH"));
+        assert_eq!(file["tags"].env_key.as_deref(), Some("NV_SRC_TAGS"));
+        assert_eq!(url["retry"].env_key, None);
+    }
 }

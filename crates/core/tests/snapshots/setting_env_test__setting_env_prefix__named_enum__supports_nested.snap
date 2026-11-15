@@ -1,0 +1,63 @@
+---
+source: crates/core/tests/setting_env_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    use schematic::internal::*;
+    Ok(
+        match self {
+            Self::A { a: na, b: nb, c: mut pc } => {
+                let mut pa = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?;
+                let mut pb = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?;
+                let mut env = EnvManager::new(None::<&str>, None);
+                let ea = env
+                    .nested(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                    )?;
+                let eb = env
+                    .nested(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                            Some("PRE_"),
+                        )?,
+                    )?;
+                let ec = env
+                    .nested(
+                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                            Some("PRE_"),
+                        )?,
+                    )?;
+                MergeManager::new(context)
+                    .nested(&mut pa, na)?
+                    .nested(&mut pb, nb)?
+                    .nested(&mut pa, ea)?
+                    .nested(&mut pb, eb)?
+                    .nested(&mut pc, ec)?;
+                if let Some(layer) = pa {
+                    pa = Some(layer.finalize(context)?);
+                }
+                if let Some(layer) = pb {
+                    pb = Some(layer.finalize(context)?);
+                }
+                if let Some(layer) = pc {
+                    pc = Some({
+                        let mut base = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                                context,
+                            )?
+                            .unwrap_or_default();
+                        base.merge(context, layer)?;
+                        base.finalize(context)?
+                    });
+                }
+                Self::A { a: pa, b: pb, c: pc }
+            }
+            _ => self,
+        },
+    )
+}

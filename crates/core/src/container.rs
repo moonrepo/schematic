@@ -403,16 +403,22 @@ impl Container {
     }
 
     fn validate_enum_attributes(&self, derive: &str) {
-        if self.args.env_prefix.is_some() {
+        // A named variant has fields of its own, which a `ConfigEnum` can't hold
+        let has_fields = derive == "Config" && self.inner.has_named_variants();
+
+        if self.args.env_prefix.is_some() && !has_fields {
             panic!(
-                "Cannot use `env_prefix` on a `{derive}` enum, as an enum reads no environment variables."
+                "Cannot use `env_prefix` on a `{derive}` enum without named variants, as only the fields of a struct or a named variant read environment variables. Use `env` on the setting that holds the enum instead."
             );
         }
 
-        // A named variant has fields of its own, which a `ConfigEnum` can't hold
-        if self.args.allow_unknown_fields
-            && !(derive == "Config" && self.inner.has_named_variants())
-        {
+        // As a struct's, checked where it's read
+        #[cfg(feature = "env")]
+        if self.args.env_prefix.as_deref() == Some("") {
+            panic!("Attribute `env_prefix` cannot be empty.");
+        }
+
+        if self.args.allow_unknown_fields && !has_fields {
             panic!(
                 "Cannot use `allow_unknown_fields` on a `{derive}` enum without named variants, as only a struct or a named variant has fields. Use it on a config that a variant holds instead."
             );
@@ -426,8 +432,9 @@ impl Container {
     /// as a constant can't name its parameters.
     ///
     /// Also assert that a parent's `#[setting(nested, env_prefix)]` applies to
-    /// something. It only prefixes the keys a nested config derives from its
-    /// settings' names, which it only does with an `env_prefix` of its own.
+    /// something. It only prefixes the keys a nested struct derives from its
+    /// settings' names, which it only does with an `env_prefix` of its own,
+    /// and never those of an enum, whose variants read theirs when finalized.
     pub fn impl_partial_checks(&self) -> TokenStream {
         if self.generics.params.iter().next().is_some() {
             return quote! {};
@@ -458,18 +465,33 @@ impl Container {
             })
             .collect::<Vec<_>>();
 
+        // A named variant's settings are labeled by the variant that holds them
         #[cfg(feature = "env")]
         let env_checks = self
             .inner
             .get_fields()
             .into_iter()
-            .filter(|field| field.args.env_prefix.is_some())
-            .filter_map(|field| {
+            .map(|field| (container.clone(), field))
+            .chain(self.inner.get_variants().into_iter().flat_map(|variant| {
+                let owner = format!("{container}::{}", variant.get_name_original());
+
+                variant
+                    .settings
+                    .iter()
+                    .map(move |field| (owner.clone(), field))
+            }))
+            .filter(|(_, field)| field.args.env_prefix.is_some())
+            .filter_map(|(owner, field)| {
                 let nested = field.value.get_nested_type()?;
                 let nested_name = to_type_string(nested.clone());
+                // A tuple struct's setting has no name, only a position
+                let name = match &field.ident {
+                    Some(_) => field.get_name_original(),
+                    None => field.index.to_string(),
+                };
+                let label = format!("{owner}.{name}");
                 let message = format!(
-                    "`{container}.{}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `{nested_name}`, or remove it here.",
-                    field.get_name_original(),
+                    "`{label}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a struct derives with an `env_prefix` of its own, and never to an enum's. Add `#[config(env_prefix)]` to `{nested_name}` if it's a struct, or remove it here.",
                 );
 
                 Some(quote! {
@@ -1543,7 +1565,8 @@ impl Container {
                 }
             }
 
-            // Enums don't support env vars
+            // The layer can't know which variant a source will pick, so a
+            // named variant reads its settings' variables when it's finalized
             _ => return quote! {},
         };
 

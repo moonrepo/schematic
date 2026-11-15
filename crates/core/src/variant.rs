@@ -1280,8 +1280,8 @@ impl Variant {
                             .map(|(i, o)| {
                                 let value = if self.values[i].nested {
                                     // Variant values have no partial `Option`
-                                    // wrapper, so walk all layers. An enum
-                                    // reads no environment of its own, so a
+                                    // wrapper, so walk all layers. An enum's
+                                    // environment layer holds no variant, so a
                                     // value is finalized in full.
                                     self.values[i]
                                         .impl_partial_finalize_nested(o, false, true)

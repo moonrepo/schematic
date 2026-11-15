@@ -292,33 +292,41 @@ mod setting_env {
     mod named_enum {
         use super::*;
 
-        // An enum reads no environment variables, so neither does a variant
+        // The layer can't know which variant a source picks, so a variant's
+        // settings read their variables when it's finalized
         #[test]
-        #[should_panic(expected = "Cannot use `env` within an enum variant")]
-        fn errors_within_a_variant() {
-            Container::from(parse_quote! {
+        fn reads_within_a_variant() {
+            let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
                     A {
                         #[setting(env = "A")]
                         a: String,
+                        #[setting(env = "B")]
+                        b: Option<usize>,
+                        #[setting(env = "C")]
+                        c: Arc<bool>,
+                        d: String,
                     },
                 }
             });
+
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
         }
 
         #[test]
-        #[should_panic(expected = "Cannot use `env_prefix` within an enum variant")]
-        fn errors_for_a_prefix_within_a_variant() {
+        #[should_panic(expected = "Collection types cannot be used with `env`.")]
+        fn errors_if_using_collections() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
                     A {
-                        #[setting(nested, env_prefix = "A_")]
-                        a: NestedConfig,
+                        #[setting(env = "KEY")]
+                        a: Vec<String>,
                     },
                 }
-            });
+            })
+            .impl_partial_finalize();
         }
     }
 
@@ -473,6 +481,45 @@ mod setting_env_prefix {
             assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
     }
+
+    mod named_enum {
+        use super::*;
+
+        // A nested config within a variant is read with the prefix, through
+        // the same codegen as a struct's
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        #[setting(nested, env_prefix = "PRE_")]
+                        b: NestedConfig,
+                        #[setting(nested = CustomConfig, env_prefix = "PRE_")]
+                        c: Option<CustomConfig>,
+                    },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env_prefix` without `nested`.")]
+        fn errors_if_not_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(env_prefix = "KEY")]
+                        a: String,
+                    },
+                }
+            });
+        }
+    }
 }
 
 mod setting_parse_env {
@@ -602,8 +649,29 @@ mod setting_parse_env {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Cannot use `parse_env` within an enum variant")]
-        fn errors_within_a_variant() {
+        fn accepts_within_a_variant() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "PREFIX_")]
+                enum Example {
+                    A {
+                        #[setting(env = "A", parse_env = schematic::env::split_comma)]
+                        a: Vec<String>,
+                        #[setting(parse_env = schematic::env::split_colon, merge = append_vec)]
+                        b: Vec<String>,
+                    },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        // Without a key, there's nothing for the parser to receive
+        #[test]
+        #[should_panic(
+            expected = "Cannot use `parse_env` without `env` or a container `env_prefix`."
+        )]
+        fn errors_without_env() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {

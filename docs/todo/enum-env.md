@@ -105,7 +105,7 @@ rather than a third value from it. Snapshots: `container_finalize_test::named_en
 tests are `config_test::named_variant_env`. Named variants are unreleased, so the changelog amends
 their entry under Updates rather than adding a fix.
 
-## Phase 1: `env`, `parse_env` and `env_prefix` on named variants · the feature
+## Phase 1: `env`, `parse_env` and `env_prefix` on named variants · fixed on `0.21-enum-env`
 
 Mostly lifting panics, since Phase 0 already emits whatever `Field::impl_partial_env_value` returns.
 
@@ -164,6 +164,27 @@ enum Auth {
 
 An env value fills a field **of the variant a source, or the default, picked**. `AUTH_TOKEN` does
 nothing while the file says `type = "basic"`.
+
+As built:
+
+- The parent-prefix message now reads "...only applies to the keys a struct derives with an
+  `env_prefix` of its own, and never to an enum's. Add `#[config(env_prefix)]` to `X` if it's a
+  struct, or remove it here." A variant's setting is labeled `Enum::Variant.field`.
+- Found and fixed while extending the check: it labeled every setting with `get_name_original`,
+  which panics on a tuple struct's field, so `struct A(#[setting(nested, env_prefix)] Child)` failed
+  to derive. The check is unreleased (G7), so the changelog has no entry for it. Tuple settings are
+  labeled by position now (`A.0`).
+- Empty `env_prefix` on an enum panics in `validate_enum_attributes`, as a struct's does where it's
+  read.
+- Tests: core `setting_env_test::{setting_env, setting_env_prefix, setting_parse_env}::named_enum`,
+  `container_env_test::named_enum`, `attribute_errors_test::{enums, env_prefix}`; runtime
+  `config_test::named_variant_env`; and `named_enum_test`'s `Source` fixture gained an
+  `env_prefix` and an explicit key, so its TypeScript snapshots show `@env`.
+
+**Found, not fixed:** `#[setting(nested, env = "..")]` is silently ignored on a struct as well as a
+variant. `get_env_var` has the "Cannot use `env` with `nested`" panic, but every caller returns
+early for a nested setting, except the `parse_env` check. It's a G7-style no-op attribute, and the fix
+is a check in `Field::validate_args`, but it would break a struct that has one today.
 
 ## Phase 2: picking the variant from the environment · needs your call
 
@@ -236,6 +257,6 @@ Questions before building it:
 
 ## Suggested commits
 
-1. `fix: Read the env of nested configs in named variants.` (Phase 0)
+1. `fix: Read the env of nested configs in named variants.` (Phase 0) · `600ef7d`
 2. `new: Support env vars in named enum variants.` (Phase 1, with docs)
 3. Phase 2, only if decided.

@@ -13,17 +13,22 @@ export interface PartialRetry {
 
 /** Where to load from. */
 export type PartialSource = {
+	/** @env SOURCE_FORMAT */
 	format?: string | null;
 	/**
 	 * The file to read.
 	 *
 	 * @default 'config.json'
+	 * @env SOURCE_PATH
 	 */
 	path?: string | null;
 	type: 'file';
 } | {
+	/** @env SOURCE_ADDRESS */
 	address?: string | null;
 	retry?: PartialRetry | null;
+	/** @env SOURCE_URL_TOKEN */
+	token?: string | null;
 	type: 'url';
 };
 
