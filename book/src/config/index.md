@@ -57,8 +57,8 @@ struct AppConfig {
 ### Loading sources
 
 When all of your structs and enums have been defined, you can then load, parse, merge, and validate
-a configuration from one or many sources. A source is either a file path, secure URL, or inline code
-string.
+a configuration from one or many sources. A source is either a file path, secure URL, inline code
+string, or a partial in memory.
 
 Begin by importing the
 [`ConfigLoader`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html) struct and
@@ -88,6 +88,26 @@ loader.url("https://ordomain.com/to/config.yaml")?;
 ```
 
 > The formats to use are derived from the trailing file extension.
+
+A [partial](./partial.md) that's already in memory, like one parsed from command line arguments, is
+added with the
+[`ConfigLoader::partial()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.partial)
+method, along with a name to use within error messages. Nothing is parsed, but it's otherwise loaded
+like any other source: merged in the order it was added, validated, and able to
+[extend](./struct/extend.md) other sources. A relative file it extends is resolved against the
+working directory.
+
+```rust
+loader.partial("CLI arguments", PartialAppConfig {
+	port: Some(8080),
+	..Default::default()
+});
+```
+
+> Like every source, a partial sits below [environment variables](./struct/env.md), which are
+> applied last. For command line arguments to take precedence over the environment, read the
+> variables through your argument parser instead, such as with clap's `env` argument, rather than
+> with `#[setting(env)]`.
 
 And lastly call the
 [`ConfigLoader::load()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load)

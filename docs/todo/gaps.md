@@ -3,17 +3,17 @@
 From the 2026-11-14 audit. See [README.md](README.md) for the legend, the ID scheme, the top
 priorities, and the quick wins.
 
-**G1. An in-memory or CLI layer** (#148) 📖 · med
+**G1. An in-memory or CLI layer** (#148) · fixed on `0.21-gaps`
 
-- **Today:** there are two workarounds.
-  - Serialize a clap partial to JSON and call `.code()`. This needs the `json` feature.
-  - The issue's recipe: `load_partial → finalize → merge → from_partial`. This silently skips final
-    validation.
-- **Simplest addition:** `ConfigLoader::partial(name, T::Partial)` backed by a
-  `Source::Memory { name }`. It sits below env, consistent with not changing `finalize`.
-- **Optional:** `ConfigLoader::overrides(T::Partial)`, merged after `finalize` and before
-  validation. This gives CLI precedence over env without touching `finalize`. Caveat: transforms
-  don't run on override values.
+`ConfigLoader::partial(name, T::Partial)` adds a layer recorded as `Source::Memory { name }`. It's
+merged in declaration order, validated with its name as the location, and may extend other sources;
+a relative file resolves against the working directory, as a memory source has no location of its
+own. `ConfigLoader::source` rejects a `Source::Memory`, which has no partial to load. Like every
+layer it sits below env.
+
+`ConfigLoader::overrides`, a layer above env, was not built, by decision: it would either skip
+transforms on override values or go through the hidden `finalize_nested`. CLI-over-env is left to
+the argument parser's own env support, which the book now says.
 
 **G2. Merge helpers that real configs need** 📖 · med
 

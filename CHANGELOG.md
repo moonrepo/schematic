@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, so a `match`
+  on `Source` needs another arm.
+
 #### 🚀 Updates
 
+- Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
+  CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
+  the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other
+  sources, a relative file resolving against the working directory. Like every layer, it sits below
+  environment variables.
 - Added `ConfigError::ExtendsCycle`, returned when the sources a config extends form a cycle, such
   as `a.json` extending `b.json` which extends `a.json`, rather than overflowing the stack. It lists
   every source in the cycle.

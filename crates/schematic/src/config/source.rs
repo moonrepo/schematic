@@ -13,6 +13,11 @@ pub enum Source {
     /// File system path to the configuration.
     File { path: PathBuf, required: bool },
 
+    /// A partial configuration held in memory, like one parsed from CLI
+    /// arguments. Added with [`ConfigLoader::partial`](crate::ConfigLoader::partial),
+    /// which holds the partial, so the name only identifies it.
+    Memory { name: String },
+
     /// Secure URL to the configuration.
     #[cfg(feature = "url")]
     Url { url: String },
@@ -25,6 +30,10 @@ impl Source {
     /// - Will be a URL, if the value starts with `http://`, `https://`, or `www.`.
     /// - Will be a file, if the file ends in an extension, or contains path separators.
     /// - Otherwise will be an error.
+    ///
+    /// A relative file is resolved against a parent file. A parent in memory
+    /// has no location, so a file it extends is resolved as one without a
+    /// parent, against the working directory.
     pub fn new(value: &str, parent_source: Option<&Source>) -> Result<Source, ConfigError> {
         // Extending from a URL is allowed from any parent source
         #[cfg(feature = "url")]
@@ -41,7 +50,7 @@ impl Source {
             };
 
             return match parent_source {
-                None => Source::file(value, true),
+                None | Some(Source::Memory { .. }) => Source::file(value, true),
                 Some(Source::File {
                     path: parent_path, ..
                 }) => {
@@ -93,6 +102,7 @@ impl Source {
             Self::Code { path, .. } | Self::File { path, .. } => {
                 path.extension().and_then(|name| name.to_str())
             }
+            Self::Memory { .. } => None,
             #[cfg(feature = "url")]
             Self::Url { url, .. } => extract_file_ext(url),
         }
@@ -105,17 +115,20 @@ impl Source {
                 .file_name()
                 .and_then(|name| name.to_str())
                 .unwrap_or("unknown"),
+            Self::Memory { name } => name,
             #[cfg(feature = "url")]
             Self::Url { url, .. } => extract_file_name(url),
         }
     }
 
-    /// Return the source as a string, either as a file path or URL.
+    /// Return the source as a string, either as a file path, URL, or the name
+    /// of a partial in memory.
     pub fn as_str(&self) -> &str {
         match self {
             Source::Code { path, .. } | Source::File { path, .. } => {
                 path.to_str().unwrap_or_default()
             }
+            Source::Memory { name } => name,
             #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
         }

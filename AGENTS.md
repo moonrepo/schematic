@@ -126,7 +126,8 @@ impl Schematic for PartialExample { /* delegates + partialize_schema */ }
 Runtime flow: each source is parsed into a partial layer, layers are combined with `merge`, then
 `finalize` re-merges that result **over** `default_values` and **under** `env_values` (so env wins),
 runs per-setting transforms and nested finalization, and finally `validate` runs before
-`from_partial` produces the full type. Precedence, lowest to highest: defaults → files → env.
+`from_partial` produces the full type. Precedence, lowest to highest: defaults → files → env. A partial added with
+`ConfigLoader::partial` (`Source::Memory`) is a layer like a file, so it sits below env too.
 
 **Defaults and env are applied once, by the outermost config.** A struct's `default_values` and
 `env_values` already contain those of its bare and optional nested configs, so the derived

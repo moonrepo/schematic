@@ -37,7 +37,9 @@ pub enum ConfigError {
     ExtendsFromNoCode,
 
     #[diagnostic(code(config::extends::only_parent_file))]
-    #[error("Extending from a file is only allowed if the parent source is also a file.")]
+    #[error(
+        "Extending from a file is only allowed if the parent source is also a file, or a partial in memory."
+    )]
     ExtendsFromParentFileOnly,
 
     #[diagnostic(code(config::url::https_only))]
@@ -59,6 +61,13 @@ pub enum ConfigError {
     #[diagnostic(code(config::url::invalid))]
     #[error("Invalid URL used as a source.")]
     InvalidUrl,
+
+    #[diagnostic(
+        code(config::memory::missing_partial),
+        help("Add a partial in memory with ConfigLoader::partial, which holds it.")
+    )]
+    #[error("Memory source {} has no partial to load.", .0.style(Style::Id))]
+    MemoryWithoutPartial(String),
 
     #[diagnostic(code(config::file::missing), help("Is the path absolute?"))]
     #[error("File path {} does not exist.", .0.style(Style::Path))]
