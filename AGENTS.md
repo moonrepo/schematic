@@ -343,7 +343,7 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   works. A setting that never reads the environment, like a collection without `parse_env`, reports
   nothing.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
-  `merge` to change it.
+  `merge` to change it — `merge::merge_partials` merges a map of nested configs by key.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,
   replace, or manager-wrapped).
 - **`required` works on any struct setting, and still needs `Default`.** A required setting is left

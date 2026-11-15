@@ -109,7 +109,7 @@ renderer_typescript = ["schema", "dep:convert_case"]
 
 # Types
 type_chrono = ["schematic_types/chrono"]
-type_indexmap = ["schematic_types/indexmap"]
+type_indexmap = ["schematic_types/indexmap", "dep:indexmap"]
 type_regex = ["schematic_types/regex", "dep:regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal", "garde?/rust_decimal"]

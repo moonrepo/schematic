@@ -6,6 +6,9 @@
 
 - Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, so a `match`
   on `Source` needs another arm.
+- Updated `merge::merge_hashmap` and `merge::merge_hashset` to accept any hasher. A direct call may
+  now need its map's hasher named, like `HashMap::<_, _>::from_iter(..)`, while `#[setting(merge)]`
+  is unaffected.
 
 #### 🚀 Updates
 
@@ -14,6 +17,17 @@
   the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other
   sources, a relative file resolving against the working directory. Like every layer, it sits below
   environment variables.
+- Added merge functions that configs commonly write for themselves:
+  - `merge::merge_partials`, which deep merges a map of nested configs by key, for
+    `#[setting(nested, merge = merge_partials)]`, as a nested collection is otherwise replaced. It
+    supports `HashMap`, `BTreeMap`, and `IndexMap`, through the new `merge::MergeableMap` trait.
+  - `merge::append_vec_unique`, which appends only the items a `Vec` doesn't contain yet, so a
+    source that lists a default again doesn't repeat it.
+  - `merge::merge_iter`, which extends any collection that implements `Extend`.
+  - `merge::merge_indexmap` and `merge::merge_indexset`, with the `type_indexmap` feature.
+- Updated `merge::merge_hashmap` and `merge::merge_hashset` to support any hasher, like
+  `FxHashMap`'s, and `merge::merge_btreemap` and `merge::merge_btreeset` to no longer require
+  `Hash`.
 - Added `ConfigError::ExtendsCycle`, returned when the sources a config extends form a cycle, such
   as `a.json` extending `b.json` which extends `a.json`, rather than overflowing the stack. It lists
   every source in the cycle.

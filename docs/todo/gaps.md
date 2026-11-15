@@ -15,19 +15,18 @@ layer it sits below env.
 transforms on override values or go through the hidden `finalize_nested`. CLI-over-env is left to
 the argument parser's own env support, which the book now says.
 
-**G2. Merge helpers that real configs need** 📖 · med
+**G2. Merge helpers that real configs need** · fixed on `0.21-gaps`
 
-- **What moon hand-rolls:** moon's `crates/config/src/merging.rs` re-implements:
-  - `merge_iter`, an append for any `Extend` collection;
-  - `merge_partials`, a deep merge of `Map<K, V: PartialConfig>` by key;
-  - a dedupe-aware append.
-- **Where the built-ins fall short:**
-  - `merge_hashmap` and `merge_hashset` only accept the default hasher, so `FxHashMap` can't use
-    them.
-  - `merge_btreemap` and `merge_btreeset` require a `Hash` bound they don't need.
-  - There are no `IndexMap`/`IndexSet` merges under `type_indexmap`.
-- **Fix:** generic `S: BuildHasher` versions, `append_unique`, `merge_iter`, `merge_partials` (it
-  fits today's merge signature through `&V::Context`), and indexmap variants. All additive and cheap.
+Added to `merge`: `merge_partials` (a map of nested configs, deep merged by key through a
+`MergeableMap` trait implemented for `HashMap` with any hasher, `BTreeMap`, and `IndexMap`),
+`append_vec_unique` (moon's dedupe-aware append, keeping duplicates already in `prev`),
+`merge_iter` (any `Extend`), and `merge_indexmap`/`merge_indexset` under `type_indexmap`, which now
+enables `indexmap`. `merge_hashmap`/`merge_hashset` take any `S: BuildHasher`, and the `BTree*`
+merges only need `Ord`. moon's `merge_iter` and `merge_partials` can be replaced by these.
+
+`merge_partials` hands the items the parent's context, as every `merge` function receives it, so it
+can't be combined with `#[setting(nested, context = func)]`. A hasher parameter means a direct call
+like `merge_hashmap(HashMap::from_iter(..), ..)` no longer infers `RandomState`.
 
 **G3. Config files choosing their own merge strategy** (#175) 📖 · med
 

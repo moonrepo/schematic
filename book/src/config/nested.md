@@ -29,8 +29,10 @@ enum ParentEnum {
 The `#[setting(nested)]` attribute is required, as the macro will substitute [`Config`][config] with
 its [partial](./partial.md) implementation.
 
-> Nested values can also be wrapped in collections, like `Vec` and `HashMap`. However, these are
-> tricky to support and may not work in all situations!
+Nested values can also be wrapped in collections, like `Vec` and `HashMap`. Each item is finalized
+and validated as a nested config, but the collection is replaced when merged, rather than merging
+its items. To merge a map of configs by key, use the
+[`merge_partials` strategy](./struct/merge.md#nested-maps).
 
 A `#[setting(nested)]` on a variant applies to every value it holds. To hold a nested config
 alongside plain values, mark the value itself instead. Its config is merged, finalized, and
