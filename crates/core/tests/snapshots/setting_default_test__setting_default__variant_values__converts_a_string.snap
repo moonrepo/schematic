@@ -6,11 +6,18 @@ fn default_values(
     &self,
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
     Ok(
         match self {
             Self::Foo(_) => {
-                Some(Self::Foo((&&DefaultString::<String>::new()).parse_default("abc")?))
+                Some(
+                    Self::Foo({
+                        use schematic::internal::defaults::{
+                            DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
+                        };
+                        (&&schematic::internal::defaults::DefaultString::<String>::new())
+                            .parse_default("abc")?
+                    }),
+                )
             }
             _ => None,
         },

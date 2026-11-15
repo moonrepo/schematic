@@ -6,13 +6,14 @@ fn default_values(
     &self,
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
     Ok(
         match self {
             Self::Foo(_) => {
                 Some(
                     Self::Foo(
-                        handle_default_result(default_count(context))?
+                        schematic::internal::defaults::handle_default_result(
+                                default_count(context),
+                            )?
                             .unwrap_or_default(),
                     ),
                 )

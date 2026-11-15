@@ -9,15 +9,20 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let content = schematic::internal::untagged::buffer_untagged_content(
+            deserializer,
+        )?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::literal_content(&content) {
+        match schematic::internal::untagged::literal_content(&content) {
             Some("A") => return Ok(PartialExample::A),
             _ => {
                 errors
                     .push((
                         "",
-                        schematic::internal::literal_error_message(&["A"], &content),
+                        schematic::internal::untagged::literal_error_message(
+                            &["A"],
+                            &content,
+                        ),
                     ))
             }
         }
@@ -27,7 +32,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
                 #[serde(skip_serializing_if = "Option::is_none", default)]
                 value: Option<usize>,
             }
-            match schematic::internal::deserialize_untagged_variant::<
+            match schematic::internal::untagged::deserialize_untagged_variant::<
                 Variant,
             >(&content) {
                 Ok(value) => {
@@ -40,7 +45,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         }
         Err(
             D::Error::custom(
-                schematic::internal::untagged_error_message(
+                schematic::internal::untagged::untagged_error_message(
                     stringify!(PartialExample),
                     &errors,
                 ),

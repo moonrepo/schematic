@@ -29,13 +29,20 @@ impl schematic::PartialConfig for PartialExample {
         &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        use schematic::internal::*;
         Ok(
             match self {
                 Self::A { b: pb, .. } => {
                     Some(Self::A {
-                        a: Some((&&DefaultString::<String>::new()).parse_default("a")?),
-                        b: schematic::internal::nested_default_values(
+                        a: Some({
+                            use schematic::internal::defaults::{
+                                DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
+                            };
+                            (&&schematic::internal::defaults::DefaultString::<
+                                String,
+                            >::new())
+                                .parse_default("a")?
+                        }),
+                        b: schematic::internal::layers::nested_default_values(
                             pb.as_ref(),
                             context,
                         )?,
@@ -52,15 +59,17 @@ impl schematic::PartialConfig for PartialExample {
         &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        use schematic::internal::*;
-        let mut env = EnvManager::new(prefix, None);
+        let mut env = schematic::internal::env::EnvManager::new(prefix, None);
         let value = match self {
             Self::A { b: pb, .. } => {
                 Self::A {
                     a: None,
                     b: env
                         .nested(
-                            schematic::internal::nested_env_values(pb.as_ref(), None)?,
+                            schematic::internal::layers::nested_env_values(
+                                pb.as_ref(),
+                                None,
+                            )?,
                         )?,
                 }
             }
@@ -89,18 +98,20 @@ impl schematic::PartialConfig for PartialExample {
         context: &Self::Context,
         mut next: Self,
     ) -> std::result::Result<(), schematic::ConfigError> {
-        use schematic::internal::*;
         match self {
             Self::A { a: pa, b: pb } => {
                 if let Self::A { a: na, b: nb } = next {
-                    MergeManager::new(context).apply(pa, na)?.nested(pb, nb)?;
+                    schematic::internal::merge::MergeManager::new(context)
+                        .apply(pa, na)?
+                        .nested(pb, nb)?;
                 } else {
                     *self = next;
                 }
             }
             Self::B { c: pa } => {
                 if let Self::B { c: na } = next {
-                    MergeManager::new(context).apply(pa, na)?;
+                    schematic::internal::merge::MergeManager::new(context)
+                        .apply(pa, na)?;
                 } else {
                     *self = next;
                 }
@@ -117,8 +128,11 @@ impl schematic::PartialConfig for PartialExample {
         finalizing: bool,
         path: schematic::Path,
     ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-        use schematic::internal::*;
-        let mut validate = ValidateManager::new(context, finalizing, path);
+        let mut validate = schematic::internal::validate::ValidateManager::new(
+            context,
+            finalizing,
+            path,
+        );
         match self {
             Self::A { b: pb, .. } => {
                 validate
@@ -193,7 +207,7 @@ impl schematic::Config for Example {
                             ("a".into(), ConfigSetting::new("String")),
                             (
                                 "b".into(),
-                                schematic::internal::with_nested_settings::<
+                                schematic::internal::settings::with_nested_settings::<
                                     NestedConfig,
                                 >(ConfigSetting::new("NestedConfig")),
                             ),
@@ -308,7 +322,7 @@ impl schematic::Schematic for PartialExample {
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
         let mut schema = <Example as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
+        schematic::internal::schema::partialize_schema(&mut schema, true);
         schema
     }
 }

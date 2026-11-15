@@ -9,39 +9,43 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let content = schematic::internal::untagged::buffer_untagged_content(
+            deserializer,
+        )?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::literal_content(&content) {
+        match schematic::internal::untagged::literal_content(&content) {
             Some("alpha" | "a") => return Ok(PartialExample::Alpha),
             Some("bb") => return Ok(PartialExample::Beta),
             _ => {
                 errors
                     .push((
                         "",
-                        schematic::internal::literal_error_message(
+                        schematic::internal::untagged::literal_error_message(
                             &["alpha", "bb"],
                             &content,
                         ),
                     ))
             }
         }
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
+        match schematic::internal::untagged::deserialize_untagged_variant::<
+            bool,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::Flag(value)),
             Err(error) => errors.push(("flag", error)),
         }
-        match schematic::internal::deserialize_untagged_variant::<
+        match schematic::internal::untagged::deserialize_untagged_variant::<
             (usize, String),
         >(&content) {
             Ok(value) => return Ok(PartialExample::Pair(value.0, value.1)),
             Err(error) => errors.push(("pair", error)),
         }
-        if schematic::internal::is_null_content(&content) {
+        if schematic::internal::untagged::is_null_content(&content) {
             return Ok(PartialExample::Missing);
         }
         errors.push(("missing", "expected null".to_owned()));
         Err(
             D::Error::custom(
-                schematic::internal::untagged_error_message(
+                schematic::internal::untagged::untagged_error_message(
                     stringify!(PartialExample),
                     &errors,
                 ),

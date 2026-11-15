@@ -36,8 +36,8 @@ where
         context: &Self::Context,
         mut next: Self,
     ) -> std::result::Result<(), schematic::ConfigError> {
-        use schematic::internal::*;
-        MergeManager::new(context).apply(&mut self.inner, next.inner)?;
+        schematic::internal::merge::MergeManager::new(context)
+            .apply(&mut self.inner, next.inner)?;
         Ok(())
     }
 }
@@ -102,7 +102,7 @@ where
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
         let mut schema = <Example<T> as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
+        schematic::internal::schema::partialize_schema(&mut schema, true);
         schema
     }
 }

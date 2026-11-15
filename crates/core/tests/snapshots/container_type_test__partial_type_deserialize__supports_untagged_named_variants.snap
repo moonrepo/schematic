@@ -9,9 +9,13 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let content = schematic::internal::untagged::buffer_untagged_content(
+            deserializer,
+        )?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
+        match schematic::internal::untagged::deserialize_untagged_variant::<
+            bool,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::A(value)),
             Err(error) => errors.push(("A", error)),
         }
@@ -31,7 +35,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
                 #[serde(skip_serializing_if = "Option::is_none", default)]
                 child: Option<<NestedConfig as schematic::Config>::Partial>,
             }
-            match schematic::internal::deserialize_untagged_variant::<
+            match schematic::internal::untagged::deserialize_untagged_variant::<
                 Variant,
             >(&content) {
                 Ok(value) => {
@@ -51,7 +55,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
                 #[serde(skip_serializing_if = "Option::is_none", default)]
                 some_value: Option<bool>,
             }
-            match schematic::internal::deserialize_untagged_variant::<
+            match schematic::internal::untagged::deserialize_untagged_variant::<
                 Variant,
             >(&content) {
                 Ok(value) => {
@@ -66,7 +70,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
             #[derive(serde::Deserialize)]
             #[serde(deny_unknown_fields)]
             struct Variant {}
-            match schematic::internal::deserialize_untagged_variant::<
+            match schematic::internal::untagged::deserialize_untagged_variant::<
                 Variant,
             >(&content) {
                 Ok(_) => return Ok(PartialExample::D {}),
@@ -75,7 +79,7 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         }
         Err(
             D::Error::custom(
-                schematic::internal::untagged_error_message(
+                schematic::internal::untagged::untagged_error_message(
                     stringify!(PartialExample),
                     &errors,
                 ),

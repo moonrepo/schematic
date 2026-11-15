@@ -1,4 +1,4 @@
-use crate::{ParseEnvResult, internal};
+use crate::{ParseEnvResult, internal::env::parse_value};
 use std::str::FromStr;
 
 /// Ignore the environment variable if it's empty and fallback to the previous or default value.
@@ -9,7 +9,7 @@ pub fn ignore_empty<T: FromStr>(var: String) -> ParseEnvResult<T> {
         return Ok(None);
     }
 
-    internal::parse_value(var).map(|v| Some(v))
+    parse_value(var).map(|v| Some(v))
 }
 
 /// Parse a string into a boolean. Will parse `1`, `true`, `yes`, `on`,
@@ -28,7 +28,7 @@ fn split<T: FromStr>(var: String, delim: char) -> ParseEnvResult<Vec<T>> {
         let value = s.trim();
 
         if !value.is_empty() {
-            list.push(internal::parse_value(value)?);
+            list.push(parse_value(value)?);
         }
     }
 

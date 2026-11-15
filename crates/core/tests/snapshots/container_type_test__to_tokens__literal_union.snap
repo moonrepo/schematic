@@ -23,26 +23,33 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let content = schematic::internal::untagged::buffer_untagged_content(
+            deserializer,
+        )?;
         let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::literal_content(&content) {
+        match schematic::internal::untagged::literal_content(&content) {
             Some("a") => return Ok(PartialExample::A),
             Some("b") => return Ok(PartialExample::B),
             _ => {
                 errors
                     .push((
                         "",
-                        schematic::internal::literal_error_message(&["a", "b"], &content),
+                        schematic::internal::untagged::literal_error_message(
+                            &["a", "b"],
+                            &content,
+                        ),
                     ))
             }
         }
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
+        match schematic::internal::untagged::deserialize_untagged_variant::<
+            bool,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::Flag(value)),
             Err(error) => errors.push(("flag", error)),
         }
         Err(
             D::Error::custom(
-                schematic::internal::untagged_error_message(
+                schematic::internal::untagged::untagged_error_message(
                     stringify!(PartialExample),
                     &errors,
                 ),
@@ -78,8 +85,11 @@ impl schematic::PartialConfig for PartialExample {
         finalizing: bool,
         path: schematic::Path,
     ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-        use schematic::internal::*;
-        let mut validate = ValidateManager::new(context, finalizing, path);
+        let mut validate = schematic::internal::validate::ValidateManager::new(
+            context,
+            finalizing,
+            path,
+        );
         match self {
             Self::Flag(pa) => {}
             _ => {}
@@ -150,7 +160,7 @@ impl schematic::Schematic for PartialExample {
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
         let mut schema = <Example as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
+        schematic::internal::schema::partialize_schema(&mut schema, true);
         schema
     }
 }

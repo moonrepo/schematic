@@ -883,13 +883,13 @@ impl Container {
                     use serde::de::Error as _;
 
                     // Buffer the content so that we can attempt to deserialize it multiple times
-                    let content = schematic::internal::buffer_untagged_content(deserializer)?;
+                    let content = schematic::internal::untagged::buffer_untagged_content(deserializer)?;
                     let mut errors: Vec<(&str, String)> = Vec::new();
 
                     #(#attempts)*
 
                     // All variants failed, so combine the errors into a single message
-                    Err(D::Error::custom(schematic::internal::untagged_error_message(
+                    Err(D::Error::custom(schematic::internal::untagged::untagged_error_message(
                         stringify!(#partial_name),
                         &errors,
                     )))
@@ -949,9 +949,9 @@ impl Container {
         }
 
         quote! {
-            match schematic::internal::literal_content(&content) {
+            match schematic::internal::untagged::literal_content(&content) {
                 #(#arms)*
-                _ => errors.push(("", schematic::internal::literal_error_message(
+                _ => errors.push(("", schematic::internal::untagged::literal_error_message(
                     &[#(#names),*],
                     &content,
                 ))),
@@ -1103,7 +1103,7 @@ impl Container {
         validate_case_format("before_parse", format);
 
         quote! {
-            let value = schematic::internal::format_case(value, #format);
+            let value = schematic::internal::casing::format_case(value, #format);
             let value = value.as_str();
         }
     }
@@ -1213,7 +1213,7 @@ impl Container {
 
                 fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
                     let mut schema = <#base_name #ty_generics as schematic::Schematic>::build_schema(schema);
-                    schematic::internal::partialize_schema(&mut schema, true);
+                    schematic::internal::schema::partialize_schema(&mut schema, true);
                     schema
                 }
             }
@@ -1412,8 +1412,6 @@ impl Container {
     }
 
     pub fn impl_partial_default_values(&self) -> TokenStream {
-        let mut requires_internal = false;
-
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } => {
                 let mut rows = vec![];
@@ -1436,10 +1434,6 @@ impl Container {
                         } else {
                             always_some = true;
                         }
-                    }
-
-                    if res.requires_internal {
-                        requires_internal = true;
                     }
                 }
 
@@ -1484,10 +1478,6 @@ impl Container {
                             always_some = true;
                         }
                     }
-
-                    if res.requires_internal {
-                        requires_internal = true;
-                    }
                 }
 
                 // Do not implement method
@@ -1525,10 +1515,6 @@ impl Container {
                         continue;
                     }
 
-                    if res.requires_internal {
-                        requires_internal = true;
-                    }
-
                     arms.push(res.value);
                 }
 
@@ -1548,11 +1534,8 @@ impl Container {
             }
         };
 
-        let internal = ImplResult::impl_use_internal(requires_internal);
-
         quote! {
             fn default_values(&self, context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-                #internal
                 #inner
             }
         }
@@ -1599,8 +1582,6 @@ impl Container {
             }
         };
 
-        let internal = ImplResult::impl_use_internal(true);
-
         // A prefix passed in by a parent is read alongside the container's
         // own, rather than replacing it, so that the keys reported in the
         // schema and `settings()` always work
@@ -1622,9 +1603,7 @@ impl Container {
             }
 
             fn env_values_with_prefix(&self, prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-                #internal
-
-                let mut env = EnvManager::new(prefix, #own_prefix);
+                let mut env = schematic::internal::env::EnvManager::new(prefix, #own_prefix);
                 let mut partial = Self::default();
 
                 #inner
@@ -1675,7 +1654,7 @@ impl Container {
                 quote! {
                     #pick
 
-                    let mut env = EnvManager::new(prefix, #own_prefix);
+                    let mut env = schematic::internal::env::EnvManager::new(prefix, #own_prefix);
                     let value = match #view {
                         #(#arms)*
                         #rest
@@ -1696,8 +1675,6 @@ impl Container {
             }
 
             fn env_values_with_prefix(&self, prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-                use schematic::internal::*;
-
                 #inner
             }
         }
@@ -1740,7 +1717,7 @@ impl Container {
         );
 
         Some(quote! {
-            EnvManager::new(prefix, #own_prefix)
+            schematic::internal::env::EnvManager::new(prefix, #own_prefix)
                 .get_and_parse_prefixed(#key, |value| {
                     Ok(Some(match value.as_str() {
                         #(#arms)*
@@ -1832,17 +1809,12 @@ impl Container {
             }
             ContainerInner::Enum { variants } => {
                 let mut statements = vec![];
-                let mut requires_internal = false;
 
                 for variant in variants {
                     let res = variant.impl_partial_finalize();
 
                     if !res.no_value {
                         statements.push(res.value);
-                    }
-
-                    if res.requires_internal {
-                        requires_internal = true;
                     }
                 }
 
@@ -1852,11 +1824,7 @@ impl Container {
                     return quote! {};
                 }
 
-                let internal = ImplResult::impl_use_internal(requires_internal);
-
                 quote! {
-                    #internal
-
                     Ok(match self {
                         #(#statements)*
                         _ => self
@@ -1889,17 +1857,13 @@ impl Container {
                     return quote! {};
                 }
 
-                let internal = ImplResult::impl_use_internal(true);
-
                 quote! {
                     fn merge(
                         &mut self,
                         context: &Self::Context,
                         mut next: Self,
                     ) -> std::result::Result<(), schematic::ConfigError> {
-                        #internal
-
-                        MergeManager::new(context)
+                        schematic::internal::merge::MergeManager::new(context)
                         #(#statements)*;
 
                         Ok(())
@@ -1908,7 +1872,6 @@ impl Container {
             }
             ContainerInner::Enum { variants } => {
                 let mut statements = vec![];
-                let mut requires_internal = false;
 
                 for variant in variants {
                     let res = variant.impl_partial_merge();
@@ -1916,13 +1879,8 @@ impl Container {
                     if !res.no_value {
                         statements.push(res.value);
                     }
-
-                    if res.requires_internal {
-                        requires_internal = true;
-                    }
                 }
 
-                let internal = ImplResult::impl_use_internal(requires_internal);
                 let inner = if statements.is_empty() {
                     quote! {
                         *self = next;
@@ -1944,7 +1902,6 @@ impl Container {
                         context: &Self::Context,
                         mut next: Self,
                     ) -> std::result::Result<(), schematic::ConfigError> {
-                        #internal
                         #inner
                         Ok(())
                     }
@@ -2008,7 +1965,6 @@ impl Container {
         }
 
         let inner = quote! { #(#statements)* };
-        let internal = ImplResult::impl_use_internal(true);
 
         quote! {
             fn validate_with_path(
@@ -2017,9 +1973,7 @@ impl Container {
                 finalizing: bool,
                 path: schematic::Path
             ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-                #internal
-
-                let mut validate = ValidateManager::new(context, finalizing, path);
+                let mut validate = schematic::internal::validate::ValidateManager::new(context, finalizing, path);
                 #inner
 
                 if !validate.errors.is_empty() {

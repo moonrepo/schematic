@@ -12,7 +12,9 @@ where
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let content = schematic::internal::untagged::buffer_untagged_content(
+            deserializer,
+        )?;
         let mut errors: Vec<(&str, String)> = Vec::new();
         {
             #[derive(serde::Deserialize)]
@@ -31,7 +33,7 @@ where
                 #[serde(skip)]
                 __marker: std::marker::PhantomData<PartialExample<T, U>>,
             }
-            match schematic::internal::deserialize_untagged_variant::<
+            match schematic::internal::untagged::deserialize_untagged_variant::<
                 Variant<T, U>,
             >(&content) {
                 Ok(value) => {
@@ -42,13 +44,15 @@ where
                 Err(error) => errors.push(("A", error)),
             }
         }
-        match schematic::internal::deserialize_untagged_variant::<U>(&content) {
+        match schematic::internal::untagged::deserialize_untagged_variant::<
+            U,
+        >(&content) {
             Ok(value) => return Ok(PartialExample::B(value)),
             Err(error) => errors.push(("B", error)),
         }
         Err(
             D::Error::custom(
-                schematic::internal::untagged_error_message(
+                schematic::internal::untagged::untagged_error_message(
                     stringify!(PartialExample),
                     &errors,
                 ),

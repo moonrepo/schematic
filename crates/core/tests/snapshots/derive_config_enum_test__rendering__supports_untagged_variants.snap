@@ -16,7 +16,7 @@ impl std::str::FromStr for Example {
     type Err = schematic::ConfigError;
     fn from_str(value: &str) -> std::result::Result<Self, schematic::ConfigError> {
         let input = value;
-        let value = schematic::internal::format_case(value, "lowercase");
+        let value = schematic::internal::casing::format_case(value, "lowercase");
         let value = value.as_str();
         Ok(
             match value {

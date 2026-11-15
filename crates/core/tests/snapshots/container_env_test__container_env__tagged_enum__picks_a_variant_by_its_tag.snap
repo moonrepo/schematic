@@ -9,8 +9,7 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let picked = EnvManager::new(prefix, Some("AUTH_"))
+    let picked = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"))
         .get_and_parse_prefixed(
             "TYPE",
             |value| {
@@ -45,7 +44,7 @@ fn env_values_with_prefix(
             },
         )?
         .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self));
-    let mut env = EnvManager::new(prefix, Some("AUTH_"));
+    let mut env = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"));
     let value = match picked.as_ref().unwrap_or(self) {
         Self::Token { .. } => {
             Self::Token {
@@ -61,7 +60,9 @@ fn env_values_with_prefix(
         Self::Nested(pa) => {
             Self::Nested(
                 env
-                    .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                    .nested(
+                        schematic::internal::layers::nested_env_values(Some(pa), None)?,
+                    )?
                     .unwrap_or_default(),
             )
         }

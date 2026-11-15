@@ -7,8 +7,8 @@ fn default_values(
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     let defaults = Self {
-        a: schematic::internal::nested_default_values(self.a.as_ref(), context)?,
-        b: schematic::internal::nested_default_values(self.b.as_ref(), context)?,
+        a: schematic::internal::layers::nested_default_values(self.a.as_ref(), context)?,
+        b: schematic::internal::layers::nested_default_values(self.b.as_ref(), context)?,
     };
     Ok(
         if matches!(defaults, Self { a : None, b : None, .. }) {

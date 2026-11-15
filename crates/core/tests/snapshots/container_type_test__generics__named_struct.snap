@@ -33,8 +33,7 @@ impl<T> schematic::PartialConfig for PartialExample<T> {
         context: &Self::Context,
         mut next: Self,
     ) -> std::result::Result<(), schematic::ConfigError> {
-        use schematic::internal::*;
-        MergeManager::new(context)
+        schematic::internal::merge::MergeManager::new(context)
             .apply(&mut self.inner, next.inner)?
             .apply(&mut self.label, next.label)?;
         Ok(())
@@ -92,7 +91,7 @@ impl<T> schematic::Schematic for PartialExample<T> {
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
         let mut schema = <Example<T> as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
+        schematic::internal::schema::partialize_schema(&mut schema, true);
         schema
     }
 }

@@ -776,7 +776,7 @@ impl Field {
         // would otherwise never stop collecting them
         let setting = match self.value.get_nested_type() {
             Some(ty) => quote! {
-                schematic::internal::with_nested_settings::<#ty>(#setting)
+                schematic::internal::settings::with_nested_settings::<#ty>(#setting)
             },
             None => setting,
         };
