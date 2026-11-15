@@ -1141,6 +1141,13 @@ impl Variant {
                     .map(|setting| setting.get_key())
                     .collect::<Vec<_>>();
 
+                // A variant without settings reads none of the value
+                let value = if keys.is_empty() {
+                    quote! { _ }
+                } else {
+                    quote! { value }
+                };
+
                 let (_, ty_generics, where_clause) = generics.split_for_impl();
                 let marker = if generics.params.is_empty() {
                     quote! {}
@@ -1161,7 +1168,7 @@ impl Variant {
                         }
 
                         match schematic::internal::deserialize_untagged_variant::<Variant #ty_generics>(&content) {
-                            Ok(value) => return Ok(#partial_name::#name {
+                            Ok(#value) => return Ok(#partial_name::#name {
                                 #(#keys: value.#keys),*
                             }),
                             Err(error) => errors.push((#name_string, error)),

@@ -1,0 +1,50 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type_deserialize())
+---
+#[automatically_derived]
+impl<'de> serde::Deserialize<'de> for PartialExample {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let mut errors: Vec<(&str, String)> = Vec::new();
+        match schematic::internal::literal_content(&content) {
+            Some("A") => return Ok(PartialExample::A),
+            _ => {
+                errors
+                    .push((
+                        "",
+                        schematic::internal::literal_error_message(&["A"], &content),
+                    ))
+            }
+        }
+        {
+            #[derive(serde::Deserialize)]
+            struct Variant {
+                #[serde(skip_serializing_if = "Option::is_none", default)]
+                value: Option<usize>,
+            }
+            match schematic::internal::deserialize_untagged_variant::<
+                Variant,
+            >(&content) {
+                Ok(value) => {
+                    return Ok(PartialExample::B {
+                        value: value.value,
+                    });
+                }
+                Err(error) => errors.push(("B", error)),
+            }
+        }
+        Err(
+            D::Error::custom(
+                schematic::internal::untagged_error_message(
+                    stringify!(PartialExample),
+                    &errors,
+                ),
+            ),
+        )
+    }
+}

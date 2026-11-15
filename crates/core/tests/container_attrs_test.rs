@@ -180,6 +180,86 @@ mod partial_serde_args {
         }
     }
 
+    mod named_enum {
+        use super::*;
+
+        // A named variant has fields, which are denied as a struct's are
+        #[test]
+        fn defaults() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A { a: bool },
+                    B(usize),
+                }
+            });
+
+            assert_snapshot!(container.get_partial_serde_attribute_args().to_string());
+        }
+
+        #[test]
+        fn allows_unknown_fields() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(allow_unknown_fields)]
+                enum Example {
+                    A { a: bool },
+                }
+            });
+
+            assert!(container.get_partial_serde_attribute_args().is_empty());
+        }
+
+        #[test]
+        fn allows_unknown_fields_beside_a_flattened_map() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A { a: bool },
+                    B {
+                        #[serde(flatten)]
+                        rest: HashMap<String, String>,
+                    },
+                }
+            });
+
+            assert!(container.get_partial_serde_attribute_args().is_empty());
+        }
+
+        #[test]
+        fn supports_tagged() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type", content = "value", rename_all_fields = "camelCase")]
+                enum Example {
+                    A { a: bool },
+                    B(usize),
+                }
+            });
+
+            assert_snapshot!(container.get_partial_serde_attribute_args().to_string());
+        }
+
+        // Forwarded to the variant, along with its other serde attributes
+        #[test]
+        fn forwards_variant_rename_all() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[serde(rename_all = "camelCase", alias = "b")]
+                    #[setting(rename = "aa")]
+                    A { some_value: bool },
+                }
+            });
+
+            assert_snapshot!(
+                container.inner.get_variants()[0]
+                    .get_partial_serde_attribute_args()
+                    .to_string()
+            );
+        }
+    }
+
     mod unnamed_enum {
         use super::*;
 

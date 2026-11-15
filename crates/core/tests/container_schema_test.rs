@@ -46,6 +46,19 @@ mod schematic {
     }
 
     #[test]
+    fn named_enum() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A { a: bool },
+                B { b: String },
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_schematic()));
+    }
+
+    #[test]
     fn unnamed_enum() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]
@@ -229,6 +242,187 @@ mod schema_type {
 
     // Every tagging format uses the same variants, so that the
     // output can be compared across them
+    mod named_enum {
+        use super::*;
+
+        // Each variant is a struct of its settings, marked as a partial
+        #[test]
+        fn supports_external() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    /// Docs.
+                    A {
+                        /// Field docs.
+                        a: String,
+                        #[setting(default = 10)]
+                        b: usize,
+                        c: Option<bool>,
+                        #[setting(required)]
+                        d: Option<String>,
+                    },
+                    #[setting(default)]
+                    B {
+                        #[setting(nested)]
+                        inner: NestedConfig,
+                        #[setting(nested)]
+                        inner_opt: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        inner_map: HashMap<String, CustomConfig>,
+                    },
+                    C {},
+                    Text(String),
+                    Unit,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_untagged() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(untagged)]
+                enum Example {
+                    /// Docs.
+                    A {
+                        /// Field docs.
+                        a: String,
+                        #[setting(default = 10)]
+                        b: usize,
+                        c: Option<bool>,
+                        #[setting(required)]
+                        d: Option<String>,
+                    },
+                    #[setting(default)]
+                    B {
+                        #[setting(nested)]
+                        inner: NestedConfig,
+                        #[setting(nested)]
+                        inner_opt: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        inner_map: HashMap<String, CustomConfig>,
+                    },
+                    C {},
+                    Text(String),
+                    Unit,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        // The tag is added to the struct, which is no longer a named type
+        #[test]
+        fn supports_internal_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type")]
+                enum Example {
+                    /// Docs.
+                    A {
+                        /// Field docs.
+                        a: String,
+                        #[setting(default = 10)]
+                        b: usize,
+                        c: Option<bool>,
+                        #[setting(required)]
+                        d: Option<String>,
+                    },
+                    #[setting(default)]
+                    B {
+                        #[setting(nested)]
+                        inner: NestedConfig,
+                        #[setting(nested)]
+                        inner_opt: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        inner_map: HashMap<String, CustomConfig>,
+                    },
+                    C {},
+                    Text(String),
+                    Unit,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_adjacent_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type", content = "value")]
+                enum Example {
+                    /// Docs.
+                    A {
+                        /// Field docs.
+                        a: String,
+                        #[setting(default = 10)]
+                        b: usize,
+                        c: Option<bool>,
+                        #[setting(required)]
+                        d: Option<String>,
+                    },
+                    #[setting(default)]
+                    B {
+                        #[setting(nested)]
+                        inner: NestedConfig,
+                        #[setting(nested)]
+                        inner_opt: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        inner_map: HashMap<String, CustomConfig>,
+                    },
+                    C {},
+                    Text(String),
+                    Unit,
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_renames_and_exclusions() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all = "kebab-case", rename_all_fields = "camelCase")]
+                enum Example {
+                    SomeVariant {
+                        some_value: String,
+                        #[setting(rename = "other", alias = "o")]
+                        other_value: String,
+                        #[setting(exclude)]
+                        excluded: String,
+                        #[serde(skip)]
+                        skipped: String,
+                    },
+                    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+                    OtherVariant {
+                        some_value: String,
+                    },
+                    #[setting(exclude)]
+                    Excluded {},
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn supports_allow_unknown_fields() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(allow_unknown_fields)]
+                enum Example {
+                    A { a: String },
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+    }
+
     mod unnamed_enum {
         use super::*;
 

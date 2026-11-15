@@ -149,6 +149,44 @@ mod enums {
         });
     }
 
+    // A named variant has fields of its own
+    #[test]
+    fn supports_allow_unknown_fields_with_named_variants() {
+        config(parse_quote! {
+            #[derive(Config)]
+            #[config(allow_unknown_fields)]
+            enum Example {
+                A(String),
+                B { b: String },
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Can only use `rename_all` with named variants")]
+    fn errors_for_rename_all_on_a_tuple_variant() {
+        config(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                #[serde(rename_all = "camelCase")]
+                A(String),
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Only unit variants are supported")]
+    fn errors_for_named_variants_on_a_config_enum() {
+        config_enum(parse_quote! {
+            #[derive(ConfigEnum)]
+            enum Example {
+                A,
+                B { b: String },
+            }
+        })
+        .impl_config_enum();
+    }
+
     #[test]
     #[should_panic(expected = "Cannot use `allow_unknown_fields` on a `ConfigEnum` enum")]
     fn errors_for_allow_unknown_fields_on_a_config_enum() {

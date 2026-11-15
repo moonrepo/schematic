@@ -206,6 +206,104 @@ mod variants {
 
 // Environment variables stay derived from the Rust name, so a casing choice
 // for the serialized shape doesn't reshape variable names.
+// The settings of a named variant take the variant's `rename_all`, or the
+// container's `rename_all_fields`, as serde does, but never the container's
+// `rename_all`, which names the variants themselves
+mod variant_settings {
+    use super::*;
+
+    fn names(input: syn::DeriveInput) -> Vec<Vec<String>> {
+        Container::from(input)
+            .inner
+            .get_variants()
+            .iter()
+            .map(|variant| {
+                variant
+                    .settings
+                    .iter()
+                    .map(|setting| setting.get_name())
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn leaves_names_alone_without_rename_all_fields() {
+        assert_eq!(
+            names(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all = "kebab-case")]
+                enum Example {
+                    SomeVariant { some_field: String },
+                }
+            }),
+            vec![vec!["some_field"]]
+        );
+    }
+
+    #[test]
+    fn applies_rename_all_fields() {
+        assert_eq!(
+            names(parse_quote! {
+                #[derive(Config)]
+                #[config(rename_all_fields = "camelCase")]
+                enum Example {
+                    A { some_field: String },
+                    B { other_field: String },
+                }
+            }),
+            vec![vec!["someField"], vec!["otherField"]]
+        );
+    }
+
+    #[test]
+    fn variant_takes_precedence_over_the_container() {
+        assert_eq!(
+            names(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all_fields = "camelCase")]
+                enum Example {
+                    #[serde(rename_all = "kebab-case")]
+                    A { some_field: String },
+                    #[setting(rename_all = "SCREAMING_SNAKE_CASE")]
+                    B { some_field: String },
+                    C { some_field: String },
+                }
+            }),
+            vec![vec!["some-field"], vec!["SOME_FIELD"], vec!["someField"]]
+        );
+    }
+
+    #[test]
+    fn does_not_case_an_explicit_rename() {
+        assert_eq!(
+            names(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all_fields = "camelCase")]
+                enum Example {
+                    A {
+                        #[serde(rename = "as_written")]
+                        some_field: String,
+                    },
+                }
+            }),
+            vec![vec!["as_written"]]
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown `rename_all` value `nope`")]
+    fn rejects_an_unknown_case() {
+        names(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                #[serde(rename_all = "nope")]
+                A { some_field: String },
+            }
+        });
+    }
+}
+
 mod env_keys {
     use super::*;
 

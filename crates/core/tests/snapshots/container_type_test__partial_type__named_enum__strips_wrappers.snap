@@ -1,0 +1,22 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+enum PartialExample {
+    A {
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        a: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        b: Option<usize>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        c: Option<Vec<bool>>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        d: Option<<NestedConfig as schematic::Config>::Partial>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        e: Option<<NestedConfig as schematic::Config>::Partial>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        f: Option<Box<str>>,
+    },
+}

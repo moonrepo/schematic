@@ -196,6 +196,102 @@ mod partial_type {
         }
     }
 
+    mod named_enum {
+        use super::*;
+
+        // Each setting is optional, like a struct's, but has no visibility
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                pub enum Example {
+                    /// Docs.
+                    #[setting(rename = "aa")]
+                    A {
+                        /// Docs.
+                        a: bool,
+                        b: Option<usize>,
+                        #[serde(alias = "cee")]
+                        c: String,
+                    },
+                    #[serde(rename_all = "camelCase", alias = "bee")]
+                    B {
+                        #[setting(nested)]
+                        some_value: NestedConfig,
+                        #[setting(nested)]
+                        other_value: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        list: Vec<CustomConfig>,
+                    },
+                    #[setting(untagged, partial(serde(default)))]
+                    C {
+                        #[setting(partial(serde(alias = "dee")))]
+                        d: String,
+                        #[serde(flatten)]
+                        e: HashMap<String, String>,
+                    },
+                    D {},
+                    E(bool),
+                    F,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        #[test]
+        fn strips_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: Box<String>,
+                        b: Option<Arc<usize>>,
+                        c: Vec<Rc<bool>>,
+                        #[setting(nested)]
+                        d: Arc<NestedConfig>,
+                        #[setting(nested)]
+                        e: Option<Box<NestedConfig>>,
+                        // Unsized values keep their wrapper
+                        f: Box<str>,
+                    },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        // Unknown fields are denied, as a struct's are
+        #[test]
+        fn supports_tagged() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(tag = "type")]
+                enum Example {
+                    A { a: bool },
+                    B { b: usize },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+
+        // Deserialized by hand, so serde's derive is left off
+        #[test]
+        fn supports_untagged() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(untagged)]
+                enum Example {
+                    A { a: bool },
+                    B(usize),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_type()));
+        }
+    }
+
     mod unnamed_enum {
         use super::*;
 
@@ -353,6 +449,25 @@ mod partial_type_default {
         assert_snapshot!(pretty(container.impl_partial_type_default()));
     }
 
+    // Every setting of the default variant is empty, as a struct's are
+    #[test]
+    fn supports_named_variants() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A(bool),
+                #[setting(default)]
+                B {
+                    #[setting(default = 1)]
+                    a: usize,
+                    b: Option<String>,
+                },
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_type_default()));
+    }
+
     #[test]
     #[should_panic(expected = "Enums must have at least 1 variant.")]
     fn errors_for_empty_enum() {
@@ -393,6 +508,51 @@ mod partial_type_deserialize {
                 #[setting(nested)]
                 D(Option<Vec<NestedConfig>>),
                 E,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
+    }
+
+    // A named variant is deserialized through a struct that stands in for
+    // it, which denies unknown fields as the partial does
+    #[test]
+    fn supports_untagged_named_variants() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(untagged, rename_all_fields = "camelCase")]
+            enum Example {
+                A(bool),
+                B {
+                    some_value: usize,
+                    #[setting(rename = "other", partial(derive_more(something)))]
+                    #[serde(alias = "o")]
+                    other_value: Option<String>,
+                    #[setting(nested)]
+                    child: NestedConfig,
+                },
+                #[serde(rename_all = "kebab-case")]
+                C {
+                    some_value: bool,
+                },
+                D {},
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
+    }
+
+    #[test]
+    fn supports_named_variants_in_literal_unions() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[config(allow_unknown_fields)]
+            enum Example {
+                A,
+                #[serde(untagged)]
+                B {
+                    value: usize,
+                },
             }
         });
 
@@ -539,6 +699,29 @@ mod to_tokens {
     }
 
     #[test]
+    fn named_enum() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(tag = "type")]
+            enum Example {
+                #[setting(default)]
+                A {
+                    #[setting(default = "a")]
+                    a: String,
+                    #[setting(nested)]
+                    b: NestedConfig,
+                },
+                B {
+                    #[setting(required, validate = func_ref)]
+                    c: Option<bool>,
+                },
+            }
+        });
+
+        assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    #[test]
     fn unit_enum() {
         let container = Container::from(parse_quote! {
             #[derive(Config)]
@@ -629,6 +812,25 @@ mod generics {
         });
 
         assert_snapshot!(pretty(container.to_token_stream()));
+    }
+
+    // The struct a named variant is read through takes the container's
+    // generics, and a marker so that every parameter is used
+    #[test]
+    fn untagged_named_variant_carries_generics() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(untagged)]
+            enum Example<T: Clone, U = String>
+            where
+                U: Default,
+            {
+                A { value: T },
+                B(U),
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_type_deserialize()));
     }
 
     #[test]

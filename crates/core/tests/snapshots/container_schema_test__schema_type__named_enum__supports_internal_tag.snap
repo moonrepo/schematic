@@ -1,0 +1,169 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_named_schemas(
+                [
+                    (
+                        "A".into(),
+                        {
+                            let mut item = {
+                                let mut item = {
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "a".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<String>());
+                                                    field.comment = Some("Field docs.".into());
+                                                    field
+                                                },
+                                            ),
+                                            (
+                                                "b".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<usize>());
+                                                    field.default = Some(LiteralValue::Int(10));
+                                                    field.optional = true;
+                                                    field
+                                                },
+                                            ),
+                                            (
+                                                "c".into(),
+                                                {
+                                                    let mut field = SchemaField::new(
+                                                        schema.infer::<Option<bool>>(),
+                                                    );
+                                                    field.nullable = true;
+                                                    field.optional = true;
+                                                    field
+                                                },
+                                            ),
+                                            ("d".into(), SchemaField::new(schema.infer::<String>())),
+                                        ]),
+                                    );
+                                    if item
+                                        .ty
+                                        .add_field(
+                                            "type",
+                                            SchemaField::new(
+                                                Schema::literal_value(LiteralValue::String("A".into())),
+                                            ),
+                                        )
+                                    {
+                                        item.name = None;
+                                    }
+                                    item
+                                };
+                                item.partialize();
+                                item
+                            };
+                            item.description = Some("Docs.".into());
+                            item
+                        },
+                    ),
+                    (
+                        "B".into(),
+                        {
+                            let mut item = {
+                                let mut item = Schema::structure(
+                                    StructType::new([
+                                        (
+                                            "inner".into(),
+                                            SchemaField::new(schema.infer_as_nested::<NestedConfig>()),
+                                        ),
+                                        (
+                                            "inner_opt".into(),
+                                            {
+                                                let mut field = SchemaField::new(
+                                                    schema.infer_as_nested::<Option<NestedConfig>>(),
+                                                );
+                                                field.nullable = true;
+                                                field.optional = true;
+                                                field
+                                            },
+                                        ),
+                                        (
+                                            "inner_map".into(),
+                                            SchemaField::new(
+                                                schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                                            ),
+                                        ),
+                                    ]),
+                                );
+                                if item
+                                    .ty
+                                    .add_field(
+                                        "type",
+                                        SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("B".into())),
+                                        ),
+                                    )
+                                {
+                                    item.name = None;
+                                }
+                                item
+                            };
+                            item.partialize();
+                            item
+                        },
+                    ),
+                    (
+                        "C".into(),
+                        {
+                            let mut item = {
+                                let mut item = Schema::structure(StructType::default());
+                                if item
+                                    .ty
+                                    .add_field(
+                                        "type",
+                                        SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("C".into())),
+                                        ),
+                                    )
+                                {
+                                    item.name = None;
+                                }
+                                item
+                            };
+                            item.partialize();
+                            item
+                        },
+                    ),
+                    (
+                        "Text".into(),
+                        {
+                            let mut item = schema.infer::<String>();
+                            if item
+                                .ty
+                                .add_field(
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Text".into())),
+                                    ),
+                                )
+                            {
+                                item.name = None;
+                            }
+                            item
+                        },
+                    ),
+                    (
+                        "Unit".into(),
+                        Schema::structure(
+                            StructType::new([
+                                (
+                                    "type".into(),
+                                    Schema::literal_value(LiteralValue::String("Unit".into())),
+                                ),
+                            ]),
+                        ),
+                    ),
+                ],
+                Some(1usize),
+            ),
+        )
+}

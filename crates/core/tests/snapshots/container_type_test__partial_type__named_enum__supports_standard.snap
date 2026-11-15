@@ -1,0 +1,39 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+pub enum PartialExample {
+    #[serde(rename = "aa")]
+    /// Docs.
+    A {
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        /// Docs.
+        a: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        b: Option<usize>,
+        #[serde(alias = "cee", skip_serializing_if = "Option::is_none", default)]
+        c: Option<String>,
+    },
+    #[serde(alias = "bee", rename_all = "camelCase")]
+    B {
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        some_value: Option<<NestedConfig as schematic::Config>::Partial>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        other_value: Option<<NestedConfig as schematic::Config>::Partial>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        list: Option<Vec<<CustomConfig as schematic::Config>::Partial>>,
+    },
+    #[serde(untagged)]
+    #[serde(default)]
+    C {
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        #[serde(alias = "dee")]
+        d: Option<String>,
+        #[serde(flatten, skip_serializing_if = "Option::is_none", default)]
+        e: Option<HashMap<String, String>>,
+    },
+    D {},
+    E(bool),
+    F,
+}
