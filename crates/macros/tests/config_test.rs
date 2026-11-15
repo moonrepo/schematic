@@ -2916,3 +2916,424 @@ mod flattened_loading {
         }
     }
 }
+
+mod named_variants {
+    use super::*;
+    use schematic::merge::append_vec;
+    use schematic::{ValidateError, ValidateResult};
+    use std::collections::BTreeMap;
+
+    fn add_suffix(value: String, _: &()) -> schematic::TransformResult<String> {
+        Ok(format!("{value}!"))
+    }
+
+    fn not_empty<D, C>(value: &str, _: &D, _: &C, _: bool) -> ValidateResult {
+        if value.is_empty() {
+            return Err(ValidateError::new("must not be empty"));
+        }
+
+        Ok(())
+    }
+
+    fn default_timeout(_: &()) -> schematic::DefaultValueResult<u32> {
+        Ok(Some(30))
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Child {
+        #[setting(default = 3)]
+        retries: u8,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Source {
+        #[setting(default)]
+        File {
+            #[setting(default = "config.json")]
+            path: String,
+            #[setting(default = vec!["d".to_owned()], merge = append_vec)]
+            tags: Vec<String>,
+        },
+        Url {
+            #[setting(required, validate = not_empty)]
+            address: Option<String>,
+            #[setting(transform = add_suffix)]
+            name: String,
+            #[setting(nested)]
+            child: Child,
+            #[setting(default = default_timeout)]
+            timeout: u32,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        source: Source,
+    }
+
+    fn load<T: ConfigTrait>(codes: &[&str]) -> Result<T, String> {
+        let mut loader = ConfigLoader::<T>::new();
+
+        for (index, code) in codes.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    // Each setting is optional within the partial, like a struct's
+    #[test]
+    fn settings_are_optional_in_the_partial() {
+        let partial: PartialSource = serde_json::from_str(r#"{ "type": "file" }"#).unwrap();
+
+        assert_eq!(
+            partial,
+            PartialSource::File {
+                path: None,
+                tags: None
+            }
+        );
+        assert_eq!(
+            PartialSource::default(),
+            PartialSource::File {
+                path: None,
+                tags: None
+            }
+        );
+    }
+
+    #[test]
+    fn defaults_to_the_marked_variant_with_its_defaults() {
+        let expected = Source::File {
+            path: "config.json".into(),
+            tags: vec!["d".into()],
+        };
+
+        assert_eq!(Source::default(), expected);
+        assert_eq!(load::<Source>(&[]).unwrap(), expected);
+        assert_eq!(Parent::default().source, expected);
+        assert_eq!(load::<Parent>(&[]).unwrap().source, expected);
+    }
+
+    // No layer holds the defaults of a variant a source picks, so they're
+    // applied when it's finalized, along with nested configs and transforms
+    #[test]
+    fn applies_the_defaults_of_another_variant() {
+        let config =
+            load::<Source>(&[r#"{ "type": "url", "address": "x", "name": "n" }"#]).unwrap();
+
+        assert_eq!(
+            config,
+            Source::Url {
+                address: Some("x".into()),
+                name: "n!".into(),
+                child: Child { retries: 3 },
+                timeout: 30,
+            }
+        );
+    }
+
+    #[test]
+    fn merges_settings_of_the_same_variant() {
+        let config = load::<Parent>(&[
+            r#"{ "source": { "type": "file", "path": "a.json", "tags": ["x"] } }"#,
+            r#"{ "source": { "type": "file", "tags": ["y"] } }"#,
+        ])
+        .unwrap();
+
+        // The default is merged under every layer once
+        assert_eq!(
+            config.source,
+            Source::File {
+                path: "a.json".into(),
+                tags: vec!["d".into(), "x".into(), "y".into()],
+            }
+        );
+    }
+
+    #[test]
+    fn replaces_another_variant() {
+        let config = load::<Source>(&[
+            r#"{ "type": "file", "path": "a.json" }"#,
+            r#"{ "type": "url", "address": "x" }"#,
+        ])
+        .unwrap();
+
+        assert!(matches!(config, Source::Url { .. }));
+
+        let config = load::<Source>(&[
+            r#"{ "type": "url", "address": "x" }"#,
+            r#"{ "type": "file", "path": "b.json" }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(
+            config,
+            Source::File {
+                path: "b.json".into(),
+                tags: vec!["d".into()],
+            }
+        );
+    }
+
+    #[test]
+    fn denies_unknown_fields() {
+        let error = load::<Source>(&[r#"{ "type": "file", "nope": true }"#]).unwrap_err();
+
+        assert!(error.contains("unknown field `nope`"), "{error}");
+    }
+
+    // Reported under the variant, as a struct's are under the struct
+    #[test]
+    fn validates_settings_under_the_variant() {
+        let error = load::<Parent>(&[r#"{ "source": { "type": "url" } }"#]).unwrap_err();
+
+        assert!(
+            error.contains("source.url.address: this setting is required"),
+            "{error}"
+        );
+
+        let error =
+            load::<Parent>(&[r#"{ "source": { "type": "url", "address": "" } }"#]).unwrap_err();
+
+        assert!(
+            error.contains("source.url.address: must not be empty"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn lists_settings_of_each_variant() {
+        let settings = Source::settings();
+
+        assert_eq!(
+            settings["file"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .keys()
+                .collect::<Vec<_>>(),
+            vec!["path", "tags"]
+        );
+        assert!(
+            settings["url"].nested.as_ref().unwrap()["child"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("retries")
+        );
+    }
+
+    // Externally tagged, alongside unit and tuple variants
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[serde(rename_all_fields = "camelCase")]
+    pub enum Mode {
+        #[setting(default)]
+        Off,
+        Level(u8),
+        On {
+            #[setting(default = 5)]
+            max_level: u8,
+            #[serde(alias = "lvl")]
+            level: Option<u8>,
+        },
+        #[serde(rename_all = "kebab-case")]
+        Custom {
+            some_value: String,
+        },
+    }
+
+    #[test]
+    fn supports_external_tags() {
+        assert_eq!(Mode::default(), Mode::Off);
+        assert_eq!(
+            load::<Mode>(&[r#"{ "On": { "level": 2 } }"#]).unwrap(),
+            Mode::On {
+                max_level: 5,
+                level: Some(2)
+            }
+        );
+        assert_eq!(
+            load::<Mode>(&[r#"{ "On": { "maxLevel": 1, "lvl": 2 } }"#]).unwrap(),
+            Mode::On {
+                max_level: 1,
+                level: Some(2)
+            }
+        );
+        assert_eq!(
+            load::<Mode>(&[r#"{ "Custom": { "some-value": "x" } }"#]).unwrap(),
+            Mode::Custom {
+                some_value: "x".into()
+            }
+        );
+        assert_eq!(
+            load::<Mode>(&[r#"{ "Level": 3 }"#]).unwrap(),
+            Mode::Level(3)
+        );
+    }
+
+    // Untagged, where each variant is attempted in order
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[serde(untagged)]
+    pub enum Dependency {
+        #[setting(default)]
+        Version(String),
+        Detailed {
+            version: String,
+            #[setting(default = true)]
+            optional: bool,
+            #[serde(flatten)]
+            extra: BTreeMap<String, String>,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Manifest {
+        #[setting(nested)]
+        deps: HashMap<String, Dependency>,
+    }
+
+    #[test]
+    fn supports_untagged() {
+        let config = load::<Manifest>(&[
+            r#"{ "deps": { "a": "1", "b": { "version": "2" }, "c": { "version": "3", "optional": false, "features": "x" } } }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(config.deps["a"], Dependency::Version("1".into()));
+        assert_eq!(
+            config.deps["b"],
+            Dependency::Detailed {
+                version: "2".into(),
+                optional: true,
+                extra: BTreeMap::new(),
+            }
+        );
+        assert_eq!(
+            config.deps["c"],
+            Dependency::Detailed {
+                version: "3".into(),
+                optional: false,
+                extra: BTreeMap::from_iter([("features".into(), "x".into())]),
+            }
+        );
+    }
+
+    #[test]
+    fn lists_each_untagged_failure() {
+        let error = serde_json::from_str::<PartialDependency>("[1]")
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("Version"), "{error}");
+        assert!(error.contains("Detailed"), "{error}");
+    }
+
+    // A literal union may hold a named variant too
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Toggle {
+        #[setting(default)]
+        Auto,
+        #[serde(untagged)]
+        Custom {
+            #[setting(default = 1)]
+            weight: u8,
+        },
+    }
+
+    #[test]
+    fn supports_literal_unions() {
+        assert_eq!(load::<Toggle>(&[r#""Auto""#]).unwrap(), Toggle::Auto);
+        assert_eq!(
+            load::<Toggle>(&[r#"{}"#]).unwrap(),
+            Toggle::Custom { weight: 1 }
+        );
+
+        let error = serde_json::from_str::<PartialToggle>(r#"{ "nope": 1 }"#)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("unknown field `nope`"), "{error}");
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(allow_unknown_fields)]
+    #[serde(tag = "kind", content = "data")]
+    pub enum Open {
+        #[setting(default)]
+        A { value: Option<String> },
+    }
+
+    #[test]
+    fn supports_allow_unknown_fields_and_adjacent_tags() {
+        assert_eq!(
+            load::<Open>(&[r#"{ "kind": "A", "data": { "value": "x", "other": 1 } }"#]).unwrap(),
+            Open::A {
+                value: Some("x".into())
+            }
+        );
+    }
+
+    // Generics are threaded through the struct an untagged variant
+    // deserializes through
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[serde(untagged)]
+    pub enum Generic<T>
+    where
+        T: Clone
+            + Default
+            + serde::de::DeserializeOwned
+            + schematic::Schematic
+            + Serialize
+            + PartialEq,
+    {
+        #[setting(default)]
+        Plain(T),
+        Wrapped {
+            inner: T,
+            label: Option<String>,
+        },
+    }
+
+    #[test]
+    fn supports_generics() {
+        assert_eq!(load::<Generic<u32>>(&["5"]).unwrap(), Generic::Plain(5));
+        assert_eq!(
+            load::<Generic<u32>>(&[r#"{ "inner": 5, "label": "x" }"#]).unwrap(),
+            Generic::Wrapped {
+                inner: 5,
+                label: Some("x".into())
+            }
+        );
+    }
+
+    // A setting named like a generated local doesn't shadow it
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Shadowing {
+        #[setting(default)]
+        A {
+            #[setting(default = "c")]
+            context: String,
+            #[setting(validate = not_empty)]
+            validate: String,
+            r#type: Option<String>,
+        },
+    }
+
+    #[test]
+    fn keeps_generated_locals_apart() {
+        assert_eq!(
+            load::<Shadowing>(&[r#"{ "A": { "validate": "v", "type": "t" } }"#]).unwrap(),
+            Shadowing::A {
+                context: "c".into(),
+                validate: "v".into(),
+                r#type: Some("t".into()),
+            }
+        );
+    }
+}

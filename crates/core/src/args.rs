@@ -131,6 +131,7 @@ pub struct SerdeFieldArgs {
 
     // variant
     pub other: bool,
+    pub rename_all: Option<SerdeRenameArg>,
     pub untagged: bool,
 }
 
