@@ -1,63 +1,34 @@
 ---
 source: crates/core/tests/container_env_test.rs
-expression: pretty(container.impl_partial_finalize())
+expression: pretty(container.impl_partial_env_values())
 ---
-fn finalize(
-    self,
-    context: &Self::Context,
-) -> std::result::Result<Self, schematic::ConfigError> {
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    Ok(
-        match self {
-            Self::A { a: na, long_name: nb, c: nc, d: nd, e: ne } => {
-                let mut pa = Some(Default::default());
-                let mut pb = Some(Default::default());
-                let mut pc = Some(Default::default());
-                let mut pd = Some(Default::default());
-                let mut pe = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut env = EnvManager::new(None::<&str>, Some("PREFIX_"));
-                let ea = env.get("OVERRIDE")?;
-                let eb = env.get_prefixed("LONG_NAME")?;
-                let ec = env.get_prefixed("RENAMED")?;
-                let ee = env
-                    .nested(
-                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                MergeManager::new(context)
-                    .apply(&mut pa, na)?
-                    .apply(&mut pb, nb)?
-                    .apply(&mut pc, nc)?
-                    .apply(&mut pd, nd)?
-                    .nested(&mut pe, ne)?
-                    .apply(&mut pa, ea)?
-                    .apply(&mut pb, eb)?
-                    .apply(&mut pc, ec)?
-                    .nested(&mut pe, ee)?;
-                if let Some(layer) = pe {
-                    pe = Some(layer.finalize(context)?);
-                }
-                Self::A {
-                    a: pa,
-                    long_name: pb,
-                    c: pc,
-                    d: pd,
-                    e: pe,
-                }
+    let mut env = EnvManager::new(prefix, Some("PREFIX_"));
+    let value = match self {
+        Self::A { e: pe, .. } => {
+            Self::A {
+                a: env.get("OVERRIDE")?,
+                long_name: env.get_prefixed("LONG_NAME")?,
+                c: env.get_prefixed("RENAMED")?,
+                d: None,
+                e: env
+                    .nested(schematic::internal::nested_env_values(pe.as_ref(), None)?)?,
             }
-            Self::B { c: na, f: mut pb } => {
-                let mut pa = Some(3);
-                let mut env = EnvManager::new(None::<&str>, Some("PREFIX_"));
-                let ea = env.get_prefixed("C")?;
-                let eb = env.get_prefixed("F")?;
-                MergeManager::new(context)
-                    .apply(&mut pa, na)?
-                    .apply(&mut pa, ea)?
-                    .apply(&mut pb, eb)?;
-                Self::B { c: pa, f: pb }
+        }
+        Self::B { .. } => {
+            Self::B {
+                c: env.get_prefixed("C")?,
+                f: env.get_prefixed("F")?,
             }
-            _ => self,
-        },
-    )
+        }
+        _ => return Ok(None),
+    };
+    Ok(if env.is_empty() { None } else { Some(value) })
 }

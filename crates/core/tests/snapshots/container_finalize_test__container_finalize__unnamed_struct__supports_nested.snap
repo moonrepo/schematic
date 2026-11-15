@@ -14,14 +14,7 @@ fn finalize(
         partial.1 = Some(transform_config(layer.finalize(context)?, context)?);
     }
     if let Some(layer) = partial.2 {
-        partial.2 = Some({
-            let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?
-                .unwrap_or_default();
-            base.merge(context, layer)?;
-            base.finalize(context)?
-        });
+        partial.2 = Some(layer.finalize(context)?);
     }
     if let Some(layer) = partial.3 {
         partial.3 = Some(transform_config(layer.finalize(context)?, context)?);

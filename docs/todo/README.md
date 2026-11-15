@@ -26,7 +26,7 @@ The probe crates were throwaway. Each ✅ item gives enough of a scenario to reb
 | [composability.md](composability.md) | `C1`–`C10` | Nesting, contexts, hand-written impls, custom renderers, features |
 | [docs.md](docs.md) | — | Places the book, README or `AGENTS.md` disagree with the code |
 | [enum-env.md](enum-env.md) | — | Plan for env vars in `Config` enums (built in #218) |
-| [self-aware-layers.md](self-aware-layers.md) | — | Plan for `&self` on `default_values` and `env_values` (not built) |
+| [self-aware-layers.md](self-aware-layers.md) | — | Plan for `&self` on `default_values` and `env_values` (built on `0.21-self-api`) |
 
 ## Top priorities
 

@@ -6,9 +6,14 @@
 
 - Updated `PartialConfig::finalize` to only run transforms and finalize nested configs. The loader
   now merges default values and environment variables as layers of their own, so calling `finalize`
-  directly no longer applies them: merge `default_values` under the partial and `env_values` over it
-  first, or load it with `ConfigLoader::partial`. The hidden `finalize_nested` was removed, and a
-  hand-written partial implements `finalize` for its transforms.
+  directly no longer applies them, a named variant's fields included: load the partial with
+  `ConfigLoader::partial` instead. The hidden `finalize_nested` was removed, and a hand-written
+  partial implements `finalize` for its transforms.
+- Updated `PartialConfig::default_values` and `env_values` to take `&self`, the partial they go under
+  or over, so that they hold what applies to what the sources set, like the variant an enum's
+  sources picked. Read a config's own defaults with `T::default().default_values(&context)`, and add
+  `&self` to a hand-written partial's, and to the hidden `env_values_with_prefix`. The derive no
+  longer overrides `Config::default_partial`, which is now that call with a default context.
 - Updated `ConfigLoadResult.layers` to begin with the default values and end with environment
   variables, so an index into it shifts by one.
 - Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it, or
@@ -28,8 +33,8 @@
     pick.
   - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
   - `skip_deserializing_if`, which serde has no such attribute for.
-  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, or
-    for an enum, which a parent's prefix doesn't apply to. This fails to compile, through a hidden
+  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, which
+    a parent's prefix doesn't apply to. This fails to compile, through a hidden
     `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
 - Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
   is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
@@ -47,7 +52,8 @@
   with its own `default`, `env`, `merge`, `nested`, `parse_env`, `required`, `transform`, and
   `validate`. Two layers picking the same variant are merged field by field, and a layer picking
   another replaces it. The defaults and environment variables of a variant's fields are applied
-  whenever it's picked, and a field's validation errors are reported under the variant, like
+  whenever it's picked, as the layers are read for the variant the sources picked, and
+  `ConfigLoadResult.layers` reports them. A field's validation errors are reported under the variant, like
   `source.url.address`. Untagged and internally tagged named variants are supported too, and each is
   a struct in the schema.
   - The fields take the variant's `#[serde(rename_all)]`, or the enum's `rename_all_fields`.
@@ -56,19 +62,26 @@
   - An enum with a named variant accepts `#[config(env_prefix)]`, which derives a key for each field
     of every named variant, like `SOURCE_PATH`. A variable fills in a field of the variant a source
     or the default picked, and never picks one. The keys appear in `Config::settings()` and the
-    schema, like a struct's, so TypeScript and templates render them.
+    schema, like a struct's, so TypeScript and templates render them. A parent's
+    `#[setting(nested, env_prefix)]` adds its prefix to them, as for a struct, and an optional enum
+    that no source provided reads those of its default variant, as an optional struct does.
   - `extend` fails to compile within a variant, as does an attribute on the variant that its fields
     hold instead, like `nested` or `validate`.
 - Added picking a `Config` enum's variant from an environment variable. A tagged enum, with serde's
   `tag`, and `#[config(env_prefix)]` derives a key from its tag, so `tag = "type"` with
   `env_prefix = "AUTH_"` reads `AUTH_TYPE`. Its value is matched against the variants' names and
   aliases, and the variant it names replaces one a source picked, with its fields filled in from
-  their defaults and variables. A unit variant, a named variant, or one holding nested configs can
-  be picked, and the key is reported on the tag in the schema, so TypeScript renders `@env`.
+  their defaults and variables, while naming the variant a source picked keeps what it holds. A unit
+  variant, a named variant, or one holding nested configs can be picked, and the key is reported on
+  the tag in the schema, so TypeScript renders `@env`.
 - Added the default values and environment variables to `ConfigLoadResult.layers`, as
   `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
   traced to the layer that set it. They're the layers that were merged, so a default handler that
-  isn't idempotent, like one finding an unused port, reports the value that was used.
+  isn't idempotent, like one finding an unused port, reports the value that was used. Both are read
+  against the sources, so they hold those of the variant an enum's sources picked, and of an
+  optional nested config only when it's present. The variables are read first, as a tag's variable
+  can pick the variant whose defaults apply, and the defaults go under every other layer merged
+  together, so a later layer picking a variant gets its defaults.
 - Updated schemas to describe what serde accepts more closely:
   - An `Option` field is optional, as serde fills in an omitted one with `None`, so it's no longer
     in JSON Schema's `required`, and TypeScript renders it as `name?: T | null`. api_docs tags it
@@ -206,9 +219,8 @@
 - Fixed the default values and environment variables of a nested config being applied again by
   every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
   defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
-  of nesting. They're now applied once, by the outermost config. Items of a nested collection, and
-  the value of an enum variant, are still finalized in full, as nothing above them applies their
-  defaults.
+  of nesting. They're now applied once, by the outermost config. Items of a nested collection are
+  still finalized in full, as no layer holds their defaults.
 - Fixed `rename_all` casing an enum variant differently to serde when it holds consecutive
   capitals, as serde splits before every one. `MacOS` in kebab case is now `mac-o-s`, like serde
   accepts, rather than `mac-os`, which is what `Display`, `FromStr`, and schemas used before. A

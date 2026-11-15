@@ -2,22 +2,19 @@
 source: crates/core/tests/setting_env_test.rs
 expression: pretty(container.impl_partial_env_values())
 ---
-fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    Self::env_values_with_prefix(None)
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
 }
 fn env_values_with_prefix(
+    &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
     let mut env = EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.0 = env
-        .nested(
-            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-        )?;
+        .nested(schematic::internal::nested_env_values(self.0.as_ref(), None)?)?;
     partial.1 = env
-        .nested(
-            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-        )?;
+        .nested(schematic::internal::nested_env_values(self.1.as_ref(), None)?)?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

@@ -292,8 +292,7 @@ mod setting_env {
     mod named_enum {
         use super::*;
 
-        // The layer can't know which variant a source picks, so a variant's
-        // settings read their variables when it's finalized
+        // The layer reads the settings of the variant the partial holds
         #[test]
         fn reads_within_a_variant() {
             let container = Container::from(parse_quote! {
@@ -311,7 +310,7 @@ mod setting_env {
                 }
             });
 
-            assert_snapshot!(pretty(container.impl_partial_finalize()));
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
 
         #[test]
@@ -326,7 +325,7 @@ mod setting_env {
                     },
                 }
             })
-            .impl_partial_finalize();
+            .impl_partial_env_values();
         }
     }
 
@@ -503,7 +502,7 @@ mod setting_env_prefix {
                 }
             });
 
-            assert_snapshot!(pretty(container.impl_partial_finalize()));
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
 
         #[test]
@@ -663,7 +662,7 @@ mod setting_parse_env {
                 }
             });
 
-            assert_snapshot!(pretty(container.impl_partial_finalize()));
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
 
         // Without a key, there's nothing for the parser to receive

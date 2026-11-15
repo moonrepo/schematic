@@ -230,7 +230,7 @@ impl Container {
         None
     }
 
-    /// The variants a variable can pick, by the key from [`get_env_tag_key`].
+    /// The variants a variable can pick, by the key from [`Self::get_env_tag_key`].
     pub fn get_env_selectable_variants(&self) -> Vec<&Variant> {
         if self.get_env_tag_key().is_none() {
             return vec![];
@@ -544,7 +544,7 @@ impl Container {
                 };
                 let label = format!("{owner}.{name}");
                 let message = format!(
-                    "`{label}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a struct derives with an `env_prefix` of its own, and never to an enum's. Add `#[config(env_prefix)]` to `{nested_name}` if it's a struct, or remove it here.",
+                    "`{label}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `{nested_name}`, or remove it here.",
                 );
 
                 Some(quote! {
@@ -650,7 +650,6 @@ impl Container {
         let base_name = &self.ident;
         let partial_name = self.get_partial_ident();
 
-        let default_partial_method = self.impl_full_default_partial();
         let from_partial_method = self.impl_full_from_partial();
         let settings_method = self.impl_full_settings();
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
@@ -660,7 +659,6 @@ impl Container {
             impl #impl_generics schematic::Config for #base_name #ty_generics #where_clause {
                 type Partial = #partial_name #ty_generics;
 
-                #default_partial_method
                 #from_partial_method
                 #settings_method
             }
@@ -672,66 +670,6 @@ impl Container {
                         <Self as schematic::Config>::default_partial()
                     )
                 }
-            }
-        }
-    }
-
-    /// Generate `default_partial`, which `Default` is built from, when a nested
-    /// config's default partial isn't the same as its default values. A
-    /// nested enum leaves the config its default variant holds to be applied
-    /// when it's finalized, so each bare nested config takes its own default
-    /// partial instead, which recurses into it.
-    pub fn impl_full_default_partial(&self) -> TokenStream {
-        let partial_name = self.get_partial_ident();
-
-        let inner = match &self.inner {
-            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                let rows = fields
-                    .iter()
-                    .filter(|field| field.is_bare_nested())
-                    .filter_map(|field| {
-                        let key = field.get_key();
-                        let ty = field.value.get_nested_type()?;
-
-                        Some(quote! {
-                            partial.#key = Some(<#ty as schematic::Config>::default_partial());
-                        })
-                    })
-                    .collect::<Vec<_>>();
-
-                if rows.is_empty() {
-                    return quote! {};
-                }
-
-                quote! {
-                    let mut partial = <Self::Partial as schematic::PartialConfig>::default_values(
-                        &Default::default(),
-                    )
-                    .expect("Failed to generate default values.")
-                    .unwrap_or_default();
-
-                    #(#rows)*
-
-                    partial
-                }
-            }
-            // A unit variant holds nothing to take a default partial of
-            ContainerInner::Enum { variants } => {
-                let Some(value) = variants
-                    .iter()
-                    .find(|variant| variant.is_default())
-                    .and_then(|variant| variant.impl_full_default_partial(&partial_name))
-                else {
-                    return quote! {};
-                };
-
-                value
-            }
-        };
-
-        quote! {
-            fn default_partial() -> Self::Partial {
-                #inner
             }
         }
     }
@@ -1448,10 +1386,12 @@ impl Container {
             if !self.partial_denies_unknown_fields() {
                 consts.push(quote! { const ALLOWS_UNKNOWN_FIELDS: bool = true; });
             }
+        }
 
-            if self.args.env_prefix.is_some() {
-                consts.push(quote! { const HAS_ENV_PREFIX: bool = true; });
-            }
+        // A parent's prefix reaches the keys a struct's fields derive, and an
+        // enum's, of its named variants and its tag
+        if self.args.env_prefix.is_some() {
+            consts.push(quote! { const HAS_ENV_PREFIX: bool = true; });
         }
 
         quote! {
@@ -1477,6 +1417,8 @@ impl Container {
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } => {
                 let mut rows = vec![];
+                let mut empty = vec![];
+                let mut always_some = false;
 
                 for field in fields {
                     let res = field.impl_partial_default_value();
@@ -1488,6 +1430,12 @@ impl Container {
                         rows.push(quote! {
                             #key: #value,
                         });
+
+                        if field.default_may_be_none() {
+                            empty.push(quote! { #key: None, });
+                        } else {
+                            always_some = true;
+                        }
                     }
 
                     if res.requires_internal {
@@ -1501,17 +1449,23 @@ impl Container {
                 }
 
                 let default_row = ImplResult::impl_struct_default(rows.len() != fields.len());
-
-                quote! {
-                    Ok(Some(Self {
+                let defaults = quote! {
+                    Self {
                         #(#rows)*
                         #default_row
-                    }))
+                    }
+                };
+
+                if always_some {
+                    quote! { Ok(Some(#defaults)) }
+                } else {
+                    impl_partial_defaults_if_any(defaults, quote! { Self { #(#empty)* .. } })
                 }
             }
             ContainerInner::UnnamedStruct { fields } => {
                 let mut rows = vec![];
                 let mut all_none = true;
+                let mut always_some = false;
 
                 for field in fields {
                     let res = field.impl_partial_default_value();
@@ -1525,6 +1479,10 @@ impl Container {
                         rows.push(quote! {
                             #value
                         });
+
+                        if !field.default_may_be_none() {
+                            always_some = true;
+                        }
                     }
 
                     if res.requires_internal {
@@ -1537,45 +1495,55 @@ impl Container {
                     return quote! {};
                 }
 
-                quote! {
-                    Ok(Some(Self(
+                let defaults = quote! {
+                    Self(
                         #(#rows),*
-                    )))
+                    )
+                };
+
+                if always_some {
+                    quote! { Ok(Some(#defaults)) }
+                } else {
+                    let empty = fields.iter().map(|_| quote! { None });
+
+                    impl_partial_defaults_if_any(defaults, quote! { Self(#(#empty),*) })
                 }
             }
+            // The defaults of the variant the partial holds, which is what the
+            // sources and environment variables picked, or the default variant
             ContainerInner::Enum { variants } => {
-                let default_variants = variants
-                    .iter()
-                    .filter(|v| v.is_default())
-                    .collect::<Vec<_>>();
-
-                if default_variants.len() > 1 {
+                if variants.iter().filter(|v| v.is_default()).count() > 1 {
                     panic!("Only 1 variant may be marked as default.");
                 }
 
-                match default_variants.first() {
-                    Some(default_variant) => {
-                        let res = default_variant.impl_partial_default_values();
+                let mut arms = vec![];
 
-                        if res.requires_internal {
-                            requires_internal = true;
-                        }
+                for variant in variants {
+                    let res = variant.impl_partial_default_values();
 
-                        if res.no_value {
-                            quote! {
-                                Ok(None)
-                            }
-                        } else {
-                            let value = res.value;
-
-                            quote! {
-                                Ok(Some(Self::#value))
-                            }
-                        }
+                    if res.no_value {
+                        continue;
                     }
-                    None => quote! {
-                        Ok(None)
-                    },
+
+                    if res.requires_internal {
+                        requires_internal = true;
+                    }
+
+                    arms.push(res.value);
+                }
+
+                // Do not implement method
+                if arms.is_empty() {
+                    return quote! {};
+                }
+
+                let rest = (arms.len() < variants.len()).then(|| quote! { _ => None, });
+
+                quote! {
+                    Ok(match self {
+                        #(#arms)*
+                        #rest
+                    })
                 }
             }
         };
@@ -1583,7 +1551,7 @@ impl Container {
         let internal = ImplResult::impl_use_internal(requires_internal);
 
         quote! {
-            fn default_values(context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+            fn default_values(&self, context: &Self::Context) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
                 #inner
             }
@@ -1624,12 +1592,11 @@ impl Container {
                 }
             }
 
-            // The layer can't know which variant a source will pick, so a
-            // named variant reads its settings' variables when it's finalized.
-            // A tag's variable picks one, though, which the layer holds with
-            // nothing in it, for finalizing to fill in, so each variable is
-            // still read once.
-            ContainerInner::Enum { .. } => return self.impl_partial_env_values_tag(),
+            // The variables of the variant the partial holds, unless the tag's
+            // variable picks another
+            ContainerInner::Enum { variants } => {
+                return self.impl_partial_env_values_enum(variants);
+            }
         };
 
         let internal = ImplResult::impl_use_internal(true);
@@ -1650,11 +1617,11 @@ impl Container {
         // Both are implemented, as the trait's `env_values_with_prefix` falls
         // back to `env_values`, for a hand-written partial
         quote! {
-            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-                Self::env_values_with_prefix(None)
+            fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                self.env_values_with_prefix(None)
             }
 
-            fn env_values_with_prefix(prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+            fn env_values_with_prefix(&self, prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
 
                 let mut env = EnvManager::new(prefix, #own_prefix);
@@ -1671,19 +1638,84 @@ impl Container {
         }
     }
 
-    /// Generate the environment values of a tagged enum, which hold the variant
-    /// its tag's variable names, matched as serde matches the tag: by its name
-    /// or an alias, exactly. A parent's prefix never reaches an enum, as its
-    /// settings are read when finalized, so only `env_values` is implemented.
+    /// Generate the environment values of an enum, which are those of the
+    /// variant the partial holds, or of the one the tag's variable picks. A
+    /// parent's prefix applies to the keys its settings derive, and its tag's,
+    /// alongside its own.
     #[cfg(feature = "env")]
-    fn impl_partial_env_values_tag(&self) -> TokenStream {
-        let (Some(key), Some(prefix)) = (self.get_env_tag_key(), &self.args.env_prefix) else {
-            return quote! {};
+    fn impl_partial_env_values_enum(&self, variants: &[Variant]) -> TokenStream {
+        let own_prefix = match &self.args.env_prefix {
+            Some(prefix) => quote! { Some(#prefix) },
+            None => quote! { None },
         };
+
+        let arms = variants
+            .iter()
+            .map(|variant| variant.impl_partial_env_values())
+            .filter(|res| !res.no_value)
+            .map(|res| res.value)
+            .collect::<Vec<_>>();
+        let picked = self.impl_partial_env_values_tag(&own_prefix);
+
+        let inner = match picked {
+            None if arms.is_empty() => return quote! {},
+            Some(picked) if arms.is_empty() => quote! { Ok(#picked) },
+            picked => {
+                let (pick, view, fallback) = match picked {
+                    Some(picked) => (
+                        quote! { let picked = #picked; },
+                        quote! { picked.as_ref().unwrap_or(self) },
+                        quote! { picked },
+                    ),
+                    None => (quote! {}, quote! { self }, quote! { None }),
+                };
+                let rest =
+                    (arms.len() < variants.len()).then(|| quote! { _ => return Ok(#fallback), });
+
+                quote! {
+                    #pick
+
+                    let mut env = EnvManager::new(prefix, #own_prefix);
+                    let value = match #view {
+                        #(#arms)*
+                        #rest
+                    };
+
+                    Ok(if env.is_empty() {
+                        #fallback
+                    } else {
+                        Some(value)
+                    })
+                }
+            }
+        };
+
+        quote! {
+            fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                self.env_values_with_prefix(None)
+            }
+
+            fn env_values_with_prefix(&self, prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                use schematic::internal::*;
+
+                #inner
+            }
+        }
+    }
+
+    /// Generate the variant a tagged enum's variable picks, as an
+    /// `Option<Self>`, matched as serde matches the tag: by its name or an
+    /// alias, exactly. It holds nothing of its own, as the variables of its
+    /// settings are read from it like those of the partial's own variant. A
+    /// variable naming the variant the partial already holds picks nothing,
+    /// so what the sources gave it stands.
+    #[cfg(feature = "env")]
+    fn impl_partial_env_values_tag(&self, own_prefix: &TokenStream) -> Option<TokenStream> {
+        let key = self.get_env_tag_key()?;
         let variants = self.get_env_selectable_variants();
 
         if variants.is_empty() {
-            return quote! {};
+            return None;
         }
 
         let mut expected = vec![];
@@ -1707,20 +1739,16 @@ impl Container {
             expected.join(", ")
         );
 
-        quote! {
-            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-                use schematic::internal::*;
-
-                let mut env = EnvManager::new(None::<&str>, Some(#prefix));
-
-                Ok(env.get_and_parse_prefixed(#key, |value| {
+        Some(quote! {
+            EnvManager::new(prefix, #own_prefix)
+                .get_and_parse_prefixed(#key, |value| {
                     Ok(Some(match value.as_str() {
                         #(#arms)*
                         _ => return Err(schematic::HandlerError::new(format!(#message))),
                     }))
-                })?)
-            }
-        }
+                })?
+                .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self))
+        })
     }
 
     #[cfg(not(feature = "extends"))]
@@ -2001,6 +2029,21 @@ impl Container {
                 Ok(())
             }
         }
+    }
+}
+
+/// Return `defaults` only when it holds something, as every setting with a
+/// default, like a nested config, may have none, which `empty` matches.
+/// Otherwise the loader would report a layer of defaults that sets nothing.
+fn impl_partial_defaults_if_any(defaults: TokenStream, empty: TokenStream) -> TokenStream {
+    quote! {
+        let defaults = #defaults;
+
+        Ok(if matches!(defaults, #empty) {
+            None
+        } else {
+            Some(defaults)
+        })
     }
 }
 

@@ -14,23 +14,38 @@ pub struct PartialExample(
 impl schematic::PartialConfig for PartialExample {
     type Context = ();
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        Ok(Some(Self(Some(10), None)))
+        Ok(
+            Some(
+                Self(
+                    Some(10),
+                    match self.1.as_ref() {
+                        Some(inner) => {
+                            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                                inner,
+                                context,
+                            )?
+                        }
+                        None => None,
+                    },
+                ),
+            ),
+        )
     }
-    fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        Self::env_values_with_prefix(None)
+    fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        self.env_values_with_prefix(None)
     }
     fn env_values_with_prefix(
+        &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         use schematic::internal::*;
         let mut env = EnvManager::new(prefix, None);
         let mut partial = Self::default();
         partial.1 = env
-            .nested(
-                <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-            )?;
+            .nested(schematic::internal::nested_env_values(self.1.as_ref(), None)?)?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
     fn finalize(
@@ -39,14 +54,7 @@ impl schematic::PartialConfig for PartialExample {
     ) -> std::result::Result<Self, schematic::ConfigError> {
         let mut partial = self;
         if let Some(layer) = partial.1 {
-            partial.1 = Some({
-                let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                        context,
-                    )?
-                    .unwrap_or_default();
-                base.merge(context, layer)?;
-                base.finalize(context)?
-            });
+            partial.1 = Some(layer.finalize(context)?);
         }
         Ok(partial)
     }

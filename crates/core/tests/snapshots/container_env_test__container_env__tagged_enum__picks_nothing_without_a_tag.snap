@@ -1,0 +1,22 @@
+---
+source: crates/core/tests/container_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::new(prefix, Some("AUTH_"));
+    let value = match self {
+        Self::Token { .. } => {
+            Self::Token {
+                token: env.get_prefixed("TOKEN")?,
+            }
+        }
+    };
+    Ok(if env.is_empty() { None } else { Some(value) })
+}

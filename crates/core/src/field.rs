@@ -7,6 +7,7 @@ use crate::utils::{
     ImplResult, format_case, get_renamed_value, is_inheritable_attribute, preserve_str_literal,
     to_type_string,
 };
+use crate::value::path_names_a_value;
 use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
@@ -843,20 +844,52 @@ impl Field {
             };
         }
 
-        self.value.impl_partial_default_value(&self.args)
+        self.value
+            .impl_partial_default_value(&self.args, &self.get_access(quote! { self }))
+    }
+
+    /// Whether the setting's default values depend on its value beneath
+    /// them, as a nested config's do, so a named variant has to bind it.
+    pub fn defaults_read_value(&self) -> bool {
+        self.is_nested() && !self.value.is_collection()
+    }
+
+    /// Whether the setting's default may be `None`, as a nested config's or a
+    /// handler's may be, rather than always holding a value.
+    pub fn default_may_be_none(&self) -> bool {
+        if self.defaults_read_value() {
+            return true;
+        }
+
+        match &self.args.default {
+            Some(Expr::Path(func)) => !path_names_a_value(&func.path),
+            Some(_) => false,
+            None => {
+                matches!(self.serde_args.default, SerdeDefaultArg::Func(_))
+                    && self.value.is_outer_option_wrapped()
+            }
+        }
     }
 
     pub fn impl_partial_env_value(&self) -> ImplResult {
+        let access = self.get_access(quote! { self });
+
         if self.is_nested() {
-            return self.value.impl_partial_env_value(&self.args, None);
+            return self.value.impl_partial_env_value(&self.args, None, &access);
         }
 
         match self.get_env_var() {
             Some(env_key) => self
                 .value
-                .impl_partial_env_value(&self.args, Some(&env_key)),
+                .impl_partial_env_value(&self.args, Some(&env_key), &access),
             None => ImplResult::skipped(),
         }
+    }
+
+    /// Whether the setting's environment variables depend on its value
+    /// beneath them, as a nested config's do, so a named variant has to bind it.
+    pub fn env_reads_value(&self) -> bool {
+        self.is_nested() && self.value.supports_env_value(self.args.parse_env.is_some())
     }
 
     pub fn impl_partial_extends_from(&self) -> ImplResult {

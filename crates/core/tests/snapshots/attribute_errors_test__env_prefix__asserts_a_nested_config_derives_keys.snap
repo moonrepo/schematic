@@ -5,5 +5,5 @@ expression: pretty(container.impl_partial_checks())
 const _: () = assert!(
     << Child as schematic::Config > ::Partial as schematic::PartialConfig >
     ::HAS_ENV_PREFIX,
-    "`Example.child` sets an `env_prefix` for `Child`, which has no effect, as a parent's prefix only applies to the keys a struct derives with an `env_prefix` of its own, and never to an enum's. Add `#[config(env_prefix)]` to `Child` if it's a struct, or remove it here."
+    "`Example.child` sets an `env_prefix` for `Child`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `Child`, or remove it here."
 );

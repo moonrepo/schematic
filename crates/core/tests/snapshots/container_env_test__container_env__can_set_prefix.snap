@@ -2,10 +2,11 @@
 source: crates/core/tests/container_env_test.rs
 expression: pretty(container.impl_partial_env_values())
 ---
-fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    Self::env_values_with_prefix(None)
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
 }
 fn env_values_with_prefix(
+    &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
@@ -15,24 +16,16 @@ fn env_values_with_prefix(
     partial.b = env.get_prefixed("B")?;
     partial.c = env.get_prefixed("C")?;
     partial.d = env
-        .nested(
-            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-        )?;
+        .nested(schematic::internal::nested_env_values(self.d.as_ref(), None)?)?;
     partial.e = env
-        .nested(
-            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-        )?;
+        .nested(schematic::internal::nested_env_values(self.e.as_ref(), None)?)?;
     partial.f = env
         .nested(
-            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
-                Some("NESTED_"),
-            )?,
+            schematic::internal::nested_env_values(self.f.as_ref(), Some("NESTED_"))?,
         )?;
     partial.g = env
         .nested(
-            <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
-                Some("NESTED_"),
-            )?,
+            schematic::internal::nested_env_values(self.g.as_ref(), Some("NESTED_"))?,
         )?;
     Ok(if env.is_empty() { None } else { Some(partial) })
 }

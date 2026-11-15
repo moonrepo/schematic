@@ -2,8 +2,43 @@
 
 Plan for giving `PartialConfig::default_values` and `env_values` a `&self`, so the loader's layers
 can depend on what the sources picked. Written 2026-11-15 on `0.21-enum-env`, after
-[enum-env.md](enum-env.md) (PR #218). This is a breaking change, which is fine for 0.21. Nothing here
-is built yet.
+[enum-env.md](enum-env.md) (PR #218). This is a breaking change, which is fine for 0.21.
+
+**Built 2026-11-15 on `0.21-self-api`**, with the recommendation taken for each of the four
+decisions. It differs from the plan below in the ways listed under "As built", most importantly in
+the loader's merge order, which the plan got wrong.
+
+## As built
+
+- **Defaults go under the merge of everything else, not first in a left fold.** The plan's
+  `[Defaults, ..sources, EnvVars]` folded in order drops a variant's defaults whenever an earlier
+  layer picked another: `A_defaults ⊕ B ⊕ A` is `A` without them, as an enum's merge replaces
+  another variant. `internal::apply_layers` merges `D ⊕ (S1 ⊕ … ⊕ E)` instead. That's the same for
+  every associative merge, which every merge but an enum's is, and is how collection items and
+  optional configs already had their defaults merged. Three existing tests fail under the plan's
+  order (`applies_defaults_of_a_variant_switched_back_to`, `picks_the_variant_its_tag_names`,
+  `replaces_another_variant`).
+- **`read_layers` is `apply_layers`**, which also returns the merged partial, as the loader needs
+  it, and `finalize_with_layers` is `apply_layers(Some(item))` and `finalize`. Both stay hidden
+  (decision 4).
+- **A tag naming the variant `self` already holds picks nothing** (`std::mem::discriminant`), so a
+  source's values within it stand. Otherwise the env layer held the variant with type defaults,
+  which replaced a collection it held.
+- **Env through the layer only for a variant whose values can be left out.** A named variant's
+  fields are optional, and a single nested config is either read or left out, but a tuple variant
+  holding several values has no empty form for the ones it didn't read: a plain value or a nested
+  enum's variant would be replaced. So any tuple variant holding several values, not only a mixed
+  one, reads its nested values' env in `finalize` (`internal::finalize_with_env`,
+  `Variant::has_layered_env`), as do a recursive or collected config (decision 2, widened).
+- **A layer that sets nothing isn't reported.** A struct or a non-default variant whose every
+  default may be `None` (nested configs, handlers) returns `None` when they all are
+  (`impl_partial_defaults_if_any`), and a non-default tuple variant holding one config maps its
+  defaults, so an optional config's absence doesn't report an empty defaults layer. This also
+  fixed a struct of only bare nested configs without defaults reporting one.
+- **A unit default variant still returns itself**, rather than `None` as the table below says, so
+  the defaults layer still names it, as before.
+- `Option<Enum>` reads its default variant's env (decision 1), and `env_values_with_prefix` stays
+  hidden beside `env_values` (decision 3).
 
 ## Why
 

@@ -38,20 +38,30 @@ pub trait PartialConfig:
     const HAS_ENV_PREFIX: bool = false;
 
     /// Return a partial configuration with values populated with default values for settings
-    /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
+    /// marked with `#[setting(default)]`, to go under `self`. Unmarked settings will be [`None`].
+    ///
+    /// `self` is the partial the defaults apply to, which is what every source and environment
+    /// variable merged into. It decides what has defaults: an enum returns those of the variant
+    /// it holds, and an optional nested config has them only when it's present. A missing
+    /// config is viewed as its [`Default`], so `T::default().default_values(context)` returns
+    /// the defaults of a config that nothing provided.
     ///
     /// If a default value fails to parse or cast into the correct type, an error is returned.
-    fn default_values(_context: &Self::Context) -> Result<Option<Self>, ConfigError> {
+    fn default_values(&self, _context: &Self::Context) -> Result<Option<Self>, ConfigError> {
         Ok(None)
     }
 
     /// Return a partial configuration with values populated from environment variables
-    /// for settings marked with `#[setting(env)]`. Unmarked settings will be [`None`].
+    /// for settings marked with `#[setting(env)]`, to go over `self`. Unmarked settings will be
+    /// [`None`].
+    ///
+    /// `self` is the partial the variables apply to, which is what every source merged into. An
+    /// enum reads the settings of the variant it holds, unless its tag's variable picks another.
     ///
     /// If an environment variable does not exist, the value will be [`None`]. If
     /// the variable fails to parse or cast into the correct type, an error is returned.
     #[cfg(feature = "env")]
-    fn env_values() -> Result<Option<Self>, ConfigError> {
+    fn env_values(&self) -> Result<Option<Self>, ConfigError> {
         Ok(None)
     }
 
@@ -63,8 +73,8 @@ pub trait PartialConfig:
     /// prefix doesn't apply to, so this defaults to [`env_values`].
     #[cfg(feature = "env")]
     #[doc(hidden)]
-    fn env_values_with_prefix(_prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
-        Self::env_values()
+    fn env_values_with_prefix(&self, _prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
+        self.env_values()
     }
 
     /// When a setting is marked as extendable with `#[setting(extend)]`, this returns
@@ -79,10 +89,12 @@ pub trait PartialConfig:
     /// the `#[setting(transform)]` functions and finalizing nested configs.
     ///
     /// Default values and environment variables are not applied here, as they're layers of their
-    /// own: [`ConfigLoader`](crate::ConfigLoader) merges [`PartialConfig::default_values`] below
-    /// every source, and [`PartialConfig::env_values`] above them, before finalizing. A nested
+    /// own: [`ConfigLoader`](crate::ConfigLoader) merges [`PartialConfig::env_values`] over every
+    /// source, and [`PartialConfig::default_values`] under them, before finalizing. A nested
     /// config's are part of its parent's, so it's finalized as is, except for the items of a
-    /// collection and the values of a variant, which nothing above applied them to.
+    /// collection, which no layer holds, and their defaults and variables are merged around each.
+    /// The variables of a config within a tuple variant that holds several values are read here
+    /// too, as a layer would have to restate the values beside it.
     fn finalize(self, _context: &Self::Context) -> Result<Self, ConfigError> {
         Ok(self)
     }
@@ -131,7 +143,8 @@ pub trait PartialConfig:
 pub trait Config: Sized + Schematic {
     type Partial: PartialConfig;
 
-    /// Return default values for the partial configuration.
+    /// Return default values for the partial configuration, as a load without sources or
+    /// environment variables would, with a default context.
     ///
     /// # Panics
     ///
@@ -139,10 +152,12 @@ pub trait Config: Sized + Schematic {
     /// infallible from the perspective of [`Default`].
     fn default_partial() -> Self::Partial {
         let context = <<Self as Config>::Partial as PartialConfig>::Context::default();
+        let partial = Self::Partial::default();
 
-        <<Self as Config>::Partial as PartialConfig>::default_values(&context)
+        partial
+            .default_values(&context)
             .expect("Failed to generate default values.")
-            .unwrap_or_default()
+            .unwrap_or(partial)
     }
 
     /// Convert a partial configuration into a full configuration, with all values populated.

@@ -22,6 +22,7 @@ where
 {
     type Context = ();
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         Ok(

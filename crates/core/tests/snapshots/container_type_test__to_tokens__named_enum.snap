@@ -26,38 +26,55 @@ impl Default for PartialExample {
 impl schematic::PartialConfig for PartialExample {
     type Context = ();
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        use schematic::internal::*;
         Ok(
-            Some(Self::A {
-                a: Default::default(),
-                b: Default::default(),
-            }),
+            match self {
+                Self::A { b: pb, .. } => {
+                    Some(Self::A {
+                        a: Some((&&DefaultString::<String>::new()).parse_default("a")?),
+                        b: schematic::internal::nested_default_values(
+                            pb.as_ref(),
+                            context,
+                        )?,
+                    })
+                }
+                _ => None,
+            },
         )
+    }
+    fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        self.env_values_with_prefix(None)
+    }
+    fn env_values_with_prefix(
+        &self,
+        prefix: Option<&str>,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        use schematic::internal::*;
+        let mut env = EnvManager::new(prefix, None);
+        let value = match self {
+            Self::A { b: pb, .. } => {
+                Self::A {
+                    a: None,
+                    b: env
+                        .nested(
+                            schematic::internal::nested_env_values(pb.as_ref(), None)?,
+                        )?,
+                }
+            }
+            _ => return Ok(None),
+        };
+        Ok(if env.is_empty() { None } else { Some(value) })
     }
     fn finalize(
         self,
         context: &Self::Context,
     ) -> std::result::Result<Self, schematic::ConfigError> {
-        use schematic::internal::*;
         Ok(
             match self {
-                Self::A { a: na, b: nb } => {
-                    let mut pa = Some(
-                        (&&DefaultString::<String>::new()).parse_default("a")?,
-                    );
-                    let mut pb = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                        context,
-                    )?;
-                    let mut env = EnvManager::new(None::<&str>, None);
-                    let eb = env
-                        .nested(
-                            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                        )?;
-                    MergeManager::new(context)
-                        .apply(&mut pa, na)?
-                        .nested(&mut pb, nb)?
-                        .nested(&mut pb, eb)?;
+                Self::A { a: pa, b: mut pb } => {
                     if let Some(layer) = pb {
                         pb = Some(layer.finalize(context)?);
                     }
@@ -151,18 +168,6 @@ impl schematic::PartialConfig for PartialExample {
 #[automatically_derived]
 impl schematic::Config for Example {
     type Partial = PartialExample;
-    fn default_partial() -> Self::Partial {
-        use schematic::internal::*;
-        #[allow(unused_variables)]
-        let context: &<Self::Partial as schematic::PartialConfig>::Context = &Default::default();
-        let partial = (|| -> std::result::Result<Self::Partial, schematic::ConfigError> {
-            Ok(PartialExample::A {
-                a: Some((&&DefaultString::<String>::new()).parse_default("a")?),
-                b: Some(<NestedConfig as schematic::Config>::default_partial()),
-            })
-        })();
-        partial.expect("Failed to generate default values.")
-    }
     fn from_partial(partial: Self::Partial) -> Self {
         match partial {
             PartialExample::A { a: pa, b: pb } => {

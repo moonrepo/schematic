@@ -42,8 +42,20 @@ impl FieldValue {
         FieldValue(Value::new(ty, nested_arg, self_ty).with_context(context_fn))
     }
 
-    pub fn impl_partial_default_value(&self, field_args: &FieldArgs) -> ImplResult {
+    /// Generate the default value of a setting, for `default_values`, where
+    /// `access` is the setting within the partial its defaults go under.
+    pub fn impl_partial_default_value(
+        &self,
+        field_args: &FieldArgs,
+        access: &TokenStream,
+    ) -> ImplResult {
         let outer_option = self.is_outer_option_wrapped();
+
+        // Nested configs source their defaults from the inner partial, viewed
+        // as it is beneath them, so an enum's are those of its variant
+        if self.nested && !self.is_collection() {
+            return self.impl_partial_default_value_nested(field_args, access);
+        }
 
         // Optional settings default to `None`, unless a value is provided,
         // and required settings have no default at all, so that the partial
@@ -63,33 +75,16 @@ impl FieldValue {
             layers.remove(0);
         }
 
-        // Nested configs source their defaults from the inner partial
-        if let Some(partial) = self.get_nested_partial_type() {
+        // Collections of nested configs start empty, as each item has its
+        // defaults applied when it's finalized
+        if self.nested {
             if field_args.default.is_some() {
                 panic!("Cannot use `default` with `nested`.");
             }
 
-            let context = self.get_nested_context();
-            let defaults =
-                quote! { <#partial as schematic::PartialConfig>::default_values(#context)? };
+            let value = wrap_default_layers(&layers, quote! { Default::default() });
 
-            res.value = if self.is_collection() {
-                // Collections of nested configs start empty
-                let value = wrap_default_layers(&layers, quote! { Default::default() });
-
-                quote! { Some(#value) }
-            } else if layers.is_empty() {
-                defaults
-            } else {
-                // Wrap the inner partial with each layer
-                let mut value = quote! { inner };
-
-                for layer in layers.iter().rev() {
-                    value = wrap_layer(layer, value);
-                }
-
-                quote! { #defaults.map(|inner| #value) }
-            };
+            res.value = quote! { Some(#value) };
 
             return res;
         }
@@ -118,20 +113,64 @@ impl FieldValue {
         res
     }
 
+    /// Generate the defaults of a nested config that isn't in a collection.
+    /// A bare one that's missing is viewed as its default, as the full type
+    /// always holds one, while an optional one only has defaults when it's
+    /// present, and a recursive one would otherwise never end.
+    fn impl_partial_default_value_nested(
+        &self,
+        field_args: &FieldArgs,
+        access: &TokenStream,
+    ) -> ImplResult {
+        if field_args.default.is_some() {
+            panic!("Cannot use `default` with `nested`.");
+        }
+
+        let partial = self.get_nested_partial_type();
+        let context = self.get_nested_context();
+
+        let value = if !self.is_outer_option_wrapped() {
+            quote! { schematic::internal::nested_default_values(#access.as_ref(), #context)? }
+        } else if self.keep_box {
+            quote! {
+                match #access.as_deref() {
+                    Some(inner) => <#partial as schematic::PartialConfig>::default_values(inner, #context)?.map(Box::new),
+                    None => None,
+                }
+            }
+        } else {
+            quote! {
+                match #access.as_ref() {
+                    Some(inner) => <#partial as schematic::PartialConfig>::default_values(inner, #context)?,
+                    None => None,
+                }
+            }
+        };
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
+    }
+
     #[cfg(not(feature = "env"))]
     pub fn impl_partial_env_value(
         &self,
         _field_args: &FieldArgs,
         _env_key: Option<&EnvKey>,
+        _access: &TokenStream,
     ) -> ImplResult {
         ImplResult::skipped()
     }
 
+    /// Generate the value of a setting from the environment, for `env_values`,
+    /// where `access` is the setting within the partial the variables go over.
     #[cfg(feature = "env")]
     pub fn impl_partial_env_value(
         &self,
         field_args: &FieldArgs,
         env_key: Option<&EnvKey>,
+        access: &TokenStream,
     ) -> ImplResult {
         let mut res = ImplResult::default();
 
@@ -141,7 +180,10 @@ impl FieldValue {
         // function is provided, which handles the conversion itself.
         let supported = self.supports_env_value(field_args.parse_env.is_some());
 
-        if let Some(partial) = self.get_nested_partial_type() {
+        // A nested config is viewed as it is beneath the variables, so an
+        // enum's are those of its variant, and a missing one as its default,
+        // so that a variable can provide it
+        if self.nested {
             if !supported {
                 if field_args.env_prefix.is_some() {
                     panic!("Cannot use `env_prefix` with collections or wrapped types.");
@@ -150,20 +192,18 @@ impl FieldValue {
                 return ImplResult::skipped();
             }
 
-            let ident = quote! { <#partial as schematic::PartialConfig> };
-
-            res.value = if let Some(env_prefix) = &field_args.env_prefix {
+            let prefix = if let Some(env_prefix) = &field_args.env_prefix {
                 if env_prefix.is_empty() {
                     panic!("Attribute `env_prefix` cannot be empty.");
                 }
 
-                quote! {
-                    env.nested(#ident::env_values_with_prefix(Some(#env_prefix))?)?
-                }
+                quote! { Some(#env_prefix) }
             } else {
-                quote! {
-                    env.nested(#ident::env_values()?)?
-                }
+                quote! { None }
+            };
+
+            res.value = quote! {
+                env.nested(schematic::internal::nested_env_values(#access.as_ref(), #prefix)?)?
             };
 
             return res;

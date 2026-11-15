@@ -108,8 +108,8 @@ mod container_env {
         use super::*;
 
         // A named variant's settings derive keys with the enum's prefix, as a
-        // struct's do, and read them when it's finalized, so the environment
-        // layer holds no variant
+        // struct's do, and the environment layer reads those of the variant
+        // the partial holds, so finalizing reads none
         #[test]
         fn can_set_prefix() {
             let container = Container::from(parse_quote! {
@@ -139,7 +139,7 @@ mod container_env {
                 }
             });
 
-            assert!(container.impl_partial_env_values().is_empty());
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
             assert_snapshot!(pretty(container.impl_partial_finalize()));
         }
 
@@ -177,9 +177,9 @@ mod container_env {
         use super::*;
 
         // The tag's variable picks a variant by its serde name or an alias,
-        // which the layer holds with nothing in it, so that finalizing fills
-        // it in. A plain value has nothing to fill it in, and a skipped variant
-        // is never deserialized.
+        // unless the partial already holds it, and the layer holds the picked
+        // variant with its settings' variables. A plain value has nothing to
+        // provide it, and a skipped variant is never deserialized.
         #[test]
         fn picks_a_variant_by_its_tag() {
             let container = Container::from(parse_quote! {
@@ -226,7 +226,31 @@ mod container_env {
             assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
 
-        // An externally tagged enum has no tag to derive a key from
+        // A parent's prefix reaches the keys an enum derives, so it says so,
+        // as a struct does
+        #[test]
+        fn has_an_env_prefix() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "type")]
+                enum Example {
+                    #[setting(default)]
+                    None,
+                    Token { token: String },
+                }
+            });
+
+            assert!(
+                container
+                    .impl_partial()
+                    .to_string()
+                    .contains("const HAS_ENV_PREFIX : bool = true ;")
+            );
+        }
+
+        // An externally tagged enum has no tag to derive a key from, so only
+        // the settings of the variant the partial holds are read
         #[test]
         fn picks_nothing_without_a_tag() {
             let container = Container::from(parse_quote! {
@@ -237,7 +261,7 @@ mod container_env {
                 }
             });
 
-            assert!(container.impl_partial_env_values().is_empty());
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
         }
 
         #[test]

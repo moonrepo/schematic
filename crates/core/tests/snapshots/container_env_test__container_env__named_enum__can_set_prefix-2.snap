@@ -1,0 +1,26 @@
+---
+source: crates/core/tests/container_env_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    Ok(
+        match self {
+            Self::A { a: pa, long_name: pb, c: pc, d: pd, e: mut pe } => {
+                if let Some(layer) = pe {
+                    pe = Some(layer.finalize(context)?);
+                }
+                Self::A {
+                    a: pa,
+                    long_name: pb,
+                    c: pc,
+                    d: pd,
+                    e: pe,
+                }
+            }
+            _ => self,
+        },
+    )
+}
