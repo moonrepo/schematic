@@ -181,10 +181,11 @@ As built:
   `config_test::named_variant_env`; and `named_enum_test`'s `Source` fixture gained an
   `env_prefix` and an explicit key, so its TypeScript snapshots show `@env`.
 
-**Found, not fixed:** `#[setting(nested, env = "..")]` is silently ignored on a struct as well as a
-variant. `get_env_var` has the "Cannot use `env` with `nested`" panic, but every caller returns
-early for a nested setting, except the `parse_env` check. It's a G7-style no-op attribute, and the fix
-is a check in `Field::validate_args`, but it would break a struct that has one today.
+**Found, then fixed on `0.21-self-api`:** `#[setting(nested, env = "..")]` was silently ignored on a
+struct as well as a variant. `get_env_var` had the "Cannot use `env` with `nested`" panic, but every
+caller returns early for a nested setting, except the `parse_env` check. It was a G7-style no-op
+attribute, so the check moved to `Field::validate_args`, along with one for `parse_env` on a nested
+setting, which was ignored the same way.
 
 ## Phase 2: picking the variant from the environment · fixed on `0.21-enum-env`
 

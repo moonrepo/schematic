@@ -102,19 +102,21 @@ enum Auth {
 }
 ```
 
-The variables are read once a variant has been picked, by a source, the default, or the
+The variables are those of the variant that's been picked, by a source, the default, or the
 [tag's variable](#picking-a-variant), and they're merged over its fields as the last layer, as for a
 struct. So with `type = "basic"` in a file, and nothing picking another variant, `AUTH_TOKEN` does
 nothing. Variants may share a derived key, like a `path` in each, as only one is ever picked.
 
 A nested config that a variant holds reads its own variables, whether the variant is named or holds
-it as a value.
+it as a value. An optional enum, like `Option<Auth>`, that no source provided reads those of its
+default variant, and is provided by them when one is set, as an optional struct is.
 
-> The variables of a variant's fields aren't a layer of their own, so `ConfigLoadResult.layers`
-> doesn't include them, as with the items of a nested collection.
+> A nested config within a variant that holds other values too, like `Both(Child, bool)`, reads its
+> variables when it's finalized instead, as the layer would have to restate the values beside it.
+> So `ConfigLoadResult.layers` doesn't include them, as with the items of a nested collection.
 
-A parent's `#[setting(nested, env_prefix)]` doesn't reach an enum, since its variables are only read
-once a variant has been picked, without the parent. Setting one on an enum fails to compile.
+A parent's `#[setting(nested, env_prefix)]` reaches an enum as it does a struct, adding its prefix
+to the keys of the enum's fields and its tag, as long as the enum has an `env_prefix` of its own.
 
 ### Picking a variant
 

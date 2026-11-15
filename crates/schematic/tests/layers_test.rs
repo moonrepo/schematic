@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use schematic::*;
 use serial_test::serial;
 use std::env;
@@ -209,5 +211,151 @@ mod root_enum {
             "{config:?}"
         );
         assert!(matches!(Mode::default(), Mode::Named(value) if value == "auto"));
+    }
+}
+
+// The layers are read against what the sources picked, so they report the
+// defaults and variables of a picked variant, and of an optional config
+mod picked {
+    use super::*;
+
+    #[derive(Debug, Config)]
+    #[config(env_prefix = "LAYERS_PICKED_")]
+    #[serde(tag = "type")]
+    enum Backend {
+        #[setting(default)]
+        Memory,
+        Disk {
+            #[setting(default = 10)]
+            size: usize,
+            path: Option<String>,
+        },
+    }
+
+    #[test]
+    #[serial]
+    fn reports_the_defaults_and_env_of_a_picked_variant() {
+        unsafe { env::set_var("LAYERS_PICKED_PATH", "/tmp") };
+
+        let result = ConfigLoader::<Backend>::new()
+            .code("type: Disk", "code.yml")
+            .unwrap()
+            .load();
+
+        unsafe { env::remove_var("LAYERS_PICKED_PATH") };
+
+        let result = result.unwrap();
+        let partials = result
+            .layers
+            .iter()
+            .map(|layer| (layer.source.clone(), layer.partial.clone()))
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            partials,
+            [
+                (
+                    Source::Defaults,
+                    PartialBackend::Disk {
+                        size: Some(10),
+                        path: None,
+                    }
+                ),
+                (
+                    Source::code("type: Disk", "code.yml").unwrap(),
+                    PartialBackend::Disk {
+                        size: None,
+                        path: None,
+                    }
+                ),
+                (
+                    Source::EnvVars,
+                    PartialBackend::Disk {
+                        size: None,
+                        path: Some("/tmp".into()),
+                    }
+                ),
+            ]
+        );
+    }
+
+    #[derive(Debug, Config)]
+    struct Child {
+        #[setting(default = 1)]
+        level: usize,
+    }
+
+    #[derive(Debug, Config)]
+    struct Parent {
+        #[setting(nested)]
+        maybe: Option<Child>,
+    }
+
+    // A layer of defaults that would set nothing isn't reported at all
+    #[test]
+    fn reports_the_defaults_of_an_optional_config_only_when_present() {
+        let present = ConfigLoader::<Parent>::new()
+            .code("maybe: {}", "code.yml")
+            .unwrap()
+            .load()
+            .unwrap();
+
+        assert_eq!(present.layers[0].source, Source::Defaults);
+        assert_eq!(
+            present.layers[0].partial.maybe,
+            Some(PartialChild { level: Some(1) })
+        );
+
+        let missing = ConfigLoader::<Parent>::new().load().unwrap();
+
+        assert!(missing.layers.is_empty());
+        assert!(missing.config.maybe.is_none());
+    }
+
+    #[derive(Debug, Config)]
+    enum Named {
+        #[setting(default)]
+        A,
+        B {
+            #[setting(default = 1)]
+            b: usize,
+        },
+    }
+
+    // Finalizing only transforms, so a named variant gets nothing from it
+    #[test]
+    fn finalizing_applies_no_defaults_to_a_named_variant() {
+        let partial = PartialNamed::B { b: None }.finalize(&()).unwrap();
+
+        assert_eq!(partial, PartialNamed::B { b: None });
+    }
+
+    static CALLS: AtomicUsize = AtomicUsize::new(0);
+
+    fn count_calls(_: &()) -> DefaultValueResult<usize> {
+        Ok(Some(CALLS.fetch_add(1, Ordering::SeqCst)))
+    }
+
+    #[derive(Debug, Config)]
+    #[serde(tag = "type")]
+    enum Counted {
+        #[setting(default)]
+        A,
+        B {
+            #[setting(default = count_calls)]
+            calls: usize,
+        },
+    }
+
+    #[test]
+    fn calls_a_default_handler_of_a_picked_variant_once() {
+        let result = ConfigLoader::<Counted>::new()
+            .code("type: B", "code.yml")
+            .unwrap()
+            .load()
+            .unwrap();
+
+        assert_eq!(CALLS.load(Ordering::SeqCst), 1);
+        assert!(matches!(result.config, Counted::B { calls: 0 }));
     }
 }

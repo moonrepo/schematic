@@ -6,13 +6,9 @@ fn finalize(
     self,
     context: &Self::Context,
 ) -> std::result::Result<Self, schematic::ConfigError> {
-    use schematic::internal::*;
     Ok(
         match self {
-            Self::A { a: na, b: nb, c: mut pc } => {
-                let mut pa = Some(Default::default());
-                let mut pb = Some(Default::default());
-                MergeManager::new(context).apply(&mut pa, na)?.apply(&mut pb, nb)?;
+            Self::A { a: mut pa, b: mut pb, c: mut pc } => {
                 if let Some(layer) = pa {
                     pa = Some(
                         layer

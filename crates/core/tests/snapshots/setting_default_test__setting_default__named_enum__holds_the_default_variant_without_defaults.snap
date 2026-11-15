@@ -1,0 +1,14 @@
+---
+source: crates/core/tests/setting_default_test.rs
+expression: pretty(container.impl_partial_default_values())
+---
+fn default_values(
+    &self,
+    context: &Self::Context,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    Ok(
+        match self {
+            Self::Foo { .. } => Some(Self::Foo { a: None, b: None }),
+        },
+    )
+}

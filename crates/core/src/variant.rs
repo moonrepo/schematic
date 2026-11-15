@@ -74,12 +74,6 @@ pub fn get_binding_idents(index: usize) -> (Ident, Ident) {
     (format_ident!("p{suffix}"), format_ident!("n{suffix}"))
 }
 
-/// The binding of a named variant's setting as read from the environment
-/// (`ea`), by position, so that a setting's name never shadows it.
-fn get_env_binding_ident(index: usize) -> Ident {
-    format_ident!("e{}", get_binding_suffix(index))
-}
-
 /// Return the value of a boolean literal, which is all
 /// the `default` of a unit variant accepts.
 fn as_bool_literal(expr: &Expr) -> Option<bool> {
@@ -368,10 +362,11 @@ impl Variant {
     }
 
     /// Whether a variable naming this variant can pick it, which the enum's
-    /// environment layer then holds with nothing in it, for finalizing to fill
-    /// in. A unit or named variant can be, as can one whose values are all
-    /// nested configs, while a plain value has nothing to fill it in. One that
-    /// serde never deserializes, or that has no name to match, can't be.
+    /// environment layer then holds with the variables of its settings, and
+    /// its defaults layer with their defaults. A unit or named variant can be,
+    /// as can one whose values are all nested configs, while a plain value has
+    /// nothing to provide it. One that serde never deserializes, or that has
+    /// no name to match, can't be.
     pub fn is_env_selectable(&self) -> bool {
         if self.is_skipped_deserializing() || self.is_untagged() || self.args.null {
             return false;
@@ -908,38 +903,6 @@ impl Variant {
             .collect()
     }
 
-    /// The default of each of this named variant's settings, in order, like
-    /// the default values of a struct, or `None` for a setting without one.
-    /// When `full` is true, a bare nested config takes its own default
-    /// partial instead, for [`Config::default_partial`]. Also returns whether
-    /// building them requires the internal helpers.
-    fn get_named_defaults(&self, full: bool) -> (Vec<Option<TokenStream>>, bool) {
-        let mut requires_internal = false;
-
-        let values = self
-            .settings
-            .iter()
-            .map(|setting| {
-                if full
-                    && setting.is_bare_nested()
-                    && let Some(ty) = setting.value.get_nested_type()
-                {
-                    return Some(quote! { Some(<#ty as schematic::Config>::default_partial()) });
-                }
-
-                let res = setting.impl_partial_default_value();
-
-                if res.requires_internal {
-                    requires_internal = true;
-                }
-
-                (!res.no_value).then_some(res.value)
-            })
-            .collect();
-
-        (values, requires_internal)
-    }
-
     /// Generate this setting's entry for `Config::settings`. A named variant
     /// is the settings of its fields, like a nested config, and a unit variant,
     /// which holds no type, is reported as its name.
@@ -1049,17 +1012,155 @@ impl Variant {
         res
     }
 
-    /// Generate this variant holding its `default` value, for the partial's
-    /// `default_values`. Without one, it holds the default of its type.
+    /// Generate this variant's arm of `default_values`, which holds the
+    /// variant with its defaults when the partial holds it: those of its
+    /// settings, or of the nested configs it holds, and its `default` value
+    /// when it's the default variant. A variant with nothing to default has no
+    /// arm, unless it's the default variant, which the layer holds as it is.
     pub fn impl_partial_default_values(&self) -> ImplResult {
-        let Some(expr) = self.get_default_value() else {
-            return self.impl_partial_default_value();
-        };
-
         let mut res = ImplResult::default();
         let name = &self.ident;
 
-        let value = match expr {
+        res.value = match &self.fields {
+            Fields::Named(_) => {
+                let mut bindings = vec![];
+                let mut rows = vec![];
+                let mut empty = vec![];
+                let mut always_some = false;
+
+                for setting in &self.settings {
+                    let key = setting.get_key();
+                    let default = setting.impl_partial_default_value();
+
+                    if default.requires_internal {
+                        res.requires_internal = true;
+                    }
+
+                    if default.no_value {
+                        rows.push(quote! { #key: None });
+
+                        continue;
+                    }
+
+                    // Only a nested config's defaults depend on its value
+                    if setting.defaults_read_value() {
+                        let prev = setting.get_access(quote! { self });
+
+                        bindings.push(quote! { #key: #prev });
+                    }
+
+                    if setting.default_may_be_none() {
+                        empty.push(quote! { #key: None });
+                    } else {
+                        always_some = true;
+                    }
+
+                    let value = default.value;
+
+                    rows.push(quote! { #key: #value });
+                }
+
+                let value = quote! { Self::#name { #(#rows),* } };
+
+                // The default variant is held even without defaults, as it's
+                // what the enum defaults to, while another only when it has
+                // some, so that the layer doesn't report one that sets nothing
+                let value = if always_some || self.is_default() {
+                    quote! { Some(#value) }
+                } else if empty.is_empty() {
+                    return ImplResult::skipped();
+                } else {
+                    quote! {
+                        {
+                            let defaults = #value;
+
+                            if matches!(defaults, Self::#name { #(#empty,)* .. }) {
+                                None
+                            } else {
+                                Some(defaults)
+                            }
+                        }
+                    }
+                };
+
+                quote! {
+                    Self::#name { #(#bindings,)* .. } => #value,
+                }
+            }
+            Fields::Unnamed(_) => {
+                let mut patterns = vec![];
+                let mut items = vec![];
+                let mut nested = vec![];
+
+                for (index, value) in self.values.iter().enumerate() {
+                    let (binding, _) = get_binding_idents(index);
+
+                    match value.impl_partial_default_values_nested(&binding) {
+                        Some(defaults) => {
+                            patterns.push(quote! { #binding });
+                            items.push(value.impl_variant_value_from_defaults(&defaults));
+                            nested.push(defaults);
+                        }
+                        None => {
+                            patterns.push(quote! { _ });
+                            items.push(quote! { Default::default() });
+                        }
+                    }
+                }
+
+                // Only a single value that isn't nested may have one
+                if let Some(default) = self.impl_default_value() {
+                    if default.requires_internal {
+                        res.requires_internal = true;
+                    }
+
+                    items[0] = default.value;
+                }
+
+                let value = if self.is_default() {
+                    quote! { Some(Self::#name(#(#items),*)) }
+                } else if nested.is_empty() {
+                    return ImplResult::skipped();
+                } else if self.values.len() == 1 {
+                    // Another variant has defaults only when its config does
+                    let defaults = &nested[0];
+
+                    if self.values[0].get_partial_layers().is_empty() {
+                        quote! { #defaults.map(Self::#name) }
+                    } else {
+                        let inner = self.values[0].wrap_variant_partial(quote! { inner });
+
+                        quote! { #defaults.map(|inner| Self::#name(#inner)) }
+                    }
+                } else {
+                    quote! { Some(Self::#name(#(#items),*)) }
+                };
+
+                quote! {
+                    Self::#name(#(#patterns),*) => #value,
+                }
+            }
+            Fields::Unit => {
+                if !self.is_default() {
+                    return ImplResult::skipped();
+                }
+
+                quote! {
+                    Self::#name => Some(Self::#name),
+                }
+            }
+        };
+
+        res
+    }
+
+    /// Generate the `default` value this tuple variant holds, from
+    /// `#[setting(default = value)]`.
+    fn impl_default_value(&self) -> Option<ImplResult> {
+        let expr = self.get_default_value()?;
+        let mut res = ImplResult::default();
+
+        res.value = match expr {
             // Handler functions return an optional value,
             // falling back to the default of its type
             Expr::Path(func) if !path_names_a_value(&func.path) => {
@@ -1077,69 +1178,102 @@ impl Variant {
             }
         };
 
-        res.value = quote! { #name(#value) };
-        res
+        Some(res)
     }
 
-    /// Generate this variant as the default partial of the full type, for
-    /// [`Config::default_partial`]. A bare nested config holds its own default
-    /// partial, which isn't part of `default_values`, as finalizing the
-    /// variant applies it. Returns nothing when no value is nested, as the
-    /// provided method already matches.
-    ///
-    /// A named variant holds the defaults of its settings, which finalizing
-    /// it applies too. They're built in a closure, as building one can fail.
-    pub fn impl_full_default_partial(&self, partial_name: &Ident) -> Option<TokenStream> {
-        if self.is_named_variant() {
-            let name = &self.ident;
-            let (defaults, requires_internal) = self.get_named_defaults(true);
-
-            if defaults.iter().all(Option::is_none) {
-                return None;
+    /// Whether the enum's environment layer reads this variant's variables.
+    /// A named variant's settings are optional, so the layer holds only those
+    /// it read, as it does for a variant holding a single nested config. A
+    /// variant holding several values would have to restate the ones it
+    /// didn't read, which would replace them, so it reads them when it's
+    /// finalized instead, as does one holding a recursive or collected config.
+    pub fn has_layered_env(&self) -> bool {
+        match &self.fields {
+            Fields::Named(_) => true,
+            Fields::Unnamed(_) => {
+                self.values.len() == 1
+                    && self.values[0].nested
+                    && !self.values[0].is_collection()
+                    && self.values[0].supports_env_value(false)
             }
+            Fields::Unit => false,
+        }
+    }
 
-            let rows = self.settings.iter().zip(defaults).map(|(setting, value)| {
-                let key = setting.get_key();
-                let value = value.unwrap_or_else(|| quote! { None });
-
-                quote! { #key: #value }
-            });
-            let internal = ImplResult::impl_use_internal(requires_internal);
-
-            return Some(quote! {
-                #internal
-
-                #[allow(unused_variables)]
-                let context: &<Self::Partial as schematic::PartialConfig>::Context = &Default::default();
-
-                let partial = (|| -> std::result::Result<Self::Partial, schematic::ConfigError> {
-                    Ok(#partial_name::#name { #(#rows),* })
-                })();
-
-                partial.expect("Failed to generate default values.")
-            });
+    /// Generate this variant's arm of `env_values`, which holds the variant
+    /// with the variables of its settings, or of the nested config it holds,
+    /// when the partial holds it, or the tag's variable picks it. A variant
+    /// that reads nothing has no arm.
+    #[cfg(feature = "env")]
+    pub fn impl_partial_env_values(&self) -> ImplResult {
+        if !self.has_layered_env() {
+            return ImplResult::skipped();
         }
 
-        if self.get_default_value().is_some() || !self.is_tuple_variant() {
-            return None;
-        }
-
-        let mut nested = false;
         let name = &self.ident;
-        let fields = self
-            .values
-            .iter()
-            .map(|value| match value.get_nested_type() {
-                Some(ty) if value.get_partial_layers().is_empty() => {
-                    nested = true;
 
-                    quote! { <#ty as schematic::Config>::default_partial() }
+        let value = match &self.fields {
+            Fields::Named(_) => {
+                let mut bindings = vec![];
+                let mut rows = vec![];
+                let mut reads = false;
+
+                for setting in &self.settings {
+                    let key = setting.get_key();
+                    let res = setting.impl_partial_env_value();
+
+                    if res.no_value {
+                        rows.push(quote! { #key: None });
+
+                        continue;
+                    }
+
+                    // Only a nested config's variables depend on its value
+                    if setting.env_reads_value() {
+                        let prev = setting.get_access(quote! { self });
+
+                        bindings.push(quote! { #key: #prev });
+                    }
+
+                    let value = res.value;
+
+                    reads = true;
+                    rows.push(quote! { #key: #value });
                 }
-                _ => quote! { Default::default() },
-            })
-            .collect::<Vec<_>>();
 
-        nested.then(|| quote! { #partial_name::#name(#(#fields),*) })
+                if !reads {
+                    return ImplResult::skipped();
+                }
+
+                quote! {
+                    Self::#name { #(#bindings,)* .. } => Self::#name { #(#rows),* },
+                }
+            }
+            _ => {
+                let value = &self.values[0];
+                let (binding, _) = get_binding_idents(0);
+
+                // The value is discarded when nothing is read, so its default
+                // only stands in
+                let read = if value.is_outer_option_wrapped() {
+                    quote! { env.nested(schematic::internal::nested_env_values(#binding.as_ref(), None)?)? }
+                } else {
+                    quote! {
+                        env.nested(schematic::internal::nested_env_values(Some(#binding), None)?)?
+                            .unwrap_or_default()
+                    }
+                };
+
+                quote! {
+                    Self::#name(#binding) => Self::#name(#read),
+                }
+            }
+        };
+
+        ImplResult {
+            value,
+            ..Default::default()
+        }
     }
 
     /// Generate a deserialization attempt for this variant, for use within
@@ -1315,6 +1449,7 @@ impl Variant {
                     res.no_value = true;
                 } else {
                     let name = &self.ident;
+                    let env_boundary = cfg!(feature = "env") && !self.has_layered_env();
 
                     res.value = self.map_unnamed_match(name, fields, |outer_names, _| {
                         let items = outer_names
@@ -1323,11 +1458,11 @@ impl Variant {
                             .map(|(i, o)| {
                                 let value = if self.values[i].nested {
                                     // Variant values have no partial `Option`
-                                    // wrapper, so walk all layers. An enum's
-                                    // environment layer holds no variant, so a
-                                    // value is finalized in full.
+                                    // wrapper, so walk all layers. A value
+                                    // whose variables the enum's layer can't
+                                    // hold reads them here.
                                     self.values[i]
-                                        .impl_partial_finalize_nested(o, false, true)
+                                        .impl_partial_finalize_nested(o, false, env_boundary)
                                         .value
                                 } else {
                                     quote! { #o }
@@ -1352,121 +1487,37 @@ impl Variant {
         res
     }
 
-    /// The value of each of this named variant's settings as read from the
-    /// environment, in order, like the environment values of a struct, or
-    /// `None` for a setting that reads none.
-    fn get_named_env_values(&self) -> Vec<Option<TokenStream>> {
-        self.settings
-            .iter()
-            .map(|setting| {
-                let res = setting.impl_partial_env_value();
-
-                (!res.no_value).then_some(res.value)
-            })
-            .collect()
-    }
-
-    /// Generate the finalization of this named variant. No layer holds the
-    /// defaults or environment variables of its settings, as a source may
-    /// pick it over the default variant, so like the value of a tuple variant,
-    /// it's a boundary: its defaults are merged under it and its environment
-    /// variables over it, each setting with its own `merge`, as the loader
-    /// does for a struct, and then its settings are transformed and finalized
-    /// as a struct's are.
+    /// Generate the finalization of this named variant, whose settings are
+    /// transformed and finalized as a struct's are. Its defaults and
+    /// environment variables are part of the enum's layers, like a struct's.
     fn impl_partial_finalize_named(&self) -> ImplResult {
         let name = &self.ident;
-        let (defaults, mut requires_internal) = self.get_named_defaults(false);
-        let env_values = self.get_named_env_values();
         let statements = self
             .settings
             .iter()
             .map(|setting| setting.impl_partial_finalize())
             .collect::<Vec<_>>();
 
-        if defaults.iter().all(Option::is_none)
-            && env_values.iter().all(Option::is_none)
-            && statements.iter().all(|res| res.no_value)
-        {
+        if statements.iter().all(|res| res.no_value) {
             return ImplResult::skipped();
         }
 
-        let mut bindings = vec![];
-        let mut lets = vec![];
-        let mut merges = vec![];
-        let mut env_lets = vec![];
-        let mut env_merges = vec![];
-
-        // A setting with a default is bound as the next value, and merged into
-        // its default, while one without is bound as the value itself
-        for (index, ((setting, default), env_value)) in self
+        // A setting that's finalized is reassigned
+        let bindings = self
             .settings
             .iter()
-            .zip(defaults)
-            .zip(env_values)
-            .enumerate()
-        {
-            let key = setting.get_key();
-            let prev = setting.get_access(quote! { self });
-            let next = setting.get_next_access();
-            let finalizes = !statements[index].no_value;
+            .zip(&statements)
+            .map(|(setting, res)| {
+                let key = setting.get_key();
+                let prev = setting.get_access(quote! { self });
 
-            if let Some(value) = default {
-                lets.push(quote! { let mut #prev = #value; });
-                merges.push(
-                    setting
-                        .impl_partial_merge_into(&quote! { &mut #prev }, &next)
-                        .value,
-                );
-                bindings.push(quote! { #key: #next });
-            } else if finalizes || env_value.is_some() {
-                bindings.push(quote! { #key: mut #prev });
-            } else {
-                bindings.push(quote! { #key: #prev });
-            }
-
-            // Merged after every source, as the environment is the last layer
-            if let Some(value) = env_value {
-                let env_binding = get_env_binding_ident(index);
-
-                env_lets.push(quote! { let #env_binding = #value; });
-                env_merges.push(
-                    setting
-                        .impl_partial_merge_into(&quote! { &mut #prev }, &quote! { #env_binding })
-                        .value,
-                );
-            }
-        }
-
-        // The keys a setting derives take the container's own prefix, as a
-        // parent's `#[setting(nested, env_prefix)]` never reaches a variant
-        let env = if env_lets.is_empty() {
-            quote! {}
-        } else {
-            requires_internal = true;
-
-            let own_prefix = match &self.container_args.env_prefix {
-                Some(prefix) => quote! { Some(#prefix) },
-                None => quote! { None },
-            };
-
-            quote! {
-                let mut env = EnvManager::new(None::<&str>, #own_prefix);
-                #(#env_lets)*
-            }
-        };
-
-        merges.extend(env_merges);
-
-        let merge = if merges.is_empty() {
-            quote! {}
-        } else {
-            requires_internal = true;
-
-            quote! {
-                MergeManager::new(context)
-                    #(#merges)*;
-            }
-        };
+                if res.no_value {
+                    quote! { #key: #prev }
+                } else {
+                    quote! { #key: mut #prev }
+                }
+            })
+            .collect::<Vec<_>>();
 
         let statements = statements
             .into_iter()
@@ -1475,12 +1526,8 @@ impl Variant {
         let rebuild = self.get_named_bindings(false);
 
         ImplResult {
-            requires_internal,
             value: quote! {
                 Self::#name { #(#bindings),* } => {
-                    #(#lets)*
-                    #env
-                    #merge
                     #(#statements)*
 
                     Self::#name { #(#rebuild),* }

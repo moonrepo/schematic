@@ -2,43 +2,70 @@
 source: crates/core/tests/container_env_test.rs
 expression: pretty(container.impl_partial_env_values())
 ---
-fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    let mut env = EnvManager::new(None::<&str>, Some("AUTH_"));
-    Ok(
-        env
-            .get_and_parse_prefixed(
-                "TYPE",
-                |value| {
-                    Ok(
-                        Some(
-                            match value.as_str() {
-                                "none" => Self::None,
-                                "token" | "tok" => {
-                                    Self::Token {
-                                        token: Default::default(),
-                                        expires: Default::default(),
-                                    }
+    let picked = EnvManager::new(prefix, Some("AUTH_"))
+        .get_and_parse_prefixed(
+            "TYPE",
+            |value| {
+                Ok(
+                    Some(
+                        match value.as_str() {
+                            "none" => Self::None,
+                            "token" | "tok" => {
+                                Self::Token {
+                                    token: Default::default(),
+                                    expires: Default::default(),
                                 }
-                                "basic_auth" => {
-                                    Self::BasicAuth {
-                                        user: Default::default(),
-                                    }
+                            }
+                            "basic_auth" => {
+                                Self::BasicAuth {
+                                    user: Default::default(),
                                 }
-                                "nested" => Self::Nested(Default::default()),
-                                _ => {
-                                    return Err(
-                                        schematic::HandlerError::new(
-                                            format!(
-                                                "Unknown variant `{value}`, expected one of `none`, `token`, `basic_auth`, `nested`."
-                                            ),
+                            }
+                            "nested" => Self::Nested(Default::default()),
+                            _ => {
+                                return Err(
+                                    schematic::HandlerError::new(
+                                        format!(
+                                            "Unknown variant `{value}`, expected one of `none`, `token`, `basic_auth`, `nested`."
                                         ),
-                                    );
-                                }
-                            },
-                        ),
-                    )
-                },
-            )?,
-    )
+                                    ),
+                                );
+                            }
+                        },
+                    ),
+                )
+            },
+        )?
+        .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self));
+    let mut env = EnvManager::new(prefix, Some("AUTH_"));
+    let value = match picked.as_ref().unwrap_or(self) {
+        Self::Token { .. } => {
+            Self::Token {
+                token: env.get_prefixed("TOKEN")?,
+                expires: env.get_prefixed("EXPIRES")?,
+            }
+        }
+        Self::BasicAuth { .. } => {
+            Self::BasicAuth {
+                user: env.get_prefixed("USER")?,
+            }
+        }
+        Self::Nested(pa) => {
+            Self::Nested(
+                env
+                    .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                    .unwrap_or_default(),
+            )
+        }
+        _ => return Ok(picked),
+    };
+    Ok(if env.is_empty() { picked } else { Some(value) })
 }

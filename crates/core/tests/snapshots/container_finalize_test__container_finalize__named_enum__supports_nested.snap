@@ -6,44 +6,9 @@ fn finalize(
     self,
     context: &Self::Context,
 ) -> std::result::Result<Self, schematic::ConfigError> {
-    use schematic::internal::*;
     Ok(
         match self {
-            Self::A { a: na, b: nb, c: mut pc, d: nd } => {
-                let mut pa = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut pb = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut pd = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut env = EnvManager::new(None::<&str>, None);
-                let ea = env
-                    .nested(
-                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                let eb = env
-                    .nested(
-                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                let ec = env
-                    .nested(
-                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                let ed = env
-                    .nested(
-                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                MergeManager::new(context)
-                    .nested(&mut pa, na)?
-                    .nested(&mut pb, nb)?
-                    .nested(&mut pd, nd)?
-                    .nested(&mut pa, ea)?
-                    .nested(&mut pb, eb)?
-                    .nested(&mut pc, ec)?
-                    .nested(&mut pd, ed)?;
+            Self::A { a: mut pa, b: mut pb, c: mut pc, d: mut pd } => {
                 if let Some(layer) = pa {
                     pa = Some(layer.finalize(context)?);
                 }
@@ -51,14 +16,7 @@ fn finalize(
                     pb = Some(transform_config(layer.finalize(context)?, context)?);
                 }
                 if let Some(layer) = pc {
-                    pc = Some({
-                        let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                                context,
-                            )?
-                            .unwrap_or_default();
-                        base.merge(context, layer)?;
-                        base.finalize(context)?
-                    });
+                    pc = Some(layer.finalize(context)?);
                 }
                 if let Some(layer) = pd {
                     pd = Some(transform_config(layer.finalize(context)?, context)?);

@@ -3,7 +3,7 @@
 In Schematic, there are 2 forms of default values:
 
 - The first is applied through the [partial configuration](../partial.md), is defined with the
-  `#[setting]` attribute, and is the first layer to be merged.
+  `#[setting]` attribute, and is the layer below every other.
 - The second is on the [final configuration](../index.md) itself, and uses the `Default` trait to
   generate the final value if none was provided. This acts more like a fallback. To fail instead,
   mark the setting as [required](./validate.md#required-settings).
@@ -86,8 +86,8 @@ enum Compress {
 > [nested](../nested.md) configuration, which sources its defaults from its own settings.
 
 A named variant takes no value either, as each of its fields takes a `default` of its own. They're
-applied whenever the variant is picked, not only when it's the default, so a source that picks
-`Url` below gets a `timeout` of `30`.
+applied whenever the variant is picked, not only when it's the default, as the defaults are read for
+the variant the sources picked, so a source that picks `Url` below gets a `timeout` of `30`.
 
 ```rust
 #[derive(Config)]

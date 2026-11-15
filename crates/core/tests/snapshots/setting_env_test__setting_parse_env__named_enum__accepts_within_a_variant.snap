@@ -1,28 +1,23 @@
 ---
 source: crates/core/tests/setting_env_test.rs
-expression: pretty(container.impl_partial_finalize())
+expression: pretty(container.impl_partial_env_values())
 ---
-fn finalize(
-    self,
-    context: &Self::Context,
-) -> std::result::Result<Self, schematic::ConfigError> {
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    Ok(
-        match self {
-            Self::A { a: na, b: nb } => {
-                let mut pa = Some(Default::default());
-                let mut pb = Some(Default::default());
-                let mut env = EnvManager::new(None::<&str>, Some("PREFIX_"));
-                let ea = env.get_and_parse("A", schematic::env::split_comma)?;
-                let eb = env.get_and_parse_prefixed("B", schematic::env::split_colon)?;
-                MergeManager::new(context)
-                    .apply(&mut pa, na)?
-                    .apply_with(&mut pb, nb, append_vec)?
-                    .apply(&mut pa, ea)?
-                    .apply_with(&mut pb, eb, append_vec)?;
-                Self::A { a: pa, b: pb }
+    let mut env = EnvManager::new(prefix, Some("PREFIX_"));
+    let value = match self {
+        Self::A { .. } => {
+            Self::A {
+                a: env.get_and_parse("A", schematic::env::split_comma)?,
+                b: env.get_and_parse_prefixed("B", schematic::env::split_colon)?,
             }
-            _ => self,
-        },
-    )
+        }
+    };
+    Ok(if env.is_empty() { None } else { Some(value) })
 }

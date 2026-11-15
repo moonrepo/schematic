@@ -297,7 +297,7 @@ mod setting_required {
                     },
                 }
             });
-            assert_snapshot!(pretty(container.impl_full_default_partial()));
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
         }
 
         #[test]

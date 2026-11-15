@@ -8,30 +8,31 @@ impl schematic::PartialConfig for PartialExample {
     const FLATTENS: bool = true;
     const ALLOWS_UNKNOWN_FIELDS: bool = true;
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         Ok(
             Some(Self {
                 a: Some(Default::default()),
-                child: <<Child as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                child: schematic::internal::nested_default_values(
+                    self.child.as_ref(),
                     context,
                 )?,
             }),
         )
     }
-    fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        Self::env_values_with_prefix(None)
+    fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        self.env_values_with_prefix(None)
     }
     fn env_values_with_prefix(
+        &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         use schematic::internal::*;
         let mut env = EnvManager::new(prefix, None);
         let mut partial = Self::default();
         partial.child = env
-            .nested(
-                <<Child as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-            )?;
+            .nested(schematic::internal::nested_env_values(self.child.as_ref(), None)?)?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
     fn finalize(

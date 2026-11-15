@@ -1,4 +1,5 @@
 use crate::helpers::strip_bom;
+use crate::internal;
 
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
 use super::configs::{Config, PartialConfig};
@@ -23,10 +24,11 @@ pub struct ConfigLoadResult<T: Config> {
     /// Final configuration, after all layers are merged.
     pub config: T,
 
-    /// Partial layers, in the order they were merged: the default values first,
-    /// then each source in order of declaration and extension, and environment
-    /// variables last. The default values and environment variables are only
-    /// included when they set something.
+    /// Partial layers, from the lowest precedence to the highest: the default
+    /// values first, then each source in order of declaration and extension,
+    /// and environment variables last. The default values and environment
+    /// variables are only included when they set something, and are read
+    /// against what the sources picked, like the variant of an enum.
     pub layers: Vec<Layer<T>>,
 }
 
@@ -146,8 +148,8 @@ impl<T: Config> ConfigLoader<T> {
     /// arguments, as a layer named for use within error messages.
     ///
     /// It's loaded like any other source: merged in the order it was added,
-    /// validated, and able to extend other sources. Like any other layer, it
-    /// sits below environment variables, which are applied when finalizing.
+    /// validated, and able to extend other sources. Like any other source, it
+    /// sits below environment variables.
     pub fn partial<N: Into<String>>(&mut self, name: N, partial: T::Partial) -> &mut Self {
         self.sources
             .push((Source::Memory { name: name.into() }, Some(partial)));
@@ -203,10 +205,12 @@ impl<T: Config> ConfigLoader<T> {
         #[cfg(feature = "validate")]
         let last_source = sources.last().map(|layer| layer.source.clone());
 
-        // Default values sit below every source, and environment variables above them
+        // Environment variables go over the sources, and default values under
+        // them, each read against what the sources picked
+        let applied = internal::apply_layers(self.merge_layers(&sources, context)?, context)?;
         let mut layers = Vec::with_capacity(sources.len() + 2);
 
-        if let Some(partial) = <T::Partial as PartialConfig>::default_values(context)? {
+        if let Some(partial) = applied.defaults {
             layers.push(Layer {
                 partial,
                 source: Source::Defaults,
@@ -215,15 +219,14 @@ impl<T: Config> ConfigLoader<T> {
 
         layers.extend(sources);
 
-        #[cfg(feature = "env")]
-        if let Some(partial) = <T::Partial as PartialConfig>::env_values()? {
+        if let Some(partial) = applied.env {
             layers.push(Layer {
                 partial,
                 source: Source::EnvVars,
             });
         }
 
-        let partial = self.merge_layers(&layers, context)?.finalize(context)?;
+        let partial = applied.partial.finalize(context)?;
 
         // Validate the final result before moving on
         #[cfg(feature = "validate")]
@@ -253,7 +256,7 @@ impl<T: Config> ConfigLoader<T> {
 
         let layers =
             self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
-        let partial = self.merge_layers(&layers, context)?;
+        let partial = self.merge_layers(&layers, context)?.unwrap_or_default();
 
         Ok(partial)
     }
@@ -340,26 +343,32 @@ impl<T: Config> ConfigLoader<T> {
         }
     }
 
+    /// Merge the layers in order, starting from the first, or `None` without
+    /// any. Starting from the partial's [`Default`] instead would be the same
+    /// for a struct, but an enum's holds a variant, which a layer of the same
+    /// variant would be merged into, rather than standing alone.
     #[instrument(skip_all)]
     fn merge_layers(
         &self,
         layers: &[Layer<T>],
         context: &<T::Partial as PartialConfig>::Context,
-    ) -> Result<T::Partial, ConfigError> {
+    ) -> Result<Option<T::Partial>, ConfigError> {
         trace!(
             config = &self.name,
             "Merging partial layers into a final result"
         );
 
-        // All `None` by default
-        let mut merged = T::Partial::default();
+        let mut layers = layers.iter();
+        let Some(first) = layers.next() else {
+            return Ok(None);
+        };
+        let mut merged = first.partial.clone();
 
-        // Then apply other layers in order
         for layer in layers {
             merged.merge(context, layer.partial.clone())?;
         }
 
-        Ok(merged)
+        Ok(Some(merged))
     }
 
     #[instrument(skip_all)]

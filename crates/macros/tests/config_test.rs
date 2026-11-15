@@ -1313,7 +1313,7 @@ mod literal_union {
     fn leaves_the_value_out_of_the_partial_default() {
         assert_eq!(PartialToggle::default(), PartialToggle::Enabled(false));
         assert_eq!(
-            PartialToggle::default_values(&()).unwrap(),
+            PartialToggle::default().default_values(&()).unwrap(),
             Some(PartialToggle::Enabled(true))
         );
     }
@@ -2580,11 +2580,14 @@ mod hand_written_nested {
 
         const HAS_ENV_PREFIX: bool = true;
 
-        fn env_values() -> Result<Option<Self>, ConfigError> {
-            Self::env_values_with_prefix(None)
+        fn env_values(&self) -> Result<Option<Self>, ConfigError> {
+            self.env_values_with_prefix(None)
         }
 
-        fn env_values_with_prefix(prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
+        fn env_values_with_prefix(
+            &self,
+            prefix: Option<&str>,
+        ) -> Result<Option<Self>, ConfigError> {
             let key = format!("{}LEVEL", prefix.unwrap_or("HAND_"));
 
             Ok(env::var(key).ok().map(|value| PartialEnvLevel {
@@ -3020,8 +3023,8 @@ mod named_variants {
         assert_eq!(load::<Parent>(&[]).unwrap().source, expected);
     }
 
-    // No layer holds the defaults of a variant a source picks, so they're
-    // applied when it's finalized, along with nested configs and transforms
+    // The defaults layer holds those of the variant a source picks, which
+    // nested configs and transforms are applied over
     #[test]
     fn applies_the_defaults_of_another_variant() {
         let config =
@@ -3399,9 +3402,8 @@ mod named_variant_env {
         items: Vec<Auth>,
     }
 
-    // No layer holds the environment variables of a variant a source picks,
-    // so a nested config within a named variant reads its own when the
-    // variant is finalized, as one within a tuple variant already did
+    // The environment layer holds the variables of the variant a source
+    // picks, including those of a nested config within it, as a struct's does
     #[test]
     fn reads_the_env_of_a_nested_config() {
         unsafe {
@@ -3707,8 +3709,9 @@ mod env_picked_variant {
     }
 
     // The tag's variable picks a variant, which the environment layer holds
-    // with nothing in it, so finalizing fills it in, from its defaults and
-    // its own variables. Every case shares the variables, so they're one test.
+    // with its own variables, and the defaults layer with its defaults, as
+    // both are read against it. Every case shares the variables, so they're
+    // one test.
     #[test]
     fn picks_the_variant_its_tag_names() {
         unsafe {
@@ -3796,5 +3799,361 @@ mod env_picked_variant {
                 .iter()
                 .any(|layer| matches!(layer.source, schematic::Source::EnvVars))
         );
+    }
+}
+
+// The defaults and environment layers are read against what the sources
+// picked, so a picked variant, an optional config, and a parent's prefix all
+// go through the layers, rather than being applied when finalizing.
+mod self_aware_layers {
+    use super::*;
+    use schematic::merge::append_vec;
+    use std::env;
+
+    fn load<T: ConfigTrait>(codes: &[&str]) -> Result<T, String> {
+        let mut loader = ConfigLoader::<T>::new();
+
+        for (index, code) in codes.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_ONCE_")]
+    #[serde(tag = "type")]
+    pub enum Picked {
+        #[setting(default)]
+        A,
+        B {
+            #[setting(default = vec!["d".to_owned()], merge = append_vec, parse_env = schematic::env::split_comma)]
+            list: Vec<String>,
+        },
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_ONCE_CHILD_")]
+    pub struct OnceChild {
+        #[setting(default = vec!["d".to_owned()], merge = append_vec, parse_env = schematic::env::split_comma)]
+        list: Vec<String>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Holds {
+        #[setting(default)]
+        Nothing,
+        #[setting(nested)]
+        Child(OnceChild),
+        #[setting(nested)]
+        Maybe(Option<OnceChild>),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct OnceParent {
+        #[setting(nested)]
+        picked: Picked,
+        #[setting(nested)]
+        maybe: Option<Picked>,
+        #[setting(nested)]
+        holds: Holds,
+        #[setting(nested)]
+        holds_maybe: Holds,
+        #[setting(nested)]
+        child: Option<OnceChild>,
+    }
+
+    // Each is in a layer, read once, with the merge applied once between each
+    // layer, for a variant a source picked, a config held by one, and an
+    // optional config. Every case shares the variables, so they're one test.
+    #[test]
+    fn applies_defaults_and_env_once() {
+        unsafe {
+            env::set_var("SAL_ONCE_LIST", "e");
+            env::set_var("SAL_ONCE_CHILD_LIST", "e");
+        };
+
+        let config = load::<OnceParent>(&[r#"{
+            "picked": { "type": "B", "list": ["f"] },
+            "maybe": { "type": "B", "list": ["f"] },
+            "holds": { "Child": { "list": ["f"] } },
+            "holds_maybe": { "Maybe": { "list": ["f"] } },
+            "child": { "list": ["f"] }
+        }"#]);
+
+        unsafe {
+            env::remove_var("SAL_ONCE_LIST");
+            env::remove_var("SAL_ONCE_CHILD_LIST");
+        };
+
+        let config = config.unwrap();
+        let list = vec!["d".to_owned(), "f".into(), "e".into()];
+
+        assert_eq!(config.picked, Picked::B { list: list.clone() });
+        assert_eq!(config.maybe, Some(Picked::B { list: list.clone() }));
+        assert_eq!(config.holds, Holds::Child(OnceChild { list: list.clone() }));
+        assert_eq!(
+            config.holds_maybe,
+            Holds::Maybe(Some(OnceChild { list: list.clone() }))
+        );
+        assert_eq!(config.child, Some(OnceChild { list }));
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[serde(tag = "type")]
+    pub enum Switched {
+        #[setting(default)]
+        A {
+            #[setting(default = 1)]
+            a: u8,
+        },
+        B {
+            #[setting(default = 2)]
+            b: u8,
+        },
+    }
+
+    // The defaults are of the variant the layers end on, and go under all of
+    // them together, so a source picking another first doesn't drop them
+    #[test]
+    fn applies_the_defaults_of_a_variant_a_later_source_picks() {
+        let config = load::<Switched>(&[r#"{ "type": "B", "b": 5 }"#, r#"{ "type": "A" }"#]);
+
+        assert_eq!(config.unwrap(), Switched::A { a: 1 });
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_OWN_")]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Store {
+        #[setting(default)]
+        Memory,
+        Disk {
+            path: Option<String>,
+            #[setting(default = 10)]
+            size: u32,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HasStore {
+        #[setting(nested, env_prefix = "SAL_PARENT_")]
+        store: Store,
+    }
+
+    // A parent's prefix reaches an enum's tag and its settings, alongside the
+    // enum's own, which is read first, as for a struct
+    #[test]
+    fn reads_a_parent_prefix_within_an_enum() {
+        unsafe {
+            env::set_var("SAL_PARENT_TYPE", "disk");
+            env::set_var("SAL_PARENT_PATH", "/parent");
+            env::set_var("SAL_PARENT_SIZE", "5");
+            env::set_var("SAL_OWN_SIZE", "7");
+        };
+
+        let config = load::<HasStore>(&[]);
+
+        unsafe {
+            env::remove_var("SAL_PARENT_TYPE");
+            env::remove_var("SAL_PARENT_PATH");
+            env::remove_var("SAL_PARENT_SIZE");
+            env::remove_var("SAL_OWN_SIZE");
+        };
+
+        assert_eq!(
+            config.unwrap().store,
+            Store::Disk {
+                path: Some("/parent".into()),
+                size: 7,
+            }
+        );
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_OPT_")]
+    pub enum Cache {
+        #[setting(default)]
+        Local {
+            dir: Option<String>,
+            #[setting(default = 1)]
+            level: u8,
+        },
+        Off,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HasCache {
+        #[setting(nested)]
+        cache: Option<Cache>,
+    }
+
+    // As with an optional struct, a variable can provide a missing enum, as
+    // its default variant, which then has its defaults
+    #[test]
+    fn provides_a_missing_optional_enum_from_its_default_variant() {
+        let without = load::<HasCache>(&[]);
+
+        unsafe { env::set_var("SAL_OPT_DIR", "/tmp") };
+
+        let with = load::<HasCache>(&[]);
+        let off = load::<HasCache>(&[r#"{ "cache": "Off" }"#]);
+
+        unsafe { env::remove_var("SAL_OPT_DIR") };
+
+        assert_eq!(without.unwrap().cache, None);
+        assert_eq!(
+            with.unwrap().cache,
+            Some(Cache::Local {
+                dir: Some("/tmp".into()),
+                level: 1,
+            })
+        );
+        assert_eq!(off.unwrap().cache, Some(Cache::Off));
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_MIX_")]
+    pub struct MixChild {
+        #[setting(default = 2)]
+        level: u8,
+        name: Option<String>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Mixed {
+        #[setting(default)]
+        Both(#[setting(nested)] MixChild, bool),
+        Neither,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HasMixed {
+        #[setting(nested)]
+        mixed: Mixed,
+    }
+
+    // A layer would have to restate the plain value beside the config, which
+    // would replace it, so the config reads its variables when finalized
+    #[test]
+    fn reads_the_env_of_a_config_beside_a_plain_value_when_finalized() {
+        unsafe { env::set_var("SAL_MIX_NAME", "env") };
+
+        let config = load::<HasMixed>(&[r#"{ "mixed": { "Both": [{ "name": "src" }, true] } }"#]);
+
+        unsafe { env::remove_var("SAL_MIX_NAME") };
+
+        assert_eq!(
+            config.unwrap().mixed,
+            Mixed::Both(
+                MixChild {
+                    level: 2,
+                    name: Some("env".into()),
+                },
+                true
+            )
+        );
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Item {
+        #[setting(default = 1)]
+        weight: u8,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "SAL_SAME_")]
+    #[serde(tag = "type", content = "value", rename_all = "snake_case")]
+    pub enum Group {
+        #[setting(default)]
+        Empty,
+        #[setting(nested)]
+        Many(Vec<Item>),
+    }
+
+    // A tag's variable naming the variant a source already picked leaves it
+    // as the source gave it, rather than replacing it with an empty one
+    #[test]
+    fn keeps_the_values_of_a_variant_its_tag_already_names() {
+        unsafe { env::set_var("SAL_SAME_TYPE", "many") };
+
+        let same = load::<Group>(&[r#"{ "type": "many", "value": [{}, { "weight": 3 }] }"#]);
+        let other = load::<Group>(&[r#"{ "type": "empty" }"#]);
+
+        unsafe { env::remove_var("SAL_SAME_TYPE") };
+
+        assert_eq!(
+            same.unwrap(),
+            Group::Many(vec![Item { weight: 1 }, Item { weight: 3 }])
+        );
+        assert_eq!(other.unwrap(), Group::Many(vec![]));
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Linked {
+        #[setting(default = 1)]
+        weight: u8,
+        #[setting(nested)]
+        next: Option<Box<Self>>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Tree {
+        #[setting(default)]
+        Leaf {
+            #[setting(default = 1)]
+            weight: u8,
+        },
+        #[setting(nested)]
+        Node(Box<Self>),
+        #[setting(nested)]
+        Maybe(Option<Box<Self>>),
+    }
+
+    // The defaults follow a recursive config as deep as the sources go
+    #[test]
+    fn applies_defaults_at_every_depth_of_a_recursive_config() {
+        let linked = load::<Linked>(&[r#"{ "next": { "next": {} } }"#]).unwrap();
+
+        assert_eq!(linked.weight, 1);
+        assert_eq!(linked.next.as_ref().unwrap().weight, 1);
+        assert_eq!(linked.next.unwrap().next.unwrap().weight, 1);
+
+        let tree = load::<Tree>(&[r#"{ "Node": { "Maybe": { "Leaf": {} } } }"#]).unwrap();
+
+        assert_eq!(
+            tree,
+            Tree::Node(Box::new(Tree::Maybe(Some(Box::new(Tree::Leaf {
+                weight: 1
+            })))))
+        );
+        assert_eq!(Tree::default(), Tree::Leaf { weight: 1 });
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Mode {
+        #[setting(default = "auto")]
+        Named(String),
+        Off,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HasMode {
+        #[setting(nested)]
+        mode: Mode,
+    }
+
+    // The layers are merged from the first, so the enum's type default never
+    // goes over the value its defaults hold
+    #[test]
+    fn applies_a_default_variant_value_when_nested() {
+        assert_eq!(
+            load::<HasMode>(&[]).unwrap().mode,
+            Mode::Named("auto".into())
+        );
+        assert_eq!(HasMode::default().mode, Mode::Named("auto".into()));
     }
 }

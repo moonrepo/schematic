@@ -224,6 +224,29 @@ mod setting_default {
             assert_snapshot!(pretty(container.impl_partial_default_values()));
         }
 
+        // An optional config only has defaults when it's present, and a plain
+        // setting beside it always does, so no check for none is needed
+        #[test]
+        fn supports_optional_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: Option<NestedConfig>,
+                    #[setting(nested, context = schematic::context::unit)]
+                    b: Option<NestedConfig>,
+                    #[setting(nested)]
+                    c: Option<Box<Self>>,
+                    #[setting(nested, required)]
+                    d: Option<NestedConfig>,
+                    #[setting(default = 1)]
+                    e: usize,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+        }
+
         #[test]
         fn renders_nothing_if_all_option_wrapped() {
             let container = Container::from(parse_quote! {
@@ -335,8 +358,9 @@ mod setting_default {
             .impl_partial_default_values();
         }
 
-        // The default variant holds the type default of each setting, as
-        // finalizing the variant applies their defaults
+        // The variant the partial holds has the defaults of its settings, a
+        // nested config's read through it, while one without any has no arm,
+        // unless it's the default variant
         #[test]
         fn supports() {
             let container = Container::from(parse_quote! {
@@ -368,9 +392,9 @@ mod setting_default {
             assert!(variants[1].is_default());
         }
 
-        // While the full type's `Default` holds their defaults
+        // A handler is called with the context
         #[test]
-        fn supports_default_partial() {
+        fn supports_handlers() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
@@ -392,11 +416,12 @@ mod setting_default {
                 }
             });
 
-            assert_snapshot!(pretty(container.impl_full_default_partial()));
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
         }
 
+        // The default variant is held as it is, as an enum's defaults pick it
         #[test]
-        fn skips_default_partial_without_defaults() {
+        fn holds_the_default_variant_without_defaults() {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
@@ -409,7 +434,7 @@ mod setting_default {
                 }
             });
 
-            assert!(container.impl_full_default_partial().is_empty());
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
         }
 
         #[test]
@@ -652,6 +677,31 @@ mod setting_default {
                     Foo(usize, bool),
                 }
             });
+        }
+
+        // A config is read through the value the partial holds, by its shape,
+        // and a variant other than the default only has defaults when its
+        // config does, as there's nothing else to default
+        #[test]
+        fn supports_nested_shapes() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default, nested)]
+                    Bare(NestedConfig),
+                    #[setting(nested)]
+                    Optional(Option<NestedConfig>),
+                    #[setting(nested)]
+                    Boxed(Box<Self>),
+                    #[setting(nested)]
+                    MaybeBoxed(Option<Box<Self>>),
+                    #[setting(nested)]
+                    Items(Vec<NestedConfig>),
+                    Both(#[setting(nested)] NestedConfig, bool),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
         }
 
         #[test]

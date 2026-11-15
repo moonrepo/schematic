@@ -475,41 +475,116 @@ impl Value {
         }
     }
 
+    /// The shape of a nested config held by a tuple variant, as whether it's
+    /// optional, and whether it's boxed, as a recursive one is. Nothing for a
+    /// value that isn't a nested config, or is a collection, whose items have
+    /// their defaults applied when they're finalized.
+    fn get_variant_nested_shape(&self) -> Option<(bool, bool)> {
+        if !self.nested || self.is_collection() {
+            return None;
+        }
+
+        let layers = self.get_partial_layers();
+        let is = |index: usize, layer: Layer| layers.get(index).is_some_and(|l| **l == layer);
+
+        match layers.len() {
+            0 => Some((false, false)),
+            1 if is(0, Layer::Box) => Some((false, true)),
+            1 if is(0, Layer::Option) => Some((true, false)),
+            2 if is(0, Layer::Option) && is(1, Layer::Box) => Some((true, true)),
+            _ => None,
+        }
+    }
+
+    /// Generate the defaults of a nested config held by a tuple variant, as an
+    /// `Option` of its partial, from `binding`, a reference to the value within
+    /// the partial the defaults go under. A variant's value has no partial
+    /// `Option` of its own, so a bare config always holds one, while an
+    /// optional one only has defaults when it's present.
+    pub fn impl_partial_default_values_nested(&self, binding: &Ident) -> Option<TokenStream> {
+        let (optional, boxed) = self.get_variant_nested_shape()?;
+        let partial = self.get_nested_partial_type()?;
+        let context = self.get_nested_context();
+
+        Some(if optional {
+            let view = if boxed {
+                quote! { #binding.as_deref() }
+            } else {
+                quote! { #binding.as_ref() }
+            };
+
+            quote! {
+                match #view {
+                    Some(inner) => <#partial as schematic::PartialConfig>::default_values(inner, #context)?,
+                    None => None,
+                }
+            }
+        } else {
+            quote! { <#partial as schematic::PartialConfig>::default_values(#binding, #context)? }
+        })
+    }
+
+    /// Generate the value a tuple variant holds from `defaults`, the `Option`
+    /// of [`Self::impl_partial_default_values_nested`]. A bare config falls back to
+    /// its default, as the variant always holds one.
+    pub fn impl_variant_value_from_defaults(&self, defaults: &TokenStream) -> TokenStream {
+        match self.get_variant_nested_shape() {
+            Some((false, false)) => quote! { #defaults.unwrap_or_default() },
+            Some((false, true)) => quote! { Box::new(#defaults.unwrap_or_default()) },
+            Some((true, true)) => quote! { #defaults.map(Box::new) },
+            _ => quote! { #defaults },
+        }
+    }
+
+    /// Wrap a partial of the nested config as a tuple variant holds it, like
+    /// `Some(Box::new(inner))`.
+    pub fn wrap_variant_partial(&self, inner: TokenStream) -> TokenStream {
+        let Some((optional, boxed)) = self.get_variant_nested_shape() else {
+            return inner;
+        };
+
+        let inner = if boxed {
+            quote! { Box::new(#inner) }
+        } else {
+            inner
+        };
+
+        if optional {
+            quote! { Some(#inner) }
+        } else {
+            inner
+        }
+    }
+
     /// Generate the finalization of a nested config, within the partial.
     ///
-    /// The config's own default values and environment variables are merged
-    /// around it when it's an item of a collection, or `boundary` is true, as no
-    /// layer above it holds them. Otherwise they're part of its parent's, which
-    /// the loader merged as layers, so it's only finalized. An optional config
-    /// is left `None` by its parent's defaults, so its default values are
-    /// merged under it first.
+    /// The config's own default values and environment variables are applied
+    /// to it when it's an item of a collection, as no layer above it holds
+    /// them. Otherwise they're part of its parent's, which the loader merged as
+    /// layers, so it's only finalized, unless `env_boundary` is true, for a
+    /// value of a tuple variant whose environment variables the enum's layer
+    /// can't hold, which merges them over it first.
     pub fn impl_partial_finalize_nested(
         &self,
         layer_var: &Ident,
         skip_outer_option: bool,
-        boundary: bool,
+        env_boundary: bool,
     ) -> ImplResult {
         let skips_option = skip_outer_option && self.is_outer_option_wrapped();
 
         // The innermost value, and the `Result` it unwraps, when a collection
         // can map over that directly rather than `Ok(...?)`
         let context = self.get_nested_context();
-        let (value, result) = if boundary || self.is_collection() {
+        let (value, result) = if self.is_collection() {
             (
                 quote! { schematic::internal::finalize_with_layers(#layer_var, #context)? },
                 Some(quote! { schematic::internal::finalize_with_layers(#layer_var, #context) }),
             )
-        } else if skips_option && let Some(partial) = self.get_nested_partial_type() {
-            let value = quote! {
-                {
-                    let mut base = <#partial as schematic::PartialConfig>::default_values(#context)?
-                        .unwrap_or_default();
-                    base.merge(#context, #layer_var)?;
-                    base.finalize(#context)?
-                }
-            };
-
-            (value, None)
+        } else if env_boundary {
+            (
+                quote! { schematic::internal::finalize_with_env(#layer_var, #context)? },
+                None,
+            )
         } else {
             (quote! { #layer_var.finalize(#context)? }, None)
         };
