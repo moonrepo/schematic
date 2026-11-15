@@ -193,6 +193,56 @@ impl Container {
         }
     }
 
+    /// The key of the variable that picks a variant of a tagged enum, derived
+    /// from its tag like a struct's from a setting's name, and so only with an
+    /// `env_prefix`, which is applied at runtime: `tag = "type"` reads `TYPE`.
+    /// An externally tagged or untagged enum has no tag to derive it from.
+    pub fn get_env_tag_key(&self) -> Option<String> {
+        self.args.env_prefix.as_ref()?;
+
+        if !matches!(self.inner, ContainerInner::Enum { .. }) {
+            return None;
+        }
+
+        match self.get_tag_format() {
+            SerdeTagFormat::Internal(tag) | SerdeTagFormat::Adjacent(tag, _) => {
+                Some(tag.to_uppercase())
+            }
+            _ => None,
+        }
+    }
+
+    /// The variable that picks `variant`, as reported on its tag in the schema,
+    /// with the enum's own prefix, like a setting's. Nothing for a variant it
+    /// can't pick.
+    #[cfg(feature = "env")]
+    pub fn get_env_tag_var_name(&self, variant: &Variant) -> Option<String> {
+        let key = self.get_env_tag_key()?;
+        let prefix = self.args.env_prefix.as_ref()?;
+
+        variant
+            .is_env_selectable()
+            .then(|| format!("{prefix}{key}"))
+    }
+
+    #[cfg(not(feature = "env"))]
+    pub fn get_env_tag_var_name(&self, _variant: &Variant) -> Option<String> {
+        None
+    }
+
+    /// The variants a variable can pick, by the key from [`get_env_tag_key`].
+    pub fn get_env_selectable_variants(&self) -> Vec<&Variant> {
+        if self.get_env_tag_key().is_none() {
+            return vec![];
+        }
+
+        self.inner
+            .get_variants()
+            .into_iter()
+            .filter(|variant| variant.is_env_selectable())
+            .collect()
+    }
+
     /// Whether the partial enum is untagged, and requires
     /// each variant to be attempted in order when deserializing.
     pub fn is_untagged(&self) -> bool {
@@ -403,16 +453,25 @@ impl Container {
     }
 
     fn validate_enum_attributes(&self, derive: &str) {
-        if self.args.env_prefix.is_some() {
+        // A named variant has fields of its own, which a `ConfigEnum` can't hold
+        let has_fields = derive == "Config" && self.inner.has_named_variants();
+
+        // A `ConfigEnum` is written as a string, so it's never tagged
+        let picks_variants = derive == "Config" && !self.get_env_selectable_variants().is_empty();
+
+        if self.args.env_prefix.is_some() && !has_fields && !picks_variants {
             panic!(
-                "Cannot use `env_prefix` on a `{derive}` enum, as an enum reads no environment variables."
+                "Cannot use `env_prefix` on a `{derive}` enum without named variants or a tag, as it only derives keys for the fields of a named variant, and for a tag that picks a unit, named, or nested variant. Use `env` on the setting that holds the enum instead."
             );
         }
 
-        // A named variant has fields of its own, which a `ConfigEnum` can't hold
-        if self.args.allow_unknown_fields
-            && !(derive == "Config" && self.inner.has_named_variants())
-        {
+        // As a struct's, checked where it's read
+        #[cfg(feature = "env")]
+        if self.args.env_prefix.as_deref() == Some("") {
+            panic!("Attribute `env_prefix` cannot be empty.");
+        }
+
+        if self.args.allow_unknown_fields && !has_fields {
             panic!(
                 "Cannot use `allow_unknown_fields` on a `{derive}` enum without named variants, as only a struct or a named variant has fields. Use it on a config that a variant holds instead."
             );
@@ -426,8 +485,9 @@ impl Container {
     /// as a constant can't name its parameters.
     ///
     /// Also assert that a parent's `#[setting(nested, env_prefix)]` applies to
-    /// something. It only prefixes the keys a nested config derives from its
-    /// settings' names, which it only does with an `env_prefix` of its own.
+    /// something. It only prefixes the keys a nested struct derives from its
+    /// settings' names, which it only does with an `env_prefix` of its own,
+    /// and never those of an enum, whose variants read theirs when finalized.
     pub fn impl_partial_checks(&self) -> TokenStream {
         if self.generics.params.iter().next().is_some() {
             return quote! {};
@@ -458,18 +518,33 @@ impl Container {
             })
             .collect::<Vec<_>>();
 
+        // A named variant's settings are labeled by the variant that holds them
         #[cfg(feature = "env")]
         let env_checks = self
             .inner
             .get_fields()
             .into_iter()
-            .filter(|field| field.args.env_prefix.is_some())
-            .filter_map(|field| {
+            .map(|field| (container.clone(), field))
+            .chain(self.inner.get_variants().into_iter().flat_map(|variant| {
+                let owner = format!("{container}::{}", variant.get_name_original());
+
+                variant
+                    .settings
+                    .iter()
+                    .map(move |field| (owner.clone(), field))
+            }))
+            .filter(|(_, field)| field.args.env_prefix.is_some())
+            .filter_map(|(owner, field)| {
                 let nested = field.value.get_nested_type()?;
                 let nested_name = to_type_string(nested.clone());
+                // A tuple struct's setting has no name, only a position
+                let name = match &field.ident {
+                    Some(_) => field.get_name_original(),
+                    None => field.index.to_string(),
+                };
+                let label = format!("{owner}.{name}");
                 let message = format!(
-                    "`{container}.{}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `{nested_name}`, or remove it here.",
-                    field.get_name_original(),
+                    "`{label}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a struct derives with an `env_prefix` of its own, and never to an enum's. Add `#[config(env_prefix)]` to `{nested_name}` if it's a struct, or remove it here.",
                 );
 
                 Some(quote! {
@@ -1318,7 +1393,13 @@ impl Container {
                     }
 
                     let name = variant.get_name();
-                    let ty = variant.impl_schema_type(&tag_format, partial, allows_unknown_fields);
+                    let tag_env_var = self.get_env_tag_var_name(variant);
+                    let ty = variant.impl_schema_type(
+                        &tag_format,
+                        partial,
+                        allows_unknown_fields,
+                        tag_env_var.as_deref(),
+                    );
 
                     named_types.push(quote! { (#name.into(), #ty) });
                     types.push(ty);
@@ -1543,8 +1624,12 @@ impl Container {
                 }
             }
 
-            // Enums don't support env vars
-            _ => return quote! {},
+            // The layer can't know which variant a source will pick, so a
+            // named variant reads its settings' variables when it's finalized.
+            // A tag's variable picks one, though, which the layer holds with
+            // nothing in it, for finalizing to fill in, so each variable is
+            // still read once.
+            ContainerInner::Enum { .. } => return self.impl_partial_env_values_tag(),
         };
 
         let internal = ImplResult::impl_use_internal(true);
@@ -1582,6 +1667,58 @@ impl Container {
                 } else {
                     Some(partial)
                 })
+            }
+        }
+    }
+
+    /// Generate the environment values of a tagged enum, which hold the variant
+    /// its tag's variable names, matched as serde matches the tag: by its name
+    /// or an alias, exactly. A parent's prefix never reaches an enum, as its
+    /// settings are read when finalized, so only `env_values` is implemented.
+    #[cfg(feature = "env")]
+    fn impl_partial_env_values_tag(&self) -> TokenStream {
+        let (Some(key), Some(prefix)) = (self.get_env_tag_key(), &self.args.env_prefix) else {
+            return quote! {};
+        };
+        let variants = self.get_env_selectable_variants();
+
+        if variants.is_empty() {
+            return quote! {};
+        }
+
+        let mut expected = vec![];
+
+        let arms = variants
+            .iter()
+            .map(|variant| {
+                let name = variant.get_name();
+                let names = std::iter::once(&name).chain(variant.get_aliases());
+                let value = variant.impl_partial_default_value().value;
+
+                // The message is a format string, which a renamed variant may break
+                expected.push(format!("`{}`", name.replace('{', "{{").replace('}', "}}")));
+
+                quote! { #(#names)|* => Self::#value, }
+            })
+            .collect::<Vec<_>>();
+
+        let message = format!(
+            "Unknown variant `{{value}}`, expected one of {}.",
+            expected.join(", ")
+        );
+
+        quote! {
+            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                use schematic::internal::*;
+
+                let mut env = EnvManager::new(None::<&str>, Some(#prefix));
+
+                Ok(env.get_and_parse_prefixed(#key, |value| {
+                    Ok(Some(match value.as_str() {
+                        #(#arms)*
+                        _ => return Err(schematic::HandlerError::new(format!(#message))),
+                    }))
+                })?)
             }
         }
     }

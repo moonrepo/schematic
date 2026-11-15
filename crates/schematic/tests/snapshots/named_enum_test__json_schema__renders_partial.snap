@@ -196,6 +196,16 @@ expression: "generate(true, JsonSchemaRenderer::default())"
                 }
               ]
             },
+            "token": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "type": {
               "const": "url"
             }

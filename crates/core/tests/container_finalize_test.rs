@@ -213,6 +213,33 @@ mod container_finalize {
             assert_snapshot!(pretty(container.impl_partial_finalize()));
         }
 
+        // No layer holds the environment variables of a variant a source
+        // picks either, so a nested config's are merged over it, after its
+        // sources. A collection reads none, as a struct's doesn't.
+        #[test]
+        fn reads_nested_env() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        #[setting(nested)]
+                        b: Option<NestedConfig>,
+                        #[setting(nested, context = schematic::context::unit)]
+                        c: NestedConfig,
+                        #[setting(nested)]
+                        d: Vec<NestedConfig>,
+                        e: String,
+                    },
+                    B {
+                        f: String,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
         // A variant whose settings have no default and nothing to finalize
         // is left as it is
         #[test]

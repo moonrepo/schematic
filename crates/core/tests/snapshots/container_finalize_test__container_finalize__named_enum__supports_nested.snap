@@ -19,10 +19,31 @@ fn finalize(
                 let mut pd = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
                     context,
                 )?;
+                let mut env = EnvManager::new(None::<&str>, None);
+                let ea = env
+                    .nested(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                    )?;
+                let eb = env
+                    .nested(
+                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                    )?;
+                let ec = env
+                    .nested(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                    )?;
+                let ed = env
+                    .nested(
+                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                    )?;
                 MergeManager::new(context)
                     .nested(&mut pa, na)?
                     .nested(&mut pb, nb)?
-                    .nested(&mut pd, nd)?;
+                    .nested(&mut pd, nd)?
+                    .nested(&mut pa, ea)?
+                    .nested(&mut pb, eb)?
+                    .nested(&mut pc, ec)?
+                    .nested(&mut pd, ed)?;
                 if let Some(layer) = pa {
                     pa = Some(layer.finalize(context)?);
                 }

@@ -13,6 +13,7 @@ pub struct Retry {
 
 /// Where to load from.
 #[derive(Clone, Config)]
+#[config(env_prefix = "SOURCE_")]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Source {
     /// A file on disk.
@@ -26,6 +27,8 @@ pub enum Source {
     Url {
         #[setting(required)]
         address: Option<String>,
+        #[setting(env = "SOURCE_URL_TOKEN")]
+        token: Option<String>,
         #[setting(nested)]
         retry: Retry,
     },

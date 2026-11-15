@@ -150,6 +150,16 @@ expression: "generate(false, JsonSchemaRenderer::default())"
             "retry": {
               "$ref": "#/definitions/Retry"
             },
+            "token": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "type": {
               "const": "url"
             }

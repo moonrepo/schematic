@@ -2,9 +2,6 @@
 
 > Requires the `env` Cargo feature, which is enabled by default.
 
-> Not supported for enums, so `env_prefix` on an enum, or `env` on a field of a named variant,
-> fails to compile.
-
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.
 
@@ -78,6 +75,66 @@ struct AppConfig {
 > [config template](../../schema/generator/template.md) and in
 > [`Config::settings()`](https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings)
 > with the child's own prefix, which always works.
+
+## Enums
+
+The fields of a [named variant](./index.md#enum-variants) read environment variables like a
+struct's, with `env`, `parse_env`, and an `env_prefix` on the enum, which derives a key for each
+field.
+
+```rust
+#[derive(Config)]
+#[config(env_prefix = "AUTH_")]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Auth {
+	#[setting(default)]
+	None,
+	Token {
+		// AUTH_TOKEN
+		token: String,
+	},
+	Basic {
+		// AUTH_USER
+		user: String,
+		#[setting(env = "AUTH_PASSWORD")]
+		password: String,
+	},
+}
+```
+
+The variables are read once a variant has been picked, by a source, the default, or the
+[tag's variable](#picking-a-variant), and they're merged over its fields as the last layer, as for a
+struct. So with `type = "basic"` in a file, and nothing picking another variant, `AUTH_TOKEN` does
+nothing. Variants may share a derived key, like a `path` in each, as only one is ever picked.
+
+A nested config that a variant holds reads its own variables, whether the variant is named or holds
+it as a value.
+
+> The variables of a variant's fields aren't a layer of their own, so `ConfigLoadResult.layers`
+> doesn't include them, as with the items of a nested collection.
+
+A parent's `#[setting(nested, env_prefix)]` doesn't reach an enum, since its variables are only read
+once a variant has been picked, without the parent. Setting one on an enum fails to compile.
+
+### Picking a variant
+
+A tagged enum, with serde's `tag` (and optionally `content`), also derives a key from its tag, which
+picks the variant. Above, `AUTH_TYPE=token` picks `Token`, and `AUTH_TOKEN` then fills it in. It's
+part of the environment layer, so it replaces a variant a source picked, while a source that picked
+the same one keeps its fields.
+
+- The value is matched against each variant's name, after `rename_all`, and its aliases, exactly as
+  serde matches the tag. Any other value fails to load, listing the names it accepts.
+- A unit variant, a named variant, or one that holds only nested configs can be picked, as its
+  fields are filled in from their defaults and variables. One that holds a plain value, like
+  `Path(String)`, has nothing to fill it in, so it can't be.
+- An externally tagged or untagged enum has no tag, so a variable can only fill in its variants.
+- Each item of a nested collection reads the variable for itself, so `AUTH_TYPE` picks the variant
+  of every item in a `Vec<Auth>`.
+
+The key is reported on the tag in the [schema](../../schema/index.md), so TypeScript renders it as
+`@env AUTH_TYPE`. An `env_prefix` is accepted on a tagged enum without named variants too, as long
+as it has a variant to pick.
 
 ## Parsing values
 
