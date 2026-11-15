@@ -310,7 +310,7 @@ fn own_prefix_takes_precedence_when_reading_with_parent_prefix() {
         env::set_var("OVERRIDE_STRING", "parent");
     };
 
-    let partial = PartialEnvVarsPrefixed::env_values_with_prefix(Some("OVERRIDE_"));
+    let partial = PartialEnvVarsPrefixed::default().env_values_with_prefix(Some("OVERRIDE_"));
 
     unsafe { env::remove_var("OVERRIDE_STRING") };
 

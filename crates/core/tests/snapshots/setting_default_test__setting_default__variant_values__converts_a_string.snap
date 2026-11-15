@@ -3,8 +3,16 @@ source: crates/core/tests/setting_default_test.rs
 expression: pretty(container.impl_partial_default_values())
 ---
 fn default_values(
+    &self,
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    Ok(Some(Self::Foo((&&DefaultString::<String>::new()).parse_default("abc")?)))
+    Ok(
+        match self {
+            Self::Foo(_) => {
+                Some(Self::Foo((&&DefaultString::<String>::new()).parse_default("abc")?))
+            }
+            _ => None,
+        },
+    )
 }

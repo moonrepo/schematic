@@ -1,37 +1,25 @@
 ---
 source: crates/core/tests/setting_env_test.rs
-expression: pretty(container.impl_partial_finalize())
+expression: pretty(container.impl_partial_env_values())
 ---
-fn finalize(
-    self,
-    context: &Self::Context,
-) -> std::result::Result<Self, schematic::ConfigError> {
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    Ok(
-        match self {
-            Self::A { a: na, b: mut pb, c: nc, d: nd } => {
-                let mut pa = Some(Default::default());
-                let mut pc = Some(Default::default());
-                let mut pd = Some(Default::default());
-                let mut env = EnvManager::new(None::<&str>, None);
-                let ea = env.get("A")?;
-                let eb = env.get("B")?;
-                let ec = env.get("C")?;
-                MergeManager::new(context)
-                    .apply(&mut pa, na)?
-                    .apply(&mut pc, nc)?
-                    .apply(&mut pd, nd)?
-                    .apply(&mut pa, ea)?
-                    .apply(&mut pb, eb)?
-                    .apply(&mut pc, ec)?;
-                Self::A {
-                    a: pa,
-                    b: pb,
-                    c: pc,
-                    d: pd,
-                }
+    let mut env = EnvManager::new(prefix, None);
+    let value = match self {
+        Self::A { .. } => {
+            Self::A {
+                a: env.get("A")?,
+                b: env.get("B")?,
+                c: env.get("C")?,
+                d: None,
             }
-            _ => self,
-        },
-    )
+        }
+    };
+    Ok(if env.is_empty() { None } else { Some(value) })
 }

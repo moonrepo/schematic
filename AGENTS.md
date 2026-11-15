@@ -126,44 +126,61 @@ impl Schematic for Example { /* schema_name, build_schema */ }
 impl Schematic for PartialExample { /* delegates + partialize_schema */ }
 ```
 
-Runtime flow: each source is parsed into a partial layer. The loader adds `default_values` below
-them as a `Source::Defaults` layer and `env_values` above them as a `Source::EnvVars` layer, merges
-every layer in order with `merge`, and calls `finalize`, which only runs per-setting transforms and
-nested finalization. Finally `validate` runs before `from_partial` produces the full type.
-Precedence, lowest to highest: defaults → sources → env. A partial added with
-`ConfigLoader::partial` (`Source::Memory`) is a source like a file, so it sits below env too.
-`ConfigLoadResult.layers` reports exactly the layers merged, so each default handler and env read
-runs once per load.
+Runtime flow: each source is parsed into a partial layer, and the sources are merged in order,
+from the first (`None` without any). `internal::apply_layers` then reads `env_values` against that
+merge and merges it over, and reads `default_values` against the result and merges *that* under,
+then `finalize` runs per-setting transforms and nested finalization. Finally `validate` runs before
+`from_partial` produces the full type. Precedence, lowest to highest: defaults → sources → env. A
+partial added with `ConfigLoader::partial` (`Source::Memory`) is a source like a file, so it sits
+below env too. `ConfigLoadResult.layers` reports the defaults as a `Source::Defaults` layer and the
+env as a `Source::EnvVars` layer, each only when it sets something, so each default handler and env
+read runs once per load.
 
-**Defaults and env are applied once, as the outermost config's layers.** A struct's
-`default_values` and `env_values` already contain those of its bare and optional nested configs, so
-`finalize` runs transforms and finalizes each nested config *without* applying its own defaults or
-env. Before this, every level re-applied them, and a merge like `append_vec` repeated them. Per
-kind of nested setting:
+**The layers are read against `self`.** `default_values(&self, ctx)` and `env_values(&self)` take
+the partial they go under or over, which is what lets the layers depend on what the sources picked:
 
-- **Bare** (`child: Child`): `child.finalize(..)`.
-- **Optional** (`Option<Child>`): a parent's defaults leave it `None`, so its `default_values` are
-  merged under it, then `finalize`. Its env already came through the parent's env layer.
-- **Collection items** and **enum variant values** are boundaries: no layer holds their defaults or
-  env (collections aren't in `default_values`, and an enum's env layer holds at most an empty
-  variant), so they go through the hidden `internal::finalize_with_layers`, which merges their defaults under them
-  and their env over them, as the loader does, then finalizes. This is also what lets each item
-  read the environment.
-- `finalize` used to merge defaults and env itself, with a hidden `finalize_nested` for the rest.
-  The loader drives the layers now, so `partial.finalize(ctx)` on its own applies neither.
+- Env is read **before** defaults, as a tag's variable can pick the variant whose defaults apply.
+- Defaults go under everything else merged together — `D ⊕ (S1 ⊕ … ⊕ E)`, not `((D ⊕ S1) ⊕ …) ⊕ E`.
+  An enum's merge replaces another variant, so a left fold drops the defaults of a variant that a
+  later source or the tag picks, as an earlier source picking another replaces them. Every merge
+  but an enum's is associative, so for a struct the two are the same.
+- A missing partial is **viewed** as its `Default`, but never merged, as merging an enum's
+  `Default` (its default variant, holding type defaults) over its defaults would replace the
+  `default = value` they hold. That's why the sources are folded from the first.
 
-Because a variant's value gets its own defaults, an enum's `default_values` holds its default variant
-with the *type* default of a nested config, not its defaults, or they'd be applied twice. A named
-variant is the same kind of boundary: `default_values` holds it with every field empty, and its
-`finalize` arm merges the fields' defaults under it and their env over it, each with its own
-`merge`, then runs transforms and nested finalization as a struct's would. The env is read with the
-same per-field codegen as a struct's `env_values` (`Variant::get_named_env_values`), so a field's
-`env`, `parse_env`, and a key derived from the enum's `env_prefix` work as on a struct, and a nested
-config within it reads its own, as one within a tuple variant does through `finalize_with_layers`.
-No layer holds it, so `ConfigLoadResult.layers` doesn't report it, as for collection items. `Default`
-still gets them: derived configs override `Config::default_partial` to call
-`<T as Config>::default_partial()` for each bare nested config, which recurses into the default
-variant of an enum.
+**Defaults and env are applied once, as the outermost config's layers.** A config's
+`default_values` and `env_values` contain those of its nested configs, so `finalize` runs
+transforms and finalizes each nested config *without* applying its own defaults or env. Per kind of
+nested setting, through `self`:
+
+- **Bare** (`child: Child`): `internal::nested_default_values(self.child.as_ref(), ctx)` and
+  `nested_env_values(..)`, which view a missing config as its `Default`, as the full type always
+  holds one.
+- **Optional** (`Option<Child>`): defaults only when `self` holds one, so a parent's defaults leave
+  a missing one `None`. Env is read as for a bare one, so a variable can provide it. A recursive one
+  (`Option<Box<Self>>`) reads no env, or a missing one would recurse forever.
+- **Enums** return the layers of the variant `self` holds: a named variant's fields' defaults and
+  env, a tuple variant's nested values', and the default variant's `default = value`. A variant
+  with nothing to default has no arm (`None`), except the default variant, which is held as it is.
+  The tag's variable (`impl_partial_env_values_tag`) picks a variant unless `self` already holds it
+  (`std::mem::discriminant`), so a source's values within it stand, and the fields are then read
+  from whichever variant that leaves.
+- **Collection items** are the one boundary: no layer holds their defaults or env, as a collection
+  replaces on merge, so each item goes through the hidden `internal::finalize_with_layers`, which
+  runs `apply_layers` on the item, as the loader does on a config, then finalizes. They aren't
+  reported in `layers`.
+- **A tuple variant holding several values**, or a recursive or collected config, reads its nested
+  values' env in `finalize`, through the hidden `internal::finalize_with_env`
+  (`Variant::has_layered_env`). An env layer would have to restate every value it didn't read,
+  which would replace a source's plain value or a nested enum's variant, as neither has an empty
+  form to merge. Its defaults are still in the layer, as they go *under* the source.
+- `partial.finalize(ctx)` on its own applies no defaults or env, save the case above.
+
+A struct or variant whose every default may be `None` (nested configs, handlers) returns `None`
+when they all are (`impl_partial_defaults_if_any`), so `layers` never reports defaults that set
+nothing. `Config::default_partial` is the provided method only —
+`Partial::default().default_values(&ctx)` — as `&self` already recurses into bare nested configs,
+the default variant's values, and named variant fields.
 
 Key invariants:
 
@@ -287,12 +304,15 @@ shadows a generated local.
   as a derive's own `partial(...)` attribute wouldn't exist there.
 - **Schema**: a struct of the fields, marked partial like a nested value for a `Config`, so the partial
   schema makes its fields optional; never marked for a `Schematic`-only derive.
-- **Env**: the finalize arm reads the fields' env over the variant (see the runtime flow above),
-  never `env_values`, which can't know the variant a source will pick. A tagged enum's `env_values`
-  only picks one, from the key its tag derives (`impl_partial_env_values_tag`), holding it with
-  every field empty, as `default_values` does, so the arm still reads each field's env once. An enum
-  accepts `env_prefix` with a named variant, or with a tag that can pick a variant
-  (`Variant::is_env_selectable`).
+- **Defaults and env**: `default_values` and `env_values` each have an arm per variant, reading the
+  fields with the struct codegen through the arm's bindings, so a nested field is viewed through
+  `pa` (see the runtime flow above). Only the fields whose layers read their value are bound
+  (`Field::defaults_read_value`, `Field::env_reads_value`), as the rest would be unused. A tagged
+  enum's `env_values` also picks a variant, from the key its tag derives
+  (`impl_partial_env_values_tag`), whose fields are then read. An enum accepts `env_prefix` with a
+  named variant, or with a tag that can pick a variant (`Variant::is_env_selectable`), and then sets
+  `HAS_ENV_PREFIX`, so a parent's prefix reaches its fields and its tag.
+- **Finalize**: only transforms and nested finalization, as a struct's.
 - Variant-level `nested`, `context`, `merge`, `required`, `transform`, `validate`, and a `default`
   value panic, as the fields hold them; `extend` panics on a field, as only a struct extends.
 
@@ -393,10 +413,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   and `SchemaField.env_var` report the derived key with the container's *own* prefix
   (`Field::get_env_var_name`), because the parent's is only known at runtime and the own key always
   works. A setting that never reads the environment, like a collection without `parse_env`, reports
-  nothing. A parent's prefix never reaches an enum, as a named variant reads its env in `finalize`,
-  which takes no prefix (a hidden `finalize_with_prefix` was rejected), so the enum leaves
-  `HAS_ENV_PREFIX` unset and the parent's `#[setting(nested, env_prefix)]` fails to compile, as on a
-  collection. A tagged enum's `env_prefix` also derives a key from its tag
+  nothing. A parent's prefix reaches an enum with an `env_prefix` of its own, its named variants'
+  fields and its tag alike, as an enum's env is a layer like a struct's, so it sets
+  `HAS_ENV_PREFIX`. It never reaches a collection, whose items aren't in the layer. An `Option<Enum>`
+  that no source provided reads its default variant's env, and a variable makes it `Some`, as for an
+  `Option<Struct>`. A tagged enum's `env_prefix` also derives a key from its tag
   (`Container::get_env_tag_key`, `tag = "type"` → `TYPE`), which picks a variant by its serde name
   or an alias, exactly, and is reported as the tag's `SchemaField.env_var`. By decision an
   externally tagged enum gets no such key (there's no tag, and no attribute to name one), and each
@@ -415,10 +436,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   its required settings.
 - **A variant's `default` value lives in `default_values`, not the partial's `Default`.**
   `#[setting(default = value)]` on a variant holding a single value marks it as the default and is
-  what `default_values` puts in it (`Variant::impl_partial_default_values`), which is what the full
-  type's `Default` goes through. A default variant holding a bare nested config is the exception:
-  it holds that config's type default there, and its defaults come through `default_partial` (see
-  the runtime flow above). The partial's own `Default` holds the type default, like the empty
+  what `default_values` puts in it when the partial holds that variant
+  (`Variant::impl_partial_default_values`), which is what the full type's `Default` goes through. A
+  default variant holding a bare nested config holds that config's defaults there, read through it.
+  The partial's own `Default` holds the type default, like the empty
   partial of a struct, since it has no context for a handler and can't return a string conversion's
   error. A unit variant's `default = bool` still only marks it, as it always has.
 - **`Config::default_partial` panics** on default-value errors. `Default::default()` can't return a
@@ -436,8 +457,8 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   container's visibility, which is what actually caps how far those fields reach.
 - **A named variant's fields are settings**, optional in the partial and merged field by field,
   rather than values written in full like a tuple variant's. Its fields' defaults apply whenever the
-  variant is picked, so they live in `finalize`, not the enum's `default_values` (see the runtime
-  flow). Names take the variant's `rename_all`, else the enum's `rename_all_fields`, never the
+  variant is picked, as the enum's `default_values` is read against the variant the partial holds
+  (see the runtime flow). Names take the variant's `rename_all`, else the enum's `rename_all_fields`, never the
   enum's `rename_all`, which names the variants.
 - **An enum with a named variant denies unknown fields**, as a struct does, through serde's
   enum-wide `deny_unknown_fields`, so it also applies to the keys around an internally or adjacently
@@ -535,9 +556,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `{"Unix": [bytes]}`, not a string.
 - A parent must reach a nested config through a method a hand-written `PartialConfig` would
   override, not only the hidden ones the derive implements. Nested validation goes through the
-  public `validate` (re-pathing its errors), and the hidden `env_values_with_prefix` defaults to
-  `env_values`. Don't make a public method's default call a hidden one whose default calls it back,
-  as a partial overriding neither would recurse.
+  public `validate` (re-pathing its errors), and `internal::nested_env_values` calls `env_values`
+  without a prefix, as the hidden `env_values_with_prefix` defaults to it. Don't make a public
+  method's default call a hidden one whose default calls it back, as a partial overriding neither
+  would recurse.
 - A nested config receives its parent's context, as the managers require `Context = Ctx`, unless
   `#[setting(nested, context = func)]` maps it (`Value::context_fn`). Then every call that hands a
   context to the child goes through `func(context)`, and the managers' `*_with` methods take it
@@ -551,10 +573,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   currently catch this at derive time.
 - A `MergeList` is known by name (`Value::is_merge_list`), like the layers, and merged with
   `merge::merge_list` without a `merge`, which still wins. An alias isn't recognized, by decision.
-- `MergeList` merging must stay associative. The loader folds its layers in order, but an optional
-  nested config or a collection item has its defaults merged under a value that layers already
-  merged, so `merge` is composition: a list holding the index where the previous items go, rather
-  than a strategy flag that the next merge would overwrite.
+- Merging must stay associative, `MergeList`'s included. The loader merges the defaults under a
+  value the sources and env already merged (`apply_layers`), as does each collection item, so
+  `merge` is composition: a `MergeList` holds the index where the previous items go, rather than a
+  strategy flag that the next merge would overwrite. An enum's isn't, as another variant replaces,
+  which is exactly why the defaults go under rather than first.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
   Use `command git`.
 

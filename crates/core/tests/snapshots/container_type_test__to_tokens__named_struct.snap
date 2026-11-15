@@ -26,6 +26,7 @@ impl schematic::PartialConfig for PartialExample {
     type Context = ();
     const HAS_ENV_PREFIX: bool = true;
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         use schematic::internal::*;
@@ -33,7 +34,8 @@ impl schematic::PartialConfig for PartialExample {
             Some(Self {
                 enabled: Some(true),
                 name: Some((&&DefaultString::<String>::new()).parse_default("abc")?),
-                nested: <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                nested: schematic::internal::nested_default_values(
+                    self.nested.as_ref(),
                     context,
                 )?,
                 list: Some(Default::default()),
@@ -43,10 +45,11 @@ impl schematic::PartialConfig for PartialExample {
             }),
         )
     }
-    fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        Self::env_values_with_prefix(None)
+    fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        self.env_values_with_prefix(None)
     }
     fn env_values_with_prefix(
+        &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         use schematic::internal::*;
@@ -57,7 +60,7 @@ impl schematic::PartialConfig for PartialExample {
         partial.port = env.get_prefixed("PORT")?;
         partial.nested = env
             .nested(
-                <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                schematic::internal::nested_env_values(self.nested.as_ref(), None)?,
             )?;
         Ok(if env.is_empty() { None } else { Some(partial) })
     }
@@ -152,15 +155,6 @@ impl schematic::PartialConfig for PartialExample {
 #[automatically_derived]
 impl schematic::Config for Example {
     type Partial = PartialExample;
-    fn default_partial() -> Self::Partial {
-        let mut partial = <Self::Partial as schematic::PartialConfig>::default_values(
-                &Default::default(),
-            )
-            .expect("Failed to generate default values.")
-            .unwrap_or_default();
-        partial.nested = Some(<NestedConfig as schematic::Config>::default_partial());
-        partial
-    }
     fn from_partial(partial: Self::Partial) -> Self {
         Self {
             enabled: partial.enabled.unwrap_or_default(),

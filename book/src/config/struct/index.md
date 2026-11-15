@@ -54,9 +54,9 @@ variant itself takes only `default`, `exclude`, `partial`, and the serde fields,
 hold the rest.
 
 A source may pick a variant other than the default, so the defaults and
-[environment variables](./env.md#enums) of a named variant's fields are applied when it's
-finalized, however it was picked. A field that fails validation is reported under the variant, like
-`source.url.address`.
+[environment variables](./env.md#enums) of a named variant's fields are read for the variant the
+sources picked, and apply however it was picked. A field that fails validation is reported under
+the variant, like `source.url.address`.
 
 The fields are named as written, unless the variant has a `#[serde(rename_all)]` of its own, or the
 enum has a `rename_all_fields`. The enum's own `rename_all` names the variants, as with serde.

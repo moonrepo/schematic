@@ -17,6 +17,7 @@ struct PartialExample<T, U>(
 impl<T, U> schematic::PartialConfig for PartialExample<T, U> {
     type Context = ();
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         Ok(Some(Self(Some(Default::default()), Some(Default::default()))))

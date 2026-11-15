@@ -19,9 +19,15 @@ impl Default for PartialExample {
 impl schematic::PartialConfig for PartialExample {
     type Context = ();
     fn default_values(
+        &self,
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        Ok(Some(Self::B))
+        Ok(
+            match self {
+                Self::B => Some(Self::B),
+                _ => None,
+            },
+        )
     }
     fn merge(
         &mut self,

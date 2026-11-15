@@ -1,0 +1,68 @@
+---
+source: crates/core/tests/setting_default_test.rs
+expression: pretty(container.impl_partial_default_values())
+---
+fn default_values(
+    &self,
+    context: &Self::Context,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    Ok(
+        match self {
+            Self::Bare(pa) => {
+                Some(
+                    Self::Bare(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                                pa,
+                                context,
+                            )?
+                            .unwrap_or_default(),
+                    ),
+                )
+            }
+            Self::Optional(pa) => {
+                match pa.as_ref() {
+                    Some(inner) => {
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                            inner,
+                            context,
+                        )?
+                    }
+                    None => None,
+                }
+                    .map(|inner| Self::Optional(Some(inner)))
+            }
+            Self::Boxed(pa) => {
+                <<Example as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                        pa,
+                        context,
+                    )?
+                    .map(|inner| Self::Boxed(Box::new(inner)))
+            }
+            Self::MaybeBoxed(pa) => {
+                match pa.as_deref() {
+                    Some(inner) => {
+                        <<Example as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                            inner,
+                            context,
+                        )?
+                    }
+                    None => None,
+                }
+                    .map(|inner| Self::MaybeBoxed(Some(Box::new(inner))))
+            }
+            Self::Both(pa, _) => {
+                Some(
+                    Self::Both(
+                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                                pa,
+                                context,
+                            )?
+                            .unwrap_or_default(),
+                        Default::default(),
+                    ),
+                )
+            }
+            _ => None,
+        },
+    )
+}

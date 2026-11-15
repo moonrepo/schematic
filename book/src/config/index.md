@@ -121,11 +121,16 @@ result.config; // AppConfig
 result.layers; // Vec<Layer<PartialAppConfig>>
 ```
 
-The layers are in the order they were merged, and each one holds only the values it set, so a value
-can be traced to where it came from. The [default values](./struct/default.md) come first, as
+The layers are in order of precedence, and each one holds only the values it set, so a value can be
+traced to where it came from. The [default values](./struct/default.md) come first, as
 `Source::Defaults`, then each source in order, and the
 [environment variables](./struct/env.md) last, as `Source::EnvVars`. The default values and
 environment variables are left out when they set nothing.
+
+Both are read against what the sources set, so they hold what applies to it: the defaults and
+variables of the variant an enum's sources picked, and those of an optional nested config only when
+it's present. The environment variables are read first, as a tag's variable can
+[pick a variant](./struct/env.md#picking-a-variant), and the defaults then go under the result.
 
 ### Automatic schemas
 

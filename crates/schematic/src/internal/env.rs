@@ -1,14 +1,45 @@
 use super::parse_value;
-use crate::config::{HandlerError, ParseEnvResult};
+use crate::config::{ConfigError, HandlerError, ParseEnvResult, PartialConfig};
 use std::str::FromStr;
+
+/// The environment variables of a nested config, viewing one that's missing
+/// as its [`Default`], so that a variable can provide a config that no source
+/// did. A parent's `#[setting(nested, env_prefix)]` is passed as `prefix`.
+pub fn nested_env_values<T: PartialConfig>(
+    value: Option<&T>,
+    prefix: Option<&str>,
+) -> Result<Option<T>, ConfigError> {
+    let read = |value: &T| match prefix {
+        Some(_) => value.env_values_with_prefix(prefix),
+        None => value.env_values(),
+    };
+
+    match value {
+        Some(value) => read(value),
+        None => read(&T::default()),
+    }
+}
+
+/// Finalize a config within a tuple variant that holds several values, whose
+/// environment variables no layer holds, as the enum's would have to restate
+/// the values beside it. Its defaults are part of the enum's own.
+pub fn finalize_with_env<T: PartialConfig>(
+    mut partial: T,
+    context: &T::Context,
+) -> Result<T, ConfigError> {
+    if let Some(env) = partial.env_values()? {
+        partial.merge(context, env)?;
+    }
+
+    partial.finalize(context)
+}
 
 pub struct EnvManager {
     found: bool,
     /// Prefixes to apply to derived keys, in order of precedence. The
     /// container's own prefix comes first, then the one a parent passed
-    /// in with `#[setting(nested, env_prefix)]`. The container's own must
-    /// win, because `finalize` re-reads the environment without a parent
-    /// in the picture, and that read is applied last.
+    /// in with `#[setting(nested, env_prefix)]`, so that the key a config
+    /// reports for itself is the one that wins.
     prefixes: Vec<String>,
 }
 

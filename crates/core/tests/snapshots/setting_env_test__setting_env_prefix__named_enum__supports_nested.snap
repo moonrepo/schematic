@@ -1,63 +1,37 @@
 ---
 source: crates/core/tests/setting_env_test.rs
-expression: pretty(container.impl_partial_finalize())
+expression: pretty(container.impl_partial_env_values())
 ---
-fn finalize(
-    self,
-    context: &Self::Context,
-) -> std::result::Result<Self, schematic::ConfigError> {
+fn env_values(&self) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    self.env_values_with_prefix(None)
+}
+fn env_values_with_prefix(
+    &self,
+    prefix: Option<&str>,
+) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     use schematic::internal::*;
-    Ok(
-        match self {
-            Self::A { a: na, b: nb, c: mut pc } => {
-                let mut pa = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut pb = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                    context,
-                )?;
-                let mut env = EnvManager::new(None::<&str>, None);
-                let ea = env
+    let mut env = EnvManager::new(prefix, None);
+    let value = match self {
+        Self::A { a: pa, b: pb, c: pc, .. } => {
+            Self::A {
+                a: env
+                    .nested(schematic::internal::nested_env_values(pa.as_ref(), None)?)?,
+                b: env
                     .nested(
-                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
-                    )?;
-                let eb = env
-                    .nested(
-                        <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                        schematic::internal::nested_env_values(
+                            pb.as_ref(),
                             Some("PRE_"),
                         )?,
-                    )?;
-                let ec = env
+                    )?,
+                c: env
                     .nested(
-                        <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values_with_prefix(
+                        schematic::internal::nested_env_values(
+                            pc.as_ref(),
                             Some("PRE_"),
                         )?,
-                    )?;
-                MergeManager::new(context)
-                    .nested(&mut pa, na)?
-                    .nested(&mut pb, nb)?
-                    .nested(&mut pa, ea)?
-                    .nested(&mut pb, eb)?
-                    .nested(&mut pc, ec)?;
-                if let Some(layer) = pa {
-                    pa = Some(layer.finalize(context)?);
-                }
-                if let Some(layer) = pb {
-                    pb = Some(layer.finalize(context)?);
-                }
-                if let Some(layer) = pc {
-                    pc = Some({
-                        let mut base = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
-                                context,
-                            )?
-                            .unwrap_or_default();
-                        base.merge(context, layer)?;
-                        base.finalize(context)?
-                    });
-                }
-                Self::A { a: pa, b: pb, c: pc }
+                    )?,
             }
-            _ => self,
-        },
-    )
+        }
+    };
+    Ok(if env.is_empty() { None } else { Some(value) })
 }

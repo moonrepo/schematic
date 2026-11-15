@@ -152,8 +152,8 @@ mod container_finalize {
             assert_snapshot!(pretty(container.impl_partial_finalize()));
         }
 
-        // No layer holds the defaults of a variant a source picks, so they're
-        // merged under it, each setting with its own merge
+        // The defaults of a variant a source picks are part of the enum's
+        // defaults layer, so finalizing only transforms
         #[test]
         fn supports_defaults() {
             let container = Container::from(parse_quote! {
@@ -213,9 +213,8 @@ mod container_finalize {
             assert_snapshot!(pretty(container.impl_partial_finalize()));
         }
 
-        // No layer holds the environment variables of a variant a source
-        // picks either, so a nested config's are merged over it, after its
-        // sources. A collection reads none, as a struct's doesn't.
+        // Nor its environment variables, so a nested config is only finalized,
+        // except for the items of a collection, which no layer holds
         #[test]
         fn reads_nested_env() {
             let container = Container::from(parse_quote! {
