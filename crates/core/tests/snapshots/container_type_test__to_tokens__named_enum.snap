@@ -49,7 +49,15 @@ impl schematic::PartialConfig for PartialExample {
                     let mut pb = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
                         context,
                     )?;
-                    MergeManager::new(context).apply(&mut pa, na)?.nested(&mut pb, nb)?;
+                    let mut env = EnvManager::new(None::<&str>, None);
+                    let eb = env
+                        .nested(
+                            <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::env_values()?,
+                        )?;
+                    MergeManager::new(context)
+                        .apply(&mut pa, na)?
+                        .nested(&mut pb, nb)?
+                        .nested(&mut pb, eb)?;
                     if let Some(layer) = pb {
                         pb = Some(layer.finalize(context)?);
                     }

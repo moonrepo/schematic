@@ -3,7 +3,8 @@
 > Requires the `env` Cargo feature, which is enabled by default.
 
 > Not supported for enums, so `env_prefix` on an enum, or `env` on a field of a named variant,
-> fails to compile.
+> fails to compile. A nested config that a variant holds still reads its own, once the variant has
+> been picked.
 
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.

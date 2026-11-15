@@ -45,9 +45,10 @@
   `File { path: String }`. Each field is a setting, like a struct's: optional within the partial,
   with its own `default`, `merge`, `nested`, `required`, `transform`, and `validate`. Two layers
   picking the same variant are merged field by field, and a layer picking another replaces it. The
-  defaults of a variant's fields are applied whenever it's picked, and a field's validation errors
-  are reported under the variant, like `source.url.address`. Untagged and internally tagged named
-  variants are supported too, and each is a struct in the schema.
+  defaults of a variant's fields are applied whenever it's picked, as are the environment variables
+  of a nested config it holds, and a field's validation errors are reported under the variant, like
+  `source.url.address`. Untagged and internally tagged named variants are supported too, and each is
+  a struct in the schema.
   - The fields take the variant's `#[serde(rename_all)]`, or the enum's `rename_all_fields`.
   - An enum with a named variant denies unknown fields, so it now accepts
     `#[config(allow_unknown_fields)]`.

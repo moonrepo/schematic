@@ -3347,3 +3347,183 @@ mod named_variants {
         );
     }
 }
+
+mod named_variant_env {
+    use super::*;
+    use schematic::merge::append_vec;
+    use std::env;
+
+    fn load<T: ConfigTrait>(code: &str) -> Result<T, String> {
+        ConfigLoader::<T>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Child {
+        #[setting(env = "NAMED_ENV_TOKEN")]
+        token: Option<String>,
+        #[setting(
+            default = vec!["d".to_owned()],
+            merge = append_vec,
+            env = "NAMED_ENV_LIST",
+            parse_env = schematic::env::split_comma
+        )]
+        list: Vec<String>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Auth {
+        #[setting(nested)]
+        Tuple(Child),
+        #[setting(default)]
+        Named {
+            #[setting(nested)]
+            child: Child,
+            #[setting(nested)]
+            maybe: Option<Child>,
+            // Named like the `EnvManager` that finalizing binds
+            #[setting(nested)]
+            env: Child,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        auth: Auth,
+        #[setting(nested)]
+        items: Vec<Auth>,
+    }
+
+    // No layer holds the environment variables of a variant a source picks,
+    // so a nested config within a named variant reads its own when the
+    // variant is finalized, as one within a tuple variant already did
+    #[test]
+    fn reads_the_env_of_a_nested_config() {
+        unsafe {
+            env::set_var("NAMED_ENV_TOKEN", "env");
+            env::set_var("NAMED_ENV_LIST", "e");
+        };
+
+        let root = load::<Auth>(r#"{ "Named": { "child": { "list": ["f"] } } }"#);
+        let tuple = load::<Auth>(r#"{ "Tuple": {} }"#);
+        let parent = load::<Parent>(r#"{ "auth": { "Named": {} }, "items": [{ "Named": {} }] }"#);
+        let default = Auth::default();
+
+        unsafe {
+            env::remove_var("NAMED_ENV_TOKEN");
+            env::remove_var("NAMED_ENV_LIST");
+        };
+
+        let from_env = |list: &[&str]| Child {
+            token: Some("env".into()),
+            list: list.iter().map(|item| item.to_string()).collect(),
+        };
+
+        // Over the source and its defaults, and each merged once
+        assert_eq!(
+            root.unwrap(),
+            Auth::Named {
+                child: from_env(&["d", "f", "e"]),
+                maybe: Some(from_env(&["d", "e"])),
+                env: from_env(&["d", "e"]),
+            }
+        );
+        assert_eq!(tuple.unwrap(), Auth::Tuple(from_env(&["d", "e"])));
+
+        let parent = parent.unwrap();
+        let named = Auth::Named {
+            child: from_env(&["d", "e"]),
+            maybe: Some(from_env(&["d", "e"])),
+            env: from_env(&["d", "e"]),
+        };
+
+        assert_eq!(parent.auth, named);
+        assert_eq!(parent.items, vec![named]);
+
+        // Defaults never read the environment
+        let empty = Child {
+            token: None,
+            list: vec!["d".into()],
+        };
+
+        assert_eq!(
+            default,
+            Auth::Named {
+                child: empty.clone(),
+                maybe: None,
+                env: empty,
+            }
+        );
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct PortChild {
+        #[setting(env = "NAMED_ENV_PORT")]
+        port: Option<u16>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum PortSource {
+        #[setting(default)]
+        Named {
+            #[setting(nested)]
+            child: PortChild,
+        },
+    }
+
+    #[test]
+    fn names_the_variable_that_fails_to_parse() {
+        unsafe { env::set_var("NAMED_ENV_PORT", "abc") };
+
+        let result = load::<PortSource>(r#"{ "Named": {} }"#);
+
+        unsafe { env::remove_var("NAMED_ENV_PORT") };
+
+        assert!(result.unwrap_err().contains("NAMED_ENV_PORT"));
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct UnitChild {
+        #[setting(env = "NAMED_ENV_MAPPED")]
+        value: Option<String>,
+    }
+
+    #[derive(Default)]
+    pub struct AppContext {
+        _name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(context = AppContext)]
+    pub enum Mapped {
+        #[setting(default)]
+        Named {
+            #[setting(nested, context = schematic::context::unit)]
+            child: UnitChild,
+        },
+    }
+
+    // The environment is merged with the context the child takes
+    #[test]
+    fn reads_the_env_of_a_nested_config_with_a_mapped_context() {
+        unsafe { env::set_var("NAMED_ENV_MAPPED", "mapped") };
+
+        let result = load::<Mapped>(r#"{ "Named": {} }"#);
+
+        unsafe { env::remove_var("NAMED_ENV_MAPPED") };
+
+        assert_eq!(
+            result.unwrap(),
+            Mapped::Named {
+                child: UnitChild {
+                    value: Some("mapped".into())
+                }
+            }
+        );
+    }
+}

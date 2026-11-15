@@ -57,16 +57,27 @@ pub struct VariantValueArgs {
     pub nested: Option<NestedArg>,
 }
 
+/// The suffix of a binding by position, a letter for the first 26.
+fn get_binding_suffix(index: usize) -> String {
+    if index < 26 {
+        ((b'a' + index as u8) as char).to_string()
+    } else {
+        index.to_string()
+    }
+}
+
 /// The bindings of a variant's values or settings, when destructured from
 /// this partial (`pa`) and the next (`na`), by position.
 pub fn get_binding_idents(index: usize) -> (Ident, Ident) {
-    if index < 26 {
-        let letter = (b'a' + index as u8) as char;
+    let suffix = get_binding_suffix(index);
 
-        (format_ident!("p{letter}"), format_ident!("n{letter}"))
-    } else {
-        (format_ident!("p{index}"), format_ident!("n{index}"))
-    }
+    (format_ident!("p{suffix}"), format_ident!("n{suffix}"))
+}
+
+/// The binding of a named variant's setting as read from the environment
+/// (`ea`), by position, so that a setting's name never shadows it.
+fn get_env_binding_ident(index: usize) -> Ident {
+    format_ident!("e{}", get_binding_suffix(index))
 }
 
 /// Return the value of a boolean literal, which is all
@@ -1298,34 +1309,63 @@ impl Variant {
         res
     }
 
+    /// The value of each of this named variant's settings as read from the
+    /// environment, in order, like the environment values of a struct, or
+    /// `None` for a setting that reads none.
+    fn get_named_env_values(&self) -> Vec<Option<TokenStream>> {
+        self.settings
+            .iter()
+            .map(|setting| {
+                let res = setting.impl_partial_env_value();
+
+                (!res.no_value).then_some(res.value)
+            })
+            .collect()
+    }
+
     /// Generate the finalization of this named variant. No layer holds the
-    /// defaults of its settings, as a source may pick it over the default
-    /// variant, so like the value of a tuple variant, it's a boundary: its
-    /// defaults are merged under it, each setting with its own `merge`, and
-    /// then its settings are transformed and finalized as a struct's are.
+    /// defaults or environment variables of its settings, as a source may
+    /// pick it over the default variant, so like the value of a tuple variant,
+    /// it's a boundary: its defaults are merged under it and its environment
+    /// variables over it, each setting with its own `merge`, as the loader
+    /// does for a struct, and then its settings are transformed and finalized
+    /// as a struct's are.
     fn impl_partial_finalize_named(&self) -> ImplResult {
         let name = &self.ident;
         let (defaults, mut requires_internal) = self.get_named_defaults(false);
+        let env_values = self.get_named_env_values();
         let statements = self
             .settings
             .iter()
             .map(|setting| setting.impl_partial_finalize())
             .collect::<Vec<_>>();
 
-        if defaults.iter().all(Option::is_none) && statements.iter().all(|res| res.no_value) {
+        if defaults.iter().all(Option::is_none)
+            && env_values.iter().all(Option::is_none)
+            && statements.iter().all(|res| res.no_value)
+        {
             return ImplResult::skipped();
         }
 
         let mut bindings = vec![];
         let mut lets = vec![];
         let mut merges = vec![];
+        let mut env_lets = vec![];
+        let mut env_merges = vec![];
 
         // A setting with a default is bound as the next value, and merged into
         // its default, while one without is bound as the value itself
-        for ((setting, default), res) in self.settings.iter().zip(defaults).zip(&statements) {
+        for (index, ((setting, default), env_value)) in self
+            .settings
+            .iter()
+            .zip(defaults)
+            .zip(env_values)
+            .enumerate()
+        {
             let key = setting.get_key();
             let prev = setting.get_access(quote! { self });
             let next = setting.get_next_access();
+            let finalizes = !statements[index].no_value;
 
             if let Some(value) = default {
                 lets.push(quote! { let mut #prev = #value; });
@@ -1335,12 +1375,44 @@ impl Variant {
                         .value,
                 );
                 bindings.push(quote! { #key: #next });
-            } else if res.no_value {
-                bindings.push(quote! { #key: #prev });
-            } else {
+            } else if finalizes || env_value.is_some() {
                 bindings.push(quote! { #key: mut #prev });
+            } else {
+                bindings.push(quote! { #key: #prev });
+            }
+
+            // Merged after every source, as the environment is the last layer
+            if let Some(value) = env_value {
+                let env_binding = get_env_binding_ident(index);
+
+                env_lets.push(quote! { let #env_binding = #value; });
+                env_merges.push(
+                    setting
+                        .impl_partial_merge_into(&quote! { &mut #prev }, &quote! { #env_binding })
+                        .value,
+                );
             }
         }
+
+        // The keys a setting derives take the container's own prefix, as a
+        // parent's `#[setting(nested, env_prefix)]` never reaches a variant
+        let env = if env_lets.is_empty() {
+            quote! {}
+        } else {
+            requires_internal = true;
+
+            let own_prefix = match &self.container_args.env_prefix {
+                Some(prefix) => quote! { Some(#prefix) },
+                None => quote! { None },
+            };
+
+            quote! {
+                let mut env = EnvManager::new(None::<&str>, #own_prefix);
+                #(#env_lets)*
+            }
+        };
+
+        merges.extend(env_merges);
 
         let merge = if merges.is_empty() {
             quote! {}
@@ -1364,6 +1436,7 @@ impl Variant {
             value: quote! {
                 Self::#name { #(#bindings),* } => {
                     #(#lets)*
+                    #env
                     #merge
                     #(#statements)*
 
