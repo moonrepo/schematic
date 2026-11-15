@@ -476,7 +476,7 @@ mod setting_nested {
 
 mod audit_fixes {
     use quote::ToTokens;
-    use schematic_core::container::Container;
+    use schematic_core::container::{Container, ContainerInner};
     use syn::parse_quote;
 
     fn partial_type(input: syn::DeriveInput) -> String {
@@ -543,16 +543,73 @@ mod audit_fixes {
         });
     }
 
+    // A generic type that isn't a known layer is the nested config itself
+    #[test]
+    fn treats_a_generic_as_the_nested_config() {
+        assert_eq!(
+            partial_type(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    inner: Vec<Wrapper<String>>,
+                }
+            })
+            .replace(' ', ""),
+            "Vec<<Wrapper<String>asschematic::Config>::Partial>"
+        );
+    }
+
+    // A wrapper the partial strips has to be rebuilt within it
     #[test]
     #[should_panic(expected = "is not a known collection")]
-    fn errors_for_an_unknown_collection_of_nested_configs() {
+    fn errors_for_an_unknown_collection_of_wrappers() {
         Container::from(parse_quote! {
             #[derive(Config)]
             struct Example {
-                #[setting(nested)]
-                items: Custom<Child>,
+                items: Custom<std::sync::Arc<String>>,
             }
         })
         .to_token_stream();
+    }
+
+    #[test]
+    #[should_panic(expected = "Cannot use `context` without `nested`.")]
+    fn errors_for_a_context_without_nested() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(context = schematic::context::unit)]
+                value: String,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Cannot use `nested` on both a variant and its values")]
+    fn errors_for_nested_on_a_variant_and_its_value() {
+        Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                #[setting(nested)]
+                Both(#[setting(nested)] Child, bool),
+            }
+        });
+    }
+
+    #[test]
+    fn allows_nested_on_a_single_variant_value() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                Both(#[setting(nested)] Child, bool),
+            }
+        });
+
+        let ContainerInner::UnnamedEnum { variants } = &container.inner else {
+            panic!();
+        };
+
+        assert!(variants[0].values[0].nested);
+        assert!(!variants[0].values[1].nested);
     }
 }

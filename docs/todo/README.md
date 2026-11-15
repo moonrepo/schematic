@@ -30,13 +30,11 @@ The probe crates were throwaway. Each ✅ item gives enough of a scenario to reb
 
 Ordered by user impact per unit of work. Every bug was fixed on `0.21-bugs`.
 
-1. **Resolve generic nested configs by full type (C1).** Nesting by path and `Self` now work, but
-   `#[setting(nested)] inner: Wrapper<String>` still doesn't.
-2. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
+1. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
    `Debug` dump of the darling error.
-3. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
+2. **Make loader errors name the right place (X3–X6).** TOML syntax errors have no file, YAML type
    errors have no span, and validation is blamed on the last file.
-4. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
+3. **Ship the small loader and merge additions users already hand-roll (G1–G3).** A CLI or
    in-memory layer, the merge helpers moon wrote, and a runtime merge strategy (#175).
 
 ## Quick wins
@@ -53,8 +51,6 @@ Each item is trivial or a few lines, and every one is confirmed:
 
 ## Larger changes worth sequencing together
 
-- **C1 + C2:** keep the full nested `syn::Type` for a generic nested config, and fold the two
-  remaining layer walkers (`impl_full_from_partial_value`, `impl_partial_finalize_nested`) into one.
 - **G5:** a schema-fidelity pass, building on `SchemaField.default`:
   - add `SchemaField.required` and `StructType.deny_unknown_fields`;
   - add `transparent`;

@@ -45,6 +45,49 @@ impl<'a, Ctx> MergeManager<'a, Ctx> {
         })
     }
 
+    /// Merge a nested config with a context of its own, from
+    /// `#[setting(nested, context)]`.
+    pub fn nested_with<T: PartialConfig>(
+        self,
+        prev: &mut Option<T>,
+        next: Option<T>,
+        context: &T::Context,
+    ) -> Result<Self, MergeError> {
+        match (prev.as_mut(), next) {
+            (Some(prev), Some(next)) => {
+                prev.merge(context, next)
+                    .map_err(|error| MergeError(error.to_string()))?;
+            }
+            (None, Some(next)) => {
+                prev.replace(next);
+            }
+            _ => {}
+        };
+
+        Ok(self)
+    }
+
+    /// Merge a nested config that holds its own type, with a context of its own.
+    pub fn nested_boxed_with<T: PartialConfig>(
+        self,
+        prev: &mut Option<Box<T>>,
+        next: Option<Box<T>>,
+        context: &T::Context,
+    ) -> Result<Self, MergeError> {
+        match (prev.as_mut(), next) {
+            (Some(prev), Some(next)) => {
+                prev.merge(context, *next)
+                    .map_err(|error| MergeError(error.to_string()))?;
+            }
+            (None, Some(next)) => {
+                prev.replace(next);
+            }
+            _ => {}
+        };
+
+        Ok(self)
+    }
+
     /// Merge a nested config that holds its own type, which is kept
     /// in a `Box` within the partial.
     pub fn nested_boxed<T: PartialConfig<Context = Ctx>>(

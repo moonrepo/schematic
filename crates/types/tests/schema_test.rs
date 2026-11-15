@@ -1241,3 +1241,83 @@ mod generic_names {
         }
     }
 }
+
+// Every field of a shape defaults, so hand-written JSON may leave any out
+mod serde_defaults {
+    use super::*;
+
+    #[test]
+    fn deserializes_an_empty_schema_as_unknown() {
+        let schema: Schema = serde_json::from_str("{}").unwrap();
+
+        assert_eq!(schema.ty, SchemaType::Unknown);
+    }
+
+    #[test]
+    fn deserializes_an_array_without_its_items() {
+        let schema: Schema = serde_json::from_str(r#"{"ty":{"type":"Array"}}"#).unwrap();
+
+        let SchemaType::Array(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(inner.items_type.ty, SchemaType::Unknown);
+    }
+
+    #[test]
+    fn deserializes_numbers_without_their_kind() {
+        let integer: Schema = serde_json::from_str(r#"{"ty":{"type":"Integer"}}"#).unwrap();
+        let float: Schema = serde_json::from_str(r#"{"ty":{"type":"Float"}}"#).unwrap();
+
+        assert_eq!(integer.ty, SchemaType::Integer(Box::default()));
+        assert_eq!(float.ty, SchemaType::Float(Box::default()));
+    }
+
+    #[test]
+    fn deserializes_a_field_with_only_its_schema() {
+        let schema: Schema = serde_json::from_str(
+            r#"{"ty":{"type":"Struct","fields":{"a":{"schema":{"ty":{"type":"Boolean"}}}}}}"#,
+        )
+        .unwrap();
+
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert!(!inner.fields["a"].optional);
+        assert!(inner.fields["a"].comment.is_none());
+    }
+
+    #[test]
+    fn requires_a_literal_value() {
+        assert!(serde_json::from_str::<Schema>(r#"{"ty":{"type":"Literal"}}"#).is_err());
+    }
+
+    #[test]
+    fn deserializes_a_struct_without_its_flags() {
+        let schema: Schema = serde_json::from_str(r#"{"ty":{"type":"Struct"}}"#).unwrap();
+
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert!(inner.fields.is_empty());
+        assert!(!inner.partial);
+    }
+
+    #[test]
+    fn deserializes_a_union_without_its_flags() {
+        let schema: Schema = serde_json::from_str(
+            r#"{"ty":{"type":"Union","variants_types":[{"ty":{"type":"Null"}}]}}"#,
+        )
+        .unwrap();
+
+        let SchemaType::Union(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert!(!inner.partial);
+        assert_eq!(inner.operator, UnionOperator::AnyOf);
+        assert_eq!(inner.variants_types.len(), 1);
+    }
+}

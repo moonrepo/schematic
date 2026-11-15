@@ -20,18 +20,18 @@ all-features = true
 [dependencies]
 schematic_macros = { version = "0.20.11", path = "../macros" }
 schematic_types = { version = "0.12.11", path = "../types" }
-miette = { workspace = true }
-serde-content = "0.1.2"
-thiserror = "2.0.21"
-tracing = { workspace = true }
+miette = { workspace = true, optional = true }
 
 # config
 garde = { version = "0.23.0", default-features = false, optional = true, features = [
 	"regex",
 ] }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
+serde-content = { version = "0.1.2", optional = true }
 serde_path_to_error = { version = "0.1.20", optional = true }
 starbase_styles = { version = "0.6.10", optional = true }
+thiserror = { version = "2.0.21", optional = true }
+tracing = { workspace = true, optional = true }
 
 # settings
 regex = { workspace = true, optional = true }
@@ -70,18 +70,24 @@ ureq = { workspace = true, optional = true }
 default = ["config", "env", "extends", "validate"]
 config = [
 	"dep:convert_case",
+	"dep:miette",
+	"dep:serde",
+	"dep:serde-content",
 	"dep:serde_path_to_error",
 	"dep:starbase_styles",
+	"dep:thiserror",
+	"dep:tracing",
 	"schematic_macros/config",
 ]
-schema = ["dep:convert_case", "dep:indexmap", "schematic_macros/schema"]
+schema = ["dep:indexmap", "dep:miette", "schematic_macros/schema"]
 schema_serde = ["schema", "schematic_types/serde"]
 
 # Features
-env = ["schematic_macros/env"]
-extends = ["schematic_macros/extends"]
-url = ["dep:ureq"]
-validate = ["dep:garde", "schematic_macros/validate"]
+# These only apply to configs, so they enable them
+env = ["config", "schematic_macros/env"]
+extends = ["config", "schematic_macros/extends"]
+url = ["config", "dep:ureq"]
+validate = ["config", "dep:garde", "schematic_macros/validate"]
 
 # Formats
 json = [
@@ -97,9 +103,9 @@ yaml = ["dep:serde_norway", "schematic_types/serde_yaml_norway"]
 # Renderers
 renderer_api_docs = ["schema"]
 renderer_json_schema = ["json", "schema", "dep:markdown", "dep:schemars"]
-renderer_pkl_schema = ["schema"]
+renderer_pkl_schema = ["schema", "dep:convert_case"]
 renderer_template = ["schema"]
-renderer_typescript = ["schema"]
+renderer_typescript = ["schema", "dep:convert_case"]
 
 # Types
 type_chrono = ["schematic_types/chrono"]

@@ -3,6 +3,7 @@ use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct TupleType {
     pub items_types: Vec<Box<Schema>>,
 }

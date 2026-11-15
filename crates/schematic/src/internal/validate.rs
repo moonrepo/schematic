@@ -1,4 +1,4 @@
-use crate::config::{PartialConfig, Path, ValidateError, ValidateResult};
+use crate::config::{ConfigError, PartialConfig, Path, ValidateError, ValidateResult};
 
 pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
@@ -75,10 +75,21 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_at(self.path.join_key(key), value);
     }
 
+    /// Validate a nested config with a context of its own, from
+    /// `#[setting(nested, context)]`.
+    pub fn nested_with<S: PartialConfig>(&mut self, key: &str, value: &S, context: &S::Context) {
+        self.nested_at_with(self.path.join_key(key), value, context);
+    }
+
     /// Validate a nested configuration whose settings are flattened into
     /// this one, so its settings are reported at this path, as written.
     pub fn flattened<S: PartialConfig<Context = Ctx>>(&mut self, value: &S) {
         self.nested_at(self.path.clone(), value);
+    }
+
+    /// Validate a flattened config with a context of its own.
+    pub fn flattened_with<S: PartialConfig>(&mut self, value: &S, context: &S::Context) {
+        self.nested_at_with(self.path.clone(), value, context);
     }
 
     pub fn nested_variant<S: PartialConfig<Context = Ctx>>(
@@ -88,6 +99,17 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         value: &S,
     ) {
         self.nested_at(self.variant_path(variant, index), value);
+    }
+
+    /// Validate a nested config within a variant, with a context of its own.
+    pub fn nested_variant_with<S: PartialConfig>(
+        &mut self,
+        variant: &str,
+        index: usize,
+        value: &S,
+        context: &S::Context,
+    ) {
+        self.nested_at_with(self.variant_path(variant, index), value, context);
     }
 
     /// The path of a setting, which a nested collection extends for each of
@@ -105,8 +127,36 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
     /// Validate a nested configuration at the provided path, like an item
     /// within a nested collection.
     pub fn nested_at<S: PartialConfig<Context = Ctx>>(&mut self, path: Path, value: &S) {
-        if let Err(errors) = value.validate_with_path(self.context, self.finalizing, path) {
-            self.errors.extend(errors);
+        self.nested_at_with(path, value, self.context);
+    }
+
+    /// Validate a nested configuration at the provided path, with a
+    /// context of its own.
+    ///
+    /// This goes through the public `validate`, which a hand-written partial
+    /// overrides, rather than the hidden `validate_with_path` that a derived
+    /// one does, so that either is validated when nested. Its errors are then
+    /// moved under the path, and any other error is reported at the path.
+    pub fn nested_at_with<S: PartialConfig>(
+        &mut self,
+        path: Path,
+        value: &S,
+        context: &S::Context,
+    ) {
+        match value.validate(context, self.finalizing) {
+            Ok(()) => {}
+            Err(ConfigError::Validator { error, .. }) => {
+                self.errors.extend(
+                    error
+                        .errors
+                        .into_iter()
+                        .map(|error| error.prepend_path(path.clone())),
+                );
+            }
+            Err(error) => {
+                self.errors
+                    .push(ValidateError::new(error.to_string()).prepend_path(path));
+            }
         }
     }
 }

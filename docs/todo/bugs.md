@@ -20,8 +20,8 @@ Nothing. B1, nested defaults and env applied once per nesting level, was fixed w
     `None` would clear belongs to the parent. Supporting it would need new merge semantics.
 - **`chrono::Days`, `Months`, `IsoWeek`, `NaiveWeek` and `Date<Tz>` have no serde impl, so their
   schemas describe nothing serde accepts** 📖 · low
-  - Removing the impls would break a config that holds one in a `#[serde(skip)]` field, as those are
-    still inferred (C9). Revisit alongside C9.
+  - A `#[serde(skip)]` field no longer needs an impl (C9, fixed), so removing these is now only
+    breaking for a schema that really holds one, which serde can't produce anyway.
 - **`Box<Path>` still can't be a setting** · low
   - The partial now keeps the wrapper, but std has no `Default` for `Box<Path>`, which every setting
     needs for `from_partial`. `Box<OsStr>` and `Box<CStr>` have one, but no `Schematic` impl.

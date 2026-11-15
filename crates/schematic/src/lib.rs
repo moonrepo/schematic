@@ -5,6 +5,10 @@ pub mod helpers;
 #[cfg(feature = "config")]
 mod config;
 
+/// Built-in `context` functions, for `#[setting(nested, context)]`.
+#[cfg(feature = "config")]
+pub mod context;
+
 /// Built-in `parse_env` functions.
 #[cfg(all(feature = "config", feature = "env"))]
 pub mod env;
@@ -39,4 +43,5 @@ pub use schematic_macros::*;
 pub use schematic_types::{Schema, SchemaBuilder, SchemaType, Schematic};
 
 // Re-export serde_content for use in macros
+#[cfg(feature = "config")]
 pub use serde_content;

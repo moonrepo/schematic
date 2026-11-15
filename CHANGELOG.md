@@ -15,6 +15,26 @@
   `FromStr`, like `IpAddr` and `SocketAddr`, when it doesn't implement `TryFrom<&str>`.
 - Updated `#[setting(nested)]` to resolve the nested config by the path it was written as, so a
   config from another module, like `child::Child`, no longer needs its partial imported.
+- Added a `context` field to `#[setting(nested)]`, a function that maps the parent's context to the
+  nested config's own, like `fn(&AppContext) -> &PluginContext`, so a config with another context,
+  such as one from a library, can be nested. `schematic::context::unit` passes `()`, for a config
+  without a context. It's also supported on enum variants.
+- Added `SchemaGenerator::render`, which returns the rendered output as a string, rather than
+  writing it to a file like `generate`.
+- Updated `SchemaRenderer`'s `render_*` methods to default to an error naming the renderer and the
+  type, so a custom renderer only implements the types it supports.
+- Updated every schema type except `LiteralType` to default each of its fields when deserialized
+  with `schema_serde`, so a hand-written schema only needs the fields it sets. A missing schema is
+  `Unknown`, so an `ArrayType` without `items_type` holds any value, and an `IntegerType` or
+  `FloatType` without `kind` is a `usize` or `f32`. A literal still requires its value.
+  Serialization is unchanged.
+- Updated `#[setting(nested)]` to be accepted on a value of an enum variant, like
+  `Both(#[setting(nested)] Child, bool)`, so a variant can hold a nested config alongside plain
+  values. Previously it could only mark the whole variant, and panicked on any value that wasn't a
+  config. It also takes `context` there.
+- Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including
+  within an `Option` or a collection, and a type parameter that is a config itself. Previously the
+  derive looked inside the type arguments for the config, and panicked on `String`.
 - Updated `#[setting(nested)]` to support a config that holds its own type, like
   `next: Option<Box<Self>>`, which keeps the `Box` in the partial. Without a `Box` or a collection,
   the derive panics, as the type would have an infinite size.
@@ -26,10 +46,36 @@
 - Updated `JsonSchemaRenderer` to put definitions where `definitions_path` points, such as
   `#/$defs/`, and to render a tuple with `prefixItems` when the meta schema is draft 2020-12.
 
+#### ⚙️ Internal
+
+- Made `miette`, `serde`, `serde-content`, `thiserror`, and `tracing` optional, so they're only
+  compiled with the `config` feature (and `miette` with `schema`), and `convert_case` only with
+  `config` or the TypeScript and Pkl renderers. A build without features compiles 22 crates rather
+  than 40, and one with only `schema`, 29 rather than 42.
+- Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only apply
+  to configs, and compiled their dependencies for nothing without it.
+
+- Merged the code that rebuilds a setting through its layers, when converting a partial into a full
+  config and when finalizing nested configs, into one helper. Generated code is unchanged.
+
 #### 🐞 Fixes
+
+##### Schema
+
+- Fixed a skipped setting, with `#[setting(skip)]` or `#[serde(skip)]`, requiring its type to
+  implement `Schematic`, and registering that type's schema. It's now left out of the schema like an
+  excluded one, rather than hidden, as it's never read or written.
 
 ##### Config
 
+- Fixed a hand-written `PartialConfig` being skipped when nested within a derived config. Its
+  `validate` was never called, as a parent called the hidden method that derived partials implement
+  instead, and its `env_values` was ignored under a parent's `#[setting(nested, env_prefix)]`.
+  - Nested configs are now validated through `validate`, with its errors reported under the
+    setting's path, and any other error it returns reported at that path.
+  - The hidden `env_values_with_prefix` now defaults to `env_values`, and `env_values` defaults to
+    none, so a hand-written partial that implemented only `env_values_with_prefix` must implement
+    `env_values` too.
 - Fixed the default values and environment variables of a nested config being applied again by
   every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
   defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
