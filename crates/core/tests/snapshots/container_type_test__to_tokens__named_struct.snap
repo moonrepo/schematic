@@ -244,11 +244,8 @@ impl schematic::Schematic for Example {
                     (
                         "port".into(),
                         {
-                            let mut field = SchemaField::new(
-                                schema.infer::<Option<u16>>(),
-                            );
+                            let mut field = SchemaField::new(schema.infer::<u16>());
                             field.env_var = Some("EXAMPLE_PORT".into());
-                            field.nullable = true;
                             field
                         },
                     ),

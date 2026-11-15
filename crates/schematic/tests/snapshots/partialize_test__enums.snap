@@ -12,6 +12,7 @@ expression: "create_diff::<Enums>()"
 ⬛️    nullable: false,
 ⬛️    ty: Struct(
 ⬛️        StructType {
+⬛️            allow_unknown_fields: false,
 ⬛️            fields: {
 ⬛️                "unit": SchemaField {
 ⬛️                    aliases: [],
@@ -99,6 +100,32 @@ expression: "create_diff::<Enums>()"
 🟥                                                    LiteralType {
 🟥                                                        value: String(
 🟥                                                            "b",
+🟥                                                        ),
+🟥                                                    },
+🟥                                                ),
+🟥                                            },
+🟥                                            default: None,
+🟥                                            deprecated: None,
+🟥                                            env_var: None,
+🟥                                            flatten: false,
+🟥                                            hidden: false,
+🟥                                            nullable: false,
+🟥                                            optional: false,
+🟥                                            read_only: false,
+🟥                                            write_only: false,
+🟥                                        },
+🟥                                        "c": SchemaField {
+🟥                                            aliases: [],
+🟥                                            comment: None,
+🟥                                            schema: Schema {
+🟥                                                deprecated: None,
+🟥                                                description: None,
+🟥                                                name: None,
+🟥                                                nullable: false,
+🟥                                                ty: Literal(
+🟥                                                    LiteralType {
+🟥                                                        value: String(
+🟥                                                            "c",
 🟥                                                        ),
 🟩                                                values: [
 🟩                                                    String(
@@ -204,42 +231,16 @@ expression: "create_diff::<Enums>()"
 🟥                                            read_only: false,
 🟥                                            write_only: false,
 🟥                                        },
-🟥                                        "c": SchemaField {
-🟥                                            aliases: [],
-🟥                                            comment: None,
-🟥                                            schema: Schema {
-🟥                                                deprecated: None,
-🟥                                                description: None,
-🟥                                                name: None,
-🟥                                                nullable: false,
-🟥                                                ty: Literal(
-🟥                                                    LiteralType {
-🟥                                                        value: String(
-🟥                                                            "c",
-🟥                                                        ),
-🟥                                                    },
-🟥                                                ),
-🟥                                            },
-🟥                                            default: None,
-🟥                                            deprecated: None,
-🟥                                            env_var: None,
-🟥                                            flatten: false,
-🟥                                            hidden: false,
-🟥                                            nullable: false,
-🟥                                            optional: false,
-🟥                                            read_only: false,
-🟥                                            write_only: false,
-🟥                                        },
 🟩                                        ),
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -401,8 +402,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    flatten: false,
 ⬛️                    hidden: false,
 ⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
+⬛️                    optional: true,
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
@@ -448,27 +448,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                            "a",
 🟥                                                        ),
 🟥                                                    },
-🟩                        name: None,
-🟩                        nullable: true,
-🟩                        ty: Union(
-🟩                            UnionType {
-🟩                                default_index: None,
-🟩                                partial: false,
-🟩                                operator: AnyOf,
-🟩                                variants_names: None,
-🟩                                variants_types: [
-🟩                                    Schema {
-🟩                                        deprecated: None,
-🟩                                        description: None,
-🟩                                        name: Some(
-🟩                                            "UnitFallbackEnum",
-🟩                                        ),
-🟩                                        nullable: false,
-🟩                                        ty: Enum(
-🟩                                            EnumType {
-🟩                                                default_index: Some(
-🟩                                                    0,
-⬛️                                                ),
+🟥                                                ),
 🟥                                            },
 🟥                                            default: None,
 🟥                                            deprecated: None,
@@ -520,7 +500,27 @@ expression: "create_diff::<Enums>()"
 🟥                                                            "c",
 🟥                                                        ),
 🟥                                                    },
-🟥                                                ),
+🟩                        name: None,
+🟩                        nullable: true,
+🟩                        ty: Union(
+🟩                            UnionType {
+🟩                                default_index: None,
+🟩                                partial: false,
+🟩                                operator: AnyOf,
+🟩                                variants_names: None,
+🟩                                variants_types: [
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: Some(
+🟩                                            "UnitFallbackEnum",
+🟩                                        ),
+🟩                                        nullable: false,
+🟩                                        ty: Enum(
+🟩                                            EnumType {
+🟩                                                default_index: Some(
+🟩                                                    0,
+⬛️                                                ),
 🟥                                            },
 🟥                                            default: None,
 🟥                                            deprecated: None,
@@ -682,15 +682,15 @@ expression: "create_diff::<Enums>()"
 🟥                                            write_only: false,
 🟥                                        },
 🟩                                        ),
-⬛️                                    },
-🟥                                ),
+🟩                                    },
 🟩                                    Schema {
 🟩                                        deprecated: None,
 🟩                                        description: None,
 🟩                                        name: None,
 🟩                                        nullable: false,
 🟩                                        ty: Null,
-🟩                                    },
+⬛️                                    },
+🟥                                ),
 🟩                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -881,8 +881,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    flatten: false,
 ⬛️                    hidden: false,
 ⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
+⬛️                    optional: true,
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },
@@ -922,6 +921,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                        nullable: false,
 🟥                                        ty: Struct(
 🟥                                            StructType {
+🟥                                                allow_unknown_fields: false,
 🟥                                                fields: {
 🟥                                                    "A": SchemaField {
 🟥                                                        aliases: [],
@@ -935,6 +935,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                            nullable: false,
 🟥                                                            ty: Struct(
 🟥                                                                StructType {
+🟥                                                                    allow_unknown_fields: false,
 🟥                                                                    fields: {},
 🟥                                                                    partial: true,
 🟥                                                                    required: None,
@@ -957,6 +958,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                        nullable: false,
 🟩                                                        ty: Struct(
 🟩                                                            StructType {
+🟩                                                                allow_unknown_fields: false,
 🟩                                                                fields: {
 🟩                                                                    "A": SchemaField {
 🟩                                                                        aliases: [],
@@ -970,6 +972,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            nullable: false,
 🟩                                                                            ty: Struct(
 🟩                                                                                StructType {
+🟩                                                                                    allow_unknown_fields: false,
 🟩                                                                                    fields: {},
 🟩                                                                                    partial: true,
 🟩                                                                                    required: None,
@@ -1008,6 +1011,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                        write_only: false,
 🟩                                                        ty: Struct(
 🟩                                                            StructType {
+🟩                                                                allow_unknown_fields: false,
 🟩                                                                fields: {
 🟩                                                                    "B": SchemaField {
 🟩                                                                        aliases: [],
@@ -1021,6 +1025,7 @@ expression: "create_diff::<Enums>()"
 🟩                                                                            nullable: false,
 🟩                                                                            ty: Struct(
 🟩                                                                                StructType {
+🟩                                                                                    allow_unknown_fields: false,
 🟩                                                                                    fields: {},
 🟩                                                                                    partial: true,
 🟩                                                                                    required: None,
@@ -1057,6 +1062,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                        nullable: false,
 🟥                                        ty: Struct(
 🟥                                            StructType {
+🟥                                                allow_unknown_fields: false,
 🟥                                                fields: {
 🟥                                                    "B": SchemaField {
 🟥                                                        aliases: [],
@@ -1070,6 +1076,7 @@ expression: "create_diff::<Enums>()"
 🟥                                                            nullable: false,
 🟥                                                            ty: Struct(
 🟥                                                                StructType {
+🟥                                                                    allow_unknown_fields: false,
 🟥                                                                    fields: {},
 🟥                                                                    partial: true,
 🟥                                                                    required: None,
@@ -1151,6 +1158,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        nullable: false,
 ⬛️                                                        ty: Struct(
 ⬛️                                                            StructType {
+⬛️                                                                allow_unknown_fields: false,
 ⬛️                                                                fields: {
 ⬛️                                                                    "A": SchemaField {
 ⬛️                                                                        aliases: [],
@@ -1165,6 +1173,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                                            nullable: false,
 ⬛️                                                                            ty: Struct(
 ⬛️                                                                                StructType {
+⬛️                                                                                    allow_unknown_fields: false,
 ⬛️                                                                                    fields: {},
 ⬛️                                                                                    partial: true,
 ⬛️                                                                                    required: None,
@@ -1194,6 +1203,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        nullable: false,
 ⬛️                                                        ty: Struct(
 ⬛️                                                            StructType {
+⬛️                                                                allow_unknown_fields: false,
 ⬛️                                                                fields: {
 ⬛️                                                                    "B": SchemaField {
 ⬛️                                                                        aliases: [],
@@ -1208,6 +1218,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                                            nullable: false,
 ⬛️                                                                            ty: Struct(
 ⬛️                                                                                StructType {
+⬛️                                                                                    allow_unknown_fields: false,
 ⬛️                                                                                    fields: {},
 ⬛️                                                                                    partial: true,
 ⬛️                                                                                    required: None,
@@ -1251,8 +1262,7 @@ expression: "create_diff::<Enums>()"
 ⬛️                    flatten: false,
 ⬛️                    hidden: false,
 ⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
+⬛️                    optional: true,
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },

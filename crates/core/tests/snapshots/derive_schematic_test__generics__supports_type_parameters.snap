@@ -11,11 +11,10 @@ impl<T> schematic::Schematic for Example<T> {
     }
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
         use schematic::schema::*;
-        schema
-            .structure(
-                StructType::new([
-                    ("inner".into(), SchemaField::new(schema.infer::<T>())),
-                ]),
-            )
+        let mut structure = StructType::new([
+            ("inner".into(), SchemaField::new(schema.infer::<T>())),
+        ]);
+        structure.allow_unknown_fields = true;
+        schema.structure(structure)
     }
 }

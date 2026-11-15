@@ -324,6 +324,7 @@ fn supports_cycles() {
     assert_eq!(
         test_builder::<Cycle>().ty,
         SchemaType::Struct(Box::new(StructType {
+            allow_unknown_fields: false,
             fields: IndexMap::from_iter([(
                 "values".into(),
                 Box::new(SchemaField {

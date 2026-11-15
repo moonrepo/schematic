@@ -18,6 +18,22 @@ mod partial_serde_args {
     mod named_struct {
         use super::*;
 
+        // The partial wraps its setting in `Option` and defaults it, so it would
+        // still be written as a map, while its schema said otherwise
+        #[test]
+        #[should_panic(expected = "`#[serde(transparent)]` is not supported on a `Config`")]
+        fn errors_for_transparent() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(transparent)]
+                struct Example {
+                    a: bool,
+                }
+            });
+
+            container.get_partial_serde_attribute_args();
+        }
+
         #[test]
         fn defaults() {
             let container = Container::from(parse_quote! {

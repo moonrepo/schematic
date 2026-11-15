@@ -12,6 +12,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️    nullable: false,
 ⬛️    ty: Struct(
 ⬛️        StructType {
+⬛️            allow_unknown_fields: false,
 ⬛️            fields: {
 ⬛️                "field": SchemaField {
 ⬛️                    aliases: [],
@@ -33,6 +34,7 @@ expression: "create_diff::<NestedList>()"
 🟥                                    nullable: false,
 🟥                                    ty: Struct(
 🟥                                        StructType {
+🟥                                            allow_unknown_fields: false,
 🟥                                            fields: {
 🟥                                                "field": SchemaField {
 🟥                                                    aliases: [],
@@ -85,6 +87,7 @@ expression: "create_diff::<NestedList>()"
 🟥                                                    write_only: false,
 🟩                                                    ty: Struct(
 🟩                                                        StructType {
+🟩                                                            allow_unknown_fields: false,
 🟩                                                            fields: {
 🟩                                                                "field": SchemaField {
 🟩                                                                    aliases: [],
@@ -214,6 +217,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                                                    nullable: false,
 ⬛️                                                    ty: Struct(
 ⬛️                                                        StructType {
+⬛️                                                            allow_unknown_fields: false,
 ⬛️                                                            fields: {
 ⬛️                                                                "field": SchemaField {
 ⬛️                                                                    aliases: [],
@@ -307,8 +311,7 @@ expression: "create_diff::<NestedList>()"
 ⬛️                    flatten: false,
 ⬛️                    hidden: false,
 ⬛️                    nullable: true,
-🟥                    optional: false,
-🟩                    optional: true,
+⬛️                    optional: true,
 ⬛️                    read_only: false,
 ⬛️                    write_only: false,
 ⬛️                },

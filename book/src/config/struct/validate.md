@@ -83,7 +83,8 @@ source is free to omit it. A `null` counts as missing, while an empty value, lik
 not.
 
 When the setting is wrapped in `Option`, the value must be `Some`, but the field stays an `Option`
-in the final configuration. A setting that isn't wrapped still has to implement `Default`, which
+in the final configuration. Its [schema](../../schema/struct.md#optional-and-nullable-fields)
+describes the type the `Option` holds, as `null` isn't a value. A setting that isn't wrapped still has to implement `Default`, which
 `AppConfig::default()` falls back to.
 
 A required setting can't declare a `default`, as it would always have a value. Nor can a

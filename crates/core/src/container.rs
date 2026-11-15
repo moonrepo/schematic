@@ -291,7 +291,28 @@ impl Container {
             .any(|attr| attr.to_string().contains("bound"))
     }
 
+    /// Whether a struct accepts keys other than its fields, as serde does
+    /// unless `deny_unknown_fields`. A config's partial denies them unless
+    /// `#[config(allow_unknown_fields)]`, as that's what's deserialized.
+    #[cfg(feature = "schema")]
+    fn allows_unknown_fields(&self) -> bool {
+        match self.macro_type {
+            ContainerMacro::Config | ContainerMacro::ConfigUnitEnum => {
+                self.args.allow_unknown_fields && !self.serde_args.deny_unknown_fields
+            }
+            ContainerMacro::Schematic => !self.serde_args.deny_unknown_fields,
+        }
+    }
+
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
+        // The partial wraps every setting in `Option` and defaults them, which
+        // serde won't make transparent, so it would still be written as a map
+        if self.serde_args.transparent {
+            panic!(
+                "`#[serde(transparent)]` is not supported on a `Config`, as its partial is written as a map. Derive `Schematic` for a transparent type, and use it as a setting."
+            );
+        }
+
         let mut meta = vec![];
 
         match &self.inner {
@@ -1032,23 +1053,48 @@ impl Container {
             // A skipped field is never read or written, so like an excluded
             // one it has no schema, and its type needn't implement `Schematic`
             ContainerInner::NamedStruct { fields } => {
-                let types = fields
+                let fields = fields
                     .iter()
                     .filter(|field| !field.is_excluded() && !field.is_skipped())
+                    .collect::<Vec<_>>();
+
+                // A transparent struct is written as its one field
+                if self.serde_args.transparent && fields.len() == 1 {
+                    let inner = fields[0].impl_schema_type(false);
+
+                    return quote! {
+                        let mut schema = #inner;
+                        #(#meta)*
+                        schema
+                    };
+                }
+
+                let types = fields
+                    .iter()
                     .map(|field| field.impl_schema_type(true))
                     .collect::<Vec<_>>();
 
-                if types.is_empty() {
+                let structure = if types.is_empty() {
+                    quote! { StructType::default() }
+                } else {
+                    quote! {
+                        StructType::new([
+                            #(#types),*
+                        ])
+                    }
+                };
+
+                if self.allows_unknown_fields() {
                     quote! {
                         #(#meta)*
-                        schema.structure(StructType::default())
+                        let mut structure = #structure;
+                        structure.allow_unknown_fields = true;
+                        schema.structure(structure)
                     }
                 } else {
                     quote! {
                         #(#meta)*
-                        schema.structure(StructType::new([
-                            #(#types),*
-                        ]))
+                        schema.structure(#structure)
                     }
                 }
             }

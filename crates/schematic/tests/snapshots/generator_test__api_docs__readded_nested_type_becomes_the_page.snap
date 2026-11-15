@@ -19,7 +19,7 @@ Some comment.
 
 ### `enums`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 An optional enum.
 
@@ -30,7 +30,7 @@ An optional enum.
 
 ### `opt`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 An optional string.
 

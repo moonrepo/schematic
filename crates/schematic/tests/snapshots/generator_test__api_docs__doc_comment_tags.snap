@@ -24,7 +24,7 @@ A config with tags in its doc comments.
 
 ### `added`
 
-> **Nullable** · **Since** (1.2.0) · **Experimental**
+> **Optional** · **Nullable** · **Since** (1.2.0) · **Experimental**
 
 Added after the config.
 
@@ -34,7 +34,7 @@ Added after the config.
 
 ### `example`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 A line of an example that starts with `@` is kept.
 
@@ -58,7 +58,7 @@ A line of an example that starts with `@` is kept.
 
 ### `old`
 
-> **Nullable** · **Deprecated** (Use `added` instead.)
+> **Optional** · **Nullable** · **Deprecated** (Use `added` instead.)
 
 Deprecated through its doc comment.
 
@@ -68,7 +68,7 @@ Deprecated through its doc comment.
 
 ### `older`
 
-> **Nullable** · **Deprecated** (Use `added`.)
+> **Optional** · **Nullable** · **Deprecated** (Use `added`.)
 
 Deprecated by both, where the attribute wins.
 

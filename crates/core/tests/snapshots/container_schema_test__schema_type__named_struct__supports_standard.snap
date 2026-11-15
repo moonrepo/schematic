@@ -58,6 +58,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             schema.infer::<Option<String>>(),
                         );
                         field.nullable = true;
+                        field.optional = true;
                         field
                     },
                 ),

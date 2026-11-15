@@ -17,7 +17,6 @@ expression: "fs::read_to_string(file).unwrap()"
     "float32",
     "float64",
     "indexmap",
-    "indexset",
     "json_value",
     "map",
     "nested",
@@ -27,11 +26,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "rel_path",
     "string",
     "time",
-    "toml_value",
-    "url",
     "uuid",
     "vector",
-    "version",
     "version2",
     "version_req",
     "yaml_value"
@@ -108,7 +104,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "map": {
       "type": "object",
       "additionalProperties": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0
       },
       "propertyNames": {
         "type": "string"
@@ -123,7 +120,8 @@ expression: "fs::read_to_string(file).unwrap()"
       ]
     },
     "number": {
-      "type": "number"
+      "type": "integer",
+      "minimum": 0
     },
     "path": {
       "type": "string",
@@ -197,10 +195,6 @@ expression: "fs::read_to_string(file).unwrap()"
       "title": "AnotherConfig",
       "description": "Some comment.",
       "type": "object",
-      "required": [
-        "enums",
-        "opt"
-      ],
       "properties": {
         "enums": {
           "description": "An optional enum.",

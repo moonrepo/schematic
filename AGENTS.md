@@ -382,6 +382,13 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - **A container `#[serde(default)]` makes every field optional**, the same as one declared on the
   field, since serde falls back per field when the input omits it. `SchemaField.optional` reflects
   that, which is what puts the `?` on a TypeScript property.
+- **An `Option` field is optional in the schema**, as serde fills in an omitted one with `None`, and
+  a `#[setting(required)]` one is described by the type it holds, so neither nullable nor optional
+  (`Field::get_schema_type`). There's no `SchemaField.required`; `optional: false` says it.
+- **`StructType.allow_unknown_fields` defaults to closed.** It's inverted from serde on purpose, so
+  hand-written, std, and synthesized variant schemas stay closed. The derive sets it to what's
+  deserialized: a config's partial (`#[config(allow_unknown_fields)]`), or the serde attributes of a
+  type that only derives `Schematic`.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 

@@ -67,24 +67,30 @@ It also fixed a root enum's default variant value never being applied when loadi
 Not built: source-aware transforms (`&Source` in the transform context), and resolving relative
 paths against the declaring file, which moon does after loading.
 
-**G5. Schema metadata that never reaches the schema** · med
+**G5. Schema metadata that never reaches the schema** · partly fixed on `0.21-gaps`
 
-- **`required` on `Option`:** `#[setting(required)]` on an `Option` is reported as nullable or
-  optional everywhere (a known follow-up). Fix: add `SchemaField.required`. ✅
-- **`Option` fields in JSON Schema and TS:** they are marked `required`, although serde accepts
-  omission. api_docs and Pkl already treat them as optional, and the book says otherwise
-  (`field.rs:302`, `json_schema.rs:561`). ✅
-- **`additionalProperties: false`:** it is unconditional, even with
-  `#[config(allow_unknown_fields)]` or a plain serde struct. Fix: add
-  `StructType.deny_unknown_fields`. ✅
-- **`#[serde(transparent)]`:** it is not parsed, so a wrapper renders `{inner}` instead of the inner
-  type. ✅
+Fixed, mostly in core so that every renderer agrees:
+
+- **`Option` fields** are `optional`, as serde fills in an omitted one, which takes them out of
+  JSON Schema's `required` and gives them `?` in TypeScript (and an Optional tag in api_docs).
+- **`required` on `Option`** is described by the type it holds, so it's neither optional nor
+  nullable. That covers what `SchemaField.required` was proposed for, without a new field.
+- **Unknown fields:** `StructType.allow_unknown_fields`, inverted from the proposed
+  `deny_unknown_fields` so that hand-written, std, and synthesized variant schemas stay closed by
+  default. The derive opens a config with `allow_unknown_fields` and a `Schematic` type without
+  `deny_unknown_fields`; JSON Schema then leaves out `additionalProperties`, also through flatten.
+- **`#[serde(transparent)]`** on a `Schematic` named struct uses its field's schema (a tuple newtype
+  already did). On a `Config` it panics, as the partial isn't transparent and serde won't make it
+  so, with every setting defaulted.
+- **Integers** render as `"type": "integer"` in JSON Schema, with their kind's range up to 32 bits;
+  an explicit bound narrows it.
+
+Still open:
+
 - **Validator constraints:** they never reach the schema. Built-ins with literal args (`min_length`,
   `in_range`, `regex`, `email`, `url`, `ip_v4`, `uuid`) could set `StringType`/`IntegerType` fields
   at derive time, following the `path_names_a_value` precedent. JSON, Pkl and api_docs already render
   these constraints. 📖
-- **Integer types in JSON Schema:** they render as `"type": "number"` with no range, so `1.5` and
-  `-3` pass for a `u8`. Pkl already maps the kinds. ✅
 - **Other missing metadata:** 📖
   - Aliases are not in `required` alternatives, and enum variant aliases never reach `EnumType`.
   - `read_only` and `write_only` are never set.
@@ -92,6 +98,7 @@ paths against the declaring file, which moon does after loading.
   - There is no `examples` support (an `@example` tag would be a natural source).
   - The deprecation message is dropped in JSON Schema.
   - Unit-enum variant descriptions are dropped.
+- api_docs and Pkl don't reflect `allow_unknown_fields`.
 
 **G6. Templates drop flattened fields** ✅ · med
 

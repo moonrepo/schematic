@@ -1061,7 +1061,7 @@ fn panic_unknown_collection(name: &str, ty_string: &str) -> TokenStream {
 }
 
 /// The last type argument of a path type, like `T` for `Option<T>`.
-fn get_last_type_argument(ty: &Type) -> Option<Type> {
+pub(crate) fn get_last_type_argument(ty: &Type) -> Option<Type> {
     let Type::Path(ty_path) = ty else {
         return None;
     };

@@ -18,7 +18,7 @@ export type Threads = 'auto' | 'off' | number;
 export interface LiteralConfig {
 	/** @default 'remote' */
 	cache: Cache;
-	cache_opt: Cache | null;
+	cache_opt?: Cache | null;
 	/** @default true */
 	compress: Compress;
 	/**
@@ -26,5 +26,5 @@ export interface LiteralConfig {
 	 * @type {'auto' | 'off' | number}
 	 */
 	threads: Threads;
-	threads_opt: Threads | null;
+	threads_opt?: Threads | null;
 }

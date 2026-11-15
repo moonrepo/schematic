@@ -466,3 +466,185 @@ mod externals {
         );
     }
 }
+
+mod schema_fidelity {
+    use super::*;
+    use serde_json::json;
+
+    #[derive(Config)]
+    struct Fields {
+        plain: String,
+        optional: Option<String>,
+        #[setting(required)]
+        required: Option<String>,
+    }
+
+    // Serde fills in an omitted `Option` with `None`
+    #[test]
+    fn an_option_may_be_omitted() {
+        assert_eq!(
+            json_schema::<Fields>()["required"],
+            json!(["plain", "required"])
+        );
+
+        let output = render::<Fields, _, _>(TypeScriptRenderer::default());
+
+        assert!(output.contains("optional?: string | null;"), "{output}");
+    }
+
+    // A required setting needs a value, which `null` isn't
+    #[test]
+    fn a_required_option_must_be_a_value() {
+        let schema = json_schema::<Fields>();
+
+        assert_eq!(
+            schema["properties"]["required"],
+            json!({ "type": "string" })
+        );
+        assert_eq!(
+            schema["properties"]["optional"]["anyOf"][1],
+            json!({ "type": "null" })
+        );
+
+        let output = render::<Fields, _, _>(TypeScriptRenderer::default());
+
+        assert!(output.contains("required: string;"), "{output}");
+    }
+
+    #[derive(Config)]
+    struct Closed {
+        a: String,
+    }
+
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    struct Open {
+        a: String,
+    }
+
+    #[derive(Deserialize, Schematic)]
+    struct SerdeOpen {
+        a: String,
+    }
+
+    #[derive(Deserialize, Schematic)]
+    #[serde(deny_unknown_fields)]
+    struct SerdeClosed {
+        a: String,
+    }
+
+    #[derive(Deserialize, Schematic)]
+    #[serde(deny_unknown_fields)]
+    struct FlattensOpen {
+        #[serde(flatten)]
+        inner: SerdeOpen,
+        b: String,
+    }
+
+    // Closed is what serde enforces, and a config's partial denies unknown
+    // fields unless told otherwise
+    #[test]
+    fn closes_only_what_denies_unknown_fields() {
+        assert_eq!(
+            json_schema::<Closed>()["additionalProperties"],
+            json!(false)
+        );
+        assert_eq!(json_schema::<Open>().get("additionalProperties"), None);
+        assert_eq!(json_schema::<SerdeOpen>().get("additionalProperties"), None);
+        assert_eq!(
+            json_schema::<SerdeClosed>()["additionalProperties"],
+            json!(false)
+        );
+
+        // Serde can't deny the keys a flattened struct accepts
+        assert_eq!(
+            json_schema::<FlattensOpen>().get("additionalProperties"),
+            None
+        );
+        assert!(serde_json::from_str::<SerdeOpen>(r#"{ "a": "x", "z": 1 }"#).is_ok());
+    }
+
+    #[derive(Schematic)]
+    struct Integers {
+        a: u8,
+        b: i16,
+        c: u64,
+        d: i64,
+    }
+
+    #[test]
+    fn describes_an_integer_and_its_range() {
+        let schema = json_schema::<Integers>();
+
+        assert_eq!(
+            schema["properties"]["a"],
+            json!({ "type": "integer", "minimum": 0, "maximum": 255 })
+        );
+        assert_eq!(
+            schema["properties"]["b"],
+            json!({ "type": "integer", "minimum": -32768, "maximum": 32767 })
+        );
+        // A 64-bit bound can't be held exactly by a JSON number
+        assert_eq!(
+            schema["properties"]["c"],
+            json!({ "type": "integer", "minimum": 0 })
+        );
+        assert_eq!(schema["properties"]["d"], json!({ "type": "integer" }));
+    }
+
+    struct Narrowed;
+
+    impl Schematic for Narrowed {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.integer(IntegerType {
+                kind: IntegerKind::U8,
+                min: Some(10),
+                max: Some(500),
+                ..IntegerType::default()
+            })
+        }
+    }
+
+    #[derive(Schematic)]
+    struct UsesNarrowed {
+        value: Narrowed,
+    }
+
+    #[test]
+    fn an_explicit_bound_narrows_but_cant_widen() {
+        assert_eq!(
+            json_schema::<UsesNarrowed>()["properties"]["value"],
+            json!({ "type": "integer", "minimum": 10, "maximum": 255 })
+        );
+    }
+
+    #[derive(Deserialize, Schematic)]
+    #[serde(transparent)]
+    struct Port {
+        value: u16,
+    }
+
+    #[derive(Schematic)]
+    struct UsesPort {
+        port: Port,
+    }
+
+    #[test]
+    fn a_transparent_struct_is_its_field() {
+        let schema = json_schema::<UsesPort>();
+        let port = match schema["properties"]["port"].get("$ref") {
+            Some(reference) => {
+                let name = reference.as_str().unwrap().rsplit('/').next().unwrap();
+
+                schema["definitions"][name].clone()
+            }
+            None => schema["properties"]["port"].clone(),
+        };
+
+        assert_eq!(
+            port,
+            json!({ "type": "integer", "minimum": 0, "maximum": 65535 })
+        );
+        assert_eq!(serde_json::from_str::<Port>("8080").unwrap().value, 8080);
+    }
+}

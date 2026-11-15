@@ -59,7 +59,7 @@ An inline struct.
 
 ### `ident`
 
-<Badge>Nullable</Badge>
+<Badge>Optional</Badge> <Badge>Nullable</Badge>
 
 :::note
 A constrained string.
@@ -129,7 +129,7 @@ A string with a default and aliases.
 
 ### `nested`
 
-<Badge>Nullable</Badge>
+<Badge>Optional</Badge> <Badge>Nullable</Badge>
 
 :::note
 An optional nested config.
@@ -154,7 +154,7 @@ A list of nullable enums.
 
 ### `old_name`
 
-<Badge>Nullable</Badge> <Badge>Deprecated</Badge> Use `name` instead.
+<Badge>Optional</Badge> <Badge>Nullable</Badge> <Badge>Deprecated</Badge> Use `name` instead.
 
 :::note
 A deprecated field, use `name` instead.

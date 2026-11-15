@@ -99,6 +99,7 @@ pub struct SerdeContainerArgs {
 
     // struct
     pub rename: Option<SerdeRenameArg>,
+    pub transparent: bool,
     pub rename_all: Option<SerdeRenameArg>,
     pub rename_all_fields: Option<SerdeRenameArg>,
 

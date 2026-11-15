@@ -11,6 +11,11 @@
   hand-written partial implements `finalize` for its transforms.
 - Updated `ConfigLoadResult.layers` to begin with the default values and end with environment
   variables, so an index into it shifts by one.
+- Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it, or
+  `..Default::default()`. A type that only derives `Schematic` now follows serde, so its schema is
+  open unless `#[serde(deny_unknown_fields)]`.
+- Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
+  is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
 - Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, and
   `Source::Defaults` and `Source::EnvVars`, the loader's own layers, so a `match` on `Source` needs
   more arms. Adding either of the latter as a source is an error.
@@ -24,6 +29,19 @@
   `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
   traced to the layer that set it. They're the layers that were merged, so a default handler that
   isn't idempotent, like one finding an unused port, reports the value that was used.
+- Updated schemas to describe what serde accepts more closely:
+  - An `Option` field is optional, as serde fills in an omitted one with `None`, so it's no longer
+    in JSON Schema's `required`, and TypeScript renders it as `name?: T | null`. api_docs tags it
+    as optional as well as nullable.
+  - A `#[setting(required)]` `Option` field is described by the type it holds, as it must be given
+    a value, which `null` isn't.
+  - A struct that accepts unknown fields, a config with `#[config(allow_unknown_fields)]` or a
+    `Schematic` type without `#[serde(deny_unknown_fields)]`, no longer renders
+    `additionalProperties: false` in JSON Schema.
+  - A struct with `#[serde(transparent)]` is described by its one field.
+  - JSON Schema renders an integer as `"type": "integer"` rather than `"number"`, with its kind's
+    range, like `0` to `255` for a `u8`. An explicit bound narrows the range but can't widen it, and
+    a 64-bit bound, which a JSON number can't hold exactly, is left out.
 - Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
   CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
   the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other

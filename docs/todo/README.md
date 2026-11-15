@@ -74,19 +74,19 @@ Each item is trivial or a few lines, and every one is confirmed:
 | deprecated message          | ~ bool only         | ✓               | ✓              | ✓              | ✓               |
 | field default               | ~ leaks (B18)       | ~ leaks         | ~ leaks        | ~ alias leaks  | ~ leaks         |
 | env var                     | ✗                   | ✓               | ✓              | ✗              | ✓               |
-| `Option` field omittable    | ✗                   | ✗               | n/a            | ✓              | ✓               |
-| `required` on `Option`      | ✗                   | ✗               | n/a            | ✗              | ✗               |
+| `Option` field omittable    | ✓ (G5)              | ✓ (G5)          | n/a            | ✓              | ✓               |
+| `required` on `Option`      | ✓ (G5)              | ✓ (G5)          | n/a            | ✓ (G5)         | ✓ (G5)          |
 | aliases                     | ~                   | ✓               | ✗              | ✓              | ✓               |
 | flatten map                 | ✓                   | ✓               | ✗              | ✓              | ✓               |
 | flatten struct              | ✗ (B15)             | ✗ collision     | ✗ dropped      | ✓              | ✓               |
 | internal tag + named struct | ✗ (B16)             | ✗               | ?              | ✓              | ✗               |
 | recursion                   | ✗ root ref, ✗ `Box` | ✗ `Box`         | ✗ `Box`        | ✓              | ✗ `Box`         |
-| integer kind and range      | ✗ `number`          | ~               | ✓              | ✓              | ~               |
+| integer kind and range      | ✓ (G5)              | ~               | ✓              | ✓              | ~               |
 | string/number constraints   | ✓                   | ✗               | ✗              | ✓              | ✓               |
-| unknown fields allowed      | ✗ always closed     | n/a             | n/a            | ~              | ✗               |
+| unknown fields allowed      | ✓ (G5)              | n/a             | n/a            | ~              | ✗               |
 | non-string map keys         | ✗                   | ~ strict Record | n/a            | ✓              | ✓               |
 | `Unknown` / any             | ✗ excludes null     | ✓               | ✗ TOML `null`  | ✓              | ✓               |
-| `transparent`               | ✗                   | ✗               | ✗              | ✗              | ✗               |
+| `transparent`               | ✓ (G5)              | ✓ (G5)          | ✓ (G5)         | ✓ (G5)         | ✓ (G5)          |
 | identifier/string escaping  | ✓                   | ✗ (B17)         | ✗ (B19)        | ✓              | ✓               |
 
 TypeScript also has smaller typing gaps:
