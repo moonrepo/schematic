@@ -1,0 +1,55 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    use schematic::internal::*;
+    Ok(
+        match self {
+            Self::A { a: na, b: nb, c: mut pc, d: nd } => {
+                let mut pa = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?;
+                let mut pb = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?;
+                let mut pd = <<CustomConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                    context,
+                )?;
+                MergeManager::new(context)
+                    .nested(&mut pa, na)?
+                    .nested(&mut pb, nb)?
+                    .nested(&mut pd, nd)?;
+                if let Some(layer) = pa {
+                    pa = Some(layer.finalize(context)?);
+                }
+                if let Some(layer) = pb {
+                    pb = Some(transform_config(layer.finalize(context)?, context)?);
+                }
+                if let Some(layer) = pc {
+                    pc = Some({
+                        let mut base = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                                context,
+                            )?
+                            .unwrap_or_default();
+                        base.merge(context, layer)?;
+                        base.finalize(context)?
+                    });
+                }
+                if let Some(layer) = pd {
+                    pd = Some(transform_config(layer.finalize(context)?, context)?);
+                }
+                Self::A {
+                    a: pa,
+                    b: pb,
+                    c: pc,
+                    d: pd,
+                }
+            }
+            _ => self,
+        },
+    )
+}

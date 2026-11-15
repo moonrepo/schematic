@@ -5,21 +5,21 @@ use syn::parse_quote;
 mod setting_null {
     use super::*;
 
-    // mod named_enum {
-    //     use super::*;
+    mod named_enum {
+        use super::*;
 
-    //     #[test]
-    //     #[should_panic(expected = "Can only use `null` with unit variants.")]
-    //     fn errors_for_named() {
-    //         Container::from(parse_quote! {
-    //             #[derive(Config)]
-    //             enum Example {
-    //                 #[setting(null)]
-    //                 A {}
-    //             }
-    //         });
-    //     }
-    // }
+        #[test]
+        #[should_panic(expected = "Can only use `null` with unit variants.")]
+        fn errors_for_named() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(null)]
+                    A {}
+                }
+            });
+        }
+    }
 
     mod unnamed_enum {
         use super::*;

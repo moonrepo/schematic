@@ -145,7 +145,73 @@ mod container_from_partial {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: bool,
+                        b: usize,
+                        c: String,
+                        d: i16,
+                        e: Option<String>,
+                        f: Vec<String>,
+                        g: Option<HashMap<u8, String>>,
+                        h: Box<String>,
+                    },
+                    B {
+                        r#type: String,
+                    },
+                    C {},
+                    D(String, usize),
+                    E,
+                }
+            });
+            assert_snapshot!(pretty(container.impl_full_from_partial()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        #[setting(nested = CustomConfig)]
+                        b: CustomConfig,
+                        #[setting(nested)]
+                        c: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        d: Arc<CustomConfig>,
+                        #[setting(nested)]
+                        e: Box<NestedConfig>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_full_from_partial()));
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Vec<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        b: HashMap<String, CustomConfig>,
+                        #[setting(nested)]
+                        c: Option<BTreeSet<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_full_from_partial()));
+        }
     }
 
     mod unnamed_enum {

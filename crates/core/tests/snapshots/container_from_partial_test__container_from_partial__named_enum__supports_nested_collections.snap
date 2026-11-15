@@ -1,0 +1,45 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    match partial {
+        PartialExample::A { a: pa, b: pb, c: pc } => {
+            Self::A {
+                a: {
+                    let data = pa.unwrap_or_default();
+                    data.into_iter()
+                        .map(|data| <NestedConfig as schematic::Config>::from_partial(
+                            data,
+                        ))
+                        .collect()
+                },
+                b: {
+                    let data = pb.unwrap_or_default();
+                    data.into_iter()
+                        .map(|(key, data)| (
+                            key,
+                            <CustomConfig as schematic::Config>::from_partial(data),
+                        ))
+                        .collect()
+                },
+                c: {
+                    let data = pc;
+                    match data {
+                        Some(data) => {
+                            Some(
+                                data
+                                    .into_iter()
+                                    .map(|data| <NestedConfig as schematic::Config>::from_partial(
+                                        data,
+                                    ))
+                                    .collect(),
+                            )
+                        }
+                        None => None,
+                    }
+                },
+            }
+        }
+    }
+}

@@ -1,0 +1,31 @@
+---
+source: crates/core/tests/container_from_partial_test.rs
+expression: pretty(container.impl_full_from_partial())
+---
+fn from_partial(partial: Self::Partial) -> Self {
+    match partial {
+        PartialExample::A { a: pa, b: pb, c: pc, d: pd, e: pe, f: pf, g: pg, h: ph } => {
+            Self::A {
+                a: pa.unwrap_or_default(),
+                b: pb.unwrap_or_default(),
+                c: pc.unwrap_or_default(),
+                d: pd.unwrap_or_default(),
+                e: pe,
+                f: pf.unwrap_or_default(),
+                g: pg,
+                h: {
+                    let data = ph.unwrap_or_default();
+                    std::boxed::Box::new(data)
+                },
+            }
+        }
+        PartialExample::B { r#type: pa } => {
+            Self::B {
+                r#type: pa.unwrap_or_default(),
+            }
+        }
+        PartialExample::C {} => Self::C {},
+        PartialExample::D(pa, pb) => Self::D(pa, pb),
+        PartialExample::E => Self::E,
+    }
+}

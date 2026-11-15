@@ -162,7 +162,37 @@ mod setting_extend {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn skips_when_unused() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: bool,
+                    },
+                    B {
+                        b: usize,
+                    },
+                }
+            });
+            assert!(container.impl_partial_extends_from().is_empty());
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `extend` within an enum variant")]
+        fn errors_within_a_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(extend)]
+                        extends: Vec<String>,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

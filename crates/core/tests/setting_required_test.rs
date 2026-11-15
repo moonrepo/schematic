@@ -230,7 +230,117 @@ mod setting_required {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn accepts_bool() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(required)]
+                        a: Option<String>,
+                        #[setting(required)]
+                        b: String,
+                    },
+                }
+            });
+            let variant = container.inner.get_variants()[0];
+
+            assert!(variant.settings[0].args.required);
+            assert!(variant.settings[1].args.required);
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(required = 123)]
+                        a: Option<String>,
+                    },
+                }
+            });
+        }
+
+        // Required settings are checked when finalizing, under the variant
+        #[test]
+        fn validates_settings() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(required)]
+                        a: Option<String>,
+                        #[setting(required)]
+                        b: String,
+                        c: bool,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        // Left out of the defaults, so it stays empty until a layer provides it
+        #[test]
+        fn skips_defaults() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default)]
+                    A {
+                        #[setting(required)]
+                        a: String,
+                        b: String,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_full_default_partial()));
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` on a named variant")]
+        fn errors_on_the_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(required)]
+                    A {
+                        a: Option<String>,
+                    },
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` with `default`")]
+        fn errors_with_default() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(required, default = "a")]
+                        a: String,
+                    },
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `required` with a non-optional `nested` setting")]
+        fn errors_for_bare_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(required, nested)]
+                        a: NestedConfig,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

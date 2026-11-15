@@ -1,0 +1,72 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalizing: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalizing, path);
+    match self {
+        Self::A { a: pa, b: pb, .. } => {
+            validate
+                .named_variant(
+                    "A",
+                    |validate| {
+                        if let Some(setting) = pa {
+                            validate
+                                .check(
+                                    "a",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                        }
+                        if let Some(setting) = pb {
+                            validate
+                                .check(
+                                    "b",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                        }
+                    },
+                );
+        }
+        Self::B { d: pa, e: pb, .. } => {
+            validate
+                .named_variant(
+                    "B",
+                    |validate| {
+                        if let Some(setting) = pa {
+                            validate
+                                .check(
+                                    "d",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                        }
+                        if let Some(setting) = pb {
+                            validate
+                                .check(
+                                    "e",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                        }
+                    },
+                );
+        }
+        _ => {}
+    };
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

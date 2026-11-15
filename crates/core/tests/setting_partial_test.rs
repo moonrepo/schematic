@@ -86,6 +86,54 @@ mod setting_partial {
 
             assert_eq!(field.args.partial.len(), 1);
         }
+
+        #[test]
+        fn can_repeat() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(partial(other(attribute)))]
+                    #[setting(partial(and(another)))]
+                    A {
+                        field: bool
+                    }
+                }
+            });
+            let variant = container.inner.get_variants()[0];
+
+            assert_eq!(variant.args.partial.len(), 2);
+            assert_eq!(
+                pretty_attrs(variant.get_partial_attributes()),
+                "# [other (attribute)]\n# [and (another)]"
+            );
+        }
+
+        // A setting defaults itself, as a variant has no container default
+        #[test]
+        fn can_set_on_a_setting() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(partial(other(attribute)), partial(serde(alias = "b")))]
+                        field: bool
+                    }
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert_eq!(field.args.partial.len(), 2);
+            assert_eq!(
+                pretty_attrs(field.get_partial_attributes()),
+                "# [serde (skip_serializing_if = \"Option::is_none\" , default)]\n# [other (attribute)]\n# [serde (alias = \"b\")]"
+            );
+
+            // Only serde's own, for the struct an untagged variant is read through
+            assert_eq!(
+                pretty_attrs(field.get_partial_deserialize_attributes()),
+                "# [serde (skip_serializing_if = \"Option::is_none\" , default)]\n# [serde (alias = \"b\")]"
+            );
+        }
     }
 
     mod unnamed_enum {
