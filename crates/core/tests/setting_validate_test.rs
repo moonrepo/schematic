@@ -291,7 +291,181 @@ mod setting_validate {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn accepts_func_ref() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(validate = func_ref)]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.validate.is_some());
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn accepts_curried_func() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(validate = func_call())]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.validate.is_some());
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(validate = 123)]
+                        a: String,
+                    },
+                }
+            });
+        }
+
+        // Only the settings that are validated are bound
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(validate = func_ref)]
+                        a: bool,
+                        #[setting(validate = func_ref)]
+                        b: Option<bool>,
+                        c: String,
+                    },
+                    B {
+                        #[setting(validate = func_ref)]
+                        d: Vec<String>,
+                        #[setting(validate = func_ref)]
+                        e: Option<Vec<HashMap<String, usize>>>,
+                    },
+                    C {
+                        f: String,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn uses_serde_names() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(rename_all = "kebab-case")]
+                enum Example {
+                    #[setting(rename = "aa")]
+                    A {
+                        #[setting(rename = "a1", validate = func_ref)]
+                        a: String,
+                    },
+                    #[serde(rename_all = "camelCase")]
+                    B {
+                        #[setting(validate = func_ref)]
+                        some_value: String,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, validate = func_ref)]
+                        a: NestedConfig,
+                        #[setting(nested = CustomConfig, validate = func_ref)]
+                        b: CustomConfig,
+                        #[setting(nested, validate = func_ref)]
+                        c: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig, validate = func_ref)]
+                        d: Arc<CustomConfig>,
+                        #[setting(nested)]
+                        e: NestedConfig,
+                        #[setting(nested, flatten)]
+                        f: NestedConfig,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Box<NestedConfig>,
+                        #[setting(nested)]
+                        b: Option<Box<NestedConfig>>,
+                        #[setting(nested)]
+                        c: Box<Arc<NestedConfig>>,
+                        #[setting(nested)]
+                        d: Option<Vec<NestedConfig>>,
+                        #[setting(nested)]
+                        e: Box<Vec<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, validate = func_ref)]
+                        a: Vec<NestedConfig>,
+                        #[setting(nested = CustomConfig, validate = func_ref)]
+                        b: HashMap<String, CustomConfig>,
+                        #[setting(nested)]
+                        c: Option<BTreeSet<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `validate` on a named variant")]
+        fn errors_on_the_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(validate = func_ref)]
+                    A {
+                        a: String,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

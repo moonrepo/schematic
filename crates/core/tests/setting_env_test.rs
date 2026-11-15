@@ -290,7 +290,36 @@ mod setting_env {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        // An enum reads no environment variables, so neither does a variant
+        #[test]
+        #[should_panic(expected = "Cannot use `env` within an enum variant")]
+        fn errors_within_a_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(env = "A")]
+                        a: String,
+                    },
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env_prefix` within an enum variant")]
+        fn errors_for_a_prefix_within_a_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, env_prefix = "A_")]
+                        a: NestedConfig,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {
@@ -570,7 +599,21 @@ mod setting_parse_env {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        #[should_panic(expected = "Cannot use `parse_env` within an enum variant")]
+        fn errors_within_a_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(parse_env = schematic::env::split_comma)]
+                        a: Vec<String>,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

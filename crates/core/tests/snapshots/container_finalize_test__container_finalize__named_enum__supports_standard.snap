@@ -1,0 +1,43 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    use schematic::internal::*;
+    Ok(
+        match self {
+            Self::A { a: na, b: nb, c: nc, d: nd, e: pe, f: nf, g: pg } => {
+                let mut pa = Some(Default::default());
+                let mut pb = Some(Default::default());
+                let mut pc = Some(Default::default());
+                let mut pd = Some(Default::default());
+                let mut pf = Some(Default::default());
+                MergeManager::new(context)
+                    .apply(&mut pa, na)?
+                    .apply(&mut pb, nb)?
+                    .apply(&mut pc, nc)?
+                    .apply(&mut pd, nd)?
+                    .apply(&mut pf, nf)?;
+                if let Some(layer) = pc {
+                    pc = Some(transform_string(layer, context)?);
+                }
+                if let Some(layer) = pf {
+                    pf = Some(transform_vec(layer, context)?);
+                }
+                Self::A {
+                    a: pa,
+                    b: pb,
+                    c: pc,
+                    d: pd,
+                    e: pe,
+                    f: pf,
+                    g: pg,
+                }
+            }
+            _ => self,
+        },
+    )
+}

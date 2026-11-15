@@ -1,0 +1,70 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty(container.impl_schematic())
+---
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .union(
+                UnionType::from_named_schemas(
+                    [
+                        (
+                            "A".into(),
+                            Schema::structure(
+                                StructType::new([
+                                    (
+                                        "A".into(),
+                                        {
+                                            let mut item = Schema::structure(
+                                                StructType::new([
+                                                    ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                                                ]),
+                                            );
+                                            item.partialize();
+                                            item
+                                        },
+                                    ),
+                                ]),
+                            ),
+                        ),
+                        (
+                            "B".into(),
+                            Schema::structure(
+                                StructType::new([
+                                    (
+                                        "B".into(),
+                                        {
+                                            let mut item = Schema::structure(
+                                                StructType::new([
+                                                    ("b".into(), SchemaField::new(schema.infer::<String>())),
+                                                ]),
+                                            );
+                                            item.partialize();
+                                            item
+                                        },
+                                    ),
+                                ]),
+                            ),
+                        ),
+                    ],
+                    None,
+                ),
+            )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {
+    fn schema_name() -> Option<String> {
+        Some("PartialExample".into())
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}

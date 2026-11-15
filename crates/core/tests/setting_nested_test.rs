@@ -324,7 +324,170 @@ mod setting_nested {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn word() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.value.nested);
+            assert_eq!(
+                field.value.nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn bool_true() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested = true)]
+                        a: NestedConfig,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.value.nested);
+            assert_eq!(
+                field.value.nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn bool_false() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested = false)]
+                        a: NestedConfig,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(!field.value.nested);
+            assert!(field.value.nested_ident.is_none());
+        }
+
+        #[test]
+        fn explicit_ident() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested = NestedConfig)]
+                        a: NestedConfig,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.value.nested);
+            assert_eq!(
+                field.value.nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        fn detect_in_vec() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Vec<NestedConfig>,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.value.nested);
+            assert_eq!(
+                field.value.nested_ident.as_ref().unwrap(),
+                &format_ident!("NestedConfig")
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        fn panics_invalid_expr() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested = (1 + 1))]
+                        a: NestedConfig,
+                    },
+                }
+            });
+        }
+
+        // Each setting is nested on its own, so it may mix with others
+        #[test]
+        fn supports_multiple_settings() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        b: bool,
+                        #[setting(nested)]
+                        c: CustomConfig,
+                    },
+                }
+            });
+            let settings = &container.inner.get_variants()[0].settings;
+
+            assert!(settings[0].value.nested);
+            assert!(!settings[1].value.nested);
+            assert!(settings[2].value.nested);
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Nested configurations must be a `Config` type, received `bool`."
+        )]
+        fn panics_if_not_a_config() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: bool,
+                    },
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `nested` on a named variant")]
+        fn errors_on_the_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nested)]
+                    A {
+                        a: NestedConfig,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

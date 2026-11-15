@@ -43,6 +43,41 @@ mod standalone {
         assert_snapshot!(pretty(output.to_token_stream()));
     }
 
+    // A full struct of the settings, which follows serde in accepting
+    // unknown fields
+    #[test]
+    fn named_enum() {
+        let output = schematic_only(parse_quote! {
+            #[derive(Schematic)]
+            #[serde(tag = "type")]
+            enum Example {
+                A {
+                    a: bool,
+                    /// Field docs.
+                    #[schema(default = 1)]
+                    b: usize,
+                    c: Option<String>,
+                },
+                B(String),
+            }
+        });
+
+        assert_snapshot!(pretty(output.to_token_stream()));
+    }
+
+    #[test]
+    fn named_enum_denying_unknown_fields() {
+        let output = schematic_only(parse_quote! {
+            #[derive(Schematic)]
+            #[serde(deny_unknown_fields)]
+            enum Example {
+                A { a: bool },
+            }
+        });
+
+        assert_snapshot!(pretty(output.to_token_stream()));
+    }
+
     #[test]
     fn unnamed_enum() {
         let output = schematic_only(parse_quote! {

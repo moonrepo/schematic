@@ -1,0 +1,78 @@
+---
+source: crates/core/tests/container_finalize_test.rs
+expression: pretty(container.impl_partial_finalize())
+---
+fn finalize(
+    self,
+    context: &Self::Context,
+) -> std::result::Result<Self, schematic::ConfigError> {
+    use schematic::internal::*;
+    Ok(
+        match self {
+            Self::A { a: na, b: nb, c: mut pc } => {
+                let mut pa = Some(Default::default());
+                let mut pb = Some(Default::default());
+                MergeManager::new(context).apply(&mut pa, na)?.apply(&mut pb, nb)?;
+                if let Some(layer) = pa {
+                    pa = Some(
+                        layer
+                            .into_iter()
+                            .map(|layer| schematic::internal::finalize_with_layers(
+                                layer,
+                                context,
+                            ))
+                            .collect::<
+                                std::result::Result<
+                                    Vec<<NestedConfig as schematic::Config>::Partial>,
+                                    schematic::ConfigError,
+                                >,
+                            >()?,
+                    );
+                }
+                if let Some(layer) = pb {
+                    pb = Some(
+                        transform_config(
+                            layer
+                                .into_iter()
+                                .map(|(key, layer)| Ok((
+                                    key,
+                                    schematic::internal::finalize_with_layers(layer, context)?,
+                                )))
+                                .collect::<
+                                    std::result::Result<
+                                        HashMap<
+                                            String,
+                                            <CustomConfig as schematic::Config>::Partial,
+                                        >,
+                                        schematic::ConfigError,
+                                    >,
+                                >()?,
+                            context,
+                        )?,
+                    );
+                }
+                if let Some(layer) = pc {
+                    pc = Some(
+                        transform_config(
+                            layer
+                                .into_iter()
+                                .map(|layer| schematic::internal::finalize_with_layers(
+                                    layer,
+                                    context,
+                                ))
+                                .collect::<
+                                    std::result::Result<
+                                        BTreeSet<<NestedConfig as schematic::Config>::Partial>,
+                                        schematic::ConfigError,
+                                    >,
+                                >()?,
+                            context,
+                        )?,
+                    );
+                }
+                Self::A { a: pa, b: pb, c: pc }
+            }
+            _ => self,
+        },
+    )
+}

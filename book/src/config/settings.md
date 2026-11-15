@@ -1,7 +1,9 @@
 # Settings
 
-Settings are the individual fields of a [`Config` struct](./struct/index.md) or variants of a
-[`Config` enum](./struct/index.md), and can be annotated with the optional `#[setting]` attribute.
+Settings are the individual fields of a [`Config` struct](./struct/index.md), the variants of a
+[`Config` enum](./struct/index.md), or the fields of a
+[named variant](./struct/index.md#enum-variants), and can be annotated with the optional `#[setting]`
+attribute.
 
 ## Third-party types
 
@@ -50,6 +52,8 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 - `default` - Sets the [default value](./struct/default.md). On an enum variant, it names the
   variant the partial defaults to, and on a variant holding a value, can also provide that value.
 - `env` _(struct only)_ - Sets the [environment variable](./struct/env.md) to receive a value from.
+  Not supported within a named variant either, as an enum reads no environment variables, which
+  holds for `env_prefix` and `parse_env` too.
 - `env_prefix` _(struct only)_ - Overrides the [environment variable](./struct/env.md#container-prefixes)
   prefix of the nested config this field holds. Requires `nested`.
 - `exclude` - Omits the field or variant from the generated [schema](../schema/index.md). Has no
@@ -77,6 +81,8 @@ And the following for serde compatibility:
 - `skip_serializing`
 - `skip_serializing_if` - Only honored from `#[setting]`, and written against the partial's
   `Option`. The `#[serde]` form is left for the full type, whose field is not wrapped.
+- `rename_all` _(named variant only)_ - Applies a casing to the fields of the variant, over the
+  enum's `rename_all_fields`.
 - `untagged` _(enum only)_
 
 ### Serde support

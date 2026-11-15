@@ -2,7 +2,8 @@
 
 > Requires the `env` Cargo feature, which is enabled by default.
 
-> Not supported for enums, so `env_prefix` on an enum fails to compile.
+> Not supported for enums, so `env_prefix` on an enum, or `env` on a field of a named variant,
+> fails to compile.
 
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.

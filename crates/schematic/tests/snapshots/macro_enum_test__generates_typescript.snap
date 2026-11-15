@@ -116,7 +116,7 @@ export type PartialInternalTagged = {
 } | boolean | number | {
 	bar?: number | null;
 	foo?: string | null;
-	type?: 'Qux' | null;
+	type: 'Qux';
 };
 
 export type PartialAdjacentTagged = {

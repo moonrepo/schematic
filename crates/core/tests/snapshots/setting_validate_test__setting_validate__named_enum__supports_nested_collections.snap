@@ -1,0 +1,72 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalizing: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalizing, path);
+    match self {
+        Self::A { a: pa, b: pb, c: pc, .. } => {
+            validate
+                .named_variant(
+                    "A",
+                    |validate| {
+                        if let Some(setting) = pa {
+                            validate
+                                .check(
+                                    "a",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            {
+                                let path = validate.key_path("a");
+                                let item = setting;
+                                for (index, item) in item.iter().enumerate() {
+                                    let path = path.join_index(index);
+                                    validate.nested_at(path, item);
+                                }
+                            }
+                        }
+                        if let Some(setting) = pb {
+                            validate
+                                .check(
+                                    "b",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            {
+                                let path = validate.key_path("b");
+                                let item = setting;
+                                for (key, item) in item {
+                                    let path = path.join_key(key);
+                                    validate.nested_at(path, item);
+                                }
+                            }
+                        }
+                        if let Some(setting) = pc {
+                            {
+                                let path = validate.key_path("c");
+                                let item = setting;
+                                for (index, item) in item.iter().enumerate() {
+                                    let path = path.join_index(index);
+                                    validate.nested_at(path, item);
+                                }
+                            }
+                        }
+                    },
+                );
+        }
+        _ => {}
+    };
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

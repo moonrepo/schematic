@@ -1,0 +1,34 @@
+---
+source: crates/core/tests/setting_required_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalizing: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalizing, path);
+    match self {
+        Self::A { a: pa, b: pb, .. } => {
+            validate
+                .named_variant(
+                    "A",
+                    |validate| {
+                        if pa.is_none() {
+                            validate.required("a");
+                        }
+                        if pb.is_none() {
+                            validate.required("b");
+                        }
+                    },
+                );
+        }
+        _ => {}
+    };
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

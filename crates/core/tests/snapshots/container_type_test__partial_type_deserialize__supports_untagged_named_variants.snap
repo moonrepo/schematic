@@ -1,0 +1,85 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.impl_partial_type_deserialize())
+---
+#[automatically_derived]
+impl<'de> serde::Deserialize<'de> for PartialExample {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::Error as _;
+        let content = schematic::internal::buffer_untagged_content(deserializer)?;
+        let mut errors: Vec<(&str, String)> = Vec::new();
+        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
+            Ok(value) => return Ok(PartialExample::A(value)),
+            Err(error) => errors.push(("A", error)),
+        }
+        {
+            #[derive(serde::Deserialize)]
+            #[serde(deny_unknown_fields, rename_all = "camelCase")]
+            struct Variant {
+                #[serde(skip_serializing_if = "Option::is_none", default)]
+                some_value: Option<usize>,
+                #[serde(
+                    alias = "o",
+                    rename = "other",
+                    skip_serializing_if = "Option::is_none",
+                    default
+                )]
+                other_value: Option<String>,
+                #[serde(skip_serializing_if = "Option::is_none", default)]
+                child: Option<<NestedConfig as schematic::Config>::Partial>,
+            }
+            match schematic::internal::deserialize_untagged_variant::<
+                Variant,
+            >(&content) {
+                Ok(value) => {
+                    return Ok(PartialExample::B {
+                        some_value: value.some_value,
+                        other_value: value.other_value,
+                        child: value.child,
+                    });
+                }
+                Err(error) => errors.push(("B", error)),
+            }
+        }
+        {
+            #[derive(serde::Deserialize)]
+            #[serde(deny_unknown_fields, rename_all = "kebab-case")]
+            struct Variant {
+                #[serde(skip_serializing_if = "Option::is_none", default)]
+                some_value: Option<bool>,
+            }
+            match schematic::internal::deserialize_untagged_variant::<
+                Variant,
+            >(&content) {
+                Ok(value) => {
+                    return Ok(PartialExample::C {
+                        some_value: value.some_value,
+                    });
+                }
+                Err(error) => errors.push(("C", error)),
+            }
+        }
+        {
+            #[derive(serde::Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Variant {}
+            match schematic::internal::deserialize_untagged_variant::<
+                Variant,
+            >(&content) {
+                Ok(_) => return Ok(PartialExample::D {}),
+                Err(error) => errors.push(("D", error)),
+            }
+        }
+        Err(
+            D::Error::custom(
+                schematic::internal::untagged_error_message(
+                    stringify!(PartialExample),
+                    &errors,
+                ),
+            ),
+        )
+    }
+}

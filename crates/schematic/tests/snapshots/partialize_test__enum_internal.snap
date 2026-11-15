@@ -174,41 +174,12 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                        deprecated: None,
 ⬛️                                        description: None,
 ⬛️                                        name: None,
-🟥                                        nullable: false,
-🟥                                        ty: Literal(
-🟥                                            LiteralType {
-🟥                                                value: String(
-🟥                                                    "Qux",
-🟥                                                ),
-🟩                                        nullable: true,
-🟩                                        ty: Union(
-🟩                                            UnionType {
-🟩                                                default_index: None,
-🟩                                                partial: false,
-🟩                                                operator: AnyOf,
-🟩                                                variants_names: None,
-🟩                                                variants_types: [
-🟩                                                    Schema {
-🟩                                                        deprecated: None,
-🟩                                                        description: None,
-🟩                                                        name: None,
-🟩                                                        nullable: false,
-🟩                                                        ty: Literal(
-🟩                                                            LiteralType {
-🟩                                                                value: String(
-🟩                                                                    "Qux",
-🟩                                                                ),
-🟩                                                            },
-🟩                                                        ),
-🟩                                                    },
-🟩                                                    Schema {
-🟩                                                        deprecated: None,
-🟩                                                        description: None,
-🟩                                                        name: None,
-🟩                                                        nullable: false,
-🟩                                                        ty: Null,
-🟩                                                    },
-🟩                                                ],
+⬛️                                        nullable: false,
+⬛️                                        ty: Literal(
+⬛️                                            LiteralType {
+⬛️                                                value: String(
+⬛️                                                    "Qux",
+⬛️                                                ),
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
@@ -217,10 +188,8 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                                    env_var: None,
 ⬛️                                    flatten: false,
 ⬛️                                    hidden: false,
-🟥                                    nullable: false,
-🟥                                    optional: false,
-🟩                                    nullable: true,
-🟩                                    optional: true,
+⬛️                                    nullable: false,
+⬛️                                    optional: false,
 ⬛️                                    read_only: false,
 ⬛️                                    write_only: false,
 ⬛️                                },

@@ -1,0 +1,44 @@
+---
+source: crates/core/tests/setting_merge_test.rs
+expression: pretty(container.impl_partial_merge())
+---
+fn merge(
+    &mut self,
+    context: &Self::Context,
+    mut next: Self,
+) -> std::result::Result<(), schematic::ConfigError> {
+    use schematic::internal::*;
+    match self {
+        Self::A { a: pa } => {
+            if let Self::A { a: na } = next {
+                MergeManager::new(context).apply(pa, na)?;
+            } else {
+                *self = next;
+            }
+        }
+        Self::B { b: pa, c: pb, d: pc, e: pd } => {
+            if let Self::B { b: na, c: nb, d: nc, e: nd } = next {
+                MergeManager::new(context)
+                    .apply(pa, na)?
+                    .apply(pb, nb)?
+                    .apply(pc, nc)?
+                    .apply(pd, nd)?;
+            } else {
+                *self = next;
+            }
+        }
+        Self::C { f: pa, g: pb } => {
+            if let Self::C { f: na, g: nb } = next {
+                MergeManager::new(context)
+                    .apply(pa, na)?
+                    .apply_with(pb, nb, schematic::merge::merge_list)?;
+            } else {
+                *self = next;
+            }
+        }
+        _ => {
+            *self = next;
+        }
+    };
+    Ok(())
+}

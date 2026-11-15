@@ -1,0 +1,84 @@
+---
+source: crates/core/tests/derive_schematic_test.rs
+expression: pretty(output.to_token_stream())
+---
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .union(
+                UnionType::from_named_schemas(
+                    [
+                        (
+                            "A".into(),
+                            {
+                                let mut item = {
+                                    let mut structure = StructType::new([
+                                        ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                                        (
+                                            "b".into(),
+                                            {
+                                                let mut field = SchemaField::new(schema.infer::<usize>());
+                                                field.comment = Some("Field docs.".into());
+                                                field.default = Some(LiteralValue::Int(1));
+                                                field.optional = true;
+                                                field
+                                            },
+                                        ),
+                                        (
+                                            "c".into(),
+                                            {
+                                                let mut field = SchemaField::new(
+                                                    schema.infer::<Option<String>>(),
+                                                );
+                                                field.nullable = true;
+                                                field.optional = true;
+                                                field
+                                            },
+                                        ),
+                                    ]);
+                                    structure.allow_unknown_fields = true;
+                                    Schema::structure(structure)
+                                };
+                                if item
+                                    .ty
+                                    .add_field(
+                                        "type",
+                                        SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("A".into())),
+                                        ),
+                                    )
+                                {
+                                    item.name = None;
+                                }
+                                item
+                            },
+                        ),
+                        (
+                            "B".into(),
+                            {
+                                let mut item = schema.infer::<String>();
+                                if item
+                                    .ty
+                                    .add_field(
+                                        "type",
+                                        SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("B".into())),
+                                        ),
+                                    )
+                                {
+                                    item.name = None;
+                                }
+                                item
+                            },
+                        ),
+                    ],
+                    None,
+                ),
+            )
+    }
+}

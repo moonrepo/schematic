@@ -319,18 +319,152 @@ mod setting_default {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Enums with named fields are not supported!")]
-        fn errors_for_named_enum() {
+        #[should_panic(expected = "Only 1 variant may be marked as default.")]
+        fn errors_if_multiple_defaults() {
             Container::from(parse_quote! {
                 #[derive(Config)]
                 enum Example {
+                    #[setting(default)]
                     Foo {},
                     #[setting(default)]
                     Bar {},
+                    #[setting(default)]
                     Baz {},
                 }
             })
             .impl_partial_default_values();
+        }
+
+        // The default variant holds the type default of each setting, as
+        // finalizing the variant applies their defaults
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    Foo {
+                        a: bool,
+                    },
+                    #[setting(default)]
+                    Bar {
+                        #[setting(default = true)]
+                        a: bool,
+                        #[setting(default = "abc")]
+                        b: String,
+                        c: Option<usize>,
+                        #[setting(nested)]
+                        d: NestedConfig,
+                    },
+                    Baz {
+                        a: bool,
+                    },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_default_values()));
+
+            let variants = container.inner.get_variants();
+
+            assert!(variants[1].is_default());
+        }
+
+        // While the full type's `Default` holds their defaults
+        #[test]
+        fn supports_default_partial() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    Foo {
+                        a: bool,
+                    },
+                    #[setting(default)]
+                    Bar {
+                        #[setting(default = true)]
+                        a: bool,
+                        #[setting(default = "abc")]
+                        b: String,
+                        c: Option<usize>,
+                        #[setting(nested)]
+                        d: NestedConfig,
+                        #[setting(default = handler)]
+                        e: usize,
+                    },
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_full_default_partial()));
+        }
+
+        #[test]
+        fn skips_default_partial_without_defaults() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default)]
+                    Foo {
+                        a: Option<bool>,
+                        #[setting(required)]
+                        b: Option<String>,
+                    },
+                }
+            });
+
+            assert!(container.impl_full_default_partial().is_empty());
+        }
+
+        #[test]
+        fn marks_with_a_boolean() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = false)]
+                    Foo {},
+                    #[setting(default = true)]
+                    Bar {},
+                }
+            });
+            let variants = container.inner.get_variants();
+
+            assert!(!variants[0].is_default());
+            assert!(variants[1].is_default());
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use a `default` value with named variants")]
+        fn errors_for_a_value() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default = 1)]
+                    Foo { a: usize },
+                }
+            });
+        }
+
+        #[test]
+        fn supports_setting_types() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(default)]
+                    Foo {
+                        #[setting(default = 100)]
+                        a: usize,
+                        #[setting(default = vec!["a", "b", "c"])]
+                        b: Vec<String>,
+                        #[setting(default = (10, -10, 0))]
+                        c: (usize, isize, u8),
+                    },
+                }
+            });
+
+            let defaults = container.inner.get_variants()[0]
+                .settings
+                .iter()
+                .map(|field| (field.ident.as_ref().unwrap(), field.args.default.as_ref()))
+                .collect::<BTreeMap<_, _>>();
+
+            assert_debug_snapshot!(defaults);
         }
     }
 

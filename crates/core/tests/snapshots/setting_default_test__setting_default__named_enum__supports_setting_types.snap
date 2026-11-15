@@ -1,0 +1,95 @@
+---
+source: crates/core/tests/setting_default_test.rs
+expression: defaults
+---
+{
+    Ident(
+        a,
+    ): Some(
+        Expr::Lit {
+            attrs: [],
+            lit: Lit::Int {
+                token: 100,
+            },
+        },
+    ),
+    Ident(
+        b,
+    ): Some(
+        Expr::Macro {
+            attrs: [],
+            mac: Macro {
+                path: Path {
+                    leading_colon: None,
+                    segments: [
+                        PathSegment {
+                            ident: Ident(
+                                vec,
+                            ),
+                            arguments: PathArguments::None,
+                        },
+                    ],
+                },
+                bang_token: Token![!],
+                delimiter: MacroDelimiter::Bracket(
+                    Bracket,
+                ),
+                tokens: TokenStream [
+                    Literal {
+                        lit: "a",
+                    },
+                    Punct {
+                        char: ',',
+                        spacing: Alone,
+                    },
+                    Literal {
+                        lit: "b",
+                    },
+                    Punct {
+                        char: ',',
+                        spacing: Alone,
+                    },
+                    Literal {
+                        lit: "c",
+                    },
+                ],
+            },
+        },
+    ),
+    Ident(
+        c,
+    ): Some(
+        Expr::Tuple {
+            attrs: [],
+            paren_token: Paren,
+            elems: [
+                Expr::Lit {
+                    attrs: [],
+                    lit: Lit::Int {
+                        token: 10,
+                    },
+                },
+                Token![,],
+                Expr::Unary {
+                    attrs: [],
+                    op: UnOp::Neg(
+                        Token![-],
+                    ),
+                    expr: Expr::Lit {
+                        attrs: [],
+                        lit: Lit::Int {
+                            token: 10,
+                        },
+                    },
+                },
+                Token![,],
+                Expr::Lit {
+                    attrs: [],
+                    lit: Lit::Int {
+                        token: 0,
+                    },
+                },
+            ],
+        },
+    ),
+}

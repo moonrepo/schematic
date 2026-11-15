@@ -1,0 +1,103 @@
+---
+source: crates/core/tests/setting_validate_test.rs
+expression: pretty(container.impl_partial_validate())
+---
+fn validate_with_path(
+    &self,
+    context: &Self::Context,
+    finalizing: bool,
+    path: schematic::Path,
+) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+    use schematic::internal::*;
+    let mut validate = ValidateManager::new(context, finalizing, path);
+    match self {
+        Self::A { a: pa, b: pb, c: pc, d: pd, e: pe, f: pf, .. } => {
+            validate
+                .named_variant(
+                    "A",
+                    |validate| {
+                        if let Some(setting) = pa {
+                            validate
+                                .check(
+                                    "a",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            validate.nested("a", setting);
+                        } else if finalizing {
+                            validate
+                                .nested(
+                                    "a",
+                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+                                );
+                        }
+                        if let Some(setting) = pb {
+                            validate
+                                .check(
+                                    "b",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            validate.nested("b", setting);
+                        } else if finalizing {
+                            validate
+                                .nested(
+                                    "b",
+                                    &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
+                                );
+                        }
+                        if let Some(setting) = pc {
+                            validate
+                                .check(
+                                    "c",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            validate.nested("c", setting);
+                        }
+                        if let Some(setting) = pd {
+                            validate
+                                .check(
+                                    "d",
+                                    setting,
+                                    self,
+                                    |v, d, c, f| func_ref(v, d, c, f),
+                                );
+                            validate.nested("d", setting);
+                        } else if finalizing {
+                            validate
+                                .nested(
+                                    "d",
+                                    &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
+                                );
+                        }
+                        if let Some(setting) = pe {
+                            validate.nested("e", setting);
+                        } else if finalizing {
+                            validate
+                                .nested(
+                                    "e",
+                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+                                );
+                        }
+                        if let Some(setting) = pf {
+                            validate.flattened(setting);
+                        } else if finalizing {
+                            validate
+                                .flattened(
+                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+                                );
+                        }
+                    },
+                );
+        }
+        _ => {}
+    };
+    if !validate.errors.is_empty() {
+        return Err(validate.errors);
+    }
+    Ok(())
+}

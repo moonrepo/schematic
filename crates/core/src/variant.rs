@@ -4,9 +4,10 @@ use crate::args::{
     NestedArg, PartialArg, SerdeContainerArgs, SerdeFieldArgs, SerdeRenameArg, VariantDefaultArg,
 };
 use crate::container::ContainerArgs;
+use crate::field::{Field, VariantScope};
 use crate::utils::{
     ImplResult, format_case, format_loose_case, get_meta_path, get_renamed_value,
-    is_inheritable_attribute,
+    is_inheritable_attribute, to_type_string,
 };
 use crate::value::path_names_a_value;
 use crate::variant_value::VariantValue;
@@ -16,7 +17,7 @@ use quote::{ToTokens, format_ident, quote};
 use std::rc::Rc;
 use syn::ext::IdentExt;
 use syn::{
-    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Ident, Index, Lit, Type,
+    Attribute, Expr, ExprLit, ExprPath, Fields, FieldsUnnamed, Generics, Ident, Index, Lit, Type,
     Variant as NativeVariant,
 };
 
@@ -41,6 +42,7 @@ pub struct VariantArgs {
     #[darling(multiple)]
     pub alias: Vec<String>,
     pub rename: Option<SerdeRenameArg>,
+    pub rename_all: Option<SerdeRenameArg>,
     pub skip: bool,
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
@@ -53,6 +55,18 @@ pub struct VariantArgs {
 pub struct VariantValueArgs {
     pub context: Option<ExprPath>,
     pub nested: Option<NestedArg>,
+}
+
+/// The bindings of a variant's values or settings, when destructured from
+/// this partial (`pa`) and the next (`na`), by position.
+pub fn get_binding_idents(index: usize) -> (Ident, Ident) {
+    if index < 26 {
+        let letter = (b'a' + index as u8) as char;
+
+        (format_ident!("p{letter}"), format_ident!("n{letter}"))
+    } else {
+        (format_ident!("p{index}"), format_ident!("n{index}"))
+    }
 }
 
 /// Return the value of a boolean literal, which is all
@@ -69,7 +83,13 @@ fn as_bool_literal(expr: &Expr) -> Option<bool> {
 
 #[derive(Debug)]
 pub struct Variant {
+    /// The values of a tuple variant, which aren't optional within the
+    /// partial, as the variant is the whole of a setting.
     pub values: Vec<VariantValue>,
+
+    /// The settings of a named variant, which are each optional within the
+    /// partial, like the fields of a struct.
+    pub settings: Vec<Field>,
 
     // args
     pub args: VariantArgs,
@@ -93,24 +113,56 @@ impl Variant {
         let args = VariantArgs::from_attributes(&variant.attrs).unwrap();
         let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap();
 
+        // Serde names the fields of a variant with its own `rename_all`,
+        // otherwise the container's `rename_all_fields`
+        let rename_all =
+            get_renamed_value(args.rename_all.as_ref(), serde_args.rename_all.as_ref()).or_else(
+                || {
+                    get_renamed_value(
+                        container_args.rename_all_fields.as_ref(),
+                        serde_container_args.rename_all_fields.as_ref(),
+                    )
+                },
+            );
+
+        let settings = match &variant.fields {
+            Fields::Named(fields) => fields
+                .named
+                .iter()
+                .enumerate()
+                .map(|(index, field)| {
+                    let (prev, next) = get_binding_idents(index);
+
+                    Field::new(
+                        field.to_owned(),
+                        container_args.clone(),
+                        serde_container_args.clone(),
+                        self_ty,
+                        Some(VariantScope {
+                            rename_all: rename_all.clone(),
+                            prev,
+                            next,
+                        }),
+                    )
+                })
+                .collect(),
+            _ => vec![],
+        };
+
         let variant = Self {
             attrs: variant.attrs,
             container_args,
             ident: variant.ident,
             serde_args,
             serde_container_args,
+            settings,
             values: match &variant.fields {
-                Fields::Named(fields) => fields
-                    .named
-                    .iter()
-                    .map(|field| Self::new_value(field, &args, self_ty))
-                    .collect(),
                 Fields::Unnamed(fields) => fields
                     .unnamed
                     .iter()
                     .map(|field| Self::new_value(field, &args, self_ty))
                     .collect(),
-                Fields::Unit => vec![],
+                Fields::Named(_) | Fields::Unit => vec![],
             },
             fields: variant.fields,
             args,
@@ -140,6 +192,12 @@ impl Variant {
     }
 
     fn validate_args(&self) {
+        if self.is_named_variant() {
+            self.validate_named_args();
+        } else if self.args.rename_all.is_some() || self.serde_args.rename_all.is_some() {
+            panic!("Can only use `rename_all` with named variants, as only they have fields.");
+        }
+
         if self.is_required()
             && self
                 .values
@@ -192,6 +250,33 @@ impl Variant {
         }
     }
 
+    /// Panic on an attribute that a named variant can't honor, as each of its
+    /// settings takes its own, like the fields of a struct.
+    fn validate_named_args(&self) {
+        for (name, used) in [
+            ("context", self.args.context.is_some()),
+            ("merge", self.args.merge.is_some()),
+            ("nested", self.args.nested.is_some()),
+            ("required", self.args.required),
+            ("transform", self.args.transform.is_some()),
+            ("validate", self.args.validate.is_some()),
+        ] {
+            if used {
+                panic!(
+                    "Cannot use `{name}` on a named variant, as each of its fields is a setting. Use it on the fields instead."
+                );
+            }
+        }
+
+        if let Some(VariantDefaultArg::Value(expr)) = &self.args.default
+            && as_bool_literal(expr).is_none()
+        {
+            panic!(
+                "Cannot use a `default` value with named variants, as each of its fields is a setting. Use `default` on the fields instead."
+            );
+        }
+    }
+
     /// Return an explicit `rename`, if one was provided. Casing is not
     /// applied, as a rename is used exactly as written.
     fn get_name_renamed(&self) -> Option<String> {
@@ -231,7 +316,7 @@ impl Variant {
         let marked = match &self.args.default {
             Some(VariantDefaultArg::Marked) => true,
             Some(VariantDefaultArg::Value(expr)) => {
-                !self.is_unit_variant() || as_bool_literal(expr).unwrap_or_default()
+                self.is_tuple_variant() || as_bool_literal(expr).unwrap_or_default()
             }
             None => false,
         };
@@ -244,9 +329,10 @@ impl Variant {
     }
 
     /// The value this variant holds by default, from `#[setting(default = value)]`.
+    /// Only a tuple variant holds a value, while a boolean marks any other.
     pub fn get_default_value(&self) -> Option<&Expr> {
         match &self.args.default {
-            Some(VariantDefaultArg::Value(expr)) if !self.is_unit_variant() => Some(expr),
+            Some(VariantDefaultArg::Value(expr)) if self.is_tuple_variant() => Some(expr),
             _ => None,
         }
     }
@@ -421,7 +507,17 @@ impl Variant {
     }
 
     pub fn is_unit_variant(&self) -> bool {
-        self.values.is_empty()
+        matches!(self.fields, Fields::Unit)
+    }
+
+    /// Whether this variant holds values by position, like `A(String)`.
+    pub fn is_tuple_variant(&self) -> bool {
+        matches!(self.fields, Fields::Unnamed(_))
+    }
+
+    /// Whether this variant holds settings by name, like `A { name: String }`.
+    pub fn is_named_variant(&self) -> bool {
+        matches!(self.fields, Fields::Named(_))
     }
 
     pub fn get_partial_attributes(&self) -> Vec<TokenStream> {
@@ -482,6 +578,16 @@ impl Variant {
             }
         }
 
+        if let Some(rename_all) = self
+            .args
+            .rename_all
+            .as_ref()
+            .or(self.serde_args.rename_all.as_ref())
+            .filter(|rename| !rename.is_empty())
+        {
+            meta.push(rename_all.get_meta("rename_all"));
+        }
+
         if self.is_untagged() {
             meta.push(quote! { untagged });
         }
@@ -497,8 +603,17 @@ impl Variant {
 
     /// Generate the schema for this variant, shaped by how the
     /// enum is tagged.
+    ///
+    /// A named variant is a struct of its settings, which is a partial within
+    /// a config's partial when `partial` is true, and accepts unknown fields
+    /// when `allows_unknown_fields` is true.
     #[cfg(feature = "schema")]
-    pub fn impl_schema_type(&self, tag_format: &SerdeTagFormat) -> TokenStream {
+    pub fn impl_schema_type(
+        &self,
+        tag_format: &SerdeTagFormat,
+        partial: bool,
+        allows_unknown_fields: bool,
+    ) -> TokenStream {
         use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
         let name = self.get_name();
@@ -507,7 +622,38 @@ impl Variant {
         let untagged = matches!(tag_format, SerdeTagFormat::Untagged) || self.is_untagged();
 
         let inner = match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            // A skipped setting is never read or written, so like an excluded
+            // one it has no schema, as within a struct
+            Fields::Named(_) => {
+                let fields = self
+                    .settings
+                    .iter()
+                    .filter(|setting| !setting.is_excluded() && !setting.is_skipped())
+                    .map(|setting| setting.impl_schema_type(true))
+                    .collect::<Vec<_>>();
+
+                let structure = if fields.is_empty() {
+                    quote! { StructType::default() }
+                } else {
+                    quote! {
+                        StructType::new([
+                            #(#fields),*
+                        ])
+                    }
+                };
+
+                if allows_unknown_fields {
+                    quote! {
+                        {
+                            let mut structure = #structure;
+                            structure.allow_unknown_fields = true;
+                            Schema::structure(structure)
+                        }
+                    }
+                } else {
+                    quote! { Schema::structure(#structure) }
+                }
+            }
             Fields::Unnamed(fields) => {
                 let items = fields
                     .unnamed
@@ -554,7 +700,15 @@ impl Variant {
         // literal that is always present. When only some values are nested,
         // each was marked by `infer_as_nested` already, and marking the tuple
         // would mark the others too.
-        let nested = !self.values.is_empty() && self.values.iter().all(|value| value.nested);
+        //
+        // A named variant's struct is the partial itself, as its settings are
+        // each optional within a config's partial, so it's marked like a
+        // nested value.
+        let nested = if self.is_named_variant() {
+            partial
+        } else {
+            !self.values.is_empty() && self.values.iter().all(|value| value.nested)
+        };
         let wrap = |value: TokenStream| {
             if nested {
                 quote! {
@@ -596,6 +750,8 @@ impl Variant {
             // and units have no value
             if unit {
                 quote! { Schema::null() }
+            } else if self.is_named_variant() {
+                partial_inner
             } else {
                 inner
             }
@@ -680,12 +836,103 @@ impl Variant {
         schema
     }
 
+    /// The fields of a pattern that destructures this named variant, binding
+    /// each setting for this partial (`name: pa`), or the next (`name: na`).
+    fn get_named_bindings(&self, next: bool) -> Vec<TokenStream> {
+        self.settings
+            .iter()
+            .map(|setting| {
+                let key = setting.get_key();
+                let binding = if next {
+                    setting.get_next_access()
+                } else {
+                    setting.get_access(quote! { self })
+                };
+
+                quote! { #key: #binding }
+            })
+            .collect()
+    }
+
+    /// The default of each of this named variant's settings, in order, like
+    /// the default values of a struct, or `None` for a setting without one.
+    /// When `full` is true, a bare nested config takes its own default
+    /// partial instead, for [`Config::default_partial`]. Also returns whether
+    /// building them requires the internal helpers.
+    fn get_named_defaults(&self, full: bool) -> (Vec<Option<TokenStream>>, bool) {
+        let mut requires_internal = false;
+
+        let values = self
+            .settings
+            .iter()
+            .map(|setting| {
+                if full
+                    && setting.is_bare_nested()
+                    && let Some(ty) = setting.value.get_nested_type()
+                {
+                    return Some(quote! { Some(<#ty as schematic::Config>::default_partial()) });
+                }
+
+                let res = setting.impl_partial_default_value();
+
+                if res.requires_internal {
+                    requires_internal = true;
+                }
+
+                (!res.no_value).then_some(res.value)
+            })
+            .collect();
+
+        (values, requires_internal)
+    }
+
+    /// Generate this setting's entry for `Config::settings`. A named variant
+    /// is the settings of its fields, like a nested config.
+    pub fn impl_setting(&self) -> TokenStream {
+        let name = self.get_name();
+
+        if self.is_named_variant() {
+            let settings = self.settings.iter().map(|setting| setting.impl_setting());
+
+            return quote! {
+                (#name.into(), ConfigSetting::new(#name).nested(
+                    std::collections::BTreeMap::from_iter([
+                        #(#settings),*
+                    ])
+                ))
+            };
+        }
+
+        let type_alias = to_type_string(
+            self.values
+                .iter()
+                .map(|v| v.ty.to_token_stream())
+                .collect::<TokenStream>(),
+        );
+
+        quote! { (#name.into(), ConfigSetting::new(#type_alias)) }
+    }
+
     pub fn impl_full_from_partial(&self, partial_name: &Ident) -> ImplResult {
         let mut res = ImplResult::default();
         let name = &self.ident;
 
         res.value = match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Named(_) => {
+                let bindings = self.get_named_bindings(false);
+                let rows = self.settings.iter().map(|setting| {
+                    let key = setting.get_key();
+                    let value = setting.impl_full_from_partial().value;
+
+                    quote! { #key: #value }
+                });
+
+                quote! {
+                    #partial_name::#name { #(#bindings),* } => Self::#name {
+                        #(#rows),*
+                    },
+                }
+            }
             Fields::Unnamed(fields) => {
                 self.map_unnamed_match_custom(name, partial_name, fields, |outer_names, _| {
                     let items = outer_names
@@ -721,7 +968,11 @@ impl Variant {
         let name = &self.ident;
 
         res.value = match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Named(_) => {
+                let keys = self.settings.iter().map(|setting| setting.get_key());
+
+                quote! { #name { #(#keys: Default::default()),* } }
+            }
             Fields::Unnamed(fields) => {
                 let fields = fields
                     .unnamed
@@ -776,8 +1027,41 @@ impl Variant {
     /// partial, which isn't part of `default_values`, as finalizing the
     /// variant applies it. Returns nothing when no value is nested, as the
     /// provided method already matches.
+    ///
+    /// A named variant holds the defaults of its settings, which finalizing
+    /// it applies too. They're built in a closure, as building one can fail.
     pub fn impl_full_default_partial(&self, partial_name: &Ident) -> Option<TokenStream> {
-        if self.get_default_value().is_some() || !matches!(self.fields, Fields::Unnamed(_)) {
+        if self.is_named_variant() {
+            let name = &self.ident;
+            let (defaults, requires_internal) = self.get_named_defaults(true);
+
+            if defaults.iter().all(Option::is_none) {
+                return None;
+            }
+
+            let rows = self.settings.iter().zip(defaults).map(|(setting, value)| {
+                let key = setting.get_key();
+                let value = value.unwrap_or_else(|| quote! { None });
+
+                quote! { #key: #value }
+            });
+            let internal = ImplResult::impl_use_internal(requires_internal);
+
+            return Some(quote! {
+                #internal
+
+                #[allow(unused_variables)]
+                let context: &<Self::Partial as schematic::PartialConfig>::Context = &Default::default();
+
+                let partial = (|| -> std::result::Result<Self::Partial, schematic::ConfigError> {
+                    Ok(#partial_name::#name { #(#rows),* })
+                })();
+
+                partial.expect("Failed to generate default values.")
+            });
+        }
+
+        if self.get_default_value().is_some() || !self.is_tuple_variant() {
             return None;
         }
 
@@ -801,7 +1085,17 @@ impl Variant {
 
     /// Generate a deserialization attempt for this variant, for use within
     /// untagged enums, where each variant is tried in order.
-    pub fn impl_partial_type_deserialize(&self, partial_name: &Ident) -> ImplResult {
+    ///
+    /// A named variant is deserialized through a struct that stands in for
+    /// it, with the container's generics, and the serde attributes of
+    /// `helper_meta`. A generic one holds a marker, so that every parameter
+    /// is used.
+    pub fn impl_partial_type_deserialize(
+        &self,
+        partial_name: &Ident,
+        generics: &Generics,
+        helper_meta: &[TokenStream],
+    ) -> ImplResult {
         let mut res = ImplResult::default();
 
         if self.is_skipped_deserializing() {
@@ -814,7 +1108,76 @@ impl Variant {
         let name_string = self.get_name();
 
         res.value = match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Named(_) => {
+                let mut meta = helper_meta.to_vec();
+
+                if let Some(rename_all) = self
+                    .settings
+                    .first()
+                    .and_then(|setting| setting.variant.as_ref())
+                    .and_then(|scope| scope.rename_all.as_ref())
+                {
+                    meta.push(quote! { rename_all = #rename_all });
+                }
+
+                let attrs = if meta.is_empty() {
+                    quote! {}
+                } else {
+                    quote! { #[serde(#(#meta),*)] }
+                };
+
+                let fields = self.settings.iter().map(|setting| {
+                    let attrs = setting.get_partial_deserialize_attributes();
+                    let key = setting.get_key();
+                    let ty = setting.get_partial_type();
+
+                    quote! {
+                        #(#attrs)*
+                        #key: #ty,
+                    }
+                });
+
+                let keys = self
+                    .settings
+                    .iter()
+                    .map(|setting| setting.get_key())
+                    .collect::<Vec<_>>();
+
+                // A variant without settings reads none of the value
+                let value = if keys.is_empty() {
+                    quote! { _ }
+                } else {
+                    quote! { value }
+                };
+
+                let (_, ty_generics, where_clause) = generics.split_for_impl();
+                let marker = if generics.params.is_empty() {
+                    quote! {}
+                } else {
+                    quote! {
+                        #[serde(skip)]
+                        __marker: std::marker::PhantomData<#partial_name #ty_generics>,
+                    }
+                };
+
+                quote! {
+                    {
+                        #[derive(serde::Deserialize)]
+                        #attrs
+                        struct Variant #generics #where_clause {
+                            #(#fields)*
+                            #marker
+                        }
+
+                        match schematic::internal::deserialize_untagged_variant::<Variant #ty_generics>(&content) {
+                            Ok(#value) => return Ok(#partial_name::#name {
+                                #(#keys: value.#keys),*
+                            }),
+                            Err(error) => errors.push((#name_string, error)),
+                        }
+                    }
+                }
+            }
             Fields::Unnamed(_) => {
                 let types = self
                     .values
@@ -882,7 +1245,10 @@ impl Variant {
         let mut res = ImplResult::default();
 
         match &self.fields {
-            Fields::Named(_) | Fields::Unit => {
+            Fields::Named(_) => {
+                return self.impl_partial_finalize_named();
+            }
+            Fields::Unit => {
                 res.no_value = true;
             }
             Fields::Unnamed(fields) => {
@@ -927,12 +1293,112 @@ impl Variant {
         res
     }
 
+    /// Generate the finalization of this named variant. No layer holds the
+    /// defaults of its settings, as a source may pick it over the default
+    /// variant, so like the value of a tuple variant, it's a boundary: its
+    /// defaults are merged under it, each setting with its own `merge`, and
+    /// then its settings are transformed and finalized as a struct's are.
+    fn impl_partial_finalize_named(&self) -> ImplResult {
+        let name = &self.ident;
+        let (defaults, mut requires_internal) = self.get_named_defaults(false);
+        let statements = self
+            .settings
+            .iter()
+            .map(|setting| setting.impl_partial_finalize())
+            .collect::<Vec<_>>();
+
+        if defaults.iter().all(Option::is_none) && statements.iter().all(|res| res.no_value) {
+            return ImplResult::skipped();
+        }
+
+        let mut bindings = vec![];
+        let mut lets = vec![];
+        let mut merges = vec![];
+
+        // A setting with a default is bound as the next value, and merged into
+        // its default, while one without is bound as the value itself
+        for ((setting, default), res) in self.settings.iter().zip(defaults).zip(&statements) {
+            let key = setting.get_key();
+            let prev = setting.get_access(quote! { self });
+            let next = setting.get_next_access();
+
+            if let Some(value) = default {
+                lets.push(quote! { let mut #prev = #value; });
+                merges.push(
+                    setting
+                        .impl_partial_merge_into(&quote! { &mut #prev }, &next)
+                        .value,
+                );
+                bindings.push(quote! { #key: #next });
+            } else if res.no_value {
+                bindings.push(quote! { #key: #prev });
+            } else {
+                bindings.push(quote! { #key: mut #prev });
+            }
+        }
+
+        let merge = if merges.is_empty() {
+            quote! {}
+        } else {
+            requires_internal = true;
+
+            quote! {
+                MergeManager::new(context)
+                    #(#merges)*;
+            }
+        };
+
+        let statements = statements
+            .into_iter()
+            .filter(|res| !res.no_value)
+            .map(|res| res.value);
+        let rebuild = self.get_named_bindings(false);
+
+        ImplResult {
+            requires_internal,
+            value: quote! {
+                Self::#name { #(#bindings),* } => {
+                    #(#lets)*
+                    #merge
+                    #(#statements)*
+
+                    Self::#name { #(#rebuild),* }
+                }
+            },
+            ..Default::default()
+        }
+    }
+
     pub fn impl_partial_merge(&self) -> ImplResult {
         let mut res = ImplResult::default();
 
         match &self.fields {
             Fields::Named(_) => {
-                res.no_value = true;
+                // Each setting is merged as it would be within a struct, so
+                // the same variant is merged into, and any other replaces it
+                if self.settings.is_empty() {
+                    return ImplResult::skipped();
+                }
+
+                let name = &self.ident;
+                let prev = self.get_named_bindings(false);
+                let next = self.get_named_bindings(true);
+                let merges = self
+                    .settings
+                    .iter()
+                    .map(|setting| setting.impl_partial_merge().value);
+
+                res.requires_internal = true;
+                res.value = quote! {
+                    Self::#name { #(#prev),* } => {
+                        if let Self::#name { #(#next),* } = next {
+                            MergeManager::new(context)
+                                #(#merges)*;
+                        } else {
+                            *self = next;
+                        }
+                    },
+                };
             }
             Fields::Unnamed(fields) => {
                 let name = &self.ident;
@@ -1087,6 +1553,10 @@ impl Variant {
     }
 
     pub fn impl_partial_validate(&self) -> ImplResult {
+        if self.is_named_variant() {
+            return self.impl_partial_validate_named();
+        }
+
         let Fields::Unnamed(fields) = &self.fields else {
             return ImplResult::skipped();
         };
@@ -1162,6 +1632,46 @@ impl Variant {
         }
     }
 
+    /// Generate the validation of this named variant's settings, as a
+    /// struct's are, reported under the variant's name, like `Name.setting`.
+    /// Only the settings that are validated are bound.
+    fn impl_partial_validate_named(&self) -> ImplResult {
+        let mut bindings = vec![];
+        let mut statements = vec![];
+
+        for setting in &self.settings {
+            let res = setting.impl_partial_validate();
+
+            if res.no_value {
+                continue;
+            }
+
+            let key = setting.get_key();
+            let prev = setting.get_access(quote! { self });
+
+            bindings.push(quote! { #key: #prev });
+            statements.push(res.value);
+        }
+
+        if statements.is_empty() {
+            return ImplResult::skipped();
+        }
+
+        let name = &self.ident;
+        let name_string = self.get_name();
+
+        ImplResult {
+            value: quote! {
+                Self::#name { #(#bindings,)* .. } => {
+                    validate.named_variant(#name_string, |validate| {
+                        #(#statements)*
+                    });
+                },
+            },
+            ..Default::default()
+        }
+    }
+
     fn map_unnamed_match<F>(&self, name: &Ident, fields: &FieldsUnnamed, factory: F) -> TokenStream
     where
         F: FnOnce(&[Ident], &[Ident]) -> TokenStream,
@@ -1171,7 +1681,6 @@ impl Variant {
         self.map_unnamed_match_custom(name, &self_name, fields, factory)
     }
 
-    #[allow(clippy::explicit_counter_loop)]
     fn map_unnamed_match_custom<F>(
         &self,
         name: &Ident,
@@ -1182,18 +1691,14 @@ impl Variant {
     where
         F: FnOnce(&[Ident], &[Ident]) -> TokenStream,
     {
-        let mut count: u8 = 97; // a
         let mut outer_names = vec![];
         let mut inner_names = vec![];
 
-        for _ in &fields.unnamed {
-            let outer_name = format_ident!("p{}", count as char);
-            let inner_name = format_ident!("n{}", count as char);
+        for index in 0..fields.unnamed.len() {
+            let (outer_name, inner_name) = get_binding_idents(index);
 
             outer_names.push(outer_name);
             inner_names.push(inner_name);
-
-            count += 1;
         }
 
         let inner = factory(&outer_names, &inner_names);
@@ -1213,7 +1718,16 @@ impl ToTokens for Variant {
         let name = &self.ident;
 
         tokens.extend(match &self.fields {
-            Fields::Named(_) => panic!("Enums with named fields are not supported!"),
+            Fields::Named(_) => {
+                let settings = &self.settings;
+
+                quote! {
+                    #(#attrs)*
+                    #name {
+                        #(#settings)*
+                    },
+                }
+            }
             Fields::Unnamed(_) => {
                 let types = self
                     .values
