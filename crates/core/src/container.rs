@@ -1297,8 +1297,8 @@ impl Container {
                 }
             }
             ContainerInner::Enum { variants } => {
-                let unit = self.inner.is_unit_only() || self.is_config_enum();
                 let tag_format = self.get_tag_format();
+                let unit = matches!(tag_format, SerdeTagFormat::Unit);
                 let partial = matches!(self.macro_type, ContainerMacro::Config);
                 let allows_unknown_fields = self.allows_unknown_fields();
                 let mut default_index = quote! { None };
