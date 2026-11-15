@@ -482,4 +482,40 @@ mod setting_validate {
             });
         }
     }
+
+    // A config's own validator runs after its settings', through a closure,
+    // so a factory works, and on an enum of units, which has no settings
+    mod config_validate {
+        use super::*;
+
+        #[test]
+        fn runs_after_the_settings() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(validate = check_all(5))]
+                struct Example {
+                    #[setting(validate = check)]
+                    a: String,
+                    b: usize,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+
+        #[test]
+        fn validates_an_enum_of_units() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(validate = check)]
+                enum Example {
+                    #[setting(default)]
+                    A,
+                    B,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_validate()));
+        }
+    }
 }

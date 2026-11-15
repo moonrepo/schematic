@@ -58,6 +58,17 @@
   - JSON Schema renders an integer as `"type": "integer"` rather than `"number"`, with its kind's
     range, like `0` to `255` for a `u8`. An explicit bound narrows the range but can't widen it, and
     a 64-bit bound, which a JSON number can't hold exactly, is left out.
+- Added `validate::min` and `validate::max`, which bound a number on one side, next to
+  `validate::in_range`.
+- Added `IntoValidateErrors`, so that a validator may return several errors, as a
+  `Vec<ValidateError>`, or a garde `Report`, rather than only one. `ValidateResult` and `Validator`
+  are unchanged, so existing validators work as before.
+- Added `#[config(validate = func)]`, which validates a config as a whole, after its settings, for
+  rules across settings, like a minimum that must be below a maximum. It receives the partial, and
+  works on structs and enums.
+- Updated a `ValidateError` at the root of a config, like one from `#[config(validate)]`, to render as
+  only its message, rather than `.: message`.
+- Added `Path::is_empty`.
 - Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
   CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
   the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other

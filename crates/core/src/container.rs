@@ -31,6 +31,7 @@ pub struct ContainerArgs {
     pub env_prefix: Option<String>,
     #[darling(multiple)]
     pub partial: Vec<PartialArg>,
+    pub validate: Option<crate::args::ValidateArg>,
 
     // serde
     pub rename: Option<SerdeRenameArg>,
@@ -389,6 +390,12 @@ impl Container {
             }
             ContainerMacro::ConfigUnitEnum => {
                 self.validate_enum_attributes("ConfigEnum");
+
+                if self.args.validate.is_some() {
+                    panic!(
+                        "Cannot use `validate` on a `ConfigEnum`, as it parses from a string, which has nothing to validate. Validate the setting that holds it instead."
+                    );
+                }
             }
             ContainerMacro::Schematic => {}
         }
@@ -1790,10 +1797,10 @@ impl Container {
 
     #[cfg(feature = "validate")]
     pub fn impl_partial_validate(&self) -> TokenStream {
-        let inner = match &self.inner {
-            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                let mut statements = vec![];
+        let mut statements = vec![];
 
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
                     let res = field.impl_partial_validate();
 
@@ -1801,42 +1808,43 @@ impl Container {
                         statements.push(res.value);
                     }
                 }
-
-                if statements.is_empty() {
-                    return quote! {};
-                }
-
-                quote! {
-                     #(#statements)*
-                }
             }
             ContainerInner::UnnamedEnum { variants } => {
-                let mut statements = vec![];
+                let mut arms = vec![];
 
                 for variant in variants {
                     let res = variant.impl_partial_validate();
 
                     if !res.no_value {
-                        statements.push(res.value);
+                        arms.push(res.value);
                     }
                 }
 
-                if statements.is_empty() {
-                    return quote! {};
-                }
-
-                quote! {
-                    match self {
-                        #(#statements)*
-                        _ => {}
-                    };
+                if !arms.is_empty() {
+                    statements.push(quote! {
+                        match self {
+                            #(#arms)*
+                            _ => {}
+                        };
+                    });
                 }
             }
-            ContainerInner::UnitEnum { .. } => {
-                return quote! {};
-            }
+            ContainerInner::UnitEnum { .. } => {}
         };
 
+        // The config as a whole, after its settings, from `#[config(validate)]`.
+        // Called through a closure, like a setting's validator, so a factory works.
+        if let Some(func) = self.args.validate.as_deref() {
+            statements.push(quote! {
+                validate.check_config(self, |d, c, f| #func(d, c, f));
+            });
+        }
+
+        if statements.is_empty() {
+            return quote! {};
+        }
+
+        let inner = quote! { #(#statements)* };
         let internal = ImplResult::impl_use_internal(true);
 
         quote! {

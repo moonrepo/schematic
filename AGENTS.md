@@ -402,7 +402,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   deref coerces on its way in — a `String` setting reaches a `&str` validator and a `Vec<T>` a
   `&[T]` one. `ValidateManager::check` therefore takes `impl FnOnce(V, &D, &Ctx, bool)` and takes
   the value by move, because a variant of several values passes a *tuple of references*, not a
-  reference to a tuple. Boxing the validator instead breaks built-ins like `validate::extends_string`.
+  reference to a tuple. It returns `Result<(), E: IntoValidateErrors>`, so a validator may report
+  several errors while `ValidateResult` stays a single one. `#[config(validate)]` goes through
+  `check_config` the same way, without a value. Boxing the validator instead breaks built-ins like `validate::extends_string`.
 - **A doc comment keeps the line structure the author wrote.** Renderers depend on it — a JSDoc
   block or a template comment that was several lines has to stay several lines, and collapsing it
   breaks markdown lists and paragraph breaks. A block comment (`/** ... */`) arrives as a single

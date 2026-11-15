@@ -102,6 +102,18 @@ mod enums {
     }
 
     #[test]
+    #[should_panic(expected = "Cannot use `validate` on a `ConfigEnum`")]
+    fn errors_for_validate_on_a_config_enum() {
+        config_enum(parse_quote! {
+            #[derive(ConfigEnum)]
+            #[config(validate = check)]
+            enum Example {
+                A,
+            }
+        });
+    }
+
+    #[test]
     #[should_panic(expected = "Cannot use `env_prefix` on a `Config` enum")]
     fn errors_for_env_prefix_on_a_config() {
         config(parse_quote! {

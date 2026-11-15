@@ -163,12 +163,19 @@ Not covered: config-only attributes on a type that only derives `Schematic`, lik
   `deny_unknown_fields`. Fix: strip it in the JSON and YAML formats, or document the
   `#[serde(rename = "$schema")]` field pattern.
 
-**G9. Validator limits** 📖 · low
+**G9. Validator limits** · mostly fixed on `0.21-gaps`
 
-- A validator returns one error, so `items[1]` is reported but `items[2]` isn't, and a garde
-  `Report` can't be mapped.
-- `validate::regex(..)` compiles, and panics on a bad pattern, on every validation pass.
-- There are no one-sided `min` or `max` validators.
-- There is no container-level `#[config(validate = fn)]`.
-- Per-layer validation runs before transforms, so a "must be absolute" validator fails on raw
-  layers. The `finalizing` flag exists for this, but it is undocumented.
+- **One error per validator:** `IntoValidateErrors`, implemented for `ValidateError`,
+  `Vec<ValidateError>`, and `garde::Report`, which `ValidateManager::check` now accepts. Existing
+  validators are unchanged. A garde error's path is kept as it renders, like `a.b[0]`, in one
+  segment, as garde only exposes its components through a hidden method.
+- **One-sided bounds:** `validate::min` and `validate::max`.
+- **Container-level validation:** `#[config(validate = func)]`, taking the partial, the context, and
+  `finalizing`, through `ValidateManager::check_config`, after the settings' validators. Structs and
+  enums, including an enum of units, which had no validation before; a `ConfigEnum` panics. An error
+  at the root renders as only its message.
+- **Per-layer validation runs before transforms:** documented in the book ("Validation passes"),
+  with the `finalizing` flag.
+
+Not built, by decision: `validate::regex(..)` still compiles on every pass and panics on a bad
+pattern.

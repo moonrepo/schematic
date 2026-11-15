@@ -54,7 +54,33 @@ enum Entry {
 
 > We provide a handful of built-in validation functions in the
 > [`validate` module](https://docs.rs/schematic/latest/schematic/validate/index.html). Furthermore,
-> some functions are factories which can be called to produce a validator.
+> some functions are factories which can be called to produce a validator, like `min(1)`, `max(10)`,
+> and `in_range(1, 10)` for numbers, or `min_length(1)` for strings and lists.
+
+## Validation passes
+
+A configuration is validated more than once while loading. Each source is validated on its own as
+it's parsed, and the final configuration is validated again once every source,
+[default value](./default.md), and [environment variable](./env.md) has been merged, and every
+[transform](./transform.md) has run. A validator is told which pass it's in by its last argument,
+`finalizing`, which is only `true` for the final pass.
+
+A source only holds part of the configuration, and a later one may replace a value an earlier one
+set, so a check that needs the final value should wait for the final pass. For example, a path that
+a transform makes absolute isn't absolute yet when its source is validated.
+
+```rust
+fn absolute_path<P, C>(value: &str, partial: &P, context: &C, finalizing: bool) -> ValidateResult {
+	if finalizing && !Path::new(value).is_absolute() {
+		return Err(ValidateError::new("must be an absolute path"));
+	}
+
+	Ok(())
+}
+```
+
+> Settings that no source provided are `None` in each source's pass, and are skipped, while the
+> final pass has a value for every setting.
 
 ## Required settings
 
@@ -149,6 +175,26 @@ fn regex<T, P, C>(pattern: &str) -> Validator<T, P, C> {
 }
 ```
 
+### Several errors
+
+A validator returns one error, but may return several instead, such as one for each item of a list
+that fails, by returning a `Vec<ValidateError>`, or a garde `Report`. Anything that implements
+[`IntoValidateErrors`](https://docs.rs/schematic/latest/schematic/trait.IntoValidateErrors.html)
+can be returned.
+
+```rust
+fn no_empty_items<P, C>(items: &[String], partial: &P, context: &C, finalizing: bool) -> Result<(), Vec<ValidateError>> {
+	let errors = items
+		.iter()
+		.enumerate()
+		.filter(|(_, item)| item.is_empty())
+		.map(|(index, _)| ValidateError::with_segment("must not be empty", PathSegment::Index(index)))
+		.collect::<Vec<_>>();
+
+	if errors.is_empty() { Ok(()) } else { Err(errors) }
+}
+```
+
 ### Path targeting
 
 If validating an item in a list or collection, you can specifiy the nested path when failing. This
@@ -174,6 +220,41 @@ fn using_generics<P, C>(value: &str, partial: &P, context: &C, finalize: bool) -
 	// ...
 }
 ```
+
+## Config validation
+
+A rule that compares settings, rather than checking one, can validate the configuration as a whole,
+with the `#[config(validate)]` container attribute field. The function receives the partial
+configuration, the [context](../context.md), and whether this is the
+[final pass](#validation-passes), and may return [several errors](#several-errors). It runs after the
+validators of each setting, for structs and enums alike, and is a factory when called, like
+`#[config(validate = at_most(10))]`.
+
+```rust
+fn min_below_max<C>(partial: &PartialRangeConfig, context: &C, finalizing: bool) -> ValidateResult {
+	// A source may only set one of them
+	if let (Some(min), Some(max)) = (partial.min, partial.max)
+		&& min > max
+	{
+		return Err(ValidateError::with_segment(
+			"must be at most max",
+			PathSegment::Key("min".into()),
+		));
+	}
+
+	Ok(())
+}
+
+#[derive(Config)]
+#[config(validate = min_below_max)]
+struct RangeConfig {
+	pub min: usize,
+	pub max: usize,
+}
+```
+
+An error is reported at the configuration's own path, like `range` when it's nested, unless it
+[targets a setting](#path-targeting) within it, like `range.min`.
 
 ## Cargo features
 

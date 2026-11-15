@@ -10,7 +10,7 @@ mod string;
 mod url;
 mod uuid;
 
-pub use crate::config::{ValidateError, ValidateResult, Validator};
+pub use crate::config::{IntoValidateErrors, ValidateError, ValidateResult, Validator};
 #[cfg(feature = "validate_email")]
 pub use email::*;
 #[cfg(feature = "extends")]
