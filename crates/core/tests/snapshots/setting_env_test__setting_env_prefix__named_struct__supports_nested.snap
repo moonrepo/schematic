@@ -29,5 +29,5 @@ fn env_values_with_prefix(
                 Some("PRE_"),
             )?,
         )?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

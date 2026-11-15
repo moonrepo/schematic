@@ -15,5 +15,5 @@ fn env_values_with_prefix(
     partial.2 = env.get("B")?;
     partial.3 = env.get("C")?;
     partial.4 = env.get("D")?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

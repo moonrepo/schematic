@@ -99,8 +99,5 @@ fn validate_with_path(
         }
         _ => {}
     };
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

@@ -4,8 +4,7 @@ pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
     finalizing: bool,
     path: Path,
-
-    pub errors: Vec<ValidateError>,
+    errors: Vec<ValidateError>,
 }
 
 impl<'a, Ctx> ValidateManager<'a, Ctx> {
@@ -15,6 +14,15 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
             errors: vec![],
             finalizing,
             path,
+        }
+    }
+
+    /// Return every error the checks reported, if any did.
+    pub fn finish(self) -> Result<(), Vec<ValidateError>> {
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(self.errors)
         }
     }
 

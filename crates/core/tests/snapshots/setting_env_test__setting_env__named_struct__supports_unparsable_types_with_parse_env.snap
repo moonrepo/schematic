@@ -14,5 +14,5 @@ fn env_values_with_prefix(
     partial.a = env.get_and_parse("LIST", schematic::env::split_comma)?;
     partial.b = env.get_and_parse("OPT_LIST", schematic::env::split_comma)?;
     partial.c = env.get_and_parse("BOXED", parse_func)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

@@ -34,8 +34,38 @@ impl EnvManager {
         }
     }
 
-    pub fn is_empty(&self) -> bool {
-        !self.found
+    /// Return the layer the variables were read into, or `None` when none was
+    /// set, so a layer is only reported when it sets something.
+    pub fn finish<T>(self, layer: T) -> Option<T> {
+        self.found.then_some(layer)
+    }
+
+    /// Pick a variant of a tagged enum from the variable its tag derives,
+    /// using `parse` to match the value by a variant's name or alias, and
+    /// listing `expected` in the error when it matches none. A variable naming
+    /// the variant `current` already holds picks nothing, so what the sources
+    /// gave it stands.
+    pub fn pick_variant<T>(
+        &mut self,
+        key: &str,
+        current: &T,
+        expected: &[&str],
+        parse: impl Fn(&str) -> Option<T>,
+    ) -> ParseEnvResult<T> {
+        let picked = self.get_and_parse_prefixed(key, |value| match parse(&value) {
+            Some(variant) => Ok(Some(variant)),
+            None => Err(HandlerError::new(format!(
+                "Unknown variant `{value}`, expected one of {}.",
+                expected
+                    .iter()
+                    .map(|name| format!("`{name}`"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ))),
+        })?;
+
+        Ok(picked
+            .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(current)))
     }
 
     /// Get a variable using the exact key, ignoring the prefix.

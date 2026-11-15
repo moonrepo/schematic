@@ -16,8 +16,5 @@ fn validate_with_path(
     if self.a.is_none() {
         validate.required("a");
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

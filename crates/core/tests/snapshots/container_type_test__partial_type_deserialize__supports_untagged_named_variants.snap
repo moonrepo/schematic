@@ -8,16 +8,11 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::untagged::buffer_untagged_content(
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
             deserializer,
         )?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            bool,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::A(value)),
-            Err(error) => errors.push(("A", error)),
+        if let Some(value) = attempts.variant::<bool>("A") {
+            return Ok(PartialExample::A(value));
         }
         {
             #[derive(serde::Deserialize)]
@@ -35,17 +30,12 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
                 #[serde(skip_serializing_if = "Option::is_none", default)]
                 child: Option<<NestedConfig as schematic::Config>::Partial>,
             }
-            match schematic::internal::untagged::deserialize_untagged_variant::<
-                Variant,
-            >(&content) {
-                Ok(value) => {
-                    return Ok(PartialExample::B {
-                        some_value: value.some_value,
-                        other_value: value.other_value,
-                        child: value.child,
-                    });
-                }
-                Err(error) => errors.push(("B", error)),
+            if let Some(value) = attempts.variant::<Variant>("B") {
+                return Ok(PartialExample::B {
+                    some_value: value.some_value,
+                    other_value: value.other_value,
+                    child: value.child,
+                });
             }
         }
         {
@@ -55,35 +45,20 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
                 #[serde(skip_serializing_if = "Option::is_none", default)]
                 some_value: Option<bool>,
             }
-            match schematic::internal::untagged::deserialize_untagged_variant::<
-                Variant,
-            >(&content) {
-                Ok(value) => {
-                    return Ok(PartialExample::C {
-                        some_value: value.some_value,
-                    });
-                }
-                Err(error) => errors.push(("C", error)),
+            if let Some(value) = attempts.variant::<Variant>("C") {
+                return Ok(PartialExample::C {
+                    some_value: value.some_value,
+                });
             }
         }
         {
             #[derive(serde::Deserialize)]
             #[serde(deny_unknown_fields)]
             struct Variant {}
-            match schematic::internal::untagged::deserialize_untagged_variant::<
-                Variant,
-            >(&content) {
-                Ok(_) => return Ok(PartialExample::D {}),
-                Err(error) => errors.push(("D", error)),
+            if attempts.variant::<Variant>("D").is_some() {
+                return Ok(PartialExample::D {});
             }
         }
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }

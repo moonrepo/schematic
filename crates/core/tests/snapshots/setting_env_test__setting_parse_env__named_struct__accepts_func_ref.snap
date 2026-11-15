@@ -12,5 +12,5 @@ fn env_values_with_prefix(
     let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.a = env.get_and_parse("KEY", func_ref)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

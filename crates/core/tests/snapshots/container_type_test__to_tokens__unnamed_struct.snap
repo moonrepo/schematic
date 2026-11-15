@@ -47,7 +47,7 @@ impl schematic::PartialConfig for PartialExample {
             .nested(
                 schematic::internal::layers::nested_env_values(self.1.as_ref(), None)?,
             )?;
-        Ok(if env.is_empty() { None } else { Some(partial) })
+        Ok(env.finish(partial))
     }
     fn finalize(
         self,
@@ -83,10 +83,7 @@ impl schematic::PartialConfig for PartialExample {
         if let Some(setting) = &self.1 {
             validate.nested("1", setting);
         }
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]

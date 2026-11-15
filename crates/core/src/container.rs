@@ -880,19 +880,11 @@ impl Container {
                 where
                     D: serde::Deserializer<'de>,
                 {
-                    use serde::de::Error as _;
-
-                    // Buffer the content so that we can attempt to deserialize it multiple times
-                    let content = schematic::internal::untagged::buffer_untagged_content(deserializer)?;
-                    let mut errors: Vec<(&str, String)> = Vec::new();
+                    let mut attempts = schematic::internal::untagged::UntaggedManager::new(deserializer)?;
 
                     #(#attempts)*
 
-                    // All variants failed, so combine the errors into a single message
-                    Err(D::Error::custom(schematic::internal::untagged::untagged_error_message(
-                        stringify!(#partial_name),
-                        &errors,
-                    )))
+                    Err(attempts.into_error(stringify!(#partial_name)))
                 }
             }
         }
@@ -949,12 +941,11 @@ impl Container {
         }
 
         quote! {
-            match schematic::internal::untagged::literal_content(&content) {
+            if let Some(value) = attempts.literal(&[#(#names),*], |value| match value {
                 #(#arms)*
-                _ => errors.push(("", schematic::internal::untagged::literal_error_message(
-                    &[#(#names),*],
-                    &content,
-                ))),
+                _ => None,
+            }) {
+                return Ok(value);
             }
         }
     }
@@ -1608,11 +1599,7 @@ impl Container {
 
                 #inner
 
-                Ok(if env.is_empty() {
-                    None
-                } else {
-                    Some(partial)
-                })
+                Ok(env.finish(partial))
             }
         }
     }
@@ -1640,13 +1627,19 @@ impl Container {
             None if arms.is_empty() => return quote! {},
             Some(picked) if arms.is_empty() => quote! { Ok(#picked) },
             picked => {
-                let (pick, view, fallback) = match picked {
+                let (pick, view, fallback, finish) = match picked {
                     Some(picked) => (
                         quote! { let picked = #picked; },
                         quote! { picked.as_ref().unwrap_or(self) },
                         quote! { picked },
+                        quote! { env.finish(value).or(picked) },
                     ),
-                    None => (quote! {}, quote! { self }, quote! { None }),
+                    None => (
+                        quote! {},
+                        quote! { self },
+                        quote! { None },
+                        quote! { env.finish(value) },
+                    ),
                 };
                 let rest =
                     (arms.len() < variants.len()).then(|| quote! { _ => return Ok(#fallback), });
@@ -1660,11 +1653,7 @@ impl Container {
                         #rest
                     };
 
-                    Ok(if env.is_empty() {
-                        #fallback
-                    } else {
-                        Some(value)
-                    })
+                    Ok(#finish)
                 }
             }
         };
@@ -1704,27 +1693,18 @@ impl Container {
                 let names = std::iter::once(&name).chain(variant.get_aliases());
                 let value = variant.impl_partial_default_value().value;
 
-                // The message is a format string, which a renamed variant may break
-                expected.push(format!("`{}`", name.replace('{', "{{").replace('}', "}}")));
+                expected.push(name.clone());
 
-                quote! { #(#names)|* => Self::#value, }
+                quote! { #(#names)|* => Some(Self::#value), }
             })
             .collect::<Vec<_>>();
 
-        let message = format!(
-            "Unknown variant `{{value}}`, expected one of {}.",
-            expected.join(", ")
-        );
-
         Some(quote! {
             schematic::internal::env::EnvManager::new(prefix, #own_prefix)
-                .get_and_parse_prefixed(#key, |value| {
-                    Ok(Some(match value.as_str() {
-                        #(#arms)*
-                        _ => return Err(schematic::HandlerError::new(format!(#message))),
-                    }))
+                .pick_variant(#key, self, &[#(#expected),*], |value| match value {
+                    #(#arms)*
+                    _ => None,
                 })?
-                .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self))
         })
     }
 
@@ -1976,11 +1956,7 @@ impl Container {
                 let mut validate = schematic::internal::validate::ValidateManager::new(context, finalizing, path);
                 #inner
 
-                if !validate.errors.is_empty() {
-                    return Err(validate.errors);
-                }
-
-                Ok(())
+                validate.finish()
             }
         }
     }

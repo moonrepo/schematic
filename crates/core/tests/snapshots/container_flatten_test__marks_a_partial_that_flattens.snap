@@ -37,7 +37,7 @@ impl schematic::PartialConfig for PartialExample {
                     None,
                 )?,
             )?;
-        Ok(if env.is_empty() { None } else { Some(partial) })
+        Ok(env.finish(partial))
     }
     fn finalize(
         self,
@@ -78,9 +78,6 @@ impl schematic::PartialConfig for PartialExample {
                     &<<Child as schematic::Config>::Partial as Default>::default(),
                 );
         }
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }

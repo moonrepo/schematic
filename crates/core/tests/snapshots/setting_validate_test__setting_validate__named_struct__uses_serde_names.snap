@@ -28,8 +28,5 @@ fn validate_with_path(
                 &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
             );
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

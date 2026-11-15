@@ -37,5 +37,5 @@ fn env_values_with_prefix(
             }
         }
     };
-    Ok(if env.is_empty() { None } else { Some(value) })
+    Ok(env.finish(value))
 }

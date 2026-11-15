@@ -1321,13 +1321,6 @@ impl Variant {
                     .map(|setting| setting.get_key())
                     .collect::<Vec<_>>();
 
-                // A variant without settings reads none of the value
-                let value = if keys.is_empty() {
-                    quote! { _ }
-                } else {
-                    quote! { value }
-                };
-
                 let (_, ty_generics, where_clause) = generics.split_for_impl();
                 let marker = if generics.params.is_empty() {
                     quote! {}
@@ -1335,6 +1328,23 @@ impl Variant {
                     quote! {
                         #[serde(skip)]
                         __marker: std::marker::PhantomData<#partial_name #ty_generics>,
+                    }
+                };
+
+                // A variant without settings reads none of the value
+                let attempt = if keys.is_empty() {
+                    quote! {
+                        if attempts.variant::<Variant #ty_generics>(#name_string).is_some() {
+                            return Ok(#partial_name::#name {});
+                        }
+                    }
+                } else {
+                    quote! {
+                        if let Some(value) = attempts.variant::<Variant #ty_generics>(#name_string) {
+                            return Ok(#partial_name::#name {
+                                #(#keys: value.#keys),*
+                            });
+                        }
                     }
                 };
 
@@ -1347,12 +1357,7 @@ impl Variant {
                             #marker
                         }
 
-                        match schematic::internal::untagged::deserialize_untagged_variant::<Variant #ty_generics>(&content) {
-                            Ok(#value) => return Ok(#partial_name::#name {
-                                #(#keys: value.#keys),*
-                            }),
-                            Err(error) => errors.push((#name_string, error)),
-                        }
+                        #attempt
                     }
                 }
             }
@@ -1367,9 +1372,8 @@ impl Variant {
                     let ty = &types[0];
 
                     quote! {
-                        match schematic::internal::untagged::deserialize_untagged_variant::<#ty>(&content) {
-                            Ok(value) => return Ok(#partial_name::#name(value)),
-                            Err(error) => errors.push((#name_string, error)),
+                        if let Some(value) = attempts.variant::<#ty>(#name_string) {
+                            return Ok(#partial_name::#name(value));
                         }
                     }
                 } else {
@@ -1377,20 +1381,17 @@ impl Variant {
                     let indexes = (0..types.len()).map(Index::from).collect::<Vec<_>>();
 
                     quote! {
-                        match schematic::internal::untagged::deserialize_untagged_variant::<(#(#types),*)>(&content) {
-                            Ok(value) => return Ok(#partial_name::#name(#(value.#indexes),*)),
-                            Err(error) => errors.push((#name_string, error)),
+                        if let Some(value) = attempts.variant::<(#(#types),*)>(#name_string) {
+                            return Ok(#partial_name::#name(#(value.#indexes),*));
                         }
                     }
                 }
             }
             // Unit variants in untagged enums are represented as null
             Fields::Unit => quote! {
-                if schematic::internal::untagged::is_null_content(&content) {
+                if attempts.unit(#name_string) {
                     return Ok(#partial_name::#name);
                 }
-
-                errors.push((#name_string, "expected null".to_owned()));
             },
         };
 
@@ -1413,7 +1414,7 @@ impl Variant {
         let aliases = self.get_aliases();
 
         res.value = quote! {
-            Some(#value #(| #aliases)*) => return Ok(#partial_name::#name),
+            #value #(| #aliases)* => Some(#partial_name::#name),
         };
 
         res

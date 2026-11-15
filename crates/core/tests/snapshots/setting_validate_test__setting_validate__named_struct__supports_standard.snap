@@ -28,8 +28,5 @@ fn validate_with_path(
     if let Some(setting) = &self.e {
         validate.check("e", setting, self, |v, d, c, f| func_ref(v, d, c, f));
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

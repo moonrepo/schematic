@@ -18,5 +18,5 @@ fn env_values_with_prefix(
         .nested(schematic::internal::layers::nested_env_values(self.d.as_ref(), None)?)?;
     partial.e = env
         .nested(schematic::internal::layers::nested_env_values(self.e.as_ref(), None)?)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

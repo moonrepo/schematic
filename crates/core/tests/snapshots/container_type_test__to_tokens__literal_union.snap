@@ -22,39 +22,25 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::untagged::buffer_untagged_content(
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
             deserializer,
         )?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::untagged::literal_content(&content) {
-            Some("a") => return Ok(PartialExample::A),
-            Some("b") => return Ok(PartialExample::B),
-            _ => {
-                errors
-                    .push((
-                        "",
-                        schematic::internal::untagged::literal_error_message(
-                            &["a", "b"],
-                            &content,
-                        ),
-                    ))
-            }
+        if let Some(value) = attempts
+            .literal(
+                &["a", "b"],
+                |value| match value {
+                    "a" => Some(PartialExample::A),
+                    "b" => Some(PartialExample::B),
+                    _ => None,
+                },
+            )
+        {
+            return Ok(value);
         }
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            bool,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Flag(value)),
-            Err(error) => errors.push(("flag", error)),
+        if let Some(value) = attempts.variant::<bool>("flag") {
+            return Ok(PartialExample::Flag(value));
         }
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }
 #[automatically_derived]
@@ -94,10 +80,7 @@ impl schematic::PartialConfig for PartialExample {
             Self::Flag(pa) => {}
             _ => {}
         };
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]

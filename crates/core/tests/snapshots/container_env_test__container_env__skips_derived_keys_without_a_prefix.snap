@@ -14,5 +14,5 @@ fn env_values_with_prefix(
     partial.b = env.get("B_VAR")?;
     partial.c = env
         .nested(schematic::internal::layers::nested_env_values(self.c.as_ref(), None)?)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

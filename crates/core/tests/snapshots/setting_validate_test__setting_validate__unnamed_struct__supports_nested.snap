@@ -65,8 +65,5 @@ fn validate_with_path(
                 &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
             );
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

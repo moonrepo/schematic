@@ -51,10 +51,7 @@ impl<T> schematic::PartialConfig for PartialExample<T> {
             Self::Value(pa) => {}
             _ => {}
         };
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]

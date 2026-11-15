@@ -22,43 +22,26 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::untagged::buffer_untagged_content(
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
             deserializer,
         )?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            bool,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Bool(value)),
-            Err(error) => errors.push(("Bool", error)),
+        if let Some(value) = attempts.variant::<bool>("Bool") {
+            return Ok(PartialExample::Bool(value));
         }
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            usize,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Number(value)),
-            Err(error) => errors.push(("Number", error)),
+        if let Some(value) = attempts.variant::<usize>("Number") {
+            return Ok(PartialExample::Number(value));
         }
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            <NestedConfig as schematic::Config>::Partial,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Nested(value)),
-            Err(error) => errors.push(("Nested", error)),
+        if let Some(value) = attempts
+            .variant::<<NestedConfig as schematic::Config>::Partial>("Nested")
+        {
+            return Ok(PartialExample::Nested(value));
         }
-        match schematic::internal::untagged::deserialize_untagged_variant::<
-            Vec<<NestedConfig as schematic::Config>::Partial>,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::List(value)),
-            Err(error) => errors.push(("List", error)),
+        if let Some(value) = attempts
+            .variant::<Vec<<NestedConfig as schematic::Config>::Partial>>("List")
+        {
+            return Ok(PartialExample::List(value));
         }
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }
 #[automatically_derived]
@@ -105,7 +88,7 @@ impl schematic::PartialConfig for PartialExample {
             }
             _ => return Ok(None),
         };
-        Ok(if env.is_empty() { None } else { Some(value) })
+        Ok(env.finish(value))
     }
     fn finalize(
         self,
@@ -193,10 +176,7 @@ impl schematic::PartialConfig for PartialExample {
             }
             _ => {}
         };
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]

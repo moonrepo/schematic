@@ -13,5 +13,5 @@ fn env_values_with_prefix(
     let mut partial = Self::default();
     partial.a = env.get("A")?;
     partial.b = env.get_and_parse("B", parse_func)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

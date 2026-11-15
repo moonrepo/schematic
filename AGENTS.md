@@ -162,9 +162,9 @@ nested setting, through `self`:
 - **Enums** return the layers of the variant `self` holds: a named variant's fields' defaults and
   env, a tuple variant's nested values', and the default variant's `default = value`. A variant
   with nothing to default has no arm (`None`), except the default variant, which is held as it is.
-  The tag's variable (`impl_partial_env_values_tag`) picks a variant unless `self` already holds it
-  (`std::mem::discriminant`), so a source's values within it stand, and the fields are then read
-  from whichever variant that leaves.
+  The tag's variable (`impl_partial_env_values_tag`, through `EnvManager::pick_variant`) picks a
+  variant unless `self` already holds it (`std::mem::discriminant`), so a source's values within
+  it stand, and the fields are then read from whichever variant that leaves.
 - **Collection items** are the one boundary: no layer holds their defaults or env, as a collection
   replaces on merge, so each item goes through the hidden `internal::layers::finalize_with_layers`, which
   runs `apply_layers` on the item, as the loader does on a config, then finalizes. They aren't
@@ -246,6 +246,12 @@ Each piece is separately callable, which is what the snapshot tests do.
   declares them, so a new helper goes in the module of its domain rather than being re-exported.
   The one import is for a string default, whose `DefaultString` traits must be in scope for
   autoref to pick one, so they're imported `as _` within the value's own block.
+- What doesn't depend on the derive belongs in a helper, with generated code supplying only what
+  the derive knows: keys, names, types, and the arms that build a variant. The managers each end
+  with `finish`, `EnvManager::pick_variant` builds the tag's error from the names it's handed,
+  and an untagged `Deserialize` is a run of `UntaggedManager` attempts (`variant`, `unit`,
+  `literal`) ending in `into_error`, so the generated code never formats a message or holds the
+  errors itself.
 
 ### `Value` and the layer system
 

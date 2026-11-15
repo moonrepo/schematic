@@ -51,8 +51,5 @@ fn validate_with_path(
             }
         }
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }
