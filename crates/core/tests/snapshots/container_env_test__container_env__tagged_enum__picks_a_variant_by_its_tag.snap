@@ -1,0 +1,44 @@
+---
+source: crates/core/tests/container_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::new(None::<&str>, Some("AUTH_"));
+    Ok(
+        env
+            .get_and_parse_prefixed(
+                "TYPE",
+                |value| {
+                    Ok(
+                        Some(
+                            match value.as_str() {
+                                "none" => Self::None,
+                                "token" | "tok" => {
+                                    Self::Token {
+                                        token: Default::default(),
+                                        expires: Default::default(),
+                                    }
+                                }
+                                "basic_auth" => {
+                                    Self::BasicAuth {
+                                        user: Default::default(),
+                                    }
+                                }
+                                "nested" => Self::Nested(Default::default()),
+                                _ => {
+                                    return Err(
+                                        schematic::HandlerError::new(
+                                            format!(
+                                                "Unknown variant `{value}`, expected one of `none`, `token`, `basic_auth`, `nested`."
+                                            ),
+                                        ),
+                                    );
+                                }
+                            },
+                        ),
+                    )
+                },
+            )?,
+    )
+}

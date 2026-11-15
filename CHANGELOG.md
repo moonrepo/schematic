@@ -24,7 +24,8 @@
   - `#[default]` on a `Config` enum variant, which was copied to the partial and failed to compile.
     Use `#[setting(default)]`.
   - `env_prefix` or `allow_unknown_fields` on an enum without named variants, which has no fields
-    to read environment variables into or to deny.
+    to read environment variables into or to deny, unless a tag gives `env_prefix` a variant to
+    pick.
   - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
   - `skip_deserializing_if`, which serde has no such attribute for.
   - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, or
@@ -58,6 +59,12 @@
     schema, like a struct's, so TypeScript and templates render them.
   - `extend` fails to compile within a variant, as does an attribute on the variant that its fields
     hold instead, like `nested` or `validate`.
+- Added picking a `Config` enum's variant from an environment variable. A tagged enum, with serde's
+  `tag`, and `#[config(env_prefix)]` derives a key from its tag, so `tag = "type"` with
+  `env_prefix = "AUTH_"` reads `AUTH_TYPE`. Its value is matched against the variants' names and
+  aliases, and the variant it names replaces one a source picked, with its fields filled in from
+  their defaults and variables. A unit variant, a named variant, or one holding nested configs can
+  be picked, and the key is reported on the tag in the schema, so TypeScript renders `@env`.
 - Added the default values and environment variables to `ConfigLoadResult.layers`, as
   `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
   traced to the layer that set it. They're the layers that were merged, so a default handler that

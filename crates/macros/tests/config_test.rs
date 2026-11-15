@@ -3651,3 +3651,150 @@ mod named_variant_env {
         assert_eq!(url["retry"].env_key, None);
     }
 }
+
+mod env_picked_variant {
+    use super::*;
+    use std::env;
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Redis {
+        #[setting(default = 6379, env = "EPV_REDIS_PORT")]
+        port: u16,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "EPV_AUTH_")]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Auth {
+        #[setting(default)]
+        None,
+        #[serde(alias = "tok")]
+        Token {
+            #[setting(required)]
+            token: Option<String>,
+            #[setting(default = 60)]
+            ttl: u32,
+        },
+        #[setting(nested)]
+        Redis(Redis),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct App {
+        #[setting(nested)]
+        auth: Auth,
+        #[setting(nested)]
+        maybe: Option<Auth>,
+        #[setting(nested)]
+        items: Vec<Auth>,
+    }
+
+    fn load<T: ConfigTrait>(code: Option<&str>) -> Result<schematic::ConfigLoadResult<T>, String> {
+        let mut loader = ConfigLoader::<T>::new();
+
+        if let Some(code) = code {
+            loader.code(code, "code.json").unwrap();
+        }
+
+        loader.load().map_err(|error| error.to_full_string())
+    }
+
+    fn token(ttl: u32) -> Auth {
+        Auth::Token {
+            token: Some("secret".into()),
+            ttl,
+        }
+    }
+
+    // The tag's variable picks a variant, which the environment layer holds
+    // with nothing in it, so finalizing fills it in, from its defaults and
+    // its own variables. Every case shares the variables, so they're one test.
+    #[test]
+    fn picks_the_variant_its_tag_names() {
+        unsafe {
+            env::set_var("EPV_AUTH_TYPE", "token");
+            env::set_var("EPV_AUTH_TOKEN", "secret");
+        };
+
+        // Over a source that picked another, or the same, or none
+        let other = load::<Auth>(Some(r#"{ "type": "none" }"#));
+        let same = load::<Auth>(Some(r#"{ "type": "token", "ttl": 5 }"#));
+        let none = load::<Auth>(None);
+        // Optional and collected configs are picked too, each item for itself
+        let app = load::<App>(Some(
+            r#"{ "items": [{ "type": "none" }, { "type": "token", "ttl": 1 }] }"#,
+        ));
+
+        unsafe { env::set_var("EPV_AUTH_TYPE", "tok") };
+        let alias = load::<Auth>(None);
+
+        unsafe {
+            env::set_var("EPV_AUTH_TYPE", "redis");
+            env::set_var("EPV_REDIS_PORT", "1");
+        };
+        let nested = load::<Auth>(None);
+
+        unsafe { env::set_var("EPV_AUTH_TYPE", "nope") };
+        let unknown = load::<Auth>(None);
+
+        unsafe {
+            env::remove_var("EPV_AUTH_TYPE");
+            env::remove_var("EPV_AUTH_TOKEN");
+            env::remove_var("EPV_REDIS_PORT");
+        };
+
+        let other = other.unwrap();
+
+        assert_eq!(other.config, token(60));
+        assert!(matches!(
+            other.layers.last().map(|layer| &layer.source),
+            Some(schematic::Source::EnvVars)
+        ));
+        assert_eq!(same.unwrap().config, token(5));
+        assert_eq!(none.unwrap().config, token(60));
+
+        let app = app.unwrap().config;
+
+        assert_eq!(app.auth, token(60));
+        assert_eq!(app.maybe, Some(token(60)));
+        assert_eq!(app.items, vec![token(60), token(1)]);
+
+        assert_eq!(alias.unwrap().config, token(60));
+        assert_eq!(nested.unwrap().config, Auth::Redis(Redis { port: 1 }));
+
+        let Err(unknown) = unknown else {
+            panic!("expected an unknown variant to fail");
+        };
+
+        assert!(unknown.contains("EPV_AUTH_TYPE"), "{unknown}");
+        assert!(
+            unknown.contains("Unknown variant `nope`, expected one of `none`, `token`, `redis`."),
+            "{unknown}"
+        );
+    }
+
+    // Without the variable, the source's variant stands
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "EPV_UNSET_")]
+    #[serde(tag = "type")]
+    pub enum Unset {
+        #[setting(default)]
+        A,
+        B {
+            b: Option<String>,
+        },
+    }
+
+    #[test]
+    fn keeps_the_variant_of_a_source_without_the_variable() {
+        let result = load::<Unset>(Some(r#"{ "type": "B" }"#)).unwrap();
+
+        assert_eq!(result.config, Unset::B { b: None });
+        assert!(
+            !result
+                .layers
+                .iter()
+                .any(|layer| matches!(layer.source, schematic::Source::EnvVars))
+        );
+    }
+}

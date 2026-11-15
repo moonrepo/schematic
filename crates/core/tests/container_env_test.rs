@@ -172,4 +172,90 @@ mod container_env {
             .validate_attributes();
         }
     }
+
+    mod tagged_enum {
+        use super::*;
+
+        // The tag's variable picks a variant by its serde name or an alias,
+        // which the layer holds with nothing in it, so that finalizing fills
+        // it in. A plain value has nothing to fill it in, and a skipped variant
+        // is never deserialized.
+        #[test]
+        fn picks_a_variant_by_its_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "type", rename_all = "snake_case")]
+                enum Example {
+                    #[setting(default)]
+                    None,
+                    #[serde(alias = "tok")]
+                    Token {
+                        token: String,
+                        expires: Option<u64>,
+                    },
+                    BasicAuth {
+                        user: String,
+                    },
+                    #[setting(nested)]
+                    Nested(NestedConfig),
+                    Path(String),
+                    #[serde(skip)]
+                    Hidden,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        #[test]
+        fn picks_an_adjacently_tagged_variant() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "kind", content = "value")]
+                enum Example {
+                    #[setting(nested)]
+                    Redis(RedisConfig),
+                    #[setting(nested)]
+                    S3(S3Config),
+                }
+            });
+
+            container.validate_attributes();
+            assert_snapshot!(pretty(container.impl_partial_env_values()));
+        }
+
+        // An externally tagged enum has no tag to derive a key from
+        #[test]
+        fn picks_nothing_without_a_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                enum Example {
+                    Token { token: String },
+                }
+            });
+
+            assert!(container.impl_partial_env_values().is_empty());
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Cannot use `env_prefix` on a `Config` enum without named variants or a tag"
+        )]
+        fn errors_without_a_variant_to_pick() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "type")]
+                enum Example {
+                    Path(String),
+                    #[serde(skip)]
+                    Hidden,
+                }
+            })
+            .validate_attributes();
+        }
+    }
 }

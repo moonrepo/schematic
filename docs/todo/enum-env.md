@@ -6,7 +6,7 @@ and the `ContainerInner::Enum` merge, #217). See [README.md](README.md) for the 
 **Goal.** A `Config` enum's settings read environment variables the way a struct's do: `env`,
 `parse_env` and a container `env_prefix`, with the same precedence (defaults → sources → env) and
 the same metadata in schemas and `settings()`. Picking the variant from the environment is a
-separate decision, covered in Phase 2.
+separate decision, covered in Phase 2, which was built too.
 
 ## Where things stand
 
@@ -186,7 +186,7 @@ variant. `get_env_var` has the "Cannot use `env` with `nested`" panic, but every
 early for a nested setting, except the `parse_env` check. It's a G7-style no-op attribute, and the fix
 is a check in `Field::validate_args`, but it would break a struct that has one today.
 
-## Phase 2: picking the variant from the environment · needs your call
+## Phase 2: picking the variant from the environment · fixed on `0.21-enum-env`
 
 Phase 1 can fill a variant but never pick one, so an env-only deployment can't switch `Auth` from
 `none` to `token`. A selector can be added without breaking Phase 1's no-double-read property:
@@ -206,16 +206,33 @@ the finalize arm fills it.
   variable name.
 - Optionally, report the key as `env_var` on the tag's `Literal` field in each variant's schema.
 
-Questions before building it:
+Decided (2026-11-15, "build with recs"):
 
-1. **Externally tagged enums** (the default for a `Config` enum) have no tag to derive a key from.
-   Should they get no selector (recommended: users add `#[serde(tag)]`), or an explicit container
-   key like `#[config(env = "AUTH_TYPE")]`, which structs would then have to reject?
-2. **Collections:** `finalize_with_layers` calls `env_values` for every item, so `AUTH_TYPE=token`
-   would turn every item of a `Vec<Auth>` into `Token`. That's consistent with items reading env
-   (`inherits_env_for_each`), but much more drastic for a selector. Should it be accepted and
-   documented?
-3. **Is there a concrete user?** Without one, I'd ship Phases 0 and 1 and park Phase 2 in `gaps.md`.
+1. **Externally tagged enums** get no selector, and there's no explicit container key. Users add
+   `#[serde(tag)]`.
+2. **Collections:** accepted and documented. Every item of a `Vec<Auth>` reads `AUTH_TYPE`.
+3. Built without a concrete user.
+
+As built:
+
+- `Container::impl_partial_env_values_tag` emits only `env_values`. `HAS_ENV_PREFIX` stays unset, so
+  a parent prefix still fails to compile. It holds the picked variant through
+  `Variant::impl_partial_default_value`, so every field is `Default::default()`.
+- `Variant::is_env_selectable` excludes skipped, untagged and `null` variants too.
+- `validate_enum_attributes` accepts `env_prefix` with a named variant, or with a tag and a
+  selectable variant.
+- The tag field reports `SchemaField.env_var` (`Container::get_env_tag_var_name`, only with the
+  `env` feature), and the adjacent `{tag, content}` struct switches to `SchemaField` entries only
+  when it does, so existing snapshots are unchanged.
+- The error reads "Invalid environment variable AUTH_TYPE. Unknown variant `x`, expected one of
+  `none`, `token`, ...", following serde's wording. Aliases are matched but not listed.
+- The picked variant is in the `Source::EnvVars` layer, so `ConfigLoadResult.layers` reports it.
+  Its fields' variables still aren't reported.
+- `settings()` has no slot for an enum's own key, so it isn't listed there.
+- Tests: core `container_env_test::tagged_enum`, and
+  `container_schema_test::named_enum::reports_the_env_var_of_*`; runtime
+  `config_test::env_picked_variant`. The `named_enum_test` TypeScript snapshots now show
+  `@env SOURCE_TYPE`.
 
 ## Tests
 
@@ -258,5 +275,5 @@ Questions before building it:
 ## Suggested commits
 
 1. `fix: Read the env of nested configs in named variants.` (Phase 0) · `600ef7d`
-2. `new: Support env vars in named enum variants.` (Phase 1, with docs)
-3. Phase 2, only if decided.
+2. `new: Support env vars in named enum variants.` (Phase 1, with docs) · `b7dd174`
+3. `new: Pick a tagged enum's variant from an env var.` (Phase 2)

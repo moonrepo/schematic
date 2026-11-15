@@ -367,6 +367,22 @@ impl Variant {
             || self.serde_args.skip_deserializing
     }
 
+    /// Whether a variable naming this variant can pick it, which the enum's
+    /// environment layer then holds with nothing in it, for finalizing to fill
+    /// in. A unit or named variant can be, as can one whose values are all
+    /// nested configs, while a plain value has nothing to fill it in. One that
+    /// serde never deserializes, or that has no name to match, can't be.
+    pub fn is_env_selectable(&self) -> bool {
+        if self.is_skipped_deserializing() || self.is_untagged() || self.args.null {
+            return false;
+        }
+
+        match &self.fields {
+            Fields::Unit | Fields::Named(_) => true,
+            Fields::Unnamed(_) => self.values.iter().all(|value| value.nested),
+        }
+    }
+
     /// Aliases can be provided by both attributes, so combine them.
     pub fn get_aliases(&self) -> Vec<&String> {
         let mut aliases = vec![];
@@ -624,6 +640,7 @@ impl Variant {
         tag_format: &SerdeTagFormat,
         partial: bool,
         allows_unknown_fields: bool,
+        tag_env_var: Option<&str>,
     ) -> TokenStream {
         use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
@@ -738,6 +755,17 @@ impl Variant {
         let unit = self.is_unit_variant();
         let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
+        // A tag reports the variable that picks its variant, like a setting
+        let tag_field = tag_env_var.map(|key| {
+            quote! {
+                {
+                    let mut field = SchemaField::new(#name_literal);
+                    field.env_var = Some(#key.into());
+                    field
+                }
+            }
+        });
+
         let mut schema = if let SerdeTagFormat::Unit = tag_format {
             // Every variant is a unit, so the enum is a list of named values
             let ty = if self.args.null {
@@ -784,12 +812,17 @@ impl Variant {
                 // { "tag": "name", ...value }
                 SerdeTagFormat::Internal(tag) => {
                     if unit {
+                        let field = tag_field.unwrap_or_else(|| name_literal.clone());
+
                         quote! {
                             Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
+                                (#tag.into(), #field),
                             ]))
                         }
                     } else {
+                        let field =
+                            tag_field.unwrap_or_else(|| quote! { SchemaField::new(#name_literal) });
+
                         // The tag makes it a different shape to the type it holds,
                         // so it's no longer that named type, which a renderer
                         // would otherwise reference without the tag
@@ -797,7 +830,7 @@ impl Variant {
                             {
                                 let mut item = #inner;
 
-                                if item.ty.add_field(#tag, SchemaField::new(#name_literal)) {
+                                if item.ty.add_field(#tag, #field) {
                                     item.name = None;
                                 }
 
@@ -808,19 +841,29 @@ impl Variant {
                 }
                 // { "tag": "name" } | { "tag": "name", "content": value }
                 SerdeTagFormat::Adjacent(tag, content) => {
-                    if unit {
-                        quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
-                            ]))
+                    match (unit, tag_field) {
+                        (true, field) => {
+                            let field = field.unwrap_or_else(|| name_literal.clone());
+
+                            quote! {
+                                Schema::structure(StructType::new([
+                                    (#tag.into(), #field),
+                                ]))
+                            }
                         }
-                    } else {
-                        quote! {
+                        // The entries are each a field, as the tag's is
+                        (false, Some(field)) => quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #field),
+                                (#content.into(), SchemaField::from(#partial_inner)),
+                            ]))
+                        },
+                        (false, None) => quote! {
                             Schema::structure(StructType::new([
                                 (#tag.into(), #name_literal),
                                 (#content.into(), #partial_inner),
                             ]))
-                        }
+                        },
                     }
                 }
             }

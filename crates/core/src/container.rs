@@ -193,6 +193,56 @@ impl Container {
         }
     }
 
+    /// The key of the variable that picks a variant of a tagged enum, derived
+    /// from its tag like a struct's from a setting's name, and so only with an
+    /// `env_prefix`, which is applied at runtime: `tag = "type"` reads `TYPE`.
+    /// An externally tagged or untagged enum has no tag to derive it from.
+    pub fn get_env_tag_key(&self) -> Option<String> {
+        self.args.env_prefix.as_ref()?;
+
+        if !matches!(self.inner, ContainerInner::Enum { .. }) {
+            return None;
+        }
+
+        match self.get_tag_format() {
+            SerdeTagFormat::Internal(tag) | SerdeTagFormat::Adjacent(tag, _) => {
+                Some(tag.to_uppercase())
+            }
+            _ => None,
+        }
+    }
+
+    /// The variable that picks `variant`, as reported on its tag in the schema,
+    /// with the enum's own prefix, like a setting's. Nothing for a variant it
+    /// can't pick.
+    #[cfg(feature = "env")]
+    pub fn get_env_tag_var_name(&self, variant: &Variant) -> Option<String> {
+        let key = self.get_env_tag_key()?;
+        let prefix = self.args.env_prefix.as_ref()?;
+
+        variant
+            .is_env_selectable()
+            .then(|| format!("{prefix}{key}"))
+    }
+
+    #[cfg(not(feature = "env"))]
+    pub fn get_env_tag_var_name(&self, _variant: &Variant) -> Option<String> {
+        None
+    }
+
+    /// The variants a variable can pick, by the key from [`get_env_tag_key`].
+    pub fn get_env_selectable_variants(&self) -> Vec<&Variant> {
+        if self.get_env_tag_key().is_none() {
+            return vec![];
+        }
+
+        self.inner
+            .get_variants()
+            .into_iter()
+            .filter(|variant| variant.is_env_selectable())
+            .collect()
+    }
+
     /// Whether the partial enum is untagged, and requires
     /// each variant to be attempted in order when deserializing.
     pub fn is_untagged(&self) -> bool {
@@ -406,9 +456,12 @@ impl Container {
         // A named variant has fields of its own, which a `ConfigEnum` can't hold
         let has_fields = derive == "Config" && self.inner.has_named_variants();
 
-        if self.args.env_prefix.is_some() && !has_fields {
+        // A `ConfigEnum` is written as a string, so it's never tagged
+        let picks_variants = derive == "Config" && !self.get_env_selectable_variants().is_empty();
+
+        if self.args.env_prefix.is_some() && !has_fields && !picks_variants {
             panic!(
-                "Cannot use `env_prefix` on a `{derive}` enum without named variants, as only the fields of a struct or a named variant read environment variables. Use `env` on the setting that holds the enum instead."
+                "Cannot use `env_prefix` on a `{derive}` enum without named variants or a tag, as it only derives keys for the fields of a named variant, and for a tag that picks a unit, named, or nested variant. Use `env` on the setting that holds the enum instead."
             );
         }
 
@@ -1340,7 +1393,13 @@ impl Container {
                     }
 
                     let name = variant.get_name();
-                    let ty = variant.impl_schema_type(&tag_format, partial, allows_unknown_fields);
+                    let tag_env_var = self.get_env_tag_var_name(variant);
+                    let ty = variant.impl_schema_type(
+                        &tag_format,
+                        partial,
+                        allows_unknown_fields,
+                        tag_env_var.as_deref(),
+                    );
 
                     named_types.push(quote! { (#name.into(), #ty) });
                     types.push(ty);
@@ -1566,8 +1625,11 @@ impl Container {
             }
 
             // The layer can't know which variant a source will pick, so a
-            // named variant reads its settings' variables when it's finalized
-            _ => return quote! {},
+            // named variant reads its settings' variables when it's finalized.
+            // A tag's variable picks one, though, which the layer holds with
+            // nothing in it, for finalizing to fill in, so each variable is
+            // still read once.
+            ContainerInner::Enum { .. } => return self.impl_partial_env_values_tag(),
         };
 
         let internal = ImplResult::impl_use_internal(true);
@@ -1605,6 +1667,58 @@ impl Container {
                 } else {
                     Some(partial)
                 })
+            }
+        }
+    }
+
+    /// Generate the environment values of a tagged enum, which hold the variant
+    /// its tag's variable names, matched as serde matches the tag: by its name
+    /// or an alias, exactly. A parent's prefix never reaches an enum, as its
+    /// settings are read when finalized, so only `env_values` is implemented.
+    #[cfg(feature = "env")]
+    fn impl_partial_env_values_tag(&self) -> TokenStream {
+        let (Some(key), Some(prefix)) = (self.get_env_tag_key(), &self.args.env_prefix) else {
+            return quote! {};
+        };
+        let variants = self.get_env_selectable_variants();
+
+        if variants.is_empty() {
+            return quote! {};
+        }
+
+        let mut expected = vec![];
+
+        let arms = variants
+            .iter()
+            .map(|variant| {
+                let name = variant.get_name();
+                let names = std::iter::once(&name).chain(variant.get_aliases());
+                let value = variant.impl_partial_default_value().value;
+
+                // The message is a format string, which a renamed variant may break
+                expected.push(format!("`{}`", name.replace('{', "{{").replace('}', "}}")));
+
+                quote! { #(#names)|* => Self::#value, }
+            })
+            .collect::<Vec<_>>();
+
+        let message = format!(
+            "Unknown variant `{{value}}`, expected one of {}.",
+            expected.join(", ")
+        );
+
+        quote! {
+            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                use schematic::internal::*;
+
+                let mut env = EnvManager::new(None::<&str>, Some(#prefix));
+
+                Ok(env.get_and_parse_prefixed(#key, |value| {
+                    Ok(Some(match value.as_str() {
+                        #(#arms)*
+                        _ => return Err(schematic::HandlerError::new(format!(#message))),
+                    }))
+                })?)
             }
         }
     }

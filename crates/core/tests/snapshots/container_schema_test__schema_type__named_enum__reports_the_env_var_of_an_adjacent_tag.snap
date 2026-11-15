@@ -1,0 +1,79 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_named_schemas(
+                [
+                    (
+                        "None".into(),
+                        Schema::structure(
+                            StructType::new([
+                                (
+                                    "kind".into(),
+                                    {
+                                        let mut field = SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("None".into())),
+                                        );
+                                        field.env_var = Some("AUTH_KIND".into());
+                                        field
+                                    },
+                                ),
+                            ]),
+                        ),
+                    ),
+                    (
+                        "Token".into(),
+                        Schema::structure(
+                            StructType::new([
+                                (
+                                    "kind".into(),
+                                    {
+                                        let mut field = SchemaField::new(
+                                            Schema::literal_value(LiteralValue::String("Token".into())),
+                                        );
+                                        field.env_var = Some("AUTH_KIND".into());
+                                        field
+                                    },
+                                ),
+                                (
+                                    "value".into(),
+                                    SchemaField::from({
+                                        let mut item = Schema::structure(
+                                            StructType::new([
+                                                (
+                                                    "token".into(),
+                                                    {
+                                                        let mut field = SchemaField::new(schema.infer::<String>());
+                                                        field.env_var = Some("AUTH_TOKEN".into());
+                                                        field
+                                                    },
+                                                ),
+                                            ]),
+                                        );
+                                        item.partialize();
+                                        item
+                                    }),
+                                ),
+                            ]),
+                        ),
+                    ),
+                    (
+                        "Path".into(),
+                        Schema::structure(
+                            StructType::new([
+                                (
+                                    "kind".into(),
+                                    Schema::literal_value(LiteralValue::String("Path".into())),
+                                ),
+                                ("value".into(), schema.infer::<String>()),
+                            ]),
+                        ),
+                    ),
+                ],
+                None,
+            ),
+        )
+}

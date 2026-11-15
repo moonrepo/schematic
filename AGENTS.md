@@ -145,8 +145,8 @@ kind of nested setting:
 - **Optional** (`Option<Child>`): a parent's defaults leave it `None`, so its `default_values` are
   merged under it, then `finalize`. Its env already came through the parent's env layer.
 - **Collection items** and **enum variant values** are boundaries: no layer holds their defaults or
-  env (collections aren't in `default_values`, and an enum's env layer holds no variant), so they
-  go through the hidden `internal::finalize_with_layers`, which merges their defaults under them
+  env (collections aren't in `default_values`, and an enum's env layer holds at most an empty
+  variant), so they go through the hidden `internal::finalize_with_layers`, which merges their defaults under them
   and their env over them, as the loader does, then finalizes. This is also what lets each item
   read the environment.
 - `finalize` used to merge defaults and env itself, with a hidden `finalize_nested` for the rest.
@@ -288,8 +288,11 @@ shadows a generated local.
 - **Schema**: a struct of the fields, marked partial like a nested value for a `Config`, so the partial
   schema makes its fields optional; never marked for a `Schematic`-only derive.
 - **Env**: the finalize arm reads the fields' env over the variant (see the runtime flow above),
-  never `env_values`, which can't know the variant a source will pick, so the enum's env layer holds
-  none. An enum accepts `env_prefix` only with a named variant, as `allow_unknown_fields`.
+  never `env_values`, which can't know the variant a source will pick. A tagged enum's `env_values`
+  only picks one, from the key its tag derives (`impl_partial_env_values_tag`), holding it with
+  every field empty, as `default_values` does, so the arm still reads each field's env once. An enum
+  accepts `env_prefix` with a named variant, or with a tag that can pick a variant
+  (`Variant::is_env_selectable`).
 - Variant-level `nested`, `context`, `merge`, `required`, `transform`, `validate`, and a `default`
   value panic, as the fields hold them; `extend` panics on a field, as only a struct extends.
 
@@ -393,7 +396,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   nothing. A parent's prefix never reaches an enum, as a named variant reads its env in `finalize`,
   which takes no prefix (a hidden `finalize_with_prefix` was rejected), so the enum leaves
   `HAS_ENV_PREFIX` unset and the parent's `#[setting(nested, env_prefix)]` fails to compile, as on a
-  collection.
+  collection. A tagged enum's `env_prefix` also derives a key from its tag
+  (`Container::get_env_tag_key`, `tag = "type"` → `TYPE`), which picks a variant by its serde name
+  or an alias, exactly, and is reported as the tag's `SchemaField.env_var`. By decision an
+  externally tagged enum gets no such key (there's no tag, and no attribute to name one), and each
+  item of a collection reads it, so it retypes every item, consistent with items reading env.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
   `merge` to change it — `merge::merge_partials` merges a map of nested configs by key.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,

@@ -72,7 +72,8 @@ The following fields are supported for the `#[config]` container attribute:
   [partial struct](../partial.md), or an enum with named variants. Defaults to `false`.
 - `context` - Sets the struct to be used as the [context](../context.md). Defaults to `None`.
 - `env_prefix` - Sets the prefix to use for [environment variable](./env.md#container-prefixes)
-  mapping, of a struct's fields or a named variant's. Defaults to `None`.
+  mapping, of a struct's fields or a named variant's, and of a tagged enum's tag. Defaults to
+  `None`.
 - `partial` - Forwards attributes to the [partial](../partial.md).
 
 ```rust

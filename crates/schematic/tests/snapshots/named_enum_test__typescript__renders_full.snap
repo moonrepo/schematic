@@ -22,6 +22,7 @@ export type Source = {
 	 * @env SOURCE_PATH
 	 */
 	path?: string;
+	/** @env SOURCE_TYPE */
 	type: 'file';
 } | {
 	/** @env SOURCE_ADDRESS */
@@ -29,6 +30,7 @@ export type Source = {
 	retry: Retry;
 	/** @env SOURCE_URL_TOKEN */
 	token?: string | null;
+	/** @env SOURCE_TYPE */
 	type: 'url';
 };
 

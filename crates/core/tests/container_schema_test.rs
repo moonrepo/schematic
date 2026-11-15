@@ -421,6 +421,45 @@ mod schema_type {
 
             assert_snapshot!(pretty_body(container.impl_schematic_type()));
         }
+
+        // The tag of a variant a variable can pick reports that variable
+        #[test]
+        fn reports_the_env_var_of_a_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "type")]
+                enum Example {
+                    None,
+                    Token {
+                        token: String,
+                    },
+                    #[setting(nested)]
+                    Nested(NestedConfig),
+                    Path(String),
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
+
+        #[test]
+        fn reports_the_env_var_of_an_adjacent_tag() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "AUTH_")]
+                #[serde(tag = "kind", content = "value")]
+                enum Example {
+                    None,
+                    Token {
+                        token: String,
+                    },
+                    Path(String),
+                }
+            });
+
+            assert_snapshot!(pretty_body(container.impl_schematic_type()));
+        }
     }
 
     mod unnamed_enum {
