@@ -122,6 +122,9 @@
 
 #### 🐞 Fixes
 
+- Fixed config templates leaving out the settings of a flattened struct. They're now rendered
+  alongside the struct's own, including those of a flattened struct within another. TOML, which
+  rendered a flattened struct as a table of its own, failed to load.
 - Fixed the default value of a root enum's default variant, like `#[setting(default = "auto")]` on
   `Named(String)`, not being applied when loading, while `Default` applied it.
 ##### Schema

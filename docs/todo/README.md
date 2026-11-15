@@ -78,7 +78,7 @@ Each item is trivial or a few lines, and every one is confirmed:
 | `required` on `Option`      | ✓ (G5)              | ✓ (G5)          | n/a            | ✓ (G5)         | ✓ (G5)          |
 | aliases                     | ~                   | ✓               | ✗              | ✓              | ✓               |
 | flatten map                 | ✓                   | ✓               | ✗              | ✓              | ✓               |
-| flatten struct              | ✗ (B15)             | ✗ collision     | ✗ dropped      | ✓              | ✓               |
+| flatten struct              | ✗ (B15)             | ✗ collision     | ✓ (G6)         | ✓              | ✓               |
 | internal tag + named struct | ✗ (B16)             | ✗               | ?              | ✓              | ✗               |
 | recursion                   | ✗ root ref, ✗ `Box` | ✗ `Box`         | ✗ `Box`        | ✓              | ✗ `Box`         |
 | integer kind and range      | ✓ (G5)              | ~               | ✓              | ✓              | ~               |

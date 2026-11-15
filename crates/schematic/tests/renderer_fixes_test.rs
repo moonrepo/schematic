@@ -648,3 +648,187 @@ mod schema_fidelity {
         assert_eq!(serde_json::from_str::<Port>("8080").unwrap().value, 8080);
     }
 }
+
+// Serde writes a flattened struct's settings alongside the struct's own, so a
+// template has to as well, or loading it fails on the unknown key
+mod flattened_templates {
+    use super::*;
+
+    #[derive(Config)]
+    pub struct Middle {
+        #[setting(default = true)]
+        middle_flag: bool,
+        #[setting(nested)]
+        middle_table: MiddleTable,
+    }
+
+    #[derive(Config)]
+    pub struct MiddleTable {
+        #[setting(default = 3)]
+        retries: usize,
+    }
+
+    #[derive(Config)]
+    pub struct Optional {
+        #[setting(default = 7)]
+        optional_count: usize,
+    }
+
+    #[derive(Config)]
+    pub struct Flattening {
+        #[setting(default = "own")]
+        own: String,
+        #[setting(flatten, nested)]
+        middle: Middle,
+        #[setting(flatten, nested)]
+        optional: Option<Optional>,
+    }
+
+    // Loading fails on a key that isn't a setting, and the template's own
+    // layer shows it set each flattened setting, rather than leaving it to
+    // fall back to its default
+    fn assert_loads(code: &str, file: &str) {
+        let result = ConfigLoader::<Flattening>::new()
+            .code(code, file)
+            .unwrap()
+            .load()
+            .unwrap_or_else(|error| panic!("{}\n{code}", error.to_full_string()));
+
+        let layer = &result.layers[1].partial;
+        let middle = layer.middle.as_ref().expect(code);
+
+        assert_eq!(layer.own.as_deref(), Some("own"), "{code}");
+        assert_eq!(middle.middle_flag, Some(true), "{code}");
+        assert_eq!(
+            middle.middle_table.as_ref().and_then(|table| table.retries),
+            Some(3),
+            "{code}"
+        );
+        assert_eq!(
+            layer
+                .optional
+                .as_ref()
+                .and_then(|optional| optional.optional_count),
+            Some(7),
+            "{code}"
+        );
+    }
+
+    #[test]
+    fn yaml_writes_flattened_settings_alongside() {
+        let yaml = render::<Flattening, _, _>(YamlTemplateRenderer::new(template_options()));
+        let parsed: serde_norway::Value = serde_norway::from_str(&yaml).unwrap();
+
+        assert_eq!(parsed["middle_flag"].as_bool(), Some(true), "{yaml}");
+        assert_eq!(
+            parsed["middle_table"]["retries"].as_u64(),
+            Some(3),
+            "{yaml}"
+        );
+        assert_loads(&yaml, "template.yml");
+    }
+
+    #[test]
+    fn toml_writes_flattened_settings_alongside() {
+        let toml = render::<Flattening, _, _>(TomlTemplateRenderer::new(template_options()));
+        let parsed: toml::Table = toml::from_str(&toml).unwrap();
+
+        // Previously a table of its own, which isn't a setting
+        assert!(!parsed.contains_key("middle"), "{toml}");
+        assert_eq!(parsed["middle_flag"].as_bool(), Some(true), "{toml}");
+        assert_eq!(
+            parsed["middle_table"]["retries"].as_integer(),
+            Some(3),
+            "{toml}"
+        );
+        assert_loads(&toml, "template.toml");
+    }
+
+    #[test]
+    fn json_writes_flattened_settings_alongside() {
+        let json = render::<Flattening, _, _>(JsonTemplateRenderer::new(template_options()));
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed["optional_count"], serde_json::json!(7), "{json}");
+        assert_loads(&json, "template.json");
+    }
+
+    #[test]
+    fn jsonc_writes_flattened_settings_alongside() {
+        let jsonc = render::<Flattening, _, _>(JsoncTemplateRenderer::new(TemplateOptions {
+            comments: true,
+            ..TemplateOptions::default()
+        }));
+
+        assert_loads(&jsonc, "template.jsonc");
+    }
+
+    #[test]
+    fn pkl_writes_flattened_settings_alongside() {
+        let pkl = render::<Flattening, _, _>(PklTemplateRenderer::new(template_options()));
+
+        for line in ["middle_flag = true", "retries = 3", "optional_count = 7"] {
+            assert!(pkl.contains(line), "{line}\n{pkl}");
+        }
+
+        assert!(!pkl.contains("middle {"), "{pkl}");
+    }
+
+    // Serde can't deny unknown fields through a flattened struct that flattens
+    // another, so these allow them, as only then does it load
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct Base {
+        #[setting(default = "base")]
+        base_name: String,
+    }
+
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct DeepMiddle {
+        #[setting(default = true)]
+        deep_flag: bool,
+        #[setting(flatten, nested)]
+        base: Base,
+    }
+
+    #[derive(Config)]
+    #[config(allow_unknown_fields)]
+    pub struct Deep {
+        #[setting(default = "own")]
+        own: String,
+        #[setting(flatten, nested)]
+        middle: DeepMiddle,
+    }
+
+    #[test]
+    fn inlines_a_flattened_struct_within_another() {
+        for (code, file) in [
+            (
+                render::<Deep, _, _>(YamlTemplateRenderer::new(template_options())),
+                "template.yml",
+            ),
+            (
+                render::<Deep, _, _>(TomlTemplateRenderer::new(template_options())),
+                "template.toml",
+            ),
+        ] {
+            let result = ConfigLoader::<Deep>::new()
+                .code(code.as_str(), file)
+                .unwrap()
+                .load()
+                .unwrap_or_else(|error| panic!("{}\n{code}", error.to_full_string()));
+            let middle = result.layers[1].partial.middle.as_ref().expect(&code);
+
+            assert_eq!(middle.deep_flag, Some(true), "{code}");
+            assert_eq!(
+                middle
+                    .base
+                    .as_ref()
+                    .and_then(|base| base.base_name.as_deref()),
+                Some("base"),
+                "{code}"
+            );
+        }
+    }
+}

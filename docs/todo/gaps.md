@@ -100,11 +100,23 @@ Still open:
   - Unit-enum variant descriptions are dropped.
 - api_docs and Pkl don't reflect `allow_unknown_fields`.
 
-**G6. Templates drop flattened fields** ✅ · med
+**G6. Templates drop flattened fields** · fixed on `0.21-gaps`
 
-- Every template renderer `continue`s past `flatten`, so `ExtendingConfig`'s YAML template is just
-  `own: false`.
-- Fix: inline the flattened struct's fields, resolving references.
+Every template renderer now inlines a flattened struct's fields in place of the field that holds it,
+through `template::inline_flattened_fields`, resolving references and an `Option`, recursively. The
+struct's own field of a name takes precedence. TOML was worse than dropping them: `extract_sections`
+didn't skip flattened fields, so a flattened struct became a `[table]` of its own, which the
+partial's `deny_unknown_fields` rejected on load. A flattened map still renders nothing.
+`renderer_fixes_test.rs` (`flattened_templates`) loads each format's template back through the
+loader and checks its layer set every flattened setting.
+
+Found while testing it: a config can't load a flattened struct that flattens another, as serde
+doesn't support `deny_unknown_fields` with `flatten`. One level works, as a plain flattened
+struct takes its keys from the parent's buffer, while one with a flattened field of its own reads
+them as a map without taking them, so the parent rejects them as unknown. Every setting of the
+middle struct fails, not only the innermost. `#[config(allow_unknown_fields)]` on each is the
+workaround. Fixing it means the derive dropping `deny_unknown_fields` somewhere, a strictness
+trade-off to decide.
 
 **G7. Attributes that parse and do nothing** · med
 
