@@ -19,12 +19,47 @@ enum Host {
 }
 ```
 
-## Enum caveats
+## Enum variants
 
-[`Config`][config] can only be derived for enums with tuple or unit variants, but not struct/named
-variants. Why not struct variants? Because with this pattern, the enum acts like a union type. This
-also allows for [`Config`][config] functionality, like partials, merging, and validation, to be
-applied to the contents of each variant.
+An enum's variants may be unit, tuple, or named, and mixed freely. A tuple variant is a single
+setting, so the values it holds are written in full, while each field of a named variant is a
+setting of its own, like the fields of a struct.
+
+```rust
+#[derive(Config)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Source {
+	#[setting(default)]
+	File {
+		#[setting(default = "config.json")]
+		path: String,
+		#[setting(default = 30, validate = schematic::validate::in_range(1, 60))]
+		timeout: u32,
+	},
+	Url {
+		#[setting(required)]
+		address: Option<String>,
+		#[setting(nested)]
+		retry: RetryConfig,
+	},
+	Inline(String),
+}
+```
+
+Every field of a named variant is optional within the [partial](../partial.md), so a layer can
+provide some of them and leave the rest to another. When two layers pick the same variant, its
+fields are merged one by one, each with its own `merge`, while a layer picking another variant
+replaces it. Each field takes the same `#[setting]` fields as a struct's, except `env`,
+`env_prefix`, `parse_env`, and `extend`, as an enum reads no environment variables. The variant
+itself takes only `default`, `exclude`, `partial`, and the serde fields, while the fields hold the
+rest.
+
+A source may pick a variant other than the default, so the defaults of a named variant's fields are
+applied when it's finalized, however it was picked. A field that fails validation is reported under
+the variant, like `source.url.address`.
+
+The fields are named as written, unless the variant has a `#[serde(rename_all)]` of its own, or the
+enum has a `rename_all_fields`. The enum's own `rename_all` names the variants, as with serde.
 
 > If you'd like to support unit-only enums, you can use the [`ConfigEnum` trait](../enum/index.md)
 > instead.
@@ -34,7 +69,7 @@ applied to the contents of each variant.
 The following fields are supported for the `#[config]` container attribute:
 
 - `allow_unknown_fields` - Removes the serde `deny_unknown_fields` from the
-  [partial struct](../partial.md). Defaults to `false`.
+  [partial struct](../partial.md), or an enum with named variants. Defaults to `false`.
 - `context` - Sets the struct to be used as the [context](../context.md). Defaults to `None`.
 - `env_prefix` - Sets the prefix to use for [environment variable](./env.md#container-prefixes)
   mapping. Defaults to `None`.
@@ -78,6 +113,10 @@ struct Example {
 > These values can also be applied using `#[serde]`, which is useful if you want to apply them to
 > the main struct as well, and not just the partial struct.
 
+The partial of an enum with a named variant denies unknown fields as well. Serde applies it to the
+enum as a whole, so every named variant denies them, as do the keys around an internally or
+adjacently tagged variant, unless a named variant flattens a map, which collects them.
+
 ### Enum tagging
 
 Serde's tagging attributes are read straight off the `#[serde]` attribute and forwarded to the
@@ -109,6 +148,9 @@ failed to parse as any variant of PartialHost:
 
 > A unit-only enum is always externally tagged, no matter what you set. Marking one `untagged`
 > would leave its variants deserializable only from `null`.
+
+An untagged named variant is attempted like any other, and unless unknown fields are allowed, fails
+on a field it doesn't know, so an input with an extra key moves on to the next variant.
 
 ### Literal unions
 

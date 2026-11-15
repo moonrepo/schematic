@@ -85,6 +85,23 @@ enum Compress {
 > A value can't be provided for a variant holding several values, or a
 > [nested](../nested.md) configuration, which sources its defaults from its own settings.
 
+A named variant takes no value either, as each of its fields takes a `default` of its own. They're
+applied whenever the variant is picked, not only when it's the default, so a source that picks
+`Url` below gets a `timeout` of `30`.
+
+```rust
+#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Url {
+		address: String,
+		#[setting(default = 30)]
+		timeout: u32,
+	},
+}
+```
+
 ## Handler function
 
 If you need more control or need to calculate a complex value, you can pass a reference to a
