@@ -3177,6 +3177,16 @@ mod named_variants {
         );
     }
 
+    // A unit variant holds no type, so it's reported as its name, as in an
+    // enum of only unit variants
+    #[test]
+    fn lists_unit_variants_by_name() {
+        let settings = Mode::settings();
+
+        assert_eq!(settings["Off"].type_alias, "Off");
+        assert_eq!(settings["Level"].type_alias, "u8");
+    }
+
     // Untagged, where each variant is attempted in order
     #[derive(Clone, Debug, Config, PartialEq)]
     #[serde(untagged)]
