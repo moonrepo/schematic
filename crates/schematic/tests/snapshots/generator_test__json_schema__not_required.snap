@@ -79,7 +79,8 @@ expression: "fs::read_to_string(file).unwrap()"
     "map": {
       "type": "object",
       "additionalProperties": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0
       },
       "propertyNames": {
         "type": "string"
@@ -94,7 +95,8 @@ expression: "fs::read_to_string(file).unwrap()"
       ]
     },
     "number": {
-      "type": "number"
+      "type": "integer",
+      "minimum": 0
     },
     "path": {
       "type": "string",

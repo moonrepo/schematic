@@ -31,6 +31,7 @@ pub struct ContainerArgs {
     pub env_prefix: Option<String>,
     #[darling(multiple)]
     pub partial: Vec<PartialArg>,
+    pub validate: Option<crate::args::ValidateArg>,
 
     // serde
     pub rename: Option<SerdeRenameArg>,
@@ -291,14 +292,216 @@ impl Container {
             .any(|attr| attr.to_string().contains("bound"))
     }
 
+    /// Whether a struct accepts keys other than its fields, as serde does
+    /// unless `deny_unknown_fields`. A config's partial denies them unless
+    /// `#[config(allow_unknown_fields)]`, as that's what's deserialized.
+    #[cfg(feature = "schema")]
+    fn allows_unknown_fields(&self) -> bool {
+        match self.macro_type {
+            ContainerMacro::Config | ContainerMacro::ConfigUnitEnum => {
+                !self.partial_denies_unknown_fields()
+            }
+            ContainerMacro::Schematic => !self.serde_args.deny_unknown_fields,
+        }
+    }
+
+    /// The settings flattened into a named struct. Serde deserializes a struct
+    /// with any as a map, so that each can read the keys left over.
+    fn get_flattened_fields(&self) -> Vec<&Field> {
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } => fields
+                .iter()
+                .filter(|field| field.is_flatten() && !field.is_skipped())
+                .collect(),
+            _ => vec![],
+        }
+    }
+
+    /// Whether the partial denies keys that aren't its settings, which it does
+    /// unless `#[config(allow_unknown_fields)]`. A flattened map collects every
+    /// key the other settings don't, so none is unknown, and as serde reads them
+    /// without taking them, denying them would reject every one of the map's.
+    fn partial_denies_unknown_fields(&self) -> bool {
+        if !matches!(self.inner, ContainerInner::NamedStruct { .. }) {
+            return false;
+        }
+
+        if self.serde_args.deny_unknown_fields {
+            return true;
+        }
+
+        !self.args.allow_unknown_fields
+            && !self
+                .get_flattened_fields()
+                .iter()
+                .any(|field| field.value.is_outer_map())
+    }
+
+    /// Panic on an attribute that parses but would do nothing for this derive,
+    /// as a silent no-op is worse than a loud failure.
+    pub fn validate_attributes(&self) {
+        let variants = match &self.inner {
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                Some(variants)
+            }
+            _ => None,
+        };
+
+        match self.macro_type {
+            ContainerMacro::Config => {
+                if self.args.before_parse.is_some() {
+                    panic!(
+                        "Cannot use `before_parse` on a `Config`, as only a `ConfigEnum` parses a string. Derive `ConfigEnum` for an enum of unit variants."
+                    );
+                }
+
+                let Some(variants) = variants else {
+                    return;
+                };
+
+                self.validate_enum_attributes("Config");
+
+                for variant in variants {
+                    if variant.is_fallback() {
+                        panic!(
+                            "Cannot use `fallback` on a `Config` enum variant, as only a `ConfigEnum` falls back when parsing a string. Use `#[serde(untagged)]` on the variant for a value of another type."
+                        );
+                    }
+
+                    if variant
+                        .attrs
+                        .iter()
+                        .any(|attr| attr.path().is_ident("default"))
+                    {
+                        panic!(
+                            "Cannot use `#[default]` on a `Config` enum variant, as the derive implements `Default` itself. Use `#[setting(default)]` instead."
+                        );
+                    }
+                }
+
+                // A unit variant is written as a string, which is what its schema says
+                if matches!(self.inner, ContainerInner::UnitEnum { .. })
+                    && (self.serde_args.tag.is_some() || self.serde_args.untagged)
+                {
+                    panic!(
+                        "Cannot use `tag` or `untagged` on a `Config` enum of only unit variants, as each is written as a string. Derive `ConfigEnum` for an enum of strings."
+                    );
+                }
+            }
+            ContainerMacro::ConfigUnitEnum => {
+                self.validate_enum_attributes("ConfigEnum");
+
+                if self.args.validate.is_some() {
+                    panic!(
+                        "Cannot use `validate` on a `ConfigEnum`, as it parses from a string, which has nothing to validate. Validate the setting that holds it instead."
+                    );
+                }
+            }
+            ContainerMacro::Schematic => {}
+        }
+    }
+
+    fn validate_enum_attributes(&self, derive: &str) {
+        if self.args.env_prefix.is_some() {
+            panic!(
+                "Cannot use `env_prefix` on a `{derive}` enum, as an enum reads no environment variables."
+            );
+        }
+
+        if self.args.allow_unknown_fields {
+            panic!(
+                "Cannot use `allow_unknown_fields` on a `{derive}` enum, as only a struct has fields. Use it on a config that a variant holds instead."
+            );
+        }
+    }
+
+    /// Assert at compile time that a flattened config can be loaded. One that
+    /// flattens a setting of its own is deserialized as a map, which reads the
+    /// keys of the struct flattening it without taking them, so serde can only
+    /// load it when neither denies unknown fields. A generic config is skipped,
+    /// as a constant can't name its parameters.
+    ///
+    /// Also assert that a parent's `#[setting(nested, env_prefix)]` applies to
+    /// something. It only prefixes the keys a nested config derives from its
+    /// settings' names, which it only does with an `env_prefix` of its own.
+    pub fn impl_partial_checks(&self) -> TokenStream {
+        if self.generics.params.iter().next().is_some() {
+            return quote! {};
+        }
+
+        let parent_allows = !self.partial_denies_unknown_fields();
+        let container = self.ident.to_string();
+
+        let checks = self
+            .get_flattened_fields()
+            .into_iter()
+            .filter(|field| field.is_nested() && !field.value.is_collection())
+            .filter_map(|field| {
+                let nested = field.value.get_nested_type()?;
+                let nested_name = to_type_string(nested.clone());
+                let message = format!(
+                    "`{container}.{}` flattens `{nested_name}`, which flattens a setting of its own. Serde can't deny unknown fields through it, so add `#[config(allow_unknown_fields)]` to both `{container}` and `{nested_name}`.",
+                    field.get_name_original(),
+                );
+                let partial = quote! { <<#nested as schematic::Config>::Partial as schematic::PartialConfig> };
+
+                Some(quote! {
+                    const _: () = assert!(
+                        !#partial::FLATTENS || (#parent_allows && #partial::ALLOWS_UNKNOWN_FIELDS),
+                        #message
+                    );
+                })
+            })
+            .collect::<Vec<_>>();
+
+        #[cfg(feature = "env")]
+        let env_checks = self
+            .inner
+            .get_fields()
+            .into_iter()
+            .filter(|field| field.args.env_prefix.is_some())
+            .filter_map(|field| {
+                let nested = field.value.get_nested_type()?;
+                let nested_name = to_type_string(nested.clone());
+                let message = format!(
+                    "`{container}.{}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `{nested_name}`, or remove it here.",
+                    field.get_name_original(),
+                );
+
+                Some(quote! {
+                    const _: () = assert!(
+                        <<#nested as schematic::Config>::Partial as schematic::PartialConfig>::HAS_ENV_PREFIX,
+                        #message
+                    );
+                })
+            })
+            .collect::<Vec<_>>();
+
+        #[cfg(not(feature = "env"))]
+        let env_checks: Vec<TokenStream> = vec![];
+
+        quote! {
+            #(#checks)*
+            #(#env_checks)*
+        }
+    }
+
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
+        // The partial wraps every setting in `Option` and defaults them, which
+        // serde won't make transparent, so it would still be written as a map
+        if self.serde_args.transparent {
+            panic!(
+                "`#[serde(transparent)]` is not supported on a `Config`, as its partial is written as a map. Derive `Schematic` for a transparent type, and use it as a setting."
+            );
+        }
+
         let mut meta = vec![];
 
         match &self.inner {
             ContainerInner::NamedStruct { .. } => {
                 meta.push(quote! { default });
 
-                if self.serde_args.deny_unknown_fields || !self.args.allow_unknown_fields {
+                if self.partial_denies_unknown_fields() {
                     meta.push(quote! { deny_unknown_fields });
                 }
             }
@@ -1032,23 +1235,48 @@ impl Container {
             // A skipped field is never read or written, so like an excluded
             // one it has no schema, and its type needn't implement `Schematic`
             ContainerInner::NamedStruct { fields } => {
-                let types = fields
+                let fields = fields
                     .iter()
                     .filter(|field| !field.is_excluded() && !field.is_skipped())
+                    .collect::<Vec<_>>();
+
+                // A transparent struct is written as its one field
+                if self.serde_args.transparent && fields.len() == 1 {
+                    let inner = fields[0].impl_schema_type(false);
+
+                    return quote! {
+                        let mut schema = #inner;
+                        #(#meta)*
+                        schema
+                    };
+                }
+
+                let types = fields
+                    .iter()
                     .map(|field| field.impl_schema_type(true))
                     .collect::<Vec<_>>();
 
-                if types.is_empty() {
+                let structure = if types.is_empty() {
+                    quote! { StructType::default() }
+                } else {
+                    quote! {
+                        StructType::new([
+                            #(#types),*
+                        ])
+                    }
+                };
+
+                if self.allows_unknown_fields() {
                     quote! {
                         #(#meta)*
-                        schema.structure(StructType::default())
+                        let mut structure = #structure;
+                        structure.allow_unknown_fields = true;
+                        schema.structure(structure)
                     }
                 } else {
                     quote! {
                         #(#meta)*
-                        schema.structure(StructType::new([
-                            #(#types),*
-                        ]))
+                        schema.structure(#structure)
                     }
                 }
             }
@@ -1136,10 +1364,29 @@ impl Container {
         let validate_method = self.impl_partial_validate();
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
+        // Only a named struct can be flattened into another
+        let mut consts = vec![];
+
+        if matches!(self.inner, ContainerInner::NamedStruct { .. }) {
+            if !self.get_flattened_fields().is_empty() {
+                consts.push(quote! { const FLATTENS: bool = true; });
+            }
+
+            if !self.partial_denies_unknown_fields() {
+                consts.push(quote! { const ALLOWS_UNKNOWN_FIELDS: bool = true; });
+            }
+
+            if self.args.env_prefix.is_some() {
+                consts.push(quote! { const HAS_ENV_PREFIX: bool = true; });
+            }
+        }
+
         quote! {
             #[automatically_derived]
             impl #impl_generics schematic::PartialConfig for #partial_name #ty_generics #where_clause {
                 type Context = #context;
+
+                #(#consts)*
 
                 #default_values_method
                 #env_values_method
@@ -1399,66 +1646,31 @@ impl Container {
     pub fn impl_partial_finalize(&self) -> TokenStream {
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                // Only pushed to with the `env` feature
-                #[allow(unused_mut)]
-                let mut statements: Vec<TokenStream> = vec![];
-
-                #[cfg(feature = "env")]
-                {
-                    statements.push(quote! {
-                        if let Some(layer) = Self::env_values()? {
-                            partial.merge(context, layer)?;
-                        }
-                    });
-                }
-
-                let mut nested_statements = vec![];
+                let mut statements = vec![];
 
                 for field in fields {
                     let res = field.impl_partial_finalize();
 
                     if !res.no_value {
-                        nested_statements.push(res.value);
+                        statements.push(res.value);
                     }
                 }
 
-                // The default values and environment variables of nested configs
-                // are part of this config's own, so they're merged once, here,
-                // and the nested configs are finalized without applying them again
-                let finalize_nested = if nested_statements.is_empty() {
-                    quote! {
-                        fn finalize_nested(self, _context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                            Ok(self)
-                        }
-                    }
-                } else {
-                    quote! {
-                        fn finalize_nested(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                            let mut partial = self;
-
-                            #(#nested_statements)*
-
-                            Ok(partial)
-                        }
-                    }
-                };
+                // Default values and environment variables are layers the loader
+                // merges, and those of nested configs are part of this config's
+                // own, so only transforms and nested configs remain
+                if statements.is_empty() {
+                    return quote! {};
+                }
 
                 return quote! {
                     fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                        let mut partial = Self::default();
-
-                        if let Some(layer) = Self::default_values(context)? {
-                            partial.merge(context, layer)?;
-                        }
-
-                        partial.merge(context, self)?;
+                        let mut partial = self;
 
                         #(#statements)*
 
-                        partial.finalize_nested(context)
+                        Ok(partial)
                     }
-
-                    #finalize_nested
                 };
             }
             ContainerInner::UnnamedEnum { variants } => {
@@ -1585,10 +1797,10 @@ impl Container {
 
     #[cfg(feature = "validate")]
     pub fn impl_partial_validate(&self) -> TokenStream {
-        let inner = match &self.inner {
-            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                let mut statements = vec![];
+        let mut statements = vec![];
 
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
                     let res = field.impl_partial_validate();
 
@@ -1596,42 +1808,43 @@ impl Container {
                         statements.push(res.value);
                     }
                 }
-
-                if statements.is_empty() {
-                    return quote! {};
-                }
-
-                quote! {
-                     #(#statements)*
-                }
             }
             ContainerInner::UnnamedEnum { variants } => {
-                let mut statements = vec![];
+                let mut arms = vec![];
 
                 for variant in variants {
                     let res = variant.impl_partial_validate();
 
                     if !res.no_value {
-                        statements.push(res.value);
+                        arms.push(res.value);
                     }
                 }
 
-                if statements.is_empty() {
-                    return quote! {};
-                }
-
-                quote! {
-                    match self {
-                        #(#statements)*
-                        _ => {}
-                    };
+                if !arms.is_empty() {
+                    statements.push(quote! {
+                        match self {
+                            #(#arms)*
+                            _ => {}
+                        };
+                    });
                 }
             }
-            ContainerInner::UnitEnum { .. } => {
-                return quote! {};
-            }
+            ContainerInner::UnitEnum { .. } => {}
         };
 
+        // The config as a whole, after its settings, from `#[config(validate)]`.
+        // Called through a closure, like a setting's validator, so a factory works.
+        if let Some(func) = self.args.validate.as_deref() {
+            statements.push(quote! {
+                validate.check_config(self, |d, c, f| #func(d, c, f));
+            });
+        }
+
+        if statements.is_empty() {
+            return quote! {};
+        }
+
+        let inner = quote! { #(#statements)* };
         let internal = ImplResult::impl_use_internal(true);
 
         quote! {
@@ -1659,6 +1872,8 @@ impl Container {
 // #[derive(Config)]
 impl ToTokens for Container {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        self.validate_attributes();
+
         match self.macro_type {
             ContainerMacro::Config => {
                 // Partial type
@@ -1666,6 +1881,7 @@ impl ToTokens for Container {
                 tokens.extend(self.impl_partial_type_default());
                 tokens.extend(self.impl_partial_type_deserialize());
                 tokens.extend(self.impl_partial());
+                tokens.extend(self.impl_partial_checks());
 
                 // Full type
                 tokens.extend(self.impl_full());

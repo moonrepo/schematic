@@ -8,6 +8,11 @@ use std::time::{Duration, SystemTime};
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(default))]
 pub struct StructType {
+    /// Whether keys other than its fields are accepted, which serde allows unless
+    /// `deny_unknown_fields`. Defaults to false, closing the struct.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
+    pub allow_unknown_fields: bool,
+
     /// Fields in declaration order, keyed by name.
     pub fields: IndexMap<String, Box<SchemaField>>,
 

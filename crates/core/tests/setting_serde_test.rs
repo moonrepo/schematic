@@ -83,17 +83,26 @@ mod setting_serde {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
-                    #[serde(skip_deserializing, skip_deserializing_if = "value")]
+                    #[serde(skip_deserializing)]
                     a: String,
                 }
             });
             let field = container.inner.get_fields()[0];
 
             assert!(field.serde_args.skip_deserializing);
-            assert_eq!(
-                field.serde_args.skip_deserializing_if.as_ref().unwrap(),
-                "value"
-            );
+        }
+
+        // Serde has no such attribute, so there's nothing to forward it to
+        #[test]
+        #[should_panic(expected = "Cannot use `skip_deserializing_if`")]
+        fn errors_for_skip_de_if() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[serde(skip_deserializing_if = "value")]
+                    a: String,
+                }
+            });
         }
 
         #[test]
@@ -266,14 +275,25 @@ mod setting_serde {
             let container = Container::from(parse_quote! {
                 #[derive(Config)]
                 struct Example {
-                    #[setting(skip_deserializing, skip_deserializing_if = "value")]
+                    #[setting(skip_deserializing)]
                     a: String,
                 }
             });
             let field = container.inner.get_fields()[0];
 
             assert!(field.args.skip_deserializing);
-            assert_eq!(field.args.skip_deserializing_if.as_ref().unwrap(), "value");
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `skip_deserializing_if`")]
+        fn errors_for_skip_de_if() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(skip_deserializing_if = "value")]
+                    a: String,
+                }
+            });
         }
 
         #[test]

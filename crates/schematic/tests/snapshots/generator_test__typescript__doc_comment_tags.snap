@@ -20,7 +20,7 @@ export interface TaggedDocsConfig {
 	 * @since 1.2.0
 	 * @experimental
 	 */
-	added: string | null;
+	added?: string | null;
 	/**
 	 * A line of an example that starts with `@` is kept.
 	 *
@@ -28,7 +28,7 @@ export interface TaggedDocsConfig {
 	 * @decorator
 	 * ```
 	 */
-	example: string | null;
+	example?: string | null;
 	/**
 	 * @default 'alpha'
 	 * @type {'alpha' | 'beta'}
@@ -39,11 +39,11 @@ export interface TaggedDocsConfig {
 	 *
 	 * @deprecated Use `added` instead.
 	 */
-	old: string | null;
+	old?: string | null;
 	/**
 	 * Deprecated by both, where the attribute wins.
 	 *
 	 * @deprecated Use `added`.
 	 */
-	older: string | null;
+	older?: string | null;
 }

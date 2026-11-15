@@ -162,6 +162,22 @@ fn insert_some(map: &mut Map<String, Value>, key: &str, value: Option<Value>) {
     }
 }
 
+/// The range of an integer kind, so a `u8` rejects `300` and an unsigned
+/// integer rejects `-1`. A bound beyond 32 bits is left out, as a JSON number
+/// is a double, which can't hold every 64-bit integer exactly.
+fn get_integer_range(kind: &IntegerKind) -> (Option<i128>, Option<i128>) {
+    match kind {
+        IntegerKind::I8 => (Some(i8::MIN.into()), Some(i8::MAX.into())),
+        IntegerKind::I16 => (Some(i16::MIN.into()), Some(i16::MAX.into())),
+        IntegerKind::I32 => (Some(i32::MIN.into()), Some(i32::MAX.into())),
+        IntegerKind::I64 | IntegerKind::I128 | IntegerKind::Isize => (None, None),
+        IntegerKind::U8 => (Some(0), Some(u8::MAX.into())),
+        IntegerKind::U16 => (Some(0), Some(u16::MAX.into())),
+        IntegerKind::U32 => (Some(0), Some(u32::MAX.into())),
+        IntegerKind::U64 | IntegerKind::U128 | IntegerKind::Usize => (Some(0), None),
+    }
+}
+
 fn number(value: f64) -> Option<Value> {
     Number::from_f64(value).map(Value::Number)
 }
@@ -477,7 +493,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut map = self.create_metadata_from_schema(schema);
 
-        map.insert("type".into(), Value::String("number".into()));
+        map.insert("type".into(), Value::String("integer".into()));
 
         insert_some(
             &mut map,
@@ -502,10 +518,21 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
             "multipleOf",
             integer.multiple_of.and_then(|i| number(i as f64)),
         );
+        // The kind's own range, which an explicit bound narrows but can't widen
+        let (kind_min, kind_max) = get_integer_range(&integer.kind);
+        let max = match (integer.max.map(|i| i as i128), kind_max) {
+            (Some(explicit), Some(kind)) => Some(explicit.min(kind)),
+            (explicit, kind) => explicit.or(kind),
+        };
+        let min = match (integer.min.map(|i| i as i128), kind_min) {
+            (Some(explicit), Some(kind)) => Some(explicit.max(kind)),
+            (explicit, kind) => explicit.or(kind),
+        };
+
         insert_some(
             &mut map,
             "maximum",
-            integer.max.and_then(|i| number(i as f64)),
+            max.map(|i| Value::Number(Number::from(i as i64))),
         );
         insert_some(
             &mut map,
@@ -515,7 +542,7 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
         insert_some(
             &mut map,
             "minimum",
-            integer.min.and_then(|i| number(i as f64)),
+            min.map(|i| Value::Number(Number::from(i as i64))),
         );
         insert_some(
             &mut map,
@@ -624,7 +651,9 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
     ) -> RenderResult<JsonSchema> {
         let mut properties = BTreeMap::new();
         let mut required = BTreeSet::from_iter(structure.required.clone().unwrap_or_default());
-        let mut additional_properties = Some(Value::Bool(false));
+        // Open when unknown keys are accepted, as JSON schema allows them by default
+        let mut additional_properties =
+            (!structure.allow_unknown_fields).then_some(Value::Bool(false));
         let exclude_aliases = self.options.exclude_aliases;
 
         for (name, field) in structure.sorted_fields() {
@@ -654,12 +683,17 @@ impl SchemaRenderer<JsonSchema> for JsonSchemaRenderer {
                                 );
                             }
 
-                            // Only when it collects unknown keys of its own
-                            if let Some(value) = inner.get("additionalProperties")
-                                && value != &Value::Bool(false)
-                            {
-                                additional_properties = Some(value.to_owned());
-                            }
+                            // Only when it accepts unknown keys of its own, which
+                            // an open struct does, as does one that collects them
+                            match inner.get("additionalProperties") {
+                                None => {
+                                    additional_properties = None;
+                                }
+                                Some(value) if value != &Value::Bool(false) => {
+                                    additional_properties = Some(value.to_owned());
+                                }
+                                _ => {}
+                            };
                         }
                         (SchemaType::Object(_), Some(inner))
                             if inner.contains_key("additionalProperties") =>

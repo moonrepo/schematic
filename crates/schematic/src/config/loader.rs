@@ -23,7 +23,10 @@ pub struct ConfigLoadResult<T: Config> {
     /// Final configuration, after all layers are merged.
     pub config: T,
 
-    /// Partial layers, in order of declaration and extension.
+    /// Partial layers, in the order they were merged: the default values first,
+    /// then each source in order of declaration and extension, and environment
+    /// variables last. The default values and environment variables are only
+    /// included when they set something.
     pub layers: Vec<Layer<T>>,
 }
 
@@ -42,7 +45,9 @@ struct SourceTracker {
 impl SourceTracker {
     fn key(source: &Source) -> Option<String> {
         match source {
-            Source::Code { .. } => None,
+            Source::Code { .. } | Source::Defaults | Source::EnvVars | Source::Memory { .. } => {
+                None
+            }
             Source::File { path, .. } => Some(
                 fs::canonicalize(path)
                     .unwrap_or_else(|_| path.to_path_buf())
@@ -55,6 +60,9 @@ impl SourceTracker {
     }
 }
 
+/// A source to load, with its partial when the source is in memory.
+type SourceEntry<P> = (Source, Option<P>);
+
 /// A system for loading configuration from multiple sources in multiple formats,
 /// and generating a final result after merging and validating layers.
 pub struct ConfigLoader<T: Config> {
@@ -63,7 +71,7 @@ pub struct ConfigLoader<T: Config> {
     formats: Vec<Arc<dyn SourceFormat<T::Partial>>>,
     help: Option<String>,
     name: String,
-    sources: Vec<Source>,
+    sources: Vec<SourceEntry<T::Partial>>,
     root: Option<PathBuf>,
 }
 
@@ -134,9 +142,33 @@ impl<T: Config> ConfigLoader<T> {
         self.source(Source::file(path, false)?)
     }
 
-    /// Add a custom source.
+    /// Add a partial configuration held in memory, like one parsed from CLI
+    /// arguments, as a layer named for use within error messages.
+    ///
+    /// It's loaded like any other source: merged in the order it was added,
+    /// validated, and able to extend other sources. Like any other layer, it
+    /// sits below environment variables, which are applied when finalizing.
+    pub fn partial<N: Into<String>>(&mut self, name: N, partial: T::Partial) -> &mut Self {
+        self.sources
+            .push((Source::Memory { name: name.into() }, Some(partial)));
+        self
+    }
+
+    /// Add a custom source. A [`Source::Memory`] is an error, as only
+    /// [`ConfigLoader::partial`] can provide its partial, as are
+    /// [`Source::Defaults`] and [`Source::EnvVars`], which the loader adds.
     pub fn source(&mut self, source: Source) -> Result<&mut Self, ConfigError> {
-        self.sources.push(source);
+        match source {
+            Source::Memory { name } => {
+                return Err(ConfigError::MemoryWithoutPartial(name));
+            }
+            Source::Defaults | Source::EnvVars => {
+                return Err(ConfigError::LoaderOnlySource(source.as_str().into()));
+            }
+            _ => {}
+        };
+
+        self.sources.push((source, None));
 
         Ok(self)
     }
@@ -164,16 +196,41 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         trace!(config = &self.name, "Loading configuration");
 
-        let layers =
+        let sources =
             self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
+
+        // Validation is reported at the last source
+        #[cfg(feature = "validate")]
+        let last_source = sources.last().map(|layer| layer.source.clone());
+
+        // Default values sit below every source, and environment variables above them
+        let mut layers = Vec::with_capacity(sources.len() + 2);
+
+        if let Some(partial) = <T::Partial as PartialConfig>::default_values(context)? {
+            layers.push(Layer {
+                partial,
+                source: Source::Defaults,
+            });
+        }
+
+        layers.extend(sources);
+
+        #[cfg(feature = "env")]
+        if let Some(partial) = <T::Partial as PartialConfig>::env_values()? {
+            layers.push(Layer {
+                partial,
+                source: Source::EnvVars,
+            });
+        }
+
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
         #[cfg(feature = "validate")]
         {
-            partial.validate(context, true).map_err(|error| {
-                self.map_validator_error(error, layers.last().map(|layer| &layer.source))
-            })?;
+            partial
+                .validate(context, true)
+                .map_err(|error| self.map_validator_error(error, last_source.as_ref()))?;
         }
 
         Ok(ConfigLoadResult {
@@ -228,7 +285,7 @@ impl<T: Config> ConfigLoader<T> {
         extends_from: &ExtendsFrom,
         tracker: &mut SourceTracker,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
-        let mut sources = vec![];
+        let mut sources: Vec<SourceEntry<T::Partial>> = vec![];
 
         let mut extend_source = |value: &str| {
             let source = Source::new(value, Some(parent_source))?;
@@ -244,7 +301,7 @@ impl<T: Config> ConfigLoader<T> {
                 "Extending additional source"
             );
 
-            sources.push(source);
+            sources.push((source, None));
 
             Ok(())
         };
@@ -266,6 +323,9 @@ impl<T: Config> ConfigLoader<T> {
     fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
             Source::Code { .. } => &self.name,
+            Source::Defaults => "default values",
+            Source::EnvVars => "environment variables",
+            Source::Memory { name } => name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
                     path.strip_prefix(root).unwrap_or(path)
@@ -305,14 +365,14 @@ impl<T: Config> ConfigLoader<T> {
     #[instrument(skip_all)]
     fn parse_into_layers(
         &self,
-        sources_to_parse: &[Source],
+        sources_to_parse: &[SourceEntry<T::Partial>],
         #[allow(unused_variables)] context: &<T::Partial as PartialConfig>::Context,
         tracker: &mut SourceTracker,
         extended: bool,
     ) -> Result<Vec<Layer<T>>, ConfigError> {
         let mut layers: Vec<Layer<T>> = vec![];
 
-        for source in sources_to_parse {
+        for (source, memory) in sources_to_parse {
             let key = SourceTracker::key(source);
 
             // Sources added to the loader are always loaded, while extended
@@ -355,7 +415,7 @@ impl<T: Config> ConfigLoader<T> {
 
             // Parse the source into a partial
             let partial: T::Partial = self
-                .parse_source(source)
+                .parse_source(source, memory.as_ref())
                 .map_err(|error| self.map_parser_error(error, source))?;
 
             // Validate before continuing so we ensure the values are correct
@@ -390,9 +450,22 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     #[instrument(skip_all)]
-    fn parse_source(&self, source: &Source) -> Result<T::Partial, ConfigError> {
+    fn parse_source(
+        &self,
+        source: &Source,
+        memory: Option<&T::Partial>,
+    ) -> Result<T::Partial, ConfigError> {
         let (content, cache_path): (Cow<'_, str>, Option<PathBuf>) = match source {
             Source::Code { code, .. } => (Cow::Borrowed(strip_bom(code)), None),
+            Source::Defaults | Source::EnvVars => {
+                return Err(ConfigError::LoaderOnlySource(source.as_str().into()));
+            }
+            // Already a partial, so there's nothing to parse
+            Source::Memory { name } => {
+                return memory
+                    .cloned()
+                    .ok_or_else(|| ConfigError::MemoryWithoutPartial(name.to_owned()));
+            }
             Source::File { path, required } => {
                 let content = if path.exists() {
                     fs::read_to_string(path).map_err(|error| ConfigError::ReadFileFailed {

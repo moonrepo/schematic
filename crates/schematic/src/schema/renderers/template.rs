@@ -83,6 +83,91 @@ pub fn get_field_schema(field: &SchemaField) -> std::borrow::Cow<'_, Schema> {
     std::borrow::Cow::Borrowed(&field.schema)
 }
 
+/// Return the struct with the settings of each flattened struct in place of
+/// the field that holds it, resolving references, as serde writes them
+/// alongside the struct's own. The struct's own setting of a name takes
+/// precedence, as serde reads it first. A flattened map collects unknown keys,
+/// which a template has no names for, so it's kept as a flattened field, which
+/// renderers leave out.
+pub fn inline_flattened_fields<'a>(
+    structure: &'a StructType,
+    schemas: &IndexMap<String, Schema>,
+) -> std::borrow::Cow<'a, StructType> {
+    if !structure.fields.values().any(|field| field.flatten) {
+        return std::borrow::Cow::Borrowed(structure);
+    }
+
+    let mut inlined = StructType {
+        fields: IndexMap::with_capacity(structure.fields.len()),
+        ..structure.clone()
+    };
+
+    inline_into(&mut inlined, structure, schemas, &mut vec![]);
+
+    std::borrow::Cow::Owned(inlined)
+}
+
+fn inline_into(
+    inlined: &mut StructType,
+    structure: &StructType,
+    schemas: &IndexMap<String, Schema>,
+    visiting: &mut Vec<String>,
+) {
+    let mut flattened = vec![];
+
+    // The struct's own settings first, so that they take precedence
+    for (name, field) in &structure.fields {
+        match field
+            .flatten
+            .then(|| resolve_flattened_struct(&field.schema, schemas))
+            .flatten()
+        {
+            Some(resolved) => flattened.push(resolved),
+            None => {
+                inlined
+                    .fields
+                    .entry(name.to_owned())
+                    .or_insert_with(|| field.to_owned());
+            }
+        };
+    }
+
+    for (inner, reference) in flattened {
+        // A struct can't flatten itself, but a schema could say so
+        if let Some(name) = &reference {
+            if visiting.contains(name) {
+                continue;
+            }
+
+            visiting.push(name.to_owned());
+        }
+
+        inline_into(inlined, inner, schemas, visiting);
+
+        if reference.is_some() {
+            visiting.pop();
+        }
+    }
+}
+
+/// The struct a flattened field holds, through an `Option` or a reference,
+/// along with the name of the reference it was resolved through.
+fn resolve_flattened_struct<'a>(
+    schema: &'a Schema,
+    schemas: &'a IndexMap<String, Schema>,
+) -> Option<(&'a StructType, Option<String>)> {
+    let schema = schema.get_nonnull_schema()?;
+
+    match &schema.ty {
+        SchemaType::Struct(inner) => Some((inner, schema.name.clone())),
+        SchemaType::Reference { name, .. } => match &schemas.get(name)?.ty {
+            SchemaType::Struct(inner) => Some((inner, Some(name.to_owned()))),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 pub fn lit_to_string(lit: &LiteralValue) -> String {
     match lit {
         LiteralValue::Bool(inner) => inner.to_string(),

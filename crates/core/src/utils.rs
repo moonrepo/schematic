@@ -178,7 +178,6 @@ pub fn is_inheritable_attribute(attr: &Attribute) -> bool {
         "doc",
         // Compilation
         "cfg",
-        "default",
         "non_exhaustive",
     ]
     .into_iter()

@@ -6,26 +6,12 @@ fn finalize(
     self,
     context: &Self::Context,
 ) -> std::result::Result<Self, schematic::ConfigError> {
-    let mut partial = Self::default();
-    if let Some(layer) = Self::default_values(context)? {
-        partial.merge(context, layer)?;
-    }
-    partial.merge(context, self)?;
-    if let Some(layer) = Self::env_values()? {
-        partial.merge(context, layer)?;
-    }
-    partial.finalize_nested(context)
-}
-fn finalize_nested(
-    self,
-    context: &Self::Context,
-) -> std::result::Result<Self, schematic::ConfigError> {
     let mut partial = self;
     if let Some(layer) = partial.a {
         partial.a = Some(
             layer
                 .into_iter()
-                .map(|layer| layer.finalize(context))
+                .map(|layer| schematic::internal::finalize_with_layers(layer, context))
                 .collect::<
                     std::result::Result<
                         Vec<<NestedConfig as schematic::Config>::Partial>,
@@ -39,7 +25,10 @@ fn finalize_nested(
             transform_config(
                 layer
                     .into_iter()
-                    .map(|(key, layer)| Ok((key, layer.finalize(context)?)))
+                    .map(|(key, layer)| Ok((
+                        key,
+                        schematic::internal::finalize_with_layers(layer, context)?,
+                    )))
                     .collect::<
                         std::result::Result<
                             HashMap<
@@ -58,7 +47,10 @@ fn finalize_nested(
             transform_config(
                 layer
                     .into_iter()
-                    .map(|layer| layer.finalize(context))
+                    .map(|layer| schematic::internal::finalize_with_layers(
+                        layer,
+                        context,
+                    ))
                     .collect::<
                         std::result::Result<
                             BTreeSet<<NestedConfig as schematic::Config>::Partial>,

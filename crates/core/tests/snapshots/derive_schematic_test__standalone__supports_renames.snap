@@ -9,9 +9,10 @@ impl schematic::Schematic for Example {
     }
     fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
         use schematic::schema::*;
-        schema
-            .structure(
-                StructType::new([("a".into(), SchemaField::new(schema.infer::<bool>()))]),
-            )
+        let mut structure = StructType::new([
+            ("a".into(), SchemaField::new(schema.infer::<bool>())),
+        ]);
+        structure.allow_unknown_fields = true;
+        schema.structure(structure)
     }
 }

@@ -31,6 +31,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
@@ -101,6 +102,7 @@ expression: "create_diff::<InternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "field": SchemaField {
 ⬛️                                    aliases: [],

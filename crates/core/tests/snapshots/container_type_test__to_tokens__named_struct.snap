@@ -24,6 +24,7 @@ pub struct PartialExample {
 #[automatically_derived]
 impl schematic::PartialConfig for PartialExample {
     type Context = ();
+    const HAS_ENV_PREFIX: bool = true;
     fn default_values(
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
@@ -67,29 +68,18 @@ impl schematic::PartialConfig for PartialExample {
         self,
         context: &Self::Context,
     ) -> std::result::Result<Self, schematic::ConfigError> {
-        let mut partial = Self::default();
-        if let Some(layer) = Self::default_values(context)? {
-            partial.merge(context, layer)?;
-        }
-        partial.merge(context, self)?;
-        if let Some(layer) = Self::env_values()? {
-            partial.merge(context, layer)?;
-        }
-        partial.finalize_nested(context)
-    }
-    fn finalize_nested(
-        self,
-        context: &Self::Context,
-    ) -> std::result::Result<Self, schematic::ConfigError> {
         let mut partial = self;
         if let Some(layer) = partial.nested {
-            partial.nested = Some(layer.finalize_nested(context)?);
+            partial.nested = Some(layer.finalize(context)?);
         }
         if let Some(layer) = partial.list {
             partial.list = Some(
                 layer
                     .into_iter()
-                    .map(|layer| layer.finalize(context))
+                    .map(|layer| schematic::internal::finalize_with_layers(
+                        layer,
+                        context,
+                    ))
                     .collect::<
                         std::result::Result<
                             Vec<<NestedConfig as schematic::Config>::Partial>,
@@ -255,11 +245,8 @@ impl schematic::Schematic for Example {
                     (
                         "port".into(),
                         {
-                            let mut field = SchemaField::new(
-                                schema.infer::<Option<u16>>(),
-                            );
+                            let mut field = SchemaField::new(schema.infer::<u16>());
                             field.env_var = Some("EXAMPLE_PORT".into());
-                            field.nullable = true;
                             field
                         },
                     ),

@@ -18,6 +18,58 @@ mod partial_serde_args {
     mod named_struct {
         use super::*;
 
+        // A flattened map collects every key the other settings don't, so none
+        // is unknown, and denying them would reject all of the map's
+        #[test]
+        fn allows_unknown_fields_beside_a_flattened_map() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: bool,
+                    #[setting(flatten)]
+                    rest: HashMap<String, String>,
+                }
+            });
+
+            assert_eq!(
+                container.get_partial_serde_attribute_args().to_string(),
+                "default"
+            );
+        }
+
+        #[test]
+        fn denies_unknown_fields_beside_a_flattened_struct() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: bool,
+                    #[setting(flatten, nested)]
+                    rest: Child,
+                }
+            });
+
+            assert_eq!(
+                container.get_partial_serde_attribute_args().to_string(),
+                "default , deny_unknown_fields"
+            );
+        }
+
+        // The partial wraps its setting in `Option` and defaults it, so it would
+        // still be written as a map, while its schema said otherwise
+        #[test]
+        #[should_panic(expected = "`#[serde(transparent)]` is not supported on a `Config`")]
+        fn errors_for_transparent() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                #[serde(transparent)]
+                struct Example {
+                    a: bool,
+                }
+            });
+
+            container.get_partial_serde_attribute_args();
+        }
+
         #[test]
         fn defaults() {
             let container = Container::from(parse_quote! {

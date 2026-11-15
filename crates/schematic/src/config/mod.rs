@@ -9,7 +9,6 @@ mod loader;
 mod merger;
 mod parser;
 mod path;
-#[cfg(any(feature = "type_regex", feature = "type_semver"))]
 mod settings;
 mod source;
 #[cfg(feature = "validate")]
@@ -26,7 +25,6 @@ pub use loader::*;
 pub use merger::*;
 pub use parser::*;
 pub use path::*;
-#[cfg(any(feature = "type_regex", feature = "type_semver"))]
 pub use settings::*;
 pub use source::*;
 #[cfg(feature = "validate")]

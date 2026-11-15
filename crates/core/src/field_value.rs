@@ -294,11 +294,22 @@ impl FieldValue {
                     );
                 }
 
-                quote! {
-                    .apply(
-                        &mut self.#field_name,
-                        next.#field_name,
-                    )?
+                // A `MergeList` is merged as each source directs
+                if self.is_merge_list() {
+                    quote! {
+                        .apply_with(
+                            &mut self.#field_name,
+                            next.#field_name,
+                            schematic::merge::merge_list,
+                        )?
+                    }
+                } else {
+                    quote! {
+                        .apply(
+                            &mut self.#field_name,
+                            next.#field_name,
+                        )?
+                    }
                 }
             }
         };

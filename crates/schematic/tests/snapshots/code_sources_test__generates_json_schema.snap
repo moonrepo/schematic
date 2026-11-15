@@ -21,7 +21,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "number"
     },
     "number": {
-      "type": "number"
+      "type": "integer",
+      "minimum": 0
     },
     "string": {
       "type": "string"

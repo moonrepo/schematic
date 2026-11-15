@@ -115,6 +115,15 @@ impl Field {
     }
 
     fn validate_args(&self) {
+        // Serde has no such attribute, so there's nothing to forward it to
+        if self.args.skip_deserializing_if.is_some()
+            || self.serde_args.skip_deserializing_if.is_some()
+        {
+            panic!(
+                "Cannot use `skip_deserializing_if`, as serde has no such attribute, so it would never apply. Use `skip_deserializing` to never deserialize the setting."
+            );
+        }
+
         #[cfg(feature = "env")]
         {
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {
@@ -312,19 +321,43 @@ impl Field {
         self.is_nested() && self.value.get_partial_layers().is_empty()
     }
 
-    /// Whether the setting accepts a `null` value.
+    /// Whether the setting accepts a `null` value. A required one must be given
+    /// a value, which `null` isn't.
     pub fn is_nullable(&self) -> bool {
-        self.value.is_outer_option_wrapped()
+        !self.is_required() && self.value.is_outer_option_wrapped()
     }
 
-    /// Whether the setting may be omitted from the input. A `default` on the
-    /// container applies to every field, so it counts the same as one declared
-    /// on the field itself, unless the field is required.
+    /// Whether the setting may be omitted from the input. Serde fills in an
+    /// omitted `Option` with `None`, and a `default` on the container applies
+    /// to every field, so it counts the same as one declared on the field
+    /// itself, unless the field is required.
     pub fn is_optional(&self) -> bool {
         !self.is_required()
-            && (self.args.default.is_some()
+            && (self.value.is_outer_option_wrapped()
+                || self.args.default.is_some()
                 || self.serde_args.default.is_enabled()
                 || self.serde_container_args.default.is_enabled())
+    }
+
+    /// The type whose schema describes the setting. A required `Option` must be
+    /// given a value, so it's described by the type it holds.
+    #[cfg(feature = "schema")]
+    fn get_schema_type(&self) -> Type {
+        let ty = &self.value.ty;
+
+        if self.is_required()
+            && let Type::Path(path) = ty
+            && path
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "Option")
+            && let Some(inner) = crate::value::get_last_type_argument(ty)
+        {
+            return inner;
+        }
+
+        ty.to_owned()
     }
 
     pub fn is_required(&self) -> bool {
@@ -495,7 +528,7 @@ impl Field {
     pub fn impl_schema_type(&self, as_field: bool) -> TokenStream {
         use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
-        let ty = &self.value.ty;
+        let ty = &self.get_schema_type();
 
         // Nested configs are inferred as partials, so that the
         // schema can be marked as such

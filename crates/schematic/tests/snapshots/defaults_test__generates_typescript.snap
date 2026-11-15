@@ -19,7 +19,7 @@ export interface CustomDefaults {
 }
 
 export interface ReqOptDefaults {
-	optional: number | null;
+	optional?: number | null;
 	/** @default 123 */
 	optional_with_default?: number | null;
 	optional_with_default_fn?: number | null;
@@ -50,8 +50,8 @@ export interface NestedDefaults {
 	nested_map: Record<string, NativeDefaults>;
 	nested_map_boxed: Record<string, NativeDefaults>;
 	nested_map_opt_boxed: Record<string, NativeDefaults | null>;
-	nested_opt: NativeDefaults | null;
-	nested_opt_boxed: NativeDefaults | null;
+	nested_opt?: NativeDefaults | null;
+	nested_opt_boxed?: NativeDefaults | null;
 	nested_vec: NativeDefaults[];
 	nested_vec_boxed: NativeDefaults[];
 	nested_vec_opt_boxed: (NativeDefaults | null)[];

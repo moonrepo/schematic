@@ -127,8 +127,12 @@ render `[]` and `{}` respectively. This can be customized with the
 Furthermore, [enums](../enum.md) and [unions](../union.md) only support default values when
 explicitly marked as such. For example, with `#[default]`.
 
-And lastly, when we're unsure of what to render for a value, we'll render `null`. This isn't a valid
-value for TOML, and may not be what you expect.
+When we're unsure of what to render for a value, we'll render `null`. This isn't a valid value for
+TOML, and may not be what you expect.
+
+A flattened struct's settings are rendered alongside the struct's own, as serde reads them, rather
+than under the field that holds it. In TOML, that means they're part of the same table. A flattened
+map collects keys that a template has no names for, so it renders nothing.
 
 ## Example output
 

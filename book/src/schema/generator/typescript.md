@@ -122,7 +122,9 @@ Properties within a struct can be rendered as either optional or required in Typ
 on usage. The default format for all properties can be customized with the `property_format` option
 and the
 [`PropertyFormat`](https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html)
-enum. By default all properties are required.
+enum. By default a property is required, unless it's
+[optional](../struct.md#optional-and-nullable-fields): an `Option`, which serde fills in with `None`,
+or a setting with a default.
 
 ```rust
 TypeScriptOptions {

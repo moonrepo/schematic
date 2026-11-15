@@ -44,6 +44,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "Bar": SchemaField {
 ⬛️                                    aliases: [],
@@ -82,6 +83,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "Baz": SchemaField {
 ⬛️                                    aliases: [],
@@ -128,6 +130,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "Qux": SchemaField {
 ⬛️                                    aliases: [],
@@ -142,6 +145,7 @@ expression: "create_diff::<ExternalTagged>()"
 ⬛️                                        nullable: false,
 ⬛️                                        ty: Struct(
 ⬛️                                            StructType {
+⬛️                                                allow_unknown_fields: false,
 ⬛️                                                fields: {
 ⬛️                                                    "field": SchemaField {
 ⬛️                                                        aliases: [],

@@ -16,9 +16,9 @@ export type FallbackEnum = 'foo' | 'bar' | 'baz' | string;
 /** Some comment. */
 export interface AnotherConfig {
 	/** An optional enum. */
-	enums: BasicEnum | null;
+	enums?: BasicEnum | null;
 	/** An optional string. */
-	opt: string | null;
+	opt?: string | null;
 }
 
 export type GenConfigFlattened = Record<string, unknown>;
@@ -44,7 +44,7 @@ export interface GenConfigBase {
 	float32: number;
 	float64: number;
 	indexmap: Record<string, string>;
-	indexset: string[] | null;
+	indexset?: string[] | null;
 	json_value: unknown;
 	map: Record<string, number>;
 	/** **Nested** field. */
@@ -55,12 +55,12 @@ export interface GenConfigBase {
 	rel_path: string;
 	string: string;
 	time: string;
-	toml_value: unknown | null;
-	url: string | null;
+	toml_value?: unknown | null;
+	url?: string | null;
 	uuid: string;
 	/** This is a list of strings. */
 	vector: string[];
-	version: string | null;
+	version?: string | null;
 	version2: string;
 	version_req: string;
 	yaml_value: unknown;

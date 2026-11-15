@@ -134,7 +134,7 @@ Flattened field...
 
 ### `indexset`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |
@@ -220,7 +220,7 @@ Flattened field...
 
 ### `toml_value`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |
@@ -228,7 +228,7 @@ Flattened field...
 
 ### `url`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |
@@ -256,7 +256,7 @@ This is a list of strings.
 
 ### `version`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |

@@ -545,4 +545,56 @@ mod setting_merge {
             });
         }
     }
+
+    mod merge_list {
+        use super::*;
+
+        #[test]
+        fn infers_for_fields() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    a: MergeList<String>,
+                    b: Option<MergeList<String>>,
+                    c: Box<MergeList<String>>,
+                    d: schematic::MergeList<Vec<String>>,
+                    // A collection of them is replaced, as is an explicit `merge`
+                    e: Vec<MergeList<String>>,
+                    #[setting(merge = schematic::merge::replace)]
+                    f: MergeList<String>,
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn infers_for_variant_values() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A(MergeList<String>),
+                    B(MergeList<String>, bool),
+                    C(Option<MergeList<String>>),
+                    #[setting(merge = schematic::merge::replace)]
+                    D(MergeList<String>),
+                    E(Vec<MergeList<String>>),
+                }
+            });
+
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(expected = "A `MergeList` can't hold nested configs")]
+        fn errors_for_nested_items() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested)]
+                    a: MergeList<NestedConfig>,
+                }
+            });
+        }
+    }
 }

@@ -12,8 +12,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "nested_map",
     "nested_map_boxed",
     "nested_map_opt_boxed",
-    "nested_opt",
-    "nested_opt_boxed",
     "nested_vec",
     "nested_vec_boxed",
     "nested_vec_opt_boxed"
@@ -112,7 +110,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "type": "object",
       "properties": {
         "count": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "path": {
           "type": "string",
@@ -135,7 +134,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         "number": {
           "default": 123,
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "string": {
           "default": "foo",
@@ -144,7 +144,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "vector": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -176,7 +177,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "number"
         },
         "number": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "string": {
           "type": "string"
@@ -194,14 +196,14 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "ReqOptDefaults",
       "type": "object",
       "required": [
-        "optional",
         "required"
       ],
       "properties": {
         "optional": {
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -212,7 +214,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "default": 123,
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -222,7 +225,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "optional_with_default_fn": {
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -230,14 +234,17 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "required": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "required_with_default": {
           "default": 123,
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "required_with_default_fn": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         }
       },
       "additionalProperties": false

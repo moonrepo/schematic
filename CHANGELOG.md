@@ -2,8 +2,95 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Updated `PartialConfig::finalize` to only run transforms and finalize nested configs. The loader
+  now merges default values and environment variables as layers of their own, so calling `finalize`
+  directly no longer applies them: merge `default_values` under the partial and `env_values` over it
+  first, or load it with `ConfigLoader::partial`. The hidden `finalize_nested` was removed, and a
+  hand-written partial implements `finalize` for its transforms.
+- Updated `ConfigLoadResult.layers` to begin with the default values and end with environment
+  variables, so an index into it shifts by one.
+- Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it, or
+  `..Default::default()`. A type that only derives `Schematic` now follows serde, so its schema is
+  open unless `#[serde(deny_unknown_fields)]`.
+- Updated `#[derive(Config)]` to fail to compile when a config flattens a config that flattens a
+  setting of its own, unless both have `#[config(allow_unknown_fields)]`. It already failed to load
+  every setting of the flattened config, as serde can't deny unknown fields through it. The error
+  names the fix.
+- Updated the derives to fail on attributes that parsed but did nothing, rather than ignoring them:
+  - `#[config(before_parse)]` on a `Config`, which only a `ConfigEnum` uses.
+  - `#[setting(fallback)]` on a `Config` enum variant, which only a `ConfigEnum` uses.
+  - `#[default]` on a `Config` enum variant, which was copied to the partial and failed to compile.
+    Use `#[setting(default)]`.
+  - `env_prefix` or `allow_unknown_fields` on an enum, which reads no environment variables and has
+    no fields.
+  - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
+  - `skip_deserializing_if`, which serde has no such attribute for.
+  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, like an
+    enum, which a parent's prefix doesn't apply to. This fails to compile, through a hidden
+    `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
+- Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
+  is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
+- Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, and
+  `Source::Defaults` and `Source::EnvVars`, the loader's own layers, so a `match` on `Source` needs
+  more arms. Adding either of the latter as a source is an error.
+- Updated `merge::merge_hashmap` and `merge::merge_hashset` to accept any hasher. A direct call may
+  now need its map's hasher named, like `HashMap::<_, _>::from_iter(..)`, while `#[setting(merge)]`
+  is unaffected.
+
 #### 🚀 Updates
 
+- Added the default values and environment variables to `ConfigLoadResult.layers`, as
+  `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
+  traced to the layer that set it. They're the layers that were merged, so a default handler that
+  isn't idempotent, like one finding an unused port, reports the value that was used.
+- Updated schemas to describe what serde accepts more closely:
+  - An `Option` field is optional, as serde fills in an omitted one with `None`, so it's no longer
+    in JSON Schema's `required`, and TypeScript renders it as `name?: T | null`. api_docs tags it
+    as optional as well as nullable.
+  - A `#[setting(required)]` `Option` field is described by the type it holds, as it must be given
+    a value, which `null` isn't.
+  - A struct that accepts unknown fields, a config with `#[config(allow_unknown_fields)]` or a
+    `Schematic` type without `#[serde(deny_unknown_fields)]`, no longer renders
+    `additionalProperties: false` in JSON Schema.
+  - A struct with `#[serde(transparent)]` is described by its one field.
+  - JSON Schema renders an integer as `"type": "integer"` rather than `"number"`, with its kind's
+    range, like `0` to `255` for a `u8`. An explicit bound narrows the range but can't widen it, and
+    a 64-bit bound, which a JSON number can't hold exactly, is left out.
+- Added `validate::min` and `validate::max`, which bound a number on one side, next to
+  `validate::in_range`.
+- Added `IntoValidateErrors`, so that a validator may return several errors, as a
+  `Vec<ValidateError>`, or a garde `Report`, rather than only one. `ValidateResult` and `Validator`
+  are unchanged, so existing validators work as before.
+- Added `#[config(validate = func)]`, which validates a config as a whole, after its settings, for
+  rules across settings, like a minimum that must be below a maximum. It receives the partial, and
+  works on structs and enums.
+- Updated a `ValidateError` at the root of a config, like one from `#[config(validate)]`, to render as
+  only its message, rather than `.: message`.
+- Added `Path::is_empty`.
+- Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
+  CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
+  the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other
+  sources, a relative file resolving against the working directory. Like every layer, it sits below
+  environment variables.
+- Added merge functions that configs commonly write for themselves:
+  - `merge::merge_partials`, which deep merges a map of nested configs by key, for
+    `#[setting(nested, merge = merge_partials)]`, as a nested collection is otherwise replaced. It
+    supports `HashMap`, `BTreeMap`, and `IndexMap`, through the new `merge::MergeableMap` trait.
+  - `merge::append_vec_unique`, which appends only the items a `Vec` doesn't contain yet, so a
+    source that lists a default again doesn't repeat it.
+  - `merge::merge_iter`, which extends any collection that implements `Extend`.
+  - `merge::merge_indexmap` and `merge::merge_indexset`, with the `type_indexmap` feature.
+- Added `MergeList<T>`, a list setting whose sources each choose how it merges. A source writes a
+  list to replace the previous items, or a map with any of `prepend`, `append`, and `replace` to
+  merge with them. The derive merges it with the new `merge::merge_list` without a `merge` of its
+  own, knowing the type by name, so an alias needs `#[setting(merge = merge::merge_list)]`. It derefs
+  to a slice, the length validators accept it, and its schema is a union of both forms. Items are
+  plain values, not nested configs.
+- Updated `merge::merge_hashmap` and `merge::merge_hashset` to support any hasher, like
+  `FxHashMap`'s, and `merge::merge_btreemap` and `merge::merge_btreeset` to no longer require
+  `Hash`.
 - Added `ConfigError::ExtendsCycle`, returned when the sources a config extends form a cycle, such
   as `a.json` extending `b.json` which extends `a.json`, rather than overflowing the stack. It lists
   every source in the cycle.
@@ -54,12 +141,23 @@
   than 40, and one with only `schema`, 29 rather than 42.
 - Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only apply
   to configs, and compiled their dependencies for nothing without it.
+- Made `schematic_macros` optional, so it's only compiled with `config` or `schema`, the features
+  that re-export its derives. Cargo 1.100's `unused_dependencies` lint warned about it without them.
 
 - Merged the code that rebuilds a setting through its layers, when converting a partial into a full
   config and when finalizing nested configs, into one helper. Generated code is unchanged.
 
 #### 🐞 Fixes
 
+- Fixed a config with a flattened map, like `#[setting(flatten)] extra: HashMap<String, String>`,
+  rejecting every key the map collects, unless `#[config(allow_unknown_fields)]`. Its partial no
+  longer denies unknown fields, as the map collects them. An explicit `#[serde(deny_unknown_fields)]`
+  is still respected.
+- Fixed config templates leaving out the settings of a flattened struct. They're now rendered
+  alongside the struct's own, including those of a flattened struct within another. TOML, which
+  rendered a flattened struct as a table of its own, failed to load.
+- Fixed the default value of a root enum's default variant, like `#[setting(default = "auto")]` on
+  `Named(String)`, not being applied when loading, while `Default` applied it.
 ##### Schema
 
 - Fixed a skipped setting, with `#[setting(skip)]` or `#[serde(skip)]`, requiring its type to

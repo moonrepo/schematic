@@ -14,6 +14,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             schema.infer_as_nested::<Option<NestedConfig>>(),
                         );
                         field.nullable = true;
+                        field.optional = true;
                         field
                     },
                 ),

@@ -12,7 +12,7 @@ export interface ExtendsString {
 }
 
 export interface ExtendsStringOptional {
-	extends: string | null;
+	extends?: string | null;
 	value: number[];
 }
 

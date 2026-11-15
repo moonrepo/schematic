@@ -26,6 +26,11 @@ impl Path {
         Self { segments }
     }
 
+    /// Return true if the path has no segments, as for the root.
+    pub fn is_empty(&self) -> bool {
+        self.segments.is_empty()
+    }
+
     /// Create a new instance and append the provided [`PathSegment`]
     /// to the end of the current path.
     pub fn join(&self, segment: PathSegment) -> Self {

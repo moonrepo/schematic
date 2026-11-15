@@ -111,6 +111,7 @@ impl SchemaRenderer<String> for JsoncTemplateRenderer {
     }
 
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
+        let structure = inline_flattened_fields(structure, &self.schemas);
         let mut out = vec![];
 
         self.ctx.depth += 1;

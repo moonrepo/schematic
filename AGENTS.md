@@ -45,8 +45,9 @@ Deliberately dropped in the rewrite, and not coming back:
   still is.
 - Named-field enum variants panic, as they did in the old derive too.
 
-Known remaining hole: **`#[setting(skip_deserializing_if)]`** parses but emits nothing, because
-serde has no such attribute.
+`#[setting(skip_deserializing_if)]` (and the serde one) panics, as serde has no such attribute.
+Other attributes that would do nothing for a derive panic in `Container::validate_attributes`, which
+`ToTokens` runs first, since `macro_type` is only set after `Container::from`.
 
 `ConfigEnum` has no implementation of its own. It is the same `Container` with
 `macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
@@ -123,27 +124,32 @@ impl Schematic for Example { /* schema_name, build_schema */ }
 impl Schematic for PartialExample { /* delegates + partialize_schema */ }
 ```
 
-Runtime flow: each source is parsed into a partial layer, layers are combined with `merge`, then
-`finalize` re-merges that result **over** `default_values` and **under** `env_values` (so env wins),
-runs per-setting transforms and nested finalization, and finally `validate` runs before
-`from_partial` produces the full type. Precedence, lowest to highest: defaults → files → env.
+Runtime flow: each source is parsed into a partial layer. The loader adds `default_values` below
+them as a `Source::Defaults` layer and `env_values` above them as a `Source::EnvVars` layer, merges
+every layer in order with `merge`, and calls `finalize`, which only runs per-setting transforms and
+nested finalization. Finally `validate` runs before `from_partial` produces the full type.
+Precedence, lowest to highest: defaults → sources → env. A partial added with
+`ConfigLoader::partial` (`Source::Memory`) is a source like a file, so it sits below env too.
+`ConfigLoadResult.layers` reports exactly the layers merged, so each default handler and env read
+runs once per load.
 
-**Defaults and env are applied once, by the outermost config.** A struct's `default_values` and
-`env_values` already contain those of its bare and optional nested configs, so the derived
-`finalize` merges them and then calls the hidden `PartialConfig::finalize_nested`, which runs
-transforms and finalizes each nested config *without* re-applying its own defaults or env. Before
-this, every level re-applied them, and a merge like `append_vec` repeated them. Per kind of nested
-setting:
+**Defaults and env are applied once, as the outermost config's layers.** A struct's
+`default_values` and `env_values` already contain those of its bare and optional nested configs, so
+`finalize` runs transforms and finalizes each nested config *without* applying its own defaults or
+env. Before this, every level re-applied them, and a merge like `append_vec` repeated them. Per
+kind of nested setting:
 
-- **Bare** (`child: Child`): `child.finalize_nested(..)`.
+- **Bare** (`child: Child`): `child.finalize(..)`.
 - **Optional** (`Option<Child>`): a parent's defaults leave it `None`, so its `default_values` are
-  merged under it, then `finalize_nested`. Its env already came through the parent's env layer.
-- **Collection items** and **enum variant values** are boundaries: nothing above them applied their
-  defaults or env (collections aren't in `default_values`, and an enum reads no env), so they get a
-  full `finalize`. This is also what lets each item read the environment.
-- The trait default of `finalize_nested` is `finalize`, so a hand-written partial behaves as before.
+  merged under it, then `finalize`. Its env already came through the parent's env layer.
+- **Collection items** and **enum variant values** are boundaries: no layer holds their defaults or
+  env (collections aren't in `default_values`, and an enum reads no env), so they go through the
+  hidden `internal::finalize_with_layers`, which merges their defaults under them and their env over
+  them, as the loader does, then finalizes. This is also what lets each item read the environment.
+- `finalize` used to merge defaults and env itself, with a hidden `finalize_nested` for the rest.
+  The loader drives the layers now, so `partial.finalize(ctx)` on its own applies neither.
 
-Because a variant's value is finalized in full, an enum's `default_values` holds its default variant
+Because a variant's value gets its own defaults, an enum's `default_values` holds its default variant
 with the *type* default of a nested config, not its defaults, or they'd be applied twice. `Default`
 still gets them: derived configs override `Config::default_partial` to call
 `<T as Config>::default_partial()` for each bare nested config, which recurses into the default
@@ -334,7 +340,7 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   applies to a child that declares one, and it *adds* a prefix rather than replacing the child's.
   `EnvManager` reads the child's own prefix first and the parent's second, and that order is what
   makes the child's own prefix win: a nested config doesn't re-read the environment in
-  `finalize_nested`, so the parent's env layer, read through `EnvManager`, is the only read. (The
+  `finalize`, so the parent's env layer, read through `EnvManager`, is the only read. (The
   old replace-the-prefix design let the parent win.) Making the parent win would need the order
   flipped, which the maintainer rejected. `settings()`
   and `SchemaField.env_var` report the derived key with the container's *own* prefix
@@ -342,7 +348,7 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   works. A setting that never reads the environment, like a collection without `parse_env`, reports
   nothing.
 - **Nested collections replace by default** on merge; bare nested configs merge recursively. Supply
-  `merge` to change it.
+  `merge` to change it — `merge::merge_partials` merges a map of nested configs by key.
 - **Nested tuple variants support multiple values**, each position handled per its own shape (merge,
   replace, or manager-wrapped).
 - **`required` works on any struct setting, and still needs `Default`.** A required setting is left
@@ -377,6 +383,18 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - **A container `#[serde(default)]` makes every field optional**, the same as one declared on the
   field, since serde falls back per field when the input omits it. `SchemaField.optional` reflects
   that, which is what puts the `?` on a TypeScript property.
+- **An `Option` field is optional in the schema**, as serde fills in an omitted one with `None`, and
+  a `#[setting(required)]` one is described by the type it holds, so neither nullable nor optional
+  (`Field::get_schema_type`). There's no `SchemaField.required`; `optional: false` says it.
+- **`StructType.allow_unknown_fields` defaults to closed.** It's inverted from serde on purpose, so
+  hand-written, std, and synthesized variant schemas stay closed. The derive sets it to what's
+  deserialized: a config's partial (`#[config(allow_unknown_fields)]`), or the serde attributes of a
+  type that only derives `Schematic`.
+- **Serde can't deny unknown fields through a flattened field it reads as a map**, as
+  `FlatMapAccess` borrows the parent's keys where a plain struct's `FlatStructAccess` takes them. So a
+  partial with a flattened map doesn't deny unknown fields (none is unknown), and a parent flattening
+  a config whose partial `FLATTENS` fails to compile unless both `ALLOWS_UNKNOWN_FIELDS`
+  (`impl_partial_checks`). Making that case load strictly was rejected as too much machinery.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 
@@ -384,7 +402,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   deref coerces on its way in — a `String` setting reaches a `&str` validator and a `Vec<T>` a
   `&[T]` one. `ValidateManager::check` therefore takes `impl FnOnce(V, &D, &Ctx, bool)` and takes
   the value by move, because a variant of several values passes a *tuple of references*, not a
-  reference to a tuple. Boxing the validator instead breaks built-ins like `validate::extends_string`.
+  reference to a tuple. It returns `Result<(), E: IntoValidateErrors>`, so a validator may report
+  several errors while `ValidateResult` stays a single one. `#[config(validate)]` goes through
+  `check_config` the same way, without a value. Boxing the validator instead breaks built-ins like `validate::extends_string`.
 - **A doc comment keeps the line structure the author wrote.** Renderers depend on it — a JSDoc
   block or a template comment that was several lines has to stay several lines, and collapsing it
   breaks markdown lists and paragraph breaks. A block comment (`/** ... */`) arrives as a single
@@ -450,9 +470,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `{"Unix": [bytes]}`, not a string.
 - A parent must reach a nested config through a method a hand-written `PartialConfig` would
   override, not only the hidden ones the derive implements. Nested validation goes through the
-  public `validate` (re-pathing its errors), the hidden `env_values_with_prefix` defaults to
-  `env_values`, and `finalize_nested` defaults to `finalize`. Don't make a public method's default
-  call a hidden one whose default calls it back, as a partial overriding neither would recurse.
+  public `validate` (re-pathing its errors), and the hidden `env_values_with_prefix` defaults to
+  `env_values`. Don't make a public method's default call a hidden one whose default calls it back,
+  as a partial overriding neither would recurse.
 - A nested config receives its parent's context, as the managers require `Context = Ctx`, unless
   `#[setting(nested, context = func)]` maps it (`Value::context_fn`). Then every call that hands a
   context to the child goes through `func(context)`, and the managers' `*_with` methods take it
@@ -464,6 +484,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   A new renderer that iterates `fields` directly will silently reintroduce declaration-ordered output.
 - Internally-tagged enums with tuple variants don't compile (serde rejects them). Core doesn't
   currently catch this at derive time.
+- A `MergeList` is known by name (`Value::is_merge_list`), like the layers, and merged with
+  `merge::merge_list` without a `merge`, which still wins. An alias isn't recognized, by decision.
+- `MergeList` merging must stay associative. The loader folds its layers in order, but an optional
+  nested config or a collection item has its defaults merged under a value that layers already
+  merged, so `merge` is composition: a list holding the index where the previous items go, rather
+  than a strategy flag that the next merge would overwrite.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
   Use `command git`.
 

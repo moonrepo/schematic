@@ -31,6 +31,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
@@ -71,6 +72,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
@@ -135,6 +137,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
@@ -207,6 +210,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    nullable: false,
 ⬛️                    ty: Struct(
 ⬛️                        StructType {
+⬛️                            allow_unknown_fields: false,
 ⬛️                            fields: {
 ⬛️                                "type": SchemaField {
 ⬛️                                    aliases: [],
@@ -247,6 +251,7 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                                        nullable: false,
 ⬛️                                        ty: Struct(
 ⬛️                                            StructType {
+⬛️                                                allow_unknown_fields: false,
 ⬛️                                                fields: {
 ⬛️                                                    "field": SchemaField {
 ⬛️                                                        aliases: [],
