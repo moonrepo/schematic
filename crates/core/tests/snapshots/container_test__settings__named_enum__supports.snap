@@ -46,6 +46,6 @@ fn settings() -> schematic::ConfigSettingMap {
                 ),
         ),
         ("D".into(), ConfigSetting::new("bool")),
-        ("E".into(), ConfigSetting::new("")),
+        ("E".into(), ConfigSetting::new("E")),
     ])
 }

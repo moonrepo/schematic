@@ -22,12 +22,6 @@ impl<T> schematic::PartialConfig for PartialExample<T> {
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
         Ok(Some(Self::Nothing))
     }
-    fn finalize(
-        self,
-        context: &Self::Context,
-    ) -> std::result::Result<Self, schematic::ConfigError> {
-        Ok(self)
-    }
     fn merge(
         &mut self,
         context: &Self::Context,
@@ -67,7 +61,7 @@ impl<T> schematic::Config for Example<T> {
         use schematic::ConfigSetting;
         std::collections::BTreeMap::from_iter([
             ("Value".into(), ConfigSetting::new("T")),
-            ("Nothing".into(), ConfigSetting::new("")),
+            ("Nothing".into(), ConfigSetting::new("Nothing")),
         ])
     }
 }
