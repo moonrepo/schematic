@@ -38,6 +38,7 @@ enum Projects {
 | `merge_btreeset`, `merge_hashset`, `merge_indexset` | A set.                                                         |
 | `merge_iter`                                        | Any collection that implements `Extend`, like a `VecDeque`.    |
 | `merge_partials`                                    | A map of [nested configs](../nested.md), by key.               |
+| `merge_list`                                        | A [`MergeList`](#merging-chosen-by-the-source), as it directs. |
 
 The hash-based functions support any hasher, like `FxHashMap`'s, and the `indexmap` functions
 require the `type_indexmap` Cargo feature.
@@ -63,6 +64,45 @@ It supports `HashMap`, `BTreeMap`, and `IndexMap`, or any map that implements
 [`MergeableMap`](https://docs.rs/schematic/latest/schematic/merge/trait.MergeableMap.html). The
 configs receive the parent's [context](../context.md), so it can't be combined with a nested
 `context` function.
+
+## Merging chosen by the source
+
+A `merge` function decides how every source merges a setting. To let each source decide for itself,
+use a [`MergeList`](https://docs.rs/schematic/latest/schematic/struct.MergeList.html). It's merged
+with the `merge_list` function without a `merge` of its own.
+
+```rust
+use schematic::{Config, MergeList};
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(default = MergeList::new(vec!["localhost".into()]))]
+	pub allowed_hosts: MergeList<String>,
+}
+```
+
+A source then writes a list, which replaces the previous items, or a map of how to merge with them,
+with any of the `prepend`, `append`, and `replace` keys.
+
+```yaml
+# Replaces the previous items, including the default
+allowed_hosts: [example.com]
+
+# Adds to the previous items
+allowed_hosts:
+  prepend: [example.com]
+  append: [example.org]
+```
+
+A `MergeList` derefs to a slice of its items, so it reads like a `Vec`, and the length validators
+accept it. Its schema is a union of the list and the map, so editors suggest both.
+
+The derive knows a `MergeList` by name, including within an `Option` or a variant, so a `merge` of
+the setting's own still takes precedence, and a collection of them is replaced like any other.
+
+> Through a type alias the derive can't tell it's a `MergeList`, so add
+> `#[setting(merge = schematic::merge::merge_list)]`, or it's replaced like any other setting, and a
+> source that appends loses the previous items. Items are plain values for now, not nested configs.
 
 ## Merge handler function
 

@@ -990,10 +990,9 @@ impl Variant {
                         // Nested configs are merged recursively, but collections
                         // of them are replaced, as there's no way to know how to
                         // pair up their items. Define `merge` to customize this.
-                        let mergeable = self
-                            .values
-                            .iter()
-                            .any(|value| value.nested && !value.is_collection());
+                        let mergeable = self.values.iter().any(|value| {
+                            (value.nested && !value.is_collection()) || value.is_merge_list()
+                        });
 
                         if mergeable {
                             let mut requires_internal = false;
@@ -1008,6 +1007,32 @@ impl Variant {
                                         .map(|(index, o)| {
                                             let i = &inner_names[index];
                                             let value = &self.values[index];
+
+                                            // A `MergeList` is merged as each
+                                            // source directs, through the
+                                            // manager when it's optional
+                                            if value.is_merge_list() {
+                                                if value.is_outer_option_wrapped() {
+                                                    requires_internal = true;
+
+                                                    return quote! {
+                                                        MergeManager::new(context).apply_with(
+                                                            #o,
+                                                            #i,
+                                                            schematic::merge::merge_list,
+                                                        )?;
+                                                    };
+                                                }
+
+                                                return quote! {
+                                                    *#o = schematic::merge::merge_list(
+                                                        std::mem::take(#o),
+                                                        #i,
+                                                        context,
+                                                    )?
+                                                    .unwrap_or_default();
+                                                };
+                                            }
 
                                             // Collections, and values that
                                             // aren't configs, are replaced in place

@@ -465,6 +465,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   A new renderer that iterates `fields` directly will silently reintroduce declaration-ordered output.
 - Internally-tagged enums with tuple variants don't compile (serde rejects them). Core doesn't
   currently catch this at derive time.
+- A `MergeList` is known by name (`Value::is_merge_list`), like the layers, and merged with
+  `merge::merge_list` without a `merge`, which still wins. An alias isn't recognized, by decision.
+- `MergeList` merging must stay associative. Layers are merged into each other first, and that
+  result is then merged over `default_values` in `finalize`, so `merge` is composition: a list
+  holding the index where the previous items go, rather than a strategy flag that the next merge
+  would overwrite.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
   Use `command git`.
 

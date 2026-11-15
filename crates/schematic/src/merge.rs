@@ -1,4 +1,4 @@
-use crate::config::{MergeError, MergeResult, PartialConfig};
+use crate::config::{MergeError, MergeList, MergeResult, PartialConfig};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     hash::{BuildHasher, Hash},
@@ -53,6 +53,16 @@ pub fn prepend_vec<T, C>(prev: Vec<T>, next: Vec<T>, _: &C) -> MergeResult<Vec<T
     new.extend(prev);
 
     Ok(Some(new))
+}
+
+/// Merge the next [`MergeList`] into the previous one, as the next list directs:
+/// replacing the previous items, or adding items before or after them.
+pub fn merge_list<T, C>(
+    prev: MergeList<T>,
+    next: MergeList<T>,
+    _: &C,
+) -> MergeResult<MergeList<T>> {
+    Ok(Some(prev.merge(next)))
 }
 
 /// Extend the previous collection with the items of the next, for any collection

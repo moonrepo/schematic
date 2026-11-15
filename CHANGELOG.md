@@ -25,6 +25,12 @@
     source that lists a default again doesn't repeat it.
   - `merge::merge_iter`, which extends any collection that implements `Extend`.
   - `merge::merge_indexmap` and `merge::merge_indexset`, with the `type_indexmap` feature.
+- Added `MergeList<T>`, a list setting whose sources each choose how it merges. A source writes a
+  list to replace the previous items, or a map with any of `prepend`, `append`, and `replace` to
+  merge with them. The derive merges it with the new `merge::merge_list` without a `merge` of its
+  own, knowing the type by name, so an alias needs `#[setting(merge = merge::merge_list)]`. It derefs
+  to a slice, the length validators accept it, and its schema is a union of both forms. Items are
+  plain values, not nested configs.
 - Updated `merge::merge_hashmap` and `merge::merge_hashset` to support any hasher, like
   `FxHashMap`'s, and `merge::merge_btreemap` and `merge::merge_btreeset` to no longer require
   `Hash`.

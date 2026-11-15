@@ -28,18 +28,26 @@ merges only need `Ord`. moon's `merge_iter` and `merge_partials` can be replaced
 can't be combined with `#[setting(nested, context = func)]`. A hasher parameter means a direct call
 like `merge_hashmap(HashMap::from_iter(..), ..)` no longer infers `RandomState`.
 
-**G3. Config files choosing their own merge strategy** (#175) 📖 · med
+**G3. Config files choosing their own merge strategy** (#175) · partly fixed on `0.21-gaps`
 
-- **What blocks it:**
-  - Merge fns see only `(prev, next, &Ctx)`, so the strategy has to travel inside the value.
-  - Variant merges only run when prev and next are the same variant; otherwise next replaces prev
-    (`container.rs:1432`, `variant.rs:869`). That rules out the issue's enum-wrapper design.
-  - moon has the same need: its own `MergeStrategy { Append, Prepend, Preserve, Replace }`.
-- **Simplest option:** a runtime newtype next to `RegexSetting`. `MergeList<T>` deserializes `[..]`
-  or `{ append | prepend | replace: [..] }`, derefs to `[T]`, and pairs with a
-  `merge::by_directive`. No derive change for scalar items.
-- **Cost:** nested items (`MergeList<Child>`) would need core to treat it as a collection layer,
-  which is medium. Ask before building that part.
+`MergeList<T>`, merged with `merge::merge_list`. A source writes `[..]` to replace the previous items, or a
+map with any of `prepend`, `append`, and `replace`. It holds the items and the index the previous
+items go at (`None` when it replaces them), which makes merging associative. That matters, because
+layers merge into each other before the result is merged over the defaults. It derefs to `[T]`,
+implements garde's `HasSimpleLength` so the length validators accept it, (de)serializes both forms
+with a hand-written visitor (so an unknown key names the expected ones), and its schema is a union
+of the list and a closed struct of optional lists.
+
+The derive infers `merge = merge_list` for a setting or variant value whose outermost type, within
+an `Option`, is named `MergeList` (`Value::is_merge_list`), the way it knows layers by name, chosen
+over autoref specialization, which would change every setting's generated merge. An explicit
+`merge` wins, a collection of them is replaced, and an alias isn't known. `nested` on one panics.
+
+Not built:
+
+- Nested items (`MergeList<Child>`), the issue's own case. Core would have to treat `MergeList` as
+  a collection layer, so its items are partials, finalized and validated. Ask first.
+- Env vars: there's no `parse_env` for it.
 
 **G4. Provenance: which layer set a value** ✅ · med
 

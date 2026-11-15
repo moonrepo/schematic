@@ -244,6 +244,13 @@ impl Value {
             )
         };
 
+        if nested_ident == "MergeList" {
+            panic!(
+                "A `MergeList` can't hold nested configs, received `{}`.",
+                self.ty_string
+            )
+        }
+
         // Primitives can never implement `Config`, so catch them here instead
         // of failing later with an obscure trait error
         if is_primitive_ident(nested_ident) {
@@ -291,6 +298,24 @@ impl Value {
 
     pub fn is_collection(&self) -> bool {
         self.layers.iter().any(|layer| layer.is_collection())
+    }
+
+    /// Whether the setting is a `MergeList`, known by name like the layers
+    /// are, so that it's merged with `merge::merge_list` without a `merge` of
+    /// its own. Only the outermost type counts, within an `Option`, as a
+    /// collection of them is replaced like any other. An alias isn't known.
+    pub fn is_merge_list(&self) -> bool {
+        if self.nested {
+            return false;
+        }
+
+        let mut layers = self.get_partial_layers();
+
+        if self.is_outer_option_wrapped() {
+            layers.remove(0);
+        }
+
+        matches!(layers.first(), Some(Layer::Unknown(name)) if name == "MergeList")
     }
 
     /// The partial type at each of its layers, from the outermost inward,
