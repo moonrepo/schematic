@@ -887,9 +887,14 @@ impl Variant {
     }
 
     /// Generate this setting's entry for `Config::settings`. A named variant
-    /// is the settings of its fields, like a nested config.
+    /// is the settings of its fields, like a nested config, and a unit variant,
+    /// which holds no type, is reported as its name.
     pub fn impl_setting(&self) -> TokenStream {
         let name = self.get_name();
+
+        if self.is_unit_variant() {
+            return quote! { (#name.into(), ConfigSetting::new(#name)) };
+        }
 
         if self.is_named_variant() {
             let settings = self.settings.iter().map(|setting| setting.impl_setting());

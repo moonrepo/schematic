@@ -768,7 +768,7 @@ mod audit_fixes {
             }
         });
 
-        let ContainerInner::UnnamedEnum { variants } = &container.inner else {
+        let ContainerInner::Enum { variants } = &container.inner else {
             panic!();
         };
 

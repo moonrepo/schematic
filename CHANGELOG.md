@@ -170,6 +170,9 @@
   rendered a flattened struct as a table of its own, failed to load.
 - Fixed the default value of a root enum's default variant, like `#[setting(default = "auto")]` on
   `Named(String)`, not being applied when loading, while `Default` applied it.
+- Fixed `Config::settings` reporting a unit variant of an enum that also holds values with an empty
+  `type_alias`. It's now the variant's name, as in an enum of only unit variants.
+
 ##### Schema
 
 - Fixed a partial schema making the tag of an internally tagged variant optional and nullable, like

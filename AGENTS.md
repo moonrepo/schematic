@@ -55,7 +55,7 @@ Other attributes that would do nothing for a derive panic in `Container::validat
 `macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
 `ConfigEnum`/`FromStr`/`TryFrom`/`Display` impls plus `impl_schematic_full`. The schema comes out of
 the ordinary unit-enum path: `get_tag_format` reports `Unit` for a config enum (even when a
-`fallback` variant makes it structurally unnamed), so `impl_schema_type` emits a literal per unit
+`fallback` variant means it isn't `is_unit_only`), so `impl_schema_type` emits a literal per unit
 variant and infers the fallback's inner type as a string, as the old derive did.
 
 A `ConfigEnum` may also hold `#[serde(untagged)]` single-field tuple variants, which is how it models
@@ -181,15 +181,20 @@ Entry point is `Container::from(DeriveInput)` in `crates/core/src/container.rs`.
 Container  (the struct/enum)          container.rs
 ├─ ContainerInner::NamedStruct   { fields: Vec<Field> }
 ├─ ContainerInner::UnnamedStruct { fields: Vec<Field> }   // tuple struct
-├─ ContainerInner::NamedEnum     { variants: Vec<Variant> }  // any variant has named fields
-├─ ContainerInner::UnnamedEnum   { variants: Vec<Variant> }  // any holds values, none named
-└─ ContainerInner::UnitEnum      { variants: Vec<Variant> }  // all variants are units
+└─ ContainerInner::Enum          { variants: Vec<Variant> }  // unit, tuple, and named, mixed
 
 Field    (a struct setting)           field.rs    → FieldValue   → Value
 Variant  (an enum variant)            variant.rs  → VariantValue → Value  (tuple values)
                                                   → Field                (named fields)
 Value    (type analysis + walkers)    value.rs
 ```
+
+An enum is one kind, because its variants may be of any kind at once. What depends on them is
+asked of the variants, never stored beside them: `ContainerInner::is_unit_only` (an enum serde
+writes as strings, so tagged `Unit`, with a string-enum schema) and `has_named_variants` (an enum
+with settings, so it denies unknown fields and accepts `allow_unknown_fields`). Everything else is
+per variant, so a unit variant adds no arm to `finalize` or `validate` and is reported by its name
+in `settings()`, whichever enum holds it.
 
 `ToTokens for Container` emits the whole derive, in this order:
 
