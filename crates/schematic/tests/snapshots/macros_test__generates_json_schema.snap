@@ -123,16 +123,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "DefaultValues",
       "type": "object",
       "required": [
-        "array_opt",
         "enums",
-        "path_string_box",
-        "tuple_opt"
+        "path_string_box"
       ],
       "properties": {
         "array": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "maximum": 255,
+            "minimum": 0
           },
           "maxItems": 4,
           "minItems": 4
@@ -142,7 +142,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "array",
               "items": {
-                "type": "number"
+                "type": "integer",
+                "maximum": 255,
+                "minimum": 0
               },
               "maxItems": 4,
               "minItems": 4
@@ -185,7 +187,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         "number": {
           "default": 123,
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "path_string": {
           "default": "foo/bar",
@@ -207,16 +210,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "array",
           "items": [
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
             },
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
             },
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
             },
             {
-              "type": "number"
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
             }
           ],
           "maxItems": 4,
@@ -228,16 +239,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
               "type": "array",
               "items": [
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 }
               ],
               "maxItems": 4,
@@ -251,7 +270,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "vector": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -323,9 +343,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "ExtendsOptional": {
       "title": "ExtendsOptional",
       "type": "object",
-      "required": [
-        "extends"
-      ],
       "properties": {
         "extends": {
           "anyOf": [
@@ -386,7 +403,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "OptionalValues",
       "type": "object",
       "required": [
-        "optional",
         "required"
       ],
       "properties": {
@@ -432,7 +448,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "array",
               "items": {
-                "type": "number"
+                "type": "integer",
+                "maximum": 255,
+                "minimum": 0
               },
               "maxItems": 4,
               "minItems": 4
@@ -447,7 +465,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "array",
               "items": {
-                "type": "number"
+                "type": "integer",
+                "maximum": 255,
+                "minimum": 0
               },
               "maxItems": 4,
               "minItems": 4
@@ -537,7 +557,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "default": 123,
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -594,16 +615,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
               "type": "array",
               "items": [
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 }
               ],
               "maxItems": 4,
@@ -620,16 +649,24 @@ expression: "std::fs::read_to_string(file).unwrap()"
               "type": "array",
               "items": [
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
                 }
               ],
               "maxItems": 4,
@@ -645,7 +682,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "array",
               "items": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 0
               }
             },
             {
@@ -775,7 +813,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             {
               "type": "object",
               "additionalProperties": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 0
               },
               "propertyNames": {
                 "type": "string"
@@ -789,7 +828,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "number": {
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -842,8 +882,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "renamed": {
           "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "SerdeNativeRenamed": {
       "title": "SerdeNativeRenamed",
@@ -889,7 +928,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         {
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -909,8 +949,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "required": [
         "basic",
         "nested",
-        "nested2",
-        "optional",
         "required"
       ],
       "properties": {
@@ -941,14 +979,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ]
         },
         "required": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "type": "string"
         }
       },
       "additionalProperties": false
@@ -980,14 +1011,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "map": {
           "type": "object",
           "additionalProperties": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           },
           "propertyNames": {
             "type": "string"
           }
         },
         "number": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "s3_value": {
           "type": "string"

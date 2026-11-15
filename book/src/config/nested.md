@@ -29,8 +29,10 @@ enum ParentEnum {
 The `#[setting(nested)]` attribute is required, as the macro will substitute [`Config`][config] with
 its [partial](./partial.md) implementation.
 
-> Nested values can also be wrapped in collections, like `Vec` and `HashMap`. However, these are
-> tricky to support and may not work in all situations!
+Nested values can also be wrapped in collections, like `Vec` and `HashMap`. Each item is finalized
+and validated as a nested config, but the collection is replaced when merged, rather than merging
+its items. To merge a map of configs by key, use the
+[`merge_partials` strategy](./struct/merge.md#nested-maps).
 
 A `#[setting(nested)]` on a variant applies to every value it holds. To hold a nested config
 alongside plain values, mark the value itself instead. Its config is merged, finalized, and
@@ -40,6 +42,43 @@ validated as nested, while the other values are replaced, like any other setting
 #[derive(Config)]
 enum ParentEnum {
 	Both(#[setting(nested)] ChildConfig, bool),
+}
+```
+
+## Flattening
+
+A nested config can be flattened with `#[setting(flatten, nested)]` (or serde's own
+`#[serde(flatten)]`), so its settings are written alongside the parent's own, rather than under the
+field's name. A map can be flattened too, which collects every key the other settings don't.
+
+```rust
+#[derive(Config)]
+struct ParentConfig {
+	pub name: String,
+
+	#[setting(flatten, nested)]
+	pub server: ServerConfig,
+
+	#[setting(flatten, nested)]
+	pub plugins: HashMap<String, PluginConfig>,
+}
+```
+
+A config rejects keys that aren't its settings, unless `#[config(allow_unknown_fields)]`, and serde
+can only do so for a flattened struct, which takes its keys from the parent's. So:
+
+- A config with a flattened map accepts unknown keys, as the map collects them, and rejecting them
+  would reject every key of the map.
+- A flattened config that flattens another can't be loaded unless both allow unknown fields, as it
+  reads the parent's keys without taking them, so the parent would reject them. Deriving one fails
+  to compile, naming the fix, rather than failing to load every setting it holds.
+
+```rust
+#[derive(Config)]
+#[config(allow_unknown_fields)]
+struct ServerConfig {
+	#[setting(flatten, nested)]
+	pub tls: TlsConfig,
 }
 ```
 

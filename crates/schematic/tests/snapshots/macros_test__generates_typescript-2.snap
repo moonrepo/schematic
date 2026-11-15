@@ -52,7 +52,7 @@ export type ValueTypes = ValueTypesBase & ValueTypesRest;
 
 export type DefaultValues = {
 	array?: number[],
-	array_opt: number[] | null,
+	array_opt?: number[] | null,
 	/** @default true */
 	boolean?: boolean,
 	boolean_fn?: boolean,
@@ -78,7 +78,7 @@ export type DefaultValues = {
 	string?: string,
 	string_fn?: string,
 	tuple?: [number, number, number, number],
-	tuple_opt: [number, number, number, number] | null,
+	tuple_opt?: [number, number, number, number] | null,
 	vector?: number[],
 };
 
@@ -110,7 +110,7 @@ export type ExtendsEnum = {
 };
 
 export type ExtendsOptional = {
-	extends: string[] | null,
+	extends?: string[] | null,
 };
 
 export type EnvVars = {
@@ -127,9 +127,9 @@ export type NestedValidations = {
 export type Validations = {
 	basic: string,
 	nested: NestedValidations,
-	nested2: NestedValidations | null,
-	optional: string | null,
-	required: string | null,
+	nested2?: NestedValidations | null,
+	optional?: string | null,
+	required: string,
 };
 
 /**
@@ -167,7 +167,7 @@ export type Comments = {
 export type UnnamedMultiple = [string, number | null, boolean];
 
 export type OptionalValues = {
-	optional: string | null,
+	optional?: string | null,
 	required: boolean,
 };
 

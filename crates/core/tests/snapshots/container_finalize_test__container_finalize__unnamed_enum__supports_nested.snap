@@ -8,17 +8,35 @@ fn finalize(
 ) -> std::result::Result<Self, schematic::ConfigError> {
     Ok(
         match self {
-            Self::A(pa) => Self::A(pa.finalize(context)?),
-            Self::B(pa) => Self::B(transform_config(pa.finalize(context)?, context)?),
+            Self::A(pa) => {
+                Self::A(schematic::internal::finalize_with_layers(pa, context)?)
+            }
+            Self::B(pa) => {
+                Self::B(
+                    transform_config(
+                        schematic::internal::finalize_with_layers(pa, context)?,
+                        context,
+                    )?,
+                )
+            }
             Self::C(pa) => {
                 Self::C(
                     match pa {
-                        Some(pa) => Some(pa.finalize(context)?),
+                        Some(pa) => {
+                            Some(schematic::internal::finalize_with_layers(pa, context)?)
+                        }
                         None => None,
                     },
                 )
             }
-            Self::D(pa) => Self::D(transform_config(pa.finalize(context)?, context)?),
+            Self::D(pa) => {
+                Self::D(
+                    transform_config(
+                        schematic::internal::finalize_with_layers(pa, context)?,
+                        context,
+                    )?,
+                )
+            }
             _ => self,
         },
     )

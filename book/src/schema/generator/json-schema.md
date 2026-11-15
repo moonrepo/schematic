@@ -96,8 +96,9 @@ JsonSchemaOptions {
 
 ### Required fields
 
-When a struct is rendered, automatically mark all non-`Option` struct fields as required, and
-include them in the JSON schema
+When a struct is rendered, automatically mark every struct field that may not be omitted as
+required, which is any that isn't [optional](../struct.md#optional-and-nullable-fields), and include
+them in the JSON schema
 [`required` field](https://json-schema.org/understanding-json-schema/reference/object#required).
 This is enabled by default.
 

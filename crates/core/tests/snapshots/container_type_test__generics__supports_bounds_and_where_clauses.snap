@@ -30,26 +30,6 @@ where
             }),
         )
     }
-    fn finalize(
-        self,
-        context: &Self::Context,
-    ) -> std::result::Result<Self, schematic::ConfigError> {
-        let mut partial = Self::default();
-        if let Some(layer) = Self::default_values(context)? {
-            partial.merge(context, layer)?;
-        }
-        partial.merge(context, self)?;
-        if let Some(layer) = Self::env_values()? {
-            partial.merge(context, layer)?;
-        }
-        partial.finalize_nested(context)
-    }
-    fn finalize_nested(
-        self,
-        _context: &Self::Context,
-    ) -> std::result::Result<Self, schematic::ConfigError> {
-        Ok(self)
-    }
     fn merge(
         &mut self,
         context: &Self::Context,

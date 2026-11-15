@@ -3,73 +3,94 @@
 From the 2026-11-14 audit. See [README.md](README.md) for the legend, the ID scheme, the top
 priorities, and the quick wins.
 
-**G1. An in-memory or CLI layer** (#148) 📖 · med
+**G1. An in-memory or CLI layer** (#148) · fixed on `0.21-gaps`
 
-- **Today:** there are two workarounds.
-  - Serialize a clap partial to JSON and call `.code()`. This needs the `json` feature.
-  - The issue's recipe: `load_partial → finalize → merge → from_partial`. This silently skips final
-    validation.
-- **Simplest addition:** `ConfigLoader::partial(name, T::Partial)` backed by a
-  `Source::Memory { name }`. It sits below env, consistent with not changing `finalize`.
-- **Optional:** `ConfigLoader::overrides(T::Partial)`, merged after `finalize` and before
-  validation. This gives CLI precedence over env without touching `finalize`. Caveat: transforms
-  don't run on override values.
+`ConfigLoader::partial(name, T::Partial)` adds a layer recorded as `Source::Memory { name }`. It's
+merged in declaration order, validated with its name as the location, and may extend other sources;
+a relative file resolves against the working directory, as a memory source has no location of its
+own. `ConfigLoader::source` rejects a `Source::Memory`, which has no partial to load. Like every
+layer it sits below env.
 
-**G2. Merge helpers that real configs need** 📖 · med
+`ConfigLoader::overrides`, a layer above env, was not built, by decision: it would either skip
+transforms on override values or go through the hidden `finalize_nested`. CLI-over-env is left to
+the argument parser's own env support, which the book now says.
 
-- **What moon hand-rolls:** moon's `crates/config/src/merging.rs` re-implements:
-  - `merge_iter`, an append for any `Extend` collection;
-  - `merge_partials`, a deep merge of `Map<K, V: PartialConfig>` by key;
-  - a dedupe-aware append.
-- **Where the built-ins fall short:**
-  - `merge_hashmap` and `merge_hashset` only accept the default hasher, so `FxHashMap` can't use
-    them.
-  - `merge_btreemap` and `merge_btreeset` require a `Hash` bound they don't need.
-  - There are no `IndexMap`/`IndexSet` merges under `type_indexmap`.
-- **Fix:** generic `S: BuildHasher` versions, `append_unique`, `merge_iter`, `merge_partials` (it
-  fits today's merge signature through `&V::Context`), and indexmap variants. All additive and cheap.
+**G2. Merge helpers that real configs need** · fixed on `0.21-gaps`
 
-**G3. Config files choosing their own merge strategy** (#175) 📖 · med
+Added to `merge`: `merge_partials` (a map of nested configs, deep merged by key through a
+`MergeableMap` trait implemented for `HashMap` with any hasher, `BTreeMap`, and `IndexMap`),
+`append_vec_unique` (moon's dedupe-aware append, keeping duplicates already in `prev`),
+`merge_iter` (any `Extend`), and `merge_indexmap`/`merge_indexset` under `type_indexmap`, which now
+enables `indexmap`. `merge_hashmap`/`merge_hashset` take any `S: BuildHasher`, and the `BTree*`
+merges only need `Ord`. moon's `merge_iter` and `merge_partials` can be replaced by these.
 
-- **What blocks it:**
-  - Merge fns see only `(prev, next, &Ctx)`, so the strategy has to travel inside the value.
-  - Variant merges only run when prev and next are the same variant; otherwise next replaces prev
-    (`container.rs:1432`, `variant.rs:869`). That rules out the issue's enum-wrapper design.
-  - moon has the same need: its own `MergeStrategy { Append, Prepend, Preserve, Replace }`.
-- **Simplest option:** a runtime newtype next to `RegexSetting`. `MergeList<T>` deserializes `[..]`
-  or `{ append | prepend | replace: [..] }`, derefs to `[T]`, and pairs with a
-  `merge::by_directive`. No derive change for scalar items.
-- **Cost:** nested items (`MergeList<Child>`) would need core to treat it as a collection layer,
-  which is medium. Ask before building that part.
+`merge_partials` hands the items the parent's context, as every `merge` function receives it, so it
+can't be combined with `#[setting(nested, context = func)]`. A hasher parameter means a direct call
+like `merge_hashmap(HashMap::from_iter(..), ..)` no longer infers `RandomState`.
 
-**G4. Provenance: which layer set a value** ✅ · med
+**G3. Config files choosing their own merge strategy** (#175) · partly fixed on `0.21-gaps`
 
-- **Today:** defaults and env never appear in `ConfigLoadResult.layers`, and transforms get no
-  source. A value that came from env looks like it came from the only file.
-- **Related:** moon post-processes loaded configs to resolve relative paths against the declaring
-  file (`config-loader/src/config_loader.rs:180-186`), because schematic can't.
-- **Cheap first step:** add `Source::Defaults` and `Source::Env` layers to the result, computed by
-  the loader for inspection only (`finalize` unchanged). Source-aware transforms (`&Source` in the
-  transform context) are the bigger follow-up.
+`MergeList<T>`, merged with `merge::merge_list`. A source writes `[..]` to replace the previous items, or a
+map with any of `prepend`, `append`, and `replace`. It holds the items and the index the previous
+items go at (`None` when it replaces them), which makes merging associative. That matters, because
+layers merge into each other before the result is merged over the defaults. It derefs to `[T]`,
+implements garde's `HasSimpleLength` so the length validators accept it, (de)serializes both forms
+with a hand-written visitor (so an unknown key names the expected ones), and its schema is a union
+of the list and a closed struct of optional lists.
 
-**G5. Schema metadata that never reaches the schema** · med
+The derive infers `merge = merge_list` for a setting or variant value whose outermost type, within
+an `Option`, is named `MergeList` (`Value::is_merge_list`), the way it knows layers by name, chosen
+over autoref specialization, which would change every setting's generated merge. An explicit
+`merge` wins, a collection of them is replaced, and an alias isn't known. `nested` on one panics.
 
-- **`required` on `Option`:** `#[setting(required)]` on an `Option` is reported as nullable or
-  optional everywhere (a known follow-up). Fix: add `SchemaField.required`. ✅
-- **`Option` fields in JSON Schema and TS:** they are marked `required`, although serde accepts
-  omission. api_docs and Pkl already treat them as optional, and the book says otherwise
-  (`field.rs:302`, `json_schema.rs:561`). ✅
-- **`additionalProperties: false`:** it is unconditional, even with
-  `#[config(allow_unknown_fields)]` or a plain serde struct. Fix: add
-  `StructType.deny_unknown_fields`. ✅
-- **`#[serde(transparent)]`:** it is not parsed, so a wrapper renders `{inner}` instead of the inner
-  type. ✅
+Not built:
+
+- Nested items (`MergeList<Child>`), the issue's own case. Core would have to treat `MergeList` as
+  a collection layer, so its items are partials, finalized and validated. Ask first.
+- Env vars: there's no `parse_env` for it.
+
+**G4. Provenance: which layer set a value** · fixed on `0.21-gaps`
+
+The loader drives the layers itself: `default_values` as a `Source::Defaults` layer below every
+source, `env_values` as a `Source::EnvVars` layer above them, merged in order, then `finalize`.
+`ConfigLoadResult.layers` reports exactly those, each only when it sets something. By decision this
+was a breaking change rather than an inspection-only copy, which would have called each default
+handler twice and could report a default other than the one used:
+
+- `PartialConfig::finalize` only runs transforms and nested finalization, taking over from the
+  removed hidden `finalize_nested`.
+- Collection items and variant values, which no layer holds the defaults or env of, go through the
+  hidden `internal::finalize_with_layers`.
+
+It also fixed a root enum's default variant value never being applied when loading.
+
+Not built: source-aware transforms (`&Source` in the transform context), and resolving relative
+paths against the declaring file, which moon does after loading.
+
+**G5. Schema metadata that never reaches the schema** · partly fixed on `0.21-gaps`
+
+Fixed, mostly in core so that every renderer agrees:
+
+- **`Option` fields** are `optional`, as serde fills in an omitted one, which takes them out of
+  JSON Schema's `required` and gives them `?` in TypeScript (and an Optional tag in api_docs).
+- **`required` on `Option`** is described by the type it holds, so it's neither optional nor
+  nullable. That covers what `SchemaField.required` was proposed for, without a new field.
+- **Unknown fields:** `StructType.allow_unknown_fields`, inverted from the proposed
+  `deny_unknown_fields` so that hand-written, std, and synthesized variant schemas stay closed by
+  default. The derive opens a config with `allow_unknown_fields` and a `Schematic` type without
+  `deny_unknown_fields`; JSON Schema then leaves out `additionalProperties`, also through flatten.
+- **`#[serde(transparent)]`** on a `Schematic` named struct uses its field's schema (a tuple newtype
+  already did). On a `Config` it panics, as the partial isn't transparent and serde won't make it
+  so, with every setting defaulted.
+- **Integers** render as `"type": "integer"` in JSON Schema, with their kind's range up to 32 bits;
+  an explicit bound narrows it.
+
+Still open:
+
 - **Validator constraints:** they never reach the schema. Built-ins with literal args (`min_length`,
   `in_range`, `regex`, `email`, `url`, `ip_v4`, `uuid`) could set `StringType`/`IntegerType` fields
   at derive time, following the `path_names_a_value` precedent. JSON, Pkl and api_docs already render
   these constraints. 📖
-- **Integer types in JSON Schema:** they render as `"type": "number"` with no range, so `1.5` and
-  `-3` pass for a `u8`. Pkl already maps the kinds. ✅
 - **Other missing metadata:** 📖
   - Aliases are not in `required` alternatives, and enum variant aliases never reach `EnumType`.
   - `read_only` and `write_only` are never set.
@@ -77,24 +98,52 @@ priorities, and the quick wins.
   - There is no `examples` support (an `@example` tag would be a natural source).
   - The deprecation message is dropped in JSON Schema.
   - Unit-enum variant descriptions are dropped.
+- api_docs and Pkl don't reflect `allow_unknown_fields`.
 
-**G6. Templates drop flattened fields** ✅ · med
+**G6. Templates drop flattened fields** · fixed on `0.21-gaps`
 
-- Every template renderer `continue`s past `flatten`, so `ExtendingConfig`'s YAML template is just
-  `own: false`.
-- Fix: inline the flattened struct's fields, resolving references.
+Every template renderer now inlines a flattened struct's fields in place of the field that holds it,
+through `template::inline_flattened_fields`, resolving references and an `Option`, recursively. The
+struct's own field of a name takes precedence. TOML was worse than dropping them: `extract_sections`
+didn't skip flattened fields, so a flattened struct became a `[table]` of its own, which the
+partial's `deny_unknown_fields` rejected on load. A flattened map still renders nothing.
+`renderer_fixes_test.rs` (`flattened_templates`) loads each format's template back through the
+loader and checks its layer set every flattened setting.
 
-**G7. Attributes that parse and do nothing** · med
+Found while testing it, and fixed with it: serde can't deny unknown fields through a flattened
+field it reads as a map (`FlatMapAccess` borrows the parent's buffered keys, while a plain struct's
+`FlatStructAccess` takes them), so the parent rejected them. Two cases:
 
-These complement the known `skip_deserializing_if`. Per the loud-failure policy, each should panic:
+- **A flattened map** rejected every key it collects, which is why moon puts
+  `allow_unknown_fields` on each struct with one. The partial no longer denies unknown fields
+  beside a flattened map, as none is unknown; an explicit `#[serde(deny_unknown_fields)]` is kept.
+- **A flattened config that flattens a setting of its own** couldn't load any of its settings. By
+  decision, this is now a compile error rather than made to load, through hidden
+  `PartialConfig::FLATTENS` and `ALLOWS_UNKNOWN_FIELDS` consts and a `const _: () = assert!(..)`
+  per flattened config (`Container::impl_partial_checks`), unless both allow unknown
+  fields. A generic config isn't checked, as a constant can't name its parameters, and a hand-written
+  partial reports neither.
 
-- `#[config(before_parse)]` on a `Config`.
-- `#[variant(fallback)]` on a `Config` enum.
-- `env_prefix` and `allow_unknown_fields` on enum containers. A parent's `nested, env_prefix` on an
-  enum is a no-op.
-- `#[default]` on a `Config` enum variant is copied to the partial and can never compile. ✅
-- `tag` or `untagged` on a unit-only enum is forwarded to the partial, while the schema still says
-  strings.
+**G7. Attributes that parse and do nothing** · fixed on `0.21-gaps`
+
+Each now fails loudly, mostly as a derive panic from `Container::validate_attributes`, which
+`ToTokens` runs first, as the derive kind is only known once `Container::from` has returned:
+
+- `#[config(before_parse)]` on a `Config` (only a `ConfigEnum` reads it).
+- `#[setting(fallback)]` on a `Config` enum variant (`#[variant]` isn't a `Config` helper, so this
+  is how one would write it).
+- `#[default]` on a `Config` enum variant, and `default` was dropped from the inheritable attributes.
+- `env_prefix` and `allow_unknown_fields` on a `Config` or `ConfigEnum` enum.
+- `tag` or `untagged` on a `Config` enum of only unit variants.
+- `skip_deserializing_if`, from `#[setting]` or `#[serde]`, in `Field::validate_args`.
+- A parent's `#[setting(nested, env_prefix)]` covers more than enums: it's a no-op for any nested
+  config without an `env_prefix` of its own. The derive can't see the child, so this is a compile-time
+  assertion on a hidden `PartialConfig::HAS_ENV_PREFIX` const, like the flatten check, in
+  `impl_partial_checks`. A hand-written partial that reads the prefix sets the const, which the C4
+  test (`hand_written_nested`) now does.
+
+Not covered: config-only attributes on a type that only derives `Schematic`, like
+`#[schematic(before_parse)]`, which also do nothing.
 
 **G8. Loader capabilities** 📖 · low-med
 
@@ -114,12 +163,19 @@ These complement the known `skip_deserializing_if`. Per the loud-failure policy,
   `deny_unknown_fields`. Fix: strip it in the JSON and YAML formats, or document the
   `#[serde(rename = "$schema")]` field pattern.
 
-**G9. Validator limits** 📖 · low
+**G9. Validator limits** · mostly fixed on `0.21-gaps`
 
-- A validator returns one error, so `items[1]` is reported but `items[2]` isn't, and a garde
-  `Report` can't be mapped.
-- `validate::regex(..)` compiles, and panics on a bad pattern, on every validation pass.
-- There are no one-sided `min` or `max` validators.
-- There is no container-level `#[config(validate = fn)]`.
-- Per-layer validation runs before transforms, so a "must be absolute" validator fails on raw
-  layers. The `finalizing` flag exists for this, but it is undocumented.
+- **One error per validator:** `IntoValidateErrors`, implemented for `ValidateError`,
+  `Vec<ValidateError>`, and `garde::Report`, which `ValidateManager::check` now accepts. Existing
+  validators are unchanged. A garde error's path is kept as it renders, like `a.b[0]`, in one
+  segment, as garde only exposes its components through a hidden method.
+- **One-sided bounds:** `validate::min` and `validate::max`.
+- **Container-level validation:** `#[config(validate = func)]`, taking the partial, the context, and
+  `finalizing`, through `ValidateManager::check_config`, after the settings' validators. Structs and
+  enums, including an enum of units, which had no validation before; a `ConfigEnum` panics. An error
+  at the root renders as only its message.
+- **Per-layer validation runs before transforms:** documented in the book ("Validation passes"),
+  with the `finalizing` flag.
+
+Not built, by decision: `validate::regex(..)` still compiles on every pass and panics on a bad
+pattern.

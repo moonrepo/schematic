@@ -28,14 +28,16 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "list2": {
       "type": "array",
       "items": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0
       }
     },
     "nested": {
       "$ref": "#/definitions/EnvVarsNested"
     },
     "number": {
-      "type": "number"
+      "type": "integer",
+      "minimum": 0
     },
     "path": {
       "type": "string",

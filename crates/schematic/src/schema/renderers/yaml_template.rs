@@ -116,6 +116,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
+        let structure = inline_flattened_fields(structure, &self.schemas);
         let mut out = vec![];
 
         for (name, field) in structure.sorted_fields() {

@@ -1,4 +1,4 @@
-use crate::config::{ConfigError, PartialConfig, Path, ValidateError, ValidateResult};
+use crate::config::{ConfigError, IntoValidateErrors, PartialConfig, Path, ValidateError};
 
 pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
@@ -18,24 +18,36 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         }
     }
 
-    pub fn check<V, D>(
+    pub fn check<V, D, E: IntoValidateErrors>(
         &mut self,
         key: &str,
         value: V,
         data: &D,
-        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> Result<(), E>,
     ) {
         self.check_at(self.path.join_key(key), value, data, validator);
     }
 
-    pub fn check_variant<V, D>(
+    pub fn check_variant<V, D, E: IntoValidateErrors>(
         &mut self,
         variant: &str,
         value: V,
         data: &D,
-        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> Result<(), E>,
     ) {
         self.check_at(self.path.join_variant(variant), value, data, validator);
+    }
+
+    /// Validate the config as a whole, from `#[config(validate)]`, so its
+    /// errors are reported at this path, unless they name settings within it.
+    pub fn check_config<D, E: IntoValidateErrors>(
+        &mut self,
+        data: &D,
+        validator: impl FnOnce(&D, &Ctx, bool) -> Result<(), E>,
+    ) {
+        if let Err(errors) = validator(data, self.context, self.finalizing) {
+            self.push_errors(self.path.clone(), errors);
+        }
     }
 
     // The value is taken as-is rather than by reference, because a variant of
@@ -44,16 +56,25 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
     // The validator is an opaque callable rather than a `Validator` box, so
     // that the generated closure can deref coerce the value on its way in.
     // A `String` setting reaches a `&str` validator, a `Vec<T>` a `&[T]` one.
-    fn check_at<V, D>(
+    fn check_at<V, D, E: IntoValidateErrors>(
         &mut self,
         path: Path,
         value: V,
         data: &D,
-        validator: impl FnOnce(V, &D, &Ctx, bool) -> ValidateResult,
+        validator: impl FnOnce(V, &D, &Ctx, bool) -> Result<(), E>,
     ) {
-        if let Err(error) = validator(value, data, self.context, self.finalizing) {
-            self.errors.push(error.prepend_path(path));
+        if let Err(errors) = validator(value, data, self.context, self.finalizing) {
+            self.push_errors(path, errors);
         }
+    }
+
+    fn push_errors(&mut self, path: Path, errors: impl IntoValidateErrors) {
+        self.errors.extend(
+            errors
+                .into_validate_errors()
+                .into_iter()
+                .map(|error| error.prepend_path(path.clone())),
+        );
     }
 
     pub fn required(&mut self, key: &str) {

@@ -8,10 +8,8 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
   "type": "object",
   "required": [
     "cache",
-    "cache_opt",
     "compress",
-    "threads",
-    "threads_opt"
+    "threads"
   ],
   "properties": {
     "cache": {
@@ -104,7 +102,9 @@ expression: "render(\"schema.json\", JsonSchemaRenderer::default())"
           "const": "off"
         },
         {
-          "type": "number"
+          "type": "integer",
+          "maximum": 4294967295,
+          "minimum": 0
         }
       ]
     }

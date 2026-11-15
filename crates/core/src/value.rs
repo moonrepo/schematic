@@ -244,6 +244,13 @@ impl Value {
             )
         };
 
+        if nested_ident == "MergeList" {
+            panic!(
+                "A `MergeList` can't hold nested configs, received `{}`.",
+                self.ty_string
+            )
+        }
+
         // Primitives can never implement `Config`, so catch them here instead
         // of failing later with an obscure trait error
         if is_primitive_ident(nested_ident) {
@@ -291,6 +298,36 @@ impl Value {
 
     pub fn is_collection(&self) -> bool {
         self.layers.iter().any(|layer| layer.is_collection())
+    }
+
+    /// Whether the setting is a map, within an `Option`, which a flattened
+    /// setting collects every remaining key into.
+    pub fn is_outer_map(&self) -> bool {
+        let mut layers = self.get_partial_layers();
+
+        if self.is_outer_option_wrapped() {
+            layers.remove(0);
+        }
+
+        matches!(layers.first(), Some(Layer::Map(_)))
+    }
+
+    /// Whether the setting is a `MergeList`, known by name like the layers
+    /// are, so that it's merged with `merge::merge_list` without a `merge` of
+    /// its own. Only the outermost type counts, within an `Option`, as a
+    /// collection of them is replaced like any other. An alias isn't known.
+    pub fn is_merge_list(&self) -> bool {
+        if self.nested {
+            return false;
+        }
+
+        let mut layers = self.get_partial_layers();
+
+        if self.is_outer_option_wrapped() {
+            layers.remove(0);
+        }
+
+        matches!(layers.first(), Some(Layer::Unknown(name)) if name == "MergeList")
     }
 
     /// The partial type at each of its layers, from the outermost inward,
@@ -440,12 +477,12 @@ impl Value {
 
     /// Generate the finalization of a nested config, within the partial.
     ///
-    /// The config is finalized in full, applying its own default values and
-    /// environment variables, when it's an item of a collection, or `boundary`
-    /// is true, as nothing above it has applied them. Otherwise its parent's
-    /// `finalize` has merged them, as part of its own, so it's finalized as
-    /// nested. An optional config is left `None` by its parent's defaults, so
-    /// its default values are merged under it first.
+    /// The config's own default values and environment variables are merged
+    /// around it when it's an item of a collection, or `boundary` is true, as no
+    /// layer above it holds them. Otherwise they're part of its parent's, which
+    /// the loader merged as layers, so it's only finalized. An optional config
+    /// is left `None` by its parent's defaults, so its default values are
+    /// merged under it first.
     pub fn impl_partial_finalize_nested(
         &self,
         layer_var: &Ident,
@@ -459,8 +496,8 @@ impl Value {
         let context = self.get_nested_context();
         let (value, result) = if boundary || self.is_collection() {
             (
-                quote! { #layer_var.finalize(#context)? },
-                Some(quote! { #layer_var.finalize(#context) }),
+                quote! { schematic::internal::finalize_with_layers(#layer_var, #context)? },
+                Some(quote! { schematic::internal::finalize_with_layers(#layer_var, #context) }),
             )
         } else if skips_option && let Some(partial) = self.get_nested_partial_type() {
             let value = quote! {
@@ -468,13 +505,13 @@ impl Value {
                     let mut base = <#partial as schematic::PartialConfig>::default_values(#context)?
                         .unwrap_or_default();
                     base.merge(#context, #layer_var)?;
-                    base.finalize_nested(#context)?
+                    base.finalize(#context)?
                 }
             };
 
             (value, None)
         } else {
-            (quote! { #layer_var.finalize_nested(#context)? }, None)
+            (quote! { #layer_var.finalize(#context)? }, None)
         };
 
         // Wrappers stripped from the partial don't exist in it, and the first
@@ -1036,7 +1073,7 @@ fn panic_unknown_collection(name: &str, ty_string: &str) -> TokenStream {
 }
 
 /// The last type argument of a path type, like `T` for `Option<T>`.
-fn get_last_type_argument(ty: &Type) -> Option<Type> {
+pub(crate) fn get_last_type_argument(ty: &Type) -> Option<Type> {
     let Type::Path(ty_path) = ty else {
         return None;
     };

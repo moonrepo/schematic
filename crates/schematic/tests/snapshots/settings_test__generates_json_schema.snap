@@ -7,7 +7,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
   "title": "NestedMapSettings",
   "type": "object",
   "required": [
-    "nested_opt",
     "nested_req"
   ],
   "properties": {
@@ -43,7 +42,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "NestedSettings",
       "type": "object",
       "required": [
-        "nested_opt",
         "nested_req"
       ],
       "properties": {
@@ -67,7 +65,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "NestedVecSettings",
       "type": "object",
       "required": [
-        "nested_opt",
         "nested_req"
       ],
       "properties": {
@@ -97,7 +94,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "StandardSettings",
       "type": "object",
       "required": [
-        "opt",
         "req"
       ],
       "properties": {

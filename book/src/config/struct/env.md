@@ -2,7 +2,7 @@
 
 > Requires the `env` Cargo feature, which is enabled by default.
 
-> Not supported for enums.
+> Not supported for enums, so `env_prefix` on an enum fails to compile.
 
 Settings can also inherit values from environment variables via the `#[setting(env)]` attribute
 field. When using this, variables take the _highest_ precedence, and are merged as the last layer.
@@ -62,7 +62,7 @@ struct AppConfig {
 
 A parent can add a prefix for a nested child to read, with `env_prefix` on the field itself. The
 child must still declare an `env_prefix` of its own, as that is what opts its fields into being
-derived at all.
+derived at all. Without one, the parent's prefix would have no effect, so it fails to compile.
 
 ```rust
 #[derive(Config)]

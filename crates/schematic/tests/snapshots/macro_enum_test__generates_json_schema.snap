@@ -42,7 +42,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "content": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "type": {
           "const": "bazzer"
@@ -107,7 +108,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "content": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             "type": {
               "const": "bazzer"
@@ -176,7 +178,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Baz": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             }
           },
           "additionalProperties": false
@@ -208,7 +211,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "bazzer": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             }
           },
           "additionalProperties": false
@@ -246,7 +250,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         {
           "type": "object",
@@ -257,7 +262,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "bar": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             "foo": {
               "type": "string"
@@ -340,7 +346,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
                   "type": "boolean"
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "minimum": 0
                 }
               ],
               "maxItems": 2,
@@ -394,7 +401,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "Baz": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             }
           },
           "additionalProperties": false
@@ -426,7 +434,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           ],
           "properties": {
             "bazzer": {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             }
           },
           "additionalProperties": false
@@ -464,7 +473,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         {
           "type": "object",
@@ -472,7 +482,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
             "bar": {
               "anyOf": [
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "minimum": 0
                 },
                 {
                   "type": "null"
@@ -574,7 +585,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
                   "type": "boolean"
                 },
                 {
-                  "type": "number"
+                  "type": "integer",
+                  "minimum": 0
                 }
               ],
               "maxItems": 2,
@@ -592,7 +604,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "bar": {
           "anyOf": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "null"
@@ -625,7 +638,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "array",
           "items": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -659,7 +673,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         }
       ]
     },
@@ -672,7 +687,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
       ],
       "properties": {
         "bar": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         },
         "foo": {
           "type": "string"
@@ -693,7 +709,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "array",
           "items": [
             {
-              "type": "number"
+              "type": "integer",
+              "minimum": 0
             },
             {
               "type": "string"
@@ -727,7 +744,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
           "type": "boolean"
         },
         {
-          "type": "number"
+          "type": "integer",
+          "minimum": 0
         }
       ]
     }

@@ -29,7 +29,7 @@ title: LiteralConfig
 
 ### `cache_opt`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |
@@ -56,7 +56,7 @@ title: LiteralConfig
 
 ### `threads_opt`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 | Attribute | Value |
 | --- | --- |

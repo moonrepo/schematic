@@ -17,7 +17,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
     "value": {
       "type": "array",
       "items": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0
       }
     }
   },
@@ -54,7 +55,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "value": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -74,7 +76,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "value": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -84,7 +87,6 @@ expression: "std::fs::read_to_string(file).unwrap()"
       "title": "ExtendsStringOptional",
       "type": "object",
       "required": [
-        "extends",
         "value"
       ],
       "properties": {
@@ -101,7 +103,8 @@ expression: "std::fs::read_to_string(file).unwrap()"
         "value": {
           "type": "array",
           "items": {
-            "type": "number"
+            "type": "integer",
+            "minimum": 0
           }
         }
       },

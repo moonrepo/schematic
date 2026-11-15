@@ -16,6 +16,29 @@ use crate::config::{
 use schematic_types::Schema;
 use std::str::FromStr;
 
+// FINALIZE
+
+/// Finalize a partial whose default values and environment variables no layer
+/// above it holds, like an item of a nested collection or the value of a
+/// variant. They're merged around it, as the loader does with a config's
+/// layers: its default values first, then the partial, then its environment
+/// variables.
+pub fn finalize_with_layers<T: PartialConfig>(
+    partial: T,
+    context: &T::Context,
+) -> Result<T, ConfigError> {
+    let mut base = T::default_values(context)?.unwrap_or_default();
+
+    base.merge(context, partial)?;
+
+    #[cfg(feature = "env")]
+    if let Some(env) = T::env_values()? {
+        base.merge(context, env)?;
+    }
+
+    base.finalize(context)
+}
+
 // UNTAGGED ENUMS
 
 /// Buffer the content of an untagged enum, so that each of its variants can

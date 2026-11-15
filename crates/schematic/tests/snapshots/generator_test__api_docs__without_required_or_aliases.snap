@@ -51,7 +51,7 @@ An inline struct.
 
 ### `ident`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 A constrained string.
 
@@ -104,7 +104,7 @@ A string with a default and aliases.
 
 ### `nested`
 
-> **Nullable**
+> **Optional** · **Nullable**
 
 An optional nested config.
 
@@ -123,7 +123,7 @@ A list of nullable enums.
 
 ### `old_name`
 
-> **Nullable** · **Deprecated** (Use `name` instead.)
+> **Optional** · **Nullable** · **Deprecated** (Use `name` instead.)
 
 A deprecated field, use `name` instead.
 

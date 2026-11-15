@@ -35,6 +35,11 @@ impl TomlTemplateRenderer {
     }
 
     fn extract_sections(&mut self, doc: &mut StructType) {
+        // A flattened struct's settings belong to this table, not one of their own
+        if let std::borrow::Cow::Owned(inlined) = inline_flattened_fields(doc, &self.schemas) {
+            *doc = inlined;
+        }
+
         for (name, field) in &mut doc.fields {
             self.ctx.push_stack(name);
 
@@ -188,6 +193,7 @@ impl SchemaRenderer<String> for TomlTemplateRenderer {
     }
 
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult<String> {
+        let structure = inline_flattened_fields(structure, &self.schemas);
         let mut out = vec![];
 
         for (name, field) in structure.sorted_fields() {

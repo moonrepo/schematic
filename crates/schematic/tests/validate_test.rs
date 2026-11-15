@@ -240,3 +240,271 @@ fn errors_if_required_and_empty() {
         "Failed to validate ValidateEnumRequired. \n  Required: this setting is required"
     );
 }
+
+fn load_error<T: Config>(code: &str) -> String {
+    ConfigLoader::<T>::new()
+        .code(code, "code.json")
+        .unwrap()
+        .load()
+        .err()
+        .map(|error| error.to_full_string())
+        .unwrap_or_default()
+}
+
+mod bounds {
+    use super::*;
+
+    #[derive(Config)]
+    pub struct Bounded {
+        #[setting(default = 1, validate = validate::min(1))]
+        at_least_one: usize,
+        #[setting(validate = validate::max(10))]
+        at_most_ten: i32,
+    }
+
+    #[test]
+    fn accepts_values_within_one_side() {
+        assert_eq!(
+            load_error::<Bounded>(r#"{ "at_least_one": 1000, "at_most_ten": -1000 }"#),
+            ""
+        );
+    }
+
+    #[test]
+    fn errors_past_either_bound() {
+        let error = load_error::<Bounded>(r#"{ "at_least_one": 0, "at_most_ten": 11 }"#);
+
+        assert!(error.contains("at_least_one: lower than 1"), "{error}");
+        assert!(error.contains("at_most_ten: greater than 10"), "{error}");
+    }
+}
+
+mod several_errors {
+    use super::*;
+
+    // Reports every empty item, rather than only the first
+    fn no_empty_items<D, C>(
+        items: &[String],
+        _: &D,
+        _: &C,
+        _: bool,
+    ) -> Result<(), Vec<ValidateError>> {
+        let errors = items
+            .iter()
+            .enumerate()
+            .filter(|(_, item)| item.is_empty())
+            .map(|(index, _)| {
+                ValidateError::with_segment("must not be empty", PathSegment::Index(index))
+            })
+            .collect::<Vec<_>>();
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+
+    // A garde report, as from a type that's validated with garde
+    fn garde_report<D, C>(_: &String, _: &D, _: &C, _: bool) -> Result<(), garde::Report> {
+        let mut report = garde::Report::new();
+
+        report.append(
+            garde::Path::new("inner").join(0usize),
+            garde::Error::new("bad item"),
+        );
+        report.append(garde::Path::empty(), garde::Error::new("bad value"));
+
+        Err(report)
+    }
+
+    #[derive(Config)]
+    pub struct Lists {
+        #[setting(validate = no_empty_items)]
+        items: Vec<String>,
+        #[setting(validate = garde_report)]
+        reported: String,
+    }
+
+    #[test]
+    fn reports_each_error_at_its_path() {
+        let error = load_error::<Lists>(r#"{ "items": ["a", "", ""], "reported": "x" }"#);
+
+        assert_eq!(
+            error,
+            "Failed to validate Lists. \n  items[1]: must not be empty\n  items[2]: must not be empty\n  reported.inner[0]: bad item\n  reported: bad value"
+        );
+    }
+}
+
+mod config_validate {
+    use super::*;
+
+    // Settings may be missing from a layer, so only compare what's set
+    fn min_below_max<C>(partial: &PartialRange, _: &C, _: bool) -> ValidateResult {
+        if let (Some(min), Some(max)) = (partial.min, partial.max)
+            && min > max
+        {
+            return Err(ValidateError::with_segment(
+                format!("must be at most max ({max})"),
+                PathSegment::Key("min".into()),
+            ));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Config)]
+    #[config(validate = min_below_max)]
+    pub struct Range {
+        min: usize,
+        max: usize,
+    }
+
+    #[test]
+    fn validates_across_settings() {
+        assert_eq!(load_error::<Range>(r#"{ "min": 1, "max": 2 }"#), "");
+        assert_eq!(
+            load_error::<Range>(r#"{ "min": 3, "max": 2 }"#),
+            "Failed to validate Range. \n  min: must be at most max (2)"
+        );
+    }
+
+    // Only the final pass has every layer, so a check across them waits for it
+    fn only_final<C>(partial: &PartialLayered, _: &C, finalizing: bool) -> ValidateResult {
+        let max = partial.range.as_ref().and_then(|range| range.max);
+
+        if finalizing && max == Some(0) {
+            return Err(ValidateError::new("max can't be 0"));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Config)]
+    #[config(validate = only_final)]
+    pub struct Layered {
+        #[setting(nested)]
+        range: Range,
+    }
+
+    #[test]
+    fn waits_for_the_final_pass() {
+        let load = |codes: &[&str]| {
+            let mut loader = ConfigLoader::<Layered>::new();
+
+            for code in codes {
+                loader.code(*code, "code.json").unwrap();
+            }
+
+            loader
+                .load()
+                .err()
+                .map(|error| error.to_full_string())
+                .unwrap_or_default()
+        };
+
+        // A layer may hold what a later one replaces
+        assert_eq!(
+            load(&[
+                r#"{ "range": { "max": 0 } }"#,
+                r#"{ "range": { "max": 5 } }"#
+            ]),
+            ""
+        );
+        assert_eq!(
+            load(&[
+                r#"{ "range": { "max": 5 } }"#,
+                r#"{ "range": { "max": 0 } }"#
+            ]),
+            "Failed to validate Layered. \n  max can't be 0"
+        );
+    }
+
+    // A factory, like a setting's validator
+    fn at_most<D, C>(limit: usize) -> impl FnOnce(&D, &C, bool) -> Result<(), Vec<ValidateError>>
+    where
+        D: HasTotal,
+    {
+        move |partial, _, _| {
+            if partial.total() > limit {
+                return Err(vec![
+                    ValidateError::with_segment("over the limit", PathSegment::Key("a".into())),
+                    ValidateError::with_segment("over the limit", PathSegment::Key("b".into())),
+                ]);
+            }
+
+            Ok(())
+        }
+    }
+
+    pub trait HasTotal {
+        fn total(&self) -> usize;
+    }
+
+    impl HasTotal for PartialTotals {
+        fn total(&self) -> usize {
+            self.a.unwrap_or_default() + self.b.unwrap_or_default()
+        }
+    }
+
+    #[derive(Config)]
+    #[config(validate = at_most(10))]
+    pub struct Totals {
+        a: usize,
+        b: usize,
+    }
+
+    #[test]
+    fn supports_a_factory_and_several_errors() {
+        assert_eq!(
+            load_error::<Totals>(r#"{ "a": 6, "b": 6 }"#),
+            "Failed to validate Totals. \n  a: over the limit\n  b: over the limit"
+        );
+    }
+
+    #[derive(Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        range: Range,
+    }
+
+    #[test]
+    fn reports_a_nested_config_at_its_path() {
+        assert_eq!(
+            load_error::<Parent>(r#"{ "range": { "min": 3, "max": 2 } }"#),
+            "Failed to validate Parent. \n  range.min: must be at most max (2)"
+        );
+    }
+
+    fn not_off<C>(partial: &PartialMode, _: &C, _: bool) -> ValidateResult {
+        if matches!(partial, PartialMode::Off) {
+            return Err(ValidateError::new("must not be off"));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Config)]
+    #[config(validate = not_off)]
+    pub enum Mode {
+        #[setting(default)]
+        On,
+        Off,
+    }
+
+    #[derive(Config)]
+    pub struct UsesMode {
+        #[setting(nested)]
+        mode: Mode,
+    }
+
+    #[test]
+    fn validates_an_enum() {
+        assert_eq!(load_error::<UsesMode>(r#"{ "mode": "On" }"#), "");
+        assert_eq!(
+            load_error::<UsesMode>(r#"{ "mode": "Off" }"#),
+            "Failed to validate UsesMode. \n  mode: must not be off"
+        );
+    }
+}

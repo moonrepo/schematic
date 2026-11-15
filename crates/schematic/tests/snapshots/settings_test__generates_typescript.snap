@@ -8,23 +8,23 @@ expression: "std::fs::read_to_string(file).unwrap()"
 
 export interface StandardSettings {
 	/** @env OPT_ENV */
-	opt: string | null;
+	opt?: string | null;
 	req: string;
 	/** @default 'abc' */
 	req_default?: string;
 }
 
 export interface NestedSettings {
-	nested_opt: StandardSettings | null;
+	nested_opt?: StandardSettings | null;
 	nested_req: StandardSettings;
 }
 
 export interface NestedVecSettings {
-	nested_opt: StandardSettings[] | null;
+	nested_opt?: StandardSettings[] | null;
 	nested_req: StandardSettings[];
 }
 
 export interface NestedMapSettings {
-	nested_opt: Record<string, StandardSettings> | null;
+	nested_opt?: Record<string, StandardSettings> | null;
 	nested_req: Record<string, StandardSettings>;
 }

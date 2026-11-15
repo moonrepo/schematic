@@ -1,0 +1,49 @@
+---
+source: crates/schematic/tests/merge_list_test.rs
+expression: output
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "App",
+  "type": "object",
+  "required": [
+    "hosts"
+  ],
+  "properties": {
+    "hosts": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "append": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "prepend": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "replace": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

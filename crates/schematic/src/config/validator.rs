@@ -13,7 +13,7 @@ pub type Validator<Val, Data, Ctx> = Box<dyn FnOnce(&Val, &Data, &Ctx, bool) -> 
 
 /// Error for a single validation failure.
 #[derive(Clone, Debug, Diagnostic, Error)]
-#[error("{}{} {message}", .path.to_string().style(Style::Id), ":".style(Style::MutedLight))]
+#[error("{}", self.render())]
 pub struct ValidateError {
     /// Failure message.
     pub message: String,
@@ -63,12 +63,66 @@ impl ValidateError {
         }
     }
 
+    // An error at the root, like one from a config's own validator, has no
+    // setting to name, so it's only the message
+    fn render(&self) -> String {
+        if self.path.is_empty() {
+            return self.message.clone();
+        }
+
+        format!(
+            "{}{} {}",
+            self.path.to_string().style(Style::Id),
+            ":".style(Style::MutedLight),
+            self.message
+        )
+    }
+
     #[doc(hidden)]
     pub fn prepend_path(self, path: Path) -> Self {
         Self {
             message: self.message,
             path: path.join_path(&self.path),
         }
+    }
+}
+
+/// The error a validator returns, which may report several failures, such as
+/// one for each item of a list. Implemented for a single [`ValidateError`], a
+/// list of them, and a garde [`Report`](garde::Report), whose errors are each
+/// reported at their path.
+pub trait IntoValidateErrors {
+    /// Convert into the errors to report, each relative to the setting.
+    fn into_validate_errors(self) -> Vec<ValidateError>;
+}
+
+impl IntoValidateErrors for ValidateError {
+    fn into_validate_errors(self) -> Vec<ValidateError> {
+        vec![self]
+    }
+}
+
+impl IntoValidateErrors for Vec<ValidateError> {
+    fn into_validate_errors(self) -> Vec<ValidateError> {
+        self
+    }
+}
+
+// A garde path's components aren't public, so it's kept as it renders, like `a.b[0]`
+impl IntoValidateErrors for garde::Report {
+    fn into_validate_errors(self) -> Vec<ValidateError> {
+        self.into_inner()
+            .into_iter()
+            .map(|(path, error)| {
+                let path = path.to_string();
+
+                if path.is_empty() {
+                    ValidateError::new(error.message())
+                } else {
+                    ValidateError::with_segment(error.message(), PathSegment::Key(path))
+                }
+            })
+            .collect()
     }
 }
 

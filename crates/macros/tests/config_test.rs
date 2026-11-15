@@ -2573,11 +2573,21 @@ mod hand_written_nested {
 
     impl Schematic for PartialEnvLevel {}
 
+    // Reads the prefix a parent passes, which it says it does, as otherwise a
+    // parent's `env_prefix` would have no effect, which fails to compile
     impl PartialConfig for PartialEnvLevel {
         type Context = ();
 
+        const HAS_ENV_PREFIX: bool = true;
+
         fn env_values() -> Result<Option<Self>, ConfigError> {
-            Ok(env::var("HAND_LEVEL").ok().map(|value| PartialEnvLevel {
+            Self::env_values_with_prefix(None)
+        }
+
+        fn env_values_with_prefix(prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
+            let key = format!("{}LEVEL", prefix.unwrap_or("HAND_"));
+
+            Ok(env::var(key).ok().map(|value| PartialEnvLevel {
                 level: value.parse().ok(),
             }))
         }
@@ -2625,12 +2635,12 @@ mod hand_written_nested {
     }
 
     #[test]
-    fn reads_its_own_environment_under_a_parent_prefix() {
-        unsafe { env::set_var("HAND_LEVEL", "3") };
+    fn reads_its_environment_under_a_parent_prefix() {
+        unsafe { env::set_var("HAND_PARENT_LEVEL", "3") };
 
         let config = ConfigLoader::<PrefixesLevel>::new().load();
 
-        unsafe { env::remove_var("HAND_LEVEL") };
+        unsafe { env::remove_var("HAND_PARENT_LEVEL") };
 
         assert_eq!(config.unwrap().config.level.level, 3);
     }
@@ -2784,5 +2794,125 @@ mod skipped_without_schema {
 
         assert_eq!(config.name, "a");
         assert_eq!(config.runtime, Runtime::default());
+    }
+}
+
+// Serde reads a flattened map's keys from its struct without taking them, so a
+// struct that denied unknown fields beside one rejected every key it collects
+mod flattened_loading {
+    use super::*;
+
+    #[derive(Debug, Config)]
+    pub struct Plugin {
+        #[setting(default = "latest")]
+        version: String,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct WithValues {
+        own: String,
+        #[setting(flatten)]
+        extra: HashMap<String, String>,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct WithPlugins {
+        own: String,
+        #[setting(flatten, nested)]
+        plugins: HashMap<String, Plugin>,
+    }
+
+    fn load<T: ConfigTrait>(code: &str) -> Result<T, String> {
+        ConfigLoader::<T>::new()
+            .code(code, "a.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn collects_into_a_flattened_map() {
+        let config = load::<WithValues>(r#"{ "own": "x", "a": "1", "b": "2" }"#).unwrap();
+
+        assert_eq!(config.own, "x");
+        assert_eq!(
+            config.extra,
+            HashMap::from_iter([("a".into(), "1".into()), ("b".into(), "2".into())])
+        );
+    }
+
+    #[test]
+    fn collects_configs_into_a_flattened_map() {
+        let config =
+            load::<WithPlugins>(r#"{ "own": "x", "foo": {}, "bar": { "version": "2" } }"#).unwrap();
+
+        assert_eq!(config.plugins["foo"].version, "latest");
+        assert_eq!(config.plugins["bar"].version, "2");
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Child {
+        child_flag: bool,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        own: String,
+        #[setting(flatten, nested)]
+        child: Child,
+    }
+
+    // A plain flattened struct takes its keys, so the parent still denies the rest
+    #[test]
+    fn still_denies_unknown_fields_beside_a_flattened_struct() {
+        let config = load::<Parent>(r#"{ "own": "x", "child_flag": true }"#).unwrap();
+
+        assert!(config.child.child_flag);
+        assert!(
+            load::<Parent>(r#"{ "own": "x", "typo": true }"#)
+                .unwrap_err()
+                .contains("unknown field `typo`")
+        );
+    }
+
+    #[derive(Debug, Config)]
+    #[config(allow_unknown_fields)]
+    pub struct OpenMiddle {
+        middle_flag: bool,
+        #[setting(flatten, nested)]
+        child: Child,
+    }
+
+    #[derive(Debug, Config)]
+    #[config(allow_unknown_fields)]
+    pub struct OpenParent {
+        own: String,
+        #[setting(flatten, nested)]
+        middle: OpenMiddle,
+    }
+
+    // What the compile-time check asks for, so that it loads
+    #[test]
+    fn loads_a_flattened_struct_within_another_that_allow_unknown_fields() {
+        let config =
+            load::<OpenParent>(r#"{ "own": "x", "middle_flag": true, "child_flag": true }"#)
+                .unwrap();
+
+        assert!(config.middle.middle_flag);
+        assert!(config.middle.child.child_flag);
+    }
+
+    #[test]
+    fn reports_what_a_partial_flattens() {
+        const {
+            assert!(!<PartialChild as PartialConfig>::FLATTENS);
+            assert!(!<PartialChild as PartialConfig>::ALLOWS_UNKNOWN_FIELDS);
+            assert!(<PartialParent as PartialConfig>::FLATTENS);
+            assert!(!<PartialParent as PartialConfig>::ALLOWS_UNKNOWN_FIELDS);
+            assert!(<PartialWithValues as PartialConfig>::FLATTENS);
+            assert!(<PartialWithValues as PartialConfig>::ALLOWS_UNKNOWN_FIELDS);
+            assert!(<PartialOpenMiddle as PartialConfig>::ALLOWS_UNKNOWN_FIELDS);
+        }
     }
 }
