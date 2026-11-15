@@ -52,22 +52,16 @@ pub trait PartialConfig:
         None
     }
 
-    /// Finalize the partial configuration by consuming it and populating all fields with a value.
-    /// Defaults values from [`PartialConfig::default_values`] will be applied first, followed
-    /// by merging the current partial, and lastly environment variable values from
-    /// [`PartialConfig::env_values`].
+    /// Finalize the partial configuration, once every layer has been merged into it, by running
+    /// the `#[setting(transform)]` functions and finalizing nested configs.
+    ///
+    /// Default values and environment variables are not applied here, as they're layers of their
+    /// own: [`ConfigLoader`](crate::ConfigLoader) merges [`PartialConfig::default_values`] below
+    /// every source, and [`PartialConfig::env_values`] above them, before finalizing. A nested
+    /// config's are part of its parent's, so it's finalized as is, except for the items of a
+    /// collection and the values of a variant, which nothing above applied them to.
     fn finalize(self, _context: &Self::Context) -> Result<Self, ConfigError> {
         Ok(self)
-    }
-
-    /// Internal use only, use [`finalize`] instead.
-    ///
-    /// Finalize a partial nested within another, whose [`finalize`] has already merged this
-    /// partial's default values and environment variables, as they're part of its own. They are
-    /// not applied again, so a merge that isn't idempotent, like appending, applies them once.
-    #[doc(hidden)]
-    fn finalize_nested(self, context: &Self::Context) -> Result<Self, ConfigError> {
-        self.finalize(context)
     }
 
     /// Merge another partial configuration into this one and clone values when applicable. The

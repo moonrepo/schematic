@@ -4,14 +4,26 @@
 
 #### 💥 Breaking
 
-- Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, so a `match`
-  on `Source` needs another arm.
+- Updated `PartialConfig::finalize` to only run transforms and finalize nested configs. The loader
+  now merges default values and environment variables as layers of their own, so calling `finalize`
+  directly no longer applies them: merge `default_values` under the partial and `env_values` over it
+  first, or load it with `ConfigLoader::partial`. The hidden `finalize_nested` was removed, and a
+  hand-written partial implements `finalize` for its transforms.
+- Updated `ConfigLoadResult.layers` to begin with the default values and end with environment
+  variables, so an index into it shifts by one.
+- Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, and
+  `Source::Defaults` and `Source::EnvVars`, the loader's own layers, so a `match` on `Source` needs
+  more arms. Adding either of the latter as a source is an error.
 - Updated `merge::merge_hashmap` and `merge::merge_hashset` to accept any hasher. A direct call may
   now need its map's hasher named, like `HashMap::<_, _>::from_iter(..)`, while `#[setting(merge)]`
   is unaffected.
 
 #### 🚀 Updates
 
+- Added the default values and environment variables to `ConfigLoadResult.layers`, as
+  `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
+  traced to the layer that set it. They're the layers that were merged, so a default handler that
+  isn't idempotent, like one finding an unused port, reports the value that was used.
 - Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
   CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
   the order it was added, validated, reported in `ConfigLoadResult.layers`, and may extend other
@@ -84,12 +96,16 @@
   than 40, and one with only `schema`, 29 rather than 42.
 - Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only apply
   to configs, and compiled their dependencies for nothing without it.
+- Made `schematic_macros` optional, so it's only compiled with `config` or `schema`, the features
+  that re-export its derives. Cargo 1.100's `unused_dependencies` lint warned about it without them.
 
 - Merged the code that rebuilds a setting through its layers, when converting a partial into a full
   config and when finalizing nested configs, into one helper. Generated code is unchanged.
 
 #### 🐞 Fixes
 
+- Fixed the default value of a root enum's default variant, like `#[setting(default = "auto")]` on
+  `Named(String)`, not being applied when loading, while `Default` applied it.
 ##### Schema
 
 - Fixed a skipped setting, with `#[setting(skip)]` or `#[serde(skip)]`, requiring its type to

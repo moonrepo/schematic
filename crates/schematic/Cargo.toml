@@ -18,7 +18,7 @@ pre-release-replacements = [
 all-features = true
 
 [dependencies]
-schematic_macros = { version = "0.20.11", path = "../macros" }
+schematic_macros = { version = "0.20.11", path = "../macros", optional = true }
 schematic_types = { version = "0.12.11", path = "../types" }
 miette = { workspace = true, optional = true }
 
@@ -77,9 +77,15 @@ config = [
 	"dep:starbase_styles",
 	"dep:thiserror",
 	"dep:tracing",
+	"dep:schematic_macros",
 	"schematic_macros/config",
 ]
-schema = ["dep:indexmap", "dep:miette", "schematic_macros/schema"]
+schema = [
+	"dep:indexmap",
+	"dep:miette",
+	"dep:schematic_macros",
+	"schematic_macros/schema",
+]
 schema_serde = ["schema", "schematic_types/serde"]
 
 # Features

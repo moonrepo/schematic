@@ -12,7 +12,7 @@ fn finalize(
                 Self::A(
                     pa
                         .into_iter()
-                        .map(|pa| pa.finalize(context))
+                        .map(|pa| schematic::internal::finalize_with_layers(pa, context))
                         .collect::<
                             std::result::Result<
                                 Vec<<NestedConfig as schematic::Config>::Partial>,
@@ -26,7 +26,10 @@ fn finalize(
                     transform_config(
                         pa
                             .into_iter()
-                            .map(|(key, pa)| Ok((key, pa.finalize(context)?)))
+                            .map(|(key, pa)| Ok((
+                                key,
+                                schematic::internal::finalize_with_layers(pa, context)?,
+                            )))
                             .collect::<
                                 std::result::Result<
                                     HashMap<
@@ -48,7 +51,10 @@ fn finalize(
                                 Some(
                                     pa
                                         .into_iter()
-                                        .map(|pa| pa.finalize(context))
+                                        .map(|pa| schematic::internal::finalize_with_layers(
+                                            pa,
+                                            context,
+                                        ))
                                         .collect::<
                                             std::result::Result<
                                                 BTreeSet<<NestedConfig as schematic::Config>::Partial>,

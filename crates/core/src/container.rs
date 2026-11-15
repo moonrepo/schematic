@@ -1399,66 +1399,31 @@ impl Container {
     pub fn impl_partial_finalize(&self) -> TokenStream {
         let inner = match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
-                // Only pushed to with the `env` feature
-                #[allow(unused_mut)]
-                let mut statements: Vec<TokenStream> = vec![];
-
-                #[cfg(feature = "env")]
-                {
-                    statements.push(quote! {
-                        if let Some(layer) = Self::env_values()? {
-                            partial.merge(context, layer)?;
-                        }
-                    });
-                }
-
-                let mut nested_statements = vec![];
+                let mut statements = vec![];
 
                 for field in fields {
                     let res = field.impl_partial_finalize();
 
                     if !res.no_value {
-                        nested_statements.push(res.value);
+                        statements.push(res.value);
                     }
                 }
 
-                // The default values and environment variables of nested configs
-                // are part of this config's own, so they're merged once, here,
-                // and the nested configs are finalized without applying them again
-                let finalize_nested = if nested_statements.is_empty() {
-                    quote! {
-                        fn finalize_nested(self, _context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                            Ok(self)
-                        }
-                    }
-                } else {
-                    quote! {
-                        fn finalize_nested(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                            let mut partial = self;
-
-                            #(#nested_statements)*
-
-                            Ok(partial)
-                        }
-                    }
-                };
+                // Default values and environment variables are layers the loader
+                // merges, and those of nested configs are part of this config's
+                // own, so only transforms and nested configs remain
+                if statements.is_empty() {
+                    return quote! {};
+                }
 
                 return quote! {
                     fn finalize(self, context: &Self::Context) -> std::result::Result<Self, schematic::ConfigError> {
-                        let mut partial = Self::default();
-
-                        if let Some(layer) = Self::default_values(context)? {
-                            partial.merge(context, layer)?;
-                        }
-
-                        partial.merge(context, self)?;
+                        let mut partial = self;
 
                         #(#statements)*
 
-                        partial.finalize_nested(context)
+                        Ok(partial)
                     }
-
-                    #finalize_nested
                 };
             }
             ContainerInner::UnnamedEnum { variants } => {

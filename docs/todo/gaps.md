@@ -49,15 +49,23 @@ Not built:
   a collection layer, so its items are partials, finalized and validated. Ask first.
 - Env vars: there's no `parse_env` for it.
 
-**G4. Provenance: which layer set a value** ✅ · med
+**G4. Provenance: which layer set a value** · fixed on `0.21-gaps`
 
-- **Today:** defaults and env never appear in `ConfigLoadResult.layers`, and transforms get no
-  source. A value that came from env looks like it came from the only file.
-- **Related:** moon post-processes loaded configs to resolve relative paths against the declaring
-  file (`config-loader/src/config_loader.rs:180-186`), because schematic can't.
-- **Cheap first step:** add `Source::Defaults` and `Source::Env` layers to the result, computed by
-  the loader for inspection only (`finalize` unchanged). Source-aware transforms (`&Source` in the
-  transform context) are the bigger follow-up.
+The loader drives the layers itself: `default_values` as a `Source::Defaults` layer below every
+source, `env_values` as a `Source::EnvVars` layer above them, merged in order, then `finalize`.
+`ConfigLoadResult.layers` reports exactly those, each only when it sets something. By decision this
+was a breaking change rather than an inspection-only copy, which would have called each default
+handler twice and could report a default other than the one used:
+
+- `PartialConfig::finalize` only runs transforms and nested finalization, taking over from the
+  removed hidden `finalize_nested`.
+- Collection items and variant values, which no layer holds the defaults or env of, go through the
+  hidden `internal::finalize_with_layers`.
+
+It also fixed a root enum's default variant value never being applied when loading.
+
+Not built: source-aware transforms (`&Source` in the transform context), and resolving relative
+paths against the declaring file, which moon does after loading.
 
 **G5. Schema metadata that never reaches the schema** · med
 

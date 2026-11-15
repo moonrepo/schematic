@@ -63,6 +63,13 @@ pub enum ConfigError {
     InvalidUrl,
 
     #[diagnostic(
+        code(config::source::loader_only),
+        help("The loader adds it as a layer when loading, so it can't be added as a source.")
+    )]
+    #[error("Unable to add {} as a source.", .0.style(Style::Id))]
+    LoaderOnlySource(String),
+
+    #[diagnostic(
         code(config::memory::missing_partial),
         help("Add a partial in memory with ConfigLoader::partial, which holds it.")
     )]

@@ -112,6 +112,7 @@ fn reports_the_partial_as_a_layer() {
             .map(|layer| layer.source.clone())
             .collect::<Vec<_>>(),
         vec![
+            Source::Defaults,
             Source::Code {
                 code: "port: 4000".into(),
                 path: "code.yml".into(),
@@ -121,7 +122,7 @@ fn reports_the_partial_as_a_layer() {
             },
         ]
     );
-    assert_eq!(result.layers[1].partial, cli(Some(8080)));
+    assert_eq!(result.layers[2].partial, cli(Some(8080)));
 }
 
 #[test]
@@ -218,7 +219,7 @@ mod extends {
 
         assert_eq!(result.config.value, vec![3, 0]);
         assert_eq!(
-            result.layers[0].source,
+            result.layers[1].source,
             Source::File {
                 path: "./tests/__fixtures__/extending/string2.yml".into(),
                 required: true,

@@ -55,7 +55,7 @@ fn extends_from_chain_in_order() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            // Source::Defaults,
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
                 required: true,
@@ -68,7 +68,6 @@ fn extends_from_chain_in_order() {
                 path: root.join("./base.yml"),
                 required: true,
             },
-            // Source::EnvVars,
         ]
     );
 }
@@ -93,7 +92,7 @@ fn extends_from_chain_in_order_using_list() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            // Source::Defaults,
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
                 required: true,
@@ -110,7 +109,6 @@ fn extends_from_chain_in_order_using_list() {
                 path: root.join("./base-list.yml"),
                 required: true,
             },
-            // Source::EnvVars,
         ]
     );
 }
@@ -137,7 +135,7 @@ fn extends_from_chain_in_order_using_both_enum() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            // Source::Defaults,
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
                 required: true,
@@ -158,7 +156,6 @@ fn extends_from_chain_in_order_using_both_enum() {
                 path: root.join("./base-both.yml"),
                 required: true,
             },
-            // Source::EnvVars,
         ]
     );
 }
@@ -183,12 +180,11 @@ fn extends_from_optional() {
             .map(|l| l.source)
             .collect::<Vec<_>>(),
         vec![
-            // Source::Defaults,
+            Source::Defaults,
             Source::File {
                 path: root.join("./string2.yml"),
                 required: true,
             },
-            // Source::EnvVars,
         ]
     );
 }
@@ -242,7 +238,8 @@ fn loads_a_source_extended_twice_once() {
 
     // The base comes first, as the lowest precedence of both that extend it
     assert_eq!(result.config.value, vec![4, 2, 3, 1]);
-    assert_eq!(result.layers.len(), 4);
+    // The defaults, and each of the 4 files once
+    assert_eq!(result.layers.len(), 5);
 }
 
 #[test]

@@ -112,7 +112,7 @@ loader.partial("CLI arguments", PartialAppConfig {
 And lastly call the
 [`ConfigLoader::load()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load)
 method to generate the final configuration. This methods returns a result, which includes the final
-configuration, as well as all of the [partial layers](./partial.md) that were loaded.
+configuration, as well as all of the [partial layers](./partial.md) that were merged into it.
 
 ```rust
 let result = loader.load()?;
@@ -120,6 +120,12 @@ let result = loader.load()?;
 result.config; // AppConfig
 result.layers; // Vec<Layer<PartialAppConfig>>
 ```
+
+The layers are in the order they were merged, and each one holds only the values it set, so a value
+can be traced to where it came from. The [default values](./struct/default.md) come first, as
+`Source::Defaults`, then each source in order, and the
+[environment variables](./struct/env.md) last, as `Source::EnvVars`. The default values and
+environment variables are left out when they set nothing.
 
 ### Automatic schemas
 

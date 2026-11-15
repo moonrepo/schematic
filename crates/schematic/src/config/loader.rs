@@ -23,7 +23,10 @@ pub struct ConfigLoadResult<T: Config> {
     /// Final configuration, after all layers are merged.
     pub config: T,
 
-    /// Partial layers, in order of declaration and extension.
+    /// Partial layers, in the order they were merged: the default values first,
+    /// then each source in order of declaration and extension, and environment
+    /// variables last. The default values and environment variables are only
+    /// included when they set something.
     pub layers: Vec<Layer<T>>,
 }
 
@@ -42,7 +45,9 @@ struct SourceTracker {
 impl SourceTracker {
     fn key(source: &Source) -> Option<String> {
         match source {
-            Source::Code { .. } | Source::Memory { .. } => None,
+            Source::Code { .. } | Source::Defaults | Source::EnvVars | Source::Memory { .. } => {
+                None
+            }
             Source::File { path, .. } => Some(
                 fs::canonicalize(path)
                     .unwrap_or_else(|_| path.to_path_buf())
@@ -150,11 +155,18 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     /// Add a custom source. A [`Source::Memory`] is an error, as only
-    /// [`ConfigLoader::partial`] can provide its partial.
+    /// [`ConfigLoader::partial`] can provide its partial, as are
+    /// [`Source::Defaults`] and [`Source::EnvVars`], which the loader adds.
     pub fn source(&mut self, source: Source) -> Result<&mut Self, ConfigError> {
-        if let Source::Memory { name } = source {
-            return Err(ConfigError::MemoryWithoutPartial(name));
-        }
+        match source {
+            Source::Memory { name } => {
+                return Err(ConfigError::MemoryWithoutPartial(name));
+            }
+            Source::Defaults | Source::EnvVars => {
+                return Err(ConfigError::LoaderOnlySource(source.as_str().into()));
+            }
+            _ => {}
+        };
 
         self.sources.push((source, None));
 
@@ -184,16 +196,41 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<ConfigLoadResult<T>, ConfigError> {
         trace!(config = &self.name, "Loading configuration");
 
-        let layers =
+        let sources =
             self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
+
+        // Validation is reported at the last source
+        #[cfg(feature = "validate")]
+        let last_source = sources.last().map(|layer| layer.source.clone());
+
+        // Default values sit below every source, and environment variables above them
+        let mut layers = Vec::with_capacity(sources.len() + 2);
+
+        if let Some(partial) = <T::Partial as PartialConfig>::default_values(context)? {
+            layers.push(Layer {
+                partial,
+                source: Source::Defaults,
+            });
+        }
+
+        layers.extend(sources);
+
+        #[cfg(feature = "env")]
+        if let Some(partial) = <T::Partial as PartialConfig>::env_values()? {
+            layers.push(Layer {
+                partial,
+                source: Source::EnvVars,
+            });
+        }
+
         let partial = self.merge_layers(&layers, context)?.finalize(context)?;
 
         // Validate the final result before moving on
         #[cfg(feature = "validate")]
         {
-            partial.validate(context, true).map_err(|error| {
-                self.map_validator_error(error, layers.last().map(|layer| &layer.source))
-            })?;
+            partial
+                .validate(context, true)
+                .map_err(|error| self.map_validator_error(error, last_source.as_ref()))?;
         }
 
         Ok(ConfigLoadResult {
@@ -286,6 +323,8 @@ impl<T: Config> ConfigLoader<T> {
     fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
             Source::Code { .. } => &self.name,
+            Source::Defaults => "default values",
+            Source::EnvVars => "environment variables",
             Source::Memory { name } => name,
             Source::File { path, .. } => {
                 let rel_path = if let Some(root) = &self.root {
@@ -418,6 +457,9 @@ impl<T: Config> ConfigLoader<T> {
     ) -> Result<T::Partial, ConfigError> {
         let (content, cache_path): (Cow<'_, str>, Option<PathBuf>) = match source {
             Source::Code { code, .. } => (Cow::Borrowed(strip_bom(code)), None),
+            Source::Defaults | Source::EnvVars => {
+                return Err(ConfigError::LoaderOnlySource(source.as_str().into()));
+            }
             // Already a partial, so there's nothing to parse
             Source::Memory { name } => {
                 return memory

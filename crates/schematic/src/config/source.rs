@@ -10,6 +10,14 @@ pub enum Source {
     /// Inline code snippet of the configuration.
     Code { path: PathBuf, code: String },
 
+    /// Default values of the configuration, from `#[setting(default)]` and the
+    /// type defaults. The loader adds them as the first layer.
+    Defaults,
+
+    /// Environment variables of the configuration, from `#[setting(env)]` and
+    /// `#[config(env_prefix)]`. The loader adds them as the last layer.
+    EnvVars,
+
     /// File system path to the configuration.
     File { path: PathBuf, required: bool },
 
@@ -102,7 +110,7 @@ impl Source {
             Self::Code { path, .. } | Self::File { path, .. } => {
                 path.extension().and_then(|name| name.to_str())
             }
-            Self::Memory { .. } => None,
+            Self::Defaults | Self::EnvVars | Self::Memory { .. } => None,
             #[cfg(feature = "url")]
             Self::Url { url, .. } => extract_file_ext(url),
         }
@@ -116,18 +124,21 @@ impl Source {
                 .and_then(|name| name.to_str())
                 .unwrap_or("unknown"),
             Self::Memory { name } => name,
+            Self::Defaults | Self::EnvVars => self.as_str(),
             #[cfg(feature = "url")]
             Self::Url { url, .. } => extract_file_name(url),
         }
     }
 
-    /// Return the source as a string, either as a file path, URL, or the name
-    /// of a partial in memory.
+    /// Return the source as a string, either as a file path, URL, the name of
+    /// a partial in memory, or `defaults` and `env` for the loader's own layers.
     pub fn as_str(&self) -> &str {
         match self {
             Source::Code { path, .. } | Source::File { path, .. } => {
                 path.to_str().unwrap_or_default()
             }
+            Source::Defaults => "defaults",
+            Source::EnvVars => "env",
             Source::Memory { name } => name,
             #[cfg(feature = "url")]
             Source::Url { url, .. } => url,
