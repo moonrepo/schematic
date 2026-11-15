@@ -300,6 +300,18 @@ impl Value {
         self.layers.iter().any(|layer| layer.is_collection())
     }
 
+    /// Whether the setting is a map, within an `Option`, which a flattened
+    /// setting collects every remaining key into.
+    pub fn is_outer_map(&self) -> bool {
+        let mut layers = self.get_partial_layers();
+
+        if self.is_outer_option_wrapped() {
+            layers.remove(0);
+        }
+
+        matches!(layers.first(), Some(Layer::Map(_)))
+    }
+
     /// Whether the setting is a `MergeList`, known by name like the layers
     /// are, so that it's merged with `merge::merge_list` without a `merge` of
     /// its own. Only the outermost type counts, within an `Option`, as a

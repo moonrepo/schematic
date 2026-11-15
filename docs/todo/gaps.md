@@ -110,13 +110,19 @@ partial's `deny_unknown_fields` rejected on load. A flattened map still renders 
 `renderer_fixes_test.rs` (`flattened_templates`) loads each format's template back through the
 loader and checks its layer set every flattened setting.
 
-Found while testing it: a config can't load a flattened struct that flattens another, as serde
-doesn't support `deny_unknown_fields` with `flatten`. One level works, as a plain flattened
-struct takes its keys from the parent's buffer, while one with a flattened field of its own reads
-them as a map without taking them, so the parent rejects them as unknown. Every setting of the
-middle struct fails, not only the innermost. `#[config(allow_unknown_fields)]` on each is the
-workaround. Fixing it means the derive dropping `deny_unknown_fields` somewhere, a strictness
-trade-off to decide.
+Found while testing it, and fixed with it: serde can't deny unknown fields through a flattened
+field it reads as a map (`FlatMapAccess` borrows the parent's buffered keys, while a plain struct's
+`FlatStructAccess` takes them), so the parent rejected them. Two cases:
+
+- **A flattened map** rejected every key it collects, which is why moon puts
+  `allow_unknown_fields` on each struct with one. The partial no longer denies unknown fields
+  beside a flattened map, as none is unknown; an explicit `#[serde(deny_unknown_fields)]` is kept.
+- **A flattened config that flattens a setting of its own** couldn't load any of its settings. By
+  decision, this is now a compile error rather than made to load, through hidden
+  `PartialConfig::FLATTENS` and `ALLOWS_UNKNOWN_FIELDS` consts and a `const _: () = assert!(..)`
+  per flattened config (`Container::impl_partial_flatten_checks`), unless both allow unknown
+  fields. A generic config isn't checked, as a constant can't name its parameters, and a hand-written
+  partial reports neither.
 
 **G7. Attributes that parse and do nothing** · med
 

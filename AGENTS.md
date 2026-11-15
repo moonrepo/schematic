@@ -389,6 +389,11 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   hand-written, std, and synthesized variant schemas stay closed. The derive sets it to what's
   deserialized: a config's partial (`#[config(allow_unknown_fields)]`), or the serde attributes of a
   type that only derives `Schematic`.
+- **Serde can't deny unknown fields through a flattened field it reads as a map**, as
+  `FlatMapAccess` borrows the parent's keys where a plain struct's `FlatStructAccess` takes them. So a
+  partial with a flattened map doesn't deny unknown fields (none is unknown), and a parent flattening
+  a config whose partial `FLATTENS` fails to compile unless both `ALLOWS_UNKNOWN_FIELDS`
+  (`impl_partial_flatten_checks`). Making that case load strictly was rejected as too much machinery.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 

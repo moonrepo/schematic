@@ -14,6 +14,10 @@
 - Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it, or
   `..Default::default()`. A type that only derives `Schematic` now follows serde, so its schema is
   open unless `#[serde(deny_unknown_fields)]`.
+- Updated `#[derive(Config)]` to fail to compile when a config flattens a config that flattens a
+  setting of its own, unless both have `#[config(allow_unknown_fields)]`. It already failed to load
+  every setting of the flattened config, as serde can't deny unknown fields through it. The error
+  names the fix.
 - Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
   is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
 - Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, and
@@ -122,6 +126,10 @@
 
 #### 🐞 Fixes
 
+- Fixed a config with a flattened map, like `#[setting(flatten)] extra: HashMap<String, String>`,
+  rejecting every key the map collects, unless `#[config(allow_unknown_fields)]`. Its partial no
+  longer denies unknown fields, as the map collects them. An explicit `#[serde(deny_unknown_fields)]`
+  is still respected.
 - Fixed config templates leaving out the settings of a flattened struct. They're now rendered
   alongside the struct's own, including those of a flattened struct within another. TOML, which
   rendered a flattened struct as a table of its own, failed to load.

@@ -1,0 +1,16 @@
+---
+source: crates/core/tests/container_flatten_test.rs
+expression: pretty(container.impl_partial_flatten_checks())
+---
+const _: () = assert!(
+    ! << Child as schematic::Config > ::Partial as schematic::PartialConfig > ::FLATTENS
+    || (false && << Child as schematic::Config > ::Partial as schematic::PartialConfig >
+    ::ALLOWS_UNKNOWN_FIELDS),
+    "`Example.child` flattens `Child`, which flattens a setting of its own. Serde can't deny unknown fields through it, so add `#[config(allow_unknown_fields)]` to both `Example` and `Child`."
+);
+const _: () = assert!(
+    ! << child::Other as schematic::Config > ::Partial as schematic::PartialConfig >
+    ::FLATTENS || (false && << child::Other as schematic::Config > ::Partial as
+    schematic::PartialConfig > ::ALLOWS_UNKNOWN_FIELDS),
+    "`Example.optional` flattens `child::Other`, which flattens a setting of its own. Serde can't deny unknown fields through it, so add `#[config(allow_unknown_fields)]` to both `Example` and `child::Other`."
+);

@@ -298,10 +298,80 @@ impl Container {
     fn allows_unknown_fields(&self) -> bool {
         match self.macro_type {
             ContainerMacro::Config | ContainerMacro::ConfigUnitEnum => {
-                self.args.allow_unknown_fields && !self.serde_args.deny_unknown_fields
+                !self.partial_denies_unknown_fields()
             }
             ContainerMacro::Schematic => !self.serde_args.deny_unknown_fields,
         }
+    }
+
+    /// The settings flattened into a named struct. Serde deserializes a struct
+    /// with any as a map, so that each can read the keys left over.
+    fn get_flattened_fields(&self) -> Vec<&Field> {
+        match &self.inner {
+            ContainerInner::NamedStruct { fields } => fields
+                .iter()
+                .filter(|field| field.is_flatten() && !field.is_skipped())
+                .collect(),
+            _ => vec![],
+        }
+    }
+
+    /// Whether the partial denies keys that aren't its settings, which it does
+    /// unless `#[config(allow_unknown_fields)]`. A flattened map collects every
+    /// key the other settings don't, so none is unknown, and as serde reads them
+    /// without taking them, denying them would reject every one of the map's.
+    fn partial_denies_unknown_fields(&self) -> bool {
+        if !matches!(self.inner, ContainerInner::NamedStruct { .. }) {
+            return false;
+        }
+
+        if self.serde_args.deny_unknown_fields {
+            return true;
+        }
+
+        !self.args.allow_unknown_fields
+            && !self
+                .get_flattened_fields()
+                .iter()
+                .any(|field| field.value.is_outer_map())
+    }
+
+    /// Assert at compile time that a flattened config can be loaded. One that
+    /// flattens a setting of its own is deserialized as a map, which reads the
+    /// keys of the struct flattening it without taking them, so serde can only
+    /// load it when neither denies unknown fields. A generic config is skipped,
+    /// as a constant can't name its parameters.
+    pub fn impl_partial_flatten_checks(&self) -> TokenStream {
+        if self.generics.params.iter().next().is_some() {
+            return quote! {};
+        }
+
+        let parent_allows = !self.partial_denies_unknown_fields();
+        let container = self.ident.to_string();
+
+        let checks = self
+            .get_flattened_fields()
+            .into_iter()
+            .filter(|field| field.is_nested() && !field.value.is_collection())
+            .filter_map(|field| {
+                let nested = field.value.get_nested_type()?;
+                let nested_name = to_type_string(nested.clone());
+                let message = format!(
+                    "`{container}.{}` flattens `{nested_name}`, which flattens a setting of its own. Serde can't deny unknown fields through it, so add `#[config(allow_unknown_fields)]` to both `{container}` and `{nested_name}`.",
+                    field.get_name_original(),
+                );
+                let partial = quote! { <<#nested as schematic::Config>::Partial as schematic::PartialConfig> };
+
+                Some(quote! {
+                    const _: () = assert!(
+                        !#partial::FLATTENS || (#parent_allows && #partial::ALLOWS_UNKNOWN_FIELDS),
+                        #message
+                    );
+                })
+            })
+            .collect::<Vec<_>>();
+
+        quote! { #(#checks)* }
     }
 
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
@@ -319,7 +389,7 @@ impl Container {
             ContainerInner::NamedStruct { .. } => {
                 meta.push(quote! { default });
 
-                if self.serde_args.deny_unknown_fields || !self.args.allow_unknown_fields {
+                if self.partial_denies_unknown_fields() {
                     meta.push(quote! { deny_unknown_fields });
                 }
             }
@@ -1182,10 +1252,25 @@ impl Container {
         let validate_method = self.impl_partial_validate();
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
+        // Only a named struct can be flattened into another
+        let mut consts = vec![];
+
+        if matches!(self.inner, ContainerInner::NamedStruct { .. }) {
+            if !self.get_flattened_fields().is_empty() {
+                consts.push(quote! { const FLATTENS: bool = true; });
+            }
+
+            if !self.partial_denies_unknown_fields() {
+                consts.push(quote! { const ALLOWS_UNKNOWN_FIELDS: bool = true; });
+            }
+        }
+
         quote! {
             #[automatically_derived]
             impl #impl_generics schematic::PartialConfig for #partial_name #ty_generics #where_clause {
                 type Context = #context;
+
+                #(#consts)*
 
                 #default_values_method
                 #env_values_method
@@ -1677,6 +1762,7 @@ impl ToTokens for Container {
                 tokens.extend(self.impl_partial_type_default());
                 tokens.extend(self.impl_partial_type_deserialize());
                 tokens.extend(self.impl_partial());
+                tokens.extend(self.impl_partial_flatten_checks());
 
                 // Full type
                 tokens.extend(self.impl_full());

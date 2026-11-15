@@ -14,6 +14,20 @@ pub trait PartialConfig:
 {
     type Context: Default;
 
+    /// Internal use only.
+    ///
+    /// Whether the partial has a flattened field, which serde deserializes it as a map for. A
+    /// flattened config like it reads the keys of its parent without taking them, so a parent
+    /// that denies unknown fields rejects them.
+    #[doc(hidden)]
+    const FLATTENS: bool = false;
+
+    /// Internal use only.
+    ///
+    /// Whether the partial accepts keys that aren't its settings, rather than denying them.
+    #[doc(hidden)]
+    const ALLOWS_UNKNOWN_FIELDS: bool = false;
+
     /// Return a partial configuration with values populated with default values for settings
     /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
     ///
