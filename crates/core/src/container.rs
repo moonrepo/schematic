@@ -72,7 +72,9 @@ impl Container {
                     fields: fields
                         .named
                         .into_iter()
-                        .map(|data| Field::new(data, args.clone(), serde_args.clone(), &self_ty))
+                        .map(|data| {
+                            Field::new(data, args.clone(), serde_args.clone(), &self_ty, None)
+                        })
                         .collect(),
                 },
                 Fields::Unnamed(fields) => ContainerInner::UnnamedStruct {
@@ -82,7 +84,7 @@ impl Container {
                         .enumerate()
                         .map(|(index, data)| {
                             let mut field =
-                                Field::new(data, args.clone(), serde_args.clone(), &self_ty);
+                                Field::new(data, args.clone(), serde_args.clone(), &self_ty, None);
                             field.index = index;
                             field
                         })
@@ -717,29 +719,9 @@ impl Container {
         match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
-                    let name = field.get_name_or_index();
-                    let env_key = match field.get_env_var_name() {
-                        Some(value) => quote! { .env(#value) },
-                        None => quote! {},
-                    };
-                    let type_alias = to_type_string(field.value.ty.to_token_stream());
-                    let setting = quote! {
-                        ConfigSetting::new(#type_alias)
-                            #env_key
-                    };
+                    let setting = field.impl_setting();
 
-                    // Nested settings are guarded, as a recursive config
-                    // would otherwise never stop collecting them
-                    let setting = match field.value.get_nested_type() {
-                        Some(ty) => quote! {
-                            schematic::internal::with_nested_settings::<#ty>(#setting)
-                        },
-                        None => setting,
-                    };
-
-                    settings.push(quote! {
-                        (#name.into(), #setting),
-                    });
+                    settings.push(quote! { #setting, });
                 }
             }
             ContainerInner::UnnamedEnum { variants } => {

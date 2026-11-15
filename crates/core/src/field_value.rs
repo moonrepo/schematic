@@ -262,10 +262,14 @@ impl FieldValue {
         }
     }
 
+    /// Generate a merge of `next` into `prev`, as a method of a `MergeManager`
+    /// chain. The `prev` is a mutable reference to the setting's `Option`, and
+    /// `next` the `Option` itself.
     pub fn impl_partial_merge(
         &self,
         field_args: &FieldArgs,
-        field_name: &TokenStream,
+        prev: &TokenStream,
+        next: &TokenStream,
     ) -> ImplResult {
         let value = match field_args.merge.as_ref() {
             Some(func) => {
@@ -275,8 +279,8 @@ impl FieldValue {
 
                 quote! {
                     .apply_with(
-                        &mut self.#field_name,
-                        next.#field_name,
+                        #prev,
+                        #next,
                         #func,
                     )?
                 }
@@ -287,27 +291,23 @@ impl FieldValue {
                 // up their items. Define `merge` to customize this.
                 if self.nested && !self.is_collection() {
                     // The partial field is always wrapped in an `Option`
-                    return self.impl_partial_merge_nested(
-                        &quote! { &mut self.#field_name },
-                        &quote! { next.#field_name },
-                        true,
-                    );
+                    return self.impl_partial_merge_nested(prev, next, true);
                 }
 
                 // A `MergeList` is merged as each source directs
                 if self.is_merge_list() {
                     quote! {
                         .apply_with(
-                            &mut self.#field_name,
-                            next.#field_name,
+                            #prev,
+                            #next,
                             schematic::merge::merge_list,
                         )?
                     }
                 } else {
                     quote! {
                         .apply(
-                            &mut self.#field_name,
-                            next.#field_name,
+                            #prev,
+                            #next,
                         )?
                     }
                 }

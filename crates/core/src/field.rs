@@ -5,6 +5,7 @@ use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::{
     ImplResult, format_case, get_renamed_value, is_inheritable_attribute, preserve_str_literal,
+    to_type_string,
 };
 use darling::FromAttributes;
 use proc_macro2::{Literal, TokenStream};
@@ -64,6 +65,20 @@ impl EnvKey {
     }
 }
 
+/// What a setting needs from the named variant that holds it. Generated code
+/// reaches it through the binding its variant is destructured into, rather
+/// than as a field of the partial, and its name takes the variant's casing.
+#[derive(Debug)]
+pub struct VariantScope {
+    /// The casing of the setting's name, from the variant's `rename_all`,
+    /// or the container's `rename_all_fields`.
+    pub rename_all: Option<String>,
+    /// The binding of the setting within this partial, like `pa`.
+    pub prev: Ident,
+    /// The binding of the setting within the next partial, like `na`.
+    pub next: Ident,
+}
+
 #[derive(Debug)]
 pub struct Field {
     pub value: FieldValue,
@@ -73,6 +88,9 @@ pub struct Field {
     pub container_args: Rc<ContainerArgs>,
     pub serde_args: SerdeFieldArgs,
     pub serde_container_args: Rc<SerdeContainerArgs>,
+
+    /// Set when the setting belongs to a named variant, rather than a struct.
+    pub variant: Option<VariantScope>,
 
     // inherited
     pub attrs: Vec<Attribute>,
@@ -87,6 +105,7 @@ impl Field {
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
         self_ty: &Type,
+        variant: Option<VariantScope>,
     ) -> Self {
         let args = FieldArgs::from_attributes(&field.attrs).unwrap();
         let serde_args = SerdeFieldArgs::from_attributes(&field.attrs).unwrap();
@@ -105,16 +124,21 @@ impl Field {
                 self_ty,
                 args.context.clone(),
             ),
+            variant,
             args,
         };
-
-        // dbg!(&field);
 
         field.validate_args();
         field
     }
 
     fn validate_args(&self) {
+        // Checked first, as the checks below would otherwise
+        // report these with a struct in mind
+        if self.variant.is_some() {
+            self.validate_variant_args();
+        }
+
         // Serde has no such attribute, so there's nothing to forward it to
         if self.args.skip_deserializing_if.is_some()
             || self.serde_args.skip_deserializing_if.is_some()
@@ -154,6 +178,72 @@ impl Field {
                     "Cannot use `required` with a non-optional `nested` setting, as it always exists. Mark the settings within it as required instead."
                 );
             }
+        }
+    }
+
+    /// Panic on an attribute that a setting of a named variant can't honor,
+    /// as an enum reads no environment variables, and only a struct extends.
+    fn validate_variant_args(&self) {
+        for (name, used) in [
+            ("env", self.args.env.is_some()),
+            ("env_prefix", self.args.env_prefix.is_some()),
+            ("parse_env", self.args.parse_env.is_some()),
+        ] {
+            if used {
+                panic!(
+                    "Cannot use `{name}` within an enum variant, as an enum reads no environment variables."
+                );
+            }
+        }
+
+        if self.args.extend {
+            panic!("Cannot use `extend` within an enum variant, as only a named struct extends.");
+        }
+    }
+
+    /// The setting within `base`, like `partial.name`. A setting of a named
+    /// variant is reached through its binding instead, which holds it as the
+    /// variant was matched, by value or by reference.
+    pub fn get_access(&self, base: TokenStream) -> TokenStream {
+        match &self.variant {
+            Some(scope) => {
+                let prev = &scope.prev;
+
+                quote! { #prev }
+            }
+            None => {
+                let key = self.get_key();
+
+                quote! { #base.#key }
+            }
+        }
+    }
+
+    /// The setting within the next partial being merged, like `next.name`.
+    pub fn get_next_access(&self) -> TokenStream {
+        match &self.variant {
+            Some(scope) => {
+                let next = &scope.next;
+
+                quote! { #next }
+            }
+            None => self.get_access(quote! { next }),
+        }
+    }
+
+    /// A reference to the setting within `self`, like `&self.name`. A variant
+    /// matched by reference already binds the setting as one.
+    pub fn get_ref_access(&self, mutable: bool) -> TokenStream {
+        if self.variant.is_some() {
+            return self.get_access(quote! { self });
+        }
+
+        let key = self.get_key();
+
+        if mutable {
+            quote! { &mut self.#key }
+        } else {
+            quote! { &self.#key }
         }
     }
 
@@ -244,6 +334,9 @@ impl Field {
     /// is applied here, and not only forwarded to serde, so that schemas,
     /// `settings()`, and validation paths describe the key that is actually
     /// accepted. There is no default case.
+    ///
+    /// A setting of a named variant takes the variant's `rename_all` instead,
+    /// or the container's `rename_all_fields`, as serde does.
     pub fn get_name(&self) -> String {
         if let Some(name) = self.get_name_renamed() {
             return name;
@@ -251,10 +344,15 @@ impl Field {
 
         let name = self.get_name_original();
 
-        match get_renamed_value(
-            self.container_args.rename_all.as_ref(),
-            self.serde_container_args.rename_all.as_ref(),
-        ) {
+        let format = match &self.variant {
+            Some(scope) => scope.rename_all.clone(),
+            None => get_renamed_value(
+                self.container_args.rename_all.as_ref(),
+                self.serde_container_args.rename_all.as_ref(),
+            ),
+        };
+
+        match format {
             Some(format) => format_case(&format, &name, false),
             None => name,
         }
@@ -461,9 +559,33 @@ impl Field {
             }
         }
 
+        // A partial struct defaults every field from the container, which
+        // serde has no attribute for on a variant, so each defaults itself
+        if self.variant.is_some() {
+            meta.push(quote! { default });
+        }
+
         quote! {
             #(#meta),*
         }
+    }
+
+    /// The attributes of this setting that deserializing it depends on, for
+    /// a struct that stands in for the variant holding it. Any other, like a
+    /// derive's own attribute from `partial(...)`, wouldn't exist there.
+    pub fn get_partial_deserialize_attributes(&self) -> Vec<TokenStream> {
+        let mut attrs = vec![];
+        let serde_args = self.get_partial_serde_attribute_args();
+
+        if !serde_args.is_empty() {
+            attrs.push(quote! { #[serde(#serde_args)] });
+        }
+
+        for partial in &self.args.partial {
+            attrs.extend(partial.get_serde_attributes());
+        }
+
+        attrs
     }
 
     /// Return the type to use within the partial, which is always
@@ -505,8 +627,16 @@ impl ToTokens for Field {
         // handed to callers as the parsed representation, so a `pub(crate)`
         // setting would leave them a field they cannot read. The partial type
         // itself is only as visible as the container, which is what actually
-        // caps the reach of these fields.
-        if let Some(name) = &self.ident {
+        // caps the reach of these fields. A variant's fields have no
+        // visibility of their own, so they take none.
+        if let Some(name) = &self.ident
+            && self.variant.is_some()
+        {
+            tokens.extend(quote! {
+                #(#attrs)*
+                #name: #ty,
+            });
+        } else if let Some(name) = &self.ident {
             tokens.extend(quote! {
                 #(#attrs)*
                 pub #name: #ty,
@@ -630,8 +760,33 @@ impl Field {
 }
 
 impl Field {
+    /// Generate this setting's entry for `Config::settings`, keyed by name.
+    pub fn impl_setting(&self) -> TokenStream {
+        let name = self.get_name_or_index();
+        let env_key = match self.get_env_var_name() {
+            Some(value) => quote! { .env(#value) },
+            None => quote! {},
+        };
+        let type_alias = to_type_string(self.value.ty.to_token_stream());
+        let setting = quote! {
+            ConfigSetting::new(#type_alias)
+                #env_key
+        };
+
+        // Nested settings are guarded, as a recursive config
+        // would otherwise never stop collecting them
+        let setting = match self.value.get_nested_type() {
+            Some(ty) => quote! {
+                schematic::internal::with_nested_settings::<#ty>(#setting)
+            },
+            None => setting,
+        };
+
+        quote! { (#name.into(), #setting) }
+    }
+
     pub fn impl_full_from_partial(&self) -> ImplResult {
-        let key = self.get_key();
+        let setting = self.get_access(quote! { partial });
 
         // Reset extendable values since we don't have the entire resolved list
         if self.is_extendable() {
@@ -649,9 +804,9 @@ impl Field {
             // When option wrapped, the partial's `Option` is the first layer,
             // so pass the value as-is and let the layer unwrap it
             let data = if self.value.is_outer_option_wrapped() {
-                quote! { partial.#key }
+                quote! { #setting }
             } else {
-                quote! { partial.#key.unwrap_or_default() }
+                quote! { #setting.unwrap_or_default() }
             };
 
             quote! {
@@ -662,10 +817,10 @@ impl Field {
             }
         } else if self.value.is_outer_option_wrapped() {
             // Use optional values as-is as they're already wrapped in `Option`
-            quote! { partial.#key }
+            quote! { #setting }
         } else {
             // Otherwise unwrap the resolved value or use the type default
-            quote! { partial.#key.unwrap_or_default() }
+            quote! { #setting.unwrap_or_default() }
         };
 
         ImplResult {
@@ -730,7 +885,7 @@ impl Field {
             return ImplResult::skipped();
         }
 
-        let key = self.get_key();
+        let setting = self.get_access(quote! { partial });
 
         let mut value = if self.is_nested() {
             // The `if let` below consumes the partial's `Option`, which is
@@ -748,8 +903,8 @@ impl Field {
 
         ImplResult {
             value: quote! {
-                if let Some(layer) = partial.#key {
-                    partial.#key = Some(#value);
+                if let Some(layer) = #setting {
+                    #setting = Some(#value);
                 }
             },
             ..Default::default()
@@ -757,11 +912,18 @@ impl Field {
     }
 
     pub fn impl_partial_merge(&self) -> ImplResult {
-        self.value.impl_partial_merge(&self.args, &self.get_key())
+        self.impl_partial_merge_into(&self.get_ref_access(true), &self.get_next_access())
+    }
+
+    /// Generate a merge of `next` into `prev`, a mutable reference to an
+    /// `Option` of the setting, as a method of a `MergeManager` chain.
+    pub fn impl_partial_merge_into(&self, prev: &TokenStream, next: &TokenStream) -> ImplResult {
+        self.value.impl_partial_merge(&self.args, prev, next)
     }
 
     pub fn impl_partial_validate(&self) -> ImplResult {
-        let key = self.get_key();
+        let setting_ref = self.get_ref_access(false);
+        let setting = self.get_access(quote! { self });
         let key_string = self.get_name_or_index();
         let res = self.value.impl_partial_validate(&self.args, &key_string);
         let mut inner = res.value;
@@ -834,7 +996,7 @@ impl Field {
         let mut has_outer = has_inner;
         let mut outer = if has_inner {
             quote! {
-                if let Some(setting) = &self.#key {
+                if let Some(setting) = #setting_ref {
                     #inner
                 } #missing
             }
@@ -847,7 +1009,7 @@ impl Field {
             outer = quote! {
                 #outer
 
-                if self.#key.is_none() {
+                if #setting.is_none() {
                     validate.required(#key_string);
                 }
             };
