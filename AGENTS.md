@@ -43,7 +43,9 @@ Deliberately dropped in the rewrite, and not coming back:
 - `#[variant(value)]` — `#[variant(rename)]` covers it.
 - The `tracing` feature. Generated code is no longer wrapped in `#[tracing::instrument]`; the loader
   still is.
-- Named-field enum variants panic, as they did in the old derive too.
+
+Named-field enum variants panicked in the old derive. They're supported now; see "Named variants"
+below.
 
 `#[setting(skip_deserializing_if)]` (and the serde one) panics, as serde has no such attribute.
 Other attributes that would do nothing for a derive panic in `Container::validate_attributes`, which
@@ -150,7 +152,10 @@ kind of nested setting:
   The loader drives the layers now, so `partial.finalize(ctx)` on its own applies neither.
 
 Because a variant's value gets its own defaults, an enum's `default_values` holds its default variant
-with the *type* default of a nested config, not its defaults, or they'd be applied twice. `Default`
+with the *type* default of a nested config, not its defaults, or they'd be applied twice. A named
+variant is the same kind of boundary: `default_values` holds it with every field empty, and its
+`finalize` arm merges the fields' defaults under it, each with its own `merge`, then runs transforms
+and nested finalization as a struct's would. `Default`
 still gets them: derived configs override `Config::default_partial` to call
 `<T as Config>::default_partial()` for each bare nested config, which recurses into the default
 variant of an enum.
@@ -159,7 +164,8 @@ Key invariants:
 
 - A setting's **outer `Option` doubles as the partial's `Option`** — `Option<T>` becomes
   `Option<T>`, not `Option<Option<T>>`.
-- **Enum variant payloads get no synthetic `Option`** — `A(bool)` stays `A(bool)`.
+- **Tuple variant payloads get no synthetic `Option`** — `A(bool)` stays `A(bool)`. A **named
+  variant's fields do**, as each is a setting (`A { a: Option<bool> }`); see "Named variants".
 - **Wrapper types (`Box`/`Arc`/`Rc`) are stripped from the partial** and re-applied in
   `from_partial`. This is why partials don't need serde's `rc` feature. Exceptions: kept when the
   inner type is unsized (`Box<str>`, `Box<Path>`, `Box<[T]>`, …), and a `Box` is kept around a
@@ -175,11 +181,13 @@ Entry point is `Container::from(DeriveInput)` in `crates/core/src/container.rs`.
 Container  (the struct/enum)          container.rs
 ├─ ContainerInner::NamedStruct   { fields: Vec<Field> }
 ├─ ContainerInner::UnnamedStruct { fields: Vec<Field> }   // tuple struct
-├─ ContainerInner::UnnamedEnum   { variants: Vec<Variant> }
+├─ ContainerInner::NamedEnum     { variants: Vec<Variant> }  // any variant has named fields
+├─ ContainerInner::UnnamedEnum   { variants: Vec<Variant> }  // any holds values, none named
 └─ ContainerInner::UnitEnum      { variants: Vec<Variant> }  // all variants are units
 
 Field    (a struct setting)           field.rs    → FieldValue   → Value
-Variant  (an enum variant)            variant.rs  → VariantValue → Value
+Variant  (an enum variant)            variant.rs  → VariantValue → Value  (tuple values)
+                                                  → Field                (named fields)
 Value    (type analysis + walkers)    value.rs
 ```
 
@@ -248,6 +256,30 @@ already holds that wrapper (the partial kept it, so it's unwrapped and rebuilt) 
 stripped it, so it's only constructed), and its `ty` makes mapping fallible: collections then
 collect into a `Result` of that type, as finalizing can fail. Add a layer kind there, once, rather
 than in each walker. Merging and validating don't rebuild anything, so they walk on their own.
+
+### Named variants
+
+A named variant (`File { path: String }`) holds `Variant::settings: Vec<Field>`, while a tuple
+variant holds `Variant::values`. Each field is a full `Field`, so a named variant reuses the struct
+codegen instead of growing its own: the field carries a `VariantScope` with the variant's casing
+and the bindings it's destructured into (`pa` for this partial, `na` for the next). `Field`'s
+codegen reaches a setting through `get_access`/`get_next_access`/`get_ref_access`, which are
+`self.key`-style for a struct and the binding for a variant, so a struct's output is unchanged.
+Bindings are positional (`get_binding_idents`), so a field named `context` or `validate` never
+shadows a generated local.
+
+- **Merge**: same variant → each field merged as a struct's (`MergeManager` chain), other → replace.
+- **Validate**: the arm calls the hidden `ValidateManager::named_variant(name, |validate| ..)`, which
+  joins the variant onto the path, so the struct's field statements report `Name.field` unchanged.
+- **Untagged / literal union**: an attempt deserializes a local `struct Variant` that stands in for
+  the variant, with the container's generics (plus a `PhantomData` marker when generic), the
+  partial's deny and bound, and only the fields' serde attributes (`get_partial_deserialize_attributes`),
+  as a derive's own `partial(...)` attribute wouldn't exist there.
+- **Schema**: a struct of the fields, marked partial like a nested value for a `Config`, so the partial
+  schema makes its fields optional; never marked for a `Schematic`-only derive.
+- Variant-level `nested`, `context`, `merge`, `required`, `transform`, `validate`, and a `default`
+  value panic, as the fields hold them; `env`, `env_prefix`, `parse_env`, and `extend` panic on a
+  field, as an enum reads no environment.
 
 ## Testing
 
@@ -380,6 +412,15 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   caller receives from the loader, so a `pub(crate)` setting would otherwise leave them a field they
   cannot read or set through `..Default::default()`. The partial *type* still inherits the
   container's visibility, which is what actually caps how far those fields reach.
+- **A named variant's fields are settings**, optional in the partial and merged field by field,
+  rather than values written in full like a tuple variant's. Its fields' defaults apply whenever the
+  variant is picked, so they live in `finalize`, not the enum's `default_values` (see the runtime
+  flow). Names take the variant's `rename_all`, else the enum's `rename_all_fields`, never the
+  enum's `rename_all`, which names the variants.
+- **An enum with a named variant denies unknown fields**, as a struct does, through serde's
+  enum-wide `deny_unknown_fields`, so it also applies to the keys around an internally or adjacently
+  tagged variant. `#[config(allow_unknown_fields)]` is accepted on such an enum, and a flattened map
+  in any named variant turns the denial off for all of them.
 - **A container `#[serde(default)]` makes every field optional**, the same as one declared on the
   field, since serde falls back per field when the input omits it. `SchemaField.optional` reflects
   that, which is what puts the `?` on a TypeScript property.
@@ -420,7 +461,9 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `Serialize`/`Deserialize` pair does it.
 - `Schema::partialize()` on a tagged enum variant marks the **value**, never the `{tag, content}`
   struct synthesized around it. Marking the wrapper makes the runtime nullify the tag, so the
-  partial schema claims `{"type": null}` is valid.
+  partial schema claims `{"type": null}` is valid. An internally tagged variant can't avoid it, as
+  its tag is a field of the value, so `partialize_schema` leaves a `Literal` field alone, treating it
+  as the tag, as the Pkl renderer already did.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
 - A **literal union** (`Container::is_literal_union`) is an externally tagged `Config` enum whose

@@ -72,7 +72,9 @@ impl Container {
                     fields: fields
                         .named
                         .into_iter()
-                        .map(|data| Field::new(data, args.clone(), serde_args.clone(), &self_ty))
+                        .map(|data| {
+                            Field::new(data, args.clone(), serde_args.clone(), &self_ty, None)
+                        })
                         .collect(),
                 },
                 Fields::Unnamed(fields) => ContainerInner::UnnamedStruct {
@@ -82,7 +84,7 @@ impl Container {
                         .enumerate()
                         .map(|(index, data)| {
                             let mut field =
-                                Field::new(data, args.clone(), serde_args.clone(), &self_ty);
+                                Field::new(data, args.clone(), serde_args.clone(), &self_ty, None);
                             field.index = index;
                             field
                         })
@@ -97,6 +99,10 @@ impl Container {
                     .variants
                     .iter()
                     .all(|variant| matches!(variant.fields, Fields::Unit));
+                let any_named = data
+                    .variants
+                    .iter()
+                    .any(|variant| matches!(variant.fields, Fields::Named(_)));
                 let variants = data
                     .variants
                     .into_iter()
@@ -105,6 +111,8 @@ impl Container {
 
                 if all_unit {
                     ContainerInner::UnitEnum { variants }
+                } else if any_named {
+                    ContainerInner::NamedEnum { variants }
                 } else {
                     ContainerInner::UnnamedEnum { variants }
                 }
@@ -206,7 +214,9 @@ impl Container {
     pub fn is_untagged(&self) -> bool {
         matches!(
             self.inner,
-            ContainerInner::UnnamedEnum { .. } | ContainerInner::UnitEnum { .. }
+            ContainerInner::NamedEnum { .. }
+                | ContainerInner::UnnamedEnum { .. }
+                | ContainerInner::UnitEnum { .. }
         ) && self.serde_args.untagged
     }
 
@@ -216,7 +226,9 @@ impl Container {
     /// alone. Serde's own failure to match such an enum doesn't say what it
     /// expected, so it's deserialized like an untagged enum instead.
     pub fn is_literal_union(&self) -> bool {
-        let ContainerInner::UnnamedEnum { variants } = &self.inner else {
+        let (ContainerInner::NamedEnum { variants } | ContainerInner::UnnamedEnum { variants }) =
+            &self.inner
+        else {
             return false;
         };
 
@@ -305,24 +317,37 @@ impl Container {
         }
     }
 
-    /// The settings flattened into a named struct. Serde deserializes a struct
-    /// with any as a map, so that each can read the keys left over.
+    /// The settings flattened into a named struct, or a named variant. Serde
+    /// deserializes either with any as a map, so that each can read the keys
+    /// left over.
     fn get_flattened_fields(&self) -> Vec<&Field> {
-        match &self.inner {
-            ContainerInner::NamedStruct { fields } => fields
+        let fields = match &self.inner {
+            ContainerInner::NamedStruct { fields } => fields.iter().collect::<Vec<_>>(),
+            ContainerInner::NamedEnum { variants } => variants
                 .iter()
-                .filter(|field| field.is_flatten() && !field.is_skipped())
+                .flat_map(|variant| variant.settings.iter())
                 .collect(),
             _ => vec![],
-        }
+        };
+
+        fields
+            .into_iter()
+            .filter(|field| field.is_flatten() && !field.is_skipped())
+            .collect()
     }
 
     /// Whether the partial denies keys that aren't its settings, which it does
     /// unless `#[config(allow_unknown_fields)]`. A flattened map collects every
     /// key the other settings don't, so none is unknown, and as serde reads them
     /// without taking them, denying them would reject every one of the map's.
+    ///
+    /// Serde denies them for an enum as a whole, so it applies to every named
+    /// variant, and to the keys around an internally or adjacently tagged one.
     fn partial_denies_unknown_fields(&self) -> bool {
-        if !matches!(self.inner, ContainerInner::NamedStruct { .. }) {
+        if !matches!(
+            self.inner,
+            ContainerInner::NamedStruct { .. } | ContainerInner::NamedEnum { .. }
+        ) {
             return false;
         }
 
@@ -341,9 +366,9 @@ impl Container {
     /// as a silent no-op is worse than a loud failure.
     pub fn validate_attributes(&self) {
         let variants = match &self.inner {
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
-                Some(variants)
-            }
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => Some(variants),
             _ => None,
         };
 
@@ -408,9 +433,12 @@ impl Container {
             );
         }
 
-        if self.args.allow_unknown_fields {
+        // A named variant has fields of its own, which a `ConfigEnum` can't hold
+        if self.args.allow_unknown_fields
+            && !(derive == "Config" && matches!(self.inner, ContainerInner::NamedEnum { .. }))
+        {
             panic!(
-                "Cannot use `allow_unknown_fields` on a `{derive}` enum, as only a struct has fields. Use it on a config that a variant holds instead."
+                "Cannot use `allow_unknown_fields` on a `{derive}` enum without named variants, as only a struct or a named variant has fields. Use it on a config that a variant holds instead."
             );
         }
     }
@@ -510,7 +538,9 @@ impl Container {
             }
             // Unit enums must remain externally tagged, otherwise
             // variants can only be deserialized from `null`
-            ContainerInner::UnnamedEnum { .. } | ContainerInner::UnitEnum { .. } => {
+            ContainerInner::NamedEnum { .. }
+            | ContainerInner::UnnamedEnum { .. }
+            | ContainerInner::UnitEnum { .. } => {
                 if let Some(tag) = &self.serde_args.tag {
                     meta.push(quote! { tag = #tag });
                 }
@@ -521,6 +551,10 @@ impl Container {
 
                 if self.serde_args.untagged {
                     meta.push(quote! { untagged });
+                }
+
+                if self.partial_denies_unknown_fields() {
+                    meta.push(quote! { deny_unknown_fields });
                 }
             }
         };
@@ -632,7 +666,7 @@ impl Container {
                     partial
                 }
             }
-            ContainerInner::UnnamedEnum { variants } => {
+            ContainerInner::NamedEnum { variants } | ContainerInner::UnnamedEnum { variants } => {
                 let Some(value) = variants
                     .iter()
                     .find(|variant| variant.is_default())
@@ -688,7 +722,9 @@ impl Container {
                     )
                 }
             }
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => {
                 let partial_name = self.get_partial_ident();
                 let mut arms = vec![];
 
@@ -717,47 +753,16 @@ impl Container {
         match &self.inner {
             ContainerInner::NamedStruct { fields } | ContainerInner::UnnamedStruct { fields } => {
                 for field in fields {
-                    let name = field.get_name_or_index();
-                    let env_key = match field.get_env_var_name() {
-                        Some(value) => quote! { .env(#value) },
-                        None => quote! {},
-                    };
-                    let type_alias = to_type_string(field.value.ty.to_token_stream());
-                    let setting = quote! {
-                        ConfigSetting::new(#type_alias)
-                            #env_key
-                    };
+                    let setting = field.impl_setting();
 
-                    // Nested settings are guarded, as a recursive config
-                    // would otherwise never stop collecting them
-                    let setting = match field.value.get_nested_type() {
-                        Some(ty) => quote! {
-                            schematic::internal::with_nested_settings::<#ty>(#setting)
-                        },
-                        None => setting,
-                    };
-
-                    settings.push(quote! {
-                        (#name.into(), #setting),
-                    });
+                    settings.push(quote! { #setting, });
                 }
             }
-            ContainerInner::UnnamedEnum { variants } => {
+            ContainerInner::NamedEnum { variants } | ContainerInner::UnnamedEnum { variants } => {
                 for variant in variants {
-                    let name = variant.get_name();
-                    let type_alias = to_type_string(
-                        variant
-                            .values
-                            .iter()
-                            .map(|v| v.ty.to_token_stream())
-                            .collect::<Vec<_>>()
-                            .into_iter()
-                            .collect::<TokenStream>(),
-                    );
+                    let setting = variant.impl_setting();
 
-                    settings.push(quote! {
-                        (#name.into(), ConfigSetting::new(#type_alias)),
-                    });
+                    settings.push(quote! { #setting, });
                 }
             }
             ContainerInner::UnitEnum { variants } => {
@@ -806,7 +811,9 @@ impl Container {
                     #(#fields)*
                 ) #where_clause;
             },
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => {
                 // Untagged enums and literal unions implement `Deserialize`
                 // manually, and all enums implement `Default` manually
                 let derives = if self.has_manual_deserialize() {
@@ -831,9 +838,9 @@ impl Container {
     /// derive `Default` instead.
     pub fn impl_partial_type_default(&self) -> TokenStream {
         let variants = match &self.inner {
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
-                variants
-            }
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => variants,
             _ => return quote! {},
         };
 
@@ -877,12 +884,15 @@ impl Container {
             attempts.push(self.impl_partial_type_deserialize_literals(&partial_name));
         }
 
+        let helper_meta = self.get_variant_helper_serde_args();
+
         for variant in self.inner.get_variants() {
             if literal_union && !variant.is_untagged() {
                 continue;
             }
 
-            let res = variant.impl_partial_type_deserialize(&partial_name);
+            let res =
+                variant.impl_partial_type_deserialize(&partial_name, &self.generics, &helper_meta);
 
             if !res.no_value {
                 attempts.push(res.value);
@@ -916,6 +926,32 @@ impl Container {
                 }
             }
         }
+    }
+
+    /// The serde attributes of a struct that stands in for a named variant,
+    /// as an untagged one is deserialized through it. It denies unknown fields
+    /// as the partial does, and each type argument is bound as the partial's
+    /// is, which the hand-written `Deserialize` requires of them anyway.
+    fn get_variant_helper_serde_args(&self) -> Vec<TokenStream> {
+        let mut meta = vec![];
+
+        if self.partial_denies_unknown_fields() {
+            meta.push(quote! { deny_unknown_fields });
+        }
+
+        let params = self
+            .generics
+            .type_params()
+            .map(|param| format!("{}: serde::de::DeserializeOwned", param.ident))
+            .collect::<Vec<_>>();
+
+        if !params.is_empty() {
+            let bound = params.join(", ");
+
+            meta.push(quote! { bound(deserialize = #bound) });
+        }
+
+        meta
     }
 
     /// Generate a match of the buffered content against the name of every
@@ -968,8 +1004,9 @@ impl Container {
     /// Generate the `ConfigEnum`, `FromStr`, `TryFrom`, and `Display`
     /// implementations for a unit-only enum.
     pub fn impl_config_enum(&self) -> TokenStream {
-        let (ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants }) =
-            &self.inner
+        let (ContainerInner::NamedEnum { variants }
+        | ContainerInner::UnnamedEnum { variants }
+        | ContainerInner::UnitEnum { variants }) = &self.inner
         else {
             panic!("Only enums are supported.");
         };
@@ -1305,10 +1342,14 @@ impl Container {
                     }
                 }
             }
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => {
                 let unit =
                     matches!(self.inner, ContainerInner::UnitEnum { .. }) || self.is_config_enum();
                 let tag_format = self.get_tag_format();
+                let partial = matches!(self.macro_type, ContainerMacro::Config);
+                let allows_unknown_fields = self.allows_unknown_fields();
                 let mut default_index = quote! { None };
                 let mut types = vec![];
                 let mut named_types = vec![];
@@ -1326,7 +1367,7 @@ impl Container {
                     }
 
                     let name = variant.get_name();
-                    let ty = variant.impl_schema_type(&tag_format);
+                    let ty = variant.impl_schema_type(&tag_format, partial, allows_unknown_fields);
 
                     named_types.push(quote! { (#name.into(), #ty) });
                     types.push(ty);
@@ -1470,7 +1511,9 @@ impl Container {
                     )))
                 }
             }
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => {
                 let default_variants = variants
                     .iter()
                     .filter(|v| v.is_default())
@@ -1673,8 +1716,9 @@ impl Container {
                     }
                 };
             }
-            ContainerInner::UnnamedEnum { variants } => {
+            ContainerInner::NamedEnum { variants } | ContainerInner::UnnamedEnum { variants } => {
                 let mut statements = vec![];
+                let mut requires_internal = false;
 
                 for variant in variants {
                     let res = variant.impl_partial_finalize();
@@ -1682,7 +1726,13 @@ impl Container {
                     if !res.no_value {
                         statements.push(res.value);
                     }
+
+                    if res.requires_internal {
+                        requires_internal = true;
+                    }
                 }
+
+                let internal = ImplResult::impl_use_internal(requires_internal);
 
                 if statements.is_empty() {
                     quote! {
@@ -1690,6 +1740,8 @@ impl Container {
                     }
                 } else {
                     quote! {
+                        #internal
+
                         Ok(match self {
                             #(#statements)*
                             _ => self
@@ -1743,7 +1795,9 @@ impl Container {
                     }
                 }
             }
-            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+            ContainerInner::NamedEnum { variants }
+            | ContainerInner::UnnamedEnum { variants }
+            | ContainerInner::UnitEnum { variants } => {
                 let mut statements = vec![];
                 let mut requires_internal = false;
 
@@ -1809,7 +1863,7 @@ impl Container {
                     }
                 }
             }
-            ContainerInner::UnnamedEnum { variants } => {
+            ContainerInner::NamedEnum { variants } | ContainerInner::UnnamedEnum { variants } => {
                 let mut arms = vec![];
 
                 for variant in variants {
@@ -1904,7 +1958,9 @@ impl ToTokens for Container {
 pub enum ContainerInner {
     NamedStruct { fields: Vec<Field> },
     UnnamedStruct { fields: Vec<Field> },
-    // TODO: NamedEnum
+    // Any variant has named fields, which are settings like a struct's
+    NamedEnum { variants: Vec<Variant> },
+    // Any variant holds values, and none has named fields
     UnnamedEnum { variants: Vec<Variant> },
     UnitEnum { variants: Vec<Variant> },
 }
@@ -1921,9 +1977,9 @@ impl ContainerInner {
 
     pub fn get_variants(&self) -> Vec<&Variant> {
         match self {
-            Self::UnnamedEnum { variants } | Self::UnitEnum { variants } => {
-                variants.iter().collect()
-            }
+            Self::NamedEnum { variants }
+            | Self::UnnamedEnum { variants }
+            | Self::UnitEnum { variants } => variants.iter().collect(),
             _ => vec![],
         }
     }

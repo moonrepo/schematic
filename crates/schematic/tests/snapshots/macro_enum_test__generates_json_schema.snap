@@ -478,6 +478,9 @@ expression: "std::fs::read_to_string(file).unwrap()"
         },
         {
           "type": "object",
+          "required": [
+            "type"
+          ],
           "properties": {
             "bar": {
               "anyOf": [
@@ -501,14 +504,7 @@ expression: "std::fs::read_to_string(file).unwrap()"
               ]
             },
             "type": {
-              "anyOf": [
-                {
-                  "const": "Qux"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "const": "Qux"
             }
           },
           "additionalProperties": false

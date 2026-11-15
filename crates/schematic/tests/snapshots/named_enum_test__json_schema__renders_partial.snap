@@ -1,0 +1,208 @@
+---
+source: crates/schematic/tests/named_enum_test.rs
+expression: "generate(true, JsonSchemaRenderer::default())"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PartialSettings",
+  "type": "object",
+  "properties": {
+    "dependency": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialDependency"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "mode": {
+      "default": "Off",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialMode"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "PartialDependency": {
+      "title": "PartialDependency",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "optional": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialMode": {
+      "title": "PartialMode",
+      "default": "Off",
+      "anyOf": [
+        {
+          "const": "Off"
+        },
+        {
+          "type": "object",
+          "required": [
+            "On"
+          ],
+          "properties": {
+            "On": {
+              "type": "object",
+              "properties": {
+                "level": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "maximum": 255,
+                      "minimum": 0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "PartialRetry": {
+      "title": "PartialRetry",
+      "type": "object",
+      "properties": {
+        "attempts": {
+          "default": 3,
+          "anyOf": [
+            {
+              "type": "integer",
+              "maximum": 255,
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialSource": {
+      "title": "PartialSource",
+      "description": "Where to load from.",
+      "anyOf": [
+        {
+          "description": "A file on disk.",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "format": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "path": {
+              "description": "The file to read.",
+              "default": "config.json",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": {
+              "const": "file"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "address": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "retry": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PartialRetry"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": {
+              "const": "url"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

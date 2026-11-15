@@ -1,0 +1,5 @@
+---
+source: crates/core/tests/container_attrs_test.rs
+expression: "container.inner.get_variants()[0].get_partial_serde_attribute_args().to_string()"
+---
+alias = "b" , rename = "aa" , rename_all = "camelCase"

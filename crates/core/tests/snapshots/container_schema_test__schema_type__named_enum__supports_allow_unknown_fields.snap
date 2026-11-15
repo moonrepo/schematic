@@ -1,0 +1,35 @@
+---
+source: crates/core/tests/container_schema_test.rs
+expression: pretty_body(container.impl_schematic_type())
+---
+fn build_schema(mut schema: SchemaBuilder) -> Schema {
+    schema
+        .union(
+            UnionType::from_named_schemas(
+                [
+                    (
+                        "A".into(),
+                        Schema::structure(
+                            StructType::new([
+                                (
+                                    "A".into(),
+                                    {
+                                        let mut item = {
+                                            let mut structure = StructType::new([
+                                                ("a".into(), SchemaField::new(schema.infer::<String>())),
+                                            ]);
+                                            structure.allow_unknown_fields = true;
+                                            Schema::structure(structure)
+                                        };
+                                        item.partialize();
+                                        item
+                                    },
+                                ),
+                            ]),
+                        ),
+                    ),
+                ],
+                None,
+            ),
+        )
+}

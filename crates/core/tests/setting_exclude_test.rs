@@ -58,6 +58,22 @@ mod setting_exclude {
 
             assert!(field.args.exclude);
         }
+
+        #[test]
+        fn can_set_on_a_setting() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(exclude)]
+                        field: bool
+                    }
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.exclude);
+        }
     }
 
     mod unnamed_enum {

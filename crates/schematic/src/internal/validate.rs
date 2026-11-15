@@ -133,6 +133,17 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
         self.nested_at_with(self.variant_path(variant, index), value, context);
     }
 
+    /// Validate the settings of a named variant, which are reported under the
+    /// variant, like `Name.setting`, as a struct's are under the struct.
+    pub fn named_variant(&mut self, variant: &str, validate: impl FnOnce(&mut Self)) {
+        let path = self.path.join_variant(variant);
+        let parent = std::mem::replace(&mut self.path, path);
+
+        validate(self);
+
+        self.path = parent;
+    }
+
     /// The path of a setting, which a nested collection extends for each of
     /// its items.
     pub fn key_path(&self, key: &str) -> Path {

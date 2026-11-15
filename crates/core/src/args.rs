@@ -131,6 +131,7 @@ pub struct SerdeFieldArgs {
 
     // variant
     pub other: bool,
+    pub rename_all: Option<SerdeRenameArg>,
     pub untagged: bool,
 }
 
@@ -188,6 +189,16 @@ impl PartialArg {
     // for example `#[derive(Other)] #[serde(another)]`
     pub fn get_attributes(&self) -> Vec<TokenStream> {
         self.meta.iter().map(|meta| quote! { #[#meta] }).collect()
+    }
+
+    // Only the `serde(...)` attributes, which a type that only derives
+    // serde's traits understands
+    pub fn get_serde_attributes(&self) -> Vec<TokenStream> {
+        self.meta
+            .iter()
+            .filter(|meta| matches!(meta, NestedMeta::Meta(meta) if meta.path().is_ident("serde")))
+            .map(|meta| quote! { #[#meta] })
+            .collect()
     }
 }
 

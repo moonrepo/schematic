@@ -330,7 +330,217 @@ mod setting_merge {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn accepts_func_ref() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(merge = func_ref)]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.merge.is_some());
+        }
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(merge = "func_ref")]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.merge.is_some());
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(merge = 123)]
+                        a: String,
+                    },
+                }
+            });
+        }
+
+        // The same variant is merged setting by setting, while another replaces it
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: bool,
+                    },
+                    B {
+                        b: usize,
+                        c: String,
+                        d: Option<String>,
+                        e: Vec<String>,
+                    },
+                    C {
+                        f: Option<HashMap<u8, String>>,
+                        g: MergeList<String>,
+                    },
+                    D {},
+                    E(bool),
+                    F,
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_func() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(merge = a)]
+                        a: bool,
+                        #[setting(merge = b)]
+                        b: usize,
+                        c: String,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        #[setting(nested = CustomConfig)]
+                        b: CustomConfig,
+                        #[setting(nested)]
+                        c: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig)]
+                        d: Arc<CustomConfig>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        fn supports_nested_wrappers() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Box<NestedConfig>,
+                        #[setting(nested)]
+                        b: Rc<NestedConfig>,
+                        #[setting(nested)]
+                        c: Option<Box<NestedConfig>>,
+                        #[setting(nested)]
+                        d: Box<Arc<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(expected = "may only be wrapped in an outermost `Option`")]
+        fn errors_for_inner_option() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Option<Option<NestedConfig>>,
+                    },
+                }
+            })
+            .impl_partial_merge();
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, merge = append_vec)]
+                        a: Vec<NestedConfig>,
+                        #[setting(nested = CustomConfig, merge = merge_hashmap)]
+                        b: HashMap<String, CustomConfig>,
+                        #[setting(nested, merge = merge_btreeset)]
+                        c: Option<BTreeSet<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Nested configs do not support `merge` unless wrapped in a collection."
+        )]
+        fn errors_if_nested_has_merge_attr() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, merge = append_vec)]
+                        a: NestedConfig,
+                    },
+                }
+            })
+            .impl_partial_merge();
+        }
+
+        #[test]
+        fn replaces_collections_without_merge_attr() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Vec<NestedConfig>,
+                        #[setting(nested)]
+                        b: HashMap<String, NestedConfig>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_merge()));
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `merge` on a named variant")]
+        fn errors_on_the_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(merge = func_ref)]
+                    A {
+                        a: String,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

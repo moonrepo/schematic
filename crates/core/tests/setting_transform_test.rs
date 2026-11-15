@@ -93,7 +93,67 @@ mod setting_transform {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn accepts_func_ref() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(transform = func_ref)]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.transform.is_some());
+        }
+
+        #[test]
+        fn accepts_string() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(transform = "func_ref")]
+                        a: String,
+                    },
+                }
+            });
+            let field = &container.inner.get_variants()[0].settings[0];
+
+            assert!(field.args.transform.is_some());
+        }
+
+        #[test]
+        #[should_panic(expected = "UnexpectedType")]
+        fn errors_invalid_type() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(transform = 123)]
+                        a: String,
+                    },
+                }
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `transform` on a named variant")]
+        fn errors_on_the_variant() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(transform = func_ref)]
+                    A {
+                        a: String,
+                    },
+                }
+            });
+        }
     }
 
     mod unnamed_enum {

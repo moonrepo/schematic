@@ -129,7 +129,112 @@ mod container_finalize {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn supports_standard() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: bool,
+                        b: usize,
+                        #[setting(transform = transform_string)]
+                        c: String,
+                        d: i16,
+                        e: Option<String>,
+                        #[setting(transform = "transform_vec")]
+                        f: Vec<String>,
+                        g: Option<HashMap<u8, String>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        // No layer holds the defaults of a variant a source picks, so they're
+        // merged under it, each setting with its own merge
+        #[test]
+        fn supports_defaults() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(default = 10)]
+                        a: usize,
+                        #[setting(default = vec!["d".into()], merge = append_vec)]
+                        b: Vec<String>,
+                        c: Option<String>,
+                        #[setting(default = "abc", transform = transform_string)]
+                        d: String,
+                        #[setting(required)]
+                        e: Option<String>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        #[test]
+        fn supports_nested() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: NestedConfig,
+                        #[setting(nested = CustomConfig, transform = transform_config)]
+                        b: CustomConfig,
+                        #[setting(nested)]
+                        c: Option<NestedConfig>,
+                        #[setting(nested = CustomConfig, transform = "transform_config")]
+                        d: Arc<CustomConfig>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        #[test]
+        fn supports_nested_collections() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested)]
+                        a: Vec<NestedConfig>,
+                        #[setting(nested = CustomConfig, transform = transform_config)]
+                        b: HashMap<String, CustomConfig>,
+                        #[setting(nested, transform = transform_config)]
+                        c: Option<BTreeSet<NestedConfig>>,
+                    },
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
+
+        // A variant whose settings have no default and nothing to finalize
+        // is left as it is
+        #[test]
+        fn skips_settings_without_defaults() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: Option<String>,
+                        #[setting(required)]
+                        b: Option<bool>,
+                    },
+                    B {
+                        c: Option<usize>,
+                        #[setting(transform = transform_string)]
+                        d: Option<String>,
+                    },
+                    C(bool),
+                }
+            });
+            assert_snapshot!(pretty(container.impl_partial_finalize()));
+        }
     }
 
     mod unnamed_enum {

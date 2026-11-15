@@ -1,0 +1,51 @@
+---
+source: crates/core/tests/container_test.rs
+expression: pretty(container.impl_full_settings())
+---
+fn settings() -> schematic::ConfigSettingMap {
+    use schematic::ConfigSetting;
+    std::collections::BTreeMap::from_iter([
+        (
+            "A".into(),
+            ConfigSetting::new("A")
+                .nested(
+                    std::collections::BTreeMap::from_iter([
+                        ("a".into(), ConfigSetting::new("String")),
+                        ("b".into(), ConfigSetting::new("i32")),
+                    ]),
+                ),
+        ),
+        (
+            "B".into(),
+            ConfigSetting::new("B")
+                .nested(
+                    std::collections::BTreeMap::from_iter([
+                        ("c".into(), ConfigSetting::new("Option<String>")),
+                        ("d".into(), ConfigSetting::new("Vec<u8>")),
+                        (
+                            "eff".into(),
+                            ConfigSetting::new(
+                                "std::collections::HashMap<String, String>",
+                            ),
+                        ),
+                    ]),
+                ),
+        ),
+        (
+            "C".into(),
+            ConfigSetting::new("C")
+                .nested(
+                    std::collections::BTreeMap::from_iter([
+                        (
+                            "g".into(),
+                            schematic::internal::with_nested_settings::<
+                                NestedExample,
+                            >(ConfigSetting::new("NestedExample")),
+                        ),
+                    ]),
+                ),
+        ),
+        ("D".into(), ConfigSetting::new("bool")),
+        ("E".into(), ConfigSetting::new("")),
+    ])
+}

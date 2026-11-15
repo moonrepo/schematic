@@ -216,7 +216,33 @@ mod settings {
     }
 
     mod named_enum {
-        // N/A
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let container = Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        a: String,
+                        b: i32,
+                    },
+                    B {
+                        c: Option<String>,
+                        d: Vec<u8>,
+                        #[setting(rename = "eff")]
+                        f: std::collections::HashMap<String, String>,
+                    },
+                    C {
+                        #[setting(nested)]
+                        g: NestedExample,
+                    },
+                    D(bool),
+                    E,
+                }
+            });
+            assert_snapshot!(pretty(container.impl_full_settings()));
+        }
     }
 
     mod unnamed_enum {

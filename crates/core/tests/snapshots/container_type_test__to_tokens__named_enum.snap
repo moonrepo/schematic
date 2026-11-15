@@ -1,0 +1,301 @@
+---
+source: crates/core/tests/container_type_test.rs
+expression: pretty(container.to_token_stream())
+---
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(tag = "type", deny_unknown_fields)]
+enum PartialExample {
+    A {
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        a: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        b: Option<<NestedConfig as schematic::Config>::Partial>,
+    },
+    B { #[serde(skip_serializing_if = "Option::is_none", default)] c: Option<bool> },
+}
+#[automatically_derived]
+impl Default for PartialExample {
+    fn default() -> Self {
+        Self::A {
+            a: Default::default(),
+            b: Default::default(),
+        }
+    }
+}
+#[automatically_derived]
+impl schematic::PartialConfig for PartialExample {
+    type Context = ();
+    fn default_values(
+        context: &Self::Context,
+    ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Ok(
+            Some(Self::A {
+                a: Default::default(),
+                b: Default::default(),
+            }),
+        )
+    }
+    fn finalize(
+        self,
+        context: &Self::Context,
+    ) -> std::result::Result<Self, schematic::ConfigError> {
+        use schematic::internal::*;
+        Ok(
+            match self {
+                Self::A { a: na, b: nb } => {
+                    let mut pa = Some(
+                        (&&DefaultString::<String>::new()).parse_default("a")?,
+                    );
+                    let mut pb = <<NestedConfig as schematic::Config>::Partial as schematic::PartialConfig>::default_values(
+                        context,
+                    )?;
+                    MergeManager::new(context).apply(&mut pa, na)?.nested(&mut pb, nb)?;
+                    if let Some(layer) = pb {
+                        pb = Some(layer.finalize(context)?);
+                    }
+                    Self::A { a: pa, b: pb }
+                }
+                _ => self,
+            },
+        )
+    }
+    fn merge(
+        &mut self,
+        context: &Self::Context,
+        mut next: Self,
+    ) -> std::result::Result<(), schematic::ConfigError> {
+        use schematic::internal::*;
+        match self {
+            Self::A { a: pa, b: pb } => {
+                if let Self::A { a: na, b: nb } = next {
+                    MergeManager::new(context).apply(pa, na)?.nested(pb, nb)?;
+                } else {
+                    *self = next;
+                }
+            }
+            Self::B { c: pa } => {
+                if let Self::B { c: na } = next {
+                    MergeManager::new(context).apply(pa, na)?;
+                } else {
+                    *self = next;
+                }
+            }
+            _ => {
+                *self = next;
+            }
+        };
+        Ok(())
+    }
+    fn validate_with_path(
+        &self,
+        context: &Self::Context,
+        finalizing: bool,
+        path: schematic::Path,
+    ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
+        use schematic::internal::*;
+        let mut validate = ValidateManager::new(context, finalizing, path);
+        match self {
+            Self::A { b: pb, .. } => {
+                validate
+                    .named_variant(
+                        "A",
+                        |validate| {
+                            if let Some(setting) = pb {
+                                validate.nested("b", setting);
+                            } else if finalizing {
+                                validate
+                                    .nested(
+                                        "b",
+                                        &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
+                                    );
+                            }
+                        },
+                    );
+            }
+            Self::B { c: pa, .. } => {
+                validate
+                    .named_variant(
+                        "B",
+                        |validate| {
+                            if let Some(setting) = pa {
+                                validate
+                                    .check(
+                                        "c",
+                                        setting,
+                                        self,
+                                        |v, d, c, f| func_ref(v, d, c, f),
+                                    );
+                            }
+                            if pa.is_none() {
+                                validate.required("c");
+                            }
+                        },
+                    );
+            }
+            _ => {}
+        };
+        if !validate.errors.is_empty() {
+            return Err(validate.errors);
+        }
+        Ok(())
+    }
+}
+#[automatically_derived]
+impl schematic::Config for Example {
+    type Partial = PartialExample;
+    fn default_partial() -> Self::Partial {
+        use schematic::internal::*;
+        #[allow(unused_variables)]
+        let context: &<Self::Partial as schematic::PartialConfig>::Context = &Default::default();
+        let partial = (|| -> std::result::Result<Self::Partial, schematic::ConfigError> {
+            Ok(PartialExample::A {
+                a: Some((&&DefaultString::<String>::new()).parse_default("a")?),
+                b: Some(<NestedConfig as schematic::Config>::default_partial()),
+            })
+        })();
+        partial.expect("Failed to generate default values.")
+    }
+    fn from_partial(partial: Self::Partial) -> Self {
+        match partial {
+            PartialExample::A { a: pa, b: pb } => {
+                Self::A {
+                    a: pa.unwrap_or_default(),
+                    b: {
+                        let data = pb.unwrap_or_default();
+                        <NestedConfig as schematic::Config>::from_partial(data)
+                    },
+                }
+            }
+            PartialExample::B { c: pa } => Self::B { c: pa },
+        }
+    }
+    fn settings() -> schematic::ConfigSettingMap {
+        use schematic::ConfigSetting;
+        std::collections::BTreeMap::from_iter([
+            (
+                "A".into(),
+                ConfigSetting::new("A")
+                    .nested(
+                        std::collections::BTreeMap::from_iter([
+                            ("a".into(), ConfigSetting::new("String")),
+                            (
+                                "b".into(),
+                                schematic::internal::with_nested_settings::<
+                                    NestedConfig,
+                                >(ConfigSetting::new("NestedConfig")),
+                            ),
+                        ]),
+                    ),
+            ),
+            (
+                "B".into(),
+                ConfigSetting::new("B")
+                    .nested(
+                        std::collections::BTreeMap::from_iter([
+                            ("c".into(), ConfigSetting::new("Option<bool>")),
+                        ]),
+                    ),
+            ),
+        ])
+    }
+}
+#[automatically_derived]
+impl Default for Example {
+    fn default() -> Self {
+        <Self as schematic::Config>::from_partial(
+            <Self as schematic::Config>::default_partial(),
+        )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for Example {
+    fn schema_name() -> Option<String> {
+        Some("Example".into())
+    }
+    fn build_schema(mut schema: schematic::SchemaBuilder) -> schematic::Schema {
+        use schematic::schema::*;
+        schema
+            .union(
+                UnionType::from_named_schemas(
+                    [
+                        (
+                            "A".into(),
+                            {
+                                let mut item = {
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "a".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<String>());
+                                                    field.default = Some(LiteralValue::String("a".into()));
+                                                    field.optional = true;
+                                                    field
+                                                },
+                                            ),
+                                            (
+                                                "b".into(),
+                                                SchemaField::new(schema.infer_as_nested::<NestedConfig>()),
+                                            ),
+                                        ]),
+                                    );
+                                    if item
+                                        .ty
+                                        .add_field(
+                                            "type",
+                                            SchemaField::new(
+                                                Schema::literal_value(LiteralValue::String("A".into())),
+                                            ),
+                                        )
+                                    {
+                                        item.name = None;
+                                    }
+                                    item
+                                };
+                                item.partialize();
+                                item
+                            },
+                        ),
+                        (
+                            "B".into(),
+                            {
+                                let mut item = {
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            ("c".into(), SchemaField::new(schema.infer::<bool>())),
+                                        ]),
+                                    );
+                                    if item
+                                        .ty
+                                        .add_field(
+                                            "type",
+                                            SchemaField::new(
+                                                Schema::literal_value(LiteralValue::String("B".into())),
+                                            ),
+                                        )
+                                    {
+                                        item.name = None;
+                                    }
+                                    item
+                                };
+                                item.partialize();
+                                item
+                            },
+                        ),
+                    ],
+                    Some(0usize),
+                ),
+            )
+    }
+}
+#[automatically_derived]
+impl schematic::Schematic for PartialExample {
+    fn schema_name() -> Option<String> {
+        Some("PartialExample".into())
+    }
+    fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
+        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
+        schematic::internal::partialize_schema(&mut schema, true);
+        schema
+    }
+}

@@ -1,0 +1,19 @@
+---
+source: crates/core/tests/setting_default_test.rs
+expression: pretty(container.impl_full_default_partial())
+---
+fn default_partial() -> Self::Partial {
+    use schematic::internal::*;
+    #[allow(unused_variables)]
+    let context: &<Self::Partial as schematic::PartialConfig>::Context = &Default::default();
+    let partial = (|| -> std::result::Result<Self::Partial, schematic::ConfigError> {
+        Ok(PartialExample::Bar {
+            a: Some(true),
+            b: Some((&&DefaultString::<String>::new()).parse_default("abc")?),
+            c: None,
+            d: Some(<NestedConfig as schematic::Config>::default_partial()),
+            e: handle_default_result(handler(context))?,
+        })
+    })();
+    partial.expect("Failed to generate default values.")
+}
