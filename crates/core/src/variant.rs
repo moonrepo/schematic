@@ -750,6 +750,8 @@ impl Variant {
             // and units have no value
             if unit {
                 quote! { Schema::null() }
+            } else if self.is_named_variant() {
+                partial_inner
             } else {
                 inner
             }

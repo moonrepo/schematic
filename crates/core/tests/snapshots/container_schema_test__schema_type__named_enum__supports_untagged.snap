@@ -10,72 +10,87 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "A".into(),
                         {
-                            let mut item = Schema::structure(
-                                StructType::new([
-                                    (
-                                        "a".into(),
-                                        {
-                                            let mut field = SchemaField::new(schema.infer::<String>());
-                                            field.comment = Some("Field docs.".into());
-                                            field
-                                        },
-                                    ),
-                                    (
-                                        "b".into(),
-                                        {
-                                            let mut field = SchemaField::new(schema.infer::<usize>());
-                                            field.default = Some(LiteralValue::Int(10));
-                                            field.optional = true;
-                                            field
-                                        },
-                                    ),
-                                    (
-                                        "c".into(),
-                                        {
-                                            let mut field = SchemaField::new(
-                                                schema.infer::<Option<bool>>(),
-                                            );
-                                            field.nullable = true;
-                                            field.optional = true;
-                                            field
-                                        },
-                                    ),
-                                    ("d".into(), SchemaField::new(schema.infer::<String>())),
-                                ]),
-                            );
+                            let mut item = {
+                                let mut item = Schema::structure(
+                                    StructType::new([
+                                        (
+                                            "a".into(),
+                                            {
+                                                let mut field = SchemaField::new(schema.infer::<String>());
+                                                field.comment = Some("Field docs.".into());
+                                                field
+                                            },
+                                        ),
+                                        (
+                                            "b".into(),
+                                            {
+                                                let mut field = SchemaField::new(schema.infer::<usize>());
+                                                field.default = Some(LiteralValue::Int(10));
+                                                field.optional = true;
+                                                field
+                                            },
+                                        ),
+                                        (
+                                            "c".into(),
+                                            {
+                                                let mut field = SchemaField::new(
+                                                    schema.infer::<Option<bool>>(),
+                                                );
+                                                field.nullable = true;
+                                                field.optional = true;
+                                                field
+                                            },
+                                        ),
+                                        ("d".into(), SchemaField::new(schema.infer::<String>())),
+                                    ]),
+                                );
+                                item.partialize();
+                                item
+                            };
                             item.description = Some("Docs.".into());
                             item
                         },
                     ),
                     (
                         "B".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "inner".into(),
-                                    SchemaField::new(schema.infer_as_nested::<NestedConfig>()),
-                                ),
-                                (
-                                    "inner_opt".into(),
-                                    {
-                                        let mut field = SchemaField::new(
-                                            schema.infer_as_nested::<Option<NestedConfig>>(),
-                                        );
-                                        field.nullable = true;
-                                        field.optional = true;
-                                        field
-                                    },
-                                ),
-                                (
-                                    "inner_map".into(),
-                                    SchemaField::new(
-                                        schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                        {
+                            let mut item = Schema::structure(
+                                StructType::new([
+                                    (
+                                        "inner".into(),
+                                        SchemaField::new(schema.infer_as_nested::<NestedConfig>()),
                                     ),
-                                ),
-                            ]),
-                        ),
+                                    (
+                                        "inner_opt".into(),
+                                        {
+                                            let mut field = SchemaField::new(
+                                                schema.infer_as_nested::<Option<NestedConfig>>(),
+                                            );
+                                            field.nullable = true;
+                                            field.optional = true;
+                                            field
+                                        },
+                                    ),
+                                    (
+                                        "inner_map".into(),
+                                        SchemaField::new(
+                                            schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                                        ),
+                                    ),
+                                ]),
+                            );
+                            item.partialize();
+                            item
+                        },
                     ),
-                    ("C".into(), Schema::structure(StructType::default())),
+                    (
+                        "C".into(),
+                        {
+                            let mut item = Schema::structure(StructType::default());
+                            item.partialize();
+                            item
+                        },
+                    ),
                     ("Text".into(), schema.infer::<String>()),
                     ("Unit".into(), Schema::null()),
                 ],

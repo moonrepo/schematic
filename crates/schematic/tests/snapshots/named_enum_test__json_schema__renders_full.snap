@@ -1,0 +1,162 @@
+---
+source: crates/schematic/tests/named_enum_test.rs
+expression: "generate(false, JsonSchemaRenderer::default())"
+---
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Settings",
+  "type": "object",
+  "required": [
+    "dependency",
+    "mode",
+    "source"
+  ],
+  "properties": {
+    "dependency": {
+      "$ref": "#/definitions/Dependency"
+    },
+    "mode": {
+      "default": "Off",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Mode"
+        }
+      ]
+    },
+    "source": {
+      "$ref": "#/definitions/Source"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Dependency": {
+      "title": "Dependency",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "optional": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Mode": {
+      "title": "Mode",
+      "default": "Off",
+      "anyOf": [
+        {
+          "const": "Off"
+        },
+        {
+          "type": "object",
+          "required": [
+            "On"
+          ],
+          "properties": {
+            "On": {
+              "type": "object",
+              "required": [
+                "level"
+              ],
+              "properties": {
+                "level": {
+                  "type": "integer",
+                  "maximum": 255,
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Retry": {
+      "title": "Retry",
+      "type": "object",
+      "properties": {
+        "attempts": {
+          "default": 3,
+          "type": "integer",
+          "maximum": 255,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "Source": {
+      "title": "Source",
+      "description": "Where to load from.",
+      "anyOf": [
+        {
+          "description": "A file on disk.",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "format": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "path": {
+              "description": "The file to read.",
+              "default": "config.json",
+              "type": "string"
+            },
+            "type": {
+              "const": "file"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "address",
+            "retry",
+            "type"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            },
+            "retry": {
+              "$ref": "#/definitions/Retry"
+            },
+            "type": {
+              "const": "url"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

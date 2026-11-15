@@ -427,6 +427,12 @@ pub fn partialize_schema(schema: &mut Schema, force_partial: bool) {
                 update_name(true);
 
                 for field in inner.fields.values_mut() {
+                    // A literal is the tag an internally tagged variant adds to
+                    // the struct it holds, which serde requires of every layer
+                    if matches!(field.schema.ty, SchemaType::Literal(_)) {
+                        continue;
+                    }
+
                     // Once nullable, the default of a named type within is no
                     // longer reported, as it belongs to the type, so the
                     // default it had as a setting is kept on the field
