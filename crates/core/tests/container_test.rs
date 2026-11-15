@@ -138,6 +138,108 @@ mod container {
     }
 }
 
+// An enum is one kind, so what its variants hold is asked of them
+mod enum_kinds {
+    use super::*;
+    use schematic_core::container::ContainerMacro;
+
+    #[test]
+    fn structs_are_neither() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                a: String,
+            }
+        });
+
+        assert!(!container.inner.is_unit_only());
+        assert!(!container.inner.has_named_variants());
+    }
+
+    #[test]
+    fn unit_only() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A,
+                B,
+            }
+        });
+
+        assert!(container.inner.is_unit_only());
+        assert!(!container.inner.has_named_variants());
+        assert!(matches!(container.get_tag_format(), SerdeTagFormat::Unit));
+    }
+
+    #[test]
+    fn empty_is_unit_only() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {}
+        });
+
+        assert!(container.inner.is_unit_only());
+        assert!(!container.inner.has_named_variants());
+    }
+
+    // A unit variant beside a value is written as its name, but the enum
+    // isn't one of strings
+    #[test]
+    fn units_with_values_are_tagged() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            #[serde(tag = "type")]
+            enum Example {
+                A,
+                B(String),
+            }
+        });
+
+        assert!(!container.inner.is_unit_only());
+        assert!(!container.inner.has_named_variants());
+        assert!(matches!(
+            container.get_tag_format(),
+            SerdeTagFormat::Internal(tag) if tag == "type"
+        ));
+    }
+
+    #[test]
+    fn any_named_variant() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A,
+                B(String),
+                C { c: String },
+            }
+        });
+
+        assert!(!container.inner.is_unit_only());
+        assert!(container.inner.has_named_variants());
+        assert!(matches!(
+            container.get_tag_format(),
+            SerdeTagFormat::External
+        ));
+    }
+
+    // A fallback holds a value, yet a `ConfigEnum` is still written as a string
+    #[test]
+    fn config_enum_with_a_fallback_is_unit_tagged() {
+        let mut container = Container::from(parse_quote! {
+            #[derive(ConfigEnum)]
+            enum Example {
+                A,
+                #[setting(fallback)]
+                Other(String),
+            }
+        });
+        container.macro_type = ContainerMacro::ConfigUnitEnum;
+
+        assert!(!container.inner.is_unit_only());
+        assert!(matches!(container.get_tag_format(), SerdeTagFormat::Unit));
+    }
+}
+
 mod settings {
     use super::*;
 
