@@ -182,20 +182,8 @@ impl Field {
     }
 
     /// Panic on an attribute that a setting of a named variant can't honor,
-    /// as an enum reads no environment variables, and only a struct extends.
+    /// as only a struct extends.
     fn validate_variant_args(&self) {
-        for (name, used) in [
-            ("env", self.args.env.is_some()),
-            ("env_prefix", self.args.env_prefix.is_some()),
-            ("parse_env", self.args.parse_env.is_some()),
-        ] {
-            if used {
-                panic!(
-                    "Cannot use `{name}` within an enum variant, as an enum reads no environment variables."
-                );
-            }
-        }
-
         if self.args.extend {
             panic!("Cannot use `extend` within an enum variant, as only a named struct extends.");
         }

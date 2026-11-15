@@ -1,0 +1,33 @@
+---
+source: crates/core/tests/container_env_test.rs
+expression: pretty(container.impl_partial_env_values())
+---
+fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    use schematic::internal::*;
+    let mut env = EnvManager::new(None::<&str>, Some("AUTH_"));
+    Ok(
+        env
+            .get_and_parse_prefixed(
+                "KIND",
+                |value| {
+                    Ok(
+                        Some(
+                            match value.as_str() {
+                                "Redis" => Self::Redis(Default::default()),
+                                "S3" => Self::S3(Default::default()),
+                                _ => {
+                                    return Err(
+                                        schematic::HandlerError::new(
+                                            format!(
+                                                "Unknown variant `{value}`, expected one of `Redis`, `S3`."
+                                            ),
+                                        ),
+                                    );
+                                }
+                            },
+                        ),
+                    )
+                },
+            )?,
+    )
+}

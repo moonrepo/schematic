@@ -133,7 +133,9 @@ Each now fails loudly, mostly as a derive panic from `Container::validate_attrib
 - `#[setting(fallback)]` on a `Config` enum variant (`#[variant]` isn't a `Config` helper, so this
   is how one would write it).
 - `#[default]` on a `Config` enum variant, and `default` was dropped from the inheritable attributes.
-- `env_prefix` and `allow_unknown_fields` on a `Config` or `ConfigEnum` enum.
+- `env_prefix` and `allow_unknown_fields` on a `Config` or `ConfigEnum` enum without named
+  variants. A named variant has fields for both, so it accepts them, and a tag that can pick a
+  variant accepts `env_prefix` ([enum-env.md](enum-env.md)).
 - `tag` or `untagged` on a `Config` enum of only unit variants.
 - `skip_deserializing_if`, from `#[setting]` or `#[serde]`, in `Field::validate_args`.
 - A parent's `#[setting(nested, env_prefix)]` covers more than enums: it's a no-op for any nested

@@ -57,16 +57,27 @@ pub struct VariantValueArgs {
     pub nested: Option<NestedArg>,
 }
 
+/// The suffix of a binding by position, a letter for the first 26.
+fn get_binding_suffix(index: usize) -> String {
+    if index < 26 {
+        ((b'a' + index as u8) as char).to_string()
+    } else {
+        index.to_string()
+    }
+}
+
 /// The bindings of a variant's values or settings, when destructured from
 /// this partial (`pa`) and the next (`na`), by position.
 pub fn get_binding_idents(index: usize) -> (Ident, Ident) {
-    if index < 26 {
-        let letter = (b'a' + index as u8) as char;
+    let suffix = get_binding_suffix(index);
 
-        (format_ident!("p{letter}"), format_ident!("n{letter}"))
-    } else {
-        (format_ident!("p{index}"), format_ident!("n{index}"))
-    }
+    (format_ident!("p{suffix}"), format_ident!("n{suffix}"))
+}
+
+/// The binding of a named variant's setting as read from the environment
+/// (`ea`), by position, so that a setting's name never shadows it.
+fn get_env_binding_ident(index: usize) -> Ident {
+    format_ident!("e{}", get_binding_suffix(index))
 }
 
 /// Return the value of a boolean literal, which is all
@@ -356,6 +367,22 @@ impl Variant {
             || self.serde_args.skip_deserializing
     }
 
+    /// Whether a variable naming this variant can pick it, which the enum's
+    /// environment layer then holds with nothing in it, for finalizing to fill
+    /// in. A unit or named variant can be, as can one whose values are all
+    /// nested configs, while a plain value has nothing to fill it in. One that
+    /// serde never deserializes, or that has no name to match, can't be.
+    pub fn is_env_selectable(&self) -> bool {
+        if self.is_skipped_deserializing() || self.is_untagged() || self.args.null {
+            return false;
+        }
+
+        match &self.fields {
+            Fields::Unit | Fields::Named(_) => true,
+            Fields::Unnamed(_) => self.values.iter().all(|value| value.nested),
+        }
+    }
+
     /// Aliases can be provided by both attributes, so combine them.
     pub fn get_aliases(&self) -> Vec<&String> {
         let mut aliases = vec![];
@@ -613,6 +640,7 @@ impl Variant {
         tag_format: &SerdeTagFormat,
         partial: bool,
         allows_unknown_fields: bool,
+        tag_env_var: Option<&str>,
     ) -> TokenStream {
         use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
@@ -727,6 +755,17 @@ impl Variant {
         let unit = self.is_unit_variant();
         let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
+        // A tag reports the variable that picks its variant, like a setting
+        let tag_field = tag_env_var.map(|key| {
+            quote! {
+                {
+                    let mut field = SchemaField::new(#name_literal);
+                    field.env_var = Some(#key.into());
+                    field
+                }
+            }
+        });
+
         let mut schema = if let SerdeTagFormat::Unit = tag_format {
             // Every variant is a unit, so the enum is a list of named values
             let ty = if self.args.null {
@@ -773,12 +812,17 @@ impl Variant {
                 // { "tag": "name", ...value }
                 SerdeTagFormat::Internal(tag) => {
                     if unit {
+                        let field = tag_field.unwrap_or_else(|| name_literal.clone());
+
                         quote! {
                             Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
+                                (#tag.into(), #field),
                             ]))
                         }
                     } else {
+                        let field =
+                            tag_field.unwrap_or_else(|| quote! { SchemaField::new(#name_literal) });
+
                         // The tag makes it a different shape to the type it holds,
                         // so it's no longer that named type, which a renderer
                         // would otherwise reference without the tag
@@ -786,7 +830,7 @@ impl Variant {
                             {
                                 let mut item = #inner;
 
-                                if item.ty.add_field(#tag, SchemaField::new(#name_literal)) {
+                                if item.ty.add_field(#tag, #field) {
                                     item.name = None;
                                 }
 
@@ -797,19 +841,29 @@ impl Variant {
                 }
                 // { "tag": "name" } | { "tag": "name", "content": value }
                 SerdeTagFormat::Adjacent(tag, content) => {
-                    if unit {
-                        quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
-                            ]))
+                    match (unit, tag_field) {
+                        (true, field) => {
+                            let field = field.unwrap_or_else(|| name_literal.clone());
+
+                            quote! {
+                                Schema::structure(StructType::new([
+                                    (#tag.into(), #field),
+                                ]))
+                            }
                         }
-                    } else {
-                        quote! {
+                        // The entries are each a field, as the tag's is
+                        (false, Some(field)) => quote! {
+                            Schema::structure(StructType::new([
+                                (#tag.into(), #field),
+                                (#content.into(), SchemaField::from(#partial_inner)),
+                            ]))
+                        },
+                        (false, None) => quote! {
                             Schema::structure(StructType::new([
                                 (#tag.into(), #name_literal),
                                 (#content.into(), #partial_inner),
                             ]))
-                        }
+                        },
                     }
                 }
             }
@@ -1269,8 +1323,8 @@ impl Variant {
                             .map(|(i, o)| {
                                 let value = if self.values[i].nested {
                                     // Variant values have no partial `Option`
-                                    // wrapper, so walk all layers. An enum
-                                    // reads no environment of its own, so a
+                                    // wrapper, so walk all layers. An enum's
+                                    // environment layer holds no variant, so a
                                     // value is finalized in full.
                                     self.values[i]
                                         .impl_partial_finalize_nested(o, false, true)
@@ -1298,34 +1352,63 @@ impl Variant {
         res
     }
 
+    /// The value of each of this named variant's settings as read from the
+    /// environment, in order, like the environment values of a struct, or
+    /// `None` for a setting that reads none.
+    fn get_named_env_values(&self) -> Vec<Option<TokenStream>> {
+        self.settings
+            .iter()
+            .map(|setting| {
+                let res = setting.impl_partial_env_value();
+
+                (!res.no_value).then_some(res.value)
+            })
+            .collect()
+    }
+
     /// Generate the finalization of this named variant. No layer holds the
-    /// defaults of its settings, as a source may pick it over the default
-    /// variant, so like the value of a tuple variant, it's a boundary: its
-    /// defaults are merged under it, each setting with its own `merge`, and
-    /// then its settings are transformed and finalized as a struct's are.
+    /// defaults or environment variables of its settings, as a source may
+    /// pick it over the default variant, so like the value of a tuple variant,
+    /// it's a boundary: its defaults are merged under it and its environment
+    /// variables over it, each setting with its own `merge`, as the loader
+    /// does for a struct, and then its settings are transformed and finalized
+    /// as a struct's are.
     fn impl_partial_finalize_named(&self) -> ImplResult {
         let name = &self.ident;
         let (defaults, mut requires_internal) = self.get_named_defaults(false);
+        let env_values = self.get_named_env_values();
         let statements = self
             .settings
             .iter()
             .map(|setting| setting.impl_partial_finalize())
             .collect::<Vec<_>>();
 
-        if defaults.iter().all(Option::is_none) && statements.iter().all(|res| res.no_value) {
+        if defaults.iter().all(Option::is_none)
+            && env_values.iter().all(Option::is_none)
+            && statements.iter().all(|res| res.no_value)
+        {
             return ImplResult::skipped();
         }
 
         let mut bindings = vec![];
         let mut lets = vec![];
         let mut merges = vec![];
+        let mut env_lets = vec![];
+        let mut env_merges = vec![];
 
         // A setting with a default is bound as the next value, and merged into
         // its default, while one without is bound as the value itself
-        for ((setting, default), res) in self.settings.iter().zip(defaults).zip(&statements) {
+        for (index, ((setting, default), env_value)) in self
+            .settings
+            .iter()
+            .zip(defaults)
+            .zip(env_values)
+            .enumerate()
+        {
             let key = setting.get_key();
             let prev = setting.get_access(quote! { self });
             let next = setting.get_next_access();
+            let finalizes = !statements[index].no_value;
 
             if let Some(value) = default {
                 lets.push(quote! { let mut #prev = #value; });
@@ -1335,12 +1418,44 @@ impl Variant {
                         .value,
                 );
                 bindings.push(quote! { #key: #next });
-            } else if res.no_value {
-                bindings.push(quote! { #key: #prev });
-            } else {
+            } else if finalizes || env_value.is_some() {
                 bindings.push(quote! { #key: mut #prev });
+            } else {
+                bindings.push(quote! { #key: #prev });
+            }
+
+            // Merged after every source, as the environment is the last layer
+            if let Some(value) = env_value {
+                let env_binding = get_env_binding_ident(index);
+
+                env_lets.push(quote! { let #env_binding = #value; });
+                env_merges.push(
+                    setting
+                        .impl_partial_merge_into(&quote! { &mut #prev }, &quote! { #env_binding })
+                        .value,
+                );
             }
         }
+
+        // The keys a setting derives take the container's own prefix, as a
+        // parent's `#[setting(nested, env_prefix)]` never reaches a variant
+        let env = if env_lets.is_empty() {
+            quote! {}
+        } else {
+            requires_internal = true;
+
+            let own_prefix = match &self.container_args.env_prefix {
+                Some(prefix) => quote! { Some(#prefix) },
+                None => quote! { None },
+            };
+
+            quote! {
+                let mut env = EnvManager::new(None::<&str>, #own_prefix);
+                #(#env_lets)*
+            }
+        };
+
+        merges.extend(env_merges);
 
         let merge = if merges.is_empty() {
             quote! {}
@@ -1364,6 +1479,7 @@ impl Variant {
             value: quote! {
                 Self::#name { #(#bindings),* } => {
                     #(#lets)*
+                    #env
                     #merge
                     #(#statements)*
 

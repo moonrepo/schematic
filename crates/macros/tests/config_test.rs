@@ -3347,3 +3347,454 @@ mod named_variants {
         );
     }
 }
+
+mod named_variant_env {
+    use super::*;
+    use schematic::merge::append_vec;
+    use std::env;
+
+    fn load<T: ConfigTrait>(code: &str) -> Result<T, String> {
+        ConfigLoader::<T>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Child {
+        #[setting(env = "NAMED_ENV_TOKEN")]
+        token: Option<String>,
+        #[setting(
+            default = vec!["d".to_owned()],
+            merge = append_vec,
+            env = "NAMED_ENV_LIST",
+            parse_env = schematic::env::split_comma
+        )]
+        list: Vec<String>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum Auth {
+        #[setting(nested)]
+        Tuple(Child),
+        #[setting(default)]
+        Named {
+            #[setting(nested)]
+            child: Child,
+            #[setting(nested)]
+            maybe: Option<Child>,
+            // Named like the `EnvManager` that finalizing binds
+            #[setting(nested)]
+            env: Child,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Parent {
+        #[setting(nested)]
+        auth: Auth,
+        #[setting(nested)]
+        items: Vec<Auth>,
+    }
+
+    // No layer holds the environment variables of a variant a source picks,
+    // so a nested config within a named variant reads its own when the
+    // variant is finalized, as one within a tuple variant already did
+    #[test]
+    fn reads_the_env_of_a_nested_config() {
+        unsafe {
+            env::set_var("NAMED_ENV_TOKEN", "env");
+            env::set_var("NAMED_ENV_LIST", "e");
+        };
+
+        let root = load::<Auth>(r#"{ "Named": { "child": { "list": ["f"] } } }"#);
+        let tuple = load::<Auth>(r#"{ "Tuple": {} }"#);
+        let parent = load::<Parent>(r#"{ "auth": { "Named": {} }, "items": [{ "Named": {} }] }"#);
+        let default = Auth::default();
+
+        unsafe {
+            env::remove_var("NAMED_ENV_TOKEN");
+            env::remove_var("NAMED_ENV_LIST");
+        };
+
+        let from_env = |list: &[&str]| Child {
+            token: Some("env".into()),
+            list: list.iter().map(|item| item.to_string()).collect(),
+        };
+
+        // Over the source and its defaults, and each merged once
+        assert_eq!(
+            root.unwrap(),
+            Auth::Named {
+                child: from_env(&["d", "f", "e"]),
+                maybe: Some(from_env(&["d", "e"])),
+                env: from_env(&["d", "e"]),
+            }
+        );
+        assert_eq!(tuple.unwrap(), Auth::Tuple(from_env(&["d", "e"])));
+
+        let parent = parent.unwrap();
+        let named = Auth::Named {
+            child: from_env(&["d", "e"]),
+            maybe: Some(from_env(&["d", "e"])),
+            env: from_env(&["d", "e"]),
+        };
+
+        assert_eq!(parent.auth, named);
+        assert_eq!(parent.items, vec![named]);
+
+        // Defaults never read the environment
+        let empty = Child {
+            token: None,
+            list: vec!["d".into()],
+        };
+
+        assert_eq!(
+            default,
+            Auth::Named {
+                child: empty.clone(),
+                maybe: None,
+                env: empty,
+            }
+        );
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct PortChild {
+        #[setting(env = "NAMED_ENV_PORT")]
+        port: Option<u16>,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub enum PortSource {
+        #[setting(default)]
+        Named {
+            #[setting(nested)]
+            child: PortChild,
+        },
+    }
+
+    #[test]
+    fn names_the_variable_that_fails_to_parse() {
+        unsafe { env::set_var("NAMED_ENV_PORT", "abc") };
+
+        let result = load::<PortSource>(r#"{ "Named": {} }"#);
+
+        unsafe { env::remove_var("NAMED_ENV_PORT") };
+
+        assert!(result.unwrap_err().contains("NAMED_ENV_PORT"));
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct UnitChild {
+        #[setting(env = "NAMED_ENV_MAPPED")]
+        value: Option<String>,
+    }
+
+    #[derive(Default)]
+    pub struct AppContext {
+        _name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(context = AppContext)]
+    pub enum Mapped {
+        #[setting(default)]
+        Named {
+            #[setting(nested, context = schematic::context::unit)]
+            child: UnitChild,
+        },
+    }
+
+    // The environment is merged with the context the child takes
+    #[test]
+    fn reads_the_env_of_a_nested_config_with_a_mapped_context() {
+        unsafe { env::set_var("NAMED_ENV_MAPPED", "mapped") };
+
+        let result = load::<Mapped>(r#"{ "Named": {} }"#);
+
+        unsafe { env::remove_var("NAMED_ENV_MAPPED") };
+
+        assert_eq!(
+            result.unwrap(),
+            Mapped::Named {
+                child: UnitChild {
+                    value: Some("mapped".into())
+                }
+            }
+        );
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_RETRY_")]
+    pub struct Retry {
+        #[setting(default = 3)]
+        attempts: u8,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_SRC_")]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Source {
+        #[setting(default)]
+        File {
+            #[setting(default = "config.json")]
+            path: String,
+            #[setting(
+                default = vec!["d".to_owned()],
+                merge = append_vec,
+                parse_env = schematic::env::split_comma
+            )]
+            tags: Vec<String>,
+        },
+        Url {
+            #[setting(required)]
+            address: Option<String>,
+            #[setting(env = "NV_URL_TOKEN")]
+            token: Option<String>,
+            // Shares `NV_SRC_PATH` with `File`, as only one is ever picked
+            path: Option<String>,
+            #[setting(nested, env_prefix = "NV_URL_RETRY_")]
+            retry: Retry,
+        },
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Sources {
+        #[setting(nested)]
+        source: Source,
+        #[setting(nested)]
+        items: Vec<Source>,
+    }
+
+    // A variant's settings read the variables they derive from the enum's
+    // prefix, or name, over every source, but only within the variant that a
+    // source or the default picked
+    #[test]
+    fn reads_the_env_of_the_picked_variant() {
+        unsafe {
+            env::set_var("NV_SRC_PATH", "env.json");
+            env::set_var("NV_SRC_TAGS", "e");
+            env::set_var("NV_SRC_ADDRESS", "addr");
+            env::set_var("NV_URL_TOKEN", "tok");
+            env::set_var("NV_URL_RETRY_ATTEMPTS", "7");
+        };
+
+        let file = load::<Source>(r#"{ "type": "file", "tags": ["f"] }"#);
+        let url = load::<Source>(r#"{ "type": "url" }"#);
+        let default = ConfigLoader::<Source>::new().load();
+        let parent = load::<Sources>(r#"{ "items": [{ "type": "url" }, { "type": "file" }] }"#);
+
+        unsafe {
+            env::remove_var("NV_SRC_PATH");
+            env::remove_var("NV_SRC_TAGS");
+            env::remove_var("NV_SRC_ADDRESS");
+            env::remove_var("NV_URL_TOKEN");
+            env::remove_var("NV_URL_RETRY_ATTEMPTS");
+        };
+
+        let file_from_env = |tags: &[&str]| Source::File {
+            path: "env.json".into(),
+            tags: tags.iter().map(|tag| tag.to_string()).collect(),
+        };
+        // `address` is required, which the environment satisfies, and the
+        // parent's prefix reaches the nested config
+        let url_from_env = Source::Url {
+            address: Some("addr".into()),
+            token: Some("tok".into()),
+            path: Some("env.json".into()),
+            retry: Retry { attempts: 7 },
+        };
+
+        // Each merged once, over the default and the source
+        assert_eq!(file.unwrap(), file_from_env(&["d", "f", "e"]));
+        assert_eq!(url.unwrap(), url_from_env);
+        assert_eq!(default.unwrap().config, file_from_env(&["d", "e"]));
+
+        let parent = parent.unwrap();
+
+        assert_eq!(parent.source, file_from_env(&["d", "e"]));
+        assert_eq!(parent.items, vec![url_from_env, file_from_env(&["d", "e"])]);
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "NV_REQ_")]
+    pub enum RequiredSource {
+        #[setting(default)]
+        Url {
+            #[setting(required)]
+            address: Option<String>,
+        },
+    }
+
+    // Without the variable, a required setting is still reported
+    #[test]
+    fn reports_a_required_setting_the_env_leaves_out() {
+        let error = load::<RequiredSource>(r#"{ "Url": {} }"#).unwrap_err();
+
+        assert!(error.contains("Url.address"), "{error}");
+    }
+
+    #[test]
+    fn lists_the_env_of_each_variant() {
+        let settings = Source::settings();
+        let url = settings["url"].nested.as_ref().unwrap();
+        let file = settings["file"].nested.as_ref().unwrap();
+
+        assert_eq!(url["address"].env_key.as_deref(), Some("NV_SRC_ADDRESS"));
+        assert_eq!(url["token"].env_key.as_deref(), Some("NV_URL_TOKEN"));
+        assert_eq!(url["path"].env_key.as_deref(), Some("NV_SRC_PATH"));
+        assert_eq!(file["path"].env_key.as_deref(), Some("NV_SRC_PATH"));
+        assert_eq!(file["tags"].env_key.as_deref(), Some("NV_SRC_TAGS"));
+        assert_eq!(url["retry"].env_key, None);
+    }
+}
+
+mod env_picked_variant {
+    use super::*;
+    use std::env;
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    pub struct Redis {
+        #[setting(default = 6379, env = "EPV_REDIS_PORT")]
+        port: u16,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "EPV_AUTH_")]
+    #[serde(tag = "type", rename_all = "snake_case")]
+    pub enum Auth {
+        #[setting(default)]
+        None,
+        #[serde(alias = "tok")]
+        Token {
+            #[setting(required)]
+            token: Option<String>,
+            #[setting(default = 60)]
+            ttl: u32,
+        },
+        #[setting(nested)]
+        Redis(Redis),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct App {
+        #[setting(nested)]
+        auth: Auth,
+        #[setting(nested)]
+        maybe: Option<Auth>,
+        #[setting(nested)]
+        items: Vec<Auth>,
+    }
+
+    fn load<T: ConfigTrait>(code: Option<&str>) -> Result<schematic::ConfigLoadResult<T>, String> {
+        let mut loader = ConfigLoader::<T>::new();
+
+        if let Some(code) = code {
+            loader.code(code, "code.json").unwrap();
+        }
+
+        loader.load().map_err(|error| error.to_full_string())
+    }
+
+    fn token(ttl: u32) -> Auth {
+        Auth::Token {
+            token: Some("secret".into()),
+            ttl,
+        }
+    }
+
+    // The tag's variable picks a variant, which the environment layer holds
+    // with nothing in it, so finalizing fills it in, from its defaults and
+    // its own variables. Every case shares the variables, so they're one test.
+    #[test]
+    fn picks_the_variant_its_tag_names() {
+        unsafe {
+            env::set_var("EPV_AUTH_TYPE", "token");
+            env::set_var("EPV_AUTH_TOKEN", "secret");
+        };
+
+        // Over a source that picked another, or the same, or none
+        let other = load::<Auth>(Some(r#"{ "type": "none" }"#));
+        let same = load::<Auth>(Some(r#"{ "type": "token", "ttl": 5 }"#));
+        let none = load::<Auth>(None);
+        // Optional and collected configs are picked too, each item for itself
+        let app = load::<App>(Some(
+            r#"{ "items": [{ "type": "none" }, { "type": "token", "ttl": 1 }] }"#,
+        ));
+
+        unsafe { env::set_var("EPV_AUTH_TYPE", "tok") };
+        let alias = load::<Auth>(None);
+
+        unsafe {
+            env::set_var("EPV_AUTH_TYPE", "redis");
+            env::set_var("EPV_REDIS_PORT", "1");
+        };
+        let nested = load::<Auth>(None);
+
+        unsafe { env::set_var("EPV_AUTH_TYPE", "nope") };
+        let unknown = load::<Auth>(None);
+
+        unsafe {
+            env::remove_var("EPV_AUTH_TYPE");
+            env::remove_var("EPV_AUTH_TOKEN");
+            env::remove_var("EPV_REDIS_PORT");
+        };
+
+        let other = other.unwrap();
+
+        assert_eq!(other.config, token(60));
+        assert!(matches!(
+            other.layers.last().map(|layer| &layer.source),
+            Some(schematic::Source::EnvVars)
+        ));
+        assert_eq!(same.unwrap().config, token(5));
+        assert_eq!(none.unwrap().config, token(60));
+
+        let app = app.unwrap().config;
+
+        assert_eq!(app.auth, token(60));
+        assert_eq!(app.maybe, Some(token(60)));
+        assert_eq!(app.items, vec![token(60), token(1)]);
+
+        assert_eq!(alias.unwrap().config, token(60));
+        assert_eq!(nested.unwrap().config, Auth::Redis(Redis { port: 1 }));
+
+        let Err(unknown) = unknown else {
+            panic!("expected an unknown variant to fail");
+        };
+
+        assert!(unknown.contains("EPV_AUTH_TYPE"), "{unknown}");
+        assert!(
+            unknown.contains("Unknown variant `nope`, expected one of `none`, `token`, `redis`."),
+            "{unknown}"
+        );
+    }
+
+    // Without the variable, the source's variant stands
+    #[derive(Clone, Debug, Config, PartialEq)]
+    #[config(env_prefix = "EPV_UNSET_")]
+    #[serde(tag = "type")]
+    pub enum Unset {
+        #[setting(default)]
+        A,
+        B {
+            b: Option<String>,
+        },
+    }
+
+    #[test]
+    fn keeps_the_variant_of_a_source_without_the_variable() {
+        let result = load::<Unset>(Some(r#"{ "type": "B" }"#)).unwrap();
+
+        assert_eq!(result.config, Unset::B { b: None });
+        assert!(
+            !result
+                .layers
+                .iter()
+                .any(|layer| matches!(layer.source, schematic::Source::EnvVars))
+        );
+    }
+}

@@ -23,12 +23,13 @@
   - `#[setting(fallback)]` on a `Config` enum variant, which only a `ConfigEnum` uses.
   - `#[default]` on a `Config` enum variant, which was copied to the partial and failed to compile.
     Use `#[setting(default)]`.
-  - `env_prefix` or `allow_unknown_fields` on an enum, which reads no environment variables and has
-    no fields.
+  - `env_prefix` or `allow_unknown_fields` on an enum without named variants, which has no fields
+    to read environment variables into or to deny, unless a tag gives `env_prefix` a variant to
+    pick.
   - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
   - `skip_deserializing_if`, which serde has no such attribute for.
-  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, like an
-    enum, which a parent's prefix doesn't apply to. This fails to compile, through a hidden
+  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, or
+    for an enum, which a parent's prefix doesn't apply to. This fails to compile, through a hidden
     `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
 - Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
   is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
@@ -43,16 +44,27 @@
 
 - Added named enum variants to `#[derive(Config)]` and `#[derive(Schematic)]`, like
   `File { path: String }`. Each field is a setting, like a struct's: optional within the partial,
-  with its own `default`, `merge`, `nested`, `required`, `transform`, and `validate`. Two layers
-  picking the same variant are merged field by field, and a layer picking another replaces it. The
-  defaults of a variant's fields are applied whenever it's picked, and a field's validation errors
-  are reported under the variant, like `source.url.address`. Untagged and internally tagged named
-  variants are supported too, and each is a struct in the schema.
+  with its own `default`, `env`, `merge`, `nested`, `parse_env`, `required`, `transform`, and
+  `validate`. Two layers picking the same variant are merged field by field, and a layer picking
+  another replaces it. The defaults and environment variables of a variant's fields are applied
+  whenever it's picked, and a field's validation errors are reported under the variant, like
+  `source.url.address`. Untagged and internally tagged named variants are supported too, and each is
+  a struct in the schema.
   - The fields take the variant's `#[serde(rename_all)]`, or the enum's `rename_all_fields`.
   - An enum with a named variant denies unknown fields, so it now accepts
     `#[config(allow_unknown_fields)]`.
-  - `env`, `env_prefix`, `parse_env`, and `extend` fail to compile within a variant, as does an
-    attribute on the variant that its fields hold instead, like `nested` or `validate`.
+  - An enum with a named variant accepts `#[config(env_prefix)]`, which derives a key for each field
+    of every named variant, like `SOURCE_PATH`. A variable fills in a field of the variant a source
+    or the default picked, and never picks one. The keys appear in `Config::settings()` and the
+    schema, like a struct's, so TypeScript and templates render them.
+  - `extend` fails to compile within a variant, as does an attribute on the variant that its fields
+    hold instead, like `nested` or `validate`.
+- Added picking a `Config` enum's variant from an environment variable. A tagged enum, with serde's
+  `tag`, and `#[config(env_prefix)]` derives a key from its tag, so `tag = "type"` with
+  `env_prefix = "AUTH_"` reads `AUTH_TYPE`. Its value is matched against the variants' names and
+  aliases, and the variant it names replaces one a source picked, with its fields filled in from
+  their defaults and variables. A unit variant, a named variant, or one holding nested configs can
+  be picked, and the key is reported on the tag in the schema, so TypeScript renders `@env`.
 - Added the default values and environment variables to `ConfigLoadResult.layers`, as
   `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
   traced to the layer that set it. They're the layers that were merged, so a default handler that

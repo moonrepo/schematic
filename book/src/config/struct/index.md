@@ -49,14 +49,14 @@ enum Source {
 Every field of a named variant is optional within the [partial](../partial.md), so a layer can
 provide some of them and leave the rest to another. When two layers pick the same variant, its
 fields are merged one by one, each with its own `merge`, while a layer picking another variant
-replaces it. Each field takes the same `#[setting]` fields as a struct's, except `env`,
-`env_prefix`, `parse_env`, and `extend`, as an enum reads no environment variables. The variant
-itself takes only `default`, `exclude`, `partial`, and the serde fields, while the fields hold the
-rest.
+replaces it. Each field takes the same `#[setting]` fields as a struct's, except `extend`. The
+variant itself takes only `default`, `exclude`, `partial`, and the serde fields, while the fields
+hold the rest.
 
-A source may pick a variant other than the default, so the defaults of a named variant's fields are
-applied when it's finalized, however it was picked. A field that fails validation is reported under
-the variant, like `source.url.address`.
+A source may pick a variant other than the default, so the defaults and
+[environment variables](./env.md#enums) of a named variant's fields are applied when it's
+finalized, however it was picked. A field that fails validation is reported under the variant, like
+`source.url.address`.
 
 The fields are named as written, unless the variant has a `#[serde(rename_all)]` of its own, or the
 enum has a `rename_all_fields`. The enum's own `rename_all` names the variants, as with serde.
@@ -72,7 +72,8 @@ The following fields are supported for the `#[config]` container attribute:
   [partial struct](../partial.md), or an enum with named variants. Defaults to `false`.
 - `context` - Sets the struct to be used as the [context](../context.md). Defaults to `None`.
 - `env_prefix` - Sets the prefix to use for [environment variable](./env.md#container-prefixes)
-  mapping. Defaults to `None`.
+  mapping, of a struct's fields or a named variant's, and of a tagged enum's tag. Defaults to
+  `None`.
 - `partial` - Forwards attributes to the [partial](../partial.md).
 
 ```rust
