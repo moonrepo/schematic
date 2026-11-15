@@ -155,6 +155,20 @@ impl Field {
                 panic!("Cannot use `env_prefix` without `nested`.");
             }
 
+            // A nested config reads its own variables, so its env codegen
+            // never asks for a key, and these would be silently ignored
+            if self.is_nested() {
+                if self.args.env.is_some() {
+                    panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
+                }
+
+                if self.args.parse_env.is_some() {
+                    panic!(
+                        "Cannot use `parse_env` with `nested`, as a nested config reads its own variables."
+                    );
+                }
+            }
+
             // A key may be explicit, or derived from the container's prefix,
             // but without one there is nothing for the parser to receive
             if self.args.parse_env.is_some() && self.get_env_var().is_none() {
@@ -250,10 +264,6 @@ impl Field {
         if let Some(env_key) = &self.args.env {
             if env_key.is_empty() {
                 panic!("Attribute `env` cannot be empty.");
-            }
-
-            if self.is_nested() {
-                panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
             }
 
             return Some(EnvKey::Explicit(env_key.to_owned()));

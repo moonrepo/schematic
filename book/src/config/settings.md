@@ -53,7 +53,7 @@ The following fields are supported for the `#[setting]` field/variant attribute:
   variant the partial defaults to, and on a variant holding a value, can also provide that value.
 - `env` _(field only)_ - Sets the [environment variable](./struct/env.md) to receive a value from.
   On a field of a named variant, it's read once a source has [picked](./struct/env.md#enums) the
-  variant.
+  variant. A `nested` config reads its own, so it takes `env_prefix` instead.
 - `env_prefix` _(field only)_ - Adds an [environment variable](./struct/env.md#nested-prefixes)
   prefix for the nested config this field holds. Requires `nested`.
 - `exclude` - Omits the field or variant from the generated [schema](../schema/index.md). Has no
@@ -63,7 +63,8 @@ The following fields are supported for the `#[setting]` field/variant attribute:
 - `nested` - Marks the field as using a [nested `Config`](./nested.md).
 - `null` _(enum only)_ - Marks the variant as representing `null`, so it is never tagged.
 - `parse_env` _(field only)_ - Parses the [environment variable](./struct/env.md) value using a
-  function. Requires either `env`, or an `env_prefix` on the container.
+  function. Requires either `env`, or an `env_prefix` on the container, and can't be used with
+  `nested`.
 - `partial` - Forwards attributes to the field on the [partial](./partial.md). May be repeated.
 - `required` - Marks the setting as [required](./struct/validate.md#required-settings), so that
   loading fails when no source provides a value, instead of falling back to a default.

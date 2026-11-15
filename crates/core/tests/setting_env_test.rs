@@ -101,6 +101,19 @@ mod setting_env {
             .impl_partial_env_values();
         }
 
+        // A nested config reads its own variables, so a key would be ignored
+        #[test]
+        #[should_panic(expected = "Cannot use `env` with `nested`, use `env_prefix` instead?")]
+        fn errors_if_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(nested, env = "KEY")]
+                    a: NestedConfig,
+                }
+            });
+        }
+
         #[test]
         fn supports_different_types() {
             let container = Container::from(parse_quote! {
@@ -326,6 +339,20 @@ mod setting_env {
                 }
             })
             .impl_partial_env_values();
+        }
+
+        #[test]
+        #[should_panic(expected = "Cannot use `env` with `nested`, use `env_prefix` instead?")]
+        fn errors_if_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    A {
+                        #[setting(nested, env = "KEY")]
+                        a: Option<NestedConfig>,
+                    },
+                }
+            });
         }
     }
 
@@ -579,6 +606,22 @@ mod setting_parse_env {
                 struct Example {
                     #[setting(parse_env = func_ref)]
                     a: String,
+                }
+            });
+        }
+
+        // Even with a key derived from the container's prefix to parse
+        #[test]
+        #[should_panic(
+            expected = "Cannot use `parse_env` with `nested`, as a nested config reads its own variables."
+        )]
+        fn errors_if_nested() {
+            Container::from(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefix = "APP_")]
+                struct Example {
+                    #[setting(nested, parse_env = func_ref)]
+                    a: NestedConfig,
                 }
             });
         }

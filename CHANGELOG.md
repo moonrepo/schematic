@@ -33,6 +33,8 @@
     pick.
   - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
   - `skip_deserializing_if`, which serde has no such attribute for.
+  - `env` or `parse_env` on a `nested` setting, as a nested config reads its own variables. Use
+    `env_prefix` instead.
   - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, which
     a parent's prefix doesn't apply to. This fails to compile, through a hidden
     `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
