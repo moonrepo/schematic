@@ -1029,10 +1029,12 @@ impl Container {
         }
 
         match &self.inner {
+            // A skipped field is never read or written, so like an excluded
+            // one it has no schema, and its type needn't implement `Schematic`
             ContainerInner::NamedStruct { fields } => {
                 let types = fields
                     .iter()
-                    .filter(|field| !field.is_excluded())
+                    .filter(|field| !field.is_excluded() && !field.is_skipped())
                     .map(|field| field.impl_schema_type(true))
                     .collect::<Vec<_>>();
 
@@ -1053,7 +1055,7 @@ impl Container {
             ContainerInner::UnnamedStruct { fields } => {
                 let types = fields
                     .iter()
-                    .filter(|field| !field.is_excluded())
+                    .filter(|field| !field.is_excluded() && !field.is_skipped())
                     .map(|field| field.impl_schema_type(false))
                     .collect::<Vec<_>>();
 
@@ -1321,7 +1323,13 @@ impl Container {
             quote! { None }
         };
 
+        // Both are implemented, as the trait's `env_values_with_prefix` falls
+        // back to `env_values`, for a hand-written partial
         quote! {
+            fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+                Self::env_values_with_prefix(None)
+            }
+
             fn env_values_with_prefix(prefix: Option<&str>) -> std::result::Result<Option<Self>, schematic::ConfigError> {
                 #internal
 

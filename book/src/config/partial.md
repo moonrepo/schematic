@@ -29,6 +29,9 @@ pub struct PartialExampleConfig {
 }
 ```
 
+The derives on a partial are always the same, so every setting's type has to implement them. See
+[required traits](./settings.md#required-traits).
+
 So what are partials used for exactly? Partials are used for the entire parsing, layering,
 extending, and merging process, and ultimately become the [final configuration](./index.md).
 

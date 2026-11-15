@@ -51,6 +51,38 @@ Without it serde would infer a `T: Deserialize<'de>` bound of its own, which is 
 the `DeserializeOwned` already in scope. Supplying your own bound through
 `#[config(partial(serde(bound(...))))]` suppresses the generated one.
 
+## Nesting generic configs
+
+A generic config can be nested like any other, including within an `Option` or a collection. The
+type it's written with is the config, so the derive doesn't look inside its type arguments.
+
+```rust
+#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub names: Wrapper<String>,
+
+	#[setting(nested)]
+	pub counts: Vec<Wrapper<usize>>,
+}
+```
+
+A type parameter can also be the nested config. Its partial is derived like any other, which bounds
+every type parameter, so it needs the [same bounds](#bounds-are-not-inferred) as any other
+parameter. Its partial is printed and compared with the rest, and shares the parent's
+[context](./context.md), which the where clause states:
+
+```rust
+#[derive(Config)]
+struct Outer<C: Config + Setting>
+where
+	C::Partial: Debug + PartialEq + PartialConfig<Context = ()>,
+{
+	#[setting(nested)]
+	pub inner: C,
+}
+```
+
 ## Schema names
 
 Schemas are keyed by name alone, so every instantiation of a generic type would otherwise claim the

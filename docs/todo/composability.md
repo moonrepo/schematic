@@ -3,100 +3,81 @@
 From the 2026-11-14 audit. See [README.md](README.md) for the legend, the ID scheme, the top
 priorities, and the quick wins.
 
-**C1. Nested configs are referenced by bare identifier** ✅ · high
+**C1. Nested configs are referenced by bare identifier** · fixed on `0.21-bugs` and `0.21-compose`
 
-> **Partly fixed on `0.21-bugs`:** nested configs are now called through `<T as Config>` by the
-> path they were written as, so `child::Child`, a config from another module, and `Self` work.
-> Generic nested configs, like `Wrapper<String>`, still don't, as the layer walk descends into the
-> last type argument.
+Nested configs are called through `<T as Config>` by the path they're written as, so a config from
+another module and `Self` work (`0.21-bugs`). Generic nested configs, like `Wrapper<String>`, and a
+type parameter that is a config work too (`0.21-compose`), as the layer walk stops at the first type
+that isn't a layer. A type parameter still needs the partial's derive bounds, as std's derives bound
+every parameter; see `book/src/config/generics.md`.
 
-- **Cause:** codegen emits `format_ident!("Partial{}", ident)::default_values` and
-  `#ident::from_partial`, while the partial *type* correctly uses `<path as Config>::Partial`.
-- **Effects:**
-  - `use child::Child;` plus `#[setting(nested)] child: Child` fails with "cannot find type
-    `PartialChild`", so users must also import the partial.
-  - `child: child::Child` fails.
-  - `Option<Box<Self>>` produces 19 errors.
-  - Generic nested configs fail. `#[setting(nested)] inner: Wrapper<String>` panics with "must be a
-    `Config` type, received `Wrapper<String>`", because the layer walk descends into the last generic
-    argument. `inner: T` emits `PartialT`.
-- **Where:** `field_value.rs:67`, `:146`, `value.rs:260`, `:716-721`, `:769`, `container.rs:448`.
-- **Fix:**
-  - Stop the layer walk at the first non-layer segment and keep that whole `syn::Type`.
-  - Emit fully qualified calls: `<#ty as schematic::Config>::from_partial(..)` and
-    `<<#ty as Config>::Partial as PartialConfig>::default_values(..)`.
-  - Substitute `Self`.
-- **Cost:** no new impls. This was a limitation of the old derive too, and it is the most common
-  composability snag.
+**C2. One layer walker instead of three** · fixed on `0.21-compose`
 
-**C2. One layer walker instead of three** 📖 · med (maintainability, enables B20 and qualified
-paths)
+`wrap_layer` no longer names collections (`0.21-bugs`), and `impl_full_from_partial_value` and
+`impl_partial_finalize_nested` now share `map_layers`, so a layer kind is handled in one place. The
+generated code is unchanged; every core snapshot is identical. Validation still walks on its own, as
+it borrows rather than rebuilds.
 
-- **Today:** the same `Option`/`Map`/`Set`/`Vec`/`Unknown` match is written out three times: in
-  `wrap_layer`, `impl_full_from_partial_value` and `impl_partial_finalize_nested` (`value.rs:22`,
-  `:257-330`, `:332-427`).
-- **Fix:** one `map_layers(layers, value, f)` helper using `.into_iter().map(..).collect()`. It works
-  for any `FromIterator` collection, drops the name heuristics, and stops emitting `Vec::default()`
-  and `Arc::new` by bare name.
+**C3. A library config can't be nested in an app config with a different `Context`** · fixed on
+`0.21-compose`
 
-**C3. A library config can't be nested in an app config with a different `Context`** ✅ · med
+`#[setting(nested, context = func)]` takes a `fn(&Parent) -> &Child` that maps the parent's context
+for every call that passes one to the nested config (defaults, finalize, merge, validate).
+`schematic::context::unit` covers a child with `Context = ()`. Code without a `context` is
+unchanged; the managers gained `_with` variants that take the child's context.
 
-- **Scenario:** a library exports `LibConfig` with `Context = ()`, and the app has
-  `#[config(context = AppCtx)]` and nests it. This fails with E0308 "expected `&()`, found
-  `&AppCtx`".
-- **Where:** `internal/merge.rs:35` and `internal/validate.rs:74`, `:101` require `Context = Ctx`.
-- **Simplest fix:** `#[setting(nested, context = default)]`, which passes `&Default::default()` for
-  the child's context. A mapping fn (`fn(&Parent) -> &Child`) is the bigger version. Ask before
-  building, since it changes what `finalize`, `merge` and `validate` pass.
+**C4. A hand-written `PartialConfig` is silently skipped when nested** · fixed on `0.21-compose`
 
-**C4. A hand-written `PartialConfig` is silently skipped when nested** ✅ · med
+`ValidateManager::nested_at_with` now calls the public `validate` and re-paths its errors, so an
+override of either `validate` or the hidden `validate_with_path` is validated when nested. The
+hidden `env_values_with_prefix` defaults to `env_values` (and `env_values` to none, with the derive
+implementing both), so a hand-written partial's own env is read under a parent `env_prefix`.
 
-- **Scenario:** a hand-written impl overrides `validate`, but the parent calls the
-  `#[doc(hidden)] validate_with_path`, whose default is `Ok(())`. "level too high" errors at the top
-  level and loads `Ok` when nested.
-  - The same happens for env: a parent `env_prefix` calls the hidden `env_values_with_prefix`.
-- **Where:** `internal/validate.rs:101-105`, `configs.rs:88-95`.
-- **Fix:** have `nested_at` call `validate()` and re-path its errors. Alternatively, document the
-  hidden methods as the real override points. Small.
+**C5. The partial always derives `PartialEq` and `Debug`** · documented on `0.21-compose`
 
-**C5. The partial always derives `PartialEq` and `Debug`** ✅ · low-med
+Kept as is, by decision: dropping either would break code that compares or prints partials, or
+derives them on a struct holding one. `book/src/config/settings.md` ("Required traits") now states
+that every setting's type must implement the partial's derives, and points at the newtype pattern
+`RegexSetting` uses.
 
-- `PartialConfig` doesn't require either, but a setting type without them (a `ConfigEnum` without
-  `PartialEq`, `regex::Regex`) fails at the derive. `partial(derive(..))` can only add derives.
-- Fix: document the requirement, or drop the two derives (breaking for code comparing partials).
+**C6. Multi-value variants can't mix nested and plain positions** · fixed on `0.21-compose`
 
-**C6. Multi-value variants can't mix nested and plain positions** ✅ · low
+`#[setting(nested)]` (and `context`) may be put on a value of a variant, like
+`Both(#[setting(nested)] Child, bool)`, which marks that value alone. Each value is merged,
+finalized, validated, and given a schema by its own shape. Marking both a variant and one of its
+values panics.
 
-- `#[setting(nested)] Both(Child, bool)` panics on `bool`.
-- Fix: read `#[setting(nested)]` from each tuple field's own attributes.
+**C7. `ConfigLoader` is neither `Send` nor `Sync`** · won't fix, by decision
 
-**C7. `ConfigLoader` is neither `Send` nor `Sync`** ✅ · low-med
+Adding `+ Send + Sync` to formats and cachers (and `PhantomData<fn() -> T>`) works for every built-in
+except `PklFormat`. It stores rpkl's `EvaluatorOptions`, whose client readers are
+`Arc<dyn PklModuleReader>` with no `Send` bound, so no `PklFormat` is `Send`, even with default
+options. The fix would be `PklFormat::new` taking a `Fn() -> EvaluatorOptions + Send + Sync`
+factory, which was declined, so the loader stays as it is. Revisit if rpkl bounds its readers.
 
-- The trait objects lack `+ Send + Sync`, so a loader can't live in shared state or a reload task.
-- Fix: add the bounds. Mildly breaking for non-`Send` custom formats or cachers.
+**C8. Custom renderers can't reuse built-in helpers** · partly fixed on `0.21-compose`
 
-**C8. Custom renderers can't reuse built-in helpers** 📖 · low
+Built: `SchemaGenerator::render` returns the output as a string; `SchemaRenderer`'s `render_*`
+methods default to an "unsupported" error, so a custom renderer implements only what it needs; and
+every schema type but `LiteralType` has a container-level `serde(default)` under `schema_serde`. The book's generator page documents custom
+renderers, including being generic over the output type `O`.
 
-- `schema::renderers` is private. `TemplateContext`, the `template::render_*` helpers,
-  `split_doc_tags` and Pkl quoting are unreachable.
-- `SchemaRenderer` has 15 required methods and no default impls.
-- `SchemaGenerator::generate` only writes files.
-- `JsonSchemaRenderer` is `SchemaRenderer<schemars::Schema>`, so a helper generic over
-  `SchemaRenderer<String>` can't take it.
-- With `schema_serde`, several fields lack `serde(default)`, so hand-authored schemas must spell
-  them out.
+Not built, by decision: making `split_doc_tags` and the template helpers public, as they'd become
+API to keep stable.
 
-**C9. `#[setting(skip)]` fields still require `T: Schematic`** ✅ · med
+**C9. `#[setting(skip)]` fields still require `T: Schematic`** · fixed on `0.21-compose`
 
-- They are hidden, but still `infer`red and registered (exported as unused TS types and
-  definitions).
-- Where: `container.rs:946`.
-- Fix: treat `skip` like `exclude` in schema codegen.
+A skipped field (`#[setting(skip)]` or `#[serde(skip)]`) is now filtered out of the schema with
+excluded ones, so its type isn't inferred or registered. `skip_deserializing` fields stay hidden,
+as they're still written.
 
-**C10. Dependencies pulled in without `config`** ✅ · low
+**C10. Dependencies pulled in without `config`** · fixed on `0.21-compose`
 
-- A schema-only build pulls miette, serde-content, thiserror and tracing.
-- `env`, `extends`, `validate`, `url`, `json` and `type_regex` without `config` compile deps that do
-  nothing.
-- `validate` pulls garde with `regex` even for users who only write custom validators.
-- Fix: gate these behind `config`.
+`miette`, `serde`, `serde-content`, `thiserror` and `tracing` are optional, enabled by `config`
+(and `miette` by `schema`), and `convert_case` moved from `schema` to the TypeScript and Pkl
+renderers. `env`, `extends`, `url` and `validate` enable `config`. A featureless build compiles 22
+crates instead of 40, and a schema-only one 29 instead of 42.
+
+Not changed: `validate` still enables garde's `regex`, which `validate::regex` needs. Making it
+optional would need a feature of its own that `validate` doesn't include, which breaks any build that
+uses `validate::regex` with `default-features = false`.

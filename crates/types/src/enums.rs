@@ -4,13 +4,11 @@ use std::fmt;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct EnumType {
     /// Position of the default entry. Indexes `variants` when variants are
     /// present, otherwise `values`.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub default_index: Option<usize>,
 
     /// The literal values of this enum. When `variants` is set, this is a
@@ -20,10 +18,7 @@ pub struct EnumType {
     pub values: Vec<LiteralValue>,
 
     /// Every variant, in declaration order, keyed by name.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub variants: Option<IndexMap<String, Box<SchemaField>>>,
 }
 

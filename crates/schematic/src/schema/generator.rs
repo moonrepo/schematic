@@ -97,16 +97,23 @@ impl SchemaGenerator {
         }
     }
 
+    /// Render all collected [`Schema`]s using the provided [`SchemaRenderer`],
+    /// and return the output, rather than writing it to a file like
+    /// [`generate`](Self::generate) does.
+    pub fn render<O, R: SchemaRenderer<O>>(&self, mut renderer: R) -> miette::Result<String> {
+        renderer.render(self.schemas.clone())
+    }
+
     /// Generate an output by rendering all collected [`Schema`]s using the provided
     /// [`SchemaRenderer`], and finally write to the provided file path.
     pub fn generate<P: AsRef<Path>, O, R: SchemaRenderer<O>>(
         &self,
         output_file: P,
-        mut renderer: R,
+        renderer: R,
     ) -> miette::Result<()> {
         let output_file = output_file.as_ref();
 
-        let mut output = renderer.render(self.schemas.clone())?;
+        let mut output = self.render(renderer)?;
         output.push('\n');
 
         if let Some(parent) = output_file.parent() {

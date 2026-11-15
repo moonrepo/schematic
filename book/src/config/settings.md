@@ -33,6 +33,16 @@ string, so the wrapper works without the upstream crate's `serde` feature.
 > `semver::VersionReq` needs no wrapper, as it already defaults to `*`. Types that are only ever
 > optional don't need one either, since an `Option` setting defaults to `None`.
 
+### Required traits
+
+Every setting is held by the [partial](./partial.md), which derives `Clone`, `Debug`, `Default`,
+`PartialEq`, `Deserialize`, and `Serialize`, so a setting's type has to implement those too, along
+with [`Schematic`](../schema/index.md). `Debug` and `PartialEq` aren't needed by the partial itself,
+but deriving them lets partials be printed and compared, and lets a struct that holds one derive
+them as well. A type that lacks one, like `regex::Regex`, which has no `PartialEq`, fails to compile
+at `#[derive(Config)]`, so wrap it in a newtype that implements it, as `RegexSetting` does by
+comparing patterns.
+
 ## Attribute fields
 
 The following fields are supported for the `#[setting]` field/variant attribute:
@@ -61,8 +71,9 @@ And the following for serde compatibility:
 - `alias`
 - `flatten`
 - `rename`
-- `skip`
-- `skip_deserializing`
+- `skip` - Also left out of the generated [schema](../schema/index.md), as it's never read or
+  written, so its type needn't implement `Schematic`.
+- `skip_deserializing` - Hidden in the generated schema, as it's written but never read.
 - `skip_serializing`
 - `skip_serializing_if` - Only honored from `#[setting]`, and written against the partial's
   `Option`. The `#[serde]` form is left for the full type, whose field is not wrapped.

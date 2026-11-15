@@ -6,6 +6,7 @@ use std::time::{Duration, SystemTime};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct StructType {
     /// Fields in declaration order, keyed by name.
     pub fields: IndexMap<String, Box<SchemaField>>,
@@ -14,10 +15,7 @@ pub struct StructType {
     // This doesn't mean it's been partialized.
     pub partial: bool,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub required: Option<Vec<String>>,
 }
 

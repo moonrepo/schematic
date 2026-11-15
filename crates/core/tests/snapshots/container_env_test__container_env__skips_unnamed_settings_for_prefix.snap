@@ -2,6 +2,9 @@
 source: crates/core/tests/container_env_test.rs
 expression: pretty(container.impl_partial_env_values())
 ---
+fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+    Self::env_values_with_prefix(None)
+}
 fn env_values_with_prefix(
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {

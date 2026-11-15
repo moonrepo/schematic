@@ -4,26 +4,18 @@ use std::fmt;
 /// Describes the metadata and shape of a type.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct Schema {
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub deprecated: Option<String>,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub description: Option<String>,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub name: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub nullable: bool,
 
     pub ty: SchemaType,
@@ -291,17 +283,12 @@ pub(crate) fn is_false(value: &bool) -> bool {
 /// Describes the metadata and shape of a field within a struct or enum.
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
 pub struct SchemaField {
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Vec::is_empty")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Vec::is_empty"))]
     pub aliases: Vec<String>,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub comment: Option<String>,
 
     pub schema: Schema,
@@ -309,40 +296,31 @@ pub struct SchemaField {
     /// The default of this field, which takes precedence over a default
     /// within its schema. Kept apart, as the schema of a named type is shared
     /// by every field that uses it.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub default: Option<LiteralValue>,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub deprecated: Option<String>,
 
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
-    )]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub env_var: Option<String>,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub flatten: bool,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub hidden: bool,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub nullable: bool,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub optional: bool,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub read_only: bool,
 
-    #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "is_false"))]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "is_false"))]
     pub write_only: bool,
 }
 

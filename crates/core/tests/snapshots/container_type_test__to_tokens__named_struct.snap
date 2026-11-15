@@ -42,6 +42,9 @@ impl schematic::PartialConfig for PartialExample {
             }),
         )
     }
+    fn env_values() -> std::result::Result<Option<Self>, schematic::ConfigError> {
+        Self::env_values_with_prefix(None)
+    }
     fn env_values_with_prefix(
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {

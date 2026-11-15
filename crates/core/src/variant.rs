@@ -24,6 +24,7 @@ use syn::{
 #[derive(Debug, Default, FromAttributes)]
 #[darling(default, attributes(setting, schema, variant))]
 pub struct VariantArgs {
+    pub context: Option<ExprPath>,
     pub default: Option<VariantDefaultArg>,
     pub exclude: bool,
     pub fallback: bool,
@@ -44,6 +45,14 @@ pub struct VariantArgs {
     pub skip_deserializing: bool,
     pub skip_serializing: bool,
     pub untagged: bool,
+}
+
+// #[setting()] on a value of a variant, like `A(#[setting(nested)] Child, bool)`
+#[derive(Debug, Default, FromAttributes)]
+#[darling(default, attributes(setting))]
+pub struct VariantValueArgs {
+    pub context: Option<ExprPath>,
+    pub nested: Option<NestedArg>,
 }
 
 /// Return the value of a boolean literal, which is all
@@ -94,12 +103,12 @@ impl Variant {
                 Fields::Named(fields) => fields
                     .named
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
+                    .map(|field| Self::new_value(field, &args, self_ty))
                     .collect(),
                 Fields::Unnamed(fields) => fields
                     .unnamed
                     .iter()
-                    .map(|field| VariantValue::new(field.ty.clone(), args.nested.as_ref(), self_ty))
+                    .map(|field| Self::new_value(field, &args, self_ty))
                     .collect(),
                 Fields::Unit => vec![],
             },
@@ -108,6 +117,26 @@ impl Variant {
         };
         variant.validate_args();
         variant
+    }
+
+    /// Analyze a value of this variant. A `#[setting(nested)]` on the value
+    /// itself applies to it alone, so a variant can mix nested and plain
+    /// values, while one on the variant applies to every value.
+    fn new_value(field: &syn::Field, args: &VariantArgs, self_ty: &Type) -> VariantValue {
+        let value_args = VariantValueArgs::from_attributes(&field.attrs).unwrap();
+
+        if value_args.nested.is_some() && args.nested.is_some() {
+            panic!(
+                "Cannot use `nested` on both a variant and its values, choose one or the other."
+            );
+        }
+
+        VariantValue::new(
+            field.ty.clone(),
+            value_args.nested.as_ref().or(args.nested.as_ref()),
+            self_ty,
+            value_args.context.or_else(|| args.context.clone()),
+        )
     }
 
     fn validate_args(&self) {
@@ -381,11 +410,10 @@ impl Variant {
         }
     }
 
+    /// Whether any value of this variant is a nested config, from a
+    /// `#[setting(nested)]` on the variant, or on the value itself.
     pub fn is_nested(&self) -> bool {
-        self.args
-            .nested
-            .as_ref()
-            .is_some_and(|nested| nested.is_nested())
+        self.values.iter().any(|value| value.nested)
     }
 
     pub fn is_required(&self) -> bool {
@@ -474,7 +502,6 @@ impl Variant {
         use crate::utils::{extract_comment, extract_deprecated, impl_literal_value};
 
         let name = self.get_name();
-        let nested = self.is_nested();
 
         // Untagged variants are represented by their value alone
         let untagged = matches!(tag_format, SerdeTagFormat::Untagged) || self.is_untagged();
@@ -485,10 +512,11 @@ impl Variant {
                 let items = fields
                     .unnamed
                     .iter()
-                    .map(|field| {
+                    .zip(&self.values)
+                    .map(|(field, value)| {
                         let ty = &field.ty;
 
-                        if nested {
+                        if value.nested {
                             return quote! { schema.infer_as_nested::<#ty>() };
                         }
 
@@ -523,7 +551,10 @@ impl Variant {
         // Mark a nested value so that it resolves to its partial. Only the
         // value itself is marked, never a struct synthesized around it for
         // tagging, as that struct is not a partial config -- its tag is a
-        // literal that is always present.
+        // literal that is always present. When only some values are nested,
+        // each was marked by `infer_as_nested` already, and marking the tuple
+        // would mark the others too.
+        let nested = !self.values.is_empty() && self.values.iter().all(|value| value.nested);
         let wrap = |value: TokenStream| {
             if nested {
                 quote! {
@@ -865,7 +896,7 @@ impl Variant {
                             .iter()
                             .enumerate()
                             .map(|(i, o)| {
-                                let value = if self.is_nested() {
+                                let value = if self.values[i].nested {
                                     // Variant values have no partial `Option`
                                     // wrapper, so walk all layers. An enum
                                     // reads no environment of its own, so a
@@ -908,11 +939,10 @@ impl Variant {
 
                 match &self.args.merge {
                     Some(func) => {
-                        if self.is_nested()
-                            && self
-                                .values
-                                .first()
-                                .is_none_or(|value| !value.is_collection())
+                        if self
+                            .values
+                            .iter()
+                            .any(|value| value.nested && !value.is_collection())
                         {
                             panic!(
                                 "Nested configs do not support `merge` unless wrapped in a collection."
@@ -960,8 +990,10 @@ impl Variant {
                         // Nested configs are merged recursively, but collections
                         // of them are replaced, as there's no way to know how to
                         // pair up their items. Define `merge` to customize this.
-                        let mergeable = self.is_nested()
-                            && self.values.iter().any(|value| !value.is_collection());
+                        let mergeable = self
+                            .values
+                            .iter()
+                            .any(|value| value.nested && !value.is_collection());
 
                         if mergeable {
                             let mut requires_internal = false;
@@ -977,8 +1009,9 @@ impl Variant {
                                             let i = &inner_names[index];
                                             let value = &self.values[index];
 
-                                            // Collections are replaced in place
-                                            if value.is_collection() {
+                                            // Collections, and values that
+                                            // aren't configs, are replaced in place
+                                            if !value.nested || value.is_collection() {
                                                 return quote! { *#o = #i; };
                                             }
 
@@ -1076,6 +1109,7 @@ impl Variant {
                     outer_names
                         .iter()
                         .enumerate()
+                        .filter(|(index, _)| self.values[*index].nested)
                         .map(|(index, o)| {
                             // Variant values are not wrapped by the partial,
                             // so all layers must be handled

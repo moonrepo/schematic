@@ -1,7 +1,7 @@
 use crate::args::NestedArg;
 use crate::value::Value;
 use std::ops::Deref;
-use syn::Type;
+use syn::{ExprPath, Type};
 
 #[derive(Debug)]
 pub struct VariantValue(Value);
@@ -15,7 +15,12 @@ impl Deref for VariantValue {
 }
 
 impl VariantValue {
-    pub fn new(ty: Type, nested_arg: Option<&NestedArg>, self_ty: &Type) -> Self {
-        VariantValue(Value::new(ty, nested_arg, self_ty))
+    pub fn new(
+        ty: Type,
+        nested_arg: Option<&NestedArg>,
+        self_ty: &Type,
+        context_fn: Option<ExprPath>,
+    ) -> Self {
+        VariantValue(Value::new(ty, nested_arg, self_ty).with_context(context_fn))
     }
 }

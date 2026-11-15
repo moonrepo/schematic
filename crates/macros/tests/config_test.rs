@@ -669,8 +669,8 @@ mod generics {
 
     #[derive(Debug, Config)]
     pub struct Wrapper<T: Setting> {
-        inner: T,
-        label: String,
+        pub inner: T,
+        pub label: String,
     }
 
     #[test]
@@ -2218,5 +2218,571 @@ mod applied_once {
         };
 
         assert_eq!(child.list, vec!["d", "f"]);
+    }
+}
+
+mod generic_nested {
+    use super::generics::{Setting, Wrapper};
+    use super::*;
+
+    #[derive(Debug, Config)]
+    pub struct Holder {
+        #[setting(nested)]
+        bare: Wrapper<String>,
+        #[setting(nested)]
+        maybe: Option<Wrapper<u8>>,
+        #[setting(nested)]
+        list: Vec<Wrapper<bool>>,
+        #[setting(nested)]
+        map: HashMap<String, Wrapper<usize>>,
+        #[setting(nested = Wrapper)]
+        explicit: Wrapper<String>,
+    }
+
+    #[test]
+    fn loads_generic_nested_configs() {
+        let config = ConfigLoader::<Holder>::new()
+            .code(
+                r#"{
+                    "bare": { "inner": "a", "label": "b" },
+                    "maybe": { "inner": 1 },
+                    "list": [{ "inner": true }],
+                    "map": { "k": { "inner": 2 } },
+                    "explicit": { "label": "e" }
+                }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.bare.inner, "a");
+        assert_eq!(config.bare.label, "b");
+        assert_eq!(config.maybe.unwrap().inner, 1);
+        assert!(config.list[0].inner);
+        assert_eq!(config.map["k"].inner, 2);
+        assert_eq!(config.explicit.label, "e");
+    }
+
+    #[test]
+    fn references_their_schemas_by_instantiation() {
+        let schema = schematic::SchemaBuilder::build_root::<Holder>();
+        let schematic::SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(
+            inner.fields["bare"].schema.name.as_deref(),
+            Some("WrapperString")
+        );
+        assert_eq!(
+            inner.fields["explicit"].schema.name.as_deref(),
+            Some("WrapperString")
+        );
+    }
+
+    #[test]
+    fn collects_their_settings() {
+        let settings = Holder::settings();
+
+        assert!(
+            settings["bare"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("inner")
+        );
+        assert!(
+            settings["maybe"]
+                .nested
+                .as_ref()
+                .unwrap()
+                .contains_key("label")
+        );
+    }
+
+    // A type parameter can be the nested config itself. The partial's derives
+    // bound every type parameter, so it needs the same bounds as any other,
+    // its partial is debugged and compared like any setting, and it shares
+    // the parent's context.
+    #[derive(Debug, Config)]
+    pub struct Outer<C: ConfigTrait + Setting>
+    where
+        C::Partial: std::fmt::Debug + PartialEq + PartialConfig<Context = ()>,
+    {
+        #[setting(nested)]
+        inner: C,
+        name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize, serde::Deserialize)]
+    pub struct Inner {
+        inner: String,
+    }
+
+    #[test]
+    fn nests_a_type_parameter() {
+        let config = ConfigLoader::<Outer<Inner>>::new()
+            .code(r#"{ "inner": { "inner": "x" }, "name": "n" }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.inner.inner, "x");
+        assert_eq!(config.name, "n");
+    }
+
+    // A generic config that holds itself through a `Box`
+    #[derive(Debug, Config)]
+    pub struct Tree<T: Setting> {
+        value: T,
+        #[setting(nested)]
+        next: Option<Box<Tree<T>>>,
+    }
+
+    #[test]
+    fn nests_a_generic_self() {
+        let config = ConfigLoader::<Tree<u8>>::new()
+            .code(r#"{ "value": 1, "next": { "value": 2 } }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.value, 1);
+        assert_eq!(config.next.unwrap().value, 2);
+    }
+}
+
+// A nested config whose context differs from its parent's, such as one
+// from a library, which can't know the application's context.
+mod nested_context {
+    use super::*;
+    use schematic::{DefaultValueResult, ValidateError, ValidateResult};
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct LibConfig {
+        #[setting(default = 1)]
+        level: usize,
+        #[setting(merge = schematic::merge::append_vec)]
+        tags: Vec<String>,
+    }
+
+    #[derive(Default)]
+    pub struct PluginContext {
+        name: String,
+        max: usize,
+    }
+
+    fn default_name(context: &PluginContext) -> DefaultValueResult<String> {
+        Ok(Some(context.name.clone()))
+    }
+
+    fn below_max<D>(value: &usize, _: &D, context: &PluginContext, _: bool) -> ValidateResult {
+        if *value > context.max {
+            return Err(ValidateError::new(format!(
+                "must be at most {}",
+                context.max
+            )));
+        }
+
+        Ok(())
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(context = PluginContext)]
+    pub struct PluginConfig {
+        #[setting(default = default_name)]
+        name: String,
+        #[setting(validate = below_max)]
+        size: usize,
+    }
+
+    #[derive(Default)]
+    pub struct AppContext {
+        plugin: PluginContext,
+    }
+
+    fn plugin_context(context: &AppContext) -> &PluginContext {
+        &context.plugin
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    #[config(context = AppContext)]
+    pub enum Source {
+        #[setting(nested, context = schematic::context::unit)]
+        Lib(LibConfig),
+        Url(String),
+    }
+
+    #[derive(Debug, Config)]
+    #[config(context = AppContext)]
+    pub struct AppConfig {
+        #[setting(nested, context = schematic::context::unit)]
+        lib: LibConfig,
+        #[setting(nested, context = schematic::context::unit)]
+        maybe: Option<LibConfig>,
+        #[setting(nested, context = schematic::context::unit)]
+        libs: Vec<LibConfig>,
+        #[setting(nested, context = plugin_context)]
+        plugin: PluginConfig,
+        #[setting(nested)]
+        source: Option<Source>,
+    }
+
+    fn app_context() -> AppContext {
+        AppContext {
+            plugin: PluginContext {
+                name: "from context".into(),
+                max: 10,
+            },
+        }
+    }
+
+    fn load(sources: &[&str]) -> Result<AppConfig, String> {
+        let mut loader = ConfigLoader::<AppConfig>::new();
+
+        for (index, code) in sources.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load_with_context(&app_context())
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn nests_a_config_with_a_unit_context() {
+        let config = load(&[
+            r#"{ "lib": { "tags": ["a"] }, "maybe": {}, "libs": [{ "level": 3 }] }"#,
+            r#"{ "lib": { "tags": ["b"] }, "source": { "Lib": {} } }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(config.lib.level, 1);
+        assert_eq!(config.lib.tags, vec!["a", "b"]);
+        assert_eq!(config.maybe.unwrap().level, 1);
+        assert_eq!(config.libs[0].level, 3);
+        assert_eq!(
+            config.source,
+            Some(Source::Lib(LibConfig {
+                level: 1,
+                tags: vec![]
+            }))
+        );
+    }
+
+    #[test]
+    fn maps_the_parent_context_for_defaults() {
+        let config = load(&["{}"]).unwrap();
+
+        assert_eq!(config.plugin.name, "from context");
+    }
+
+    #[test]
+    fn maps_the_parent_context_for_validation() {
+        let error = load(&[r#"{ "plugin": { "size": 11 } }"#]).unwrap_err();
+
+        assert!(error.contains("plugin.size: must be at most 10"), "{error}");
+    }
+
+    #[test]
+    fn defaults_without_a_context() {
+        let config = AppConfig::default();
+
+        assert_eq!(config.lib.level, 1);
+        assert_eq!(config.plugin.name, "");
+    }
+}
+
+// A hand-written partial overrides the documented methods, not the hidden
+// ones a derived partial does, and is still validated and read from the
+// environment when nested within a derived config.
+mod hand_written_nested {
+    use super::*;
+    use schematic::{ConfigError, HandlerError, Schematic};
+    use std::env;
+
+    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, Serialize)]
+    #[serde(default)]
+    pub struct PartialLevel {
+        pub level: Option<u8>,
+    }
+
+    impl Schematic for PartialLevel {}
+
+    impl PartialConfig for PartialLevel {
+        type Context = ();
+
+        fn merge(&mut self, _: &(), next: Self) -> Result<(), ConfigError> {
+            if next.level.is_some() {
+                self.level = next.level;
+            }
+
+            Ok(())
+        }
+
+        fn validate(&self, _: &(), _: bool) -> Result<(), ConfigError> {
+            if self.level.unwrap_or_default() > 5 {
+                return Err(ConfigError::Handler(Box::new(HandlerError::new(
+                    "level too high",
+                ))));
+            }
+
+            Ok(())
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    pub struct Level {
+        pub level: u8,
+    }
+
+    impl Schematic for Level {}
+
+    impl ConfigTrait for Level {
+        type Partial = PartialLevel;
+
+        fn from_partial(partial: PartialLevel) -> Self {
+            Level {
+                level: partial.level.unwrap_or_default(),
+            }
+        }
+    }
+
+    #[derive(Debug, Config)]
+    pub struct UsesLevel {
+        #[setting(nested)]
+        bare: Level,
+        #[setting(nested)]
+        maybe: Option<Level>,
+        #[setting(nested)]
+        list: Vec<Level>,
+    }
+
+    // Reads the environment itself, as its own type, since tests run in
+    // parallel and share the process environment
+    #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, Serialize)]
+    #[serde(default)]
+    pub struct PartialEnvLevel {
+        pub level: Option<u8>,
+    }
+
+    impl Schematic for PartialEnvLevel {}
+
+    impl PartialConfig for PartialEnvLevel {
+        type Context = ();
+
+        fn env_values() -> Result<Option<Self>, ConfigError> {
+            Ok(env::var("HAND_LEVEL").ok().map(|value| PartialEnvLevel {
+                level: value.parse().ok(),
+            }))
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq)]
+    pub struct EnvLevel {
+        pub level: u8,
+    }
+
+    impl Schematic for EnvLevel {}
+
+    impl ConfigTrait for EnvLevel {
+        type Partial = PartialEnvLevel;
+
+        fn from_partial(partial: PartialEnvLevel) -> Self {
+            EnvLevel {
+                level: partial.level.unwrap_or_default(),
+            }
+        }
+    }
+
+    #[derive(Debug, Config)]
+    pub struct PrefixesLevel {
+        #[setting(nested, env_prefix = "HAND_PARENT_")]
+        level: EnvLevel,
+    }
+
+    #[test]
+    fn validates_a_hand_written_partial_when_nested() {
+        let error = ConfigLoader::<UsesLevel>::new()
+            .code(
+                r#"{ "bare": { "level": 9 }, "maybe": { "level": 7 }, "list": [{}, { "level": 6 }] }"#,
+                "code.json",
+            )
+            .unwrap()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string();
+
+        assert!(error.contains("bare: level too high"), "{error}");
+        assert!(error.contains("maybe: level too high"), "{error}");
+        assert!(error.contains("list[1]: level too high"), "{error}");
+    }
+
+    #[test]
+    fn reads_its_own_environment_under_a_parent_prefix() {
+        unsafe { env::set_var("HAND_LEVEL", "3") };
+
+        let config = ConfigLoader::<PrefixesLevel>::new().load();
+
+        unsafe { env::remove_var("HAND_LEVEL") };
+
+        assert_eq!(config.unwrap().config.level.level, 3);
+    }
+}
+
+// A variant can hold a nested config alongside plain values, by marking the
+// value itself rather than the whole variant.
+mod mixed_variant_values {
+    use super::*;
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub struct Child {
+        #[setting(default = 1)]
+        level: usize,
+        #[setting(validate = schematic::validate::not_empty)]
+        name: String,
+    }
+
+    #[derive(Clone, Debug, Config, PartialEq, Serialize)]
+    pub enum Mixed {
+        Both(#[setting(nested)] Child, bool),
+        Plain(String),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Holder {
+        #[setting(nested)]
+        value: Option<Mixed>,
+    }
+
+    fn load(sources: &[&str]) -> Result<Holder, String> {
+        let mut loader = ConfigLoader::<Holder>::new();
+
+        for (index, code) in sources.iter().enumerate() {
+            loader.code(*code, format!("{index}.json")).unwrap();
+        }
+
+        loader
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn finalizes_only_the_nested_value() {
+        let config = load(&[r#"{ "value": { "Both": [{ "name": "a" }, true] } }"#]).unwrap();
+
+        assert_eq!(
+            config.value,
+            Some(Mixed::Both(
+                Child {
+                    level: 1,
+                    name: "a".into()
+                },
+                true
+            ))
+        );
+    }
+
+    #[test]
+    fn merges_the_nested_value_and_replaces_the_plain_one() {
+        let config = load(&[
+            r#"{ "value": { "Both": [{ "name": "a", "level": 5 }, true] } }"#,
+            r#"{ "value": { "Both": [{ "name": "b" }, false] } }"#,
+        ])
+        .unwrap();
+
+        assert_eq!(
+            config.value,
+            Some(Mixed::Both(
+                Child {
+                    level: 5,
+                    name: "b".into()
+                },
+                false
+            ))
+        );
+    }
+
+    #[test]
+    fn validates_the_nested_value_at_its_position() {
+        let error = load(&[r#"{ "value": { "Both": [{ "name": "" }, true] } }"#]).unwrap_err();
+
+        assert!(error.contains("value.Both[0].name: "), "{error}");
+    }
+
+    #[test]
+    fn marks_only_the_nested_value_as_partial_in_the_schema() {
+        use schematic::{SchemaBuilder, SchemaType};
+
+        let schema = SchemaBuilder::build_root::<Mixed>();
+        let SchemaType::Union(union) = &schema.ty else {
+            panic!("{schema:?}");
+        };
+
+        let SchemaType::Struct(both) = &union.variants_types[0].ty else {
+            panic!();
+        };
+
+        let SchemaType::Tuple(values) = &both.fields["Both"].schema.ty else {
+            panic!();
+        };
+
+        let SchemaType::Struct(child) = &values.items_types[0].ty else {
+            panic!();
+        };
+
+        assert!(child.partial);
+        assert!(matches!(values.items_types[1].ty, SchemaType::Boolean(_)));
+    }
+}
+
+// A skipped setting is never read or written, so its type needn't have a schema
+mod skipped_without_schema {
+    use super::*;
+    use schematic::{SchemaBuilder, SchemaType};
+
+    // Implements what the partial derives, but not `Schematic` or serde
+    #[derive(Clone, Debug, Default, PartialEq)]
+    pub struct Runtime {
+        handle: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct WithRuntime {
+        name: String,
+        #[setting(skip)]
+        runtime: Runtime,
+        #[serde(skip)]
+        other: Runtime,
+    }
+
+    #[test]
+    fn leaves_it_out_of_the_schema() {
+        let schema = SchemaBuilder::build_root::<WithRuntime>();
+        let SchemaType::Struct(inner) = &schema.ty else {
+            panic!();
+        };
+
+        assert_eq!(inner.fields.keys().collect::<Vec<_>>(), vec!["name"]);
+    }
+
+    #[test]
+    fn still_loads() {
+        let config = ConfigLoader::<WithRuntime>::new()
+            .code(r#"{ "name": "a" }"#, "code.json")
+            .unwrap()
+            .load()
+            .unwrap()
+            .config;
+
+        assert_eq!(config.name, "a");
+        assert_eq!(config.runtime, Runtime::default());
     }
 }

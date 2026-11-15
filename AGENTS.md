@@ -236,6 +236,13 @@ is respected without special-casing:
 `Vec<Arc<Nested>>` wraps each item; `Arc<Vec<Nested>>` wraps the whole loop — both fall out of the
 same code.
 
+The first two rebuild a value through its layers, and share one helper for it, `map_layers` in
+`value.rs`, which each calls with a list of `LayerStep`s. A step's `unwrap` says whether the value
+already holds that wrapper (the partial kept it, so it's unwrapped and rebuilt) or not (the partial
+stripped it, so it's only constructed), and its `ty` makes mapping fallible: collections then
+collect into a `Result` of that type, as finalizing can fail. Add a layer kind there, once, rather
+than in each walker. Merging and validating don't rebuild anything, so they walk on their own.
+
 ## Testing
 
 ### The critical caveat
@@ -402,6 +409,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   (and aliases) as one group, then each untagged variant in order, so the error lists the expected
   names. A tagged variant that holds a value is written as a map, so any such enum keeps serde's
   derive. Serialize stays derived in both cases, which is what keeps a literal union round-tripping.
+- With `schema_serde`, every shape struct (and `Schema`, `SchemaField`) has a container-level
+  `serde(default)`, so hand-written schema JSON may leave any field out, and field-level attributes
+  only carry `skip_serializing_if`. `LiteralType` is the exception, as `LiteralValue` has no default.
+  A new field on a shape needs a `Default` that is a valid schema, as an absent one takes it.
 - `SchemaField` metadata is derive-time only; `partialize_schema` at runtime is what turns a full
   schema into a partial one.
 - A literal `#[setting(default)]` is recorded in `SchemaField.default`, never in the schema of the
@@ -437,6 +448,16 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   modelled as strings while encoding as `{ secs, nanos }`, which made the generated JSON Schema
   reject valid config. `OsString` is why there is still no impl for it: it encodes as
   `{"Unix": [bytes]}`, not a string.
+- A parent must reach a nested config through a method a hand-written `PartialConfig` would
+  override, not only the hidden ones the derive implements. Nested validation goes through the
+  public `validate` (re-pathing its errors), the hidden `env_values_with_prefix` defaults to
+  `env_values`, and `finalize_nested` defaults to `finalize`. Don't make a public method's default
+  call a hidden one whose default calls it back, as a partial overriding neither would recurse.
+- A nested config receives its parent's context, as the managers require `Context = Ctx`, unless
+  `#[setting(nested, context = func)]` maps it (`Value::context_fn`). Then every call that hands a
+  context to the child goes through `func(context)`, and the managers' `*_with` methods take it
+  explicitly. Keep the two paths in step: a new call that passes `context` to a nested config must
+  use `Value::get_nested_context` / `get_nested_method`, or a mapped config gets the wrong type.
 - `StructType.fields` is an `IndexMap` so the *model* keeps declaration order, but renderers iterate
   `StructType::sorted_fields()` so *output* stays alphabetical. Both halves are deliberate: the model
   preserves what the user wrote, the generated file stays stable no matter how the type is ordered.

@@ -144,3 +144,7 @@ The following Cargo features are available:
 - `url` - Enables loading, extending, and parsing configs from URLs.
 - `validate` (default) - Enables setting value validation.
 - `yaml` - Enables YAML.
+
+`env`, `extends`, `url`, and `validate` only apply to configs, so each enables `config` as well. The
+dependencies that only configs use are only compiled with `config`, so a build for
+[schemas](../schema/index.md) alone, or without any feature, doesn't pull them in.

@@ -32,6 +32,17 @@ its [partial](./partial.md) implementation.
 > Nested values can also be wrapped in collections, like `Vec` and `HashMap`. However, these are
 > tricky to support and may not work in all situations!
 
+A `#[setting(nested)]` on a variant applies to every value it holds. To hold a nested config
+alongside plain values, mark the value itself instead. Its config is merged, finalized, and
+validated as nested, while the other values are replaced, like any other setting.
+
+```rust
+#[derive(Config)]
+enum ParentEnum {
+	Both(#[setting(nested)] ChildConfig, bool),
+}
+```
+
 ## Bare structs
 
 For structs that _do not_ implement the [`Config`][config] trait, you can use them as-is without the
