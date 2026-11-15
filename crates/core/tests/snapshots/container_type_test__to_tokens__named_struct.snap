@@ -24,6 +24,7 @@ pub struct PartialExample {
 #[automatically_derived]
 impl schematic::PartialConfig for PartialExample {
     type Context = ();
+    const HAS_ENV_PREFIX: bool = true;
     fn default_values(
         context: &Self::Context,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {

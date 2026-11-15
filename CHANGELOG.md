@@ -18,6 +18,18 @@
   setting of its own, unless both have `#[config(allow_unknown_fields)]`. It already failed to load
   every setting of the flattened config, as serde can't deny unknown fields through it. The error
   names the fix.
+- Updated the derives to fail on attributes that parsed but did nothing, rather than ignoring them:
+  - `#[config(before_parse)]` on a `Config`, which only a `ConfigEnum` uses.
+  - `#[setting(fallback)]` on a `Config` enum variant, which only a `ConfigEnum` uses.
+  - `#[default]` on a `Config` enum variant, which was copied to the partial and failed to compile.
+    Use `#[setting(default)]`.
+  - `env_prefix` or `allow_unknown_fields` on an enum, which reads no environment variables and has
+    no fields.
+  - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
+  - `skip_deserializing_if`, which serde has no such attribute for.
+  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, like an
+    enum, which a parent's prefix doesn't apply to. This fails to compile, through a hidden
+    `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
 - Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
   is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
 - Added `Source::Memory`, the source of a partial added with `ConfigLoader::partial`, and

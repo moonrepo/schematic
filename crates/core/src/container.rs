@@ -336,12 +336,88 @@ impl Container {
                 .any(|field| field.value.is_outer_map())
     }
 
+    /// Panic on an attribute that parses but would do nothing for this derive,
+    /// as a silent no-op is worse than a loud failure.
+    pub fn validate_attributes(&self) {
+        let variants = match &self.inner {
+            ContainerInner::UnnamedEnum { variants } | ContainerInner::UnitEnum { variants } => {
+                Some(variants)
+            }
+            _ => None,
+        };
+
+        match self.macro_type {
+            ContainerMacro::Config => {
+                if self.args.before_parse.is_some() {
+                    panic!(
+                        "Cannot use `before_parse` on a `Config`, as only a `ConfigEnum` parses a string. Derive `ConfigEnum` for an enum of unit variants."
+                    );
+                }
+
+                let Some(variants) = variants else {
+                    return;
+                };
+
+                self.validate_enum_attributes("Config");
+
+                for variant in variants {
+                    if variant.is_fallback() {
+                        panic!(
+                            "Cannot use `fallback` on a `Config` enum variant, as only a `ConfigEnum` falls back when parsing a string. Use `#[serde(untagged)]` on the variant for a value of another type."
+                        );
+                    }
+
+                    if variant
+                        .attrs
+                        .iter()
+                        .any(|attr| attr.path().is_ident("default"))
+                    {
+                        panic!(
+                            "Cannot use `#[default]` on a `Config` enum variant, as the derive implements `Default` itself. Use `#[setting(default)]` instead."
+                        );
+                    }
+                }
+
+                // A unit variant is written as a string, which is what its schema says
+                if matches!(self.inner, ContainerInner::UnitEnum { .. })
+                    && (self.serde_args.tag.is_some() || self.serde_args.untagged)
+                {
+                    panic!(
+                        "Cannot use `tag` or `untagged` on a `Config` enum of only unit variants, as each is written as a string. Derive `ConfigEnum` for an enum of strings."
+                    );
+                }
+            }
+            ContainerMacro::ConfigUnitEnum => {
+                self.validate_enum_attributes("ConfigEnum");
+            }
+            ContainerMacro::Schematic => {}
+        }
+    }
+
+    fn validate_enum_attributes(&self, derive: &str) {
+        if self.args.env_prefix.is_some() {
+            panic!(
+                "Cannot use `env_prefix` on a `{derive}` enum, as an enum reads no environment variables."
+            );
+        }
+
+        if self.args.allow_unknown_fields {
+            panic!(
+                "Cannot use `allow_unknown_fields` on a `{derive}` enum, as only a struct has fields. Use it on a config that a variant holds instead."
+            );
+        }
+    }
+
     /// Assert at compile time that a flattened config can be loaded. One that
     /// flattens a setting of its own is deserialized as a map, which reads the
     /// keys of the struct flattening it without taking them, so serde can only
     /// load it when neither denies unknown fields. A generic config is skipped,
     /// as a constant can't name its parameters.
-    pub fn impl_partial_flatten_checks(&self) -> TokenStream {
+    ///
+    /// Also assert that a parent's `#[setting(nested, env_prefix)]` applies to
+    /// something. It only prefixes the keys a nested config derives from its
+    /// settings' names, which it only does with an `env_prefix` of its own.
+    pub fn impl_partial_checks(&self) -> TokenStream {
         if self.generics.params.iter().next().is_some() {
             return quote! {};
         }
@@ -371,7 +447,36 @@ impl Container {
             })
             .collect::<Vec<_>>();
 
-        quote! { #(#checks)* }
+        #[cfg(feature = "env")]
+        let env_checks = self
+            .inner
+            .get_fields()
+            .into_iter()
+            .filter(|field| field.args.env_prefix.is_some())
+            .filter_map(|field| {
+                let nested = field.value.get_nested_type()?;
+                let nested_name = to_type_string(nested.clone());
+                let message = format!(
+                    "`{container}.{}` sets an `env_prefix` for `{nested_name}`, which has no effect, as a parent's prefix only applies to the keys a config derives with an `env_prefix` of its own. Add `#[config(env_prefix)]` to `{nested_name}`, or remove it here.",
+                    field.get_name_original(),
+                );
+
+                Some(quote! {
+                    const _: () = assert!(
+                        <<#nested as schematic::Config>::Partial as schematic::PartialConfig>::HAS_ENV_PREFIX,
+                        #message
+                    );
+                })
+            })
+            .collect::<Vec<_>>();
+
+        #[cfg(not(feature = "env"))]
+        let env_checks: Vec<TokenStream> = vec![];
+
+        quote! {
+            #(#checks)*
+            #(#env_checks)*
+        }
     }
 
     pub fn get_partial_serde_attribute_args(&self) -> TokenStream {
@@ -1263,6 +1368,10 @@ impl Container {
             if !self.partial_denies_unknown_fields() {
                 consts.push(quote! { const ALLOWS_UNKNOWN_FIELDS: bool = true; });
             }
+
+            if self.args.env_prefix.is_some() {
+                consts.push(quote! { const HAS_ENV_PREFIX: bool = true; });
+            }
         }
 
         quote! {
@@ -1755,6 +1864,8 @@ impl Container {
 // #[derive(Config)]
 impl ToTokens for Container {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        self.validate_attributes();
+
         match self.macro_type {
             ContainerMacro::Config => {
                 // Partial type
@@ -1762,7 +1873,7 @@ impl ToTokens for Container {
                 tokens.extend(self.impl_partial_type_default());
                 tokens.extend(self.impl_partial_type_deserialize());
                 tokens.extend(self.impl_partial());
-                tokens.extend(self.impl_partial_flatten_checks());
+                tokens.extend(self.impl_partial_checks());
 
                 // Full type
                 tokens.extend(self.impl_full());

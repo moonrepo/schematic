@@ -45,8 +45,9 @@ Deliberately dropped in the rewrite, and not coming back:
   still is.
 - Named-field enum variants panic, as they did in the old derive too.
 
-Known remaining hole: **`#[setting(skip_deserializing_if)]`** parses but emits nothing, because
-serde has no such attribute.
+`#[setting(skip_deserializing_if)]` (and the serde one) panics, as serde has no such attribute.
+Other attributes that would do nothing for a derive panic in `Container::validate_attributes`, which
+`ToTokens` runs first, since `macro_type` is only set after `Container::from`.
 
 `ConfigEnum` has no implementation of its own. It is the same `Container` with
 `macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
@@ -393,7 +394,7 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `FlatMapAccess` borrows the parent's keys where a plain struct's `FlatStructAccess` takes them. So a
   partial with a flattened map doesn't deny unknown fields (none is unknown), and a parent flattening
   a config whose partial `FLATTENS` fails to compile unless both `ALLOWS_UNKNOWN_FIELDS`
-  (`impl_partial_flatten_checks`). Making that case load strictly was rejected as too much machinery.
+  (`impl_partial_checks`). Making that case load strictly was rejected as too much machinery.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
   failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
 

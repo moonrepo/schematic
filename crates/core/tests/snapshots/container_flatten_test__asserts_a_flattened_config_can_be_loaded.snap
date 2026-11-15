@@ -1,6 +1,6 @@
 ---
 source: crates/core/tests/container_flatten_test.rs
-expression: pretty(container.impl_partial_flatten_checks())
+expression: pretty(container.impl_partial_checks())
 ---
 const _: () = assert!(
     ! << Child as schematic::Config > ::Partial as schematic::PartialConfig > ::FLATTENS

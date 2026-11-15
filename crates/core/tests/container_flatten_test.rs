@@ -50,7 +50,7 @@ fn asserts_a_flattened_config_can_be_loaded() {
         }
     });
 
-    assert_snapshot!(pretty(container.impl_partial_flatten_checks()));
+    assert_snapshot!(pretty(container.impl_partial_checks()));
 }
 
 // A flattened collection of configs is a map, which the config's items don't
@@ -65,7 +65,7 @@ fn skips_a_flattened_collection_or_generic_config() {
         }
     });
 
-    assert!(collection.impl_partial_flatten_checks().is_empty());
+    assert!(collection.impl_partial_checks().is_empty());
 
     let generic = Container::from(parse_quote! {
         #[derive(Config)]
@@ -76,5 +76,5 @@ fn skips_a_flattened_collection_or_generic_config() {
         }
     });
 
-    assert!(generic.impl_partial_flatten_checks().is_empty());
+    assert!(generic.impl_partial_checks().is_empty());
 }

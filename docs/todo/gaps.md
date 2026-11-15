@@ -120,21 +120,30 @@ field it reads as a map (`FlatMapAccess` borrows the parent's buffered keys, whi
 - **A flattened config that flattens a setting of its own** couldn't load any of its settings. By
   decision, this is now a compile error rather than made to load, through hidden
   `PartialConfig::FLATTENS` and `ALLOWS_UNKNOWN_FIELDS` consts and a `const _: () = assert!(..)`
-  per flattened config (`Container::impl_partial_flatten_checks`), unless both allow unknown
+  per flattened config (`Container::impl_partial_checks`), unless both allow unknown
   fields. A generic config isn't checked, as a constant can't name its parameters, and a hand-written
   partial reports neither.
 
-**G7. Attributes that parse and do nothing** · med
+**G7. Attributes that parse and do nothing** · fixed on `0.21-gaps`
 
-These complement the known `skip_deserializing_if`. Per the loud-failure policy, each should panic:
+Each now fails loudly, mostly as a derive panic from `Container::validate_attributes`, which
+`ToTokens` runs first, as the derive kind is only known once `Container::from` has returned:
 
-- `#[config(before_parse)]` on a `Config`.
-- `#[variant(fallback)]` on a `Config` enum.
-- `env_prefix` and `allow_unknown_fields` on enum containers. A parent's `nested, env_prefix` on an
-  enum is a no-op.
-- `#[default]` on a `Config` enum variant is copied to the partial and can never compile. ✅
-- `tag` or `untagged` on a unit-only enum is forwarded to the partial, while the schema still says
-  strings.
+- `#[config(before_parse)]` on a `Config` (only a `ConfigEnum` reads it).
+- `#[setting(fallback)]` on a `Config` enum variant (`#[variant]` isn't a `Config` helper, so this
+  is how one would write it).
+- `#[default]` on a `Config` enum variant, and `default` was dropped from the inheritable attributes.
+- `env_prefix` and `allow_unknown_fields` on a `Config` or `ConfigEnum` enum.
+- `tag` or `untagged` on a `Config` enum of only unit variants.
+- `skip_deserializing_if`, from `#[setting]` or `#[serde]`, in `Field::validate_args`.
+- A parent's `#[setting(nested, env_prefix)]` covers more than enums: it's a no-op for any nested
+  config without an `env_prefix` of its own. The derive can't see the child, so this is a compile-time
+  assertion on a hidden `PartialConfig::HAS_ENV_PREFIX` const, like the flatten check, in
+  `impl_partial_checks`. A hand-written partial that reads the prefix sets the const, which the C4
+  test (`hand_written_nested`) now does.
+
+Not covered: config-only attributes on a type that only derives `Schematic`, like
+`#[schematic(before_parse)]`, which also do nothing.
 
 **G8. Loader capabilities** 📖 · low-med
 

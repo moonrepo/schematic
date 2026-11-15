@@ -28,6 +28,15 @@ pub trait PartialConfig:
     #[doc(hidden)]
     const ALLOWS_UNKNOWN_FIELDS: bool = false;
 
+    /// Internal use only.
+    ///
+    /// Whether the partial derives environment variable keys from its settings' names, with
+    /// `#[config(env_prefix)]`, which is all that a parent's `#[setting(nested, env_prefix)]`
+    /// applies to. A hand-written partial that reads the prefix passed to `env_values_with_prefix`
+    /// sets it as well.
+    #[doc(hidden)]
+    const HAS_ENV_PREFIX: bool = false;
+
     /// Return a partial configuration with values populated with default values for settings
     /// marked with `#[setting(default)]`. Unmarked settings will be [`None`].
     ///

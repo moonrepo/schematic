@@ -115,6 +115,15 @@ impl Field {
     }
 
     fn validate_args(&self) {
+        // Serde has no such attribute, so there's nothing to forward it to
+        if self.args.skip_deserializing_if.is_some()
+            || self.serde_args.skip_deserializing_if.is_some()
+        {
+            panic!(
+                "Cannot use `skip_deserializing_if`, as serde has no such attribute, so it would never apply. Use `skip_deserializing` to never deserialize the setting."
+            );
+        }
+
         #[cfg(feature = "env")]
         {
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {

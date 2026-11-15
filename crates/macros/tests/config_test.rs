@@ -2573,11 +2573,21 @@ mod hand_written_nested {
 
     impl Schematic for PartialEnvLevel {}
 
+    // Reads the prefix a parent passes, which it says it does, as otherwise a
+    // parent's `env_prefix` would have no effect, which fails to compile
     impl PartialConfig for PartialEnvLevel {
         type Context = ();
 
+        const HAS_ENV_PREFIX: bool = true;
+
         fn env_values() -> Result<Option<Self>, ConfigError> {
-            Ok(env::var("HAND_LEVEL").ok().map(|value| PartialEnvLevel {
+            Self::env_values_with_prefix(None)
+        }
+
+        fn env_values_with_prefix(prefix: Option<&str>) -> Result<Option<Self>, ConfigError> {
+            let key = format!("{}LEVEL", prefix.unwrap_or("HAND_"));
+
+            Ok(env::var(key).ok().map(|value| PartialEnvLevel {
                 level: value.parse().ok(),
             }))
         }
@@ -2625,12 +2635,12 @@ mod hand_written_nested {
     }
 
     #[test]
-    fn reads_its_own_environment_under_a_parent_prefix() {
-        unsafe { env::set_var("HAND_LEVEL", "3") };
+    fn reads_its_environment_under_a_parent_prefix() {
+        unsafe { env::set_var("HAND_PARENT_LEVEL", "3") };
 
         let config = ConfigLoader::<PrefixesLevel>::new().load();
 
-        unsafe { env::remove_var("HAND_LEVEL") };
+        unsafe { env::remove_var("HAND_PARENT_LEVEL") };
 
         assert_eq!(config.unwrap().config.level.level, 3);
     }
