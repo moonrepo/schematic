@@ -140,6 +140,22 @@ as it has a variant to pick.
 
 ## Parsing values
 
+Without a `parse_env`, a variable is parsed with the setting's `FromStr`, so its error type must
+implement `Display`, which is what a variable that fails to parse reports, like
+`Failed to parse "70000" into u16: number too large to fit in target type.`
+
+That makes a `bool` setting accept only `true` and `false`. For values like `1`, `yes`, or `on`, use
+`parse_env = schematic::env::parse_bool`, which ignores case, treats an empty variable as unset,
+and fails on anything it doesn't recognize.
+
+```rust
+#[derive(Config)]
+struct AppConfig {
+	#[setting(env = "APP_DEBUG", parse_env = schematic::env::parse_bool)]
+	pub debug: bool,
+}
+```
+
 We also support parsing environment variables into the required type. For example, the variable may
 be a comma separated list of values, or a JSON string.
 

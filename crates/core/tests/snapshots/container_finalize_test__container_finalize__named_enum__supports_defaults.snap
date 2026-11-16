@@ -10,7 +10,12 @@ fn finalize(
         match self {
             Self::A { a: pa, b: pb, c: pc, d: mut pd, e: pe } => {
                 if let Some(layer) = pd {
-                    pd = Some(transform_string(layer, context)?);
+                    pd = Some(
+                        schematic::internal::transform::handle_transform_result(
+                            "A.d",
+                            transform_string(layer, context),
+                        )?,
+                    );
                 }
                 Self::A {
                     a: pa,

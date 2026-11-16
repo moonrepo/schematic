@@ -2,7 +2,45 @@ use crate::args::{SerdeIoDirection, SerdeRenameArg};
 use convert_case::{Boundary, Case, Casing};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Attribute, Expr, ExprLit, Lit, Meta, Path};
+use std::fmt::Display;
+use syn::ext::IdentExt;
+use syn::{Attribute, Expr, ExprLit, Ident, Lit, Meta, Path};
+
+/// Both results, or the errors of either, so that two attributes parsed
+/// side by side report each of their errors at once.
+pub fn join_results<A, B>(a: darling::Result<A>, b: darling::Result<B>) -> darling::Result<(A, B)> {
+    match (a, b) {
+        (Ok(a), Ok(b)) => Ok((a, b)),
+        (a, b) => Err(darling::Error::multiple(
+            a.err().into_iter().chain(b.err()).collect(),
+        )),
+    }
+}
+
+/// Describe a setting, for a panic about it, by its Rust name, or its
+/// position within a tuple struct, and the named variant that holds it.
+pub fn describe_setting(ident: Option<&Ident>, index: usize, variant: Option<&Ident>) -> String {
+    let name = ident
+        .map(|ident| ident.unraw().to_string())
+        .unwrap_or_else(|| index.to_string());
+
+    match variant {
+        Some(variant) => format!("Setting `{}.{name}`", variant.unraw()),
+        None => format!("Setting `{name}`"),
+    }
+}
+
+/// Describe a variant, for a panic about it, by its Rust name.
+pub fn describe_variant(ident: &Ident) -> String {
+    format!("Variant `{}`", ident.unraw())
+}
+
+/// Panic with a message about an item of the derive, like a setting or a
+/// variant, prefixed with its description, as a derive's panic otherwise
+/// only points at the derive itself.
+pub fn panic_for(item: &str, message: impl Display) -> ! {
+    panic!("{item}: {message}")
+}
 
 /// Resolve the container's `rename[_all]`, preferring the `config`/`schematic`
 /// attribute over the `serde` one. Returns `None` when neither is set, as

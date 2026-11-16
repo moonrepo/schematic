@@ -30,7 +30,8 @@ The probe crates were throwaway. Each ✅ item gives enough of a scenario to reb
 
 ## Top priorities
 
-Ordered by user impact per unit of work. Every bug was fixed on `0.21-bugs`.
+Ordered by user impact per unit of work. Every bug was fixed on `0.21-bugs`, and the devex items
+were worked through on `0.21-devx`.
 
 1. **Turn derive errors into spanned compile errors (X1).** Today a typo in an attribute prints a raw
    `Debug` dump of the darling error.

@@ -8,10 +8,20 @@ fn finalize(
 ) -> std::result::Result<Self, schematic::ConfigError> {
     let mut partial = self;
     if let Some(layer) = partial.c {
-        partial.c = Some(transform_string(layer, context)?);
+        partial.c = Some(
+            schematic::internal::transform::handle_transform_result(
+                "c",
+                transform_string(layer, context),
+            )?,
+        );
     }
     if let Some(layer) = partial.f {
-        partial.f = Some(transform_vec(layer, context)?);
+        partial.f = Some(
+            schematic::internal::transform::handle_transform_result(
+                "f",
+                transform_vec(layer, context),
+            )?,
+        );
     }
     Ok(partial)
 }

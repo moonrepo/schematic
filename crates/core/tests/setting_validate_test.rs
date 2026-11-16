@@ -42,7 +42,7 @@ mod setting_validate {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `lit` at validate")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -211,7 +211,7 @@ mod setting_validate {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `lit` at validate")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -328,7 +328,7 @@ mod setting_validate {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `lit` at validate")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -502,7 +502,7 @@ mod setting_validate {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `lit` at validate")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]

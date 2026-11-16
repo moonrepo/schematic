@@ -82,6 +82,11 @@ fn absolute_path<P, C>(value: &str, partial: &P, context: &C, finalizing: bool) 
 > Settings that no source provided are `None` in each source's pass, and are skipped, while the
 > final pass has a value for every setting.
 
+An error in a source's pass names that source, like `Failed to validate config.yml`. The final pass
+validates what every layer merged into, so its error names each source, and the environment
+variables when any were set, like `Failed to validate base.yml, config.yml, environment variables`,
+or the config's name when there are neither.
+
 ## Required settings
 
 Every setting in a [partial configuration](../partial.md) is optional, so a setting that no source

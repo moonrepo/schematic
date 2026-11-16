@@ -49,7 +49,7 @@ below.
 
 `#[setting(skip_deserializing_if)]` (and the serde one) panics, as serde has no such attribute.
 Other attributes that would do nothing for a derive panic in `Container::validate_attributes`, which
-`ToTokens` runs first, since `macro_type` is only set after `Container::from`.
+`ToTokens` runs first, since `macro_type` is only set after `Container::new`.
 
 `ConfigEnum` has no implementation of its own. It is the same `Container` with
 `macro_type = ContainerMacro::ConfigUnitEnum`, which swaps what `ToTokens` renders — the
@@ -134,7 +134,7 @@ then `finalize` runs per-setting transforms and nested finalization. Finally `va
 partial added with `ConfigLoader::partial` (`Source::Memory`) is a source like a file, so it sits
 below env too. `ConfigLoadResult.layers` reports the defaults as a `Source::Defaults` layer and the
 env as a `Source::EnvVars` layer, each only when it sets something, so each default handler and env
-read runs once per load.
+read runs once per load. An optional file that doesn't exist provides nothing, so it isn't a layer.
 
 **The layers are read against `self`.** `default_values(&self, ctx)` and `env_values(&self)` take
 the partial they go under or over, which is what lets the layers depend on what the sources picked:
@@ -197,7 +197,12 @@ Key invariants:
 
 ## The derive pipeline in `core`
 
-Entry point is `Container::from(DeriveInput)` in `crates/core/src/container.rs`.
+Entry point is `Container::new(DeriveInput)` in `crates/core/src/container.rs`, which returns a
+`darling::Result`. An attribute that fails to parse, on the container, a field, a variant, or a
+variant's value, is collected rather than unwrapped, and the macro shell reports them all with
+`write_errors()`, each spanned to the attribute. `Container::from` is the same, panicking with the
+errors' message, which is what the snapshot tests call. A misused attribute that parses still
+panics (see "Decided semantics").
 
 ```
 Container  (the struct/enum)          container.rs
@@ -242,7 +247,7 @@ Each piece is separately callable, which is what the snapshot tests do.
   `schematic::internal::merge::MergeManager::new`, never through a glob import, as one in a
   generated body would shadow the names a user's `default`, `merge`, or `validate` expression
   refers to. `crates/schematic/src/internal` is split by domain (`layers`, `env`, `merge`,
-  `validate`, `defaults`, `untagged`, `settings`, `config_enum`, `schema`), and its `mod.rs` only
+  `validate`, `defaults`, `transform`, `untagged`, `settings`, `config_enum`, `schema`), and its `mod.rs` only
   declares them, so a new helper goes in the module of its domain rather than being re-exported.
   `internal` exists under `config` or `schema`, as a `Schematic`-only derive's `build_schema`
   calls `internal::schema`, so every other module is gated on `config` itself.
@@ -257,7 +262,11 @@ Each piece is separately callable, which is what the snapshot tests do.
   checks `finalizing` for a missing bare nested config, `internal::schema` wraps a tagged
   variant's schema (`tagged_unit`, `internally_tagged`, `adjacently_tagged`) and builds the
   partial's (`build_partial_schema`), and `config_enum::parse_fallback` converts a `ConfigEnum`'s
-  fallback.
+  fallback. A default or transform that fails is converted with the setting's path, which the
+  generated code passes (`defaults::handle_default_result`, `parse_default`,
+  `transform::handle_transform_result`), from `Field::get_error_path`: the serde name, or
+  `Variant.field` for a named variant's field, as validation reports it. Only the setting's own
+  name, not its parent's, as a nested config's are generated without them.
 
 ### `Value` and the layer system
 
@@ -498,7 +507,28 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   a config whose partial `FLATTENS` fails to compile unless both `ALLOWS_UNKNOWN_FIELDS`
   (`impl_partial_checks`). Making that case load strictly was rejected as too much machinery.
 - **Derive-time panics for wrong attribute usage are intentional.** The maintainer wants loud
-  failure over silent no-ops. `#[setting(nested)]` on a primitive panics.
+  failure over silent no-ops. `#[setting(nested)]` on a primitive panics. A panic only points at
+  the derive, so one about a setting or variant goes through its `fail` (`Field::fail`,
+  `Value::fail`, `Variant::fail`), which prefixes the description `Value::owner` holds, like
+  ``Setting `port`: `` or ``Variant `A`: `` (Rust names, a tuple struct's by position). A new panic
+  about a setting uses them rather than `panic!`. Turning them into spanned errors through the
+  darling accumulator was considered and set aside, as checks made while generating code can't
+  return one, so some would stay panics anyway. Only attributes that fail to parse are errors.
+- **Error locations are strings, by decision.** A source's own parse or validation error names it:
+  its path relative to `set_root`, a code source's file name, or a memory source's name. The final
+  validation, of the merged result, names every source and `environment variables` when they set
+  something, joined with `, ` (`ConfigLoader::get_merged_location`), as any of them may have set
+  what failed, and the config's name with neither. Default values are never listed. Exact blame,
+  the one layer that set the failing path, isn't built. `ConfigError` keeps `location: String`,
+  as moon builds `ConfigError::Validator` itself, and a `Source` can't hold a list. Without
+  `schema`, the config's name is `short_type_name::<T>()`, never `<unknown>`.
+- **A `#[setting(default)]` is any expression.** Only a string (converted into the type) and a bare
+  path (a value or a handler, by its casing) are special. Anything else is written as is, and the
+  compiler checks its type, so there's no list of accepted expression kinds to keep up.
+- **Partials keep their `Partial` names in error messages**, like `expected struct PartialChild`.
+  serde_derive writes that from the Rust type's name, so `rename` doesn't change it, and
+  `expecting` would also replace each enum variant's message and a struct's "with N elements". The
+  maintainer chose to leave it.
 
 - **Validators are called through a generated closure**, never passed by value, so that the value
   deref coerces on its way in — a `String` setting reaches a `&str` validator and a `Vec<T>` a
@@ -596,6 +626,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `merge` is composition: a `MergeList` holds the index where the previous items go, rather than a
   strategy flag that the next merge would overwrite. An enum's isn't, as another variant replaces,
   which is exactly why the defaults go under rather than first.
+- YAML reads an externally tagged variant that holds a value only from a YAML tag (`!file`), never
+  the `{ file: .. }` map the other formats, JSON schemas, and templates use. That's serde_norway,
+  directly and through a `Value` alike, not the loader's two passes. By decision it's documented,
+  recommending internally tagged enums for YAML, rather than read through a deserializer of our own.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
   Use `command git`.
 

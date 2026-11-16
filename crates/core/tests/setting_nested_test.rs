@@ -96,7 +96,7 @@ mod setting_nested {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        #[should_panic(expected = "Unexpected type `paren` at nested")]
         fn panics_invalid_expr() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -269,7 +269,7 @@ mod setting_nested {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        #[should_panic(expected = "Unexpected type `paren` at nested")]
         fn panics_invalid_expr() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -424,7 +424,7 @@ mod setting_nested {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        #[should_panic(expected = "Unexpected type `paren` at nested")]
         fn panics_invalid_expr() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -581,7 +581,7 @@ mod setting_nested {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType(\"paren\")")]
+        #[should_panic(expected = "Unexpected type `paren` at nested")]
         fn panics_invalid_expr() {
             Container::from(parse_quote! {
                 #[derive(Config)]

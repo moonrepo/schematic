@@ -3,91 +3,85 @@
 From the 2026-11-14 audit. See [README.md](README.md) for the legend, the ID scheme, the top
 priorities, and the quick wins.
 
-**X1. Attribute typos print a raw `Debug` dump of the darling error** ✅ · med-high
+**X1. Attribute typos print a raw `Debug` dump of the darling error** · fixed on `0.21-devx`
 
-- **Scenario:** `#[setting(defualt = 1)]` panics with `Result::unwrap()` on
-  `Error { kind: UnknownField(... did_you_mean: Some((0.96, "default")) ...) }`, pointing at
-  `#[derive(Config)]`. Darling already has the span and the suggestion.
-- **Where:** `crates/core/src/container.rs:54-55`, `field.rs:86-87`, `variant.rs:81-82`.
-- **Fix:** have `Container::from` return `darling::Result<Self>`, accumulate errors, and call
-  `write_errors()` in the macro shell. The intentional panics elsewhere are untouched.
+`Container::new` returns a `darling::Result` that collects every attribute that fails to parse, on
+the container, a field, a variant, or a variant's value, and the macro shell calls
+`write_errors()`. So `#[setting(defualt = 1)]` is a compile error at the attribute: ``Unknown field:
+`defualt`. Did you mean `default`?``. If the container's own attributes fail, its settings aren't
+analyzed, as their checks depend on them. `Container::from` stays, panicking with the errors'
+message, for the snapshot tests. A misused attribute that parses still panics.
 
-**X2. Derive panics name neither field nor variant** ✅ · med
+**X2. Derive panics name neither field nor variant** · fixed on `0.21-devx`
 
-- **Context:** about 45 `panic!`s, such as "Cannot use `required` with `default`…", don't say which
-  field.
-- **Defaults dump syn:** `default = PathBuf::from("a").join("b")` is rejected with roughly 1 KB of
-  `Expr::MethodCall { … }` (`value.rs:212`).
-- **Fix:** prefix each message with the setting name, or route through `syn::Error::new_spanned`
-  with the X1 accumulator. Accept any other `Expr` verbatim as a default; only `Lit::Str` and bare
-  paths need special handling.
+A panic about a setting or variant is prefixed with it, like ``Setting `port`: `` (``Setting
+`File.path`: `` within a named variant, ``Setting `1`: `` by position) or ``Variant `A`: ``, through
+`Field::fail`, `Value::fail`, and `Variant::fail`. `Value` holds the description as `owner`, so a
+panic while generating code names the setting too. Rust names, not serde names. Spanned errors
+through the X1 accumulator were set aside, as checks made while generating code can't return one.
 
-**X3. TOML syntax errors are a bare `Handler` error** ✅ · med
+`#[setting(default)]` writes any expression as is, only converting a string and sorting a bare path
+into a value or a handler.
 
-- **Effect:** there is no file name, no `config::parse::failed` code, and `set_help` is not applied.
-- **Where:** `formats/toml.rs:22-24`.
-- **Fix:** build a `ParserError` from `error.span()`, as the second pass already does. About 5
-  lines.
+**X3. TOML syntax errors are a bare `Handler` error** · fixed on `0.21-devx`
 
-**X4. YAML type and unknown-field errors, and all RON data errors, have no span** ✅ · med
+A syntax error is a `ParserError` from `error.span()`, so it gets the file, the `config::parse::failed`
+code, and `set_help`. Its path is `.`, the root, as serde_path_to_error writes it for the other
+formats, as TOML parses the whole document first. YAML's merge-key error and RON's constructor
+error, which also had an empty path, use `.` too.
 
-- **YAML:** it goes through `Value` first for merge keys, so its most common error ("invalid type:
-  string, expected u16") gets no snippet. YAML is moon's format.
-- **Fix:**
-  - YAML: on failure, re-run a direct deserialize only to locate the error.
-  - RON: `de.span_error(err)`.
+**X4. YAML type and unknown-field errors, and all RON data errors, have no span** · fixed on
+`0.21-devx`
 
-**X5. Validation errors are blamed on the last file** ✅ · med
+- YAML: on failure, the content is deserialized directly, only to locate the error, and its span is
+  used when it fails at the same path, so an error a merge key causes isn't labeled elsewhere.
+- RON: `de.span_error(err)`, with the whitespace RON's span starts with skipped, so the label lands
+  on the token. It also calls `de.end()`, so trailing characters fail, as with `ron::from_str`.
 
-- **Scenario:** an env var failing `in_range`, or a `required` miss, reports "Failed to validate
-  …/b.json", even when `b.json` doesn't contain the setting.
-- **Where:** `loader.rs:144-146`.
-- **Fix:** use a neutral location for the final pass, or list all sources. Exact blame needs G4.
+**X5. Validation errors are blamed on the last file** · fixed on `0.21-devx`
 
-**X6. Errors say `<unknown>` with default features** ✅ · med
+The final pass names every source and `environment variables`, when they set something, like
+`Failed to validate a.json, b.json, environment variables.`, or the config's name with neither. The
+defaults are never listed. A single source reads as before. Exact blame, the layer that set the
+failing path, isn't built.
 
-- **Cause:** the loader name comes from `schema_name()`, which is `None` without the `schema`
-  feature. Tests pass only because dev-deps enable `schema`.
-- **Where:** `loader.rs:48`, `:236`.
-- **Fix:** fall back to the last segment of `type_name::<T>()`, and use `Source::Code.path` as the
-  location for code sources.
+**X6. Errors say `<unknown>` with default features** · fixed on `0.21-devx`
 
-**X7. Runtime handler errors don't name the setting** ✅ · low-med
+The loader's name falls back to `short_type_name::<T>()` (`Wrapper<String>`, each path shortened),
+and a code source is located by its file name.
 
-- **Scenario:** a failing transform yields just `nope`, and a failing default yields `Invalid default
-  value. bad default`.
-- **Fix:** have codegen wrap the error with the setting key.
+**X7. Runtime handler errors don't name the setting** · fixed on `0.21-devx`
 
-**X8. Env parse errors drop the reason** ✅ · med
+`InvalidDefaultValue { path, error }` and a new `TransformFailed { path, error }`, with the path
+passed by the generated code: the serde name, `Variant.field` for a named variant's field, or the
+variant for a tuple variant, `Variant[i]` with several values. Only the setting's own name, not its
+parent's. A transform may return any `Display` error.
 
-- **Messages:** `PORT=""` and `PORT=70000` both give "Failed to parse into the correct type".
-- **`parse_bool`:**
-  - `parse_bool("ture")` silently returns `false`, and an empty value is also `false`.
-  - A plain `bool` rejects `FLAG=1`, and the env docs don't point at `parse_bool`.
-- **Where:** `internal/mod.rs:267-275`, `env.rs:17-22`.
-- **Fix:**
-  - Include `type_name::<T>()` and the `FromStr` error in the message.
-  - Make `parse_bool` error on unknown values, with an empty value meaning `None`.
+**X8. Env parse errors drop the reason** · fixed on `0.21-devx`
 
-**X9. Partial type names leak into user errors** ✅ · low
+`Failed to parse "70000" into u16: number too large to fit in target type.`, which needs
+`<T as FromStr>::Err: Display`. `parse_bool` fails on an unknown value, treats an empty one as
+unset, and accepts `0`, `false`, `no`, `off`, `disable`, and `disabled`. The env docs point at it
+for a `bool`.
 
-- **Scenario:** messages read "expected struct PartialChild" and "any variant of PartialMode".
-- **Fix:** emit `#[serde(rename = "<name>")]` on the partial when none is given, and pass
-  `get_name()` to `untagged_error_message`.
+**X9. Partial type names leak into user errors** · won't fix
 
-**X10. Default features include no format** 📖 · med
+serde_derive writes "expected struct PartialChild" from the Rust type's name, so `rename` doesn't
+change it, only `#[serde(expecting)]` does. That would also replace each enum variant's message,
+and a struct's "with N elements" in a length error. The maintainer chose to leave the `Partial`
+names, untagged errors included.
 
-- **Scenario:** `cargo add schematic` plus the README's `.code("secure: false", "config.yml")`
-  returns `NoMatchingFormat` at runtime, and `.url()` doesn't compile without the `url` feature.
-- **Fix:** do one of the following, in order of cost:
-  - Make `NoMatchingFormat`'s help name the feature to enable (cheapest).
-  - Fix the README and book.
-  - Add `yaml` or `json` to the defaults.
+**X10. Default features include no format** · fixed on `0.21-devx`
 
-**X11. Small papercuts** · low
+`NoMatchingFormat`'s help names the feature that adds a format for the extension, when it's
+disabled. The README and book say formats are opt-in, and the README that `serde` is a dependency.
+No format was added to the defaults.
 
-- `ConfigLoadResult` has no `Debug`, so `load().unwrap_err()` doesn't compile ✅.
-- `ConfigError` locations are plain `String`s, not `Source` 📖.
-- An optional missing file still appears in `layers` as an empty layer 📖.
-- A non-`Display` map key on a nested collection fails inside generated validate code, with the
-  error pointing at the derive ✅.
+**X11. Small papercuts** · fixed on `0.21-devx`, but one
+
+- `ConfigLoadResult` implements `Debug`, by hand, as a derive can't bound each layer's partial.
+- `ConfigError` locations stay plain `String`s, by decision. moon builds `ConfigError::Validator`
+  itself, and since X5 a location can be a list.
+- An optional missing file isn't a layer.
+- The map key of a nested collection joins a validation path through a call spanned to the
+  setting's type, so a key without `Display` fails to compile there.

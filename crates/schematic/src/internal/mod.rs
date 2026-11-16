@@ -30,6 +30,10 @@ pub mod schema;
 #[cfg(feature = "config")]
 pub mod settings;
 
+/// Running the `#[setting(transform)]` functions of a partial.
+#[cfg(feature = "config")]
+pub mod transform;
+
 /// Deserializing untagged enums and literal unions.
 #[cfg(feature = "config")]
 pub mod untagged;

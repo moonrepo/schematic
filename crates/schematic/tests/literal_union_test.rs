@@ -128,7 +128,7 @@ mod toml {
     fn lists_the_named_values_on_failure() {
         assert_eq!(
             load("cache = 1", "code.toml").unwrap_err(),
-            "Failed to parse LiteralConfig. cache: failed to parse as any variant of PartialCache:\n- expected one of \"local\", \"remote\", found 1\n- enabled: expected a boolean, found 1"
+            "Failed to parse code.toml. cache: failed to parse as any variant of PartialCache:\n- expected one of \"local\", \"remote\", found 1\n- enabled: expected a boolean, found 1"
         );
     }
 }
@@ -157,7 +157,7 @@ mod yaml {
     fn lists_the_named_values_on_failure() {
         assert_eq!(
             load("cache: qux", "code.yml").unwrap_err(),
-            "Failed to parse LiteralConfig. cache: failed to parse as any variant of PartialCache:\n- expected one of \"local\", \"remote\", found \"qux\"\n- enabled: expected a boolean, found \"qux\""
+            "Failed to parse code.yml. cache: failed to parse as any variant of PartialCache:\n- expected one of \"local\", \"remote\", found \"qux\"\n- enabled: expected a boolean, found \"qux\""
         );
     }
 }

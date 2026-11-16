@@ -40,7 +40,7 @@ impl schematic::PartialConfig for PartialExample {
                             (&&schematic::internal::defaults::DefaultString::<
                                 String,
                             >::new())
-                                .parse_default("a")?
+                                .parse_default("A.a", "a")?
                         }),
                         b: schematic::internal::layers::nested_default_values(
                             pb.as_ref(),

@@ -26,52 +26,58 @@ fn finalize(
             }
             Self::B(pa) => {
                 Self::B(
-                    transform_config(
-                        pa
-                            .into_iter()
-                            .map(|(key, pa)| Ok((
-                                key,
-                                schematic::internal::layers::finalize_with_layers(
-                                    pa,
-                                    context,
-                                )?,
-                            )))
-                            .collect::<
-                                std::result::Result<
-                                    HashMap<
-                                        String,
-                                        <CustomConfig as schematic::Config>::Partial,
+                    schematic::internal::transform::handle_transform_result(
+                        "B",
+                        transform_config(
+                            pa
+                                .into_iter()
+                                .map(|(key, pa)| Ok((
+                                    key,
+                                    schematic::internal::layers::finalize_with_layers(
+                                        pa,
+                                        context,
+                                    )?,
+                                )))
+                                .collect::<
+                                    std::result::Result<
+                                        HashMap<
+                                            String,
+                                            <CustomConfig as schematic::Config>::Partial,
+                                        >,
+                                        schematic::ConfigError,
                                     >,
-                                    schematic::ConfigError,
-                                >,
-                            >()?,
-                        context,
+                                >()?,
+                            context,
+                        ),
                     )?,
                 )
             }
             Self::C(pa) => {
                 Self::C(
-                    transform_config(
-                        match pa {
-                            Some(pa) => {
-                                Some(
-                                    pa
-                                        .into_iter()
-                                        .map(|pa| schematic::internal::layers::finalize_with_layers(
-                                            pa,
-                                            context,
-                                        ))
-                                        .collect::<
-                                            std::result::Result<
-                                                BTreeSet<<NestedConfig as schematic::Config>::Partial>,
-                                                schematic::ConfigError,
-                                            >,
-                                        >()?,
-                                )
-                            }
-                            None => None,
-                        },
-                        context,
+                    schematic::internal::transform::handle_transform_result(
+                        "C",
+                        transform_config(
+                            match pa {
+                                Some(pa) => {
+                                    Some(
+                                        pa
+                                            .into_iter()
+                                            .map(|pa| schematic::internal::layers::finalize_with_layers(
+                                                pa,
+                                                context,
+                                            ))
+                                            .collect::<
+                                                std::result::Result<
+                                                    BTreeSet<<NestedConfig as schematic::Config>::Partial>,
+                                                    schematic::ConfigError,
+                                                >,
+                                            >()?,
+                                    )
+                                }
+                                None => None,
+                            },
+                            context,
+                        ),
                     )?,
                 )
             }

@@ -60,7 +60,7 @@ fn errors_for_invalid_transformed_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate Transforms. \n  string: invalid string FOO"
+        "Failed to validate code.yaml. \n  string: invalid string FOO"
     )
 }
 
@@ -134,4 +134,71 @@ list:
             vector: vec!["item".to_owned()],
         }]
     );
+}
+
+// A failing transform names the setting it was for, as the error alone may
+// not say which
+mod errors {
+    use super::*;
+
+    fn fail(_: String, _: &()) -> TransformResult<String> {
+        Err(HandlerError::new("nope"))
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Failing {
+        #[setting(transform = fail)]
+        name: String,
+    }
+
+    #[derive(Debug, Config)]
+    #[serde(rename_all = "lowercase")]
+    pub enum FailingVariant {
+        File {
+            #[setting(transform = fail)]
+            path: String,
+        },
+        #[setting(transform = fail)]
+        Tuple(String),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct Variants {
+        #[setting(nested)]
+        source: Option<FailingVariant>,
+    }
+
+    fn load<T: Config>(code: &str) -> String {
+        ConfigLoader::<T>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string()
+    }
+
+    #[test]
+    fn names_the_setting() {
+        assert_eq!(
+            load::<Failing>(r#"{ "name": "abc" }"#),
+            "Failed to transform name. nope"
+        );
+    }
+
+    #[test]
+    fn names_the_field_of_a_variant() {
+        assert_eq!(
+            load::<Variants>(r#"{ "source": { "file": { "path": "abc" } } }"#),
+            "Failed to transform file.path. nope"
+        );
+    }
+
+    #[test]
+    fn names_a_variant() {
+        assert_eq!(
+            load::<Variants>(r#"{ "source": { "tuple": "abc" } }"#),
+            "Failed to transform tuple. nope"
+        );
+    }
 }

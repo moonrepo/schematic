@@ -4,8 +4,8 @@ use crate::args::{
 use crate::container::ContainerArgs;
 use crate::field_value::FieldValue;
 use crate::utils::{
-    ImplResult, format_case, get_renamed_value, is_inheritable_attribute, preserve_str_literal,
-    to_type_string,
+    ImplResult, describe_setting, format_case, get_renamed_value, is_inheritable_attribute,
+    join_results, preserve_str_literal, to_type_string,
 };
 use crate::value::path_names_a_value;
 use darling::FromAttributes;
@@ -78,6 +78,11 @@ pub struct VariantScope {
     pub prev: Ident,
     /// The binding of the setting within the next partial, like `na`.
     pub next: Ident,
+    /// The variant that holds the setting, which a panic names.
+    pub variant: Ident,
+    /// The serde name of that variant, which the setting's runtime errors are
+    /// reported under, set once the variant is known.
+    pub name: String,
 }
 
 #[derive(Debug)]
@@ -101,21 +106,33 @@ pub struct Field {
 }
 
 impl Field {
+    /// Analyze a setting at `index` within its struct or named variant. An
+    /// attribute that fails to parse is returned as an error, while one that
+    /// parses but is misused panics, naming the setting.
     pub fn new(
         field: NativeField,
+        index: usize,
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
         self_ty: &Type,
         variant: Option<VariantScope>,
-    ) -> Self {
-        let args = FieldArgs::from_attributes(&field.attrs).unwrap();
-        let serde_args = SerdeFieldArgs::from_attributes(&field.attrs).unwrap();
+    ) -> darling::Result<Self> {
+        let (args, serde_args) = join_results(
+            FieldArgs::from_attributes(&field.attrs),
+            SerdeFieldArgs::from_attributes(&field.attrs),
+        )?;
+
+        let owner = describe_setting(
+            field.ident.as_ref(),
+            index,
+            variant.as_ref().map(|scope| &scope.variant),
+        );
 
         let field = Self {
             attrs: field.attrs,
             container_args,
             ident: field.ident,
-            index: 0,
+            index,
             modifiers: field.modifiers,
             serde_args,
             serde_container_args,
@@ -124,13 +141,20 @@ impl Field {
                 args.nested.as_ref(),
                 self_ty,
                 args.context.clone(),
+                owner,
             ),
             variant,
             args,
         };
 
         field.validate_args();
-        field
+
+        Ok(field)
+    }
+
+    /// Panic with a message about this setting, naming it.
+    pub fn fail(&self, message: impl std::fmt::Display) -> ! {
+        self.value.fail(message)
     }
 
     fn validate_args(&self) {
@@ -144,54 +168,48 @@ impl Field {
         if self.args.skip_deserializing_if.is_some()
             || self.serde_args.skip_deserializing_if.is_some()
         {
-            panic!(
-                "Cannot use `skip_deserializing_if`, as serde has no such attribute, so it would never apply. Use `skip_deserializing` to never deserialize the setting."
-            );
+            self.fail("Cannot use `skip_deserializing_if`, as serde has no such attribute, so it would never apply. Use `skip_deserializing` to never deserialize the setting.");
         }
 
         #[cfg(feature = "env")]
         {
             if self.args.env_prefix.is_some() && self.args.nested.is_none() {
-                panic!("Cannot use `env_prefix` without `nested`.");
+                self.fail("Cannot use `env_prefix` without `nested`.");
             }
 
             // A nested config reads its own variables, so its env codegen
             // never asks for a key, and these would be silently ignored
             if self.is_nested() {
                 if self.args.env.is_some() {
-                    panic!("Cannot use `env` with `nested`, use `env_prefix` instead?");
+                    self.fail("Cannot use `env` with `nested`, use `env_prefix` instead?");
                 }
 
                 if self.args.parse_env.is_some() {
-                    panic!(
-                        "Cannot use `parse_env` with `nested`, as a nested config reads its own variables."
-                    );
+                    self.fail("Cannot use `parse_env` with `nested`, as a nested config reads its own variables.");
                 }
             }
 
             // A key may be explicit, or derived from the container's prefix,
             // but without one there is nothing for the parser to receive
             if self.args.parse_env.is_some() && self.get_env_var().is_none() {
-                panic!("Cannot use `parse_env` without `env` or a container `env_prefix`.");
+                self.fail("Cannot use `parse_env` without `env` or a container `env_prefix`.");
             }
         }
 
         // Every default of a config that always holds itself holds itself again
         if self.value.keep_box && !self.value.is_outer_option_wrapped() {
-            panic!(
-                "A setting that holds its own type must be optional, like `Option<Box<Self>>`, as its default would never end."
-            );
+            self.fail("A setting that holds its own type must be optional, like `Option<Box<Self>>`, as its default would never end.");
         }
 
         if self.is_required() {
             if self.args.default.is_some() || self.serde_args.default.is_enabled() {
-                panic!("Cannot use `required` with `default`, as the setting always has a value.");
+                self.fail(
+                    "Cannot use `required` with `default`, as the setting always has a value.",
+                );
             }
 
             if self.is_bare_nested() {
-                panic!(
-                    "Cannot use `required` with a non-optional `nested` setting, as it always exists. Mark the settings within it as required instead."
-                );
+                self.fail("Cannot use `required` with a non-optional `nested` setting, as it always exists. Mark the settings within it as required instead.");
             }
         }
     }
@@ -200,7 +218,9 @@ impl Field {
     /// as only a struct extends.
     fn validate_variant_args(&self) {
         if self.args.extend {
-            panic!("Cannot use `extend` within an enum variant, as only a named struct extends.");
+            self.fail(
+                "Cannot use `extend` within an enum variant, as only a named struct extends.",
+            );
         }
     }
 
@@ -258,12 +278,12 @@ impl Field {
     #[cfg(feature = "env")]
     pub fn get_env_var(&self) -> Option<EnvKey> {
         if self.args.env.is_some() && self.args.env_prefix.is_some() {
-            panic!("Cannot use `env` and `env_prefix` together.");
+            self.fail("Cannot use `env` and `env_prefix` together.");
         }
 
         if let Some(env_key) = &self.args.env {
             if env_key.is_empty() {
-                panic!("Attribute `env` cannot be empty.");
+                self.fail("Attribute `env` cannot be empty.");
             }
 
             return Some(EnvKey::Explicit(env_key.to_owned()));
@@ -365,6 +385,17 @@ impl Field {
             .expect("Name only usable on named fields!")
             .unraw()
             .to_string()
+    }
+
+    /// The path a runtime error about this setting names, like `port`, or
+    /// `File.path` for a field of a named variant, as validation reports it.
+    pub fn get_error_path(&self) -> String {
+        let name = self.get_name_or_index();
+
+        match &self.variant {
+            Some(scope) => format!("{}.{name}", scope.name),
+            None => name,
+        }
     }
 
     /// Return the name that identifies this setting to users, which is the
@@ -614,9 +645,7 @@ impl ToTokens for Field {
             .or(self.serde_args.deserialize_with.as_ref())
             && self.args.partial.is_empty()
         {
-            panic!(
-                "Cannot use `#[serde(with)]` or `#[serde(deserialize_with)]` (`{func}`) on a setting, as the partial holds an `Option` of its type. Provide one for the partial with `#[setting(partial(serde(with = ...)))]`, like a module's `option` variant."
-            );
+            self.fail(format!("Cannot use `#[serde(with)]` or `#[serde(deserialize_with)]` (`{func}`) on a setting, as the partial holds an `Option` of its type. Provide one for the partial with `#[setting(partial(serde(with = ...)))]`, like a module's `option` variant."));
         }
 
         let attrs = self.get_partial_attributes();
@@ -835,13 +864,13 @@ impl Field {
             && let SerdeDefaultArg::Func(func) = &self.serde_args.default
         {
             if self.value.requires_from_partial_mapping() {
-                panic!(
-                    "Cannot use `#[serde(default = \"{func}\")]` with nested configs or wrapper types, use `#[setting(default)]` instead."
-                );
+                self.fail(format!("Cannot use `#[serde(default = \"{func}\")]` with nested configs or wrapper types, use `#[setting(default)]` instead."));
             }
 
             let func: ExprPath = syn::parse_str(func).unwrap_or_else(|_| {
-                panic!("Invalid `#[serde(default)]` function path `{func}`.");
+                self.fail(format!(
+                    "Invalid `#[serde(default)]` function path `{func}`."
+                ));
             });
 
             return ImplResult {
@@ -854,8 +883,11 @@ impl Field {
             };
         }
 
-        self.value
-            .impl_partial_default_value(&self.args, &self.get_access(quote! { self }))
+        self.value.impl_partial_default_value(
+            &self.args,
+            &self.get_access(quote! { self }),
+            &self.get_error_path(),
+        )
     }
 
     /// Whether the setting's default values depend on its value beneath
@@ -929,7 +961,11 @@ impl Field {
         };
 
         if let Some(func) = &self.args.transform {
-            value = quote! { #func(#value, context)? };
+            let path = self.get_error_path();
+
+            value = quote! {
+                schematic::internal::transform::handle_transform_result(#path, #func(#value, context))?
+            };
         };
 
         ImplResult {

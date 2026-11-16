@@ -1,4 +1,4 @@
-use super::create_span;
+use super::create_span_between;
 use crate::config::error::ConfigError;
 use crate::config::parser::ParserError;
 use crate::config::source::*;
@@ -25,26 +25,31 @@ impl<T: DeserializeOwned> SourceFormat<T> for RonFormat {
         let options = ron::Options::default()
             .with_default_extension(ron::extensions::Extensions::IMPLICIT_SOME);
 
-        let de =
-            &mut ron::Deserializer::from_str_with_options(content, &options).map_err(|error| {
-                ParserError {
-                    content: NamedSource::new(source.get_file_name(), content.to_owned()),
-                    path: String::new(),
-                    span: Some(create_span(
-                        content,
-                        error.span.start.line,
-                        error.span.start.col,
-                    )),
-                    message: error.to_string(),
-                }
-            })?;
-
-        let result: T = serde_path_to_error::deserialize(de).map_err(|error| ParserError {
+        let error_at = |error: ron::error::SpannedError, path: String| ParserError {
             content: NamedSource::new(source.get_file_name(), content.to_owned()),
-            path: error.path().to_string(),
-            span: None,
-            message: error.inner().to_string(),
+            path,
+            span: Some(create_span_between(
+                content,
+                (error.span.start.line, error.span.start.col),
+                (error.span.end.line, error.span.end.col),
+            )),
+            message: error.code.to_string(),
+        };
+
+        let mut de = ron::Deserializer::from_str_with_options(content, &options)
+            .map_err(|error| error_at(error, ".".into()))?;
+
+        // A data error is located where the deserializer stopped, as RON
+        // itself does, since the error alone holds no position
+        let result: T = serde_path_to_error::deserialize(&mut de).map_err(|error| {
+            let path = error.path().to_string();
+
+            error_at(de.span_error(error.into_inner()), path)
         })?;
+
+        // Anything after the value is an error, as it is for `ron::from_str`
+        de.end()
+            .map_err(|error| error_at(de.span_error(error), ".".into()))?;
 
         Ok(result)
     }

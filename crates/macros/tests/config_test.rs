@@ -839,7 +839,7 @@ mod required {
     fn errors_when_missing() {
         assert_eq!(
             load("{}").unwrap_err(),
-            "Failed to validate Required. \n  name: this setting is required\n  list: this setting is required\n  maybe: this setting is required"
+            "Failed to validate code.json. \n  name: this setting is required\n  list: this setting is required\n  maybe: this setting is required"
         );
     }
 
@@ -847,7 +847,7 @@ mod required {
     fn errors_when_null() {
         assert_eq!(
             load(r#"{ "name": null, "list": [], "maybe": "a" }"#).unwrap_err(),
-            "Failed to validate Required. \n  name: this setting is required"
+            "Failed to validate code.json. \n  name: this setting is required"
         );
     }
 
@@ -948,7 +948,7 @@ mod required {
     fn checks_a_bare_nested_config_no_layer_provided() {
         assert_eq!(
             load_parent("{}").unwrap_err(),
-            "Failed to validate Parent. \n  one.name: this setting is required\n  one.inner.name: this setting is required\n  boxed.name: this setting is required\n  boxed.inner.name: this setting is required"
+            "Failed to validate code.json. \n  one.name: this setting is required\n  one.inner.name: this setting is required\n  boxed.name: this setting is required\n  boxed.inner.name: this setting is required"
         );
     }
 
@@ -964,7 +964,7 @@ mod required {
                 }"#
             )
             .unwrap_err(),
-            "Failed to validate Parent. \n  maybe.name: this setting is required\n  many[1].inner.name: this setting is required"
+            "Failed to validate code.json. \n  maybe.name: this setting is required\n  many[1].inner.name: this setting is required"
         );
     }
 
@@ -1287,7 +1287,7 @@ mod literal_union {
     fn reports_the_setting_that_failed() {
         assert_eq!(
             load(&[r#"{ "mode": "qux" }"#]).unwrap_err(),
-            "Failed to parse Settings. mode: failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found \"qux\"\n- enabled: expected a boolean, found \"qux\" at line 1 column 17"
+            "Failed to parse code.json. mode: failed to parse as any variant of PartialMode:\n- expected one of \"foo\", \"bar\", \"baz\", found \"qux\"\n- enabled: expected a boolean, found \"qux\" at line 1 column 17"
         );
     }
 
@@ -1494,7 +1494,7 @@ mod nested_collections {
         assert_eq!(
             load(r#"{ "groups": { "a": [{ "name": "x" }, {}] }, "grid": [[], [{}]] }"#)
                 .unwrap_err(),
-            "Failed to validate Groups. \n  groups.a[1].name: this setting is required\n  grid[1][0].name: this setting is required"
+            "Failed to validate code.json. \n  groups.a[1].name: this setting is required\n  grid[1][0].name: this setting is required"
         );
     }
 }

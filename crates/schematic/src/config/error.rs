@@ -42,6 +42,15 @@ pub enum ConfigError {
     )]
     ExtendsFromParentFileOnly,
 
+    #[diagnostic(code(config::transform::failed))]
+    #[error("Failed to transform {}. {error}", .path.style(Style::Id))]
+    TransformFailed {
+        /// The setting that was transformed, like `port`, or `File.path` for
+        /// a field of a named variant.
+        path: String,
+        error: String,
+    },
+
     #[diagnostic(code(config::url::https_only))]
     #[error("Only secure URLs are allowed, received {}.", .0.style(Style::Url))]
     HttpsOnly(String),
@@ -51,8 +60,13 @@ pub enum ConfigError {
     InvalidCode,
 
     #[diagnostic(code(config::default::invalid))]
-    #[error("Invalid default value. {0}")]
-    InvalidDefaultValue(String),
+    #[error("Invalid default value for {}. {error}", .path.style(Style::Id))]
+    InvalidDefaultValue {
+        /// The setting the default is for, like `port`, or `File.path` for a
+        /// field of a named variant.
+        path: String,
+        error: String,
+    },
 
     #[diagnostic(code(config::file::invalid))]
     #[error("Invalid file path used as a source.")]
@@ -80,16 +94,18 @@ pub enum ConfigError {
     #[error("File path {} does not exist.", .0.style(Style::Path))]
     MissingFile(PathBuf),
 
-    #[diagnostic(
-        code(config::format::no_matching),
-        help("Is there a format registered for the file extension?")
-    )]
+    #[diagnostic(code(config::format::no_matching))]
     #[error(
         "Unable to parse {} as there's no matching source format for extension {}.",
         .src.style(Style::Path),
         .ext.style(Style::File)
     )]
-    NoMatchingFormat { src: String, ext: String },
+    NoMatchingFormat {
+        src: String,
+        ext: String,
+        #[help]
+        help: String,
+    },
 
     #[diagnostic(code(config::file::read_failed))]
     #[error("Failed to read file {}.", .path.style(Style::Path))]
@@ -171,6 +187,33 @@ pub enum ConfigError {
 }
 
 impl ConfigError {
+    /// An error for a source that no format parses, whose help names the
+    /// feature that adds one for its extension, as none is enabled by default.
+    pub(crate) fn no_matching_format(src: impl Into<String>, ext: Option<&str>) -> Self {
+        let feature = match ext.unwrap_or_default() {
+            "json" | "jsonc" => Some(("json", cfg!(feature = "json"))),
+            "pkl" => Some(("pkl", cfg!(feature = "pkl"))),
+            "ron" => Some(("ron", cfg!(feature = "ron"))),
+            "toml" => Some(("toml", cfg!(feature = "toml"))),
+            "yaml" | "yml" => Some(("yaml", cfg!(feature = "yaml"))),
+            _ => None,
+        };
+
+        let help = match feature {
+            Some((feature, false)) => format!(
+                "Enable the {} feature of schematic, which adds a format for it.",
+                feature.style(Style::Id)
+            ),
+            _ => "Is there a format registered for the file extension? ConfigLoader::new registers one for each format feature that's enabled.".into(),
+        };
+
+        ConfigError::NoMatchingFormat {
+            src: src.into(),
+            ext: ext.unwrap_or("(none)").into(),
+            help,
+        }
+    }
+
     /// Return a full error string, disregarding `miette` diagnostic structure.
     /// This is extremely useful for debugging and tests, and less for application use.
     pub fn to_full_string(&self) -> String {

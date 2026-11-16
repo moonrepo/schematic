@@ -39,7 +39,7 @@ mod setting_required {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `int` at required")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -204,7 +204,7 @@ mod setting_required {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `int` at required")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -252,7 +252,7 @@ mod setting_required {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `int` at required")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]
@@ -361,7 +361,7 @@ mod setting_required {
         }
 
         #[test]
-        #[should_panic(expected = "UnexpectedType")]
+        #[should_panic(expected = "Unexpected type `int` at required")]
         fn errors_invalid_type() {
             Container::from(parse_quote! {
                 #[derive(Config)]

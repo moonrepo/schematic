@@ -1,8 +1,13 @@
-use crate::{ParseEnvResult, internal::env::parse_value};
+use crate::{HandlerError, ParseEnvResult, internal::env::parse_value};
+use std::fmt::Display;
 use std::str::FromStr;
 
 /// Ignore the environment variable if it's empty and fallback to the previous or default value.
-pub fn ignore_empty<T: FromStr>(var: String) -> ParseEnvResult<T> {
+pub fn ignore_empty<T>(var: String) -> ParseEnvResult<T>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     let var = var.trim();
 
     if var.is_empty() {
@@ -12,16 +17,26 @@ pub fn ignore_empty<T: FromStr>(var: String) -> ParseEnvResult<T> {
     parse_value(var).map(|v| Some(v))
 }
 
-/// Parse a string into a boolean. Will parse `1`, `true`, `yes`, `on`,
-/// and `enabled` as true, and everything else as false.
+/// Parse a string into a boolean, ignoring case and surrounding whitespace.
+/// Will parse `1`, `true`, `yes`, `on`, `enable`, and `enabled` as true, and
+/// `0`, `false`, `no`, `off`, `disable`, and `disabled` as false. An empty
+/// value is ignored, like an unset variable, and anything else is an error.
 pub fn parse_bool(var: String) -> ParseEnvResult<bool> {
-    Ok(match var.to_lowercase().as_str() {
-        "1" | "true" | "yes" | "on" | "enabled" | "enable" => Some(true),
-        _ => Some(false),
-    })
+    match var.trim().to_lowercase().as_str() {
+        "" => Ok(None),
+        "1" | "true" | "yes" | "on" | "enabled" | "enable" => Ok(Some(true)),
+        "0" | "false" | "no" | "off" | "disabled" | "disable" => Ok(Some(false)),
+        _ => Err(HandlerError::new(format!(
+            "Failed to parse \"{var}\" into bool, expected one of 1, true, yes, on, enable, or enabled, or 0, false, no, off, disable, or disabled."
+        ))),
+    }
 }
 
-fn split<T: FromStr>(var: String, delim: char) -> ParseEnvResult<Vec<T>> {
+fn split<T>(var: String, delim: char) -> ParseEnvResult<Vec<T>>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     let mut list = vec![];
 
     for s in var.split(delim) {
@@ -36,21 +51,37 @@ fn split<T: FromStr>(var: String, delim: char) -> ParseEnvResult<Vec<T>> {
 }
 
 /// Split a variable on each comma (`,`) and parse into a list of values.
-pub fn split_comma<T: FromStr>(var: String) -> ParseEnvResult<Vec<T>> {
+pub fn split_comma<T>(var: String) -> ParseEnvResult<Vec<T>>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     split(var, ',')
 }
 
 /// Split a variable on each colon (`:`) and parse into a list of values.
-pub fn split_colon<T: FromStr>(var: String) -> ParseEnvResult<Vec<T>> {
+pub fn split_colon<T>(var: String) -> ParseEnvResult<Vec<T>>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     split(var, ':')
 }
 
 /// Split a variable on each semicolon (`;`) and parse into a list of values.
-pub fn split_semicolon<T: FromStr>(var: String) -> ParseEnvResult<Vec<T>> {
+pub fn split_semicolon<T>(var: String) -> ParseEnvResult<Vec<T>>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     split(var, ';')
 }
 
 /// Split a variable on each space (` `) and parse into a list of values.
-pub fn split_space<T: FromStr>(var: String) -> ParseEnvResult<Vec<T>> {
+pub fn split_space<T>(var: String) -> ParseEnvResult<Vec<T>>
+where
+    T: FromStr,
+    T::Err: Display,
+{
     split(var, ' ')
 }

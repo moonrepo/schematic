@@ -11,13 +11,23 @@ fn finalize(
         partial.a = Some(layer.finalize(context)?);
     }
     if let Some(layer) = partial.b {
-        partial.b = Some(transform_config(layer.finalize(context)?, context)?);
+        partial.b = Some(
+            schematic::internal::transform::handle_transform_result(
+                "b",
+                transform_config(layer.finalize(context)?, context),
+            )?,
+        );
     }
     if let Some(layer) = partial.c {
         partial.c = Some(layer.finalize(context)?);
     }
     if let Some(layer) = partial.d {
-        partial.d = Some(transform_config(layer.finalize(context)?, context)?);
+        partial.d = Some(
+            schematic::internal::transform::handle_transform_result(
+                "d",
+                transform_config(layer.finalize(context)?, context),
+            )?,
+        );
     }
     Ok(partial)
 }

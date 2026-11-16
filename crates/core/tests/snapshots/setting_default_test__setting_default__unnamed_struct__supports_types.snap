@@ -17,7 +17,7 @@ fn default_values(
                         DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
                     };
                     (&&schematic::internal::defaults::DefaultString::<String>::new())
-                        .parse_default("abc")?
+                        .parse_default("3", "abc")?
                 }),
                 Some(["a".into(), "b".into(), "c".into()]),
                 Some(vec!["a", "b", "c"]),
