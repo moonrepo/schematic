@@ -130,6 +130,11 @@ explicitly marked as such. For example, with `#[default]`.
 When we're unsure of what to render for a value, we'll render `null`. This isn't a valid value for
 TOML, and may not be what you expect.
 
+An externally tagged enum's default variant, when it holds a value, is rendered as a map of its name
+to the value, which a YAML config can't load, as YAML only reads it from a tag, like `!file`
+([more](../../config/struct/index.md#yaml-and-externally-tagged-variants)). Prefer an internally
+tagged enum for a YAML config.
+
 A flattened struct's settings are rendered alongside the struct's own, as serde reads them, rather
 than under the field that holds it. In TOML, that means they're part of the same table. A flattened
 map collects keys that a template has no names for, so it renders nothing.

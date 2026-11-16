@@ -153,6 +153,29 @@ failed to parse as any variant of PartialHost:
 An untagged named variant is attempted like any other, and unless unknown fields are allowed, fails
 on a field it doesn't know, so an input with an extra key moves on to the next variant.
 
+#### YAML and externally tagged variants
+
+An enum without `tag` or `untagged` is externally tagged, so a variant holding a value is written as
+a map of its name to the value, like `{ "file": { "path": "a" } }` in JSON. YAML is the exception:
+its parser, `serde_norway`, only reads such a variant from a YAML tag, and fails on the map, with
+`expected a YAML tag starting with '!'`.
+
+```yaml
+# Loads
+source: !file
+  path: a
+
+# Fails
+source:
+  file:
+    path: a
+```
+
+A unit variant is still written as its name, like `source: local`. For a YAML config, prefer an
+internally tagged enum, with `#[serde(tag = "type")]`, which is written the same in every format,
+and which JSON schemas and templates describe as it's loaded. They describe an externally tagged
+variant as the map, which YAML doesn't load.
+
 ### Literal unions
 
 A setting that accepts a few named values, or a value of another type, like

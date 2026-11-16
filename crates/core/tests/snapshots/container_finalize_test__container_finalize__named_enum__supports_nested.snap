@@ -13,13 +13,23 @@ fn finalize(
                     pa = Some(layer.finalize(context)?);
                 }
                 if let Some(layer) = pb {
-                    pb = Some(transform_config(layer.finalize(context)?, context)?);
+                    pb = Some(
+                        schematic::internal::transform::handle_transform_result(
+                            "A.b",
+                            transform_config(layer.finalize(context)?, context),
+                        )?,
+                    );
                 }
                 if let Some(layer) = pc {
                     pc = Some(layer.finalize(context)?);
                 }
                 if let Some(layer) = pd {
-                    pd = Some(transform_config(layer.finalize(context)?, context)?);
+                    pd = Some(
+                        schematic::internal::transform::handle_transform_result(
+                            "A.d",
+                            transform_config(layer.finalize(context)?, context),
+                        )?,
+                    );
                 }
                 Self::A {
                     a: pa,

@@ -16,7 +16,7 @@ impl<T> DefaultString<T> {
 }
 
 pub trait DefaultStringViaTryFrom<T> {
-    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError>;
+    fn parse_default(&self, path: &str, value: &'static str) -> Result<T, ConfigError>;
 }
 
 impl<T> DefaultStringViaTryFrom<T> for &DefaultString<T>
@@ -24,13 +24,13 @@ where
     T: TryFrom<&'static str>,
     <T as TryFrom<&'static str>>::Error: std::fmt::Display,
 {
-    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError> {
-        T::try_from(value).map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
+    fn parse_default(&self, path: &str, value: &'static str) -> Result<T, ConfigError> {
+        T::try_from(value).map_err(|error| invalid_default(path, error))
     }
 }
 
 pub trait DefaultStringViaFromStr<T> {
-    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError>;
+    fn parse_default(&self, path: &str, value: &'static str) -> Result<T, ConfigError>;
 }
 
 impl<T> DefaultStringViaFromStr<T> for DefaultString<T>
@@ -38,16 +38,25 @@ where
     T: FromStr,
     <T as FromStr>::Err: std::fmt::Display,
 {
-    fn parse_default(&self, value: &'static str) -> Result<T, ConfigError> {
+    fn parse_default(&self, path: &str, value: &'static str) -> Result<T, ConfigError> {
         value
             .parse()
-            .map_err(|error: T::Err| ConfigError::InvalidDefaultValue(error.to_string()))
+            .map_err(|error: T::Err| invalid_default(path, error))
     }
 }
 
-/// Convert the error of a `#[setting(default)]` handler function.
+/// Convert the error of a `#[setting(default)]` handler function for the
+/// setting at `path`.
 pub fn handle_default_result<T, E: std::error::Error>(
+    path: &str,
     result: Result<T, E>,
 ) -> Result<T, ConfigError> {
-    result.map_err(|error| ConfigError::InvalidDefaultValue(error.to_string()))
+    result.map_err(|error| invalid_default(path, error))
+}
+
+fn invalid_default(path: &str, error: impl std::fmt::Display) -> ConfigError {
+    ConfigError::InvalidDefaultValue {
+        path: path.into(),
+        error: error.to_string(),
+    }
 }

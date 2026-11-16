@@ -46,9 +46,54 @@
 - Updated `merge::merge_hashmap` and `merge::merge_hashset` to accept any hasher. A direct call may
   now need its map's hasher named, like `HashMap::<_, _>::from_iter(..)`, while `#[setting(merge)]`
   is unaffected.
+- Updated the env helpers to require a `FromStr` error that implements `Display`, which a variable
+  that fails to parse now reports. This applies to settings read from the environment without a
+  `parse_env`, and to `env::ignore_empty` and the `env::split_*` functions. A type whose error is
+  `()`, say, no longer compiles as one.
+- Updated `env::parse_bool` to fail on a value it doesn't recognize, which was `false`, and to treat
+  an empty value as unset, rather than `false`. It now accepts `0`, `false`, `no`, `off`, `disable`,
+  and `disabled` as false.
+- Updated `ConfigError::InvalidDefaultValue` to a struct variant, `{ path, error }`, naming the
+  setting, and added `ConfigError::TransformFailed { path, error }`, which a failing transform is
+  now reported as, rather than `ConfigError::Handler`. A transform may return any error that
+  implements `Display`.
+- Updated `ConfigError::NoMatchingFormat` with a `help` field, which names the Cargo feature that
+  adds a format for the source's extension, when it's disabled.
+- Updated RON sources to fail on anything after the value, as `ron::from_str` does, rather than
+  ignoring it.
+- Updated `ConfigLoadResult.layers` to leave out an optional file that doesn't exist, rather than
+  reporting it as an empty layer.
 
 #### 🚀 Updates
 
+- Updated `#[derive(Config)]`, `#[derive(ConfigEnum)]`, and `#[derive(Schematic)]` to report an
+  attribute that fails to parse, like a misspelled `#[setting(defualt = 1)]`, as a compile error at
+  the attribute, with darling's suggestion, rather than a panic printing the error's `Debug` output.
+  Every such attribute is reported at once.
+- Updated the derives' panics for a misused attribute to name the setting or variant, like
+  ``Setting `port`: Cannot use `required` with `default`…``, as a panic only points at the derive.
+- Updated `#[setting(default)]` to accept any expression, like `PathBuf::from("a").join("b")` or
+  `60 * 60`, rather than panicking on one it didn't list. Only a string and a bare path are treated
+  specially.
+- Updated loading errors to name the right place:
+  - A code source is reported by its file name, like `config.yml`, rather than the config's name.
+  - Without the `schema` feature, the config's name comes from its type, like `AppConfig`, rather
+    than `<unknown>`.
+  - The final validation, of the merged result, names every source and the environment variables,
+    when any were set, rather than only the last source, which may not have set what failed.
+  - A failing default or transform names its setting, like `Invalid default value for port. ...`.
+  - A variable that fails to parse names the type and the reason, like
+    `Failed to parse "70000" into u16: number too large to fit in target type.`
+- Updated parse errors to label where they happened in more formats:
+  - A TOML syntax error is a `ConfigError::Parser`, with the file, a snippet, and the loader's help,
+    rather than a bare message.
+  - A YAML type or unknown field error is located by deserializing the content directly, as merge
+    keys go through a value first, which has no location. It's left unlocated when that fails
+    elsewhere, because of a merge key.
+  - A RON data error is located, as a syntax error was, at the token it's about.
+- Added `Debug` for `ConfigLoadResult`, so `load().unwrap_err()` compiles.
+- Updated a map of nested configs whose key doesn't implement `Display`, which validation errors
+  need, to fail to compile at the setting's type, rather than at the derive.
 - Added named enum variants to `#[derive(Config)]` and `#[derive(Schematic)]`, like
   `File { path: String }`. Each field is a setting, like a struct's: optional within the partial,
   with its own `default`, `env`, `merge`, `nested`, `parse_env`, `required`, `transform`, and

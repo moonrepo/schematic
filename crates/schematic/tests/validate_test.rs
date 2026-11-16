@@ -36,7 +36,7 @@ fn errors_for_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate Validate. \n  string1: invalid string"
+        "Failed to validate code.json. \n  string1: invalid string"
     )
 }
 
@@ -54,7 +54,7 @@ fn errors_for_nested_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate Validate. \n  string1: invalid string\n  nested.string2: invalid string"
+        "Failed to validate code.json. \n  string1: invalid string\n  nested.string2: invalid string"
     )
 }
 
@@ -116,7 +116,7 @@ fn runs_the_validator_funcs() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateFuncs. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  uuid: not a valid UUID: expected 36 characters, found 0\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
+        "Failed to validate code.json. \n  contains: does not contain \"foo\"\n  email: not a valid email: value is empty\n  ip: not a valid IP address\n  ip_v4: not a valid IPv4 address\n  ip_v6: not a valid IPv6 address\n  regex: does not match pattern /^foo$/\n  min: length is lower than 1\n  len: length is lower than 1\n  url: not a valid url: relative URL without a base\n  url_secure: not a valid url: relative URL without a base\n  uuid: not a valid UUID: expected 36 characters, found 0\n  range: lower than 1\n  ext_str: only file paths and URLs can be extended"
     )
 }
 
@@ -147,7 +147,7 @@ fn errors_for_optional_field() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateOptional. \n  string1: invalid string"
+        "Failed to validate code.json. \n  string1: invalid string"
     )
 }
 
@@ -173,7 +173,7 @@ fn errors_for_nested_field_collections() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateCollections. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
+        "Failed to validate code.json. \n  list[0].string2: invalid string\n  map.key.string2: invalid string"
     )
 }
 
@@ -225,7 +225,7 @@ fn errors_if_required_and_empty() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateRequired. \n  string: this setting is required"
+        "Failed to validate code.json. \n  string: this setting is required"
     );
 
     let error = ConfigLoader::<ValidateEnumRequired>::new()
@@ -237,7 +237,7 @@ fn errors_if_required_and_empty() {
 
     assert_eq!(
         error.to_full_string(),
-        "Failed to validate ValidateEnumRequired. \n  Required: this setting is required"
+        "Failed to validate code.json. \n  Required: this setting is required"
     );
 }
 
@@ -332,7 +332,7 @@ mod several_errors {
 
         assert_eq!(
             error,
-            "Failed to validate Lists. \n  items[1]: must not be empty\n  items[2]: must not be empty\n  reported.inner[0]: bad item\n  reported: bad value"
+            "Failed to validate code.json. \n  items[1]: must not be empty\n  items[2]: must not be empty\n  reported.inner[0]: bad item\n  reported: bad value"
         );
     }
 }
@@ -366,7 +366,7 @@ mod config_validate {
         assert_eq!(load_error::<Range>(r#"{ "min": 1, "max": 2 }"#), "");
         assert_eq!(
             load_error::<Range>(r#"{ "min": 3, "max": 2 }"#),
-            "Failed to validate Range. \n  min: must be at most max (2)"
+            "Failed to validate code.json. \n  min: must be at most max (2)"
         );
     }
 
@@ -417,7 +417,7 @@ mod config_validate {
                 r#"{ "range": { "max": 5 } }"#,
                 r#"{ "range": { "max": 0 } }"#
             ]),
-            "Failed to validate Layered. \n  max can't be 0"
+            "Failed to validate code.json. \n  max can't be 0"
         );
     }
 
@@ -459,7 +459,7 @@ mod config_validate {
     fn supports_a_factory_and_several_errors() {
         assert_eq!(
             load_error::<Totals>(r#"{ "a": 6, "b": 6 }"#),
-            "Failed to validate Totals. \n  a: over the limit\n  b: over the limit"
+            "Failed to validate code.json. \n  a: over the limit\n  b: over the limit"
         );
     }
 
@@ -473,7 +473,7 @@ mod config_validate {
     fn reports_a_nested_config_at_its_path() {
         assert_eq!(
             load_error::<Parent>(r#"{ "range": { "min": 3, "max": 2 } }"#),
-            "Failed to validate Parent. \n  range.min: must be at most max (2)"
+            "Failed to validate code.json. \n  range.min: must be at most max (2)"
         );
     }
 
@@ -504,7 +504,59 @@ mod config_validate {
         assert_eq!(load_error::<UsesMode>(r#"{ "mode": "On" }"#), "");
         assert_eq!(
             load_error::<UsesMode>(r#"{ "mode": "Off" }"#),
-            "Failed to validate UsesMode. \n  mode: must not be off"
+            "Failed to validate code.json. \n  mode: must not be off"
+        );
+    }
+}
+
+// The final pass validates the merged result, which no single source is to
+// blame for, so each layer that took part is named
+mod merged_location {
+    use super::*;
+    use serial_test::serial;
+
+    #[derive(Config)]
+    pub struct Ports {
+        #[setting(
+            default = 1,
+            env = "VALIDATE_MERGED_PORT",
+            validate = validate::in_range(1, 100)
+        )]
+        port: u16,
+        #[setting(required)]
+        name: Option<String>,
+    }
+
+    #[test]
+    #[serial]
+    fn names_every_source_and_the_environment() {
+        unsafe { std::env::set_var("VALIDATE_MERGED_PORT", "500") };
+
+        let error = ConfigLoader::<Ports>::new()
+            .code(r#"{ "name": "a" }"#, "a.json")
+            .unwrap()
+            .code("{}", "b.json")
+            .unwrap()
+            .load()
+            .err()
+            .unwrap();
+
+        unsafe { std::env::remove_var("VALIDATE_MERGED_PORT") };
+
+        assert_eq!(
+            error.to_full_string(),
+            "Failed to validate a.json, b.json, environment variables. \n  port: greater than 100"
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn names_the_config_without_any_source() {
+        let error = ConfigLoader::<Ports>::new().load().err().unwrap();
+
+        assert_eq!(
+            error.to_full_string(),
+            "Failed to validate Ports. \n  name: this setting is required"
         );
     }
 }

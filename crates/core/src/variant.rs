@@ -6,8 +6,8 @@ use crate::args::{
 use crate::container::ContainerArgs;
 use crate::field::{Field, VariantScope};
 use crate::utils::{
-    ImplResult, format_case, format_loose_case, get_meta_path, get_renamed_value,
-    is_inheritable_attribute, to_type_string,
+    ImplResult, describe_variant, format_case, format_loose_case, get_meta_path, get_renamed_value,
+    is_inheritable_attribute, join_results, panic_for, to_type_string,
 };
 use crate::value::path_names_a_value;
 use crate::variant_value::VariantValue;
@@ -109,14 +109,20 @@ pub struct Variant {
 }
 
 impl Variant {
+    /// Analyze a variant. An attribute that fails to parse, on the variant or
+    /// any of its fields, is returned as an error, while one that parses but
+    /// is misused panics, naming the variant.
     pub fn new(
         variant: NativeVariant,
         container_args: Rc<ContainerArgs>,
         serde_container_args: Rc<SerdeContainerArgs>,
         self_ty: &Type,
-    ) -> Variant {
-        let args = VariantArgs::from_attributes(&variant.attrs).unwrap();
-        let serde_args = SerdeFieldArgs::from_attributes(&variant.attrs).unwrap();
+    ) -> darling::Result<Variant> {
+        let (args, serde_args) = join_results(
+            VariantArgs::from_attributes(&variant.attrs),
+            SerdeFieldArgs::from_attributes(&variant.attrs),
+        )?;
+        let mut errors = darling::Error::accumulator();
 
         // Serde names the fields of a variant with its own `rename_all`,
         // otherwise the container's `rename_all_fields`
@@ -135,11 +141,12 @@ impl Variant {
                 .named
                 .iter()
                 .enumerate()
-                .map(|(index, field)| {
+                .filter_map(|(index, field)| {
                     let (prev, next) = get_binding_idents(index);
 
-                    Field::new(
+                    errors.handle(Field::new(
                         field.to_owned(),
+                        index,
                         container_args.clone(),
                         serde_container_args.clone(),
                         self_ty,
@@ -147,60 +154,91 @@ impl Variant {
                             rename_all: rename_all.clone(),
                             prev,
                             next,
+                            variant: variant.ident.clone(),
+                            name: String::new(),
                         }),
-                    )
+                    ))
                 })
                 .collect(),
             _ => vec![],
         };
 
-        let variant = Self {
+        let values = match &variant.fields {
+            Fields::Unnamed(fields) => fields
+                .unnamed
+                .iter()
+                .filter_map(|field| {
+                    errors.handle(Self::new_value(field, &variant.ident, &args, self_ty))
+                })
+                .collect(),
+            Fields::Named(_) | Fields::Unit => vec![],
+        };
+
+        errors.finish()?;
+
+        let mut variant = Self {
             attrs: variant.attrs,
             container_args,
             ident: variant.ident,
             serde_args,
             serde_container_args,
             settings,
-            values: match &variant.fields {
-                Fields::Unnamed(fields) => fields
-                    .unnamed
-                    .iter()
-                    .map(|field| Self::new_value(field, &args, self_ty))
-                    .collect(),
-                Fields::Named(_) | Fields::Unit => vec![],
-            },
+            values,
             fields: variant.fields,
             args,
         };
         variant.validate_args();
-        variant
+
+        // The settings report their errors under the variant's name, which
+        // takes the container's casing, and so is only known now
+        let name = variant.get_name();
+
+        for setting in &mut variant.settings {
+            if let Some(scope) = &mut setting.variant {
+                scope.name = name.clone();
+            }
+        }
+
+        Ok(variant)
     }
 
     /// Analyze a value of this variant. A `#[setting(nested)]` on the value
     /// itself applies to it alone, so a variant can mix nested and plain
     /// values, while one on the variant applies to every value.
-    fn new_value(field: &syn::Field, args: &VariantArgs, self_ty: &Type) -> VariantValue {
-        let value_args = VariantValueArgs::from_attributes(&field.attrs).unwrap();
+    fn new_value(
+        field: &syn::Field,
+        variant: &Ident,
+        args: &VariantArgs,
+        self_ty: &Type,
+    ) -> darling::Result<VariantValue> {
+        let value_args = VariantValueArgs::from_attributes(&field.attrs)?;
 
         if value_args.nested.is_some() && args.nested.is_some() {
-            panic!(
-                "Cannot use `nested` on both a variant and its values, choose one or the other."
+            panic_for(
+                &describe_variant(variant),
+                "Cannot use `nested` on both a variant and its values, choose one or the other.",
             );
         }
 
-        VariantValue::new(
+        Ok(VariantValue::new(
             field.ty.clone(),
             value_args.nested.as_ref().or(args.nested.as_ref()),
             self_ty,
             value_args.context.or_else(|| args.context.clone()),
-        )
+            describe_variant(variant),
+        ))
+    }
+
+    /// Panic with a message about this variant, naming it.
+    pub fn fail(&self, message: impl std::fmt::Display) -> ! {
+        panic_for(&describe_variant(&self.ident), message)
     }
 
     fn validate_args(&self) {
         if self.is_named_variant() {
             self.validate_named_args();
         } else if self.args.rename_all.is_some() || self.serde_args.rename_all.is_some() {
-            panic!("Can only use `rename_all` with named variants, as only they have fields.");
+            self.fail("Can only use `rename_all` with named variants, as only they have fields.");
         }
 
         if self.is_required()
@@ -209,47 +247,49 @@ impl Variant {
                 .iter()
                 .any(|value| !value.is_outer_option_wrapped())
         {
-            panic!("Cannot use `required` with non-optional settings.");
+            self.fail("Cannot use `required` with non-optional settings.");
         }
 
         #[allow(clippy::collapsible_else_if)]
         if self.is_unit_variant() {
             if self.args.merge.is_some() {
-                panic!("Cannot use `merge` with unit variants.");
+                self.fail("Cannot use `merge` with unit variants.");
             }
 
             if self.args.nested.is_some() {
-                panic!("Cannot use `nested` with unit variants.");
+                self.fail("Cannot use `nested` with unit variants.");
             }
 
             if self.args.required {
-                panic!("Cannot use `required` with unit variants.");
+                self.fail("Cannot use `required` with unit variants.");
             }
 
             if let Some(VariantDefaultArg::Value(expr)) = &self.args.default
                 && as_bool_literal(expr).is_none()
             {
-                panic!("Cannot use a `default` value with unit variants, as they hold no value.");
+                self.fail(
+                    "Cannot use a `default` value with unit variants, as they hold no value.",
+                );
             }
 
             #[cfg(feature = "validate")]
             if self.args.validate.is_some() {
-                panic!("Cannot use `validate` with unit variants.");
+                self.fail("Cannot use `validate` with unit variants.");
             }
         } else {
             if self.args.null {
-                panic!("Can only use `null` with unit variants.");
+                self.fail("Can only use `null` with unit variants.");
             }
 
             if self.get_default_value().is_some() {
                 if self.values.len() > 1 {
-                    panic!(
-                        "Can only use a `default` value with variants that hold a single value."
+                    self.fail(
+                        "Can only use a `default` value with variants that hold a single value.",
                     );
                 }
 
                 if self.is_nested() {
-                    panic!("Cannot use a `default` value with `nested`.");
+                    self.fail("Cannot use a `default` value with `nested`.");
                 }
             }
         }
@@ -267,18 +307,14 @@ impl Variant {
             ("validate", self.args.validate.is_some()),
         ] {
             if used {
-                panic!(
-                    "Cannot use `{name}` on a named variant, as each of its fields is a setting. Use it on the fields instead."
-                );
+                self.fail(format!("Cannot use `{name}` on a named variant, as each of its fields is a setting. Use it on the fields instead."));
             }
         }
 
         if let Some(VariantDefaultArg::Value(expr)) = &self.args.default
             && as_bool_literal(expr).is_none()
         {
-            panic!(
-                "Cannot use a `default` value with named variants, as each of its fields is a setting. Use `default` on the fields instead."
-            );
+            self.fail("Cannot use a `default` value with named variants, as each of its fields is a setting. Use `default` on the fields instead.");
         }
     }
 
@@ -400,8 +436,8 @@ impl Variant {
             "untagged"
         } else {
             if !self.is_unit_variant() {
-                panic!(
-                    "Only unit variants are supported, unless marked as `fallback` or `untagged`."
+                self.fail(
+                    "Only unit variants are supported, unless marked as `fallback` or `untagged`.",
                 );
             }
 
@@ -411,10 +447,12 @@ impl Variant {
         match &self.fields {
             Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {}
             Fields::Unnamed(_) => {
-                panic!("Only 1 unnamed field is supported for `{kind}`.");
+                self.fail(format!("Only 1 unnamed field is supported for `{kind}`."));
             }
             _ => {
-                panic!("Only unnamed tuple variants are supported for `{kind}`.");
+                self.fail(format!(
+                    "Only unnamed tuple variants are supported for `{kind}`."
+                ));
             }
         };
     }
@@ -1120,13 +1158,15 @@ impl Variant {
             // Handler functions return an optional value,
             // falling back to the default of its type
             Expr::Path(func) if !path_names_a_value(&func.path) => {
-                quote! { schematic::internal::defaults::handle_default_result(#func(context))?.unwrap_or_default() }
+                let path = self.get_name();
+
+                quote! { schematic::internal::defaults::handle_default_result(#path, #func(context))?.unwrap_or_default() }
             }
             // A variant has no partial `Option` of its own, so every layer applies
             expr => {
                 let value = &self.values[0];
 
-                value.impl_default_value(expr, &value.get_partial_layers())
+                value.impl_default_value(expr, &value.get_partial_layers(), &self.get_name())
             }
         })
     }
@@ -1420,7 +1460,16 @@ impl Variant {
                                 };
 
                                 if let Some(func) = &self.args.transform {
-                                    quote! { #func(#value, context)? }
+                                    // Validation reports a value by its position
+                                    let path = if outer_names.len() == 1 {
+                                        self.get_name()
+                                    } else {
+                                        format!("{}[{i}]", self.get_name())
+                                    };
+
+                                    quote! {
+                                        schematic::internal::transform::handle_transform_result(#path, #func(#value, context))?
+                                    }
                                 } else {
                                     value
                                 }
@@ -1528,9 +1577,7 @@ impl Variant {
                             .iter()
                             .any(|value| value.nested && !value.is_collection())
                         {
-                            panic!(
-                                "Nested configs do not support `merge` unless wrapped in a collection."
-                            );
+                            self.fail("Nested configs do not support `merge` unless wrapped in a collection.");
                         }
 
                         res.value = self.map_unnamed_match(&self.ident, fields, |outer_names, inner_names| {
@@ -1684,7 +1731,7 @@ impl Variant {
                     // func() - is the validator itself
                     Expr::Call(_) | Expr::Path(_) => quote! { #expr },
                     _ => {
-                        panic!("Unsupported `validate` syntax.");
+                        self.fail("Unsupported `validate` syntax.");
                     }
                 };
 

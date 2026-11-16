@@ -51,13 +51,33 @@ impl<T: DeserializeOwned> SourceFormat<T> for YamlFormat {
         // Applies anchors/aliases/references
         result
             .apply_merge()
-            .map_err(|error| create_parser_error(name, content, String::new(), error))?;
+            .map_err(|error| create_parser_error(name, content, ".".into(), error))?;
 
         // Second pass, convert value to struct
         let de = result.into_deserializer();
 
         let result: T = serde_path_to_error::deserialize(de).map_err(|error| {
-            create_parser_error(name, content, error.path().to_string(), error.into_inner())
+            let path = error.path().to_string();
+            let mut error = create_parser_error(name, content, path, error.into_inner());
+
+            // A value holds no location, so the error is located by
+            // deserializing the content directly, which only fails the same
+            // way when no merge key is involved, so the path has to agree
+            if error.span.is_none() {
+                let direct: Result<T, _> =
+                    serde_path_to_error::deserialize(Deserializer::from_str(content));
+
+                if let Err(direct) = direct
+                    && direct.path().to_string() == error.path
+                {
+                    error.span = direct
+                        .inner()
+                        .location()
+                        .map(|s| create_span(content, s.line(), s.column()));
+                }
+            }
+
+            error
         })?;
 
         Ok(result)

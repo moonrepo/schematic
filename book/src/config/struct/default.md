@@ -9,8 +9,9 @@ In Schematic, there are 2 forms of default values:
   mark the setting as [required](./validate.md#required-settings).
 
 To define a default value, use the `#[setting(default)]` attribute. The `default` attribute field
-accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
-literals, paths that name a value, and function and macro calls.
+accepts any expression of the setting's type, like a number, a boolean, an array, tuple, or struct
+literal, a path that names a value, or a function, method, or macro call. A string converts into the
+setting's type, and a bare path in `snake_case` names a [handler function](#handler-function).
 
 ```rust
 #[derive(Config)]
@@ -32,8 +33,14 @@ struct AppConfig {
 
 	#[setting(default = Retry { attempts: 3, backoff: 500 })]
 	pub retry: Retry,
+
+	#[setting(default = PathBuf::from("/etc").join("app"))]
+	pub config_dir: PathBuf,
 }
 ```
+
+A string that fails to convert, or a handler function that fails, is an error naming the setting,
+like `Invalid default value for port. invalid digit found in string`.
 
 ### Paths: value or function?
 

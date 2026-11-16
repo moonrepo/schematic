@@ -99,20 +99,23 @@ impl schematic::PartialConfig for PartialExample {
                 Self::Nested(pa) => Self::Nested(pa.finalize(context)?),
                 Self::List(pa) => {
                     Self::List(
-                        transform_list(
-                            pa
-                                .into_iter()
-                                .map(|pa| schematic::internal::layers::finalize_with_layers(
-                                    pa,
-                                    context,
-                                ))
-                                .collect::<
-                                    std::result::Result<
-                                        Vec<<NestedConfig as schematic::Config>::Partial>,
-                                        schematic::ConfigError,
-                                    >,
-                                >()?,
-                            context,
+                        schematic::internal::transform::handle_transform_result(
+                            "List",
+                            transform_list(
+                                pa
+                                    .into_iter()
+                                    .map(|pa| schematic::internal::layers::finalize_with_layers(
+                                        pa,
+                                        context,
+                                    ))
+                                    .collect::<
+                                        std::result::Result<
+                                            Vec<<NestedConfig as schematic::Config>::Partial>,
+                                            schematic::ConfigError,
+                                        >,
+                                    >()?,
+                                context,
+                            ),
                         )?,
                     )
                 }

@@ -13,4 +13,4 @@ priorities, and the quick wins.
 - **Book JSON env strings:** `book/src/config/struct/env.md:84` mentions them, but no helper exists.
 - **Book struct syntax:** `book/src/schema/index.md` struct examples use `pub name: String;`.
 - **Book chrono types:** `book/src/schema/external.md` lists chrono types that have no serde support.
-- **README formats:** the README implies formats work out of the box (X10).
+- **README formats:** the README implies formats work out of the box (X10). Fixed on `0.21-devx`.

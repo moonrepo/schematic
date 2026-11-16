@@ -1,4 +1,4 @@
-use crate::helpers::strip_bom;
+use crate::helpers::{short_type_name, strip_bom};
 use crate::internal::layers::apply_layers;
 
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
@@ -30,6 +30,20 @@ pub struct ConfigLoadResult<T: Config> {
     /// variables are only included when they set something, and are read
     /// against what the sources picked, like the variant of an enum.
     pub layers: Vec<Layer<T>>,
+}
+
+// Written by hand, as a derive only bounds `T`, while each layer holds its
+// partial, which a derived partial always implements `Debug` for
+impl<T: Config + std::fmt::Debug> std::fmt::Debug for ConfigLoadResult<T>
+where
+    T::Partial: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ConfigLoadResult")
+            .field("config", &self.config)
+            .field("layers", &self.layers)
+            .finish()
+    }
 }
 
 /// Tracks the sources being loaded, so that an `extends` cycle is an error rather
@@ -84,7 +98,8 @@ impl<T: Config> Default for ConfigLoader<T> {
             cacher: Mutex::new(Box::<MemoryCache>::default()),
             formats: vec![],
             help: None,
-            name: T::schema_name().unwrap_or_else(|| "<unknown>".into()),
+            // Without the `schema` feature a config has no schema name
+            name: T::schema_name().unwrap_or_else(short_type_name::<T>),
             sources: vec![],
             root: None,
         }
@@ -201,10 +216,6 @@ impl<T: Config> ConfigLoader<T> {
         let sources =
             self.parse_into_layers(&self.sources, context, &mut SourceTracker::default(), false)?;
 
-        // Validation is reported at the last source
-        #[cfg(feature = "validate")]
-        let last_source = sources.last().map(|layer| layer.source.clone());
-
         // Environment variables go over the sources, and default values under
         // them, each read against what the sources picked
         let applied = apply_layers(self.merge_layers(&sources, context)?, context)?;
@@ -228,12 +239,15 @@ impl<T: Config> ConfigLoader<T> {
 
         let partial = applied.partial.finalize(context)?;
 
-        // Validate the final result before moving on
+        // Validate the final result before moving on. Each source was already
+        // validated on its own, so what fails here is the merged result, like
+        // a required setting no layer provided, or a variable out of range,
+        // which no single source is to blame for, so each layer is named
         #[cfg(feature = "validate")]
         {
-            partial
-                .validate(context, true)
-                .map_err(|error| self.map_validator_error(error, last_source.as_ref()))?;
+            partial.validate(context, true).map_err(|error| {
+                self.map_validator_error(error, &self.get_merged_location(&layers))
+            })?;
         }
 
         Ok(ConfigLoadResult {
@@ -325,7 +339,8 @@ impl<T: Config> ConfigLoader<T> {
 
     fn get_location<'l>(&'l self, source: &'l Source) -> &'l str {
         match source {
-            Source::Code { .. } => &self.name,
+            // A snippet is given a file name, which also picks its format
+            Source::Code { path, .. } => path.to_str().unwrap_or(&self.name),
             Source::Defaults => "default values",
             Source::EnvVars => "environment variables",
             Source::Memory { name } => name,
@@ -422,17 +437,25 @@ impl<T: Config> ConfigLoader<T> {
                 "Creating layer from source"
             );
 
-            // Parse the source into a partial
-            let partial: T::Partial = self
+            // Parse the source into a partial. An optional file that doesn't
+            // exist provides nothing, so it isn't a layer
+            let Some(partial) = self
                 .parse_source(source, memory.as_ref())
-                .map_err(|error| self.map_parser_error(error, source))?;
+                .map_err(|error| self.map_parser_error(error, source))?
+            else {
+                if key.is_some() {
+                    tracker.stack.pop();
+                }
+
+                continue;
+            };
 
             // Validate before continuing so we ensure the values are correct
             #[cfg(feature = "validate")]
             {
                 partial
                     .validate(context, false)
-                    .map_err(|error| self.map_validator_error(error, Some(source)))?;
+                    .map_err(|error| self.map_validator_error(error, self.get_location(source)))?;
             }
 
             #[cfg(feature = "extends")]
@@ -463,7 +486,7 @@ impl<T: Config> ConfigLoader<T> {
         &self,
         source: &Source,
         memory: Option<&T::Partial>,
-    ) -> Result<T::Partial, ConfigError> {
+    ) -> Result<Option<T::Partial>, ConfigError> {
         let (content, cache_path): (Cow<'_, str>, Option<PathBuf>) = match source {
             Source::Code { code, .. } => (Cow::Borrowed(strip_bom(code)), None),
             Source::Defaults | Source::EnvVars => {
@@ -473,6 +496,7 @@ impl<T: Config> ConfigLoader<T> {
             Source::Memory { name } => {
                 return memory
                     .cloned()
+                    .map(Some)
                     .ok_or_else(|| ConfigError::MemoryWithoutPartial(name.to_owned()));
             }
             Source::File { path, required } => {
@@ -486,7 +510,7 @@ impl<T: Config> ConfigLoader<T> {
                         return Err(ConfigError::MissingFile(path.to_path_buf()));
                     }
 
-                    return Ok(T::Partial::default());
+                    return Ok(None);
                 };
 
                 (Cow::Owned(strip_bom(&content).to_owned()), None)
@@ -530,14 +554,16 @@ impl<T: Config> ConfigLoader<T> {
 
         for format in &self.formats {
             if format.should_parse(source) {
-                return format.parse(source, &content, cache_path.as_deref());
+                return format
+                    .parse(source, &content, cache_path.as_deref())
+                    .map(Some);
             }
         }
 
-        Err(ConfigError::NoMatchingFormat {
-            src: source.as_str().to_owned(),
-            ext: source.get_file_ext().unwrap_or("(none)").into(),
-        })
+        Err(ConfigError::no_matching_format(
+            source.as_str(),
+            source.get_file_ext(),
+        ))
     }
 
     fn map_parser_error(&self, outer: ConfigError, source: &Source) -> ConfigError {
@@ -552,17 +578,38 @@ impl<T: Config> ConfigLoader<T> {
     }
 
     #[cfg(feature = "validate")]
-    fn map_validator_error(&self, outer: ConfigError, source: Option<&Source>) -> ConfigError {
+    fn map_validator_error(&self, outer: ConfigError, location: &str) -> ConfigError {
         match outer {
             ConfigError::Validator { error, .. } => ConfigError::Validator {
-                location: source
-                    .map(|src| self.get_location(src))
-                    .unwrap_or(&self.name)
-                    .to_owned(),
+                location: location.to_owned(),
                 error,
                 help: self.help.clone(),
             },
             _ => outer,
+        }
+    }
+
+    /// The location of the merged result, which lists every source and the
+    /// environment variables, as any of them may have set what failed. The
+    /// default values are left out, as they're always there, and a source or
+    /// variable is far more likely to blame. With neither, it's the config's
+    /// name, like a required setting that nothing provided.
+    #[cfg(feature = "validate")]
+    fn get_merged_location(&self, layers: &[Layer<T>]) -> String {
+        let mut locations: Vec<&str> = vec![];
+
+        for layer in layers {
+            let location = self.get_location(&layer.source);
+
+            if layer.source != Source::Defaults && !locations.contains(&location) {
+                locations.push(location);
+            }
+        }
+
+        if locations.is_empty() {
+            self.name.clone()
+        } else {
+            locations.join(", ")
         }
     }
 }

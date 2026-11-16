@@ -208,3 +208,72 @@ fn generates_typescript() {
     assert!(file.exists());
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
+
+// A default that fails names the setting it was for
+mod errors {
+    use super::*;
+
+    #[derive(Debug, thiserror::Error)]
+    #[error("bad default")]
+    struct BadDefault;
+
+    fn fail(_: &()) -> Result<Option<usize>, BadDefault> {
+        Err(BadDefault)
+    }
+
+    #[derive(Debug, Config)]
+    pub struct FromHandler {
+        #[setting(default = fail)]
+        count: usize,
+    }
+
+    #[derive(Debug, Config)]
+    pub struct FromString {
+        #[setting(default = "abc")]
+        port: u16,
+    }
+
+    #[derive(Debug, Config)]
+    pub enum FromVariant {
+        #[setting(default = "abc")]
+        Port(u16),
+    }
+
+    #[derive(Debug, Config)]
+    pub struct HoldsVariant {
+        #[setting(nested)]
+        port: FromVariant,
+    }
+
+    fn load<T: Config>() -> String {
+        ConfigLoader::<T>::new()
+            .load()
+            .err()
+            .unwrap()
+            .to_full_string()
+    }
+
+    #[test]
+    fn names_the_setting_of_a_handler() {
+        assert_eq!(
+            load::<FromHandler>(),
+            "Invalid default value for count. bad default"
+        );
+    }
+
+    #[test]
+    fn names_the_setting_of_a_string() {
+        assert_eq!(
+            load::<FromString>(),
+            "Invalid default value for port. invalid digit found in string"
+        );
+    }
+
+    #[test]
+    fn names_a_variant() {
+        assert_eq!(
+            load::<HoldsVariant>(),
+            "Invalid default value for Port. invalid digit found in string"
+        );
+    }
+}
