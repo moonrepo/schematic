@@ -9,7 +9,14 @@ fn finalize(
     Ok(
         match self {
             Self::A(pa) => Self::A(pa.finalize(context)?),
-            Self::B(pa) => Self::B(transform_config(pa.finalize(context)?, context)?),
+            Self::B(pa) => {
+                Self::B(
+                    schematic::internal::transform::handle_transform_result(
+                        "B",
+                        transform_config(pa.finalize(context)?, context),
+                    )?,
+                )
+            }
             Self::C(pa) => {
                 Self::C(
                     match pa {
@@ -18,7 +25,14 @@ fn finalize(
                     },
                 )
             }
-            Self::D(pa) => Self::D(transform_config(pa.finalize(context)?, context)?),
+            Self::D(pa) => {
+                Self::D(
+                    schematic::internal::transform::handle_transform_result(
+                        "D",
+                        transform_config(pa.finalize(context)?, context),
+                    )?,
+                )
+            }
             _ => self,
         },
     )

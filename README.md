@@ -27,7 +27,8 @@ Get started: https://moonrepo.github.io/schematic
 - Beautiful parsing and validation errors (powered by [miette](https://crates.io/crates/miette)).
 - Generates schemas that can be rendered to TypeScript types, JSON schemas, and more!
 
-Define a struct or enum and derive the `Config` trait.
+Define a struct or enum and derive the `Config` trait. The derive generates a partial type that
+derives serde's traits, so it needs `serde` as a dependency too, with its `derive` feature.
 
 ```rust
 use schematic::Config;
@@ -46,7 +47,8 @@ struct AppConfig {
 ```
 
 Then load, parse, merge, and validate the configuration from one or many sources. A source is either
-a file path, secure URL, or code block.
+a file path, secure URL, or code block. Each format is a Cargo feature, and none is enabled by
+default, so this example needs `cargo add schematic --features yaml,url`.
 
 ```rust
 use schematic::ConfigLoader;

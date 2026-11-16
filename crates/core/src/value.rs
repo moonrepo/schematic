@@ -1,9 +1,9 @@
 use crate::args::NestedArg;
-use crate::utils::{ImplResult, to_type_string};
+use crate::utils::{ImplResult, panic_for, to_type_string};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{
-    Expr, ExprPath, GenericArgument, Ident, Lit, Path, PathArguments, PathSegment, Type,
+    Expr, ExprLit, ExprPath, GenericArgument, Ident, Lit, Path, PathArguments, PathSegment, Type,
     parse_quote,
 };
 
@@ -66,6 +66,9 @@ impl Layer {
 
 #[derive(Debug)]
 pub struct Value {
+    /// The setting or variant that holds this value, like ``Setting `port` ``,
+    /// which a panic about the value names.
+    pub owner: String,
     pub inner_ty: Option<Type>,
     pub layers: Vec<Layer>,
     pub nested: bool,
@@ -89,7 +92,15 @@ impl Value {
     /// Analyze a setting's type. The `self_ty` is the container's own type,
     /// which replaces any `Self`, as within the partial `Self` would mean
     /// the partial instead.
-    pub fn new(mut ty: Type, nested_arg: Option<&NestedArg>, self_ty: &Type) -> Self {
+    ///
+    /// The `owner` describes the setting or variant that holds the value, for
+    /// panics, as from [`describe_setting`](crate::utils::describe_setting).
+    pub fn new(
+        mut ty: Type,
+        nested_arg: Option<&NestedArg>,
+        self_ty: &Type,
+        owner: String,
+    ) -> Self {
         replace_self_type(&mut ty, self_ty);
 
         let mut nested = false;
@@ -107,8 +118,11 @@ impl Value {
                     nested_ident = Some(ident.to_owned());
 
                     if !ty_string.contains(&ident.to_string()) {
-                        panic!(
-                            "Nested configuration identifier `{ident}` does not exist within `{ty_string}`."
+                        panic_for(
+                            &owner,
+                            format!(
+                                "Nested configuration identifier `{ident}` does not exist within `{ty_string}`."
+                            ),
                         )
                     }
                 }
@@ -116,6 +130,7 @@ impl Value {
         }
 
         let mut value = Value {
+            owner,
             context_fn: None,
             inner_ty: None,
             keep_box: false,
@@ -134,11 +149,26 @@ impl Value {
     /// Set the function that maps the parent's context to the nested config's.
     pub fn with_context(mut self, context_fn: Option<ExprPath>) -> Self {
         if context_fn.is_some() && !self.nested {
-            panic!("Cannot use `context` without `nested`.");
+            self.fail("Cannot use `context` without `nested`.");
         }
 
         self.context_fn = context_fn;
         self
+    }
+
+    /// Panic with a message about the setting or variant that holds this
+    /// value, naming it.
+    pub fn fail(&self, message: impl std::fmt::Display) -> ! {
+        panic_for(&self.owner, message)
+    }
+
+    /// Panic for a type that wraps a nested config, or a wrapper the partial
+    /// strips, but can't be rebuilt, as it isn't a known collection.
+    fn panic_unknown_collection(&self, name: &str) -> ! {
+        self.fail(format!(
+            "Unable to convert `{}`, as `{name}` is not a known collection. A collection must be named like `*Vec`, `*Set`, or `*Map`, or be a `VecDeque`, `LinkedList`, or `BinaryHeap`.",
+            self.ty_string
+        ))
     }
 
     /// The context a nested config receives, which is the parent's own,
@@ -185,10 +215,10 @@ impl Value {
         }
 
         if !self.layers.contains(&Layer::Box) {
-            panic!(
+            self.fail(format!(
                 "A nested setting that holds its own type must be wrapped in a `Box` or a collection, like `Option<Box<Self>>` or `Vec<Self>`, received `{}`.",
                 self.ty_string
-            );
+            ));
         }
 
         self.keep_box = true;
@@ -238,26 +268,26 @@ impl Value {
         }
 
         let Some(nested_ident) = &self.nested_ident else {
-            panic!(
+            self.fail(format!(
                 "Unable to extract the nested configuration identifier from `{}`. Try explicitly passing the identifier with `nested = ConfigName`.",
                 self.ty_string
-            )
+            ))
         };
 
         if nested_ident == "MergeList" {
-            panic!(
+            self.fail(format!(
                 "A `MergeList` can't hold nested configs, received `{}`.",
                 self.ty_string
-            )
+            ))
         }
 
         // Primitives can never implement `Config`, so catch them here instead
         // of failing later with an obscure trait error
         if is_primitive_ident(nested_ident) {
-            panic!(
+            self.fail(format!(
                 "Nested configurations must be a `Config` type, received `{}`.",
                 self.ty_string
-            )
+            ))
         }
     }
 
@@ -350,40 +380,31 @@ impl Value {
     /// wrapped with the provided layers. A value is written up to the
     /// outermost collection, so only the layers outside of it are applied.
     /// Handler functions are left to the caller, as what they return
-    /// differs between a setting and a variant.
-    pub fn impl_default_value(&self, expr: &Expr, layers: &[&Layer]) -> TokenStream {
+    /// differs between a setting and a variant. The `path` is the setting's,
+    /// which a string that fails to convert names.
+    pub fn impl_default_value(&self, expr: &Expr, layers: &[&Layer], path: &str) -> TokenStream {
+        // A string converts into the setting's type, while any other
+        // expression is written as is, and the compiler checks its type
         let mut value = match expr {
-            Expr::Array(_)
-            | Expr::Call(_)
-            | Expr::Macro(_)
-            | Expr::Path(_)
-            | Expr::Struct(_)
-            | Expr::Tuple(_) => {
-                quote! { #expr }
-            }
-            Expr::Lit(lit) => match &lit.lit {
-                Lit::Str(string) => {
-                    let ty = self.get_default_target_type(layers);
+            Expr::Lit(ExprLit {
+                lit: Lit::Str(string),
+                ..
+            }) => {
+                let ty = self.get_default_target_type(layers);
 
-                    // Both traits must be in scope for the call to pick one
-                    quote! {
-                        {
-                            use schematic::internal::defaults::{
-                                DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
-                            };
+                // Both traits must be in scope for the call to pick one
+                quote! {
+                    {
+                        use schematic::internal::defaults::{
+                            DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
+                        };
 
-                            (&&schematic::internal::defaults::DefaultString::<#ty>::new())
-                                .parse_default(#string)?
-                        }
+                        (&&schematic::internal::defaults::DefaultString::<#ty>::new())
+                            .parse_default(#path, #string)?
                     }
                 }
-                other => quote! { #other },
-            },
-            invalid => {
-                panic!(
-                    "Unsupported default value ({invalid:?}). May only provide literals, primitives, arrays, tuples, structs, paths, or calls."
-                );
             }
+            other => quote! { #other },
         };
 
         let outer = layers
@@ -474,7 +495,7 @@ impl Value {
             .collect::<Vec<_>>();
 
         ImplResult {
-            value: map_layers(data_var, &steps, value, None, &self.ty_string),
+            value: map_layers(data_var, &steps, value, None, self),
             ..Default::default()
         }
     }
@@ -619,7 +640,7 @@ impl Value {
             .collect::<Vec<_>>();
 
         ImplResult {
-            value: map_layers(layer_var, &steps, value, result, &self.ty_string),
+            value: map_layers(layer_var, &steps, value, result, self),
             ..Default::default()
         }
     }
@@ -651,8 +672,8 @@ impl Value {
 
         // Collections are replaced by the caller, so only `Option`s remain
         if !layers.is_empty() && !boxed {
-            panic!(
-                "Nested configs may only be wrapped in an outermost `Option` when using `merge`."
+            self.fail(
+                "Nested configs may only be wrapped in an outermost `Option` when using `merge`.",
             );
         }
 
@@ -728,6 +749,7 @@ impl Value {
                 setting_var,
                 variant,
                 &layers,
+                syn::spanned::Spanned::span(&self.ty),
                 quote! { validate.#nested_at(path, item #nested_context); },
             )
         } else {
@@ -772,12 +794,17 @@ impl Value {
 /// nested, and each collection extends the path an item is reported at, like
 /// `groups.name[0]` for a map of lists. An item that is `None` is skipped,
 /// but still holds its position.
+///
+/// A map's key joins the path through `Display`, which is spanned to the
+/// setting's type, so a key without it fails to compile there, rather than
+/// at the derive.
 #[cfg(feature = "validate")]
 fn impl_partial_validate_nested_items(
     target: &TokenStream,
     setting_var: &Ident,
     variant: bool,
     layers: &[&Layer],
+    span: proc_macro2::Span,
     validate_item: TokenStream,
 ) -> TokenStream {
     let mut value = validate_item;
@@ -793,12 +820,16 @@ fn impl_partial_validate_nested_items(
                     #value
                 }
             },
-            Layer::Map(_) => quote! {
-                for (key, item) in item {
-                    let path = path.join_key(key);
-                    #value
+            Layer::Map(_) => {
+                let join = quote::quote_spanned! { span=> path.join_key(key) };
+
+                quote! {
+                    for (key, item) in item {
+                        let path = #join;
+                        #value
+                    }
                 }
-            },
+            }
             Layer::Set(_) | Layer::Vec(_) => quote! {
                 for (index, item) in item.iter().enumerate() {
                     let path = path.join_index(index);
@@ -1055,7 +1086,7 @@ fn map_layers(
     steps: &[LayerStep],
     mut value: TokenStream,
     mut result: Option<TokenStream>,
-    ty_string: &str,
+    source: &Value,
 ) -> TokenStream {
     for step in steps.iter().rev() {
         let fallible_ty = step.ty.as_ref();
@@ -1132,7 +1163,7 @@ fn map_layers(
                         .collect()
                 },
             },
-            Layer::Unknown(name) => panic_unknown_collection(name, ty_string),
+            Layer::Unknown(name) => source.panic_unknown_collection(name),
         };
 
         // Only a collection's own result can be mapped over by the next
@@ -1142,14 +1173,6 @@ fn map_layers(
     }
 
     value
-}
-
-/// Panic for a type that wraps a nested config, or a wrapper the partial
-/// strips, but can't be rebuilt, as it isn't a known collection.
-fn panic_unknown_collection(name: &str, ty_string: &str) -> TokenStream {
-    panic!(
-        "Unable to convert `{ty_string}`, as `{name}` is not a known collection. A collection must be named like `*Vec`, `*Set`, or `*Map`, or be a `VecDeque`, `LinkedList`, or `BinaryHeap`."
-    );
 }
 
 /// The last type argument of a path type, like `T` for `Option<T>`.

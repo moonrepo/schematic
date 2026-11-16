@@ -16,7 +16,7 @@ fn default_values(
                     DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
                 };
                 (&&schematic::internal::defaults::DefaultString::<String>::new())
-                    .parse_default("abc")?
+                    .parse_default("d", "abc")?
             }),
             ..Default::default()
         }),

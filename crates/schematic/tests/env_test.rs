@@ -352,3 +352,78 @@ fn generates_typescript() {
     assert!(file.exists());
     assert_snapshot!(std::fs::read_to_string(file).unwrap());
 }
+
+// A variable that fails to parse says into what, and why
+mod parse_errors {
+    use super::*;
+
+    #[derive(Debug, Config)]
+    pub struct Port {
+        #[setting(env = "ENV_PARSE_PORT")]
+        port: u16,
+        #[setting(env = "ENV_PARSE_LIST", parse_env = schematic::env::split_comma)]
+        list: Vec<u8>,
+    }
+
+    fn load_with(key: &str, value: &str) -> String {
+        unsafe { env::set_var(key, value) };
+
+        let error = ConfigLoader::<Port>::new().load().err().unwrap();
+
+        unsafe { env::remove_var(key) };
+
+        error.to_full_string()
+    }
+
+    #[test]
+    #[serial]
+    fn names_the_type_and_reason() {
+        assert_eq!(
+            load_with("ENV_PARSE_PORT", "70000"),
+            "Invalid environment variable ENV_PARSE_PORT. Failed to parse \"70000\" into u16: number too large to fit in target type."
+        );
+        assert_eq!(
+            load_with("ENV_PARSE_PORT", ""),
+            "Invalid environment variable ENV_PARSE_PORT. Failed to parse \"\" into u16: cannot parse integer from empty string."
+        );
+    }
+
+    #[test]
+    #[serial]
+    fn names_the_type_of_an_item() {
+        assert_eq!(
+            load_with("ENV_PARSE_LIST", "1,x"),
+            "Invalid environment variable ENV_PARSE_LIST. Failed to parse \"x\" into u8: invalid digit found in string."
+        );
+    }
+}
+
+mod parse_bool {
+    use schematic::env::parse_bool;
+
+    #[test]
+    fn parses_true_and_false_values() {
+        for value in ["1", "true", "YES", " on ", "enable", "Enabled"] {
+            assert_eq!(parse_bool(value.into()).unwrap(), Some(true), "{value}");
+        }
+
+        for value in ["0", "false", "NO", " off ", "disable", "Disabled"] {
+            assert_eq!(parse_bool(value.into()).unwrap(), Some(false), "{value}");
+        }
+    }
+
+    // Like an unset variable, so the layers beneath it stand
+    #[test]
+    fn ignores_an_empty_value() {
+        assert_eq!(parse_bool("".into()).unwrap(), None);
+        assert_eq!(parse_bool("  ".into()).unwrap(), None);
+    }
+
+    #[test]
+    fn errors_for_anything_else() {
+        assert_eq!(
+            parse_bool("ture".into()).unwrap_err().to_string(),
+            "Failed to parse \"ture\" into bool, expected one of 1, true, yes, on, enable, or enabled, or 0, false, no, off, disable, or disabled."
+        );
+    }
+}

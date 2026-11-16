@@ -1,5 +1,6 @@
 mod utils;
 
+use quote::ToTokens;
 use schematic_core::container::{Container, ContainerMacro};
 use starbase_sandbox::assert_snapshot;
 use syn::{DeriveInput, parse_quote};
@@ -302,5 +303,154 @@ mod env_prefix {
         });
 
         assert_snapshot!(pretty(container.impl_partial_checks()));
+    }
+}
+
+// An attribute that fails to parse is an error spanned to where it was
+// written, which the derive reports as a compile error, rather than a panic
+mod parse_errors {
+    use super::*;
+
+    fn errors(input: DeriveInput) -> Vec<String> {
+        Container::new(input)
+            .expect_err("an error")
+            .flatten()
+            .into_iter()
+            .map(|error| error.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn suggests_a_misspelled_setting_attribute() {
+        assert_eq!(
+            errors(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    #[setting(defualt = 1)]
+                    a: u8,
+                }
+            }),
+            ["Unknown field: `defualt`. Did you mean `default`?"]
+        );
+    }
+
+    #[test]
+    fn reports_every_error_at_once() {
+        assert_eq!(
+            errors(parse_quote! {
+                #[derive(Config)]
+                enum Example {
+                    #[setting(nestd)]
+                    A(Child),
+                    B {
+                        #[setting(requird)]
+                        b: String,
+                        #[setting(env = 1)]
+                        c: String,
+                    },
+                    C(#[setting(nested = 1)] Child),
+                }
+            }),
+            [
+                "Unknown field: `nestd`. Did you mean `nested`?",
+                "Unknown field: `requird`. Did you mean `required`?",
+                "Unexpected type `int` at env",
+                "Unexpected type `int` at nested",
+            ]
+        );
+    }
+
+    #[test]
+    fn reports_a_container_attribute() {
+        assert_eq!(
+            errors(parse_quote! {
+                #[derive(Config)]
+                #[config(env_prefx = "APP_")]
+                struct Example {
+                    a: String,
+                }
+            }),
+            ["Unknown field: `env_prefx`. Did you mean `env_prefix`?"]
+        );
+    }
+}
+
+// A misused attribute still panics, but names the setting or variant, as
+// the panic only points at the derive
+mod panic_names {
+    use super::*;
+
+    #[test]
+    #[should_panic(
+        expected = "Setting `port`: Cannot use `required` with `default`, as the setting always has a value."
+    )]
+    fn names_a_setting() {
+        config(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(required, default = 1)]
+                port: Option<u16>,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Setting `1`: Nested configurations must be a `Config` type")]
+    fn names_a_setting_by_position() {
+        config(parse_quote! {
+            #[derive(Config)]
+            struct Example(String, #[setting(nested)] String);
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Setting `File.type`: Cannot use `extend` within an enum variant")]
+    fn names_a_setting_of_a_variant() {
+        config(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                File {
+                    #[setting(extend)]
+                    r#type: String,
+                },
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Variant `Unit`: Cannot use `merge` with unit variants.")]
+    fn names_a_variant() {
+        config(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                #[setting(merge = func)]
+                Unit,
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Variant `A`: Nested configurations must be a `Config` type")]
+    fn names_the_variant_of_a_value() {
+        config(parse_quote! {
+            #[derive(Config)]
+            enum Example {
+                A(#[setting(nested)] bool),
+            }
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Setting `items`: Unable to convert `Custom<std::sync::Arc<String>>`"
+    )]
+    fn names_a_setting_while_generating() {
+        config(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                items: Custom<std::sync::Arc<String>>,
+            }
+        })
+        .to_token_stream();
     }
 }

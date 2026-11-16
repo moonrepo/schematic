@@ -144,6 +144,37 @@ fn loads_json_file_optional() {
     assert_eq!(result.config.number, 0);
 }
 
+// A missing file provides nothing, so it isn't reported as a layer, while
+// a file beside it that exists is
+#[cfg(feature = "json")]
+#[test]
+fn skips_a_missing_optional_file_as_a_layer() {
+    let root = get_fixture_path("json");
+
+    let result = ConfigLoader::<Config>::new()
+        .file_optional(root.join("missing.json"))
+        .unwrap()
+        .file_optional(root.join("one.json"))
+        .unwrap()
+        .load()
+        .unwrap();
+
+    assert_eq!(
+        result
+            .layers
+            .iter()
+            .map(|layer| layer.source.clone())
+            .collect::<Vec<_>>(),
+        [
+            Source::Defaults,
+            Source::File {
+                path: root.join("one.json"),
+                required: false,
+            },
+        ]
+    );
+}
+
 #[cfg(feature = "pkl")]
 #[test]
 fn loads_pkl_files() {

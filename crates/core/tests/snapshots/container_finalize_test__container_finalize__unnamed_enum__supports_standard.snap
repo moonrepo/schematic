@@ -8,8 +8,22 @@ fn finalize(
 ) -> std::result::Result<Self, schematic::ConfigError> {
     Ok(
         match self {
-            Self::C(pa) => Self::C(transform_string(pa, context)?),
-            Self::F(pa) => Self::F(transform_vec(pa, context)?),
+            Self::C(pa) => {
+                Self::C(
+                    schematic::internal::transform::handle_transform_result(
+                        "C",
+                        transform_string(pa, context),
+                    )?,
+                )
+            }
+            Self::F(pa) => {
+                Self::F(
+                    schematic::internal::transform::handle_transform_result(
+                        "F",
+                        transform_vec(pa, context),
+                    )?,
+                )
+            }
             _ => self,
         },
     )

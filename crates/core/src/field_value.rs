@@ -38,16 +38,20 @@ impl FieldValue {
         nested_arg: Option<&NestedArg>,
         self_ty: &Type,
         context_fn: Option<ExprPath>,
+        owner: String,
     ) -> Self {
-        FieldValue(Value::new(ty, nested_arg, self_ty).with_context(context_fn))
+        FieldValue(Value::new(ty, nested_arg, self_ty, owner).with_context(context_fn))
     }
 
     /// Generate the default value of a setting, for `default_values`, where
     /// `access` is the setting within the partial its defaults go under.
+    ///
+    /// The `path` is the setting's, which an invalid default names.
     pub fn impl_partial_default_value(
         &self,
         field_args: &FieldArgs,
         access: &TokenStream,
+        path: &str,
     ) -> ImplResult {
         let outer_option = self.is_outer_option_wrapped();
 
@@ -79,7 +83,7 @@ impl FieldValue {
         // defaults applied when it's finalized
         if self.nested {
             if field_args.default.is_some() {
-                panic!("Cannot use `default` with `nested`.");
+                self.fail("Cannot use `default` with `nested`.");
             }
 
             let value = wrap_default_layers(&layers, quote! { Default::default() });
@@ -92,10 +96,10 @@ impl FieldValue {
         match field_args.default.as_ref() {
             // Handler functions return the entire value
             Some(Expr::Path(func)) if !path_names_a_value(&func.path) => {
-                res.value = quote! { schematic::internal::defaults::handle_default_result(#func(context))? };
+                res.value = quote! { schematic::internal::defaults::handle_default_result(#path, #func(context))? };
             }
             Some(expr) => {
-                let value = self.impl_default_value(expr, &layers);
+                let value = self.impl_default_value(expr, &layers, path);
 
                 res.value = quote! { Some(#value) };
             }
@@ -120,7 +124,7 @@ impl FieldValue {
         access: &TokenStream,
     ) -> ImplResult {
         if field_args.default.is_some() {
-            panic!("Cannot use `default` with `nested`.");
+            self.fail("Cannot use `default` with `nested`.");
         }
 
         let partial = self.get_nested_partial_type();
@@ -183,7 +187,7 @@ impl FieldValue {
         if self.nested {
             if !supported {
                 if field_args.env_prefix.is_some() {
-                    panic!("Cannot use `env_prefix` with collections or wrapped types.");
+                    self.fail("Cannot use `env_prefix` with collections or wrapped types.");
                 }
 
                 return ImplResult::skipped();
@@ -191,7 +195,7 @@ impl FieldValue {
 
             let prefix = if let Some(env_prefix) = &field_args.env_prefix {
                 if env_prefix.is_empty() {
-                    panic!("Attribute `env_prefix` cannot be empty.");
+                    self.fail("Attribute `env_prefix` cannot be empty.");
                 }
 
                 quote! { Some(#env_prefix) }
@@ -211,9 +215,9 @@ impl FieldValue {
             // derived from the container-level `env_prefix`
             if field_args.env.is_some() {
                 if self.is_collection() {
-                    panic!("Collection types cannot be used with `env`.");
+                    self.fail("Collection types cannot be used with `env`.");
                 } else {
-                    panic!("Wrapper types cannot be used with `env`.");
+                    self.fail("Wrapper types cannot be used with `env`.");
                 }
             }
 
@@ -287,9 +291,9 @@ impl FieldValue {
                 }
             }
             inner => {
-                panic!(
-                    "Only `String`, `Vec<String>`, or `schematic::ExtendsFrom` are supported when using `extend` for {field_name}. Received `{inner}`."
-                );
+                self.fail(format!(
+                    "Only `String`, `Vec<String>`, or `schematic::ExtendsFrom` are supported when using `extend`, received `{inner}`."
+                ));
             }
         };
 
@@ -311,7 +315,9 @@ impl FieldValue {
         let value = match field_args.merge.as_ref() {
             Some(func) => {
                 if self.nested && !self.is_collection() {
-                    panic!("Nested configs do not support `merge` unless wrapped in a collection.");
+                    self.fail(
+                        "Nested configs do not support `merge` unless wrapped in a collection.",
+                    );
                 }
 
                 quote! {
@@ -372,7 +378,7 @@ impl FieldValue {
                 // func() - is the validator itself
                 Expr::Call(_) | Expr::Path(_) => quote! { #expr },
                 _ => {
-                    panic!("Unsupported `validate` syntax.");
+                    self.fail("Unsupported `validate` syntax.");
                 }
             };
 

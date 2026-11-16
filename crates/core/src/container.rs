@@ -2,7 +2,9 @@ use crate::args::{
     PartialArg, SerdeContainerArgs, SerdeIoDirection, SerdeRenameArg, SerdeTagFormat,
 };
 use crate::field::Field;
-use crate::utils::{ImplResult, is_inheritable_attribute, to_type_string, validate_case_format};
+use crate::utils::{
+    ImplResult, is_inheritable_attribute, join_results, to_type_string, validate_case_format,
+};
 use crate::variant::Variant;
 use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
@@ -54,9 +56,18 @@ pub struct Container {
 }
 
 impl Container {
-    pub fn from(input: DeriveInput) -> Self {
-        let args = Rc::new(ContainerArgs::from_derive_input(&input).unwrap());
-        let serde_args = Rc::new(SerdeContainerArgs::from_derive_input(&input).unwrap());
+    /// Analyze the input of a derive. An attribute that fails to parse, like
+    /// a misspelled one, is collected as an error spanned to where it was
+    /// written, rather than panicking, so the derive reports each of them as
+    /// a compile error, alongside darling's suggestion.
+    pub fn new(input: DeriveInput) -> darling::Result<Self> {
+        let (args, serde_args) = join_results(
+            ContainerArgs::from_derive_input(&input),
+            SerdeContainerArgs::from_derive_input(&input),
+        )?;
+        let args = Rc::new(args);
+        let serde_args = Rc::new(serde_args);
+        let mut errors = darling::Error::accumulator();
 
         // Replaces `Self` within settings, as it means the partial within the partial
         let self_ty: Type = {
@@ -72,8 +83,16 @@ impl Container {
                     fields: fields
                         .named
                         .into_iter()
-                        .map(|data| {
-                            Field::new(data, args.clone(), serde_args.clone(), &self_ty, None)
+                        .enumerate()
+                        .filter_map(|(index, data)| {
+                            errors.handle(Field::new(
+                                data,
+                                index,
+                                args.clone(),
+                                serde_args.clone(),
+                                &self_ty,
+                                None,
+                            ))
                         })
                         .collect(),
                 },
@@ -82,11 +101,15 @@ impl Container {
                         .unnamed
                         .into_iter()
                         .enumerate()
-                        .map(|(index, data)| {
-                            let mut field =
-                                Field::new(data, args.clone(), serde_args.clone(), &self_ty, None);
-                            field.index = index;
-                            field
+                        .filter_map(|(index, data)| {
+                            errors.handle(Field::new(
+                                data,
+                                index,
+                                args.clone(),
+                                serde_args.clone(),
+                                &self_ty,
+                                None,
+                            ))
                         })
                         .collect(),
                 },
@@ -98,7 +121,14 @@ impl Container {
                 variants: data
                     .variants
                     .into_iter()
-                    .map(|data| Variant::new(data, args.clone(), serde_args.clone(), &self_ty))
+                    .filter_map(|data| {
+                        errors.handle(Variant::new(
+                            data,
+                            args.clone(),
+                            serde_args.clone(),
+                            &self_ty,
+                        ))
+                    })
                     .collect(),
             },
             Data::Union(_) => {
@@ -106,7 +136,9 @@ impl Container {
             }
         };
 
-        let container = Self {
+        errors.finish()?;
+
+        Ok(Self {
             args,
             attrs: input.attrs,
             generics: input.generics,
@@ -115,12 +147,15 @@ impl Container {
             macro_type: ContainerMacro::Config,
             serde_args,
             vis: input.vis,
-        };
-        container.validate_args();
-        container
+        })
     }
 
-    fn validate_args(&self) {}
+    /// Analyze the input of a derive, panicking with the errors of any
+    /// attribute that fails to parse. The derive itself uses [`Container::new`],
+    /// which reports them as compile errors.
+    pub fn from(input: DeriveInput) -> Self {
+        Self::new(input).unwrap_or_else(|errors| panic!("{errors}"))
+    }
 
     pub fn get_partial_ident(&self) -> Ident {
         format_ident!("Partial{}", self.ident)

@@ -148,6 +148,26 @@ mod setting_default {
         assert_snapshot!(pretty(container.impl_partial_default_values()));
     }
 
+    // Any other expression is written as is, as the compiler checks its type
+    #[test]
+    fn supports_any_expression() {
+        let container = Container::from(parse_quote! {
+            #[derive(Config)]
+            struct Example {
+                #[setting(default = PathBuf::from("a").join("b"))]
+                a: PathBuf,
+                #[setting(default = -1)]
+                b: Option<i8>,
+                #[setting(default = if cfg!(windows) { 1 } else { 2 })]
+                c: u8,
+                #[setting(default = 60 * 60)]
+                d: u32,
+            }
+        });
+
+        assert_snapshot!(pretty(container.impl_partial_default_values()));
+    }
+
     // An `Option` setting still gets its value wrapped, and a collection still
     // takes the whole literal
     #[test]

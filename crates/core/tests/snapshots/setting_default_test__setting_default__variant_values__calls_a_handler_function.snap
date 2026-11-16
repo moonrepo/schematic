@@ -12,6 +12,7 @@ fn default_values(
                 Some(
                     Self::Foo(
                         schematic::internal::defaults::handle_default_result(
+                                "Foo",
                                 default_count(context),
                             )?
                             .unwrap_or_default(),

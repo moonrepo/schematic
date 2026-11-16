@@ -1,13 +1,22 @@
 use crate::config::{HandlerError, ParseEnvResult};
+use crate::helpers::short_type_name;
+use std::fmt::Display;
 use std::str::FromStr;
 
-/// Parse the value of an environment variable into a setting's type.
-pub fn parse_value<T: FromStr, V: AsRef<str>>(value: V) -> Result<T, HandlerError> {
+/// Parse the value of an environment variable into a setting's type, naming
+/// the type and why it failed, like `number too large to fit in target type`.
+pub fn parse_value<T, V>(value: V) -> Result<T, HandlerError>
+where
+    T: FromStr,
+    T::Err: Display,
+    V: AsRef<str>,
+{
     let value = value.as_ref();
 
-    value.parse::<T>().map_err(|_| {
+    value.parse::<T>().map_err(|error| {
         HandlerError(format!(
-            "Failed to parse \"{value}\" into the correct type."
+            "Failed to parse \"{value}\" into {}: {error}.",
+            short_type_name::<T>()
         ))
     })
 }
@@ -70,7 +79,11 @@ impl EnvManager {
 
     /// Get a variable using the exact key, ignoring the prefix.
     /// For explicit keys defined with `#[setting(env)]`.
-    pub fn get<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
+    pub fn get<T>(&mut self, key: &str) -> ParseEnvResult<T>
+    where
+        T: FromStr,
+        T::Err: Display,
+    {
         self.get_and_parse(key, |value| parse_value(value).map(|v| Some(v)))
     }
 
@@ -86,7 +99,11 @@ impl EnvManager {
 
     /// Get a variable using the key with a prefix applied.
     /// For keys derived from setting names when using `env_prefix`.
-    pub fn get_prefixed<T: FromStr>(&mut self, key: &str) -> ParseEnvResult<T> {
+    pub fn get_prefixed<T>(&mut self, key: &str) -> ParseEnvResult<T>
+    where
+        T: FromStr,
+        T::Err: Display,
+    {
         self.get_and_parse_prefixed(key, |value| parse_value(value).map(|v| Some(v)))
     }
 

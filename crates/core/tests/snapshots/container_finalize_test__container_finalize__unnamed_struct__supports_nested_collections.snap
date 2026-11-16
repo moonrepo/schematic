@@ -25,45 +25,51 @@ fn finalize(
     }
     if let Some(layer) = partial.1 {
         partial.1 = Some(
-            transform_config(
-                layer
-                    .into_iter()
-                    .map(|(key, layer)| Ok((
-                        key,
-                        schematic::internal::layers::finalize_with_layers(
-                            layer,
-                            context,
-                        )?,
-                    )))
-                    .collect::<
-                        std::result::Result<
-                            HashMap<
-                                String,
-                                <CustomConfig as schematic::Config>::Partial,
+            schematic::internal::transform::handle_transform_result(
+                "1",
+                transform_config(
+                    layer
+                        .into_iter()
+                        .map(|(key, layer)| Ok((
+                            key,
+                            schematic::internal::layers::finalize_with_layers(
+                                layer,
+                                context,
+                            )?,
+                        )))
+                        .collect::<
+                            std::result::Result<
+                                HashMap<
+                                    String,
+                                    <CustomConfig as schematic::Config>::Partial,
+                                >,
+                                schematic::ConfigError,
                             >,
-                            schematic::ConfigError,
-                        >,
-                    >()?,
-                context,
+                        >()?,
+                    context,
+                ),
             )?,
         );
     }
     if let Some(layer) = partial.2 {
         partial.2 = Some(
-            transform_config(
-                layer
-                    .into_iter()
-                    .map(|layer| schematic::internal::layers::finalize_with_layers(
-                        layer,
-                        context,
-                    ))
-                    .collect::<
-                        std::result::Result<
-                            BTreeSet<<NestedConfig as schematic::Config>::Partial>,
-                            schematic::ConfigError,
-                        >,
-                    >()?,
-                context,
+            schematic::internal::transform::handle_transform_result(
+                "2",
+                transform_config(
+                    layer
+                        .into_iter()
+                        .map(|layer| schematic::internal::layers::finalize_with_layers(
+                            layer,
+                            context,
+                        ))
+                        .collect::<
+                            std::result::Result<
+                                BTreeSet<<NestedConfig as schematic::Config>::Partial>,
+                                schematic::ConfigError,
+                            >,
+                        >()?,
+                    context,
+                ),
             )?,
         );
     }

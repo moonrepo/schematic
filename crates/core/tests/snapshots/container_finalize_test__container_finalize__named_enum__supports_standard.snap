@@ -10,10 +10,20 @@ fn finalize(
         match self {
             Self::A { a: pa, b: pb, c: mut pc, d: pd, e: pe, f: mut pf, g: pg } => {
                 if let Some(layer) = pc {
-                    pc = Some(transform_string(layer, context)?);
+                    pc = Some(
+                        schematic::internal::transform::handle_transform_result(
+                            "A.c",
+                            transform_string(layer, context),
+                        )?,
+                    );
                 }
                 if let Some(layer) = pf {
-                    pf = Some(transform_vec(layer, context)?);
+                    pf = Some(
+                        schematic::internal::transform::handle_transform_result(
+                            "A.f",
+                            transform_vec(layer, context),
+                        )?,
+                    );
                 }
                 Self::A {
                     a: pa,

@@ -72,3 +72,54 @@ pub fn extract_file_ext(value: &str) -> Option<&str> {
 
     name.rfind('.').map(|index| &name[index + 1..])
 }
+
+/// The name of a type without its module paths, like `Vec<Config>` rather
+/// than `alloc::vec::Vec<app::Config>`, for use within error messages.
+#[cfg(feature = "config")]
+pub(crate) fn short_type_name<T: ?Sized>() -> String {
+    let name = std::any::type_name::<T>();
+    let mut short = String::with_capacity(name.len());
+    let mut path = String::new();
+
+    // Each path keeps only its last segment, while everything
+    // between them, like `<`, `, `, or `&`, is kept as is
+    for char in name.chars().chain(std::iter::once('\0')) {
+        if char.is_alphanumeric() || char == '_' || char == ':' {
+            path.push(char);
+            continue;
+        }
+
+        short.push_str(path.rsplit("::").next().unwrap_or_default());
+        path.clear();
+
+        if char != '\0' {
+            short.push(char);
+        }
+    }
+
+    short
+}
+
+#[cfg(all(test, feature = "config"))]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    struct Wrapper<T>(T);
+
+    #[test]
+    fn shortens_every_path_of_a_type() {
+        assert_eq!(short_type_name::<u16>(), "u16");
+        assert_eq!(short_type_name::<PathBuf>(), "PathBuf");
+        assert_eq!(
+            short_type_name::<Wrapper<Option<String>>>(),
+            "Wrapper<Option<String>>"
+        );
+        assert_eq!(
+            short_type_name::<HashMap<String, Vec<(u8, &str)>>>(),
+            "HashMap<String, Vec<(u8, &str)>>"
+        );
+        assert_eq!(short_type_name::<dyn std::fmt::Debug>(), "dyn Debug");
+    }
+}

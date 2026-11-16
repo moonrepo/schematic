@@ -35,6 +35,9 @@ fn make_absolute(value: PathBuf, context: &Context) -> TransformResult<PathBuf> 
 }
 ```
 
+A transform that fails is an error naming the setting, like `Failed to transform env_file. ...`,
+followed by the function's own message.
+
 ### Nested values
 
 Transformers can also be used on [nested configs](../nested.md), but when defining the transformer

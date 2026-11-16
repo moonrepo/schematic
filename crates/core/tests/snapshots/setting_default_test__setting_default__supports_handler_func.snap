@@ -7,7 +7,7 @@ fn default_values(
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     let defaults = Self {
-        a: schematic::internal::defaults::handle_default_result(handler(context))?,
+        a: schematic::internal::defaults::handle_default_result("a", handler(context))?,
     };
     Ok(if matches!(defaults, Self { a : None, .. }) { None } else { Some(defaults) })
 }

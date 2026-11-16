@@ -37,7 +37,7 @@ impl schematic::PartialConfig for PartialExample {
                         DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
                     };
                     (&&schematic::internal::defaults::DefaultString::<String>::new())
-                        .parse_default("abc")?
+                        .parse_default("name", "abc")?
                 }),
                 nested: schematic::internal::layers::nested_default_values(
                     self.nested.as_ref(),
@@ -102,7 +102,12 @@ impl schematic::PartialConfig for PartialExample {
             );
         }
         if let Some(layer) = partial.map {
-            partial.map = Some(transform_map(layer, context)?);
+            partial.map = Some(
+                schematic::internal::transform::handle_transform_result(
+                    "map",
+                    transform_map(layer, context),
+                )?,
+            );
         }
         Ok(partial)
     }

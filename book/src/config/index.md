@@ -79,7 +79,7 @@ methods. For URLs, use the
 [`ConfigLoader::url()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url)
 method (requires the `url` Cargo feature, which is _not_ enabled by default). For inline code, use the
 [`ConfigLoader::code()`](https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code)
-method, which requires an explicit format.
+method, which requires an explicit format, and names the source within errors.
 
 ```rust
 loader.code("secure: false", "example.yml")?;
@@ -88,6 +88,8 @@ loader.url("https://ordomain.com/to/config.yaml")?;
 ```
 
 > The formats to use are derived from the trailing file extension.
+
+An optional file that doesn't exist provides nothing, so it's left out of `ConfigLoadResult.layers`.
 
 A [partial](./partial.md) that's already in memory, like one parsed from command line arguments, is
 added with the
@@ -160,6 +162,9 @@ Schematic is powered entirely by [serde](https://serde.rs), and supports the fol
 - RON - Uses `ron` and requires the `ron` Cargo feature.
 - TOML - Uses `toml` and requires the `toml` Cargo feature.
 - YAML - Uses `serde_norway` and requires the `yaml` Cargo feature.
+
+None of them is enabled by default, so enable the feature of each format you load. A source with no
+format to parse it fails to load, with an error that names the feature its extension needs.
 
 ## Cargo features
 
