@@ -367,7 +367,7 @@ impl Value {
         let mut types = vec![];
 
         for _ in self.get_partial_layers() {
-            let inner = get_last_type_argument(&ty);
+            let inner = get_item_type(&ty);
 
             types.push(ty);
             ty = inner.unwrap_or_else(|| types.last().unwrap().to_owned());
@@ -434,7 +434,7 @@ impl Value {
 
         // The caller may have already removed the partial's outer `Option`
         for _ in 0..self.get_partial_layers().len().saturating_sub(layers.len()) {
-            ty = get_last_type_argument(&ty).unwrap_or(ty);
+            ty = get_item_type(&ty).unwrap_or(ty);
         }
 
         for layer in layers {
@@ -442,7 +442,7 @@ impl Value {
                 break;
             }
 
-            ty = get_last_type_argument(&ty).unwrap_or(ty);
+            ty = get_item_type(&ty).unwrap_or(ty);
         }
 
         ty
@@ -886,6 +886,11 @@ fn is_unsized_type(ty: &Type) -> bool {
 /// Whether any wrapper within the type contains an unsized value,
 /// in which case the wrappers cannot be stripped from the partial.
 fn has_unsized_wrapper(ty: &Type) -> bool {
+    // The items of a collection, like `SmallVec<[Box<str>; N]>`
+    if let Type::Array(array) = ty {
+        return has_unsized_wrapper(&array.elem);
+    }
+
     let Type::Path(ty_path) = ty else {
         return false;
     };
@@ -919,29 +924,24 @@ fn strip_wrapper_types(ty: &Type, keep_box: bool) -> Type {
         return ty.clone();
     };
 
-    let PathArguments::AngleBracketed(args) = &last_segment.arguments else {
+    if !matches!(last_segment.arguments, PathArguments::AngleBracketed(_)) {
         return ty.clone();
-    };
+    }
 
     // Replace the wrapper with the type it wraps
     if is_wrapper_ident(&last_segment.ident)
         && !(keep_box && last_segment.ident == "Box")
-        && let Some(GenericArgument::Type(inner_ty)) = args.args.last()
+        && let Some(inner_ty) = get_item_type_argument(last_segment)
     {
         return strip_wrapper_types(inner_ty, keep_box);
     }
 
     // Otherwise drill into each argument, like the value of a map
     let mut ty_path = ty_path.clone();
-    let last_segment = ty_path.path.segments.last_mut().unwrap();
 
-    if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
-        for arg in args.args.iter_mut() {
-            if let GenericArgument::Type(inner_ty) = arg {
-                *inner_ty = strip_wrapper_types(inner_ty, keep_box);
-            }
-        }
-    }
+    map_type_arguments(ty_path.path.segments.last_mut().unwrap(), |inner_ty| {
+        strip_wrapper_types(inner_ty, keep_box)
+    });
 
     Type::Path(ty_path)
 }
@@ -962,15 +962,10 @@ fn replace_nested_type(ty: &Type, nested_ident: &Ident) -> Type {
         && is_layer_segment(last_segment)
     {
         let mut ty_path = ty_path.clone();
-        let last_segment = ty_path.path.segments.last_mut().unwrap();
 
-        if let PathArguments::AngleBracketed(args) = &mut last_segment.arguments {
-            for arg in args.args.iter_mut() {
-                if let GenericArgument::Type(inner_ty) = arg {
-                    *inner_ty = replace_nested_type(inner_ty, nested_ident);
-                }
-            }
-        }
+        map_type_arguments(ty_path.path.segments.last_mut().unwrap(), |inner_ty| {
+            replace_nested_type(inner_ty, nested_ident)
+        });
 
         return Type::Path(ty_path);
     }
@@ -1010,10 +1005,10 @@ fn extract_type_information(
         }
 
         // Attempt to drill deeper down
-        PathArguments::AngleBracketed(args) => {
-            extract_layer(last_segment, layers);
+        PathArguments::AngleBracketed(_) => {
+            layers.push(get_layer(last_segment));
 
-            if let Some(GenericArgument::Type(inner_ty)) = args.args.last() {
+            if let Some(inner_ty) = get_item_type_argument(last_segment) {
                 extract_type_information(inner_ty, layers, stop_at_unknown, on_last);
             }
         }
@@ -1026,15 +1021,63 @@ fn extract_type_information(
 /// Whether a generic type is a layer the derive walks through, a wrapper,
 /// an `Option`, or a known collection, rather than a type of its own.
 fn is_layer_segment(segment: &PathSegment) -> bool {
-    let mut layers = vec![];
-
-    extract_layer(segment, &mut layers);
-
-    !matches!(layers.first(), Some(Layer::Unknown(_)))
+    !matches!(get_layer(segment), Layer::Unknown(_))
 }
 
-fn extract_layer(last_segment: &PathSegment, layers: &mut Vec<Layer>) {
-    let layer = if last_segment.ident == "Option" {
+/// The type argument that holds a layer's value: a map's value, as a hasher
+/// may follow it, and otherwise the first, as an allocator may. A const, like
+/// the capacity of `ArrayVec<T, CAP>`, is never one, and a collection of an
+/// array, like `SmallVec<[T; N]>`, holds the array's items. An unknown layer
+/// holds its last, as it's only walked through when it isn't a nested config.
+fn get_item_type_argument(segment: &PathSegment) -> Option<&Type> {
+    let PathArguments::AngleBracketed(args) = &segment.arguments else {
+        return None;
+    };
+
+    let mut types = args.args.iter().filter_map(|arg| match arg {
+        GenericArgument::Type(ty) => Some(ty),
+        _ => None,
+    });
+
+    let layer = get_layer(segment);
+
+    let item = match layer {
+        Layer::Map(_) => {
+            let first = types.next();
+
+            types.next().or(first)
+        }
+        Layer::Unknown(_) => types.next_back(),
+        _ => types.next(),
+    }?;
+
+    match item {
+        Type::Array(array) if matches!(layer, Layer::Set(_) | Layer::Vec(_)) => Some(&array.elem),
+        _ => Some(item),
+    }
+}
+
+/// Map each type argument of a segment, walking into the array that a
+/// collection holds, like `SmallVec<[T; N]>`, as its items are the layer's.
+fn map_type_arguments(segment: &mut PathSegment, map: impl Fn(&Type) -> Type) {
+    let holds_items = matches!(get_layer(segment), Layer::Set(_) | Layer::Vec(_));
+
+    let PathArguments::AngleBracketed(args) = &mut segment.arguments else {
+        return;
+    };
+
+    for arg in args.args.iter_mut() {
+        if let GenericArgument::Type(inner_ty) = arg {
+            match inner_ty {
+                Type::Array(array) if holds_items => *array.elem = map(&array.elem),
+                _ => *inner_ty = map(inner_ty),
+            }
+        }
+    }
+}
+
+fn get_layer(last_segment: &PathSegment) -> Layer {
+    if last_segment.ident == "Option" {
         Layer::Option
     } else if last_segment.ident == "Arc" {
         Layer::Arc
@@ -1058,9 +1101,7 @@ fn extract_layer(last_segment: &PathSegment, layers: &mut Vec<Layer>) {
         } else {
             Layer::Unknown(ident)
         }
-    };
-
-    layers.push(layer);
+    }
 }
 
 /// A layer that `map_layers` rebuilds a value through.
@@ -1175,20 +1216,14 @@ fn map_layers(
     value
 }
 
-/// The last type argument of a path type, like `T` for `Option<T>`.
-pub(crate) fn get_last_type_argument(ty: &Type) -> Option<Type> {
+/// The type a layer holds, like `T` for `Option<T>` or `SmallVec<[T; N]>`,
+/// and `V` for `HashMap<K, V, S>`.
+pub(crate) fn get_item_type(ty: &Type) -> Option<Type> {
     let Type::Path(ty_path) = ty else {
         return None;
     };
 
-    let PathArguments::AngleBracketed(args) = &ty_path.path.segments.last()?.arguments else {
-        return None;
-    };
-
-    args.args.iter().rev().find_map(|arg| match arg {
-        GenericArgument::Type(inner) => Some(inner.to_owned()),
-        _ => None,
-    })
+    get_item_type_argument(ty_path.path.segments.last()?).cloned()
 }
 
 /// Replace every `Self` within a type with the container's own type.

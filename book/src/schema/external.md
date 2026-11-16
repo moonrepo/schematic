@@ -3,6 +3,18 @@
 Schematic provides schema implementations for third-party [crates](https://crates.io) through a
 concept known as external types. This functionality is opt-in through Cargo features.
 
+Each feature implements the version of the crate that Schematic depends on, so the version in your
+own `Cargo.toml` must be compatible with it, or the type won't implement `Schematic`.
+
+## arrayvec
+
+> Requires the `type_arrayvec` Cargo feature, and arrayvec 0.7.
+
+Implements schemas for `ArrayVec` and `ArrayString` from the
+[arrayvec](https://crates.io/crates/arrayvec) crate. Each one's capacity is its maximum length,
+which for an `ArrayString` is in bytes, so a schema only rejects a string with more characters than
+that.
+
 ## chrono
 
 > Requires the `type_chrono` Cargo feature.
@@ -11,12 +23,39 @@ Implements schemas for `Date`, `DateTime`, `Duration`, `Days`, `Months`, `IsoWee
 `NaiveDate`, `NaiveDateTime`, and `NaiveTime` from the [chrono](https://crates.io/crates/chrono)
 crate.
 
+## compact_str
+
+> Requires the `type_compact_str` Cargo feature, and compact_str 0.10.
+
+Implements a schema for `CompactString` from the [compact_str](https://crates.io/crates/compact_str)
+crate.
+
+## hashbrown
+
+> Requires the `type_hashbrown` Cargo feature, and hashbrown 0.17.
+
+Implements schemas for `HashMap` and `HashSet` from the
+[hashbrown](https://crates.io/crates/hashbrown) crate.
+
 ## indexmap
 
 > Requires the `type_indexmap` Cargo feature.
 
 Implements a schema for `IndexMap` and `IndexSet` from the
 [indexmap](https://crates.io/crates/indexmap) crate.
+
+## jiff
+
+> Requires the `type_jiff` Cargo feature, and jiff 1.
+
+Implements schemas for `Timestamp`, `ZonedDateTime`, `Span`, and `SignedDuration`, and the civil
+`Date`, `DateTime`, `Time`, and `ISOWeekDate`, from the [jiff](https://crates.io/crates/jiff) crate.
+
+Only `Timestamp` and `Date` have a format, `date-time` and `date`. The others are strings, as their
+format would reject what jiff writes or reads: a `ZonedDateTime` ends with its time zone, like
+`[America/New_York]`, a civil `DateTime` and `Time` have no offset, an `ISOWeekDate` is a week, like
+`2024-W01-2`, and a `Span` and `SignedDuration` are also read in jiff's friendly format, like
+`1h 30m`.
 
 ## regex
 
@@ -84,6 +123,18 @@ Implements schemas for `Value`, `Number`, and `Mapping` from the
 
 Implements schemas for `Value`, `Number`, and `Mapping` from the
 [serde_norway](https://crates.io/crates/serde_norway) crate.
+
+## smallvec
+
+> Requires the `type_smallvec` Cargo feature, and smallvec 1.
+
+Implements a schema for `SmallVec` from the [smallvec](https://crates.io/crates/smallvec) crate.
+
+## smol_str
+
+> Requires the `type_smol_str` Cargo feature, and smol_str 0.3.
+
+Implements a schema for `SmolStr` from the [smol_str](https://crates.io/crates/smol_str) crate.
 
 ## toml
 
