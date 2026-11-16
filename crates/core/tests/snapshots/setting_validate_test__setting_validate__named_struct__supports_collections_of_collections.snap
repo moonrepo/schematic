@@ -8,8 +8,11 @@ fn validate_with_path(
     finalizing: bool,
     path: schematic::Path,
 ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-    use schematic::internal::*;
-    let mut validate = ValidateManager::new(context, finalizing, path);
+    let mut validate = schematic::internal::validate::ValidateManager::new(
+        context,
+        finalizing,
+        path,
+    );
     if let Some(setting) = &self.a {
         {
             let path = validate.key_path("a");
@@ -48,8 +51,5 @@ fn validate_with_path(
             }
         }
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

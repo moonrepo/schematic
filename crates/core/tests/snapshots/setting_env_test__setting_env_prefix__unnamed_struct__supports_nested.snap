@@ -9,16 +9,25 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, None);
+    let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.0 = env
-        .nested(schematic::internal::nested_env_values(self.0.as_ref(), None)?)?;
+        .nested(schematic::internal::layers::nested_env_values(self.0.as_ref(), None)?)?;
     partial.1 = env
-        .nested(schematic::internal::nested_env_values(self.1.as_ref(), None)?)?;
+        .nested(schematic::internal::layers::nested_env_values(self.1.as_ref(), None)?)?;
     partial.2 = env
-        .nested(schematic::internal::nested_env_values(self.2.as_ref(), Some("PRE_"))?)?;
+        .nested(
+            schematic::internal::layers::nested_env_values(
+                self.2.as_ref(),
+                Some("PRE_"),
+            )?,
+        )?;
     partial.3 = env
-        .nested(schematic::internal::nested_env_values(self.3.as_ref(), Some("PRE_"))?)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+        .nested(
+            schematic::internal::layers::nested_env_values(
+                self.3.as_ref(),
+                Some("PRE_"),
+            )?,
+        )?;
+    Ok(env.finish(partial))
 }

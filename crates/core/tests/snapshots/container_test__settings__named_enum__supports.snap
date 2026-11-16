@@ -38,7 +38,7 @@ fn settings() -> schematic::ConfigSettingMap {
                     std::collections::BTreeMap::from_iter([
                         (
                             "g".into(),
-                            schematic::internal::with_nested_settings::<
+                            schematic::internal::settings::with_nested_settings::<
                                 NestedExample,
                             >(ConfigSetting::new("NestedExample")),
                         ),

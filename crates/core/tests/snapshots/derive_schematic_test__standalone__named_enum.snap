@@ -15,8 +15,8 @@ impl schematic::Schematic for Example {
                     [
                         (
                             "A".into(),
-                            {
-                                let mut item = {
+                            schematic::internal::schema::internally_tagged(
+                                {
                                     let mut structure = StructType::new([
                                         ("a".into(), SchemaField::new(schema.infer::<bool>())),
                                         (
@@ -43,38 +43,22 @@ impl schematic::Schematic for Example {
                                     ]);
                                     structure.allow_unknown_fields = true;
                                     Schema::structure(structure)
-                                };
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("A".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            },
+                                },
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("A".into())),
+                                ),
+                            ),
                         ),
                         (
                             "B".into(),
-                            {
-                                let mut item = schema.infer::<String>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("B".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            },
+                            schematic::internal::schema::internally_tagged(
+                                schema.infer::<String>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("B".into())),
+                                ),
+                            ),
                         ),
                     ],
                     None,

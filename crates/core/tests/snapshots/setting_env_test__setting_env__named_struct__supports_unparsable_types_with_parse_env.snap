@@ -9,11 +9,10 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, None);
+    let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.a = env.get_and_parse("LIST", schematic::env::split_comma)?;
     partial.b = env.get_and_parse("OPT_LIST", schematic::env::split_comma)?;
     partial.c = env.get_and_parse("BOXED", parse_func)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

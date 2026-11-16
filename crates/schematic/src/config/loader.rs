@@ -1,5 +1,5 @@
 use crate::helpers::strip_bom;
-use crate::internal;
+use crate::internal::layers::apply_layers;
 
 use super::cacher::{BoxedCacher, Cacher, MemoryCache};
 use super::configs::{Config, PartialConfig};
@@ -207,7 +207,7 @@ impl<T: Config> ConfigLoader<T> {
 
         // Environment variables go over the sources, and default values under
         // them, each read against what the sources picked
-        let applied = internal::apply_layers(self.merge_layers(&sources, context)?, context)?;
+        let applied = apply_layers(self.merge_layers(&sources, context)?, context)?;
         let mut layers = Vec::with_capacity(sources.len() + 2);
 
         if let Some(partial) = applied.defaults {

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use schematic::internal::partialize_schema;
+use schematic::internal::schema::partialize_schema;
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, SchemaType, Schematic, derive_enum};
 use similar::{ChangeTag, TextDiff};
 use starbase_sandbox::assert_snapshot;

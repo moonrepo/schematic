@@ -92,14 +92,11 @@ impl FieldValue {
         match field_args.default.as_ref() {
             // Handler functions return the entire value
             Some(Expr::Path(func)) if !path_names_a_value(&func.path) => {
-                res.requires_internal = true;
-                res.value = quote! { handle_default_result(#func(context))? };
+                res.value = quote! { schematic::internal::defaults::handle_default_result(#func(context))? };
             }
             Some(expr) => {
-                let default = self.impl_default_value(expr, &layers);
-                let value = default.value;
+                let value = self.impl_default_value(expr, &layers);
 
-                res.requires_internal = default.requires_internal;
                 res.value = quote! { Some(#value) };
             }
             // Otherwise fallback to the type default
@@ -130,7 +127,7 @@ impl FieldValue {
         let context = self.get_nested_context();
 
         let value = if !self.is_outer_option_wrapped() {
-            quote! { schematic::internal::nested_default_values(#access.as_ref(), #context)? }
+            quote! { schematic::internal::layers::nested_default_values(#access.as_ref(), #context)? }
         } else if self.keep_box {
             quote! {
                 match #access.as_deref() {
@@ -203,7 +200,7 @@ impl FieldValue {
             };
 
             res.value = quote! {
-                env.nested(schematic::internal::nested_env_values(#access.as_ref(), #prefix)?)?
+                env.nested(schematic::internal::layers::nested_env_values(#access.as_ref(), #prefix)?)?
             };
 
             return res;

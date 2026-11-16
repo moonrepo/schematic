@@ -8,8 +8,11 @@ fn validate_with_path(
     finalizing: bool,
     path: schematic::Path,
 ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-    use schematic::internal::*;
-    let mut validate = ValidateManager::new(context, finalizing, path);
+    let mut validate = schematic::internal::validate::ValidateManager::new(
+        context,
+        finalizing,
+        path,
+    );
     match self {
         Self::A { a: pa, b: pb, c: pc, d: pd, e: pe, .. } => {
             validate
@@ -18,24 +21,22 @@ fn validate_with_path(
                     |validate| {
                         if let Some(setting) = pa {
                             validate.nested("a", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "a",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("a");
                         }
                         if let Some(setting) = pb {
                             validate.nested("b", setting);
                         }
                         if let Some(setting) = pc {
                             validate.nested("c", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "c",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("c");
                         }
                         if let Some(setting) = pd {
                             {
@@ -62,8 +63,5 @@ fn validate_with_path(
         }
         _ => {}
     };
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

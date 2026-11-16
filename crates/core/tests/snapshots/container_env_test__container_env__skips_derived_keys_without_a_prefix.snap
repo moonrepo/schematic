@@ -9,11 +9,10 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, None);
+    let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.b = env.get("B_VAR")?;
     partial.c = env
-        .nested(schematic::internal::nested_env_values(self.c.as_ref(), None)?)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+        .nested(schematic::internal::layers::nested_env_values(self.c.as_ref(), None)?)?;
+    Ok(env.finish(partial))
 }

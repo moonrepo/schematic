@@ -14,7 +14,7 @@ impl schematic::PartialConfig for PartialExample {
         Ok(
             Some(Self {
                 a: Some(Default::default()),
-                child: schematic::internal::nested_default_values(
+                child: schematic::internal::layers::nested_default_values(
                     self.child.as_ref(),
                     context,
                 )?,
@@ -28,12 +28,16 @@ impl schematic::PartialConfig for PartialExample {
         &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        use schematic::internal::*;
-        let mut env = EnvManager::new(prefix, None);
+        let mut env = schematic::internal::env::EnvManager::new(prefix, None);
         let mut partial = Self::default();
         partial.child = env
-            .nested(schematic::internal::nested_env_values(self.child.as_ref(), None)?)?;
-        Ok(if env.is_empty() { None } else { Some(partial) })
+            .nested(
+                schematic::internal::layers::nested_env_values(
+                    self.child.as_ref(),
+                    None,
+                )?,
+            )?;
+        Ok(env.finish(partial))
     }
     fn finalize(
         self,
@@ -50,8 +54,7 @@ impl schematic::PartialConfig for PartialExample {
         context: &Self::Context,
         mut next: Self,
     ) -> std::result::Result<(), schematic::ConfigError> {
-        use schematic::internal::*;
-        MergeManager::new(context)
+        schematic::internal::merge::MergeManager::new(context)
             .apply(&mut self.a, next.a)?
             .nested(&mut self.child, next.child)?;
         Ok(())
@@ -62,19 +65,16 @@ impl schematic::PartialConfig for PartialExample {
         finalizing: bool,
         path: schematic::Path,
     ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-        use schematic::internal::*;
-        let mut validate = ValidateManager::new(context, finalizing, path);
+        let mut validate = schematic::internal::validate::ValidateManager::new(
+            context,
+            finalizing,
+            path,
+        );
         if let Some(setting) = &self.child {
             validate.flattened(setting);
-        } else if finalizing {
-            validate
-                .flattened(
-                    &<<Child as schematic::Config>::Partial as Default>::default(),
-                );
+        } else {
+            validate.missing_flattened::<<Child as schematic::Config>::Partial>();
         }
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }

@@ -185,6 +185,16 @@
 
 - Merged the code that rebuilds a setting through its layers, when converting a partial into a full
   config and when finalizing nested configs, into one helper. Generated code is unchanged.
+- Reorganized the hidden `schematic::internal` module by domain (`layers`, `env`, `merge`,
+  `validate`, `defaults`, `untagged`, `settings`, `config_enum`, `schema`), with nothing re-exported
+  from its root, and removed the helpers only the old derive called. Generated code calls each by
+  its full path, rather than through `use schematic::internal::*`, which shadowed a user's function
+  of the same name passed to a setting attribute, like `validate`.
+- Moved what generated code did that doesn't depend on the derive into those helpers: finishing
+  validation and environment reads, picking a tagged enum's variant from its variable, attempting
+  the variants of an untagged `Deserialize`, validating a missing nested config, building the
+  schemas of tagged variants and partials, and converting a `ConfigEnum`'s fallback. Generated code
+  is shorter, and behaves the same.
 
 #### 🐞 Fixes
 

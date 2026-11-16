@@ -8,27 +8,22 @@ fn validate_with_path(
     finalizing: bool,
     path: schematic::Path,
 ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-    use schematic::internal::*;
-    let mut validate = ValidateManager::new(context, finalizing, path);
+    let mut validate = schematic::internal::validate::ValidateManager::new(
+        context,
+        finalizing,
+        path,
+    );
     if let Some(setting) = &self.0 {
         validate.check("0", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("0", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "0",
-                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<NestedConfig as schematic::Config>::Partial>("0");
     }
     if let Some(setting) = &self.1 {
         validate.check("1", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("1", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "1",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("1");
     }
     if let Some(setting) = &self.2 {
         validate.check("2", setting, self, |v, d, c, f| func_ref(v, d, c, f));
@@ -37,33 +32,18 @@ fn validate_with_path(
     if let Some(setting) = &self.3 {
         validate.check("3", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("3", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "3",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("3");
     }
     if let Some(setting) = &self.4 {
         validate.nested("4", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "4",
-                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<NestedConfig as schematic::Config>::Partial>("4");
     }
     if let Some(setting) = &self.5 {
         validate.nested("5", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "5",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("5");
     }
-    if !validate.errors.is_empty() {
-        return Err(validate.errors);
-    }
-    Ok(())
+    validate.finish()
 }

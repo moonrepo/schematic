@@ -9,21 +9,13 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "Text".into(),
-                        {
-                            let mut item = schema.infer::<String>();
-                            if item
-                                .ty
-                                .add_field(
-                                    "type",
-                                    SchemaField::new(
-                                        Schema::literal_value(LiteralValue::String("Text".into())),
-                                    ),
-                                )
-                            {
-                                item.name = None;
-                            }
-                            item
-                        },
+                        schematic::internal::schema::internally_tagged(
+                            schema.infer::<String>(),
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Text".into())),
+                            ),
+                        ),
                     ),
                     ("Inner".into(), schema.infer::<String>()),
                     ("Other".into(), schema.infer::<String>()),

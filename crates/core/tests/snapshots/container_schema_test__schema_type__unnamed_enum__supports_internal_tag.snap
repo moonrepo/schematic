@@ -10,84 +10,52 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "Text".into(),
                         {
-                            let mut item = {
-                                let mut item = schema.infer::<String>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("Text".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer::<String>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("Text".into())),
+                                ),
+                            );
                             item.description = Some("Docs.".into());
                             item
                         },
                     ),
                     (
                         "List".into(),
-                        {
-                            let mut item = schema.infer::<Vec<String>>();
-                            if item
-                                .ty
-                                .add_field(
-                                    "type",
-                                    SchemaField::new(
-                                        Schema::literal_value(LiteralValue::String("List".into())),
-                                    ),
-                                )
-                            {
-                                item.name = None;
-                            }
-                            item
-                        },
+                        schematic::internal::schema::internally_tagged(
+                            schema.infer::<Vec<String>>(),
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("List".into())),
+                            ),
+                        ),
                     ),
                     (
                         "Pair".into(),
-                        {
-                            let mut item = Schema::tuple(
+                        schematic::internal::schema::internally_tagged(
+                            Schema::tuple(
                                 TupleType::new([
                                     schema.infer::<usize>(),
                                     schema.infer::<bool>(),
                                 ]),
-                            );
-                            if item
-                                .ty
-                                .add_field(
-                                    "type",
-                                    SchemaField::new(
-                                        Schema::literal_value(LiteralValue::String("Pair".into())),
-                                    ),
-                                )
-                            {
-                                item.name = None;
-                            }
-                            item
-                        },
+                            ),
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Pair".into())),
+                            ),
+                        ),
                     ),
                     (
                         "Inner".into(),
                         {
-                            let mut item = {
-                                let mut item = schema.infer_as_nested::<NestedConfig>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("Inner".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer_as_nested::<NestedConfig>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("Inner".into())),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
@@ -95,24 +63,15 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "InnerOpt".into(),
                         {
-                            let mut item = {
-                                let mut item = schema
-                                    .infer_as_nested::<Option<NestedConfig>>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(
-                                                LiteralValue::String("InnerOpt".into()),
-                                            ),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer_as_nested::<Option<NestedConfig>>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerOpt".into()),
+                                    ),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
@@ -120,24 +79,15 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "InnerList".into(),
                         {
-                            let mut item = {
-                                let mut item = schema
-                                    .infer_as_nested::<Vec<NestedConfig>>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(
-                                                LiteralValue::String("InnerList".into()),
-                                            ),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer_as_nested::<Vec<NestedConfig>>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerList".into()),
+                                    ),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
@@ -145,37 +95,26 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "InnerMap".into(),
                         {
-                            let mut item = {
-                                let mut item = schema
-                                    .infer_as_nested::<HashMap<String, CustomConfig>>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(
-                                                LiteralValue::String("InnerMap".into()),
-                                            ),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(
+                                        LiteralValue::String("InnerMap".into()),
+                                    ),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
                     ),
                     (
                         "Unit".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(LiteralValue::String("Unit".into())),
-                                ),
-                            ]),
+                        schematic::internal::schema::tagged_unit(
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Unit".into())),
+                            ),
                         ),
                     ),
                 ],

@@ -13,7 +13,7 @@ fn settings() -> schematic::ConfigSettingMap {
         ("f".into(), ConfigSetting::new("std::collections::HashMap<String, String>")),
         (
             "g".into(),
-            schematic::internal::with_nested_settings::<
+            schematic::internal::settings::with_nested_settings::<
                 NestedExample,
             >(ConfigSetting::new("NestedExample")),
         ),

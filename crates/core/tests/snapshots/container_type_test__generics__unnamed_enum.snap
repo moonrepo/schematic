@@ -42,16 +42,16 @@ impl<T> schematic::PartialConfig for PartialExample<T> {
         finalizing: bool,
         path: schematic::Path,
     ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-        use schematic::internal::*;
-        let mut validate = ValidateManager::new(context, finalizing, path);
+        let mut validate = schematic::internal::validate::ValidateManager::new(
+            context,
+            finalizing,
+            path,
+        );
         match self {
             Self::Value(pa) => {}
             _ => {}
         };
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]
@@ -116,8 +116,6 @@ impl<T> schematic::Schematic for PartialExample<T> {
         Some(name)
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-        let mut schema = <Example<T> as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
-        schema
+        schematic::internal::schema::build_partial_schema::<Example<T>>(schema)
     }
 }

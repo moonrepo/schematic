@@ -9,23 +9,28 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, Some("PREFIX_"));
+    let mut env = schematic::internal::env::EnvManager::new(prefix, Some("PREFIX_"));
     let mut partial = Self::default();
     partial.a = env.get("OVERRIDE")?;
     partial.b = env.get_prefixed("B")?;
     partial.c = env.get_prefixed("C")?;
     partial.d = env
-        .nested(schematic::internal::nested_env_values(self.d.as_ref(), None)?)?;
+        .nested(schematic::internal::layers::nested_env_values(self.d.as_ref(), None)?)?;
     partial.e = env
-        .nested(schematic::internal::nested_env_values(self.e.as_ref(), None)?)?;
+        .nested(schematic::internal::layers::nested_env_values(self.e.as_ref(), None)?)?;
     partial.f = env
         .nested(
-            schematic::internal::nested_env_values(self.f.as_ref(), Some("NESTED_"))?,
+            schematic::internal::layers::nested_env_values(
+                self.f.as_ref(),
+                Some("NESTED_"),
+            )?,
         )?;
     partial.g = env
         .nested(
-            schematic::internal::nested_env_values(self.g.as_ref(), Some("NESTED_"))?,
+            schematic::internal::layers::nested_env_values(
+                self.g.as_ref(),
+                Some("NESTED_"),
+            )?,
         )?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

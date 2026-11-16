@@ -479,11 +479,7 @@ impl Variant {
         let name = &self.ident;
 
         quote! {
-            Self::#name(
-                #value.try_into().map_err(|_| {
-                    schematic::ConfigError::EnumInvalidFallback(#value.to_string())
-                })?
-            )
+            Self::#name(schematic::internal::config_enum::parse_fallback(#value)?)
         }
     }
 
@@ -751,15 +747,16 @@ impl Variant {
         let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
         // A tag reports the variable that picks its variant, like a setting
-        let tag_field = tag_env_var.map(|key| {
-            quote! {
+        let tag_field = match tag_env_var {
+            Some(key) => quote! {
                 {
                     let mut field = SchemaField::new(#name_literal);
                     field.env_var = Some(#key.into());
                     field
                 }
-            }
-        });
+            },
+            None => quote! { SchemaField::new(#name_literal) },
+        };
 
         let mut schema = if let SerdeTagFormat::Unit = tag_format {
             // Every variant is a unit, so the enum is a list of named values
@@ -807,58 +804,26 @@ impl Variant {
                 // { "tag": "name", ...value }
                 SerdeTagFormat::Internal(tag) => {
                     if unit {
-                        let field = tag_field.unwrap_or_else(|| name_literal.clone());
-
-                        quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #field),
-                            ]))
-                        }
+                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
                     } else {
-                        let field =
-                            tag_field.unwrap_or_else(|| quote! { SchemaField::new(#name_literal) });
-
-                        // The tag makes it a different shape to the type it holds,
-                        // so it's no longer that named type, which a renderer
-                        // would otherwise reference without the tag
                         wrap(quote! {
-                            {
-                                let mut item = #inner;
-
-                                if item.ty.add_field(#tag, #field) {
-                                    item.name = None;
-                                }
-
-                                item
-                            }
+                            schematic::internal::schema::internally_tagged(#inner, #tag, #tag_field)
                         })
                     }
                 }
                 // { "tag": "name" } | { "tag": "name", "content": value }
                 SerdeTagFormat::Adjacent(tag, content) => {
-                    match (unit, tag_field) {
-                        (true, field) => {
-                            let field = field.unwrap_or_else(|| name_literal.clone());
-
-                            quote! {
-                                Schema::structure(StructType::new([
-                                    (#tag.into(), #field),
-                                ]))
-                            }
+                    if unit {
+                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
+                    } else {
+                        quote! {
+                            schematic::internal::schema::adjacently_tagged(
+                                #tag,
+                                #tag_field,
+                                #content,
+                                #partial_inner,
+                            )
                         }
-                        // The entries are each a field, as the tag's is
-                        (false, Some(field)) => quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #field),
-                                (#content.into(), SchemaField::from(#partial_inner)),
-                            ]))
-                        },
-                        (false, None) => quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
-                                (#content.into(), #partial_inner),
-                            ]))
-                        },
                     }
                 }
             }
@@ -1032,10 +997,6 @@ impl Variant {
                     let key = setting.get_key();
                     let default = setting.impl_partial_default_value();
 
-                    if default.requires_internal {
-                        res.requires_internal = true;
-                    }
-
                     if default.no_value {
                         rows.push(quote! { #key: None });
 
@@ -1110,11 +1071,7 @@ impl Variant {
 
                 // Only a single value that isn't nested may have one
                 if let Some(default) = self.impl_default_value() {
-                    if default.requires_internal {
-                        res.requires_internal = true;
-                    }
-
-                    items[0] = default.value;
+                    items[0] = default;
                 }
 
                 let value = if self.is_default() {
@@ -1156,29 +1113,22 @@ impl Variant {
 
     /// Generate the `default` value this tuple variant holds, from
     /// `#[setting(default = value)]`.
-    fn impl_default_value(&self) -> Option<ImplResult> {
+    fn impl_default_value(&self) -> Option<TokenStream> {
         let expr = self.get_default_value()?;
-        let mut res = ImplResult::default();
 
-        res.value = match expr {
+        Some(match expr {
             // Handler functions return an optional value,
             // falling back to the default of its type
             Expr::Path(func) if !path_names_a_value(&func.path) => {
-                res.requires_internal = true;
-
-                quote! { handle_default_result(#func(context))?.unwrap_or_default() }
+                quote! { schematic::internal::defaults::handle_default_result(#func(context))?.unwrap_or_default() }
             }
             // A variant has no partial `Option` of its own, so every layer applies
             expr => {
                 let value = &self.values[0];
-                let default = value.impl_default_value(expr, &value.get_partial_layers());
 
-                res.requires_internal = default.requires_internal;
-                default.value
+                value.impl_default_value(expr, &value.get_partial_layers())
             }
-        };
-
-        Some(res)
+        })
     }
 
     /// Whether the enum's environment layer reads this variant's variables.
@@ -1256,10 +1206,10 @@ impl Variant {
                 // The value is discarded when nothing is read, so its default
                 // only stands in
                 let read = if value.is_outer_option_wrapped() {
-                    quote! { env.nested(schematic::internal::nested_env_values(#binding.as_ref(), None)?)? }
+                    quote! { env.nested(schematic::internal::layers::nested_env_values(#binding.as_ref(), None)?)? }
                 } else {
                     quote! {
-                        env.nested(schematic::internal::nested_env_values(Some(#binding), None)?)?
+                        env.nested(schematic::internal::layers::nested_env_values(Some(#binding), None)?)?
                             .unwrap_or_default()
                     }
                 };
@@ -1336,13 +1286,6 @@ impl Variant {
                     .map(|setting| setting.get_key())
                     .collect::<Vec<_>>();
 
-                // A variant without settings reads none of the value
-                let value = if keys.is_empty() {
-                    quote! { _ }
-                } else {
-                    quote! { value }
-                };
-
                 let (_, ty_generics, where_clause) = generics.split_for_impl();
                 let marker = if generics.params.is_empty() {
                     quote! {}
@@ -1350,6 +1293,23 @@ impl Variant {
                     quote! {
                         #[serde(skip)]
                         __marker: std::marker::PhantomData<#partial_name #ty_generics>,
+                    }
+                };
+
+                // A variant without settings reads none of the value
+                let attempt = if keys.is_empty() {
+                    quote! {
+                        if attempts.variant::<Variant #ty_generics>(#name_string).is_some() {
+                            return Ok(#partial_name::#name {});
+                        }
+                    }
+                } else {
+                    quote! {
+                        if let Some(value) = attempts.variant::<Variant #ty_generics>(#name_string) {
+                            return Ok(#partial_name::#name {
+                                #(#keys: value.#keys),*
+                            });
+                        }
                     }
                 };
 
@@ -1362,12 +1322,7 @@ impl Variant {
                             #marker
                         }
 
-                        match schematic::internal::deserialize_untagged_variant::<Variant #ty_generics>(&content) {
-                            Ok(#value) => return Ok(#partial_name::#name {
-                                #(#keys: value.#keys),*
-                            }),
-                            Err(error) => errors.push((#name_string, error)),
-                        }
+                        #attempt
                     }
                 }
             }
@@ -1382,9 +1337,8 @@ impl Variant {
                     let ty = &types[0];
 
                     quote! {
-                        match schematic::internal::deserialize_untagged_variant::<#ty>(&content) {
-                            Ok(value) => return Ok(#partial_name::#name(value)),
-                            Err(error) => errors.push((#name_string, error)),
+                        if let Some(value) = attempts.variant::<#ty>(#name_string) {
+                            return Ok(#partial_name::#name(value));
                         }
                     }
                 } else {
@@ -1392,20 +1346,17 @@ impl Variant {
                     let indexes = (0..types.len()).map(Index::from).collect::<Vec<_>>();
 
                     quote! {
-                        match schematic::internal::deserialize_untagged_variant::<(#(#types),*)>(&content) {
-                            Ok(value) => return Ok(#partial_name::#name(#(value.#indexes),*)),
-                            Err(error) => errors.push((#name_string, error)),
+                        if let Some(value) = attempts.variant::<(#(#types),*)>(#name_string) {
+                            return Ok(#partial_name::#name(#(value.#indexes),*));
                         }
                     }
                 }
             }
             // Unit variants in untagged enums are represented as null
             Fields::Unit => quote! {
-                if schematic::internal::is_null_content(&content) {
+                if attempts.unit(#name_string) {
                     return Ok(#partial_name::#name);
                 }
-
-                errors.push((#name_string, "expected null".to_owned()));
             },
         };
 
@@ -1428,7 +1379,7 @@ impl Variant {
         let aliases = self.get_aliases();
 
         res.value = quote! {
-            Some(#value #(| #aliases)*) => return Ok(#partial_name::#name),
+            #value #(| #aliases)* => Some(#partial_name::#name),
         };
 
         res
@@ -1556,11 +1507,10 @@ impl Variant {
                     .iter()
                     .map(|setting| setting.impl_partial_merge().value);
 
-                res.requires_internal = true;
                 res.value = quote! {
                     Self::#name { #(#prev),* } => {
                         if let Self::#name { #(#next),* } = next {
-                            MergeManager::new(context)
+                            schematic::internal::merge::MergeManager::new(context)
                                 #(#merges)*;
                         } else {
                             *self = next;
@@ -1629,8 +1579,6 @@ impl Variant {
                         });
 
                         if mergeable {
-                            let mut requires_internal = false;
-
                             res.value = self.map_unnamed_match(
                                 &self.ident,
                                 fields,
@@ -1647,10 +1595,8 @@ impl Variant {
                                             // manager when it's optional
                                             if value.is_merge_list() {
                                                 if value.is_outer_option_wrapped() {
-                                                    requires_internal = true;
-
                                                     return quote! {
-                                                        MergeManager::new(context).apply_with(
+                                                        schematic::internal::merge::MergeManager::new(context).apply_with(
                                                             #o,
                                                             #i,
                                                             schematic::merge::merge_list,
@@ -1683,12 +1629,10 @@ impl Variant {
                                             );
 
                                             // Wrap with the manager when the value is optional
-                                            if merge.requires_internal {
-                                                requires_internal = true;
-
+                                            if value.is_outer_option_wrapped() {
                                                 let inner = merge.value;
 
-                                                quote! { MergeManager::new(context)#inner; }
+                                                quote! { schematic::internal::merge::MergeManager::new(context)#inner; }
                                             } else {
                                                 merge.value
                                             }
@@ -1704,8 +1648,6 @@ impl Variant {
                                     }
                                 },
                             );
-
-                            res.requires_internal = requires_internal;
                         } else {
                             res.no_value = true;
                         }

@@ -351,9 +351,7 @@ impl Value {
     /// outermost collection, so only the layers outside of it are applied.
     /// Handler functions are left to the caller, as what they return
     /// differs between a setting and a variant.
-    pub fn impl_default_value(&self, expr: &Expr, layers: &[&Layer]) -> ImplResult {
-        let mut res = ImplResult::default();
-
+    pub fn impl_default_value(&self, expr: &Expr, layers: &[&Layer]) -> TokenStream {
         let mut value = match expr {
             Expr::Array(_)
             | Expr::Call(_)
@@ -366,10 +364,17 @@ impl Value {
             Expr::Lit(lit) => match &lit.lit {
                 Lit::Str(string) => {
                     let ty = self.get_default_target_type(layers);
-                    res.requires_internal = true;
 
+                    // Both traits must be in scope for the call to pick one
                     quote! {
-                        (&&DefaultString::<#ty>::new()).parse_default(#string)?
+                        {
+                            use schematic::internal::defaults::{
+                                DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
+                            };
+
+                            (&&schematic::internal::defaults::DefaultString::<#ty>::new())
+                                .parse_default(#string)?
+                        }
                     }
                 }
                 other => quote! { #other },
@@ -397,8 +402,7 @@ impl Value {
             value = wrap_layer(layer, value);
         }
 
-        res.value = value;
-        res
+        value
     }
 
     /// The type that a string literal default converts into. It's written
@@ -577,12 +581,14 @@ impl Value {
         let context = self.get_nested_context();
         let (value, result) = if self.is_collection() {
             (
-                quote! { schematic::internal::finalize_with_layers(#layer_var, #context)? },
-                Some(quote! { schematic::internal::finalize_with_layers(#layer_var, #context) }),
+                quote! { schematic::internal::layers::finalize_with_layers(#layer_var, #context)? },
+                Some(
+                    quote! { schematic::internal::layers::finalize_with_layers(#layer_var, #context) },
+                ),
             )
         } else if env_boundary {
             (
-                quote! { schematic::internal::finalize_with_env(#layer_var, #context)? },
+                quote! { schematic::internal::layers::finalize_with_env(#layer_var, #context)? },
                 None,
             )
         } else {
@@ -655,7 +661,6 @@ impl Value {
         let (nested, nested_context) = self.get_nested_method("nested");
         let (nested_boxed, _) = self.get_nested_method("nested_boxed");
 
-        res.requires_internal = manager;
         res.value = match (manager, boxed) {
             (true, true) => quote! { .#nested_boxed(#prev, #next #nested_context)? },
             (true, false) => quote! { .#nested(#prev, #next #nested_context)? },
