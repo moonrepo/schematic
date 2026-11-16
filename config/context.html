@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -219,6 +219,33 @@ let result = ConfigLoader::&lt;ExampleConfig&gt;::new()
 <p>Refer to the <a href="./struct/default.html">default values</a>, <a href="./struct/merge.html">merge strategies</a>, and
 <a href="./struct/validate.html">validation rules</a> sections for more information on how to use context.</p>
 </blockquote>
+<h2 id="nested-configs-with-another-context"><a class="header" href="#nested-configs-with-another-context">Nested configs with another context</a></h2>
+<p>A <a href="./nested.html">nested config</a> receives its parent’s context, so by default it must declare the
+same one. A config from a library can’t know an application’s context, so the <code>context</code> field of
+<code>#[setting(nested)]</code> maps the parent’s context to the nested config’s own, with a function from a
+reference to one to a reference to the other.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(context = AppContext)]
+struct AppConfig {
+	// A library config, whose context is `()`
+	#[setting(nested, context = schematic::context::unit)]
+	pub lib: LibConfig,
+
+	// A config whose context is part of the application's
+	#[setting(nested, context = plugin_context)]
+	pub plugin: PluginConfig,
+}
+
+fn plugin_context(context: &amp;AppContext) -&gt; &amp;PluginContext {
+	&amp;context.plugin
+}
+<span class="boring">}</span></code></pre>
+<p>The mapped context is what the nested config’s own default values, merge strategies, and validation
+rules receive. <code>schematic::context::unit</code> passes <code>()</code>, whatever the parent’s context. A
+<code>Default</code> of the parent, which has no context to map, gives each nested config the <code>Default</code> of its
+own context instead.</p>
 <h2 id="metadata"><a class="header" href="#metadata">Metadata</a></h2>
 <p>Alongside the configuration itself, the derive records a little metadata about each
 <a href="./settings.html">setting</a>, reachable with

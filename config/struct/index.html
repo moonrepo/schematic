@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -196,11 +196,43 @@ enum Host {
 	Remote(HostConfig),
 }
 <span class="boring">}</span></code></pre>
-<h2 id="enum-caveats"><a class="header" href="#enum-caveats">Enum caveats</a></h2>
-<p><a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> can only be derived for enums with tuple or unit variants, but not struct/named
-variants. Why not struct variants? Because with this pattern, the enum acts like a union type. This
-also allows for <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> functionality, like partials, merging, and validation, to be
-applied to the contents of each variant.</p>
+<h2 id="enum-variants"><a class="header" href="#enum-variants">Enum variants</a></h2>
+<p>An enum’s variants may be unit, tuple, or named, and mixed freely. A tuple variant is a single
+setting, so the values it holds are written in full, while each field of a named variant is a
+setting of its own, like the fields of a struct.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Source {
+	#[setting(default)]
+	File {
+		#[setting(default = "config.json")]
+		path: String,
+		#[setting(default = 30, validate = schematic::validate::in_range(1, 60))]
+		timeout: u32,
+	},
+	Url {
+		#[setting(required)]
+		address: Option&lt;String&gt;,
+		#[setting(nested)]
+		retry: RetryConfig,
+	},
+	Inline(String),
+}
+<span class="boring">}</span></code></pre>
+<p>Every field of a named variant is optional within the <a href="../partial.html">partial</a>, so a layer can
+provide some of them and leave the rest to another. When two layers pick the same variant, its
+fields are merged one by one, each with its own <code>merge</code>, while a layer picking another variant
+replaces it. Each field takes the same <code>#[setting]</code> fields as a struct’s, except <code>extend</code>. The
+variant itself takes only <code>default</code>, <code>exclude</code>, <code>partial</code>, and the serde fields, while the fields
+hold the rest.</p>
+<p>A source may pick a variant other than the default, so the defaults and
+<a href="./env.html#enums">environment variables</a> of a named variant’s fields are read for the variant the
+sources picked, and apply however it was picked. A field that fails validation is reported under
+the variant, like <code>source.url.address</code>.</p>
+<p>The fields are named as written, unless the variant has a <code>#[serde(rename_all)]</code> of its own, or the
+enum has a <code>rename_all_fields</code>. The enum’s own <code>rename_all</code> names the variants, as with serde.</p>
 <blockquote>
 <p>If you’d like to support unit-only enums, you can use the <a href="../enum/index.html"><code>ConfigEnum</code> trait</a>
 instead.</p>
@@ -209,10 +241,11 @@ instead.</p>
 <p>The following fields are supported for the <code>#[config]</code> container attribute:</p>
 <ul>
 <li><code>allow_unknown_fields</code> - Removes the serde <code>deny_unknown_fields</code> from the
-<a href="../partial.html">partial struct</a>. Defaults to <code>false</code>.</li>
+<a href="../partial.html">partial struct</a>, or an enum with named variants. Defaults to <code>false</code>.</li>
 <li><code>context</code> - Sets the struct to be used as the <a href="../context.html">context</a>. Defaults to <code>None</code>.</li>
 <li><code>env_prefix</code> - Sets the prefix to use for <a href="./env.html#container-prefixes">environment variable</a>
-mapping. Defaults to <code>None</code>.</li>
+mapping, of a struct’s fields or a named variant’s, and of a tagged enum’s tag. Defaults to
+<code>None</code>.</li>
 <li><code>partial</code> - Forwards attributes to the <a href="../partial.html">partial</a>.</li>
 </ul>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -251,6 +284,9 @@ struct Example {
 <p>These values can also be applied using <code>#[serde]</code>, which is useful if you want to apply them to
 the main struct as well, and not just the partial struct.</p>
 </blockquote>
+<p>The partial of an enum with a named variant denies unknown fields as well. Serde applies it to the
+enum as a whole, so every named variant denies them, as do the keys around an internally or
+adjacently tagged variant, unless a named variant flattens a map, which collects them.</p>
 <h3 id="enum-tagging"><a class="header" href="#enum-tagging">Enum tagging</a></h3>
 <p>Serde’s tagging attributes are read straight off the <code>#[serde]</code> attribute and forwarded to the
 partial, so <code>untagged</code>, <code>tag</code>, <code>content</code>, and <code>expecting</code> work as they normally would.</p>
@@ -278,6 +314,26 @@ holds it.</p>
 <p>A unit-only enum is always externally tagged, no matter what you set. Marking one <code>untagged</code>
 would leave its variants deserializable only from <code>null</code>.</p>
 </blockquote>
+<p>An untagged named variant is attempted like any other, and unless unknown fields are allowed, fails
+on a field it doesn’t know, so an input with an extra key moves on to the next variant.</p>
+<h4 id="yaml-and-externally-tagged-variants"><a class="header" href="#yaml-and-externally-tagged-variants">YAML and externally tagged variants</a></h4>
+<p>An enum without <code>tag</code> or <code>untagged</code> is externally tagged, so a variant holding a value is written as
+a map of its name to the value, like <code>{ "file": { "path": "a" } }</code> in JSON. YAML is the exception:
+its parser, <code>serde_norway</code>, only reads such a variant from a YAML tag, and fails on the map, with
+<code>expected a YAML tag starting with '!'</code>.</p>
+<pre><code class="language-yaml"># Loads
+source: !file
+  path: a
+
+# Fails
+source:
+  file:
+    path: a
+</code></pre>
+<p>A unit variant is still written as its name, like <code>source: local</code>. For a YAML config, prefer an
+internally tagged enum, with <code>#[serde(tag = "type")]</code>, which is written the same in every format,
+and which JSON schemas and templates describe as it’s loaded. They describe an externally tagged
+variant as the map, which YAML doesn’t load.</p>
 <h3 id="literal-unions"><a class="header" href="#literal-unions">Literal unions</a></h3>
 <p>A setting that accepts a few named values, or a value of another type, like
 <code>"local" | "remote" | boolean</code>, is known as a literal union. Leave the enum externally tagged, so that

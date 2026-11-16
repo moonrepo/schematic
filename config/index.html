@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -233,8 +233,8 @@ struct AppConfig {
 <span class="boring">}</span></code></pre>
 <h3 id="loading-sources"><a class="header" href="#loading-sources">Loading sources</a></h3>
 <p>When all of your structs and enums have been defined, you can then load, parse, merge, and validate
-a configuration from one or many sources. A source is either a file path, secure URL, or inline code
-string.</p>
+a configuration from one or many sources. A source is either a file path, secure URL, inline code
+string, or a partial in memory.</p>
 <p>Begin by importing the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html"><code>ConfigLoader</code></a> struct and
 initializing it with the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>
@@ -253,7 +253,7 @@ methods. For URLs, use the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url"><code>ConfigLoader::url()</code></a>
 method (requires the <code>url</code> Cargo feature, which is <em>not</em> enabled by default). For inline code, use the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code"><code>ConfigLoader::code()</code></a>
-method, which requires an explicit format.</p>
+method, which requires an explicit format, and names the source within errors.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>loader.code("secure: false", "example.yml")?;
@@ -263,10 +263,31 @@ loader.url("https://ordomain.com/to/config.yaml")?;
 <blockquote>
 <p>The formats to use are derived from the trailing file extension.</p>
 </blockquote>
+<p>An optional file that doesn’t exist provides nothing, so it’s left out of <code>ConfigLoadResult.layers</code>.</p>
+<p>A <a href="./partial.html">partial</a> that’s already in memory, like one parsed from command line arguments, is
+added with the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.partial"><code>ConfigLoader::partial()</code></a>
+method, along with a name to use within error messages. Nothing is parsed, but it’s otherwise loaded
+like any other source: merged in the order it was added, validated, and able to
+<a href="./struct/extend.html">extend</a> other sources. A relative file it extends is resolved against the
+working directory.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>loader.partial("CLI arguments", PartialAppConfig {
+	port: Some(8080),
+	..Default::default()
+});
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Like every source, a partial sits below <a href="./struct/env.html">environment variables</a>, which are
+applied last. For command line arguments to take precedence over the environment, read the
+variables through your argument parser instead, such as with clap’s <code>env</code> argument, rather than
+with <code>#[setting(env)]</code>.</p>
+</blockquote>
 <p>And lastly call the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load"><code>ConfigLoader::load()</code></a>
 method to generate the final configuration. This methods returns a result, which includes the final
-configuration, as well as all of the <a href="./partial.html">partial layers</a> that were loaded.</p>
+configuration, as well as all of the <a href="./partial.html">partial layers</a> that were merged into it.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let result = loader.load()?;
@@ -274,6 +295,15 @@ configuration, as well as all of the <a href="./partial.html">partial layers</a>
 result.config; // AppConfig
 result.layers; // Vec&lt;Layer&lt;PartialAppConfig&gt;&gt;
 <span class="boring">}</span></code></pre>
+<p>The layers are in order of precedence, and each one holds only the values it set, so a value can be
+traced to where it came from. The <a href="./struct/default.html">default values</a> come first, as
+<code>Source::Defaults</code>, then each source in order, and the
+<a href="./struct/env.html">environment variables</a> last, as <code>Source::EnvVars</code>. The default values and
+environment variables are left out when they set nothing.</p>
+<p>Both are read against what the sources set, so they hold what applies to it: the defaults and
+variables of the variant an enum’s sources picked, and those of an optional nested config only when
+it’s present. The environment variables are read first, as a tag’s variable can
+<a href="./struct/env.html#picking-a-variant">pick a variant</a>, and the defaults then go under the result.</p>
 <h3 id="automatic-schemas"><a class="header" href="#automatic-schemas">Automatic schemas</a></h3>
 <p>When the <code>schema</code> Cargo feature is enabled, the
 <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait will be
@@ -298,8 +328,12 @@ struct AppConfig {}
 <li>Pkl - Uses <code>rpkl</code> and requires the <code>pkl</code> Cargo feature.</li>
 <li>RON - Uses <code>ron</code> and requires the <code>ron</code> Cargo feature.</li>
 <li>TOML - Uses <code>toml</code> and requires the <code>toml</code> Cargo feature.</li>
-<li>YAML - Uses <code>serde_norway</code> and requires the <code>yaml</code> Cargo feature.</li>
+<li>YAML - Uses <code>serde_norway</code> and requires the <code>yaml</code> Cargo feature. An externally tagged enum
+variant that holds a value is written as a YAML tag, like <code>!file</code>, rather than a map
+(<a href="./struct/index.html#yaml-and-externally-tagged-variants">more</a>).</li>
 </ul>
+<p>None of them is enabled by default, so enable the feature of each format you load. A source with no
+format to parse it fails to load, with an error that names the feature its extension needs.</p>
 <h2 id="cargo-features"><a class="header" href="#cargo-features">Cargo features</a></h2>
 <p>The following Cargo features are available:</p>
 <ul>
@@ -314,6 +348,9 @@ struct AppConfig {}
 <li><code>validate</code> (default) - Enables setting value validation.</li>
 <li><code>yaml</code> - Enables YAML.</li>
 </ul>
+<p><code>env</code>, <code>extends</code>, <code>url</code>, and <code>validate</code> only apply to configs, so each enables <code>config</code> as well. The
+dependencies that only configs use are only compiled with <code>config</code>, so a build for
+<a href="../schema/index.html">schemas</a> alone, or without any feature, doesn’t pull them in.</p>
 
                     </main>
 

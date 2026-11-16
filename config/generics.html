@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -221,6 +221,35 @@ struct Wrapper&lt;T: Setting&gt; {
 Without it serde would infer a <code>T: Deserialize&lt;'de&gt;</code> bound of its own, which is ambiguous against
 the <code>DeserializeOwned</code> already in scope. Supplying your own bound through
 <code>#[config(partial(serde(bound(...))))]</code> suppresses the generated one.</p>
+<h2 id="nesting-generic-configs"><a class="header" href="#nesting-generic-configs">Nesting generic configs</a></h2>
+<p>A generic config can be nested like any other, including within an <code>Option</code> or a collection. The
+type it’s written with is the config, so the derive doesn’t look inside its type arguments.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub names: Wrapper&lt;String&gt;,
+
+	#[setting(nested)]
+	pub counts: Vec&lt;Wrapper&lt;usize&gt;&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A type parameter can also be the nested config. Its partial is derived like any other, which bounds
+every type parameter, so it needs the <a href="#bounds-are-not-inferred">same bounds</a> as any other
+parameter. Its partial is printed and compared with the rest, and shares the parent’s
+<a href="./context.html">context</a>, which the where clause states:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct Outer&lt;C: Config + Setting&gt;
+where
+	C::Partial: Debug + PartialEq + PartialConfig&lt;Context = ()&gt;,
+{
+	#[setting(nested)]
+	pub inner: C,
+}
+<span class="boring">}</span></code></pre>
 <h2 id="schema-names"><a class="header" href="#schema-names">Schema names</a></h2>
 <p>Schemas are keyed by name alone, so every instantiation of a generic type would otherwise claim the
 same one. The derive appends each type argument to the name, so <code>Wrapper&lt;String&gt;</code> becomes

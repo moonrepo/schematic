@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -181,14 +181,15 @@
 <p>In Schematic, there are 2 forms of default values:</p>
 <ul>
 <li>The first is applied through the <a href="../partial.html">partial configuration</a>, is defined with the
-<code>#[setting]</code> attribute, and is the first layer to be merged.</li>
+<code>#[setting]</code> attribute, and is the layer below every other.</li>
 <li>The second is on the <a href="../index.html">final configuration</a> itself, and uses the <code>Default</code> trait to
 generate the final value if none was provided. This acts more like a fallback. To fail instead,
 mark the setting as <a href="./validate.html#required-settings">required</a>.</li>
 </ul>
 <p>To define a default value, use the <code>#[setting(default)]</code> attribute. The <code>default</code> attribute field
-accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
-literals, paths that name a value, and function and macro calls.</p>
+accepts any expression of the setting’s type, like a number, a boolean, an array, tuple, or struct
+literal, a path that names a value, or a function, method, or macro call. A string converts into the
+setting’s type, and a bare path in <code>snake_case</code> names a <a href="#handler-function">handler function</a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
@@ -210,8 +211,13 @@ struct AppConfig {
 
 	#[setting(default = Retry { attempts: 3, backoff: 500 })]
 	pub retry: Retry,
+
+	#[setting(default = PathBuf::from("/etc").join("app"))]
+	pub config_dir: PathBuf,
 }
 <span class="boring">}</span></code></pre>
+<p>A string that fails to convert, or a handler function that fails, is an error naming the setting,
+like <code>Invalid default value for port. invalid digit found in string</code>.</p>
 <h3 id="paths-value-or-function"><a class="header" href="#paths-value-or-function">Paths: value or function?</a></h3>
 <p>A bare path is ambiguous — <code>LevelFilter::Debug</code> names a value, while <code>find_unused_port</code> names a
 <a href="#handler-function">handler function</a> to call. Nothing at compile time can tell them apart, so
@@ -264,6 +270,22 @@ enum Compress {
 <p>A value can’t be provided for a variant holding several values, or a
 <a href="../nested.html">nested</a> configuration, which sources its defaults from its own settings.</p>
 </blockquote>
+<p>A named variant takes no value either, as each of its fields takes a <code>default</code> of its own. They’re
+applied whenever the variant is picked, not only when it’s the default, as the defaults are read for
+the variant the sources picked, so a source that picks <code>Url</code> below gets a <code>timeout</code> of <code>30</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Url {
+		address: String,
+		#[setting(default = 30)]
+		timeout: u32,
+	},
+}
+<span class="boring">}</span></code></pre>
 <h2 id="handler-function"><a class="header" href="#handler-function">Handler function</a></h2>
 <p>If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the <a href="../context.html">context</a> as the first argument, and can

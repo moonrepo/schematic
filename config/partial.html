@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -205,6 +205,8 @@ pub struct PartialExampleConfig {
 	pub optional: Option&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre>
+<p>The derives on a partial are always the same, so every setting’s type has to implement them. See
+<a href="./settings.html#required-traits">required traits</a>.</p>
 <p>So what are partials used for exactly? Partials are used for the entire parsing, layering,
 extending, and merging process, and ultimately become the <a href="./index.html">final configuration</a>.</p>
 <p>When deserializing a source with serde, we utilize the partial config as the target type, because

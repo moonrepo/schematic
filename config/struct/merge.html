@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -201,6 +201,79 @@ enum Projects {
 <blockquote>
 <p>We provide a handful of built-in merge functions in the
 <a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
+</blockquote>
+<h2 id="built-in-functions"><a class="header" href="#built-in-functions">Built-in functions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Merges</th></tr>
+</thead>
+<tbody>
+<tr><td><code>discard</code></td><td>Neither value, so the setting is <code>None</code>.</td></tr>
+<tr><td><code>preserve</code></td><td>The previous value.</td></tr>
+<tr><td><code>replace</code></td><td>The next value, which is the default for every setting.</td></tr>
+<tr><td><code>append_vec</code>, <code>prepend_vec</code></td><td>A <code>Vec</code>, with the next items after or before the previous.</td></tr>
+<tr><td><code>append_vec_unique</code></td><td>A <code>Vec</code>, appending only the next items it doesn’t contain yet.</td></tr>
+<tr><td><code>merge_btreemap</code>, <code>merge_hashmap</code>, <code>merge_indexmap</code></td><td>A map, the next value of a key replacing the previous.</td></tr>
+<tr><td><code>merge_btreeset</code>, <code>merge_hashset</code>, <code>merge_indexset</code></td><td>A set.</td></tr>
+<tr><td><code>merge_iter</code></td><td>Any collection that implements <code>Extend</code>, like a <code>VecDeque</code>.</td></tr>
+<tr><td><code>merge_partials</code></td><td>A map of <a href="../nested.html">nested configs</a>, by key.</td></tr>
+<tr><td><code>merge_list</code></td><td>A <a href="#merging-chosen-by-the-source"><code>MergeList</code></a>, as it directs.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The hash-based functions support any hasher, like <code>FxHashMap</code>’s, and the <code>indexmap</code> functions
+require the <code>type_indexmap</code> Cargo feature.</p>
+<p><code>append_vec_unique</code> is useful for a list with a default, as it doesn’t repeat the default items that
+a source lists again.</p>
+<h3 id="nested-maps"><a class="header" href="#nested-maps">Nested maps</a></h3>
+<p>A collection of nested configs is replaced by default, as there’s no way to pair up its items. For a
+map, <code>merge_partials</code> pairs them up by key: a config under a key in both layers is merged with its
+own strategies, and a key only in the next layer is added.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(nested, merge = schematic::merge::merge_partials)]
+	pub plugins: HashMap&lt;String, PluginConfig&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>It supports <code>HashMap</code>, <code>BTreeMap</code>, and <code>IndexMap</code>, or any map that implements
+<a href="https://docs.rs/schematic/latest/schematic/merge/trait.MergeableMap.html"><code>MergeableMap</code></a>. The
+configs receive the parent’s <a href="../context.html">context</a>, so it can’t be combined with a nested
+<code>context</code> function.</p>
+<h2 id="merging-chosen-by-the-source"><a class="header" href="#merging-chosen-by-the-source">Merging chosen by the source</a></h2>
+<p>A <code>merge</code> function decides how every source merges a setting. To let each source decide for itself,
+use a <a href="https://docs.rs/schematic/latest/schematic/struct.MergeList.html"><code>MergeList</code></a>. It’s merged
+with the <code>merge_list</code> function without a <code>merge</code> of its own.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Config, MergeList};
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(default = MergeList::new(vec!["localhost".into()]))]
+	pub allowed_hosts: MergeList&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A source then writes a list, which replaces the previous items, or a map of how to merge with them,
+with any of the <code>prepend</code>, <code>append</code>, and <code>replace</code> keys.</p>
+<pre><code class="language-yaml"># Replaces the previous items, including the default
+allowed_hosts: [example.com]
+
+# Adds to the previous items
+allowed_hosts:
+  prepend: [example.com]
+  append: [example.org]
+</code></pre>
+<p>A <code>MergeList</code> derefs to a slice of its items, so it reads like a <code>Vec</code>, and the length validators
+accept it. Its schema is a union of the list and the map, so editors suggest both.</p>
+<p>The derive knows a <code>MergeList</code> by name, including within an <code>Option</code> or a variant, so a <code>merge</code> of
+the setting’s own still takes precedence, and a collection of them is replaced like any other.</p>
+<blockquote>
+<p>Through a type alias the derive can’t tell it’s a <code>MergeList</code>, so add
+<code>#[setting(merge = schematic::merge::merge_list)]</code>, or it’s replaced like any other setting, and a
+source that appends loses the previous items. Items are plain values for now, not nested configs.</p>
 </blockquote>
 <h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
 <p>You can also define your own function for merging values.</p>

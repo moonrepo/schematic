@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -266,8 +266,9 @@ string, but some tools support markdown through another field called <code>markd
 <p>This is a non-standard extension to the JSON schema specification.</p>
 </blockquote>
 <h3 id="required-fields"><a class="header" href="#required-fields">Required fields</a></h3>
-<p>When a struct is rendered, automatically mark all non-<code>Option</code> struct fields as required, and
-include them in the JSON schema
+<p>When a struct is rendered, automatically mark every struct field that may not be omitted as
+required, which is any that isn’t <a href="../struct.html#optional-and-nullable-fields">optional</a>, and include
+them in the JSON schema
 <a href="https://json-schema.org/understanding-json-schema/reference/object#required"><code>required</code> field</a>.
 This is enabled by default.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]

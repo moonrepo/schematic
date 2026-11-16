@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-774c0fcb.js"></script>
@@ -256,8 +256,8 @@ struct AppConfig {
 <span class="boring">}</span></code></pre>
 <h3 id="loading-sources"><a class="header" href="#loading-sources">Loading sources</a></h3>
 <p>When all of your structs and enums have been defined, you can then load, parse, merge, and validate
-a configuration from one or many sources. A source is either a file path, secure URL, or inline code
-string.</p>
+a configuration from one or many sources. A source is either a file path, secure URL, inline code
+string, or a partial in memory.</p>
 <p>Begin by importing the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html"><code>ConfigLoader</code></a> struct and
 initializing it with the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a>
@@ -276,7 +276,7 @@ methods. For URLs, use the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.url"><code>ConfigLoader::url()</code></a>
 method (requires the <code>url</code> Cargo feature, which is <em>not</em> enabled by default). For inline code, use the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.code"><code>ConfigLoader::code()</code></a>
-method, which requires an explicit format.</p>
+method, which requires an explicit format, and names the source within errors.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>loader.code("secure: false", "example.yml")?;
@@ -286,10 +286,31 @@ loader.url("https://ordomain.com/to/config.yaml")?;
 <blockquote>
 <p>The formats to use are derived from the trailing file extension.</p>
 </blockquote>
+<p>An optional file that doesn’t exist provides nothing, so it’s left out of <code>ConfigLoadResult.layers</code>.</p>
+<p>A <a href="#partials">partial</a> that’s already in memory, like one parsed from command line arguments, is
+added with the
+<a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.partial"><code>ConfigLoader::partial()</code></a>
+method, along with a name to use within error messages. Nothing is parsed, but it’s otherwise loaded
+like any other source: merged in the order it was added, validated, and able to
+<a href="#extendable-sources">extend</a> other sources. A relative file it extends is resolved against the
+working directory.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>loader.partial("CLI arguments", PartialAppConfig {
+	port: Some(8080),
+	..Default::default()
+});
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Like every source, a partial sits below <a href="#environment-variables">environment variables</a>, which are
+applied last. For command line arguments to take precedence over the environment, read the
+variables through your argument parser instead, such as with clap’s <code>env</code> argument, rather than
+with <code>#[setting(env)]</code>.</p>
+</blockquote>
 <p>And lastly call the
 <a href="https://docs.rs/schematic/latest/schematic/struct.ConfigLoader.html#method.load"><code>ConfigLoader::load()</code></a>
 method to generate the final configuration. This methods returns a result, which includes the final
-configuration, as well as all of the <a href="#partials">partial layers</a> that were loaded.</p>
+configuration, as well as all of the <a href="#partials">partial layers</a> that were merged into it.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let result = loader.load()?;
@@ -297,6 +318,15 @@ configuration, as well as all of the <a href="#partials">partial layers</a> that
 result.config; // AppConfig
 result.layers; // Vec&lt;Layer&lt;PartialAppConfig&gt;&gt;
 <span class="boring">}</span></code></pre>
+<p>The layers are in order of precedence, and each one holds only the values it set, so a value can be
+traced to where it came from. The <a href="#default-values">default values</a> come first, as
+<code>Source::Defaults</code>, then each source in order, and the
+<a href="#environment-variables">environment variables</a> last, as <code>Source::EnvVars</code>. The default values and
+environment variables are left out when they set nothing.</p>
+<p>Both are read against what the sources set, so they hold what applies to it: the defaults and
+variables of the variant an enum’s sources picked, and those of an optional nested config only when
+it’s present. The environment variables are read first, as a tag’s variable can
+<a href="#picking-a-variant">pick a variant</a>, and the defaults then go under the result.</p>
 <h3 id="automatic-schemas"><a class="header" href="#automatic-schemas">Automatic schemas</a></h3>
 <p>When the <code>schema</code> Cargo feature is enabled, the
 <a href="https://docs.rs/schematic/latest/schematic/trait.Schematic.html"><code>Schematic</code></a> trait will be
@@ -321,8 +351,12 @@ struct AppConfig {}
 <li>Pkl - Uses <code>rpkl</code> and requires the <code>pkl</code> Cargo feature.</li>
 <li>RON - Uses <code>ron</code> and requires the <code>ron</code> Cargo feature.</li>
 <li>TOML - Uses <code>toml</code> and requires the <code>toml</code> Cargo feature.</li>
-<li>YAML - Uses <code>serde_norway</code> and requires the <code>yaml</code> Cargo feature.</li>
+<li>YAML - Uses <code>serde_norway</code> and requires the <code>yaml</code> Cargo feature. An externally tagged enum
+variant that holds a value is written as a YAML tag, like <code>!file</code>, rather than a map
+(<a href="#yaml-and-externally-tagged-variants">more</a>).</li>
 </ul>
+<p>None of them is enabled by default, so enable the feature of each format you load. A source with no
+format to parse it fails to load, with an error that names the feature its extension needs.</p>
 <h2 id="cargo-features"><a class="header" href="#cargo-features">Cargo features</a></h2>
 <p>The following Cargo features are available:</p>
 <ul>
@@ -337,10 +371,15 @@ struct AppConfig {}
 <li><code>validate</code> (default) - Enables setting value validation.</li>
 <li><code>yaml</code> - Enables YAML.</li>
 </ul>
+<p><code>env</code>, <code>extends</code>, <code>url</code>, and <code>validate</code> only apply to configs, so each enables <code>config</code> as well. The
+dependencies that only configs use are only compiled with <code>config</code>, so a build for
+<a href="#schemas">schemas</a> alone, or without any feature, doesn’t pull them in.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
-<p>Settings are the individual fields of a <a href="#structs--enums"><code>Config</code> struct</a> or variants of a
-<a href="#structs--enums"><code>Config</code> enum</a>, and can be annotated with the optional <code>#[setting]</code> attribute.</p>
+<p>Settings are the individual fields of a <a href="#structs--enums"><code>Config</code> struct</a>, the variants of a
+<a href="#structs--enums"><code>Config</code> enum</a>, or the fields of a
+<a href="#enum-variants">named variant</a>, and can be annotated with the optional <code>#[setting]</code>
+attribute.</p>
 <h2 id="third-party-types"><a class="header" href="#third-party-types">Third-party types</a></h2>
 <p>A setting that isn’t wrapped in <code>Option</code> falls back to <code>Default::default()</code> when the config provides
 no value and no <a href="#default-values">default value</a> is declared, so every such setting has to
@@ -374,22 +413,33 @@ string, so the wrapper works without the upstream crate’s <code>serde</code> f
 <p><code>semver::VersionReq</code> needs no wrapper, as it already defaults to <code>*</code>. Types that are only ever
 optional don’t need one either, since an <code>Option</code> setting defaults to <code>None</code>.</p>
 </blockquote>
+<h3 id="required-traits"><a class="header" href="#required-traits">Required traits</a></h3>
+<p>Every setting is held by the <a href="#partials">partial</a>, which derives <code>Clone</code>, <code>Debug</code>, <code>Default</code>,
+<code>PartialEq</code>, <code>Deserialize</code>, and <code>Serialize</code>, so a setting’s type has to implement those too, along
+with <a href="#schemas"><code>Schematic</code></a>. <code>Debug</code> and <code>PartialEq</code> aren’t needed by the partial itself,
+but deriving them lets partials be printed and compared, and lets a struct that holds one derive
+them as well. A type that lacks one, like <code>regex::Regex</code>, which has no <code>PartialEq</code>, fails to compile
+at <code>#[derive(Config)]</code>, so wrap it in a newtype that implements it, as <code>RegexSetting</code> does by
+comparing patterns.</p>
 <h2 id="attribute-fields"><a class="header" href="#attribute-fields">Attribute fields</a></h2>
 <p>The following fields are supported for the <code>#[setting]</code> field/variant attribute:</p>
 <ul>
 <li><code>default</code> - Sets the <a href="#default-values">default value</a>. On an enum variant, it names the
 variant the partial defaults to, and on a variant holding a value, can also provide that value.</li>
-<li><code>env</code> <em>(struct only)</em> - Sets the <a href="#environment-variables">environment variable</a> to receive a value from.</li>
-<li><code>env_prefix</code> <em>(struct only)</em> - Overrides the <a href="#container-prefixes">environment variable</a>
-prefix of the nested config this field holds. Requires <code>nested</code>.</li>
+<li><code>env</code> <em>(field only)</em> - Sets the <a href="#environment-variables">environment variable</a> to receive a value from.
+On a field of a named variant, it’s read once a source has <a href="#enums-1">picked</a> the
+variant. A <code>nested</code> config reads its own, so it takes <code>env_prefix</code> instead.</li>
+<li><code>env_prefix</code> <em>(field only)</em> - Adds an <a href="#nested-prefixes">environment variable</a>
+prefix for the nested config this field holds. Requires <code>nested</code>.</li>
 <li><code>exclude</code> - Omits the field or variant from the generated <a href="#schemas">schema</a>. Has no
 effect without the <code>schema</code> Cargo feature.</li>
 <li><code>extend</code> <em>(struct only)</em> - Enables a configuration to <a href="#extendable-sources">extend other configs</a>.</li>
 <li><code>merge</code> - Defines a function to use for <a href="#merge-strategies">merging values</a>.</li>
 <li><code>nested</code> - Marks the field as using a <a href="#nesting">nested <code>Config</code></a>.</li>
 <li><code>null</code> <em>(enum only)</em> - Marks the variant as representing <code>null</code>, so it is never tagged.</li>
-<li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="#environment-variables">environment variable</a> value using a
-function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container.</li>
+<li><code>parse_env</code> <em>(field only)</em> - Parses the <a href="#environment-variables">environment variable</a> value using a
+function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container, and can’t be used with
+<code>nested</code>.</li>
 <li><code>partial</code> - Forwards attributes to the field on the <a href="#partials">partial</a>. May be repeated.</li>
 <li><code>required</code> - Marks the setting as <a href="#required-settings">required</a>, so that
 loading fails when no source provides a value, instead of falling back to a default.</li>
@@ -401,11 +451,14 @@ loading fails when no source provides a value, instead of falling back to a defa
 <li><code>alias</code></li>
 <li><code>flatten</code></li>
 <li><code>rename</code></li>
-<li><code>skip</code></li>
-<li><code>skip_deserializing</code></li>
+<li><code>skip</code> - Also left out of the generated <a href="#schemas">schema</a>, as it’s never read or
+written, so its type needn’t implement <code>Schematic</code>.</li>
+<li><code>skip_deserializing</code> - Hidden in the generated schema, as it’s written but never read.</li>
 <li><code>skip_serializing</code></li>
 <li><code>skip_serializing_if</code> - Only honored from <code>#[setting]</code>, and written against the partial’s
 <code>Option</code>. The <code>#[serde]</code> form is left for the full type, whose field is not wrapped.</li>
+<li><code>rename_all</code> <em>(named variant only)</em> - Applies a casing to the fields of the variant, over the
+enum’s <code>rename_all_fields</code>.</li>
 <li><code>untagged</code> <em>(enum only)</em></li>
 </ul>
 <h3 id="serde-support"><a class="header" href="#serde-support">Serde support</a></h3>
@@ -456,6 +509,8 @@ pub struct PartialExampleConfig {
 	pub optional: Option&lt;String&gt;,
 }
 <span class="boring">}</span></code></pre>
+<p>The derives on a partial are always the same, so every setting’s type has to implement them. See
+<a href="#required-traits">required traits</a>.</p>
 <p>So what are partials used for exactly? Partials are used for the entire parsing, layering,
 extending, and merging process, and ultimately become the <a href="#configuration">final configuration</a>.</p>
 <p>When deserializing a source with serde, we utilize the partial config as the target type, because
@@ -539,10 +594,55 @@ enum ParentEnum {
 <span class="boring">}</span></code></pre>
 <p>The <code>#[setting(nested)]</code> attribute is required, as the macro will substitute <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> with
 its <a href="#partials">partial</a> implementation.</p>
-<blockquote>
-<p>Nested values can also be wrapped in collections, like <code>Vec</code> and <code>HashMap</code>. However, these are
-tricky to support and may not work in all situations!</p>
-</blockquote>
+<p>Nested values can also be wrapped in collections, like <code>Vec</code> and <code>HashMap</code>. Each item is finalized
+and validated as a nested config, but the collection is replaced when merged, rather than merging
+its items. To merge a map of configs by key, use the
+<a href="#nested-maps"><code>merge_partials</code> strategy</a>.</p>
+<p>A <code>#[setting(nested)]</code> on a variant applies to every value it holds. To hold a nested config
+alongside plain values, mark the value itself instead. Its config is merged, finalized, and
+validated as nested, while the other values are replaced, like any other setting.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum ParentEnum {
+	Both(#[setting(nested)] ChildConfig, bool),
+}
+<span class="boring">}</span></code></pre>
+<h2 id="flattening"><a class="header" href="#flattening">Flattening</a></h2>
+<p>A nested config can be flattened with <code>#[setting(flatten, nested)]</code> (or serde’s own
+<code>#[serde(flatten)]</code>), so its settings are written alongside the parent’s own, rather than under the
+field’s name. A map can be flattened too, which collects every key the other settings don’t.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct ParentConfig {
+	pub name: String,
+
+	#[setting(flatten, nested)]
+	pub server: ServerConfig,
+
+	#[setting(flatten, nested)]
+	pub plugins: HashMap&lt;String, PluginConfig&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A config rejects keys that aren’t its settings, unless <code>#[config(allow_unknown_fields)]</code>, and serde
+can only do so for a flattened struct, which takes its keys from the parent’s. So:</p>
+<ul>
+<li>A config with a flattened map accepts unknown keys, as the map collects them, and rejecting them
+would reject every key of the map.</li>
+<li>A flattened config that flattens another can’t be loaded unless both allow unknown fields, as it
+reads the parent’s keys without taking them, so the parent would reject them. Deriving one fails
+to compile, naming the fix, rather than failing to load every setting it holds.</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(allow_unknown_fields)]
+struct ServerConfig {
+	#[setting(flatten, nested)]
+	pub tls: TlsConfig,
+}
+<span class="boring">}</span></code></pre>
 <h2 id="bare-structs"><a class="header" href="#bare-structs">Bare structs</a></h2>
 <p>For structs that <em>do not</em> implement the <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> trait, you can use them as-is without the
 <code>#[setting(nested)]</code> attribute. When using bare structs, be aware that all of the functionality
@@ -601,6 +701,33 @@ let result = ConfigLoader::&lt;ExampleConfig&gt;::new()
 <p>Refer to the <a href="#default-values">default values</a>, <a href="#merge-strategies">merge strategies</a>, and
 <a href="#validation-rules">validation rules</a> sections for more information on how to use context.</p>
 </blockquote>
+<h2 id="nested-configs-with-another-context"><a class="header" href="#nested-configs-with-another-context">Nested configs with another context</a></h2>
+<p>A <a href="#nesting">nested config</a> receives its parent’s context, so by default it must declare the
+same one. A config from a library can’t know an application’s context, so the <code>context</code> field of
+<code>#[setting(nested)]</code> maps the parent’s context to the nested config’s own, with a function from a
+reference to one to a reference to the other.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(context = AppContext)]
+struct AppConfig {
+	// A library config, whose context is `()`
+	#[setting(nested, context = schematic::context::unit)]
+	pub lib: LibConfig,
+
+	// A config whose context is part of the application's
+	#[setting(nested, context = plugin_context)]
+	pub plugin: PluginConfig,
+}
+
+fn plugin_context(context: &amp;AppContext) -&gt; &amp;PluginContext {
+	&amp;context.plugin
+}
+<span class="boring">}</span></code></pre>
+<p>The mapped context is what the nested config’s own default values, merge strategies, and validation
+rules receive. <code>schematic::context::unit</code> passes <code>()</code>, whatever the parent’s context. A
+<code>Default</code> of the parent, which has no context to map, gives each nested config the <code>Default</code> of its
+own context instead.</p>
 <h2 id="metadata"><a class="header" href="#metadata">Metadata</a></h2>
 <p>Alongside the configuration itself, the derive records a little metadata about each
 <a href="#settings">setting</a>, reachable with
@@ -672,6 +799,35 @@ struct Wrapper&lt;T: Setting&gt; {
 Without it serde would infer a <code>T: Deserialize&lt;'de&gt;</code> bound of its own, which is ambiguous against
 the <code>DeserializeOwned</code> already in scope. Supplying your own bound through
 <code>#[config(partial(serde(bound(...))))]</code> suppresses the generated one.</p>
+<h2 id="nesting-generic-configs"><a class="header" href="#nesting-generic-configs">Nesting generic configs</a></h2>
+<p>A generic config can be nested like any other, including within an <code>Option</code> or a collection. The
+type it’s written with is the config, so the derive doesn’t look inside its type arguments.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(nested)]
+	pub names: Wrapper&lt;String&gt;,
+
+	#[setting(nested)]
+	pub counts: Vec&lt;Wrapper&lt;usize&gt;&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A type parameter can also be the nested config. Its partial is derived like any other, which bounds
+every type parameter, so it needs the <a href="#bounds-are-not-inferred">same bounds</a> as any other
+parameter. Its partial is printed and compared with the rest, and shares the parent’s
+<a href="#context">context</a>, which the where clause states:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct Outer&lt;C: Config + Setting&gt;
+where
+	C::Partial: Debug + PartialEq + PartialConfig&lt;Context = ()&gt;,
+{
+	#[setting(nested)]
+	pub inner: C,
+}
+<span class="boring">}</span></code></pre>
 <h2 id="schema-names"><a class="header" href="#schema-names">Schema names</a></h2>
 <p>Schemas are keyed by name alone, so every instantiation of a generic type would otherwise claim the
 same one. The derive appends each type argument to the name, so <code>Wrapper&lt;String&gt;</code> becomes
@@ -719,11 +875,43 @@ enum Host {
 	Remote(HostConfig),
 }
 <span class="boring">}</span></code></pre>
-<h2 id="enum-caveats"><a class="header" href="#enum-caveats">Enum caveats</a></h2>
-<p><a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> can only be derived for enums with tuple or unit variants, but not struct/named
-variants. Why not struct variants? Because with this pattern, the enum acts like a union type. This
-also allows for <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html"><code>Config</code></a> functionality, like partials, merging, and validation, to be
-applied to the contents of each variant.</p>
+<h2 id="enum-variants"><a class="header" href="#enum-variants">Enum variants</a></h2>
+<p>An enum’s variants may be unit, tuple, or named, and mixed freely. A tuple variant is a single
+setting, so the values it holds are written in full, while each field of a named variant is a
+setting of its own, like the fields of a struct.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Source {
+	#[setting(default)]
+	File {
+		#[setting(default = "config.json")]
+		path: String,
+		#[setting(default = 30, validate = schematic::validate::in_range(1, 60))]
+		timeout: u32,
+	},
+	Url {
+		#[setting(required)]
+		address: Option&lt;String&gt;,
+		#[setting(nested)]
+		retry: RetryConfig,
+	},
+	Inline(String),
+}
+<span class="boring">}</span></code></pre>
+<p>Every field of a named variant is optional within the <a href="#partials">partial</a>, so a layer can
+provide some of them and leave the rest to another. When two layers pick the same variant, its
+fields are merged one by one, each with its own <code>merge</code>, while a layer picking another variant
+replaces it. Each field takes the same <code>#[setting]</code> fields as a struct’s, except <code>extend</code>. The
+variant itself takes only <code>default</code>, <code>exclude</code>, <code>partial</code>, and the serde fields, while the fields
+hold the rest.</p>
+<p>A source may pick a variant other than the default, so the defaults and
+<a href="#enums-1">environment variables</a> of a named variant’s fields are read for the variant the
+sources picked, and apply however it was picked. A field that fails validation is reported under
+the variant, like <code>source.url.address</code>.</p>
+<p>The fields are named as written, unless the variant has a <code>#[serde(rename_all)]</code> of its own, or the
+enum has a <code>rename_all_fields</code>. The enum’s own <code>rename_all</code> names the variants, as with serde.</p>
 <blockquote>
 <p>If you’d like to support unit-only enums, you can use the <a href="#unit-only-enums"><code>ConfigEnum</code> trait</a>
 instead.</p>
@@ -732,10 +920,11 @@ instead.</p>
 <p>The following fields are supported for the <code>#[config]</code> container attribute:</p>
 <ul>
 <li><code>allow_unknown_fields</code> - Removes the serde <code>deny_unknown_fields</code> from the
-<a href="#partials">partial struct</a>. Defaults to <code>false</code>.</li>
+<a href="#partials">partial struct</a>, or an enum with named variants. Defaults to <code>false</code>.</li>
 <li><code>context</code> - Sets the struct to be used as the <a href="#context">context</a>. Defaults to <code>None</code>.</li>
 <li><code>env_prefix</code> - Sets the prefix to use for <a href="#container-prefixes">environment variable</a>
-mapping. Defaults to <code>None</code>.</li>
+mapping, of a struct’s fields or a named variant’s, and of a tagged enum’s tag. Defaults to
+<code>None</code>.</li>
 <li><code>partial</code> - Forwards attributes to the <a href="#partials">partial</a>.</li>
 </ul>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -774,6 +963,9 @@ struct Example {
 <p>These values can also be applied using <code>#[serde]</code>, which is useful if you want to apply them to
 the main struct as well, and not just the partial struct.</p>
 </blockquote>
+<p>The partial of an enum with a named variant denies unknown fields as well. Serde applies it to the
+enum as a whole, so every named variant denies them, as do the keys around an internally or
+adjacently tagged variant, unless a named variant flattens a map, which collects them.</p>
 <h3 id="enum-tagging"><a class="header" href="#enum-tagging">Enum tagging</a></h3>
 <p>Serde’s tagging attributes are read straight off the <code>#[serde]</code> attribute and forwarded to the
 partial, so <code>untagged</code>, <code>tag</code>, <code>content</code>, and <code>expecting</code> work as they normally would.</p>
@@ -801,6 +993,26 @@ holds it.</p>
 <p>A unit-only enum is always externally tagged, no matter what you set. Marking one <code>untagged</code>
 would leave its variants deserializable only from <code>null</code>.</p>
 </blockquote>
+<p>An untagged named variant is attempted like any other, and unless unknown fields are allowed, fails
+on a field it doesn’t know, so an input with an extra key moves on to the next variant.</p>
+<h4 id="yaml-and-externally-tagged-variants"><a class="header" href="#yaml-and-externally-tagged-variants">YAML and externally tagged variants</a></h4>
+<p>An enum without <code>tag</code> or <code>untagged</code> is externally tagged, so a variant holding a value is written as
+a map of its name to the value, like <code>{ "file": { "path": "a" } }</code> in JSON. YAML is the exception:
+its parser, <code>serde_norway</code>, only reads such a variant from a YAML tag, and fails on the map, with
+<code>expected a YAML tag starting with '!'</code>.</p>
+<pre><code class="language-yaml"># Loads
+source: !file
+  path: a
+
+# Fails
+source:
+  file:
+    path: a
+</code></pre>
+<p>A unit variant is still written as its name, like <code>source: local</code>. For a YAML config, prefer an
+internally tagged enum, with <code>#[serde(tag = "type")]</code>, which is written the same in every format,
+and which JSON schemas and templates describe as it’s loaded. They describe an externally tagged
+variant as the map, which YAML doesn’t load.</p>
 <h3 id="literal-unions"><a class="header" href="#literal-unions">Literal unions</a></h3>
 <p>A setting that accepts a few named values, or a value of another type, like
 <code>"local" | "remote" | boolean</code>, is known as a literal union. Leave the enum externally tagged, so that
@@ -829,7 +1041,7 @@ TypeScript type <code>'local' | 'remote' | boolean</code>. The named values are 
 variant in the order declared, which serde requires to come last. An untagged unit variant is
 written as <code>null</code>.</p>
 <p>To default to a value rather than a name, provide it on the untagged variant, like
-<code>#[setting(default = true)]</code>. See <a href="#enum-variants">default values</a>.</p>
+<code>#[setting(default = true)]</code>. See <a href="#enum-variants-1">default values</a>.</p>
 <p>When a value matches none of them, the error lists the named values together, followed by each
 untagged variant.</p>
 <pre><code>failed to parse as any variant of PartialCache:
@@ -848,14 +1060,15 @@ implements <code>FromStr</code> for it.</p>
 <p>In Schematic, there are 2 forms of default values:</p>
 <ul>
 <li>The first is applied through the <a href="#partials">partial configuration</a>, is defined with the
-<code>#[setting]</code> attribute, and is the first layer to be merged.</li>
+<code>#[setting]</code> attribute, and is the layer below every other.</li>
 <li>The second is on the <a href="#configuration">final configuration</a> itself, and uses the <code>Default</code> trait to
 generate the final value if none was provided. This acts more like a fallback. To fail instead,
 mark the setting as <a href="#required-settings">required</a>.</li>
 </ul>
 <p>To define a default value, use the <code>#[setting(default)]</code> attribute. The <code>default</code> attribute field
-accepts primitive values, like numbers, strings, and booleans, as well as array, tuple, and struct
-literals, paths that name a value, and function and macro calls.</p>
+accepts any expression of the setting’s type, like a number, a boolean, an array, tuple, or struct
+literal, a path that names a value, or a function, method, or macro call. A string converts into the
+setting’s type, and a bare path in <code>snake_case</code> names a <a href="#handler-function">handler function</a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
@@ -877,8 +1090,13 @@ struct AppConfig {
 
 	#[setting(default = Retry { attempts: 3, backoff: 500 })]
 	pub retry: Retry,
+
+	#[setting(default = PathBuf::from("/etc").join("app"))]
+	pub config_dir: PathBuf,
 }
 <span class="boring">}</span></code></pre>
+<p>A string that fails to convert, or a handler function that fails, is an error naming the setting,
+like <code>Invalid default value for port. invalid digit found in string</code>.</p>
 <h3 id="paths-value-or-function"><a class="header" href="#paths-value-or-function">Paths: value or function?</a></h3>
 <p>A bare path is ambiguous — <code>LevelFilter::Debug</code> names a value, while <code>find_unused_port</code> names a
 <a href="#handler-function">handler function</a> to call. Nothing at compile time can tell them apart, so
@@ -900,7 +1118,7 @@ since a name breaking those conventions would already be earning a compiler lint
 <p>A handler function that must keep a non-conventional name can be reached through a <code>snake_case</code>
 wrapper, or called directly with <code>default = my_wrapper()</code> when it needs no context.</p>
 </blockquote>
-<h3 id="enum-variants"><a class="header" href="#enum-variants">Enum variants</a></h3>
+<h3 id="enum-variants-1"><a class="header" href="#enum-variants-1">Enum variants</a></h3>
 <p>For enums, the <code>default</code> field marks which variant to use as the default. A unit variant holds no
 value, so <code>default</code> takes none, or a boolean.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -931,6 +1149,22 @@ enum Compress {
 <p>A value can’t be provided for a variant holding several values, or a
 <a href="#nesting">nested</a> configuration, which sources its defaults from its own settings.</p>
 </blockquote>
+<p>A named variant takes no value either, as each of its fields takes a <code>default</code> of its own. They’re
+applied whenever the variant is picked, not only when it’s the default, as the defaults are read for
+the variant the sources picked, so a source that picks <code>Url</code> below gets a <code>timeout</code> of <code>30</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+enum Host {
+	#[setting(default)]
+	Local,
+	Url {
+		address: String,
+		#[setting(default = 30)]
+		timeout: u32,
+	},
+}
+<span class="boring">}</span></code></pre>
 <h2 id="handler-function"><a class="header" href="#handler-function">Handler function</a></h2>
 <p>If you need more control or need to calculate a complex value, you can pass a reference to a
 function to call. This function receives the <a href="#context">context</a> as the first argument, and can
@@ -995,6 +1229,8 @@ passed as arguments, and the function must return the transformed result.</p>
 	})
 }
 <span class="boring">}</span></code></pre>
+<p>A transform that fails is an error naming the setting, like <code>Failed to transform env_file. ...</code>,
+followed by the function’s own message.</p>
 <h3 id="nested-values"><a class="header" href="#nested-values">Nested values</a></h3>
 <p>Transformers can also be used on <a href="#nesting">nested configs</a>, but when defining the transformer
 function, the value being transformed is the <em><a href="#partials">partial nested config</a></em>, not the final
@@ -1028,9 +1264,6 @@ fn using_generics&lt;T, C&gt;(value: T, _: &amp;C) -&gt; TransformResult&lt;T&gt
 <h1 id="environment-variables"><a class="header" href="#environment-variables">Environment variables</a></h1>
 <blockquote>
 <p>Requires the <code>env</code> Cargo feature, which is enabled by default.</p>
-</blockquote>
-<blockquote>
-<p>Not supported for enums.</p>
 </blockquote>
 <p>Settings can also inherit values from environment variables via the <code>#[setting(env)]</code> attribute
 field. When using this, variables take the <em>highest</em> precedence, and are merged as the last layer.</p>
@@ -1082,7 +1315,7 @@ struct AppConfig {
 <span class="boring">}</span></code></pre>
 <p>A parent can add a prefix for a nested child to read, with <code>env_prefix</code> on the field itself. The
 child must still declare an <code>env_prefix</code> of its own, as that is what opts its fields into being
-derived at all.</p>
+derived at all. Without one, the parent’s prefix would have no effect, so it fails to compile.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[derive(Config)]
@@ -1098,7 +1331,77 @@ struct AppConfig {
 <a href="https://docs.rs/schematic/latest/schematic/trait.Config.html#method.settings"><code>Config::settings()</code></a>
 with the child’s own prefix, which always works.</p>
 </blockquote>
+<h2 id="enums-1"><a class="header" href="#enums-1">Enums</a></h2>
+<p>The fields of a <a href="#enum-variants">named variant</a> read environment variables like a
+struct’s, with <code>env</code>, <code>parse_env</code>, and an <code>env_prefix</code> on the enum, which derives a key for each
+field.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+#[config(env_prefix = "AUTH_")]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Auth {
+	#[setting(default)]
+	None,
+	Token {
+		// AUTH_TOKEN
+		token: String,
+	},
+	Basic {
+		// AUTH_USER
+		user: String,
+		#[setting(env = "AUTH_PASSWORD")]
+		password: String,
+	},
+}
+<span class="boring">}</span></code></pre>
+<p>The variables are those of the variant that’s been picked, by a source, the default, or the
+<a href="#picking-a-variant">tag’s variable</a>, and they’re merged over its fields as the last layer, as for a
+struct. So with <code>type = "basic"</code> in a file, and nothing picking another variant, <code>AUTH_TOKEN</code> does
+nothing. Variants may share a derived key, like a <code>path</code> in each, as only one is ever picked.</p>
+<p>A nested config that a variant holds reads its own variables, whether the variant is named or holds
+it as a value. An optional enum, like <code>Option&lt;Auth&gt;</code>, that no source provided reads those of its
+default variant, and is provided by them when one is set, as an optional struct is.</p>
+<blockquote>
+<p>A nested config within a variant that holds other values too, like <code>Both(Child, bool)</code>, reads its
+variables when it’s finalized instead, as the layer would have to restate the values beside it.
+So <code>ConfigLoadResult.layers</code> doesn’t include them, as with the items of a nested collection.</p>
+</blockquote>
+<p>A parent’s <code>#[setting(nested, env_prefix)]</code> reaches an enum as it does a struct, adding its prefix
+to the keys of the enum’s fields and its tag, as long as the enum has an <code>env_prefix</code> of its own.</p>
+<h3 id="picking-a-variant"><a class="header" href="#picking-a-variant">Picking a variant</a></h3>
+<p>A tagged enum, with serde’s <code>tag</code> (and optionally <code>content</code>), also derives a key from its tag, which
+picks the variant. Above, <code>AUTH_TYPE=token</code> picks <code>Token</code>, and <code>AUTH_TOKEN</code> then fills it in. It’s
+part of the environment layer, so it replaces a variant a source picked, while a source that picked
+the same one keeps its fields.</p>
+<ul>
+<li>The value is matched against each variant’s name, after <code>rename_all</code>, and its aliases, exactly as
+serde matches the tag. Any other value fails to load, listing the names it accepts.</li>
+<li>A unit variant, a named variant, or one that holds only nested configs can be picked, as its
+fields are filled in from their defaults and variables. One that holds a plain value, like
+<code>Path(String)</code>, has nothing to fill it in, so it can’t be.</li>
+<li>An externally tagged or untagged enum has no tag, so a variable can only fill in its variants.</li>
+<li>Each item of a nested collection reads the variable for itself, so <code>AUTH_TYPE</code> picks the variant
+of every item in a <code>Vec&lt;Auth&gt;</code>.</li>
+</ul>
+<p>The key is reported on the tag in the <a href="#schemas">schema</a>, so TypeScript renders it as
+<code>@env AUTH_TYPE</code>. An <code>env_prefix</code> is accepted on a tagged enum without named variants too, as long
+as it has a variant to pick.</p>
 <h2 id="parsing-values"><a class="header" href="#parsing-values">Parsing values</a></h2>
+<p>Without a <code>parse_env</code>, a variable is parsed with the setting’s <code>FromStr</code>, so its error type must
+implement <code>Display</code>, which is what a variable that fails to parse reports, like
+<code>Failed to parse "70000" into u16: number too large to fit in target type.</code></p>
+<p>That makes a <code>bool</code> setting accept only <code>true</code> and <code>false</code>. For values like <code>1</code>, <code>yes</code>, or <code>on</code>, use
+<code>parse_env = schematic::env::parse_bool</code>, which ignores case, treats an empty variable as unset,
+and fails on anything it doesn’t recognize.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(env = "APP_DEBUG", parse_env = schematic::env::parse_bool)]
+	pub debug: bool,
+}
+<span class="boring">}</span></code></pre>
 <p>We also support parsing environment variables into the required type. For example, the variable may
 be a comma separated list of values, or a JSON string.</p>
 <p>The <code>#[setting(parse_env)]</code> attribute field can be used, which requires a path to a function to
@@ -1213,6 +1516,79 @@ enum Projects {
 <p>We provide a handful of built-in merge functions in the
 <a href="https://docs.rs/schematic/latest/schematic/merge/index.html"><code>merge</code> module</a>.</p>
 </blockquote>
+<h2 id="built-in-functions"><a class="header" href="#built-in-functions">Built-in functions</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Merges</th></tr>
+</thead>
+<tbody>
+<tr><td><code>discard</code></td><td>Neither value, so the setting is <code>None</code>.</td></tr>
+<tr><td><code>preserve</code></td><td>The previous value.</td></tr>
+<tr><td><code>replace</code></td><td>The next value, which is the default for every setting.</td></tr>
+<tr><td><code>append_vec</code>, <code>prepend_vec</code></td><td>A <code>Vec</code>, with the next items after or before the previous.</td></tr>
+<tr><td><code>append_vec_unique</code></td><td>A <code>Vec</code>, appending only the next items it doesn’t contain yet.</td></tr>
+<tr><td><code>merge_btreemap</code>, <code>merge_hashmap</code>, <code>merge_indexmap</code></td><td>A map, the next value of a key replacing the previous.</td></tr>
+<tr><td><code>merge_btreeset</code>, <code>merge_hashset</code>, <code>merge_indexset</code></td><td>A set.</td></tr>
+<tr><td><code>merge_iter</code></td><td>Any collection that implements <code>Extend</code>, like a <code>VecDeque</code>.</td></tr>
+<tr><td><code>merge_partials</code></td><td>A map of <a href="#nesting">nested configs</a>, by key.</td></tr>
+<tr><td><code>merge_list</code></td><td>A <a href="#merging-chosen-by-the-source"><code>MergeList</code></a>, as it directs.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The hash-based functions support any hasher, like <code>FxHashMap</code>’s, and the <code>indexmap</code> functions
+require the <code>type_indexmap</code> Cargo feature.</p>
+<p><code>append_vec_unique</code> is useful for a list with a default, as it doesn’t repeat the default items that
+a source lists again.</p>
+<h3 id="nested-maps"><a class="header" href="#nested-maps">Nested maps</a></h3>
+<p>A collection of nested configs is replaced by default, as there’s no way to pair up its items. For a
+map, <code>merge_partials</code> pairs them up by key: a config under a key in both layers is merged with its
+own strategies, and a key only in the next layer is added.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Config)]
+struct AppConfig {
+	#[setting(nested, merge = schematic::merge::merge_partials)]
+	pub plugins: HashMap&lt;String, PluginConfig&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>It supports <code>HashMap</code>, <code>BTreeMap</code>, and <code>IndexMap</code>, or any map that implements
+<a href="https://docs.rs/schematic/latest/schematic/merge/trait.MergeableMap.html"><code>MergeableMap</code></a>. The
+configs receive the parent’s <a href="#context">context</a>, so it can’t be combined with a nested
+<code>context</code> function.</p>
+<h2 id="merging-chosen-by-the-source"><a class="header" href="#merging-chosen-by-the-source">Merging chosen by the source</a></h2>
+<p>A <code>merge</code> function decides how every source merges a setting. To let each source decide for itself,
+use a <a href="https://docs.rs/schematic/latest/schematic/struct.MergeList.html"><code>MergeList</code></a>. It’s merged
+with the <code>merge_list</code> function without a <code>merge</code> of its own.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Config, MergeList};
+
+#[derive(Config)]
+struct AppConfig {
+	#[setting(default = MergeList::new(vec!["localhost".into()]))]
+	pub allowed_hosts: MergeList&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>A source then writes a list, which replaces the previous items, or a map of how to merge with them,
+with any of the <code>prepend</code>, <code>append</code>, and <code>replace</code> keys.</p>
+<pre><code class="language-yaml"># Replaces the previous items, including the default
+allowed_hosts: [example.com]
+
+# Adds to the previous items
+allowed_hosts:
+  prepend: [example.com]
+  append: [example.org]
+</code></pre>
+<p>A <code>MergeList</code> derefs to a slice of its items, so it reads like a <code>Vec</code>, and the length validators
+accept it. Its schema is a union of the list and the map, so editors suggest both.</p>
+<p>The derive knows a <code>MergeList</code> by name, including within an <code>Option</code> or a variant, so a <code>merge</code> of
+the setting’s own still takes precedence, and a collection of them is replaced like any other.</p>
+<blockquote>
+<p>Through a type alias the derive can’t tell it’s a <code>MergeList</code>, so add
+<code>#[setting(merge = schematic::merge::merge_list)]</code>, or it’s replaced like any other setting, and a
+source that appends loses the previous items. Items are plain values for now, not nested configs.</p>
+</blockquote>
 <h2 id="merge-handler-function"><a class="header" href="#merge-handler-function">Merge handler function</a></h2>
 <p>You can also define your own function for merging values.</p>
 <p>When defining a custom <code>merge</code> function, the previous value, next value, and
@@ -1299,8 +1675,36 @@ enum Entry {
 <blockquote>
 <p>We provide a handful of built-in validation functions in the
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
-some functions are factories which can be called to produce a validator.</p>
+some functions are factories which can be called to produce a validator, like <code>min(1)</code>, <code>max(10)</code>,
+and <code>in_range(1, 10)</code> for numbers, or <code>min_length(1)</code> for strings and lists.</p>
 </blockquote>
+<h2 id="validation-passes"><a class="header" href="#validation-passes">Validation passes</a></h2>
+<p>A configuration is validated more than once while loading. Each source is validated on its own as
+it’s parsed, and the final configuration is validated again once every source,
+<a href="#default-values">default value</a>, and <a href="#environment-variables">environment variable</a> has been merged, and every
+<a href="#transforming-values">transform</a> has run. A validator is told which pass it’s in by its last argument,
+<code>finalizing</code>, which is only <code>true</code> for the final pass.</p>
+<p>A source only holds part of the configuration, and a later one may replace a value an earlier one
+set, so a check that needs the final value should wait for the final pass. For example, a path that
+a transform makes absolute isn’t absolute yet when its source is validated.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn absolute_path&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C, finalizing: bool) -&gt; ValidateResult {
+	if finalizing &amp;&amp; !Path::new(value).is_absolute() {
+		return Err(ValidateError::new("must be an absolute path"));
+	}
+
+	Ok(())
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Settings that no source provided are <code>None</code> in each source’s pass, and are skipped, while the
+final pass has a value for every setting.</p>
+</blockquote>
+<p>An error in a source’s pass names that source, like <code>Failed to validate config.yml</code>. The final pass
+validates what every layer merged into, so its error names each source, and the environment
+variables when any were set, like <code>Failed to validate base.yml, config.yml, environment variables</code>,
+or the config’s name when there are neither.</p>
 <h2 id="required-settings"><a class="header" href="#required-settings">Required settings</a></h2>
 <p>Every setting in a <a href="#partials">partial configuration</a> is optional, so a setting that no source
 provides falls back to its <a href="#default-values">default value</a>, or to <code>Default::default()</code> when it has
@@ -1325,7 +1729,8 @@ source and <a href="#environment-variables">environment variable</a> has been me
 source is free to omit it. A <code>null</code> counts as missing, while an empty value, like <code>""</code> or <code>[]</code>, does
 not.</p>
 <p>When the setting is wrapped in <code>Option</code>, the value must be <code>Some</code>, but the field stays an <code>Option</code>
-in the final configuration. A setting that isn’t wrapped still has to implement <code>Default</code>, which
+in the final configuration. Its <a href="#optional-and-nullable-fields">schema</a>
+describes the type the <code>Option</code> holds, as <code>null</code> isn’t a value. A setting that isn’t wrapped still has to implement <code>Default</code>, which
 <code>AppConfig::default()</code> falls back to.</p>
 <p>A required setting can’t declare a <code>default</code>, as it would always have a value. Nor can a
 <a href="#nesting">nested config</a> that isn’t wrapped in <code>Option</code>, as one always exists in the final
@@ -1380,6 +1785,24 @@ fn regex&lt;T, P, C&gt;(pattern: &amp;str) -&gt; Validator&lt;T, P, C&gt; {
 	})
 }
 <span class="boring">}</span></code></pre>
+<h3 id="several-errors"><a class="header" href="#several-errors">Several errors</a></h3>
+<p>A validator returns one error, but may return several instead, such as one for each item of a list
+that fails, by returning a <code>Vec&lt;ValidateError&gt;</code>, or a garde <code>Report</code>. Anything that implements
+<a href="https://docs.rs/schematic/latest/schematic/trait.IntoValidateErrors.html"><code>IntoValidateErrors</code></a>
+can be returned.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn no_empty_items&lt;P, C&gt;(items: &amp;[String], partial: &amp;P, context: &amp;C, finalizing: bool) -&gt; Result&lt;(), Vec&lt;ValidateError&gt;&gt; {
+	let errors = items
+		.iter()
+		.enumerate()
+		.filter(|(_, item)| item.is_empty())
+		.map(|(index, _)| ValidateError::with_segment("must not be empty", PathSegment::Index(index)))
+		.collect::&lt;Vec&lt;_&gt;&gt;();
+
+	if errors.is_empty() { Ok(()) } else { Err(errors) }
+}
+<span class="boring">}</span></code></pre>
 <h3 id="path-targeting"><a class="header" href="#path-targeting">Path targeting</a></h3>
 <p>If validating an item in a list or collection, you can specifiy the nested path when failing. This
 is extremely useful when building error messages.</p>
@@ -1402,6 +1825,38 @@ we suggest generic inferrence.</p>
 	// ...
 }
 <span class="boring">}</span></code></pre>
+<h2 id="config-validation"><a class="header" href="#config-validation">Config validation</a></h2>
+<p>A rule that compares settings, rather than checking one, can validate the configuration as a whole,
+with the <code>#[config(validate)]</code> container attribute field. The function receives the partial
+configuration, the <a href="#context">context</a>, and whether this is the
+<a href="#validation-passes">final pass</a>, and may return <a href="#several-errors">several errors</a>. It runs after the
+validators of each setting, for structs and enums alike, and is a factory when called, like
+<code>#[config(validate = at_most(10))]</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn min_below_max&lt;C&gt;(partial: &amp;PartialRangeConfig, context: &amp;C, finalizing: bool) -&gt; ValidateResult {
+	// A source may only set one of them
+	if let (Some(min), Some(max)) = (partial.min, partial.max)
+		&amp;&amp; min &gt; max
+	{
+		return Err(ValidateError::with_segment(
+			"must be at most max",
+			PathSegment::Key("min".into()),
+		));
+	}
+
+	Ok(())
+}
+
+#[derive(Config)]
+#[config(validate = min_below_max)]
+struct RangeConfig {
+	pub min: usize,
+	pub max: usize,
+}
+<span class="boring">}</span></code></pre>
+<p>An error is reported at the configuration’s own path, like <code>range</code> when it’s nested, unless it
+<a href="#path-targeting">targets a setting</a> within it, like <code>range.min</code>.</p>
 <h2 id="cargo-features-1"><a class="header" href="#cargo-features-1">Cargo features</a></h2>
 <p>The following Cargo features can be enabled for more functionality:</p>
 <ul>
@@ -1726,7 +2181,7 @@ of formats.</p>
 <ul>
 <li><a href="#arrays">Arrays</a></li>
 <li><a href="#booleans">Booleans</a></li>
-<li><a href="#enums-1">Enums</a></li>
+<li><a href="#enums-2">Enums</a></li>
 <li><a href="#floats">Floats</a></li>
 <li><a href="#integers">Integers</a></li>
 <li><a href="#literals">Literals</a></li>
@@ -1902,7 +2357,7 @@ value to the <a href="https://docs.rs/schematic/latest/schematic/schema/struct.B
 </span>schema.boolean(BooleanType::new(true));
 <span class="boring">}</span></code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="enums-1"><a class="header" href="#enums-1">Enums</a></h1>
+<h1 id="enums-2"><a class="header" href="#enums-2">Enums</a></h1>
 <p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.EnumType.html"><code>EnumType</code></a> can be used to represent a list of <a href="#literals">literal values</a>.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -2428,6 +2883,39 @@ like scalars but serde encodes them as maps, so the schema describes the map.</p
 <p>Fields keep the order they were inserted in, which is the declaration order when the schema comes
 from a derive. <a href="#code-generation">Generators</a> sort them by name when rendering, so generated
 output stays alphabetical regardless of how the source type is written.</p>
+<h2 id="optional-and-nullable-fields"><a class="header" href="#optional-and-nullable-fields">Optional and nullable fields</a></h2>
+<p>Each field’s <code>SchemaField</code> describes two separate things about its value:</p>
+<ul>
+<li><code>optional</code> - The key may be left out of the input entirely.</li>
+<li><code>nullable</code> - The key may be present with a <code>null</code> value.</li>
+</ul>
+<p>Renderers read them independently. JSON Schema leaves an optional field out of <code>required</code>, and gives
+a nullable one an <code>anyOf</code> that includes <code>null</code>. TypeScript marks an optional property with <code>?</code>, and
+a nullable one with <code>| null</code>.</p>
+<p>When the schema comes from a derive, they follow what serde accepts:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Optional</th><th>Nullable</th><th>TypeScript</th></tr>
+</thead>
+<tbody>
+<tr><td><code>name: String</code></td><td>No</td><td>No</td><td><code>name: string</code></td></tr>
+<tr><td><code>#[setting(default = "x")] name: String</code></td><td>Yes</td><td>No</td><td><code>name?: string</code></td></tr>
+<tr><td><code>name: Option&lt;String&gt;</code></td><td>Yes</td><td>Yes</td><td><code>name?: string | null</code></td></tr>
+<tr><td><code>#[setting(required)] name: Option&lt;String&gt;</code></td><td>No</td><td>No</td><td><code>name: string</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>An <code>Option</code> is optional as well as nullable, as serde fills in an omitted one with <code>None</code>. A
+<code>#[serde(default)]</code> on the field, or on the struct, makes a field optional too. A required <code>Option</code>
+must be given a value, which <code>null</code> isn’t, so it’s described by the type it holds.</p>
+<blockquote>
+<p>For a <a href="#configuration">config</a>, a field that isn’t optional describes what a source should
+provide, which is stricter than what loads. Every setting of a <a href="#partials">partial</a>
+may be omitted, and one that no source provides falls back to its default value. Only
+<code>#[setting(required)]</code> makes a missing value an error when loading, as described in
+<a href="#required-settings">required settings</a>.</p>
+</blockquote>
 <h2 id="settings-6"><a class="header" href="#settings-6">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a>, which are then fed into the
 <a href="#code-generation">generator</a>.</p>
@@ -2442,6 +2930,22 @@ output stays alphabetical regardless of how the source type is written.</p>
 <span class="boring">}</span></code></pre>
 <blockquote>
 <p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<h3 id="unknown-fields"><a class="header" href="#unknown-fields">Unknown fields</a></h3>
+<p>The <code>allow_unknown_fields</code> field marks a struct that accepts keys other than its fields, as serde
+does unless <code>#[serde(deny_unknown_fields)]</code>. It defaults to <code>false</code>, closing the struct, which JSON
+Schema renders as <code>additionalProperties: false</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StructType {
+	// ...
+	allow_unknown_fields: true,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>The derive sets it to what’s deserialized: a config’s partial denies unknown fields unless
+<code>#[config(allow_unknown_fields)]</code>, while a type that only derives <code>Schematic</code> follows its own
+<code>#[serde(deny_unknown_fields)]</code>.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
@@ -2568,6 +3072,16 @@ so the above can simply be written as:</p>
 <h1 id="external-types-1"><a class="header" href="#external-types-1">External types</a></h1>
 <p>Schematic provides schema implementations for third-party <a href="https://crates.io">crates</a> through a
 concept known as external types. This functionality is opt-in through Cargo features.</p>
+<p>Each feature implements the version of the crate that Schematic depends on, so the version in your
+own <code>Cargo.toml</code> must be compatible with it, or the type won’t implement <code>Schematic</code>.</p>
+<h2 id="arrayvec"><a class="header" href="#arrayvec">arrayvec</a></h2>
+<blockquote>
+<p>Requires the <code>type_arrayvec</code> Cargo feature, and arrayvec 0.7.</p>
+</blockquote>
+<p>Implements schemas for <code>ArrayVec</code> and <code>ArrayString</code> from the
+<a href="https://crates.io/crates/arrayvec">arrayvec</a> crate. Each one’s capacity is its maximum length,
+which for an <code>ArrayString</code> is in bytes, so a schema only rejects a string with more characters than
+that.</p>
 <h2 id="chrono"><a class="header" href="#chrono">chrono</a></h2>
 <blockquote>
 <p>Requires the <code>type_chrono</code> Cargo feature.</p>
@@ -2575,12 +3089,35 @@ concept known as external types. This functionality is opt-in through Cargo feat
 <p>Implements schemas for <code>Date</code>, <code>DateTime</code>, <code>Duration</code>, <code>Days</code>, <code>Months</code>, <code>IsoWeek</code>, <code>NaiveWeek</code>,
 <code>NaiveDate</code>, <code>NaiveDateTime</code>, and <code>NaiveTime</code> from the <a href="https://crates.io/crates/chrono">chrono</a>
 crate.</p>
+<h2 id="compact_str"><a class="header" href="#compact_str">compact_str</a></h2>
+<blockquote>
+<p>Requires the <code>type_compact_str</code> Cargo feature, and compact_str 0.10.</p>
+</blockquote>
+<p>Implements a schema for <code>CompactString</code> from the <a href="https://crates.io/crates/compact_str">compact_str</a>
+crate.</p>
+<h2 id="hashbrown"><a class="header" href="#hashbrown">hashbrown</a></h2>
+<blockquote>
+<p>Requires the <code>type_hashbrown</code> Cargo feature, and hashbrown 0.17.</p>
+</blockquote>
+<p>Implements schemas for <code>HashMap</code> and <code>HashSet</code> from the
+<a href="https://crates.io/crates/hashbrown">hashbrown</a> crate.</p>
 <h2 id="indexmap"><a class="header" href="#indexmap">indexmap</a></h2>
 <blockquote>
 <p>Requires the <code>type_indexmap</code> Cargo feature.</p>
 </blockquote>
 <p>Implements a schema for <code>IndexMap</code> and <code>IndexSet</code> from the
 <a href="https://crates.io/crates/indexmap">indexmap</a> crate.</p>
+<h2 id="jiff"><a class="header" href="#jiff">jiff</a></h2>
+<blockquote>
+<p>Requires the <code>type_jiff</code> Cargo feature, and jiff 1.</p>
+</blockquote>
+<p>Implements schemas for <code>Timestamp</code>, <code>ZonedDateTime</code>, <code>Span</code>, and <code>SignedDuration</code>, and the civil
+<code>Date</code>, <code>DateTime</code>, <code>Time</code>, and <code>ISOWeekDate</code>, from the <a href="https://crates.io/crates/jiff">jiff</a> crate.</p>
+<p>Only <code>Timestamp</code> and <code>Date</code> have a format, <code>date-time</code> and <code>date</code>. The others are strings, as their
+format would reject what jiff writes or reads: a <code>ZonedDateTime</code> ends with its time zone, like
+<code>[America/New_York]</code>, a civil <code>DateTime</code> and <code>Time</code> have no offset, an <code>ISOWeekDate</code> is a week, like
+<code>2024-W01-2</code>, and a <code>Span</code> and <code>SignedDuration</code> are also read in jiff’s friendly format, like
+<code>1h 30m</code>.</p>
 <h2 id="regex"><a class="header" href="#regex">regex</a></h2>
 <blockquote>
 <p>Requires the <code>type_regex</code> Cargo feature.</p>
@@ -2641,6 +3178,16 @@ not enable it, as its <code>yaml</code> feature uses <code>serde_norway</code> i
 </blockquote>
 <p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
 <a href="https://crates.io/crates/serde_norway">serde_norway</a> crate.</p>
+<h2 id="smallvec"><a class="header" href="#smallvec">smallvec</a></h2>
+<blockquote>
+<p>Requires the <code>type_smallvec</code> Cargo feature, and smallvec 1.</p>
+</blockquote>
+<p>Implements a schema for <code>SmallVec</code> from the <a href="https://crates.io/crates/smallvec">smallvec</a> crate.</p>
+<h2 id="smol_str"><a class="header" href="#smol_str">smol_str</a></h2>
+<blockquote>
+<p>Requires the <code>type_smol_str</code> Cargo feature, and smol_str 0.3.</p>
+</blockquote>
+<p>Implements a schema for <code>SmolStr</code> from the <a href="https://crates.io/crates/smol_str">smol_str</a> crate.</p>
 <h2 id="toml"><a class="header" href="#toml">toml</a></h2>
 <blockquote>
 <p>Requires the <code>toml</code> Cargo feature.</p>
@@ -2715,6 +3262,14 @@ generator.add::&lt;ThirdConfig&gt;();
 generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
 generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 <span class="boring">}</span></code></pre>
+<p>To keep the output in memory instead, such as to compare it, or write it somewhere other than a
+file, call
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.render"><code>SchemaGenerator::render()</code></a>,
+which returns it as a string.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let output = generator.render(CustomRenderer::default())?;
+<span class="boring">}</span></code></pre>
 <h2 id="renderers-1"><a class="header" href="#renderers-1">Renderers</a></h2>
 <p>The following built-in renderers are available, but custom renderers can be created as well by
 implementing the
@@ -2727,6 +3282,39 @@ trait.</p>
 <li><a href="#pkl-modules">Pkl modules</a></li>
 <li><a href="#typescript-types">TypeScript types</a></li>
 </ul>
+<h3 id="custom-renderers"><a class="header" href="#custom-renderers">Custom renderers</a></h3>
+<p>A custom renderer implements <code>is_reference</code>, which says whether a named type is rendered by
+reference, and <code>render</code>, which renders every collected schema. Each <code>render_*</code> method, one per type,
+defaults to an error naming the renderer and the type, so only the types a renderer supports need
+implementing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{RenderResult, Schema, SchemaRenderer, StringType, StructType};
+
+struct CustomRenderer;
+
+impl SchemaRenderer for CustomRenderer {
+	fn is_reference(&amp;self, _name: &amp;str) -&gt; bool {
+		false
+	}
+
+	fn render_string(&amp;mut self, _string: &amp;StringType, _schema: &amp;Schema) -&gt; RenderResult {
+		Ok("string".into())
+	}
+
+	fn render_struct(&amp;mut self, structure: &amp;StructType, _schema: &amp;Schema) -&gt; RenderResult {
+		// ...
+	}
+
+	fn render(&amp;mut self, schemas: IndexMap&lt;String, Schema&gt;) -&gt; RenderResult {
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>A renderer whose types render to something other than a string, like the JSON schema renderer, sets
+the trait’s type parameter, as in <code>SchemaRenderer&lt;schemars::Schema&gt;</code>, while <code>render</code> always returns
+a string. A helper that takes any renderer is generic over both, like
+<code>fn emit&lt;O, R: SchemaRenderer&lt;O&gt;&gt;(renderer: R)</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="api-documentation"><a class="header" href="#api-documentation">API documentation</a></h1>
 <blockquote>
@@ -3144,10 +3732,17 @@ generator.generate(output_dir.join("config.json"), renderer)?;
 <p>By default <a href="#arrays">arrays</a> and <a href="#objects">objects</a> do not support default values, and will
 render <code>[]</code> and <code>{}</code> respectively. This can be customized with the
 <a href="#field-expansion"><code>expand_fields</code> option</a>.</p>
-<p>Furthermore, <a href="#enums-1">enums</a> and <a href="#unions">unions</a> only support default values when
+<p>Furthermore, <a href="#enums-2">enums</a> and <a href="#unions">unions</a> only support default values when
 explicitly marked as such. For example, with <code>#[default]</code>.</p>
-<p>And lastly, when we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid
-value for TOML, and may not be what you expect.</p>
+<p>When we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid value for
+TOML, and may not be what you expect.</p>
+<p>An externally tagged enum’s default variant, when it holds a value, is rendered as a map of its name
+to the value, which a YAML config can’t load, as YAML only reads it from a tag, like <code>!file</code>
+(<a href="#yaml-and-externally-tagged-variants">more</a>). Prefer an internally
+tagged enum for a YAML config.</p>
+<p>A flattened struct’s settings are rendered alongside the struct’s own, as serde reads them, rather
+than under the field that holds it. In TOML, that means they’re part of the same table. A flattened
+map collects keys that a template has no names for, so it renders nothing.</p>
 <h2 id="example-output"><a class="header" href="#example-output">Example output</a></h2>
 <p>Given the following type:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -3464,8 +4059,9 @@ string, but some tools support markdown through another field called <code>markd
 <p>This is a non-standard extension to the JSON schema specification.</p>
 </blockquote>
 <h3 id="required-fields-2"><a class="header" href="#required-fields-2">Required fields</a></h3>
-<p>When a struct is rendered, automatically mark all non-<code>Option</code> struct fields as required, and
-include them in the JSON schema
+<p>When a struct is rendered, automatically mark every struct field that may not be omitted as
+required, which is any that isn’t <a href="#optional-and-nullable-fields">optional</a>, and include
+them in the JSON schema
 <a href="https://json-schema.org/understanding-json-schema/reference/object#required"><code>required</code> field</a>.
 This is enabled by default.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -3781,7 +4377,7 @@ By default this is a tab (<code>\t</code>).</p>
 }
 <span class="boring">}</span></code></pre>
 <h3 id="enum-types"><a class="header" href="#enum-types">Enum types</a></h3>
-<p><a href="#enums-1">Enum types</a> can be rendered in a format of your choice using the <code>enum_format</code> option
+<p><a href="#enums-2">Enum types</a> can be rendered in a format of your choice using the <code>enum_format</code> option
 and the
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.EnumFormat.html"><code>EnumFormat</code></a>
 enum. By default enums are rendered as TypeScript string unions, but can be rendered as TypeScript
@@ -3845,7 +4441,9 @@ export type User = {
 on usage. The default format for all properties can be customized with the <code>property_format</code> option
 and the
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html"><code>PropertyFormat</code></a>
-enum. By default all properties are required.</p>
+enum. By default a property is required, unless it’s
+<a href="#optional-and-nullable-fields">optional</a>: an <code>Option</code>, which serde fills in with <code>None</code>,
+or a setting with a default.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {

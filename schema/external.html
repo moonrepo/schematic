@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -180,6 +180,16 @@
                         <h1 id="external-types"><a class="header" href="#external-types">External types</a></h1>
 <p>Schematic provides schema implementations for third-party <a href="https://crates.io">crates</a> through a
 concept known as external types. This functionality is opt-in through Cargo features.</p>
+<p>Each feature implements the version of the crate that Schematic depends on, so the version in your
+own <code>Cargo.toml</code> must be compatible with it, or the type won’t implement <code>Schematic</code>.</p>
+<h2 id="arrayvec"><a class="header" href="#arrayvec">arrayvec</a></h2>
+<blockquote>
+<p>Requires the <code>type_arrayvec</code> Cargo feature, and arrayvec 0.7.</p>
+</blockquote>
+<p>Implements schemas for <code>ArrayVec</code> and <code>ArrayString</code> from the
+<a href="https://crates.io/crates/arrayvec">arrayvec</a> crate. Each one’s capacity is its maximum length,
+which for an <code>ArrayString</code> is in bytes, so a schema only rejects a string with more characters than
+that.</p>
 <h2 id="chrono"><a class="header" href="#chrono">chrono</a></h2>
 <blockquote>
 <p>Requires the <code>type_chrono</code> Cargo feature.</p>
@@ -187,12 +197,35 @@ concept known as external types. This functionality is opt-in through Cargo feat
 <p>Implements schemas for <code>Date</code>, <code>DateTime</code>, <code>Duration</code>, <code>Days</code>, <code>Months</code>, <code>IsoWeek</code>, <code>NaiveWeek</code>,
 <code>NaiveDate</code>, <code>NaiveDateTime</code>, and <code>NaiveTime</code> from the <a href="https://crates.io/crates/chrono">chrono</a>
 crate.</p>
+<h2 id="compact_str"><a class="header" href="#compact_str">compact_str</a></h2>
+<blockquote>
+<p>Requires the <code>type_compact_str</code> Cargo feature, and compact_str 0.10.</p>
+</blockquote>
+<p>Implements a schema for <code>CompactString</code> from the <a href="https://crates.io/crates/compact_str">compact_str</a>
+crate.</p>
+<h2 id="hashbrown"><a class="header" href="#hashbrown">hashbrown</a></h2>
+<blockquote>
+<p>Requires the <code>type_hashbrown</code> Cargo feature, and hashbrown 0.17.</p>
+</blockquote>
+<p>Implements schemas for <code>HashMap</code> and <code>HashSet</code> from the
+<a href="https://crates.io/crates/hashbrown">hashbrown</a> crate.</p>
 <h2 id="indexmap"><a class="header" href="#indexmap">indexmap</a></h2>
 <blockquote>
 <p>Requires the <code>type_indexmap</code> Cargo feature.</p>
 </blockquote>
 <p>Implements a schema for <code>IndexMap</code> and <code>IndexSet</code> from the
 <a href="https://crates.io/crates/indexmap">indexmap</a> crate.</p>
+<h2 id="jiff"><a class="header" href="#jiff">jiff</a></h2>
+<blockquote>
+<p>Requires the <code>type_jiff</code> Cargo feature, and jiff 1.</p>
+</blockquote>
+<p>Implements schemas for <code>Timestamp</code>, <code>ZonedDateTime</code>, <code>Span</code>, and <code>SignedDuration</code>, and the civil
+<code>Date</code>, <code>DateTime</code>, <code>Time</code>, and <code>ISOWeekDate</code>, from the <a href="https://crates.io/crates/jiff">jiff</a> crate.</p>
+<p>Only <code>Timestamp</code> and <code>Date</code> have a format, <code>date-time</code> and <code>date</code>. The others are strings, as their
+format would reject what jiff writes or reads: a <code>ZonedDateTime</code> ends with its time zone, like
+<code>[America/New_York]</code>, a civil <code>DateTime</code> and <code>Time</code> have no offset, an <code>ISOWeekDate</code> is a week, like
+<code>2024-W01-2</code>, and a <code>Span</code> and <code>SignedDuration</code> are also read in jiff’s friendly format, like
+<code>1h 30m</code>.</p>
 <h2 id="regex"><a class="header" href="#regex">regex</a></h2>
 <blockquote>
 <p>Requires the <code>type_regex</code> Cargo feature.</p>
@@ -253,6 +286,16 @@ not enable it, as its <code>yaml</code> feature uses <code>serde_norway</code> i
 </blockquote>
 <p>Implements schemas for <code>Value</code>, <code>Number</code>, and <code>Mapping</code> from the
 <a href="https://crates.io/crates/serde_norway">serde_norway</a> crate.</p>
+<h2 id="smallvec"><a class="header" href="#smallvec">smallvec</a></h2>
+<blockquote>
+<p>Requires the <code>type_smallvec</code> Cargo feature, and smallvec 1.</p>
+</blockquote>
+<p>Implements a schema for <code>SmallVec</code> from the <a href="https://crates.io/crates/smallvec">smallvec</a> crate.</p>
+<h2 id="smol_str"><a class="header" href="#smol_str">smol_str</a></h2>
+<blockquote>
+<p>Requires the <code>type_smol_str</code> Cargo feature, and smol_str 0.3.</p>
+</blockquote>
+<p>Implements a schema for <code>SmolStr</code> from the <a href="https://crates.io/crates/smol_str">smol_str</a> crate.</p>
 <h2 id="toml"><a class="header" href="#toml">toml</a></h2>
 <blockquote>
 <p>Requires the <code>toml</code> Cargo feature.</p>

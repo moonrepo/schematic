@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -209,6 +209,8 @@ passed as arguments, and the function must return the transformed result.</p>
 	})
 }
 <span class="boring">}</span></code></pre>
+<p>A transform that fails is an error naming the setting, like <code>Failed to transform env_file. ...</code>,
+followed by the function’s own message.</p>
 <h3 id="nested-values"><a class="header" href="#nested-values">Nested values</a></h3>
 <p>Transformers can also be used on <a href="../nested.html">nested configs</a>, but when defining the transformer
 function, the value being transformed is the <em><a href="../partial.html">partial nested config</a></em>, not the final

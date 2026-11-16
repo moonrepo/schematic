@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -242,6 +242,39 @@ like scalars but serde encodes them as maps, so the schema describes the map.</p
 <p>Fields keep the order they were inserted in, which is the declaration order when the schema comes
 from a derive. <a href="./generator/index.html">Generators</a> sort them by name when rendering, so generated
 output stays alphabetical regardless of how the source type is written.</p>
+<h2 id="optional-and-nullable-fields"><a class="header" href="#optional-and-nullable-fields">Optional and nullable fields</a></h2>
+<p>Each field’s <code>SchemaField</code> describes two separate things about its value:</p>
+<ul>
+<li><code>optional</code> - The key may be left out of the input entirely.</li>
+<li><code>nullable</code> - The key may be present with a <code>null</code> value.</li>
+</ul>
+<p>Renderers read them independently. JSON Schema leaves an optional field out of <code>required</code>, and gives
+a nullable one an <code>anyOf</code> that includes <code>null</code>. TypeScript marks an optional property with <code>?</code>, and
+a nullable one with <code>| null</code>.</p>
+<p>When the schema comes from a derive, they follow what serde accepts:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Optional</th><th>Nullable</th><th>TypeScript</th></tr>
+</thead>
+<tbody>
+<tr><td><code>name: String</code></td><td>No</td><td>No</td><td><code>name: string</code></td></tr>
+<tr><td><code>#[setting(default = "x")] name: String</code></td><td>Yes</td><td>No</td><td><code>name?: string</code></td></tr>
+<tr><td><code>name: Option&lt;String&gt;</code></td><td>Yes</td><td>Yes</td><td><code>name?: string | null</code></td></tr>
+<tr><td><code>#[setting(required)] name: Option&lt;String&gt;</code></td><td>No</td><td>No</td><td><code>name: string</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>An <code>Option</code> is optional as well as nullable, as serde fills in an omitted one with <code>None</code>. A
+<code>#[serde(default)]</code> on the field, or on the struct, makes a field optional too. A required <code>Option</code>
+must be given a value, which <code>null</code> isn’t, so it’s described by the type it holds.</p>
+<blockquote>
+<p>For a <a href="../config/index.html">config</a>, a field that isn’t optional describes what a source should
+provide, which is stricter than what loads. Every setting of a <a href="../config/partial.html">partial</a>
+may be omitted, and one that no source provides falls back to its default value. Only
+<code>#[setting(required)]</code> makes a missing value an error when loading, as described in
+<a href="../config/struct/validate.html#required-settings">required settings</a>.</p>
+</blockquote>
 <h2 id="settings"><a class="header" href="#settings">Settings</a></h2>
 <p>The following fields can be passed to <a href="https://docs.rs/schematic/latest/schematic/schema/struct.StructType.html"><code>StructType</code></a>, which are then fed into the
 <a href="./generator/index.html">generator</a>.</p>
@@ -256,6 +289,22 @@ output stays alphabetical regardless of how the source type is written.</p>
 <span class="boring">}</span></code></pre>
 <blockquote>
 <p>This is primarily used by JSON Schema.</p>
+</blockquote>
+<h3 id="unknown-fields"><a class="header" href="#unknown-fields">Unknown fields</a></h3>
+<p>The <code>allow_unknown_fields</code> field marks a struct that accepts keys other than its fields, as serde
+does unless <code>#[serde(deny_unknown_fields)]</code>. It defaults to <code>false</code>, closing the struct, which JSON
+Schema renders as <code>additionalProperties: false</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StructType {
+	// ...
+	allow_unknown_fields: true,
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>The derive sets it to what’s deserialized: a config’s partial denies unknown fields unless
+<code>#[config(allow_unknown_fields)]</code>, while a type that only derives <code>Schematic</code> follows its own
+<code>#[serde(deny_unknown_fields)]</code>.</p>
 </blockquote>
 
                     </main>

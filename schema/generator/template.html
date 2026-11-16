@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -286,8 +286,15 @@ render <code>[]</code> and <code>{}</code> respectively. This can be customized 
 <a href="#field-expansion"><code>expand_fields</code> option</a>.</p>
 <p>Furthermore, <a href="../enum.html">enums</a> and <a href="../union.html">unions</a> only support default values when
 explicitly marked as such. For example, with <code>#[default]</code>.</p>
-<p>And lastly, when we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid
-value for TOML, and may not be what you expect.</p>
+<p>When we’re unsure of what to render for a value, we’ll render <code>null</code>. This isn’t a valid value for
+TOML, and may not be what you expect.</p>
+<p>An externally tagged enum’s default variant, when it holds a value, is rendered as a map of its name
+to the value, which a YAML config can’t load, as YAML only reads it from a tag, like <code>!file</code>
+(<a href="../../config/struct/index.html#yaml-and-externally-tagged-variants">more</a>). Prefer an internally
+tagged enum for a YAML config.</p>
+<p>A flattened struct’s settings are rendered alongside the struct’s own, as serde reads them, rather
+than under the field that holds it. In TOML, that means they’re part of the same table. A flattened
+map collects keys that a template has no names for, so it renders nothing.</p>
 <h2 id="example-output"><a class="header" href="#example-output">Example output</a></h2>
 <p>Given the following type:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]

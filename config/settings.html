@@ -35,7 +35,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-774c0fcb.js"></script>
@@ -178,8 +178,10 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="settings"><a class="header" href="#settings">Settings</a></h1>
-<p>Settings are the individual fields of a <a href="./struct/index.html"><code>Config</code> struct</a> or variants of a
-<a href="./struct/index.html"><code>Config</code> enum</a>, and can be annotated with the optional <code>#[setting]</code> attribute.</p>
+<p>Settings are the individual fields of a <a href="./struct/index.html"><code>Config</code> struct</a>, the variants of a
+<a href="./struct/index.html"><code>Config</code> enum</a>, or the fields of a
+<a href="./struct/index.html#enum-variants">named variant</a>, and can be annotated with the optional <code>#[setting]</code>
+attribute.</p>
 <h2 id="third-party-types"><a class="header" href="#third-party-types">Third-party types</a></h2>
 <p>A setting that isn’t wrapped in <code>Option</code> falls back to <code>Default::default()</code> when the config provides
 no value and no <a href="./struct/default.html">default value</a> is declared, so every such setting has to
@@ -213,22 +215,33 @@ string, so the wrapper works without the upstream crate’s <code>serde</code> f
 <p><code>semver::VersionReq</code> needs no wrapper, as it already defaults to <code>*</code>. Types that are only ever
 optional don’t need one either, since an <code>Option</code> setting defaults to <code>None</code>.</p>
 </blockquote>
+<h3 id="required-traits"><a class="header" href="#required-traits">Required traits</a></h3>
+<p>Every setting is held by the <a href="./partial.html">partial</a>, which derives <code>Clone</code>, <code>Debug</code>, <code>Default</code>,
+<code>PartialEq</code>, <code>Deserialize</code>, and <code>Serialize</code>, so a setting’s type has to implement those too, along
+with <a href="../schema/index.html"><code>Schematic</code></a>. <code>Debug</code> and <code>PartialEq</code> aren’t needed by the partial itself,
+but deriving them lets partials be printed and compared, and lets a struct that holds one derive
+them as well. A type that lacks one, like <code>regex::Regex</code>, which has no <code>PartialEq</code>, fails to compile
+at <code>#[derive(Config)]</code>, so wrap it in a newtype that implements it, as <code>RegexSetting</code> does by
+comparing patterns.</p>
 <h2 id="attribute-fields"><a class="header" href="#attribute-fields">Attribute fields</a></h2>
 <p>The following fields are supported for the <code>#[setting]</code> field/variant attribute:</p>
 <ul>
 <li><code>default</code> - Sets the <a href="./struct/default.html">default value</a>. On an enum variant, it names the
 variant the partial defaults to, and on a variant holding a value, can also provide that value.</li>
-<li><code>env</code> <em>(struct only)</em> - Sets the <a href="./struct/env.html">environment variable</a> to receive a value from.</li>
-<li><code>env_prefix</code> <em>(struct only)</em> - Overrides the <a href="./struct/env.html#container-prefixes">environment variable</a>
-prefix of the nested config this field holds. Requires <code>nested</code>.</li>
+<li><code>env</code> <em>(field only)</em> - Sets the <a href="./struct/env.html">environment variable</a> to receive a value from.
+On a field of a named variant, it’s read once a source has <a href="./struct/env.html#enums">picked</a> the
+variant. A <code>nested</code> config reads its own, so it takes <code>env_prefix</code> instead.</li>
+<li><code>env_prefix</code> <em>(field only)</em> - Adds an <a href="./struct/env.html#nested-prefixes">environment variable</a>
+prefix for the nested config this field holds. Requires <code>nested</code>.</li>
 <li><code>exclude</code> - Omits the field or variant from the generated <a href="../schema/index.html">schema</a>. Has no
 effect without the <code>schema</code> Cargo feature.</li>
 <li><code>extend</code> <em>(struct only)</em> - Enables a configuration to <a href="./struct/extend.html">extend other configs</a>.</li>
 <li><code>merge</code> - Defines a function to use for <a href="./struct/merge.html">merging values</a>.</li>
 <li><code>nested</code> - Marks the field as using a <a href="./nested.html">nested <code>Config</code></a>.</li>
 <li><code>null</code> <em>(enum only)</em> - Marks the variant as representing <code>null</code>, so it is never tagged.</li>
-<li><code>parse_env</code> <em>(struct only)</em> - Parses the <a href="./struct/env.html">environment variable</a> value using a
-function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container.</li>
+<li><code>parse_env</code> <em>(field only)</em> - Parses the <a href="./struct/env.html">environment variable</a> value using a
+function. Requires either <code>env</code>, or an <code>env_prefix</code> on the container, and can’t be used with
+<code>nested</code>.</li>
 <li><code>partial</code> - Forwards attributes to the field on the <a href="./partial.html">partial</a>. May be repeated.</li>
 <li><code>required</code> - Marks the setting as <a href="./struct/validate.html#required-settings">required</a>, so that
 loading fails when no source provides a value, instead of falling back to a default.</li>
@@ -240,11 +253,14 @@ loading fails when no source provides a value, instead of falling back to a defa
 <li><code>alias</code></li>
 <li><code>flatten</code></li>
 <li><code>rename</code></li>
-<li><code>skip</code></li>
-<li><code>skip_deserializing</code></li>
+<li><code>skip</code> - Also left out of the generated <a href="../schema/index.html">schema</a>, as it’s never read or
+written, so its type needn’t implement <code>Schematic</code>.</li>
+<li><code>skip_deserializing</code> - Hidden in the generated schema, as it’s written but never read.</li>
 <li><code>skip_serializing</code></li>
 <li><code>skip_serializing_if</code> - Only honored from <code>#[setting]</code>, and written against the partial’s
 <code>Option</code>. The <code>#[serde]</code> form is left for the full type, whose field is not wrapped.</li>
+<li><code>rename_all</code> <em>(named variant only)</em> - Applies a casing to the fields of the variant, over the
+enum’s <code>rename_all_fields</code>.</li>
 <li><code>untagged</code> <em>(enum only)</em></li>
 </ul>
 <h3 id="serde-support"><a class="header" href="#serde-support">Serde support</a></h3>

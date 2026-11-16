@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -229,8 +229,36 @@ enum Entry {
 <blockquote>
 <p>We provide a handful of built-in validation functions in the
 <a href="https://docs.rs/schematic/latest/schematic/validate/index.html"><code>validate</code> module</a>. Furthermore,
-some functions are factories which can be called to produce a validator.</p>
+some functions are factories which can be called to produce a validator, like <code>min(1)</code>, <code>max(10)</code>,
+and <code>in_range(1, 10)</code> for numbers, or <code>min_length(1)</code> for strings and lists.</p>
 </blockquote>
+<h2 id="validation-passes"><a class="header" href="#validation-passes">Validation passes</a></h2>
+<p>A configuration is validated more than once while loading. Each source is validated on its own as
+it’s parsed, and the final configuration is validated again once every source,
+<a href="./default.html">default value</a>, and <a href="./env.html">environment variable</a> has been merged, and every
+<a href="./transform.html">transform</a> has run. A validator is told which pass it’s in by its last argument,
+<code>finalizing</code>, which is only <code>true</code> for the final pass.</p>
+<p>A source only holds part of the configuration, and a later one may replace a value an earlier one
+set, so a check that needs the final value should wait for the final pass. For example, a path that
+a transform makes absolute isn’t absolute yet when its source is validated.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn absolute_path&lt;P, C&gt;(value: &amp;str, partial: &amp;P, context: &amp;C, finalizing: bool) -&gt; ValidateResult {
+	if finalizing &amp;&amp; !Path::new(value).is_absolute() {
+		return Err(ValidateError::new("must be an absolute path"));
+	}
+
+	Ok(())
+}
+<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Settings that no source provided are <code>None</code> in each source’s pass, and are skipped, while the
+final pass has a value for every setting.</p>
+</blockquote>
+<p>An error in a source’s pass names that source, like <code>Failed to validate config.yml</code>. The final pass
+validates what every layer merged into, so its error names each source, and the environment
+variables when any were set, like <code>Failed to validate base.yml, config.yml, environment variables</code>,
+or the config’s name when there are neither.</p>
 <h2 id="required-settings"><a class="header" href="#required-settings">Required settings</a></h2>
 <p>Every setting in a <a href="../partial.html">partial configuration</a> is optional, so a setting that no source
 provides falls back to its <a href="./default.html">default value</a>, or to <code>Default::default()</code> when it has
@@ -255,7 +283,8 @@ source and <a href="./env.html">environment variable</a> has been merged. Any on
 source is free to omit it. A <code>null</code> counts as missing, while an empty value, like <code>""</code> or <code>[]</code>, does
 not.</p>
 <p>When the setting is wrapped in <code>Option</code>, the value must be <code>Some</code>, but the field stays an <code>Option</code>
-in the final configuration. A setting that isn’t wrapped still has to implement <code>Default</code>, which
+in the final configuration. Its <a href="../../schema/struct.html#optional-and-nullable-fields">schema</a>
+describes the type the <code>Option</code> holds, as <code>null</code> isn’t a value. A setting that isn’t wrapped still has to implement <code>Default</code>, which
 <code>AppConfig::default()</code> falls back to.</p>
 <p>A required setting can’t declare a <code>default</code>, as it would always have a value. Nor can a
 <a href="../nested.html">nested config</a> that isn’t wrapped in <code>Option</code>, as one always exists in the final
@@ -310,6 +339,24 @@ fn regex&lt;T, P, C&gt;(pattern: &amp;str) -&gt; Validator&lt;T, P, C&gt; {
 	})
 }
 <span class="boring">}</span></code></pre>
+<h3 id="several-errors"><a class="header" href="#several-errors">Several errors</a></h3>
+<p>A validator returns one error, but may return several instead, such as one for each item of a list
+that fails, by returning a <code>Vec&lt;ValidateError&gt;</code>, or a garde <code>Report</code>. Anything that implements
+<a href="https://docs.rs/schematic/latest/schematic/trait.IntoValidateErrors.html"><code>IntoValidateErrors</code></a>
+can be returned.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn no_empty_items&lt;P, C&gt;(items: &amp;[String], partial: &amp;P, context: &amp;C, finalizing: bool) -&gt; Result&lt;(), Vec&lt;ValidateError&gt;&gt; {
+	let errors = items
+		.iter()
+		.enumerate()
+		.filter(|(_, item)| item.is_empty())
+		.map(|(index, _)| ValidateError::with_segment("must not be empty", PathSegment::Index(index)))
+		.collect::&lt;Vec&lt;_&gt;&gt;();
+
+	if errors.is_empty() { Ok(()) } else { Err(errors) }
+}
+<span class="boring">}</span></code></pre>
 <h3 id="path-targeting"><a class="header" href="#path-targeting">Path targeting</a></h3>
 <p>If validating an item in a list or collection, you can specifiy the nested path when failing. This
 is extremely useful when building error messages.</p>
@@ -332,6 +379,38 @@ we suggest generic inferrence.</p>
 	// ...
 }
 <span class="boring">}</span></code></pre>
+<h2 id="config-validation"><a class="header" href="#config-validation">Config validation</a></h2>
+<p>A rule that compares settings, rather than checking one, can validate the configuration as a whole,
+with the <code>#[config(validate)]</code> container attribute field. The function receives the partial
+configuration, the <a href="../context.html">context</a>, and whether this is the
+<a href="#validation-passes">final pass</a>, and may return <a href="#several-errors">several errors</a>. It runs after the
+validators of each setting, for structs and enums alike, and is a factory when called, like
+<code>#[config(validate = at_most(10))]</code>.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn min_below_max&lt;C&gt;(partial: &amp;PartialRangeConfig, context: &amp;C, finalizing: bool) -&gt; ValidateResult {
+	// A source may only set one of them
+	if let (Some(min), Some(max)) = (partial.min, partial.max)
+		&amp;&amp; min &gt; max
+	{
+		return Err(ValidateError::with_segment(
+			"must be at most max",
+			PathSegment::Key("min".into()),
+		));
+	}
+
+	Ok(())
+}
+
+#[derive(Config)]
+#[config(validate = min_below_max)]
+struct RangeConfig {
+	pub min: usize,
+	pub max: usize,
+}
+<span class="boring">}</span></code></pre>
+<p>An error is reported at the configuration’s own path, like <code>range</code> when it’s nested, unless it
+<a href="#path-targeting">targets a setting</a> within it, like <code>range.min</code>.</p>
 <h2 id="cargo-features"><a class="header" href="#cargo-features">Cargo features</a></h2>
 <p>The following Cargo features can be enabled for more functionality:</p>
 <ul>

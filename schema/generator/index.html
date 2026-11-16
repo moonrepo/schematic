@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -235,6 +235,14 @@ generator.add::&lt;ThirdConfig&gt;();
 generator.generate(PathBuf::from("output/file"), CustomRenderer::default())?;
 generator.generate(PathBuf::from("output/another/file"), AnotherRenderer::default())?;
 <span class="boring">}</span></code></pre>
+<p>To keep the output in memory instead, such as to compare it, or write it somewhere other than a
+file, call
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.SchemaGenerator.html#method.render"><code>SchemaGenerator::render()</code></a>,
+which returns it as a string.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let output = generator.render(CustomRenderer::default())?;
+<span class="boring">}</span></code></pre>
 <h2 id="renderers"><a class="header" href="#renderers">Renderers</a></h2>
 <p>The following built-in renderers are available, but custom renderers can be created as well by
 implementing the
@@ -247,6 +255,39 @@ trait.</p>
 <li><a href="./pkl.html">Pkl modules</a></li>
 <li><a href="./typescript.html">TypeScript types</a></li>
 </ul>
+<h3 id="custom-renderers"><a class="header" href="#custom-renderers">Custom renderers</a></h3>
+<p>A custom renderer implements <code>is_reference</code>, which says whether a named type is rendered by
+reference, and <code>render</code>, which renders every collected schema. Each <code>render_*</code> method, one per type,
+defaults to an error naming the renderer and the type, so only the types a renderer supports need
+implementing.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::schema::{RenderResult, Schema, SchemaRenderer, StringType, StructType};
+
+struct CustomRenderer;
+
+impl SchemaRenderer for CustomRenderer {
+	fn is_reference(&amp;self, _name: &amp;str) -&gt; bool {
+		false
+	}
+
+	fn render_string(&amp;mut self, _string: &amp;StringType, _schema: &amp;Schema) -&gt; RenderResult {
+		Ok("string".into())
+	}
+
+	fn render_struct(&amp;mut self, structure: &amp;StructType, _schema: &amp;Schema) -&gt; RenderResult {
+		// ...
+	}
+
+	fn render(&amp;mut self, schemas: IndexMap&lt;String, Schema&gt;) -&gt; RenderResult {
+		// ...
+	}
+}
+<span class="boring">}</span></code></pre>
+<p>A renderer whose types render to something other than a string, like the JSON schema renderer, sets
+the trait’s type parameter, as in <code>SchemaRenderer&lt;schemars::Schema&gt;</code>, while <code>render</code> always returns
+a string. A helper that takes any renderer is generic over both, like
+<code>fn emit&lt;O, R: SchemaRenderer&lt;O&gt;&gt;(renderer: R)</code>.</p>
 
                     </main>
 

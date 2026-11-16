@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-b83e5ab1.js";
+            window.path_to_searchindex_js = "../../searchindex-bfe229e8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-774c0fcb.js"></script>
@@ -285,7 +285,9 @@ export type User = {
 on usage. The default format for all properties can be customized with the <code>property_format</code> option
 and the
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/enum.PropertyFormat.html"><code>PropertyFormat</code></a>
-enum. By default all properties are required.</p>
+enum. By default a property is required, unless it’s
+<a href="../struct.html#optional-and-nullable-fields">optional</a>: an <code>Option</code>, which serde fills in with <code>None</code>,
+or a setting with a default.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>TypeScriptOptions {
