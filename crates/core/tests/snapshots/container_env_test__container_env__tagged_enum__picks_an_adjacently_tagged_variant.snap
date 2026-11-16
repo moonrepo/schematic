@@ -9,47 +9,37 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let picked = EnvManager::new(prefix, Some("AUTH_"))
-        .get_and_parse_prefixed(
+    let picked = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"))
+        .pick_variant(
             "KIND",
-            |value| {
-                Ok(
-                    Some(
-                        match value.as_str() {
-                            "Redis" => Self::Redis(Default::default()),
-                            "S3" => Self::S3(Default::default()),
-                            _ => {
-                                return Err(
-                                    schematic::HandlerError::new(
-                                        format!(
-                                            "Unknown variant `{value}`, expected one of `Redis`, `S3`."
-                                        ),
-                                    ),
-                                );
-                            }
-                        },
-                    ),
-                )
+            self,
+            &["Redis", "S3"],
+            |value| match value {
+                "Redis" => Some(Self::Redis(Default::default())),
+                "S3" => Some(Self::S3(Default::default())),
+                _ => None,
             },
-        )?
-        .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self));
-    let mut env = EnvManager::new(prefix, Some("AUTH_"));
+        )?;
+    let mut env = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"));
     let value = match picked.as_ref().unwrap_or(self) {
         Self::Redis(pa) => {
             Self::Redis(
                 env
-                    .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                    .nested(
+                        schematic::internal::layers::nested_env_values(Some(pa), None)?,
+                    )?
                     .unwrap_or_default(),
             )
         }
         Self::S3(pa) => {
             Self::S3(
                 env
-                    .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                    .nested(
+                        schematic::internal::layers::nested_env_values(Some(pa), None)?,
+                    )?
                     .unwrap_or_default(),
             )
         }
     };
-    Ok(if env.is_empty() { picked } else { Some(value) })
+    Ok(env.finish(value).or(picked))
 }

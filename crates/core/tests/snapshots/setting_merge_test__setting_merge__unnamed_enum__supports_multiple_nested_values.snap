@@ -7,7 +7,6 @@ fn merge(
     context: &Self::Context,
     mut next: Self,
 ) -> std::result::Result<(), schematic::ConfigError> {
-    use schematic::internal::*;
     match self {
         Self::A(pa, pb) => {
             if let Self::A(na, nb) = next {
@@ -20,7 +19,7 @@ fn merge(
         Self::B(pa, pb) => {
             if let Self::B(na, nb) = next {
                 pa.merge(context, na)?;
-                MergeManager::new(context).nested(pb, nb)?;
+                schematic::internal::merge::MergeManager::new(context).nested(pb, nb)?;
             } else {
                 *self = next;
             }

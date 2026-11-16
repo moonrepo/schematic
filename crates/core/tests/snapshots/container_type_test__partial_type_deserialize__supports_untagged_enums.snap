@@ -8,42 +8,28 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
-            Ok(value) => return Ok(PartialExample::A(value)),
-            Err(error) => errors.push(("A", error)),
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
+            deserializer,
+        )?;
+        if let Some(value) = attempts.variant::<bool>("A") {
+            return Ok(PartialExample::A(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            (usize, String),
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::B(value.0, value.1)),
-            Err(error) => errors.push(("bb", error)),
+        if let Some(value) = attempts.variant::<(usize, String)>("bb") {
+            return Ok(PartialExample::B(value.0, value.1));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            <NestedConfig as schematic::Config>::Partial,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::C(value)),
-            Err(error) => errors.push(("C", error)),
+        if let Some(value) = attempts
+            .variant::<<NestedConfig as schematic::Config>::Partial>("C")
+        {
+            return Ok(PartialExample::C(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            Option<Vec<<NestedConfig as schematic::Config>::Partial>>,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::D(value)),
-            Err(error) => errors.push(("D", error)),
+        if let Some(value) = attempts
+            .variant::<Option<Vec<<NestedConfig as schematic::Config>::Partial>>>("D")
+        {
+            return Ok(PartialExample::D(value));
         }
-        if schematic::internal::is_null_content(&content) {
+        if attempts.unit("E") {
             return Ok(PartialExample::E);
         }
-        errors.push(("E", "expected null".to_owned()));
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }

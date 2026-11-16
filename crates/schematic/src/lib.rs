@@ -13,7 +13,8 @@ pub mod context;
 #[cfg(all(feature = "config", feature = "env"))]
 pub mod env;
 
-#[cfg(feature = "config")]
+// A `Schematic` derive reaches the schema helpers without `config`
+#[cfg(any(feature = "config", feature = "schema"))]
 #[doc(hidden)]
 pub mod internal;
 

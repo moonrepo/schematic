@@ -13,7 +13,7 @@ fn finalize(
                     pa = Some(
                         layer
                             .into_iter()
-                            .map(|layer| schematic::internal::finalize_with_layers(
+                            .map(|layer| schematic::internal::layers::finalize_with_layers(
                                 layer,
                                 context,
                             ))
@@ -32,7 +32,10 @@ fn finalize(
                                 .into_iter()
                                 .map(|(key, layer)| Ok((
                                     key,
-                                    schematic::internal::finalize_with_layers(layer, context)?,
+                                    schematic::internal::layers::finalize_with_layers(
+                                        layer,
+                                        context,
+                                    )?,
                                 )))
                                 .collect::<
                                     std::result::Result<
@@ -52,7 +55,7 @@ fn finalize(
                         transform_config(
                             layer
                                 .into_iter()
-                                .map(|layer| schematic::internal::finalize_with_layers(
+                                .map(|layer| schematic::internal::layers::finalize_with_layers(
                                     layer,
                                     context,
                                 ))

@@ -4,8 +4,7 @@ pub struct ValidateManager<'a, Ctx> {
     context: &'a Ctx,
     finalizing: bool,
     path: Path,
-
-    pub errors: Vec<ValidateError>,
+    errors: Vec<ValidateError>,
 }
 
 impl<'a, Ctx> ValidateManager<'a, Ctx> {
@@ -15,6 +14,15 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
             errors: vec![],
             finalizing,
             path,
+        }
+    }
+
+    /// Return every error the checks reported, if any did.
+    pub fn finish(self) -> Result<(), Vec<ValidateError>> {
+        if self.errors.is_empty() {
+            Ok(())
+        } else {
+            Err(self.errors)
         }
     }
 
@@ -111,6 +119,37 @@ impl<'a, Ctx> ValidateManager<'a, Ctx> {
     /// Validate a flattened config with a context of its own.
     pub fn flattened_with<S: PartialConfig>(&mut self, value: &S, context: &S::Context) {
         self.nested_at_with(self.path.clone(), value, context);
+    }
+
+    /// Validate a bare nested config that no layer provided. The full type
+    /// still holds one, built from an empty partial, so that's validated when
+    /// finalizing, otherwise the settings it requires go unchecked.
+    pub fn missing_nested<S: PartialConfig<Context = Ctx>>(&mut self, key: &str) {
+        if self.finalizing {
+            self.nested(key, &S::default());
+        }
+    }
+
+    /// Validate a missing nested config with a context of its own.
+    pub fn missing_nested_with<S: PartialConfig>(&mut self, key: &str, context: &S::Context) {
+        if self.finalizing {
+            self.nested_with(key, &S::default(), context);
+        }
+    }
+
+    /// Validate a missing flattened config, whose settings are reported at
+    /// this path.
+    pub fn missing_flattened<S: PartialConfig<Context = Ctx>>(&mut self) {
+        if self.finalizing {
+            self.flattened(&S::default());
+        }
+    }
+
+    /// Validate a missing flattened config with a context of its own.
+    pub fn missing_flattened_with<S: PartialConfig>(&mut self, context: &S::Context) {
+        if self.finalizing {
+            self.flattened_with(&S::default(), context);
+        }
     }
 
     pub fn nested_variant<S: PartialConfig<Context = Ctx>>(

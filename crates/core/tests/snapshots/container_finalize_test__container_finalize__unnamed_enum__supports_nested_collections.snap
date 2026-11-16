@@ -12,7 +12,10 @@ fn finalize(
                 Self::A(
                     pa
                         .into_iter()
-                        .map(|pa| schematic::internal::finalize_with_layers(pa, context))
+                        .map(|pa| schematic::internal::layers::finalize_with_layers(
+                            pa,
+                            context,
+                        ))
                         .collect::<
                             std::result::Result<
                                 Vec<<NestedConfig as schematic::Config>::Partial>,
@@ -28,7 +31,10 @@ fn finalize(
                             .into_iter()
                             .map(|(key, pa)| Ok((
                                 key,
-                                schematic::internal::finalize_with_layers(pa, context)?,
+                                schematic::internal::layers::finalize_with_layers(
+                                    pa,
+                                    context,
+                                )?,
                             )))
                             .collect::<
                                 std::result::Result<
@@ -51,7 +57,7 @@ fn finalize(
                                 Some(
                                     pa
                                         .into_iter()
-                                        .map(|pa| schematic::internal::finalize_with_layers(
+                                        .map(|pa| schematic::internal::layers::finalize_with_layers(
                                             pa,
                                             context,
                                         ))

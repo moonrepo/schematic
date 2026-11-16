@@ -9,9 +9,8 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, None);
+    let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let mut partial = Self::default();
     partial.0 = env.get_and_parse("KEY", func_ref)?;
-    Ok(if env.is_empty() { None } else { Some(partial) })
+    Ok(env.finish(partial))
 }

@@ -6,7 +6,6 @@ fn default_values(
     &self,
     context: &Self::Context,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
     Ok(
         match self {
             Self::Foo { .. } => {
@@ -17,10 +16,21 @@ fn default_values(
             Self::Bar { d: pd, .. } => {
                 Some(Self::Bar {
                     a: Some(true),
-                    b: Some((&&DefaultString::<String>::new()).parse_default("abc")?),
+                    b: Some({
+                        use schematic::internal::defaults::{
+                            DefaultStringViaFromStr as _, DefaultStringViaTryFrom as _,
+                        };
+                        (&&schematic::internal::defaults::DefaultString::<String>::new())
+                            .parse_default("abc")?
+                    }),
                     c: None,
-                    d: schematic::internal::nested_default_values(pd.as_ref(), context)?,
-                    e: handle_default_result(handler(context))?,
+                    d: schematic::internal::layers::nested_default_values(
+                        pd.as_ref(),
+                        context,
+                    )?,
+                    e: schematic::internal::defaults::handle_default_result(
+                        handler(context),
+                    )?,
                 })
             }
         },

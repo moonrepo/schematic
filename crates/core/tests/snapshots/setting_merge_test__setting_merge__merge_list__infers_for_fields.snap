@@ -7,8 +7,7 @@ fn merge(
     context: &Self::Context,
     mut next: Self,
 ) -> std::result::Result<(), schematic::ConfigError> {
-    use schematic::internal::*;
-    MergeManager::new(context)
+    schematic::internal::merge::MergeManager::new(context)
         .apply_with(&mut self.a, next.a, schematic::merge::merge_list)?
         .apply_with(&mut self.b, next.b, schematic::merge::merge_list)?
         .apply_with(&mut self.c, next.c, schematic::merge::merge_list)?

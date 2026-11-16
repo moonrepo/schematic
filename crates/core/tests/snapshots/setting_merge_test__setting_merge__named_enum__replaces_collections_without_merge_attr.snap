@@ -7,11 +7,12 @@ fn merge(
     context: &Self::Context,
     mut next: Self,
 ) -> std::result::Result<(), schematic::ConfigError> {
-    use schematic::internal::*;
     match self {
         Self::A { a: pa, b: pb } => {
             if let Self::A { a: na, b: nb } = next {
-                MergeManager::new(context).apply(pa, na)?.apply(pb, nb)?;
+                schematic::internal::merge::MergeManager::new(context)
+                    .apply(pa, na)?
+                    .apply(pb, nb)?;
             } else {
                 *self = next;
             }

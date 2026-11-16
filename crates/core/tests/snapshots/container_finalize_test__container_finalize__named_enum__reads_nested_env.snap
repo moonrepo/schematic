@@ -22,7 +22,7 @@ fn finalize(
                     pd = Some(
                         layer
                             .into_iter()
-                            .map(|layer| schematic::internal::finalize_with_layers(
+                            .map(|layer| schematic::internal::layers::finalize_with_layers(
                                 layer,
                                 context,
                             ))

@@ -8,44 +8,30 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::literal_content(&content) {
-            Some("alpha" | "a") => return Ok(PartialExample::Alpha),
-            Some("bb") => return Ok(PartialExample::Beta),
-            _ => {
-                errors
-                    .push((
-                        "",
-                        schematic::internal::literal_error_message(
-                            &["alpha", "bb"],
-                            &content,
-                        ),
-                    ))
-            }
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
+            deserializer,
+        )?;
+        if let Some(value) = attempts
+            .literal(
+                &["alpha", "bb"],
+                |value| match value {
+                    "alpha" | "a" => Some(PartialExample::Alpha),
+                    "bb" => Some(PartialExample::Beta),
+                    _ => None,
+                },
+            )
+        {
+            return Ok(value);
         }
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
-            Ok(value) => return Ok(PartialExample::Flag(value)),
-            Err(error) => errors.push(("flag", error)),
+        if let Some(value) = attempts.variant::<bool>("flag") {
+            return Ok(PartialExample::Flag(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            (usize, String),
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Pair(value.0, value.1)),
-            Err(error) => errors.push(("pair", error)),
+        if let Some(value) = attempts.variant::<(usize, String)>("pair") {
+            return Ok(PartialExample::Pair(value.0, value.1));
         }
-        if schematic::internal::is_null_content(&content) {
+        if attempts.unit("missing") {
             return Ok(PartialExample::Missing);
         }
-        errors.push(("missing", "expected null".to_owned()));
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }

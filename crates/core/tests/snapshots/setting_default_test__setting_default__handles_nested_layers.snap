@@ -8,8 +8,14 @@ fn default_values(
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
     Ok(
         Some(Self {
-            a: schematic::internal::nested_default_values(self.a.as_ref(), context)?,
-            b: schematic::internal::nested_default_values(self.b.as_ref(), context)?,
+            a: schematic::internal::layers::nested_default_values(
+                self.a.as_ref(),
+                context,
+            )?,
+            b: schematic::internal::layers::nested_default_values(
+                self.b.as_ref(),
+                context,
+            )?,
             c: Some(Default::default()),
         }),
     )

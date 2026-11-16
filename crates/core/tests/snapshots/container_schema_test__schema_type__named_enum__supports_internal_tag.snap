@@ -11,8 +11,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                         "A".into(),
                         {
                             let mut item = {
-                                let mut item = {
-                                    let mut item = Schema::structure(
+                                let mut item = schematic::internal::schema::internally_tagged(
+                                    Schema::structure(
                                         StructType::new([
                                             (
                                                 "a".into(),
@@ -44,20 +44,12 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                             ),
                                             ("d".into(), SchemaField::new(schema.infer::<String>())),
                                         ]),
-                                    );
-                                    if item
-                                        .ty
-                                        .add_field(
-                                            "type",
-                                            SchemaField::new(
-                                                Schema::literal_value(LiteralValue::String("A".into())),
-                                            ),
-                                        )
-                                    {
-                                        item.name = None;
-                                    }
-                                    item
-                                };
+                                    ),
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("A".into())),
+                                    ),
+                                );
                                 item.partialize();
                                 item
                             };
@@ -68,8 +60,8 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "B".into(),
                         {
-                            let mut item = {
-                                let mut item = Schema::structure(
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                Schema::structure(
                                     StructType::new([
                                         (
                                             "inner".into(),
@@ -93,20 +85,12 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                             ),
                                         ),
                                     ]),
-                                );
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("B".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                                ),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("B".into())),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
@@ -114,52 +98,34 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "C".into(),
                         {
-                            let mut item = {
-                                let mut item = Schema::structure(StructType::default());
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("C".into())),
-                                        ),
-                                    )
-                                {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                Schema::structure(StructType::default()),
+                                "type",
+                                SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("C".into())),
+                                ),
+                            );
                             item.partialize();
                             item
                         },
                     ),
                     (
                         "Text".into(),
-                        {
-                            let mut item = schema.infer::<String>();
-                            if item
-                                .ty
-                                .add_field(
-                                    "type",
-                                    SchemaField::new(
-                                        Schema::literal_value(LiteralValue::String("Text".into())),
-                                    ),
-                                )
-                            {
-                                item.name = None;
-                            }
-                            item
-                        },
+                        schematic::internal::schema::internally_tagged(
+                            schema.infer::<String>(),
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Text".into())),
+                            ),
+                        ),
                     ),
                     (
                         "Unit".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    Schema::literal_value(LiteralValue::String("Unit".into())),
-                                ),
-                            ]),
+                        schematic::internal::schema::tagged_unit(
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Unit".into())),
+                            ),
                         ),
                     ),
                 ],

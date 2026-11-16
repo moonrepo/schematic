@@ -22,37 +22,26 @@ impl<'de> serde::Deserialize<'de> for PartialExample {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::deserialize_untagged_variant::<bool>(&content) {
-            Ok(value) => return Ok(PartialExample::Bool(value)),
-            Err(error) => errors.push(("Bool", error)),
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
+            deserializer,
+        )?;
+        if let Some(value) = attempts.variant::<bool>("Bool") {
+            return Ok(PartialExample::Bool(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<usize>(&content) {
-            Ok(value) => return Ok(PartialExample::Number(value)),
-            Err(error) => errors.push(("Number", error)),
+        if let Some(value) = attempts.variant::<usize>("Number") {
+            return Ok(PartialExample::Number(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            <NestedConfig as schematic::Config>::Partial,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::Nested(value)),
-            Err(error) => errors.push(("Nested", error)),
+        if let Some(value) = attempts
+            .variant::<<NestedConfig as schematic::Config>::Partial>("Nested")
+        {
+            return Ok(PartialExample::Nested(value));
         }
-        match schematic::internal::deserialize_untagged_variant::<
-            Vec<<NestedConfig as schematic::Config>::Partial>,
-        >(&content) {
-            Ok(value) => return Ok(PartialExample::List(value)),
-            Err(error) => errors.push(("List", error)),
+        if let Some(value) = attempts
+            .variant::<Vec<<NestedConfig as schematic::Config>::Partial>>("List")
+        {
+            return Ok(PartialExample::List(value));
         }
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }
 #[automatically_derived]
@@ -83,19 +72,23 @@ impl schematic::PartialConfig for PartialExample {
         &self,
         prefix: Option<&str>,
     ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-        use schematic::internal::*;
-        let mut env = EnvManager::new(prefix, None);
+        let mut env = schematic::internal::env::EnvManager::new(prefix, None);
         let value = match self {
             Self::Nested(pa) => {
                 Self::Nested(
                     env
-                        .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                        .nested(
+                            schematic::internal::layers::nested_env_values(
+                                Some(pa),
+                                None,
+                            )?,
+                        )?
                         .unwrap_or_default(),
                 )
             }
             _ => return Ok(None),
         };
-        Ok(if env.is_empty() { None } else { Some(value) })
+        Ok(env.finish(value))
     }
     fn finalize(
         self,
@@ -109,7 +102,7 @@ impl schematic::PartialConfig for PartialExample {
                         transform_list(
                             pa
                                 .into_iter()
-                                .map(|pa| schematic::internal::finalize_with_layers(
+                                .map(|pa| schematic::internal::layers::finalize_with_layers(
                                     pa,
                                     context,
                                 ))
@@ -162,8 +155,11 @@ impl schematic::PartialConfig for PartialExample {
         finalizing: bool,
         path: schematic::Path,
     ) -> std::result::Result<(), Vec<schematic::ValidateError>> {
-        use schematic::internal::*;
-        let mut validate = ValidateManager::new(context, finalizing, path);
+        let mut validate = schematic::internal::validate::ValidateManager::new(
+            context,
+            finalizing,
+            path,
+        );
         match self {
             Self::Bool(pa) => {}
             Self::Number(pa) => {}
@@ -180,10 +176,7 @@ impl schematic::PartialConfig for PartialExample {
             }
             _ => {}
         };
-        if !validate.errors.is_empty() {
-            return Err(validate.errors);
-        }
-        Ok(())
+        validate.finish()
     }
 }
 #[automatically_derived]
@@ -251,8 +244,6 @@ impl schematic::Schematic for PartialExample {
         Some("PartialExample".into())
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
-        schematic::internal::partialize_schema(&mut schema, true);
-        schema
+        schematic::internal::schema::build_partial_schema::<Example>(schema)
     }
 }

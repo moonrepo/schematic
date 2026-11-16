@@ -127,7 +127,7 @@ impl Schematic for PartialExample { /* delegates + partialize_schema */ }
 ```
 
 Runtime flow: each source is parsed into a partial layer, and the sources are merged in order,
-from the first (`None` without any). `internal::apply_layers` then reads `env_values` against that
+from the first (`None` without any). `internal::layers::apply_layers` then reads `env_values` against that
 merge and merges it over, and reads `default_values` against the result and merges *that* under,
 then `finalize` runs per-setting transforms and nested finalization. Finally `validate` runs before
 `from_partial` produces the full type. Precedence, lowest to highest: defaults → sources → env. A
@@ -153,7 +153,7 @@ the partial they go under or over, which is what lets the layers depend on what 
 transforms and finalizes each nested config *without* applying its own defaults or env. Per kind of
 nested setting, through `self`:
 
-- **Bare** (`child: Child`): `internal::nested_default_values(self.child.as_ref(), ctx)` and
+- **Bare** (`child: Child`): `internal::layers::nested_default_values(self.child.as_ref(), ctx)` and
   `nested_env_values(..)`, which view a missing config as its `Default`, as the full type always
   holds one.
 - **Optional** (`Option<Child>`): defaults only when `self` holds one, so a parent's defaults leave
@@ -162,15 +162,15 @@ nested setting, through `self`:
 - **Enums** return the layers of the variant `self` holds: a named variant's fields' defaults and
   env, a tuple variant's nested values', and the default variant's `default = value`. A variant
   with nothing to default has no arm (`None`), except the default variant, which is held as it is.
-  The tag's variable (`impl_partial_env_values_tag`) picks a variant unless `self` already holds it
-  (`std::mem::discriminant`), so a source's values within it stand, and the fields are then read
-  from whichever variant that leaves.
+  The tag's variable (`impl_partial_env_values_tag`, through `EnvManager::pick_variant`) picks a
+  variant unless `self` already holds it (`std::mem::discriminant`), so a source's values within
+  it stand, and the fields are then read from whichever variant that leaves.
 - **Collection items** are the one boundary: no layer holds their defaults or env, as a collection
-  replaces on merge, so each item goes through the hidden `internal::finalize_with_layers`, which
+  replaces on merge, so each item goes through the hidden `internal::layers::finalize_with_layers`, which
   runs `apply_layers` on the item, as the loader does on a config, then finalizes. They aren't
   reported in `layers`.
 - **A tuple variant holding several values**, or a recursive or collected config, reads its nested
-  values' env in `finalize`, through the hidden `internal::finalize_with_env`
+  values' env in `finalize`, through the hidden `internal::layers::finalize_with_env`
   (`Variant::has_layered_env`). An env layer would have to restate every value it didn't read,
   which would replace a source's plain value or a nested enum's variant, as neither has an empty
   form to merge. Its defaults are still in the layer, as they go *under* the source.
@@ -236,10 +236,28 @@ Each piece is separately callable, which is what the snapshot tests do.
 - `impl_partial_*` → code for the partial type / `PartialConfig`.
 - `impl_full_*` → code for the full type / `Config`.
 - `get_*` → derive-time values (names, keys, attributes), not codegen.
-- Most codegen methods return `ImplResult { value, no_value, requires_internal }`. `no_value` means
-  "emit nothing" (the caller skips the row/statement); `requires_internal` means the generated
-  method needs `use schematic::internal::*;`, which the container adds via
-  `ImplResult::impl_use_internal`.
+- Most codegen methods return `ImplResult { value, no_value }`. `no_value` means "emit nothing"
+  (the caller skips the row/statement).
+- Generated code calls the runtime's hidden helpers by their full path, like
+  `schematic::internal::merge::MergeManager::new`, never through a glob import, as one in a
+  generated body would shadow the names a user's `default`, `merge`, or `validate` expression
+  refers to. `crates/schematic/src/internal` is split by domain (`layers`, `env`, `merge`,
+  `validate`, `defaults`, `untagged`, `settings`, `config_enum`, `schema`), and its `mod.rs` only
+  declares them, so a new helper goes in the module of its domain rather than being re-exported.
+  `internal` exists under `config` or `schema`, as a `Schematic`-only derive's `build_schema`
+  calls `internal::schema`, so every other module is gated on `config` itself.
+  The one import is for a string default, whose `DefaultString` traits must be in scope for
+  autoref to pick one, so they're imported `as _` within the value's own block.
+- What doesn't depend on the derive belongs in a helper, with generated code supplying only what
+  the derive knows: keys, names, types, and the arms that build a variant. The managers each end
+  with `finish`, `EnvManager::pick_variant` builds the tag's error from the names it's handed,
+  and an untagged `Deserialize` is a run of `UntaggedManager` attempts (`variant`, `unit`,
+  `literal`) ending in `into_error`, so the generated code never formats a message or holds the
+  errors itself. Likewise `ValidateManager::missing_nested` (and its `_with`/`flattened` forms)
+  checks `finalizing` for a missing bare nested config, `internal::schema` wraps a tagged
+  variant's schema (`tagged_unit`, `internally_tagged`, `adjacently_tagged`) and builds the
+  partial's (`build_partial_schema`), and `config_enum::parse_fallback` converts a `ConfigEnum`'s
+  fallback.
 
 ### `Value` and the layer system
 
@@ -556,7 +574,7 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `{"Unix": [bytes]}`, not a string.
 - A parent must reach a nested config through a method a hand-written `PartialConfig` would
   override, not only the hidden ones the derive implements. Nested validation goes through the
-  public `validate` (re-pathing its errors), and `internal::nested_env_values` calls `env_values`
+  public `validate` (re-pathing its errors), and `internal::layers::nested_env_values` calls `env_values`
   without a prefix, as the hidden `env_values_with_prefix` defaults to it. Don't make a public
   method's default call a hidden one whose default calls it back, as a partial overriding neither
   would recurse.

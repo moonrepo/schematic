@@ -9,23 +9,27 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let mut env = EnvManager::new(prefix, None);
+    let mut env = schematic::internal::env::EnvManager::new(prefix, None);
     let value = match self {
         Self::A { a: pa, b: pb, c: pc, .. } => {
             Self::A {
                 a: env
-                    .nested(schematic::internal::nested_env_values(pa.as_ref(), None)?)?,
+                    .nested(
+                        schematic::internal::layers::nested_env_values(
+                            pa.as_ref(),
+                            None,
+                        )?,
+                    )?,
                 b: env
                     .nested(
-                        schematic::internal::nested_env_values(
+                        schematic::internal::layers::nested_env_values(
                             pb.as_ref(),
                             Some("PRE_"),
                         )?,
                     )?,
                 c: env
                     .nested(
-                        schematic::internal::nested_env_values(
+                        schematic::internal::layers::nested_env_values(
                             pc.as_ref(),
                             Some("PRE_"),
                         )?,
@@ -33,5 +37,5 @@ fn env_values_with_prefix(
             }
         }
     };
-    Ok(if env.is_empty() { None } else { Some(value) })
+    Ok(env.finish(value))
 }

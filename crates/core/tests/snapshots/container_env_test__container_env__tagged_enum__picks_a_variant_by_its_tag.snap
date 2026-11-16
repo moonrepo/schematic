@@ -9,43 +9,29 @@ fn env_values_with_prefix(
     &self,
     prefix: Option<&str>,
 ) -> std::result::Result<Option<Self>, schematic::ConfigError> {
-    use schematic::internal::*;
-    let picked = EnvManager::new(prefix, Some("AUTH_"))
-        .get_and_parse_prefixed(
+    let picked = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"))
+        .pick_variant(
             "TYPE",
-            |value| {
-                Ok(
-                    Some(
-                        match value.as_str() {
-                            "none" => Self::None,
-                            "token" | "tok" => {
-                                Self::Token {
-                                    token: Default::default(),
-                                    expires: Default::default(),
-                                }
-                            }
-                            "basic_auth" => {
-                                Self::BasicAuth {
-                                    user: Default::default(),
-                                }
-                            }
-                            "nested" => Self::Nested(Default::default()),
-                            _ => {
-                                return Err(
-                                    schematic::HandlerError::new(
-                                        format!(
-                                            "Unknown variant `{value}`, expected one of `none`, `token`, `basic_auth`, `nested`."
-                                        ),
-                                    ),
-                                );
-                            }
-                        },
-                    ),
-                )
+            self,
+            &["none", "token", "basic_auth", "nested"],
+            |value| match value {
+                "none" => Some(Self::None),
+                "token" | "tok" => {
+                    Some(Self::Token {
+                        token: Default::default(),
+                        expires: Default::default(),
+                    })
+                }
+                "basic_auth" => {
+                    Some(Self::BasicAuth {
+                        user: Default::default(),
+                    })
+                }
+                "nested" => Some(Self::Nested(Default::default())),
+                _ => None,
             },
-        )?
-        .filter(|picked| std::mem::discriminant(picked) != std::mem::discriminant(self));
-    let mut env = EnvManager::new(prefix, Some("AUTH_"));
+        )?;
+    let mut env = schematic::internal::env::EnvManager::new(prefix, Some("AUTH_"));
     let value = match picked.as_ref().unwrap_or(self) {
         Self::Token { .. } => {
             Self::Token {
@@ -61,11 +47,13 @@ fn env_values_with_prefix(
         Self::Nested(pa) => {
             Self::Nested(
                 env
-                    .nested(schematic::internal::nested_env_values(Some(pa), None)?)?
+                    .nested(
+                        schematic::internal::layers::nested_env_values(Some(pa), None)?,
+                    )?
                     .unwrap_or_default(),
             )
         }
         _ => return Ok(picked),
     };
-    Ok(if env.is_empty() { picked } else { Some(value) })
+    Ok(env.finish(value).or(picked))
 }

@@ -8,24 +8,15 @@ impl<'de, T> serde::Deserialize<'de> for PartialExample<T> {
     where
         D: serde::Deserializer<'de>,
     {
-        use serde::de::Error as _;
-        let content = schematic::internal::buffer_untagged_content(deserializer)?;
-        let mut errors: Vec<(&str, String)> = Vec::new();
-        match schematic::internal::deserialize_untagged_variant::<T>(&content) {
-            Ok(value) => return Ok(PartialExample::Value(value)),
-            Err(error) => errors.push(("Value", error)),
+        let mut attempts = schematic::internal::untagged::UntaggedManager::new(
+            deserializer,
+        )?;
+        if let Some(value) = attempts.variant::<T>("Value") {
+            return Ok(PartialExample::Value(value));
         }
-        if schematic::internal::is_null_content(&content) {
+        if attempts.unit("Nothing") {
             return Ok(PartialExample::Nothing);
         }
-        errors.push(("Nothing", "expected null".to_owned()));
-        Err(
-            D::Error::custom(
-                schematic::internal::untagged_error_message(
-                    stringify!(PartialExample),
-                    &errors,
-                ),
-            ),
-        )
+        Err(attempts.into_error(stringify!(PartialExample)))
     }
 }
