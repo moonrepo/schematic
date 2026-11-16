@@ -21,24 +21,22 @@ fn validate_with_path(
                     |validate| {
                         if let Some(setting) = pa {
                             validate.nested("a", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "a",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("a");
                         }
                         if let Some(setting) = pb {
                             validate.nested("b", setting);
                         }
                         if let Some(setting) = pc {
                             validate.nested("c", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "c",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("c");
                         }
                         if let Some(setting) = pd {
                             {

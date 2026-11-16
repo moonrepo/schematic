@@ -141,12 +141,11 @@ impl schematic::PartialConfig for PartialExample {
         }
         if let Some(setting) = &self.nested {
             validate.nested("nested", setting);
-        } else if finalizing {
+        } else {
             validate
-                .nested(
-                    "nested",
-                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                );
+                .missing_nested::<
+                    <NestedConfig as schematic::Config>::Partial,
+                >("nested");
         }
         if let Some(setting) = &self.list {
             {
@@ -276,8 +275,6 @@ impl schematic::Schematic for PartialExample {
         Some("PartialExample".into())
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
-        schematic::internal::schema::partialize_schema(&mut schema, true);
-        schema
+        schematic::internal::schema::build_partial_schema::<Example>(schema)
     }
 }

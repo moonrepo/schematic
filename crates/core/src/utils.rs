@@ -23,7 +23,7 @@ pub fn get_renamed_value(
 /// the serialized key, so that derive-time names (schemas, settings,
 /// validation paths) describe what is actually accepted.
 /// The case names serde accepts for `rename_all`, and that `before_parse`
-/// reuses. Kept in step with `schematic::internal::casing::format_case`, which does
+/// reuses. Kept in step with `schematic::internal::config_enum::format_case`, which does
 /// the same conversion at runtime.
 pub const CASE_FORMATS: [&str; 8] = [
     "lowercase",
@@ -127,7 +127,7 @@ fn format_field_case(format: &str, field: &str) -> String {
     }
 }
 
-/// Convert a name the way `schematic::internal::casing::format_case` converts input at
+/// Convert a name the way `schematic::internal::config_enum::format_case` converts input at
 /// runtime for `#[config(before_parse)]`. That conversion treats an acronym as
 /// one word, unlike serde, so `MacOS` becomes `mac-os` rather than `mac-o-s`,
 /// and matching it as well keeps loosely cased input parsing.

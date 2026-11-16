@@ -16,22 +16,14 @@ fn validate_with_path(
     if let Some(setting) = &self.a {
         validate.check("a", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("a", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "a",
-                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<NestedConfig as schematic::Config>::Partial>("a");
     }
     if let Some(setting) = &self.b {
         validate.check("b", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("b", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "b",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("b");
     }
     if let Some(setting) = &self.c {
         validate.check("c", setting, self, |v, d, c, f| func_ref(v, d, c, f));
@@ -40,30 +32,18 @@ fn validate_with_path(
     if let Some(setting) = &self.d {
         validate.check("d", setting, self, |v, d, c, f| func_ref(v, d, c, f));
         validate.nested("d", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "d",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("d");
     }
     if let Some(setting) = &self.e {
         validate.nested("e", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "e",
-                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<NestedConfig as schematic::Config>::Partial>("e");
     }
     if let Some(setting) = &self.f {
         validate.nested("f", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "f",
-                &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<CustomConfig as schematic::Config>::Partial>("f");
     }
     validate.finish()
 }

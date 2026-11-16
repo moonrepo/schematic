@@ -21,12 +21,8 @@ fn validate_with_path(
     }
     if let Some(setting) = &self.c {
         validate.nested("cc", setting);
-    } else if finalizing {
-        validate
-            .nested(
-                "cc",
-                &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-            );
+    } else {
+        validate.missing_nested::<<NestedConfig as schematic::Config>::Partial>("cc");
     }
     validate.finish()
 }

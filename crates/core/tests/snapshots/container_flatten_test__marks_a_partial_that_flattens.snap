@@ -72,11 +72,8 @@ impl schematic::PartialConfig for PartialExample {
         );
         if let Some(setting) = &self.child {
             validate.flattened(setting);
-        } else if finalizing {
-            validate
-                .flattened(
-                    &<<Child as schematic::Config>::Partial as Default>::default(),
-                );
+        } else {
+            validate.missing_flattened::<<Child as schematic::Config>::Partial>();
         }
         validate.finish()
     }

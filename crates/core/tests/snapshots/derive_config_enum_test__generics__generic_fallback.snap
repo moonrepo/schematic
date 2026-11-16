@@ -17,13 +17,7 @@ impl<T: Clone> std::str::FromStr for Example<T> {
                 "Known" => Self::Known,
                 unknown => {
                     Self::Other(
-                        unknown
-                            .try_into()
-                            .map_err(|_| {
-                                schematic::ConfigError::EnumInvalidFallback(
-                                    unknown.to_string(),
-                                )
-                            })?,
+                        schematic::internal::config_enum::parse_fallback(unknown)?,
                     )
                 }
             },

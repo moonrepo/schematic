@@ -141,12 +141,11 @@ impl schematic::PartialConfig for PartialExample {
                         |validate| {
                             if let Some(setting) = pb {
                                 validate.nested("b", setting);
-                            } else if finalizing {
+                            } else {
                                 validate
-                                    .nested(
-                                        "b",
-                                        &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                    );
+                                    .missing_nested::<
+                                        <NestedConfig as schematic::Config>::Partial,
+                                    >("b");
                             }
                         },
                     );
@@ -245,8 +244,8 @@ impl schematic::Schematic for Example {
                         (
                             "A".into(),
                             {
-                                let mut item = {
-                                    let mut item = Schema::structure(
+                                let mut item = schematic::internal::schema::internally_tagged(
+                                    Schema::structure(
                                         StructType::new([
                                             (
                                                 "a".into(),
@@ -262,20 +261,12 @@ impl schematic::Schematic for Example {
                                                 SchemaField::new(schema.infer_as_nested::<NestedConfig>()),
                                             ),
                                         ]),
-                                    );
-                                    if item
-                                        .ty
-                                        .add_field(
-                                            "type",
-                                            SchemaField::new(
-                                                Schema::literal_value(LiteralValue::String("A".into())),
-                                            ),
-                                        )
-                                    {
-                                        item.name = None;
-                                    }
-                                    item
-                                };
+                                    ),
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("A".into())),
+                                    ),
+                                );
                                 item.partialize();
                                 item
                             },
@@ -283,25 +274,17 @@ impl schematic::Schematic for Example {
                         (
                             "B".into(),
                             {
-                                let mut item = {
-                                    let mut item = Schema::structure(
+                                let mut item = schematic::internal::schema::internally_tagged(
+                                    Schema::structure(
                                         StructType::new([
                                             ("c".into(), SchemaField::new(schema.infer::<bool>())),
                                         ]),
-                                    );
-                                    if item
-                                        .ty
-                                        .add_field(
-                                            "type",
-                                            SchemaField::new(
-                                                Schema::literal_value(LiteralValue::String("B".into())),
-                                            ),
-                                        )
-                                    {
-                                        item.name = None;
-                                    }
-                                    item
-                                };
+                                    ),
+                                    "type",
+                                    SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("B".into())),
+                                    ),
+                                );
                                 item.partialize();
                                 item
                             },
@@ -318,8 +301,6 @@ impl schematic::Schematic for PartialExample {
         Some("PartialExample".into())
     }
     fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-        let mut schema = <Example as schematic::Schematic>::build_schema(schema);
-        schematic::internal::schema::partialize_schema(&mut schema, true);
-        schema
+        schematic::internal::schema::build_partial_schema::<Example>(schema)
     }
 }

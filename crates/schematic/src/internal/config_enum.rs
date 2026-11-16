@@ -1,3 +1,5 @@
+use crate::config::ConfigError;
+
 /// Normalize a string into the provided case, using the same format names as
 /// serde's `rename_all`. Backs `#[config(before_parse)]`, where the incoming
 /// value is reshaped before it is matched against a variant.
@@ -28,4 +30,12 @@ pub fn format_case(value: &str, format: &str) -> String {
         // case, since the value came from a user rather than a Rust ident
         .remove_boundaries(&[Boundary::UpperDigit, Boundary::LowerDigit])
         .to_case(case)
+}
+
+/// Convert a value that no other variant of a `ConfigEnum` matched into the
+/// type its fallback variant holds.
+pub fn parse_fallback<'a, T: TryFrom<&'a str>>(value: &'a str) -> Result<T, ConfigError> {
+    value
+        .try_into()
+        .map_err(|_| ConfigError::EnumInvalidFallback(value.to_string()))
 }

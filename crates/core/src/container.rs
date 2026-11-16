@@ -1094,7 +1094,7 @@ impl Container {
         validate_case_format("before_parse", format);
 
         quote! {
-            let value = schematic::internal::casing::format_case(value, #format);
+            let value = schematic::internal::config_enum::format_case(value, #format);
             let value = value.as_str();
         }
     }
@@ -1203,9 +1203,7 @@ impl Container {
                 }
 
                 fn build_schema(schema: schematic::SchemaBuilder) -> schematic::Schema {
-                    let mut schema = <#base_name #ty_generics as schematic::Schematic>::build_schema(schema);
-                    schematic::internal::schema::partialize_schema(&mut schema, true);
-                    schema
+                    schematic::internal::schema::build_partial_schema::<#base_name #ty_generics>(schema)
                 }
             }
         }

@@ -242,8 +242,10 @@ Each piece is separately callable, which is what the snapshot tests do.
   `schematic::internal::merge::MergeManager::new`, never through a glob import, as one in a
   generated body would shadow the names a user's `default`, `merge`, or `validate` expression
   refers to. `crates/schematic/src/internal` is split by domain (`layers`, `env`, `merge`,
-  `validate`, `defaults`, `untagged`, `settings`, `casing`, `schema`), and its `mod.rs` only
+  `validate`, `defaults`, `untagged`, `settings`, `config_enum`, `schema`), and its `mod.rs` only
   declares them, so a new helper goes in the module of its domain rather than being re-exported.
+  `internal` exists under `config` or `schema`, as a `Schematic`-only derive's `build_schema`
+  calls `internal::schema`, so every other module is gated on `config` itself.
   The one import is for a string default, whose `DefaultString` traits must be in scope for
   autoref to pick one, so they're imported `as _` within the value's own block.
 - What doesn't depend on the derive belongs in a helper, with generated code supplying only what
@@ -251,7 +253,11 @@ Each piece is separately callable, which is what the snapshot tests do.
   with `finish`, `EnvManager::pick_variant` builds the tag's error from the names it's handed,
   and an untagged `Deserialize` is a run of `UntaggedManager` attempts (`variant`, `unit`,
   `literal`) ending in `into_error`, so the generated code never formats a message or holds the
-  errors itself.
+  errors itself. Likewise `ValidateManager::missing_nested` (and its `_with`/`flattened` forms)
+  checks `finalizing` for a missing bare nested config, `internal::schema` wraps a tagged
+  variant's schema (`tagged_unit`, `internally_tagged`, `adjacently_tagged`) and builds the
+  partial's (`build_partial_schema`), and `config_enum::parse_fallback` converts a `ConfigEnum`'s
+  fallback.
 
 ### `Value` and the layer system
 

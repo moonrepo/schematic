@@ -9,67 +9,56 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "None".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "kind".into(),
-                                    {
-                                        let mut field = SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("None".into())),
-                                        );
-                                        field.env_var = Some("AUTH_KIND".into());
-                                        field
-                                    },
-                                ),
-                            ]),
+                        schematic::internal::schema::tagged_unit(
+                            "kind",
+                            {
+                                let mut field = SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("None".into())),
+                                );
+                                field.env_var = Some("AUTH_KIND".into());
+                                field
+                            },
                         ),
                     ),
                     (
                         "Token".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "kind".into(),
-                                    {
-                                        let mut field = SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("Token".into())),
-                                        );
-                                        field.env_var = Some("AUTH_KIND".into());
-                                        field
-                                    },
-                                ),
-                                (
-                                    "value".into(),
-                                    SchemaField::from({
-                                        let mut item = Schema::structure(
-                                            StructType::new([
-                                                (
-                                                    "token".into(),
-                                                    {
-                                                        let mut field = SchemaField::new(schema.infer::<String>());
-                                                        field.env_var = Some("AUTH_TOKEN".into());
-                                                        field
-                                                    },
-                                                ),
-                                            ]),
-                                        );
-                                        item.partialize();
-                                        item
-                                    }),
-                                ),
-                            ]),
+                        schematic::internal::schema::adjacently_tagged(
+                            "kind",
+                            {
+                                let mut field = SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("Token".into())),
+                                );
+                                field.env_var = Some("AUTH_KIND".into());
+                                field
+                            },
+                            "value",
+                            {
+                                let mut item = Schema::structure(
+                                    StructType::new([
+                                        (
+                                            "token".into(),
+                                            {
+                                                let mut field = SchemaField::new(schema.infer::<String>());
+                                                field.env_var = Some("AUTH_TOKEN".into());
+                                                field
+                                            },
+                                        ),
+                                    ]),
+                                );
+                                item.partialize();
+                                item
+                            },
                         ),
                     ),
                     (
                         "Path".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "kind".into(),
-                                    Schema::literal_value(LiteralValue::String("Path".into())),
-                                ),
-                                ("value".into(), schema.infer::<String>()),
-                            ]),
+                        schematic::internal::schema::adjacently_tagged(
+                            "kind",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Path".into())),
+                            ),
+                            "value",
+                            schema.infer::<String>(),
                         ),
                     ),
                 ],

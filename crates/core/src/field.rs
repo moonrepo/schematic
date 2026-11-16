@@ -989,34 +989,35 @@ impl Field {
         }
 
         // A bare nested config still exists in the full type when no layer
-        // provided one, built from an empty partial, so validate that when
-        // finalizing, otherwise the settings it requires go unchecked
+        // provided one, which the manager validates when finalizing
         let missing = if self.is_bare_nested() {
             let ty = self.value.get_partial_type();
 
             let (flattened, nested, context) = match &self.args.context {
                 Some(func) => (
-                    format_ident!("flattened_with"),
-                    format_ident!("nested_with"),
-                    quote! { , #func(context) },
+                    format_ident!("missing_flattened_with"),
+                    format_ident!("missing_nested_with"),
+                    Some(quote! { #func(context) }),
                 ),
                 None => (
-                    format_ident!("flattened"),
-                    format_ident!("nested"),
-                    quote! {},
+                    format_ident!("missing_flattened"),
+                    format_ident!("missing_nested"),
+                    None,
                 ),
             };
 
             if self.is_flatten() {
                 quote! {
-                    else if finalizing {
-                        validate.#flattened(&<#ty as Default>::default() #context);
+                    else {
+                        validate.#flattened::<#ty>(#context);
                     }
                 }
             } else {
+                let context = context.map(|context| quote! { , #context });
+
                 quote! {
-                    else if finalizing {
-                        validate.#nested(#key_string, &<#ty as Default>::default() #context);
+                    else {
+                        validate.#nested::<#ty>(#key_string #context);
                     }
                 }
             }

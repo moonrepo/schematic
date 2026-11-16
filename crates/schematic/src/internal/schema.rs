@@ -1,4 +1,37 @@
-use schematic_types::Schema;
+use schematic_types::{Schema, SchemaBuilder, SchemaField, Schematic, StructType};
+
+/// Build the schema of a config's partial, from the schema of the config.
+pub fn build_partial_schema<T: Schematic>(schema: SchemaBuilder) -> Schema {
+    let mut schema = T::build_schema(schema);
+    partialize_schema(&mut schema, true);
+    schema
+}
+
+/// The schema of a unit variant with a tag, `{ "tag": "name" }`.
+pub fn tagged_unit(tag: &str, field: SchemaField) -> Schema {
+    Schema::structure(StructType::new([(tag.to_owned(), field)]))
+}
+
+/// The schema of an internally tagged variant, `{ "tag": "name", ...value }`.
+/// The tag makes it a different shape to the type it holds, so it's no
+/// longer that named type, which a renderer would otherwise reference
+/// without the tag.
+pub fn internally_tagged(mut schema: Schema, tag: &str, field: SchemaField) -> Schema {
+    if schema.add_field(tag, field) {
+        schema.name = None;
+    }
+
+    schema
+}
+
+/// The schema of an adjacently tagged variant,
+/// `{ "tag": "name", "content": value }`.
+pub fn adjacently_tagged(tag: &str, field: SchemaField, content: &str, value: Schema) -> Schema {
+    Schema::structure(StructType::new([
+        (tag.to_owned(), field),
+        (content.to_owned(), SchemaField::from(value)),
+    ]))
+}
 
 /// Turn the schema of a config into the schema of its partial: the settings
 /// of each struct marked `partial` become optional and nullable, and the

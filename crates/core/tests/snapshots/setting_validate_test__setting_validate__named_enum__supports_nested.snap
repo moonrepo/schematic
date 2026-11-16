@@ -28,12 +28,11 @@ fn validate_with_path(
                                     |v, d, c, f| func_ref(v, d, c, f),
                                 );
                             validate.nested("a", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "a",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("a");
                         }
                         if let Some(setting) = pb {
                             validate
@@ -44,12 +43,11 @@ fn validate_with_path(
                                     |v, d, c, f| func_ref(v, d, c, f),
                                 );
                             validate.nested("b", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "b",
-                                    &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <CustomConfig as schematic::Config>::Partial,
+                                >("b");
                         }
                         if let Some(setting) = pc {
                             validate
@@ -70,29 +68,27 @@ fn validate_with_path(
                                     |v, d, c, f| func_ref(v, d, c, f),
                                 );
                             validate.nested("d", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "d",
-                                    &<<CustomConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <CustomConfig as schematic::Config>::Partial,
+                                >("d");
                         }
                         if let Some(setting) = pe {
                             validate.nested("e", setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .nested(
-                                    "e",
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_nested::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >("e");
                         }
                         if let Some(setting) = pf {
                             validate.flattened(setting);
-                        } else if finalizing {
+                        } else {
                             validate
-                                .flattened(
-                                    &<<NestedConfig as schematic::Config>::Partial as Default>::default(),
-                                );
+                                .missing_flattened::<
+                                    <NestedConfig as schematic::Config>::Partial,
+                                >();
                         }
                     },
                 );

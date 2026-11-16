@@ -9,26 +9,22 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "None".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "type".into(),
-                                    {
-                                        let mut field = SchemaField::new(
-                                            Schema::literal_value(LiteralValue::String("None".into())),
-                                        );
-                                        field.env_var = Some("AUTH_TYPE".into());
-                                        field
-                                    },
-                                ),
-                            ]),
+                        schematic::internal::schema::tagged_unit(
+                            "type",
+                            {
+                                let mut field = SchemaField::new(
+                                    Schema::literal_value(LiteralValue::String("None".into())),
+                                );
+                                field.env_var = Some("AUTH_TYPE".into());
+                                field
+                            },
                         ),
                     ),
                     (
                         "Token".into(),
                         {
-                            let mut item = {
-                                let mut item = Schema::structure(
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                Schema::structure(
                                     StructType::new([
                                         (
                                             "token".into(),
@@ -39,24 +35,16 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                             },
                                         ),
                                     ]),
-                                );
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        {
-                                            let mut field = SchemaField::new(
-                                                Schema::literal_value(LiteralValue::String("Token".into())),
-                                            );
-                                            field.env_var = Some("AUTH_TYPE".into());
-                                            field
-                                        },
-                                    )
+                                ),
+                                "type",
                                 {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                                    let mut field = SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Token".into())),
+                                    );
+                                    field.env_var = Some("AUTH_TYPE".into());
+                                    field
+                                },
+                            );
                             item.partialize();
                             item
                         },
@@ -64,46 +52,30 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "Nested".into(),
                         {
-                            let mut item = {
-                                let mut item = schema.infer_as_nested::<NestedConfig>();
-                                if item
-                                    .ty
-                                    .add_field(
-                                        "type",
-                                        {
-                                            let mut field = SchemaField::new(
-                                                Schema::literal_value(LiteralValue::String("Nested".into())),
-                                            );
-                                            field.env_var = Some("AUTH_TYPE".into());
-                                            field
-                                        },
-                                    )
+                            let mut item = schematic::internal::schema::internally_tagged(
+                                schema.infer_as_nested::<NestedConfig>(),
+                                "type",
                                 {
-                                    item.name = None;
-                                }
-                                item
-                            };
+                                    let mut field = SchemaField::new(
+                                        Schema::literal_value(LiteralValue::String("Nested".into())),
+                                    );
+                                    field.env_var = Some("AUTH_TYPE".into());
+                                    field
+                                },
+                            );
                             item.partialize();
                             item
                         },
                     ),
                     (
                         "Path".into(),
-                        {
-                            let mut item = schema.infer::<String>();
-                            if item
-                                .ty
-                                .add_field(
-                                    "type",
-                                    SchemaField::new(
-                                        Schema::literal_value(LiteralValue::String("Path".into())),
-                                    ),
-                                )
-                            {
-                                item.name = None;
-                            }
-                            item
-                        },
+                        schematic::internal::schema::internally_tagged(
+                            schema.infer::<String>(),
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Path".into())),
+                            ),
+                        ),
                     ),
                 ],
                 None,

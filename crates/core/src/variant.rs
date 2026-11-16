@@ -479,11 +479,7 @@ impl Variant {
         let name = &self.ident;
 
         quote! {
-            Self::#name(
-                #value.try_into().map_err(|_| {
-                    schematic::ConfigError::EnumInvalidFallback(#value.to_string())
-                })?
-            )
+            Self::#name(schematic::internal::config_enum::parse_fallback(#value)?)
         }
     }
 
@@ -751,15 +747,16 @@ impl Variant {
         let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
         // A tag reports the variable that picks its variant, like a setting
-        let tag_field = tag_env_var.map(|key| {
-            quote! {
+        let tag_field = match tag_env_var {
+            Some(key) => quote! {
                 {
                     let mut field = SchemaField::new(#name_literal);
                     field.env_var = Some(#key.into());
                     field
                 }
-            }
-        });
+            },
+            None => quote! { SchemaField::new(#name_literal) },
+        };
 
         let mut schema = if let SerdeTagFormat::Unit = tag_format {
             // Every variant is a unit, so the enum is a list of named values
@@ -807,58 +804,26 @@ impl Variant {
                 // { "tag": "name", ...value }
                 SerdeTagFormat::Internal(tag) => {
                     if unit {
-                        let field = tag_field.unwrap_or_else(|| name_literal.clone());
-
-                        quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #field),
-                            ]))
-                        }
+                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
                     } else {
-                        let field =
-                            tag_field.unwrap_or_else(|| quote! { SchemaField::new(#name_literal) });
-
-                        // The tag makes it a different shape to the type it holds,
-                        // so it's no longer that named type, which a renderer
-                        // would otherwise reference without the tag
                         wrap(quote! {
-                            {
-                                let mut item = #inner;
-
-                                if item.ty.add_field(#tag, #field) {
-                                    item.name = None;
-                                }
-
-                                item
-                            }
+                            schematic::internal::schema::internally_tagged(#inner, #tag, #tag_field)
                         })
                     }
                 }
                 // { "tag": "name" } | { "tag": "name", "content": value }
                 SerdeTagFormat::Adjacent(tag, content) => {
-                    match (unit, tag_field) {
-                        (true, field) => {
-                            let field = field.unwrap_or_else(|| name_literal.clone());
-
-                            quote! {
-                                Schema::structure(StructType::new([
-                                    (#tag.into(), #field),
-                                ]))
-                            }
+                    if unit {
+                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
+                    } else {
+                        quote! {
+                            schematic::internal::schema::adjacently_tagged(
+                                #tag,
+                                #tag_field,
+                                #content,
+                                #partial_inner,
+                            )
                         }
-                        // The entries are each a field, as the tag's is
-                        (false, Some(field)) => quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #field),
-                                (#content.into(), SchemaField::from(#partial_inner)),
-                            ]))
-                        },
-                        (false, None) => quote! {
-                            Schema::structure(StructType::new([
-                                (#tag.into(), #name_literal),
-                                (#content.into(), #partial_inner),
-                            ]))
-                        },
                     }
                 }
             }
