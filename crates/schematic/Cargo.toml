@@ -114,12 +114,18 @@ renderer_template = ["schema"]
 renderer_typescript = ["schema", "dep:convert_case"]
 
 # Types
+type_arrayvec = ["schematic_types/arrayvec"]
 type_chrono = ["schematic_types/chrono"]
+type_compact_str = ["schematic_types/compact_str"]
+type_hashbrown = ["schematic_types/hashbrown"]
 type_indexmap = ["schematic_types/indexmap", "dep:indexmap"]
+type_jiff = ["schematic_types/jiff"]
 type_regex = ["schematic_types/regex", "dep:regex"]
 type_relative_path = ["schematic_types/relative_path"]
 type_rust_decimal = ["schematic_types/rust_decimal", "garde?/rust_decimal"]
 type_semver = ["schematic_types/semver", "dep:semver"]
+type_smallvec = ["schematic_types/smallvec"]
+type_smol_str = ["schematic_types/smol_str"]
 type_url = ["schematic_types/url"]
 type_uuid = ["schematic_types/uuid"]
 
@@ -143,12 +149,18 @@ schematic = { path = ".", features = [
 	"schema",
 	"schema_serde",
 	"toml",
+	"type_arrayvec",
 	"type_chrono",
+	"type_compact_str",
+	"type_hashbrown",
 	"type_indexmap",
+	"type_jiff",
 	"type_regex",
 	"type_relative_path",
 	"type_rust_decimal",
 	"type_semver",
+	"type_smallvec",
+	"type_smol_str",
 	"type_url",
 	"type_uuid",
 	"url",
@@ -166,10 +178,16 @@ strip-ansi-escapes = "0.2.1"
 derive_more = { version = "2.1.1", features = ["try_into", "as_ref"] }
 
 # Types
+arrayvec = { workspace = true, features = ["serde"] }
 chrono = { workspace = true, features = ["serde"] }
+compact_str = { workspace = true, features = ["serde"] }
+hashbrown = { workspace = true, features = ["default-hasher", "serde"] }
 indexmap = { workspace = true }
+jiff = { workspace = true, features = ["serde", "std"] }
 relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
+smallvec = { workspace = true, features = ["serde"] }
+smol_str = { workspace = true, features = ["serde", "std"] }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["serde"] }

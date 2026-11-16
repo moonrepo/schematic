@@ -1497,6 +1497,73 @@ mod nested_collections {
             "Failed to validate code.json. \n  groups.a[1].name: this setting is required\n  grid[1][0].name: this setting is required"
         );
     }
+
+    type Hasher = std::hash::BuildHasherDefault<std::hash::DefaultHasher>;
+
+    // Their items aren't the last argument, which is an array, a capacity,
+    // or a hasher, so they're found by position
+    #[derive(Debug, Config)]
+    pub struct External {
+        #[setting(nested)]
+        small: smallvec::SmallVec<[Item; 2]>,
+        #[setting(nested)]
+        shared: smallvec::SmallVec<[std::sync::Arc<Item>; 2]>,
+        #[setting(nested)]
+        bounded: arrayvec::ArrayVec<Item, 2>,
+        #[setting(nested)]
+        hashed: hashbrown::HashMap<String, Item>,
+        #[setting(nested)]
+        hasher: HashMap<String, Item, Hasher>,
+    }
+
+    fn load_external(code: &str) -> Result<External, String> {
+        ConfigLoader::<External>::new()
+            .code(code, "code.json")
+            .unwrap()
+            .load()
+            .map(|result| result.config)
+            .map_err(|error| error.to_full_string())
+    }
+
+    #[test]
+    fn finalizes_items_held_by_position() {
+        let config = load_external(
+            r#"{
+                "small": [{ "name": "a" }, { "name": "b" }, { "name": "c" }],
+                "shared": [{ "name": "d" }],
+                "bounded": [{ "name": "e" }],
+                "hashed": { "f": { "name": "f" } },
+                "hasher": { "g": { "name": "g" } }
+            }"#,
+        )
+        .unwrap();
+
+        // Past its inline capacity, which it spills over
+        assert_eq!(config.small.len(), 3);
+        assert_eq!(config.small[2].weight, 1);
+        assert_eq!(config.shared[0].weight, 1);
+        assert_eq!(config.bounded[0].weight, 1);
+        assert_eq!(config.hashed["f"].weight, 1);
+        assert_eq!(config.hasher["g"].weight, 1);
+    }
+
+    #[test]
+    fn reports_items_held_by_position() {
+        assert_eq!(
+            load_external(
+                r#"{ "small": [{}], "shared": [{}], "bounded": [{}], "hashed": { "f": {} }, "hasher": { "g": {} } }"#
+            )
+            .unwrap_err(),
+            "Failed to validate code.json. \n  small[0].name: this setting is required\n  shared[0].name: this setting is required\n  bounded[0].name: this setting is required\n  hashed.f.name: this setting is required\n  hasher.g.name: this setting is required"
+        );
+    }
+
+    #[test]
+    fn fails_past_the_capacity_of_an_array_vec() {
+        let error = load_external(r#"{ "bounded": [{}, {}, {}] }"#).unwrap_err();
+
+        assert!(error.contains("no more than 2 items"), "{error}");
+    }
 }
 
 mod raw_identifiers {

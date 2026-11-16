@@ -443,6 +443,9 @@ mod externals {
         local: chrono::NaiveDateTime,
         decimal: rust_decimal::Decimal,
         set: indexmap::IndexSet<String>,
+        span: jiff::Span,
+        zoned: jiff::ZonedDateTime,
+        bounded: arrayvec::ArrayVec<String, 2>,
     }
 
     #[test]
@@ -458,11 +461,45 @@ mod externals {
             serde_json::json!("number")
         );
         assert_eq!(properties["set"]["uniqueItems"], serde_json::json!(true));
+        assert!(properties["span"].get("format").is_none());
+        assert!(properties["zoned"].get("format").is_none());
+        assert_eq!(properties["bounded"]["maxItems"], serde_json::json!(2));
 
         // And check the encoding itself, so this fails if it ever changes
         assert_eq!(
             serde_json::to_value(chrono::Duration::seconds(90)).unwrap(),
             serde_json::json!([90, 0])
+        );
+
+        // A span is written in ISO 8601, but read in the friendly format too,
+        // which the `duration` format would reject
+        let span = jiff::Span::new().hours(1).minutes(30);
+
+        assert_eq!(
+            serde_json::to_value(span).unwrap(),
+            serde_json::json!("PT1H30M")
+        );
+        assert_eq!(
+            serde_json::from_value::<jiff::Span>(serde_json::json!("1h 30m"))
+                .unwrap()
+                .fieldwise(),
+            span.fieldwise()
+        );
+
+        // The time zone follows the offset, which isn't a `date-time`
+        assert_eq!(
+            serde_json::to_value(
+                jiff::Timestamp::UNIX_EPOCH.to_zoned_datetime(jiff::tz::TimeZone::UTC)
+            )
+            .unwrap(),
+            serde_json::json!("1970-01-01T00:00:00+00:00[UTC]")
+        );
+
+        assert!(
+            serde_json::from_value::<arrayvec::ArrayVec<String, 2>>(serde_json::json!([
+                "a", "b", "c"
+            ]))
+            .is_err()
         );
     }
 }

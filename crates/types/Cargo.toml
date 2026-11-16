@@ -8,8 +8,12 @@ homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 
 [dependencies]
+arrayvec = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
+compact_str = { workspace = true, optional = true }
+hashbrown = { workspace = true, optional = true }
 indexmap = { workspace = true }
+jiff = { workspace = true, optional = true }
 regex = { workspace = true, optional = true }
 relative-path = { workspace = true, optional = true }
 ron = { workspace = true, optional = true }
@@ -20,19 +24,27 @@ serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 serde_norway = { workspace = true, optional = true }
 serde_yaml = { workspace = true, optional = true }
+smallvec = { workspace = true, optional = true }
+smol_str = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
 schematic_types = { path = ".", features = [
+	"arrayvec",
 	"chrono",
+	"compact_str",
+	"hashbrown",
 	"indexmap",
+	"jiff",
 	"regex",
 	"relative_path",
 	"rust_decimal",
 	"semver",
 	"serde",
+	"smallvec",
+	"smol_str",
 	"uuid",
 	"serde_json",
 	"serde_ron",
@@ -46,13 +58,19 @@ starbase_sandbox = { workspace = true }
 
 [features]
 default = []
+arrayvec = ["dep:arrayvec"]
 chrono = ["dep:chrono"]
+compact_str = ["dep:compact_str"]
+hashbrown = ["dep:hashbrown"]
 indexmap = []
+jiff = ["dep:jiff"]
 regex = ["dep:regex"]
 relative_path = ["dep:relative-path"]
 rust_decimal = ["dep:rust_decimal"]
 semver = ["dep:semver"]
 serde = ["dep:serde", "indexmap/serde"]
+smallvec = ["dep:smallvec"]
+smol_str = ["dep:smol_str"]
 uuid = ["dep:uuid"]
 serde_json = ["dep:serde_json"]
 serde_ron = ["dep:ron"]

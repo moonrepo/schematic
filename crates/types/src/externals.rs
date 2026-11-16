@@ -55,6 +55,33 @@ macro_rules! impl_string_format {
     };
 }
 
+#[cfg(feature = "arrayvec")]
+mod arrayvec_feature {
+    use super::*;
+
+    // Deserializing more items than it can hold fails
+    impl<T: Schematic, const CAP: usize> Schematic for arrayvec::ArrayVec<T, CAP> {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.array(ArrayType {
+                items_type: Box::new(schema.infer::<T>()),
+                max_length: Some(CAP),
+                ..ArrayType::default()
+            })
+        }
+    }
+
+    // Its capacity is in bytes, while a schema counts characters, of which
+    // there are never more, so the bound is loose for anything but ASCII
+    impl<const CAP: usize> Schematic for arrayvec::ArrayString<CAP> {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.string(StringType {
+                max_length: Some(CAP),
+                ..StringType::default()
+            })
+        }
+    }
+}
+
 #[cfg(feature = "chrono")]
 mod chrono_feature {
     use super::*;
@@ -96,12 +123,52 @@ mod chrono_feature {
     }
 }
 
+#[cfg(feature = "compact_str")]
+mod compact_str_feature {
+    use super::*;
+
+    impl_string!(compact_str::CompactString);
+}
+
+#[cfg(feature = "hashbrown")]
+mod hashbrown_feature {
+    use super::*;
+
+    impl_map!(hashbrown::HashMap<K, V, S>);
+    impl_set!(hashbrown::HashSet<T, S>);
+}
+
 #[cfg(feature = "indexmap")]
 mod indexmap_feature {
     use super::*;
 
     impl_map!(indexmap::IndexMap<K, V, S>);
     impl_set!(indexmap::IndexSet<T, S>);
+}
+
+#[cfg(feature = "jiff")]
+mod jiff_feature {
+    use super::*;
+
+    impl_string_format!(jiff::Timestamp, "date-time");
+    impl_string_format!(jiff::civil::Date, "date");
+
+    // These have no offset, which the `date-time` and `time` formats
+    // require, so they're plain strings, like `2024-01-02T03:04:05`
+    impl_string!(jiff::civil::DateTime);
+    impl_string!(jiff::civil::Time);
+
+    // A week, like `2024-W01-2`, which isn't a `date`
+    impl_string!(jiff::civil::ISOWeekDate);
+
+    // The offset is followed by the time zone in brackets, like
+    // `2024-01-02T03:04:05-05:00[America/New_York]`, which isn't a `date-time`
+    impl_string!(jiff::ZonedDateTime);
+
+    // Written in ISO 8601, like `PT1H30M`, but also read in jiff's friendly
+    // format, like `1h 30m`, which the `duration` format would reject
+    impl_string!(jiff::SignedDuration);
+    impl_string!(jiff::Span);
 }
 
 #[cfg(feature = "regex")]
@@ -237,6 +304,28 @@ mod serde_yaml_normay_feature {
             ))
         }
     }
+}
+
+#[cfg(feature = "smallvec")]
+mod smallvec_feature {
+    use super::*;
+
+    // Its capacity is only what's held inline, as it spills onto the heap
+    impl<A: smallvec::Array> Schematic for smallvec::SmallVec<A>
+    where
+        A::Item: Schematic,
+    {
+        fn build_schema(mut schema: SchemaBuilder) -> Schema {
+            schema.array(ArrayType::new(schema.infer::<A::Item>()))
+        }
+    }
+}
+
+#[cfg(feature = "smol_str")]
+mod smol_str_feature {
+    use super::*;
+
+    impl_string!(smol_str::SmolStr);
 }
 
 #[cfg(feature = "url")]
