@@ -7,6 +7,9 @@ description = "Shapes and types for defining schemas for Rust types."
 homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 arrayvec = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }

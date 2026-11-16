@@ -7,7 +7,7 @@ description = "A layered serde configuration and schema library."
 homepage = "https://moonrepo.github.io/schematic"
 repository = "https://github.com/moonrepo/schematic"
 readme = "../../README.md"
-rust-version = "1.85.0"
+rust-version = "1.90.0"
 
 [package.metadata.release]
 pre-release-replacements = [
@@ -180,14 +180,10 @@ derive_more = { version = "2.1.1", features = ["try_into", "as_ref"] }
 # Types
 arrayvec = { workspace = true, features = ["serde"] }
 chrono = { workspace = true, features = ["serde"] }
-compact_str = { workspace = true, features = ["serde"] }
-hashbrown = { workspace = true, features = ["default-hasher", "serde"] }
 indexmap = { workspace = true }
 jiff = { workspace = true, features = ["serde", "std"] }
 relative-path = { workspace = true, features = ["serde"] }
 rust_decimal = { workspace = true }
 semver = { workspace = true, features = ["serde"] }
-smallvec = { workspace = true, features = ["serde"] }
-smol_str = { workspace = true, features = ["serde", "std"] }
 url = { workspace = true, features = ["serde"] }
 uuid = { workspace = true, features = ["serde"] }

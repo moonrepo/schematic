@@ -101,12 +101,18 @@ Learn more about [renderers](./generator/index.md).
 
 Learn more about [external types](./external.md).
 
+- `type_arrayvec` - Implements schematic for the `arrayvec` crate.
 - `type_chrono` - Implements schematic for the `chrono` crate.
+- `type_compact_str` - Implements schematic for the `compact_str` crate.
+- `type_hashbrown` - Implements schematic for the `hashbrown` crate.
 - `type_indexmap` - Implements schematic for the `indexmap` crate.
+- `type_jiff` - Implements schematic for the `jiff` crate.
 - `type_regex` - Implements schematic for the `regex` crate.
 - `type_relative_path` - Implements schematic for the `relative-path` crate.
 - `type_rust_decimal` - Implements schematic for the `rust_decimal` crate.
 - `type_semver` - Implements schematic for the `semver` crate.
+- `type_smallvec` - Implements schematic for the `smallvec` crate.
+- `type_smol_str` - Implements schematic for the `smol_str` crate.
 - `type_url` - Implements schematic for the `url` crate.
 - `type_uuid` - Implements schematic for the `uuid` crate.
 

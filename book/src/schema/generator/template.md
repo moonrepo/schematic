@@ -1,7 +1,7 @@
 # Config templates (experimental)
 
-> Requires the `template` and desired [format](../../config/index.md#supported-source-formats) Cargo
-> feature.
+> Requires the `renderer_template` and desired
+> [format](../../config/index.md#supported-source-formats) Cargo feature.
 
 With our [format renderers](#support-formats), you can generate a config template in a specific
 format. This template will include all fields, default values, comments, metadata, and is useful for

@@ -1,6 +1,6 @@
 # JSON schemas
 
-> Requires the `json_schema` Cargo feature.
+> Requires the `renderer_json_schema` Cargo feature.
 
 With our
 [`JsonSchemaRenderer`](https://docs.rs/schematic/latest/schematic/schema/json_schema/struct.JsonSchemaRenderer.html),

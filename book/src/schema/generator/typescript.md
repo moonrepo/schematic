@@ -1,6 +1,6 @@
 # TypeScript types
 
-> Requires the `typescript` Cargo feature.
+> Requires the `renderer_typescript` Cargo feature.
 
 With our
 [`TypeScriptRenderer`](https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptRenderer.html),
