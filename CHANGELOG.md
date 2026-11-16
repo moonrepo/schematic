@@ -212,6 +212,19 @@
 - Updated `#[setting(nested)]` to support any collection that `collect` can build, including
   `VecDeque`, `LinkedList`, and `BinaryHeap`. A type the derive can't rebuild now panics, rather
   than silently emptying it.
+- Updated `#[setting(nested)]` to support a collection whose items aren't its last type argument,
+  like `SmallVec<[Child; 4]>` and `ArrayVec<Child, 4>`. Previously the derive panicked, unable to
+  find the config.
+- Added schemas for more external types, each behind a Cargo feature:
+  - `type_arrayvec`: `ArrayVec`, whose capacity is its maximum length, and `ArrayString`.
+  - `type_compact_str`: `CompactString`.
+  - `type_hashbrown`: `HashMap` and `HashSet`.
+  - `type_jiff`: `Timestamp`, `ZonedDateTime`, `Span`, `SignedDuration`, and the civil `Date`,
+    `DateTime`, `Time`, and `ISOWeekDate`. Only `Timestamp` and `Date` have a format, as the others
+    are written or read in forms that `date`, `date-time`, `time`, or `duration` reject, like
+    `1h 30m`.
+  - `type_smallvec`: `SmallVec`.
+  - `type_smol_str`: `SmolStr`.
 - Updated `JsonSchemaRenderer` to honour `inline_subschemas`, which was accepted but ignored. Named
   types are rendered in place, and only the target of a cycle remains a definition.
 - Updated `JsonSchemaRenderer` to put definitions where `definitions_path` points, such as
@@ -353,6 +366,8 @@
 - Fixed the schemas of `chrono::Duration`, `NaiveDateTime`, `NaiveTime`, `rust_decimal::Decimal`,
   `indexmap::IndexSet`, and the `Number` types of `serde_json`, `serde_yaml`, and `serde_norway` to
   match what serde accepts.
+- Fixed `#[setting(nested)]` on a map with an explicit hasher, like `HashMap<String, Child, S>`,
+  treating the hasher as the nested config.
 
 ## 0.20.12
 

@@ -291,6 +291,12 @@ emitting `Default::default()` and silently emptying it. Nested configs are alway
 `<T as schematic::Config>` and `<<T as Config>::Partial as PartialConfig>`, never `PartialT`, so
 they resolve by the path they were written as.
 
+A layer is known by its name (`get_layer`: `*Vec`, `*Set`, `*Map`), and the type it holds by its
+position (`get_item_type_argument`), never as its last argument: a map's value, as a hasher may
+follow it, and otherwise the first type argument, as an allocator or a const capacity may
+(`ArrayVec<T, CAP>`). A collection of an array holds the array's items (`SmallVec<[T; N]>`), which
+`map_type_arguments` walks into when replacing or stripping types within it.
+
 Codegen walks these layers to build nested expressions. Each walker composes inside-out, so position
 is respected without special-casing:
 

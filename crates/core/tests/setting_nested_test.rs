@@ -722,6 +722,58 @@ mod audit_fixes {
         );
     }
 
+    // A collection's items aren't always its last argument, which may be a
+    // hasher or a capacity, and an array may hold them
+    #[test]
+    fn finds_the_nested_config_by_its_position() {
+        for (ty, expected) in [
+            (
+                "SmallVec<[Child; 4]>",
+                "SmallVec<[<Childasschematic::Config>::Partial;4]>",
+            ),
+            (
+                "ArrayVec<Child, 4>",
+                "ArrayVec<<Childasschematic::Config>::Partial,4>",
+            ),
+            (
+                "HashMap<String, Child, Hasher>",
+                "HashMap<String,<Childasschematic::Config>::Partial,Hasher>",
+            ),
+            (
+                "SmallVec<[std::sync::Arc<Child>; 4]>",
+                "SmallVec<[<Childasschematic::Config>::Partial;4]>",
+            ),
+        ] {
+            let ty: syn::Type = syn::parse_str(ty).unwrap();
+
+            assert_eq!(
+                partial_type(parse_quote! {
+                    #[derive(Config)]
+                    struct Example {
+                        #[setting(nested)]
+                        items: #ty,
+                    }
+                })
+                .replace(' ', ""),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn keeps_the_wrapper_of_unsized_items_in_an_array() {
+        assert_eq!(
+            partial_type(parse_quote! {
+                #[derive(Config)]
+                struct Example {
+                    items: SmallVec<[Box<str>; 4]>,
+                }
+            })
+            .replace(' ', ""),
+            "SmallVec<[Box<str>;4]>"
+        );
+    }
+
     // A wrapper the partial strips has to be rebuilt within it
     #[test]
     #[should_panic(expected = "is not a known collection")]

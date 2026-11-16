@@ -480,7 +480,7 @@ impl Field {
                 .segments
                 .last()
                 .is_some_and(|segment| segment.ident == "Option")
-            && let Some(inner) = crate::value::get_last_type_argument(ty)
+            && let Some(inner) = crate::value::get_item_type(ty)
         {
             return inner;
         }

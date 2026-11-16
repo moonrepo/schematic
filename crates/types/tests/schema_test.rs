@@ -1321,3 +1321,70 @@ mod serde_defaults {
         assert_eq!(inner.variants_types.len(), 1);
     }
 }
+
+mod externals {
+    use super::*;
+    use std::collections::{HashMap, HashSet};
+
+    fn ty<T: Schematic + ?Sized>() -> SchemaType {
+        SchemaBuilder::build_root::<T>().ty
+    }
+
+    fn string_of(format: Option<&str>) -> SchemaType {
+        SchemaType::String(Box::new(StringType {
+            format: format.map(|format| format.into()),
+            ..StringType::default()
+        }))
+    }
+
+    #[test]
+    fn strings_are_strings() {
+        assert_eq!(ty::<compact_str::CompactString>(), ty::<String>());
+        assert_eq!(ty::<smol_str::SmolStr>(), ty::<String>());
+    }
+
+    #[test]
+    fn collections_match_their_std_counterparts() {
+        assert_eq!(
+            ty::<hashbrown::HashMap<String, u8>>(),
+            ty::<HashMap<String, u8>>()
+        );
+        assert_eq!(ty::<hashbrown::HashSet<u8>>(), ty::<HashSet<u8>>());
+        assert_eq!(ty::<smallvec::SmallVec<[u8; 2]>>(), ty::<Vec<u8>>());
+    }
+
+    #[test]
+    fn array_vecs_are_bounded_by_their_capacity() {
+        assert_eq!(
+            ty::<arrayvec::ArrayVec<u8, 2>>(),
+            SchemaType::Array(Box::new(ArrayType {
+                max_length: Some(2),
+                ..ArrayType::new(Schema::new(ty::<u8>()))
+            }))
+        );
+        assert_eq!(
+            ty::<arrayvec::ArrayString<8>>(),
+            SchemaType::String(Box::new(StringType {
+                max_length: Some(8),
+                ..StringType::default()
+            }))
+        );
+    }
+
+    #[test]
+    fn jiff_formats_only_what_matches_them() {
+        assert_eq!(ty::<jiff::Timestamp>(), string_of(Some("date-time")));
+        assert_eq!(ty::<jiff::civil::Date>(), string_of(Some("date")));
+
+        for unformatted in [
+            ty::<jiff::ZonedDateTime>(),
+            ty::<jiff::civil::DateTime>(),
+            ty::<jiff::civil::Time>(),
+            ty::<jiff::civil::ISOWeekDate>(),
+            ty::<jiff::Span>(),
+            ty::<jiff::SignedDuration>(),
+        ] {
+            assert_eq!(unformatted, string_of(None));
+        }
+    }
+}
