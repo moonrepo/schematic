@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-bfe229e8.js";
+            window.path_to_searchindex_js = "searchindex-cbbcff6f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-774c0fcb.js"></script>
@@ -2163,12 +2163,18 @@ impl Schematic for User {
 <h4 id="external-types"><a class="header" href="#external-types">External types</a></h4>
 <p>Learn more about <a href="#external-types-1">external types</a>.</p>
 <ul>
+<li><code>type_arrayvec</code> - Implements schematic for the <code>arrayvec</code> crate.</li>
 <li><code>type_chrono</code> - Implements schematic for the <code>chrono</code> crate.</li>
+<li><code>type_compact_str</code> - Implements schematic for the <code>compact_str</code> crate.</li>
+<li><code>type_hashbrown</code> - Implements schematic for the <code>hashbrown</code> crate.</li>
 <li><code>type_indexmap</code> - Implements schematic for the <code>indexmap</code> crate.</li>
+<li><code>type_jiff</code> - Implements schematic for the <code>jiff</code> crate.</li>
 <li><code>type_regex</code> - Implements schematic for the <code>regex</code> crate.</li>
 <li><code>type_relative_path</code> - Implements schematic for the <code>relative-path</code> crate.</li>
 <li><code>type_rust_decimal</code> - Implements schematic for the <code>rust_decimal</code> crate.</li>
 <li><code>type_semver</code> - Implements schematic for the <code>semver</code> crate.</li>
+<li><code>type_smallvec</code> - Implements schematic for the <code>smallvec</code> crate.</li>
+<li><code>type_smol_str</code> - Implements schematic for the <code>smol_str</code> crate.</li>
 <li><code>type_url</code> - Implements schematic for the <code>url</code> crate.</li>
 <li><code>type_uuid</code> - Implements schematic for the <code>uuid</code> crate.</li>
 </ul>
@@ -3627,8 +3633,8 @@ each line. Use this to wrap descriptions in a component, or to rewrite links.</p
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="config-templates-experimental"><a class="header" href="#config-templates-experimental">Config templates (experimental)</a></h1>
 <blockquote>
-<p>Requires the <code>template</code> and desired <a href="#supported-source-formats">format</a> Cargo
-feature.</p>
+<p>Requires the <code>renderer_template</code> and desired
+<a href="#supported-source-formats">format</a> Cargo feature.</p>
 </blockquote>
 <p>With our <a href="#support-formats">format renderers</a>, you can generate a config template in a specific
 format. This template will include all fields, default values, comments, metadata, and is useful for
@@ -3972,7 +3978,7 @@ like so:</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="json-schemas"><a class="header" href="#json-schemas">JSON schemas</a></h1>
 <blockquote>
-<p>Requires the <code>json_schema</code> Cargo feature.</p>
+<p>Requires the <code>renderer_json_schema</code> Cargo feature.</p>
 </blockquote>
 <p>With our
 <a href="https://docs.rs/schematic/latest/schematic/schema/json_schema/struct.JsonSchemaRenderer.html"><code>JsonSchemaRenderer</code></a>,
@@ -4335,7 +4341,7 @@ is optional, but names every module after its partial type.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="typescript-types"><a class="header" href="#typescript-types">TypeScript types</a></h1>
 <blockquote>
-<p>Requires the <code>typescript</code> Cargo feature.</p>
+<p>Requires the <code>renderer_typescript</code> Cargo feature.</p>
 </blockquote>
 <p>With our
 <a href="https://docs.rs/schematic/latest/schematic/schema/typescript/struct.TypeScriptRenderer.html"><code>TypeScriptRenderer</code></a>,
