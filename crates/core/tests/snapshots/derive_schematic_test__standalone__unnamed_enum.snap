@@ -16,13 +16,17 @@ impl schematic::Schematic for Example {
                         (
                             "A".into(),
                             Schema::structure(
-                                StructType::new([("A".into(), schema.infer::<bool>())]),
+                                StructType::new([
+                                    ("A".into(), SchemaField::new(schema.infer::<bool>())),
+                                ]),
                             ),
                         ),
                         (
                             "B".into(),
                             Schema::structure(
-                                StructType::new([("B".into(), schema.infer::<String>())]),
+                                StructType::new([
+                                    ("B".into(), SchemaField::new(schema.infer::<String>())),
+                                ]),
                             ),
                         ),
                     ],

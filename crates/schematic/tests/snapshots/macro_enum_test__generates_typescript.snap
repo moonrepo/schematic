@@ -50,11 +50,9 @@ export type ExternalTagged = 'Foo' | {
 
 export type InternalTagged = {
 	type: 'Foo';
-} | boolean | number | {
-	bar: number;
-	foo: string;
+} | boolean | number | ({
 	type: 'Qux';
-};
+} & SomeConfig);
 
 export type AdjacentTagged = {
 	type: 'Foo';
@@ -113,11 +111,9 @@ export type PartialExternalTagged = 'Foo' | {
 
 export type PartialInternalTagged = {
 	type: 'Foo';
-} | boolean | number | {
-	bar?: number | null;
-	foo?: string | null;
+} | boolean | number | ({
 	type: 'Qux';
-};
+} & PartialSomeConfig);
 
 export type PartialAdjacentTagged = {
 	type: 'Foo';

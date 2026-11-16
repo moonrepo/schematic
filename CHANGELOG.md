@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an internally tagged variant that holds a named struct inlining that struct's fields, rather
+  than referencing it. The variant's schema is now a struct of the tag and the value as a flattened
+  field, like `#[serde(flatten)]`, so TypeScript renders `({ type: 'git' } & GitSource) | ...`
+  rather than an object literal per variant, and the struct is defined once, without the tag. A
+  custom renderer that reads the variant's fields finds the value there as a flattened field.
+- Fixed `TypeScriptRenderer` leaving out a flattened field of a struct that's rendered in place, like
+  a named enum variant's, and `ApiDocsRenderer` rendering it as a key of its own. Each is now
+  intersected with the struct's own fields.
+- Fixed an adjacently or externally tagged variant taking the description of the named type it
+  holds, which left that type's definition without one, and repeated it on the field that holds it.
+
 ## 0.21.0
 
 #### 💥 Breaking

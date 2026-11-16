@@ -558,9 +558,17 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `Serialize`/`Deserialize` pair does it.
 - `Schema::partialize()` on a tagged enum variant marks the **value**, never the `{tag, content}`
   struct synthesized around it. Marking the wrapper makes the runtime nullify the tag, so the
-  partial schema claims `{"type": null}` is valid. An internally tagged variant can't avoid it, as
-  its tag is a field of the value, so `partialize_schema` leaves a `Literal` field alone, treating it
-  as the tag, as the Pkl renderer already did.
+  partial schema claims `{"type": null}` is valid. A named variant that's internally tagged can't
+  avoid it, as its tag is a field of the struct of its fields, so `partialize_schema` leaves a
+  `Literal` field alone, treating it as the tag, as the Pkl renderer already did.
+- An internally tagged variant holding a **named** struct never adds the tag to it, as that schema
+  is shared by every field that holds the type, and the first one registered wins, so the tag leaks
+  into all of them. `internal::schema::internally_tagged` builds `{ tag, <Name>: value }` instead,
+  with the value as a `flatten` field, which renderers reference (`{ type: 'git' } & GitSource`).
+  The same goes for anything else written onto a variant's value: wrap it in a field with
+  `SchemaField::new`, never `From<Schema>`, which takes the type's description off the shared copy.
+- A renderer handles a `flatten` field wherever a struct is rendered, not only for a named one at the
+  root: a variant's struct holds one for the tag above, as a named variant may for its own fields.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
 - A **literal union** (`Container::is_literal_union`) is an externally tagged `Config` enum whose

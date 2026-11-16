@@ -48,65 +48,68 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     ),
                     (
                         "Inner".into(),
-                        {
-                            let mut item = schematic::internal::schema::internally_tagged(
-                                schema.infer_as_nested::<NestedConfig>(),
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Inner".into())),
-                                ),
-                            );
-                            item.partialize();
-                            item
-                        },
+                        schematic::internal::schema::internally_tagged(
+                            {
+                                let mut item = schema.infer_as_nested::<NestedConfig>();
+                                item.partialize();
+                                item
+                            },
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(LiteralValue::String("Inner".into())),
+                            ),
+                        ),
                     ),
                     (
                         "InnerOpt".into(),
-                        {
-                            let mut item = schematic::internal::schema::internally_tagged(
-                                schema.infer_as_nested::<Option<NestedConfig>>(),
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerOpt".into()),
-                                    ),
+                        schematic::internal::schema::internally_tagged(
+                            {
+                                let mut item = schema
+                                    .infer_as_nested::<Option<NestedConfig>>();
+                                item.partialize();
+                                item
+                            },
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerOpt".into()),
                                 ),
-                            );
-                            item.partialize();
-                            item
-                        },
+                            ),
+                        ),
                     ),
                     (
                         "InnerList".into(),
-                        {
-                            let mut item = schematic::internal::schema::internally_tagged(
-                                schema.infer_as_nested::<Vec<NestedConfig>>(),
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerList".into()),
-                                    ),
+                        schematic::internal::schema::internally_tagged(
+                            {
+                                let mut item = schema
+                                    .infer_as_nested::<Vec<NestedConfig>>();
+                                item.partialize();
+                                item
+                            },
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerList".into()),
                                 ),
-                            );
-                            item.partialize();
-                            item
-                        },
+                            ),
+                        ),
                     ),
                     (
                         "InnerMap".into(),
-                        {
-                            let mut item = schematic::internal::schema::internally_tagged(
-                                schema.infer_as_nested::<HashMap<String, CustomConfig>>(),
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(
-                                        LiteralValue::String("InnerMap".into()),
-                                    ),
+                        schematic::internal::schema::internally_tagged(
+                            {
+                                let mut item = schema
+                                    .infer_as_nested::<HashMap<String, CustomConfig>>();
+                                item.partialize();
+                                item
+                            },
+                            "type",
+                            SchemaField::new(
+                                Schema::literal_value(
+                                    LiteralValue::String("InnerMap".into()),
                                 ),
-                            );
-                            item.partialize();
-                            item
-                        },
+                            ),
+                        ),
                     ),
                     (
                         "Unit".into(),

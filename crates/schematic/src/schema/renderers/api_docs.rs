@@ -238,6 +238,7 @@ impl Default for ApiDocsOptions {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct TypeExpression {
     parts: Vec<TypePart>,
+    is_intersection: bool,
     is_union: bool,
 }
 
@@ -259,7 +260,7 @@ impl TypeExpression {
     pub fn reference(name: impl Into<String>) -> Self {
         Self {
             parts: vec![TypePart::Reference(name.into())],
-            is_union: false,
+            ..Self::default()
         }
     }
 
@@ -314,6 +315,12 @@ impl TypeExpression {
         out.extend(self);
         out.push_code(")");
         out
+    }
+
+    /// Return true if the expression is an intersection of types, such as a
+    /// struct's own fields and the type it flattens.
+    pub fn is_intersection(&self) -> bool {
+        self.is_intersection
     }
 
     /// Return true if the expression is a union of types.
@@ -1330,7 +1337,7 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
     ) -> RenderResult<TypeExpression> {
         let mut expr = self.render_schema(&array.items_type)?;
 
-        if expr.is_union() {
+        if expr.is_union() || expr.is_intersection() {
             expr = expr.parenthesize();
         }
 
@@ -1432,9 +1439,28 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
         _schema: &Schema,
     ) -> RenderResult<TypeExpression> {
         let mut fields = vec![];
+        let mut flattened = vec![];
 
         for (name, field) in structure.sorted_fields() {
             if field.hidden {
+                continue;
+            }
+
+            // A flattened type's fields are written alongside the struct's
+            // own, so it's intersected with them rather than given a key
+            if field.flatten {
+                let schema = strip_null(&field.schema);
+
+                if !schema.is_null() {
+                    let expr = self.render_schema(&schema)?;
+
+                    flattened.push(if expr.is_union() {
+                        expr.parenthesize()
+                    } else {
+                        expr
+                    });
+                }
+
                 continue;
             }
 
@@ -1445,13 +1471,24 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
             fields.push(expr);
         }
 
-        if fields.is_empty() {
-            return Ok(TypeExpression::code("{}"));
+        let mut parts = vec![];
+
+        if !fields.is_empty() {
+            let mut expr = TypeExpression::code("{ ");
+            expr.extend(TypeExpression::join(fields, ", "));
+            expr.push_code(" }");
+
+            parts.push(expr);
+        } else if flattened.is_empty() {
+            parts.push(TypeExpression::code("{}"));
         }
 
-        let mut expr = TypeExpression::code("{ ");
-        expr.extend(TypeExpression::join(fields, ", "));
-        expr.push_code(" }");
+        let is_intersection = parts.len() + flattened.len() > 1;
+
+        parts.extend(flattened);
+
+        let mut expr = TypeExpression::join(parts, " & ");
+        expr.is_intersection = is_intersection;
 
         Ok(expr)
     }
@@ -1478,7 +1515,15 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
         let mut items = vec![];
 
         for item in &uni.variants_types {
-            items.push(self.render_schema(item)?);
+            let expr = self.render_schema(item)?;
+
+            // `&` binds tighter than `|`, but a member that's an intersection
+            // only reads as one once it's grouped
+            items.push(if expr.is_intersection() {
+                expr.parenthesize()
+            } else {
+                expr
+            });
         }
 
         let mut expr = TypeExpression::join(items, " | ");

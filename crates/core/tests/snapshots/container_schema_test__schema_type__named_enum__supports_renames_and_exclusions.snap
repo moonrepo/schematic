@@ -13,7 +13,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "some-variant".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = Schema::structure(
                                             StructType::new([
                                                 (
@@ -35,7 +35,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                         );
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -46,7 +46,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "other-variant".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = Schema::structure(
                                             StructType::new([
                                                 (
@@ -57,7 +57,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                         );
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),

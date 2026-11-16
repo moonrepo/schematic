@@ -11,7 +11,9 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                         "Text".into(),
                         {
                             let mut item = Schema::structure(
-                                StructType::new([("Text".into(), schema.infer::<String>())]),
+                                StructType::new([
+                                    ("Text".into(), SchemaField::new(schema.infer::<String>())),
+                                ]),
                             );
                             item.description = Some("Docs.".into());
                             item
@@ -21,7 +23,10 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                         "List".into(),
                         Schema::structure(
                             StructType::new([
-                                ("List".into(), schema.infer::<Vec<String>>()),
+                                (
+                                    "List".into(),
+                                    SchemaField::new(schema.infer::<Vec<String>>()),
+                                ),
                             ]),
                         ),
                     ),
@@ -31,11 +36,13 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "Pair".into(),
-                                    Schema::tuple(
-                                        TupleType::new([
-                                            schema.infer::<usize>(),
-                                            schema.infer::<bool>(),
-                                        ]),
+                                    SchemaField::new(
+                                        Schema::tuple(
+                                            TupleType::new([
+                                                schema.infer::<usize>(),
+                                                schema.infer::<bool>(),
+                                            ]),
+                                        ),
                                     ),
                                 ),
                             ]),
@@ -47,11 +54,11 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "Inner".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = schema.infer_as_nested::<NestedConfig>();
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -62,12 +69,12 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "InnerOpt".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = schema
                                             .infer_as_nested::<Option<NestedConfig>>();
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -78,12 +85,12 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "InnerList".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = schema
                                             .infer_as_nested::<Vec<NestedConfig>>();
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -94,12 +101,12 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "InnerMap".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = schema
                                             .infer_as_nested::<HashMap<String, CustomConfig>>();
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),

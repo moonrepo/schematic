@@ -19,7 +19,7 @@ impl schematic::Schematic for Example {
                                 StructType::new([
                                     (
                                         "A".into(),
-                                        {
+                                        SchemaField::new({
                                             let mut item = Schema::structure(
                                                 StructType::new([
                                                     ("a".into(), SchemaField::new(schema.infer::<bool>())),
@@ -27,7 +27,7 @@ impl schematic::Schematic for Example {
                                             );
                                             item.partialize();
                                             item
-                                        },
+                                        }),
                                     ),
                                 ]),
                             ),
@@ -38,7 +38,7 @@ impl schematic::Schematic for Example {
                                 StructType::new([
                                     (
                                         "B".into(),
-                                        {
+                                        SchemaField::new({
                                             let mut item = Schema::structure(
                                                 StructType::new([
                                                     ("b".into(), SchemaField::new(schema.infer::<String>())),
@@ -46,7 +46,7 @@ impl schematic::Schematic for Example {
                                             );
                                             item.partialize();
                                             item
-                                        },
+                                        }),
                                     ),
                                 ]),
                             ),
