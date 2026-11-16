@@ -1,4 +1,4 @@
-use schematic_types::{Schema, SchemaBuilder, SchemaField, Schematic, StructType};
+use schematic_types::{Schema, SchemaBuilder, SchemaField, SchemaType, Schematic, StructType};
 
 /// Build the schema of a config's partial, from the schema of the config.
 pub fn build_partial_schema<T: Schematic>(schema: SchemaBuilder) -> Schema {
@@ -13,23 +13,51 @@ pub fn tagged_unit(tag: &str, field: SchemaField) -> Schema {
 }
 
 /// The schema of an internally tagged variant, `{ "tag": "name", ...value }`.
-/// The tag makes it a different shape to the type it holds, so it's no
-/// longer that named type, which a renderer would otherwise reference
-/// without the tag.
+///
+/// A named struct is shared by every type that holds it, so the tag can't be
+/// added to it without claiming the tag for all of them. The variant is a
+/// struct of the tag and the value flattened instead, which renderers
+/// reference by name, like `{ type: 'git' } & GitSource`. A struct of its
+/// own, such as a named variant's fields, holds the tag itself.
 pub fn internally_tagged(mut schema: Schema, tag: &str, field: SchemaField) -> Schema {
-    if schema.add_field(tag, field) {
-        schema.name = None;
+    let SchemaType::Struct(inner) = &schema.ty else {
+        return schema;
+    };
+
+    let Some(name) = schema.name.clone() else {
+        schema.add_field(tag, field);
+
+        return schema;
+    };
+
+    // Serde reads the keys besides the tag as the value, so the variant
+    // accepts unknown keys when the value does
+    let allow_unknown_fields = inner.allow_unknown_fields;
+
+    // A flattened value has no key of its own, so it's keyed by its type,
+    // which the tag can't share
+    let mut key = name;
+
+    while key == tag {
+        key.insert(0, '_');
     }
 
-    schema
+    let mut value = SchemaField::new(schema);
+    value.flatten = true;
+
+    let mut structure = StructType::new([(tag.to_owned(), field), (key, value)]);
+    structure.allow_unknown_fields = allow_unknown_fields;
+
+    Schema::structure(structure)
 }
 
 /// The schema of an adjacently tagged variant,
-/// `{ "tag": "name", "content": value }`.
+/// `{ "tag": "name", "content": value }`. The value keeps its description, as
+/// a named type's schema is shared by every field that holds it.
 pub fn adjacently_tagged(tag: &str, field: SchemaField, content: &str, value: Schema) -> Schema {
     Schema::structure(StructType::new([
         (tag.to_owned(), field),
-        (content.to_owned(), SchemaField::from(value)),
+        (content.to_owned(), SchemaField::new(value)),
     ]))
 }
 

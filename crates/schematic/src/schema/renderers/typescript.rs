@@ -108,6 +108,60 @@ fn quote_property(name: &str) -> String {
     }
 }
 
+/// The schema without the `null` an `Option` adds, as serde writes no fields
+/// for a flattened `None`, which leaves nothing of a schema that's only `null`.
+fn strip_null(schema: &Schema) -> Option<&Schema> {
+    match &schema.ty {
+        SchemaType::Null => None,
+        SchemaType::Union(uni) if uni.has_null() => {
+            let mut variants = uni.variants_types.iter().filter(|v| !v.is_null());
+
+            match (variants.next(), variants.next()) {
+                (None, _) => None,
+                (Some(variant), None) => Some(variant),
+                _ => Some(schema),
+            }
+        }
+        _ => Some(schema),
+    }
+}
+
+/// The schemas of the struct's flattened fields, in the order of its fields.
+fn get_flattened_schemas(structure: &StructType) -> Vec<&Schema> {
+    structure
+        .sorted_fields()
+        .into_values()
+        .filter(|field| field.flatten && !field.hidden)
+        .filter_map(|field| strip_null(&field.schema))
+        .collect()
+}
+
+/// Whether the struct has a field that it doesn't flatten.
+fn has_own_fields(structure: &StructType) -> bool {
+    structure
+        .fields
+        .values()
+        .any(|field| !field.flatten && !field.hidden)
+}
+
+fn is_union(schema: &Schema) -> bool {
+    matches!(schema.ty, SchemaType::Union(_))
+}
+
+/// Whether the struct is an intersection of its own fields and the types it
+/// flattens, or of several flattened types.
+fn is_intersection(schema: &Schema) -> bool {
+    let SchemaType::Struct(structure) = &schema.ty else {
+        return false;
+    };
+
+    match get_flattened_schemas(structure).len() {
+        0 => false,
+        1 => has_own_fields(structure),
+        _ => true,
+    }
+}
+
 /// Renders TypeScript types from a schema.
 #[derive(Default)]
 pub struct TypeScriptRenderer {
@@ -146,6 +200,17 @@ impl TypeScriptRenderer {
         } else {
             chars.repeat(self.depth)
         }
+    }
+
+    /// Whether the schema is rendered in place, rather than referenced by
+    /// name, as something that `check` says of it.
+    fn renders_inline(&self, schema: &Schema, check: fn(&Schema) -> bool) -> bool {
+        let referenced = schema
+            .name
+            .as_ref()
+            .is_some_and(|name| self.is_reference(name));
+
+        !referenced && check(schema)
     }
 
     fn is_excluded(&self, name: &str) -> bool {
@@ -239,7 +304,7 @@ impl TypeScriptRenderer {
             }
         }
 
-        let value = self.render_struct(structure, schema)?;
+        let value = self.render_object_literal(structure)?;
 
         // If nothing to extend then we can render this as either an
         // interface or a type alias, depending on the option
@@ -342,6 +407,99 @@ impl TypeScriptRenderer {
         Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
     }
 
+    /// Render the struct's own fields as an object literal. Its flattened
+    /// fields are left out, as `render_struct` intersects them with it, and
+    /// `export_object_types` exports each as a type of its own.
+    fn render_object_literal(&mut self, structure: &StructType) -> RenderResult {
+        self.depth += 1;
+
+        let exclude_aliases = self.options.exclude_aliases;
+        let mut out = vec![];
+        let indent = self.indent();
+
+        let mut create_row = |name: &str, field: &SchemaField| -> miette::Result<()> {
+            if field.hidden {
+                return Ok(());
+            }
+
+            let mut row = format!("{indent}{}", quote_property(name));
+
+            if field.optional
+                || field.aliases.iter().any(|alias| name == alias)
+                || matches!(
+                    self.options.property_format,
+                    PropertyFormat::Optional | PropertyFormat::OptionalUndefined
+                )
+            {
+                row.push_str("?: ");
+            } else {
+                row.push_str(": ");
+            }
+
+            row.push_str(&self.render_schema(&field.schema)?);
+
+            if matches!(
+                self.options.property_format,
+                PropertyFormat::OptionalUndefined
+            ) {
+                row.push_str(" | undefined");
+            }
+
+            if matches!(self.options.object_format, ObjectFormat::Interface) {
+                row.push(';');
+            } else {
+                row.push(',');
+            }
+
+            let mut tags = vec![];
+
+            if let Some(default) = field.get_default() {
+                tags.push(format!("@default {}", self.lit_to_string(default)));
+            }
+
+            if let Some(deprecated) = &field.deprecated {
+                tags.push(if deprecated.is_empty() {
+                    "@deprecated".to_owned()
+                } else {
+                    format!("@deprecated {deprecated}")
+                });
+            }
+
+            if let Some(env_var) = &field.env_var {
+                tags.push(format!("@env {env_var}"));
+            }
+
+            if let SchemaType::Enum(inner) = &field.schema.ty {
+                tags.push(format!(
+                    "@type {{{}}}",
+                    self.render_enum_as_string_union(inner, &field.schema)?
+                ));
+            }
+
+            out.push(self.wrap_in_comment(field.comment.as_ref(), tags, row));
+
+            Ok(())
+        };
+
+        for (name, field) in structure.sorted_fields() {
+            if field.flatten {
+                continue;
+            }
+
+            if !exclude_aliases {
+                for alias in &field.aliases {
+                    create_row(alias, field)?;
+                }
+            }
+
+            create_row(name, field)?;
+        }
+
+        self.depth -= 1;
+
+        Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
+    }
+
     fn lit_to_string(&self, lit: &LiteralValue) -> String {
         match lit {
             LiteralValue::Bool(inner) => inner.to_string(),
@@ -433,7 +591,8 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     fn render_array(&mut self, array: &ArrayType, _schema: &Schema) -> RenderResult {
         let out = self.render_schema(&array.items_type)?;
 
-        Ok(if out.contains('|') {
+        // `[]` binds tighter than a union or an intersection
+        Ok(if out.contains(['|', '&']) {
             format!("({out})[]")
         } else {
             format!("{out}[]")
@@ -505,94 +664,31 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
     }
 
     fn render_struct(&mut self, structure: &StructType, _schema: &Schema) -> RenderResult {
-        self.depth += 1;
+        let flattened = get_flattened_schemas(structure);
 
-        let exclude_aliases = self.options.exclude_aliases;
-        let mut out = vec![];
-        let indent = self.indent();
-
-        let mut create_row = |name: &str, field: &SchemaField| -> miette::Result<()> {
-            if field.hidden {
-                return Ok(());
-            }
-
-            let mut row = format!("{indent}{}", quote_property(name));
-
-            if field.optional
-                || field.aliases.iter().any(|alias| name == alias)
-                || matches!(
-                    self.options.property_format,
-                    PropertyFormat::Optional | PropertyFormat::OptionalUndefined
-                )
-            {
-                row.push_str("?: ");
-            } else {
-                row.push_str(": ");
-            }
-
-            row.push_str(&self.render_schema(&field.schema)?);
-
-            if matches!(
-                self.options.property_format,
-                PropertyFormat::OptionalUndefined
-            ) {
-                row.push_str(" | undefined");
-            }
-
-            if matches!(self.options.object_format, ObjectFormat::Interface) {
-                row.push(';');
-            } else {
-                row.push(',');
-            }
-
-            let mut tags = vec![];
-
-            if let Some(default) = field.get_default() {
-                tags.push(format!("@default {}", self.lit_to_string(default)));
-            }
-
-            if let Some(deprecated) = &field.deprecated {
-                tags.push(if deprecated.is_empty() {
-                    "@deprecated".to_owned()
-                } else {
-                    format!("@deprecated {deprecated}")
-                });
-            }
-
-            if let Some(env_var) = &field.env_var {
-                tags.push(format!("@env {env_var}"));
-            }
-
-            if let SchemaType::Enum(inner) = &field.schema.ty {
-                tags.push(format!(
-                    "@type {{{}}}",
-                    self.render_enum_as_string_union(inner, &field.schema)?
-                ));
-            }
-
-            out.push(self.wrap_in_comment(field.comment.as_ref(), tags, row));
-
-            Ok(())
-        };
-
-        for (name, field) in structure.sorted_fields() {
-            // Handle in `export_object_types`
-            if field.flatten {
-                continue;
-            }
-
-            if !exclude_aliases {
-                for alias in &field.aliases {
-                    create_row(alias, field)?;
-                }
-            }
-
-            create_row(name, field)?;
+        if flattened.is_empty() {
+            return self.render_object_literal(structure);
         }
 
-        self.depth -= 1;
+        // A flattened type's fields are written alongside the struct's own,
+        // which an object literal can't declare, so it's intersected with them
+        let mut parts = vec![];
 
-        Ok(format!("{{\n{}\n{}}}", out.join("\n"), self.indent()))
+        if has_own_fields(structure) {
+            parts.push(self.render_object_literal(structure)?);
+        }
+
+        for schema in flattened {
+            let out = self.render_schema(schema)?;
+
+            parts.push(if self.renders_inline(schema, is_union) {
+                format!("({out})")
+            } else {
+                out
+            });
+        }
+
+        Ok(parts.join(" & "))
     }
 
     fn render_tuple(&mut self, tuple: &TupleType, _schema: &Schema) -> RenderResult {
@@ -609,7 +705,15 @@ impl SchemaRenderer<String> for TypeScriptRenderer {
         let mut items = vec![];
 
         for item in &uni.variants_types {
-            items.push(self.render_schema(item)?);
+            let out = self.render_schema(item)?;
+
+            // `&` binds tighter than `|`, but a member that's an intersection
+            // only reads as one once it's grouped
+            items.push(if self.renders_inline(item, is_intersection) {
+                format!("({out})")
+            } else {
+                out
+            });
         }
 
         Ok(items.join(" | "))

@@ -14,7 +14,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                 StructType::new([
                                     (
                                         "A".into(),
-                                        {
+                                        SchemaField::new({
                                             let mut item = Schema::structure(
                                                 StructType::new([
                                                     (
@@ -50,7 +50,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                             );
                                             item.partialize();
                                             item
-                                        },
+                                        }),
                                     ),
                                 ]),
                             );
@@ -64,7 +64,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "B".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = Schema::structure(
                                             StructType::new([
                                                 (
@@ -92,7 +92,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                         );
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -103,11 +103,11 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "C".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = Schema::structure(StructType::default());
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
@@ -115,7 +115,9 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "Text".into(),
                         Schema::structure(
-                            StructType::new([("Text".into(), schema.infer::<String>())]),
+                            StructType::new([
+                                ("Text".into(), SchemaField::new(schema.infer::<String>())),
+                            ]),
                         ),
                     ),
                     (

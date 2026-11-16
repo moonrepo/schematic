@@ -361,6 +361,129 @@ mod typescript {
         assert!(ts.contains("export interface CollidesBase2 {"), "{ts}");
         assert!(ts.contains("CollidesBase2 & CollidesBase"), "{ts}");
     }
+
+    /// The location's own docs.
+    #[derive(Schematic)]
+    pub struct Location {
+        url: String,
+    }
+
+    #[derive(Schematic)]
+    #[serde(tag = "type", rename_all = "kebab-case")]
+    pub enum Tagged {
+        /// The variant's docs.
+        Remote(Location),
+        Local {
+            path: String,
+            #[serde(flatten)]
+            location: Location,
+        },
+    }
+
+    #[derive(Schematic)]
+    pub struct HasTagged {
+        location: Location,
+        tagged: Tagged,
+    }
+
+    #[test]
+    fn an_internally_tagged_variant_references_the_type_it_holds() {
+        let ts = render::<HasTagged, _, _>(TypeScriptRenderer::default());
+
+        // A named variant's flattened field is intersected too, not dropped
+        assert!(
+            ts.contains(
+                "export type Tagged = ({\n\ttype: 'remote';\n} & Location) | ({\n\tpath: string;\n\ttype: 'local';\n} & Location);"
+            ),
+            "{ts}"
+        );
+
+        // The shared definition is left untagged, with its own docs
+        assert!(
+            ts.contains(
+                "/** The location's own docs. */\nexport interface Location {\n\turl: string;\n}"
+            ),
+            "{ts}"
+        );
+    }
+
+    #[derive(Schematic)]
+    pub struct Extended {
+        own: bool,
+        #[serde(flatten)]
+        location: Location,
+    }
+
+    #[derive(Schematic)]
+    pub struct HasExtended {
+        items: Vec<Extended>,
+    }
+
+    #[test]
+    fn groups_an_intersection_within_an_array() {
+        let ts = render::<HasExtended, _, _>(TypeScriptRenderer::new(TypeScriptOptions {
+            disable_references: true,
+            ..Default::default()
+        }));
+
+        assert!(ts.contains("items: ({\n"), "{ts}");
+        assert!(ts.contains("} & {\n"), "{ts}");
+        assert!(ts.contains("})[];"), "{ts}");
+    }
+
+    /// The content's own docs.
+    #[derive(Schematic)]
+    pub struct Content {
+        value: String,
+    }
+
+    #[derive(Schematic)]
+    #[serde(tag = "kind", content = "content")]
+    pub enum Adjacent {
+        One(Content),
+    }
+
+    #[derive(Schematic)]
+    pub enum External {
+        One(Content),
+    }
+
+    #[derive(Schematic)]
+    pub struct HasContent {
+        adjacent: Adjacent,
+        external: External,
+    }
+
+    #[test]
+    fn a_tagged_variant_leaves_the_docs_of_the_type_it_holds() {
+        let ts = render::<HasContent, _, _>(TypeScriptRenderer::default());
+
+        assert!(
+            ts.contains("/** The content's own docs. */\nexport interface Content {"),
+            "{ts}"
+        );
+        assert_eq!(ts.matches("The content's own docs.").count(), 1, "{ts}");
+    }
+}
+
+mod api_docs {
+    use super::*;
+    use crate::typescript::HasTagged;
+
+    #[test]
+    fn an_internally_tagged_variant_references_the_type_it_holds() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<HasTagged>();
+        generator.add::<crate::typescript::Tagged>();
+
+        let docs = generator.render(ApiDocsRenderer::default()).unwrap();
+
+        assert!(docs.contains("`{ type: \"remote\" } & Location`"), "{docs}");
+        assert!(
+            docs.contains("`{ path: string, type: \"local\" } & Location`"),
+            "{docs}"
+        );
+    }
 }
 
 mod templates {

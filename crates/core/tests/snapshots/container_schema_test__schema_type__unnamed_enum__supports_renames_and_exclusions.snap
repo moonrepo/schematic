@@ -10,19 +10,25 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "text".into(),
                         Schema::structure(
-                            StructType::new([("text".into(), schema.infer::<String>())]),
+                            StructType::new([
+                                ("text".into(), SchemaField::new(schema.infer::<String>())),
+                            ]),
                         ),
                     ),
                     (
                         "number".into(),
                         Schema::structure(
-                            StructType::new([("number".into(), schema.infer::<usize>())]),
+                            StructType::new([
+                                ("number".into(), SchemaField::new(schema.infer::<usize>())),
+                            ]),
                         ),
                     ),
                     (
                         "Last".into(),
                         Schema::structure(
-                            StructType::new([("Last".into(), schema.infer::<bool>())]),
+                            StructType::new([
+                                ("Last".into(), SchemaField::new(schema.infer::<bool>())),
+                            ]),
                         ),
                     ),
                 ],

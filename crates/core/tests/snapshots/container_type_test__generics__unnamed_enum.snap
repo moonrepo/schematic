@@ -95,7 +95,9 @@ impl<T> schematic::Schematic for Example<T> {
                         (
                             "Value".into(),
                             Schema::structure(
-                                StructType::new([("Value".into(), schema.infer::<T>())]),
+                                StructType::new([
+                                    ("Value".into(), SchemaField::new(schema.infer::<T>())),
+                                ]),
                             ),
                         ),
                         (

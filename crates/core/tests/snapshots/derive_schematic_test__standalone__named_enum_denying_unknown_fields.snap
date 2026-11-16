@@ -19,10 +19,12 @@ impl schematic::Schematic for Example {
                                 StructType::new([
                                     (
                                         "A".into(),
-                                        Schema::structure(
-                                            StructType::new([
-                                                ("a".into(), SchemaField::new(schema.infer::<bool>())),
-                                            ]),
+                                        SchemaField::new(
+                                            Schema::structure(
+                                                StructType::new([
+                                                    ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                                                ]),
+                                            ),
                                         ),
                                     ),
                                 ]),

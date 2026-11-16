@@ -832,9 +832,11 @@ impl Variant {
                     if unit {
                         inner
                     } else {
+                        // The value keeps its description, as a named type's
+                        // schema is shared by every field that holds it
                         quote! {
                             Schema::structure(StructType::new([
-                                (#name.into(), #partial_inner),
+                                (#name.into(), SchemaField::new(#partial_inner)),
                             ]))
                         }
                     }
@@ -844,9 +846,11 @@ impl Variant {
                     if unit {
                         quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
                     } else {
-                        wrap(quote! {
-                            schematic::internal::schema::internally_tagged(#inner, #tag, #tag_field)
-                        })
+                        // The value is marked rather than the struct around
+                        // it, which is only its own when the value has no name
+                        quote! {
+                            schematic::internal::schema::internally_tagged(#partial_inner, #tag, #tag_field)
+                        }
                     }
                 }
                 // { "tag": "name" } | { "tag": "name", "content": value }

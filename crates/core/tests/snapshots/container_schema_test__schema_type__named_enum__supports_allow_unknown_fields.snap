@@ -13,7 +13,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                             StructType::new([
                                 (
                                     "A".into(),
-                                    {
+                                    SchemaField::new({
                                         let mut item = {
                                             let mut structure = StructType::new([
                                                 ("a".into(), SchemaField::new(schema.infer::<String>())),
@@ -23,7 +23,7 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                                         };
                                         item.partialize();
                                         item
-                                    },
+                                    }),
                                 ),
                             ]),
                         ),
