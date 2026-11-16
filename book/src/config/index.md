@@ -161,7 +161,9 @@ Schematic is powered entirely by [serde](https://serde.rs), and supports the fol
 - Pkl - Uses `rpkl` and requires the `pkl` Cargo feature.
 - RON - Uses `ron` and requires the `ron` Cargo feature.
 - TOML - Uses `toml` and requires the `toml` Cargo feature.
-- YAML - Uses `serde_norway` and requires the `yaml` Cargo feature.
+- YAML - Uses `serde_norway` and requires the `yaml` Cargo feature. An externally tagged enum
+  variant that holds a value is written as a YAML tag, like `!file`, rather than a map
+  ([more](./struct/index.md#yaml-and-externally-tagged-variants)).
 
 None of them is enabled by default, so enable the feature of each format you load. A source with no
 format to parse it fails to load, with an error that names the feature its extension needs.

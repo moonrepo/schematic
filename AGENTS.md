@@ -626,6 +626,10 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   `merge` is composition: a `MergeList` holds the index where the previous items go, rather than a
   strategy flag that the next merge would overwrite. An enum's isn't, as another variant replaces,
   which is exactly why the defaults go under rather than first.
+- YAML reads an externally tagged variant that holds a value only from a YAML tag (`!file`), never
+  the `{ file: .. }` map the other formats, JSON schemas, and templates use. That's serde_norway,
+  directly and through a `Value` alike, not the loader's two passes. By decision it's documented,
+  recommending internally tagged enums for YAML, rather than read through a deserializer of our own.
 - The maintainer's zsh wraps `git` in a `scmpuff` function that breaks in non-interactive shells.
   Use `command git`.
 
