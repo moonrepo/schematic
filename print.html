@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-cbbcff6f.js";
+            window.path_to_searchindex_js = "searchindex-1ba08fb3.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-774c0fcb.js"></script>
+        <script src="toc-6a672408.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2954,6 +2954,58 @@ Schema renders as <code>additionalProperties: false</code>.</p>
 <code>#[serde(deny_unknown_fields)]</code>.</p>
 </blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="tagged-variants"><a class="header" href="#tagged-variants">Tagged variants</a></h1>
+<p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TaggedType.html"><code>TaggedType</code></a> paired with
+<a href="https://docs.rs/schematic/latest/schematic/enum.SchemaType.html#variant.Tagged"><code>SchemaType::Tagged</code></a>
+represents an enum variant that serde writes with its name, as a tag around or within the value it
+holds. It’s a variant of a <a href="#unions">union</a>, and the derive creates one for every variant of an
+enum that’s tagged, so it’s rarely built by hand.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use schematic::{Schematic, Schema, SchemaBuilder, schema::{TaggedType, TagFormat, UnionType}};
+
+impl Schematic for T {
+	fn build_schema(mut schema: SchemaBuilder) -&gt; Schema {
+		schema.union(UnionType::new_any([
+			Schema::tagged(TaggedType::new(
+				TagFormat::Internal { tag: "type".into() },
+				"git",
+				Some(schema.infer::&lt;GitSource&gt;()),
+			)),
+			Schema::tagged(TaggedType::new(
+				TagFormat::Internal { tag: "type".into() },
+				"none",
+				None,
+			)),
+		]))
+	}
+}
+<span class="boring">}</span></code></pre>
+<h2 id="formats-3"><a class="header" href="#formats-3">Formats</a></h2>
+<p>The <code>format</code> field is how serde writes the variant’s <code>name</code>, from the enum’s <code>#[serde(tag)]</code> and
+<code>#[serde(content)]</code> attributes.</p>
+<ul>
+<li><code>TagFormat::External</code> (default) - <code>{ "name": value }</code>.</li>
+<li><code>TagFormat::Internal { tag }</code> - <code>{ "tag": "name", ...value }</code>.</li>
+<li><code>TagFormat::Adjacent { tag, content }</code> - <code>{ "tag": "name", "content": value }</code>.</li>
+</ul>
+<p>A unit variant holds no <code>value</code>, so it’s only its tag, like <code>{ "tag": "name" }</code>. An externally
+tagged unit variant is written as its name alone, so it’s a <a href="#literals">literal</a> instead, and an
+untagged variant is its value alone, without a tagged type around it.</p>
+<p>The value is kept apart from the tag, rather than within a struct of them, as a named type’s schema
+is shared by every type that holds it. The tag’s <code>env_var</code> is the environment variable that picks
+the variant, from an enum’s <code>env_prefix</code>.</p>
+<h2 id="rendering"><a class="header" href="#rendering">Rendering</a></h2>
+<p>A renderer can render each format as it sees fit, through <code>SchemaRenderer::render_tagged</code>, which
+defaults to rendering the struct serde writes for the variant, from
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.TaggedType.html#method.to_schema"><code>TaggedType::to_schema()</code></a>.
+An internally tagged variant holding a named struct is flattened into a struct of its tag, as adding
+the tag to the named struct would claim it for every type that holds it, so a TypeScript type
+renders it as <code>{ type: 'git' } &amp; GitSource</code>.</p>
+<p>A renderer that reads the shape of the structs it renders, rather than rendering each tag format,
+can replace every tagged variant with that struct up front, with
+<a href="https://docs.rs/schematic/latest/schematic/schema/struct.Schema.html#method.expand_tagged"><code>Schema::expand_tagged()</code></a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="tuples"><a class="header" href="#tuples">Tuples</a></h1>
 <p>The <a href="https://docs.rs/schematic/latest/schematic/schema/struct.TupleType.html"><code>TupleType</code></a> can be used to represent a fixed list of heterogeneous values of a given
 type, as defined by <code>items_types</code>.</p>
@@ -3317,6 +3369,8 @@ impl SchemaRenderer for CustomRenderer {
 	}
 }
 <span class="boring">}</span></code></pre>
+<p>A tagged enum variant defaults to rendering as the struct serde writes for it, so a renderer only
+implements <code>render_tagged</code> to render each <a href="#tagged-variants">tag format</a> itself.</p>
 <p>A renderer whose types render to something other than a string, like the JSON schema renderer, sets
 the trait’s type parameter, as in <code>SchemaRenderer&lt;schemars::Schema&gt;</code>, while <code>render</code> always returns
 a string. A helper that takes any renderer is generic over both, like

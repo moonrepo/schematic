@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-cbbcff6f.js";
+            window.path_to_searchindex_js = "../../searchindex-1ba08fb3.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-774c0fcb.js"></script>
+        <script src="../../toc-6a672408.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -284,6 +284,8 @@ impl SchemaRenderer for CustomRenderer {
 	}
 }
 <span class="boring">}</span></code></pre>
+<p>A tagged enum variant defaults to rendering as the struct serde writes for it, so a renderer only
+implements <code>render_tagged</code> to render each <a href="../tagged.html">tag format</a> itself.</p>
 <p>A renderer whose types render to something other than a string, like the JSON schema renderer, sets
 the trait’s type parameter, as in <code>SchemaRenderer&lt;schemars::Schema&gt;</code>, while <code>render</code> always returns
 a string. A helper that takes any renderer is generic over both, like
