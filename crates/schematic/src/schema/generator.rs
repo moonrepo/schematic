@@ -75,6 +75,11 @@ impl SchemaGenerator {
                     self.add_schema(&field.schema);
                 }
             }
+            SchemaType::Tagged(inner) => {
+                if let Some(value) = &inner.value {
+                    self.add_schema(value);
+                }
+            }
             SchemaType::Tuple(inner) => {
                 for item in &inner.items_types {
                     self.add_schema(item);

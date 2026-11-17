@@ -1388,3 +1388,213 @@ mod externals {
         }
     }
 }
+
+mod tagged {
+    use super::*;
+
+    fn name(value: &str) -> Schema {
+        Schema::literal_value(LiteralValue::String(value.into()))
+    }
+
+    fn internal(tag: &str) -> TagFormat {
+        TagFormat::Internal { tag: tag.into() }
+    }
+
+    fn fields(schema: &Schema) -> &StructType {
+        match &schema.ty {
+            SchemaType::Struct(inner) => inner,
+            _ => panic!("{schema:?}"),
+        }
+    }
+
+    // A named struct, as a derived type is, which carries its own docs
+    fn named_struct(value: &str) -> Schema {
+        let mut schema = Schema::structure(StructType::new([(
+            "url".to_owned(),
+            Schema::string(StringType::default()),
+        )]));
+        schema.name = Some(value.into());
+        schema.description = Some("The value's own docs.".into());
+        schema
+    }
+
+    #[test]
+    fn external_writes_the_value_under_its_name() {
+        let tagged = TaggedType::new(TagFormat::External, "git", Some(named_struct("Git")));
+        let schema = tagged.to_schema();
+        let field = &fields(&schema).fields["git"];
+
+        assert_eq!(field.schema, named_struct("Git"));
+        assert_eq!(field.comment, None);
+        assert_eq!(tagged.get_tag(), None);
+    }
+
+    #[test]
+    fn an_external_unit_is_its_name() {
+        let tagged = TaggedType::new(TagFormat::External, "none", None);
+
+        assert_eq!(tagged.to_schema(), name("none"));
+    }
+
+    #[test]
+    fn internal_adds_the_tag_to_a_struct_of_its_own() {
+        let value = Schema::structure(StructType::new([(
+            "path".to_owned(),
+            Schema::string(StringType::default()),
+        )]));
+        let mut tagged = TaggedType::new(internal("type"), "file", Some(value));
+        tagged.env_var = Some("SOURCE_TYPE".into());
+
+        let schema = tagged.to_schema();
+        let structure = fields(&schema);
+
+        assert_eq!(structure.fields.len(), 2);
+        assert_eq!(structure.fields["type"].schema, name("file"));
+        assert_eq!(
+            structure.fields["type"].env_var.as_deref(),
+            Some("SOURCE_TYPE")
+        );
+        assert!(!structure.fields["path"].flatten);
+    }
+
+    // The named struct is shared, so the tag goes around it, never into it
+    #[test]
+    fn internal_flattens_a_named_struct_beside_the_tag() {
+        let mut value = named_struct("Git");
+
+        if let SchemaType::Struct(inner) = &mut value.ty {
+            inner.allow_unknown_fields = true;
+        }
+
+        let schema = TaggedType::new(internal("type"), "git", Some(value.clone())).to_schema();
+        let structure = fields(&schema);
+
+        assert_eq!(structure.fields["type"].schema, name("git"));
+        assert!(structure.fields["Git"].flatten);
+        assert_eq!(structure.fields["Git"].schema, value);
+        assert!(structure.allow_unknown_fields);
+    }
+
+    #[test]
+    fn internal_keys_a_named_struct_apart_from_the_tag() {
+        let schema = TaggedType::new(internal("Kind"), "a", Some(named_struct("Kind"))).to_schema();
+        let structure = fields(&schema);
+
+        assert_eq!(structure.fields["Kind"].schema, name("a"));
+        assert!(structure.fields["_Kind"].flatten);
+    }
+
+    // Serde can only add a tag to a map, so anything else is left as it is
+    #[test]
+    fn internal_leaves_a_value_that_isnt_a_struct() {
+        let value = Schema::boolean(BooleanType::default());
+        let tagged = TaggedType::new(internal("type"), "flag", Some(value.clone()));
+
+        assert_eq!(tagged.to_schema(), value);
+    }
+
+    #[test]
+    fn a_tagged_unit_is_its_tag() {
+        for format in [
+            internal("type"),
+            TagFormat::Adjacent {
+                tag: "type".into(),
+                content: "content".into(),
+            },
+        ] {
+            let schema = TaggedType::new(format, "none", None).to_schema();
+            let structure = fields(&schema);
+
+            assert_eq!(structure.fields.len(), 1);
+            assert_eq!(structure.fields["type"].schema, name("none"));
+        }
+    }
+
+    #[test]
+    fn adjacent_writes_the_tag_and_the_content() {
+        let format = TagFormat::Adjacent {
+            tag: "t".into(),
+            content: "c".into(),
+        };
+        let tagged = TaggedType::new(format, "git", Some(named_struct("Git")));
+        let schema = tagged.to_schema();
+        let structure = fields(&schema);
+
+        assert_eq!(structure.fields["t"].schema, name("git"));
+        assert_eq!(structure.fields["c"].schema, named_struct("Git"));
+        assert_eq!(tagged.get_tag(), Some("t"));
+    }
+
+    #[test]
+    fn partialize_marks_only_the_value() {
+        let mut schema = Schema::tagged(TaggedType::new(
+            internal("type"),
+            "git",
+            Some(named_struct("Git")),
+        ));
+        schema.partialize();
+
+        let SchemaType::Tagged(tagged) = &schema.ty else {
+            panic!();
+        };
+
+        assert!(fields(tagged.value.as_ref().unwrap()).partial);
+    }
+
+    // The variant's docs are the struct's, and the value keeps its own
+    #[test]
+    fn expands_every_variant_into_its_struct() {
+        let mut variant = Schema::tagged(TaggedType::new(
+            internal("type"),
+            "git",
+            Some(named_struct("Git")),
+        ));
+        variant.description = Some("The variant's docs.".into());
+
+        let mut schema = Schema::union(UnionType::new_any([
+            variant,
+            Schema::tagged(TaggedType::new(internal("type"), "none", None)),
+        ]));
+        schema.expand_tagged();
+
+        let SchemaType::Union(uni) = &schema.ty else {
+            panic!();
+        };
+        let git = &uni.variants_types[0];
+
+        assert_eq!(git.description.as_deref(), Some("The variant's docs."));
+        assert_eq!(
+            fields(git).fields["Git"].schema.description.as_deref(),
+            Some("The value's own docs.")
+        );
+        assert_eq!(fields(&uni.variants_types[1]).fields.len(), 1);
+    }
+
+    #[test]
+    fn round_trips_through_serde() {
+        let mut tagged = TaggedType::new(
+            TagFormat::Adjacent {
+                tag: "type".into(),
+                content: "content".into(),
+            },
+            "git",
+            Some(named_struct("Git")),
+        );
+        tagged.env_var = Some("SOURCE_TYPE".into());
+
+        let schema = Schema::tagged(tagged);
+        let json = serde_json::to_string(&schema).unwrap();
+
+        assert_eq!(serde_json::from_str::<Schema>(&json).unwrap(), schema);
+
+        // A unit leaves out what it doesn't hold
+        let json =
+            serde_json::to_string(&Schema::tagged(TaggedType::new(internal("t"), "a", None)))
+                .unwrap();
+
+        assert_eq!(
+            json,
+            r#"{"ty":{"type":"Tagged","format":{"Internal":{"tag":"t"}},"name":"a"}}"#
+        );
+    }
+}

@@ -525,7 +525,7 @@ impl ApiDocsRenderer {
         output_dir: P,
     ) -> miette::Result<()> {
         let output_dir = output_dir.as_ref();
-        let schemas = &generator.schemas;
+        let schemas = &super::expand_tagged(generator.schemas.clone());
 
         if schemas.is_empty() {
             return Err(miette!(
@@ -1545,6 +1545,6 @@ impl SchemaRenderer<TypeExpression> for ApiDocsRenderer {
             ));
         };
 
-        self.render_page_of(&schemas, &name)
+        self.render_page_of(&super::expand_tagged(schemas), &name)
     }
 }

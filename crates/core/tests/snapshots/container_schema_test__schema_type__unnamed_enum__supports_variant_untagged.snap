@@ -9,11 +9,13 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "Text".into(),
-                        schematic::internal::schema::internally_tagged(
-                            schema.infer::<String>(),
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Text".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Internal {
+                                    tag: "type".into(),
+                                },
+                                "Text",
+                                Some(schema.infer::<String>()),
                             ),
                         ),
                     ),

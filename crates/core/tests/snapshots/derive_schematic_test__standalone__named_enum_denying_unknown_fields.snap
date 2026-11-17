@@ -15,19 +15,18 @@ impl schematic::Schematic for Example {
                     [
                         (
                             "A".into(),
-                            Schema::structure(
-                                StructType::new([
-                                    (
-                                        "A".into(),
-                                        SchemaField::new(
-                                            Schema::structure(
-                                                StructType::new([
-                                                    ("a".into(), SchemaField::new(schema.infer::<bool>())),
-                                                ]),
-                                            ),
+                            Schema::tagged(
+                                TaggedType::new(
+                                    TagFormat::External,
+                                    "A",
+                                    Some(
+                                        Schema::structure(
+                                            StructType::new([
+                                                ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                                            ]),
                                         ),
                                     ),
-                                ]),
+                                ),
                             ),
                         ),
                     ],

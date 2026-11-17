@@ -2,13 +2,27 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Added `SchemaType::Tagged`, a `TaggedType`, as the schema of a tagged enum variant. It holds the
+  variant's `TagFormat` (external, internal, or adjacent), its name, and its value, untouched, apart
+  from the tag, so a renderer can shape each format itself. A derived variant was a struct of its
+  tag and value, or its value with the tag added, so code matching `SchemaType` exhaustively must
+  handle it, and a renderer reading a union's variants finds a `Tagged` there. An externally tagged
+  unit variant is still a literal, and an untagged variant its value.
+  - `SchemaRenderer::render_tagged` renders the struct serde writes for the variant by default,
+    from `TaggedType::to_schema`, so a custom renderer that only renders structs keeps its output.
+  - `Schema::expand_tagged` replaces every tagged variant within a schema with that struct, for a
+    renderer that reads the shape of structs. The Pkl, API docs, and template renderers do so.
+  - A serialized schema writes a tagged variant as `{ "type": "Tagged", ... }`.
+  - A partial's literal setting is now optional like any other, as a struct no longer holds a tag
+    that has to be told apart.
+
 #### 🐞 Fixes
 
 - Fixed an internally tagged variant that holds a named struct inlining that struct's fields, rather
-  than referencing it. The variant's schema is now a struct of the tag and the value as a flattened
-  field, like `#[serde(flatten)]`, so TypeScript renders `({ type: 'git' } & GitSource) | ...`
-  rather than an object literal per variant, and the struct is defined once, without the tag. A
-  custom renderer that reads the variant's fields finds the value there as a flattened field.
+  than referencing it. TypeScript renders `({ type: 'git' } & GitSource) | ...` rather than an object
+  literal per variant, and the struct is defined once, without the tag.
 - Fixed `TypeScriptRenderer` leaving out a flattened field of a struct that's rendered in place, like
   a named enum variant's, and `ApiDocsRenderer` rendering it as a key of its own. Each is now
   intersected with the struct's own fields.

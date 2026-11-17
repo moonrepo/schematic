@@ -336,7 +336,7 @@ impl PklSchemaRenderer {
         schemas: IndexMap<String, Schema>,
         root: Option<&str>,
     ) -> miette::Result<()> {
-        self.schemas = schemas;
+        self.schemas = super::expand_tagged(schemas);
         self.declared_in.clear();
         self.inheritance.clear();
         self.open.clear();

@@ -15,48 +15,52 @@ impl schematic::Schematic for Example {
                     [
                         (
                             "A".into(),
-                            schematic::internal::schema::internally_tagged(
-                                {
-                                    let mut structure = StructType::new([
-                                        ("a".into(), SchemaField::new(schema.infer::<bool>())),
-                                        (
-                                            "b".into(),
-                                            {
-                                                let mut field = SchemaField::new(schema.infer::<usize>());
-                                                field.comment = Some("Field docs.".into());
-                                                field.default = Some(LiteralValue::Int(1));
-                                                field.optional = true;
-                                                field
-                                            },
-                                        ),
-                                        (
-                                            "c".into(),
-                                            {
-                                                let mut field = SchemaField::new(
-                                                    schema.infer::<Option<String>>(),
-                                                );
-                                                field.nullable = true;
-                                                field.optional = true;
-                                                field
-                                            },
-                                        ),
-                                    ]);
-                                    structure.allow_unknown_fields = true;
-                                    Schema::structure(structure)
-                                },
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("A".into())),
+                            Schema::tagged(
+                                TaggedType::new(
+                                    TagFormat::Internal {
+                                        tag: "type".into(),
+                                    },
+                                    "A",
+                                    Some({
+                                        let mut structure = StructType::new([
+                                            ("a".into(), SchemaField::new(schema.infer::<bool>())),
+                                            (
+                                                "b".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<usize>());
+                                                    field.comment = Some("Field docs.".into());
+                                                    field.default = Some(LiteralValue::Int(1));
+                                                    field.optional = true;
+                                                    field
+                                                },
+                                            ),
+                                            (
+                                                "c".into(),
+                                                {
+                                                    let mut field = SchemaField::new(
+                                                        schema.infer::<Option<String>>(),
+                                                    );
+                                                    field.nullable = true;
+                                                    field.optional = true;
+                                                    field
+                                                },
+                                            ),
+                                        ]);
+                                        structure.allow_unknown_fields = true;
+                                        Schema::structure(structure)
+                                    }),
                                 ),
                             ),
                         ),
                         (
                             "B".into(),
-                            schematic::internal::schema::internally_tagged(
-                                schema.infer::<String>(),
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("B".into())),
+                            Schema::tagged(
+                                TaggedType::new(
+                                    TagFormat::Internal {
+                                        tag: "type".into(),
+                                    },
+                                    "B",
+                                    Some(schema.infer::<String>()),
                                 ),
                             ),
                         ),

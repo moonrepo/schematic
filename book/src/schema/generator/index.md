@@ -118,6 +118,9 @@ impl SchemaRenderer for CustomRenderer {
 }
 ```
 
+A tagged enum variant defaults to rendering as the struct serde writes for it, so a renderer only
+implements `render_tagged` to render each [tag format](../tagged.md) itself.
+
 A renderer whose types render to something other than a string, like the JSON schema renderer, sets
 the trait's type parameter, as in `SchemaRenderer<schemars::Schema>`, while `render` always returns
 a string. A helper that takes any renderer is generic over both, like

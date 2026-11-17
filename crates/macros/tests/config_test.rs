@@ -2806,11 +2806,11 @@ mod mixed_variant_values {
             panic!("{schema:?}");
         };
 
-        let SchemaType::Struct(both) = &union.variants_types[0].ty else {
+        let SchemaType::Tagged(both) = &union.variants_types[0].ty else {
             panic!();
         };
 
-        let SchemaType::Tuple(values) = &both.fields["Both"].schema.ty else {
+        let SchemaType::Tuple(values) = &both.value.as_ref().unwrap().ty else {
             panic!();
         };
 

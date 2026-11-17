@@ -9,57 +9,55 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "some-variant".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "some-variant".into(),
-                                    SchemaField::new({
-                                        let mut item = Schema::structure(
-                                            StructType::new([
-                                                (
-                                                    "someValue".into(),
-                                                    SchemaField::new(schema.infer::<String>()),
-                                                ),
-                                                (
-                                                    "other".into(),
-                                                    {
-                                                        let mut field = SchemaField::new(schema.infer::<String>());
-                                                        field.aliases = ["o"]
-                                                            .into_iter()
-                                                            .map(|alias| alias.to_string())
-                                                            .collect::<Vec<_>>();
-                                                        field
-                                                    },
-                                                ),
-                                            ]),
-                                        );
-                                        item.partialize();
-                                        item
-                                    }),
-                                ),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "some-variant",
+                                Some({
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "someValue".into(),
+                                                SchemaField::new(schema.infer::<String>()),
+                                            ),
+                                            (
+                                                "other".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<String>());
+                                                    field.aliases = ["o"]
+                                                        .into_iter()
+                                                        .map(|alias| alias.to_string())
+                                                        .collect::<Vec<_>>();
+                                                    field
+                                                },
+                                            ),
+                                        ]),
+                                    );
+                                    item.partialize();
+                                    item
+                                }),
+                            ),
                         ),
                     ),
                     (
                         "other-variant".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "other-variant".into(),
-                                    SchemaField::new({
-                                        let mut item = Schema::structure(
-                                            StructType::new([
-                                                (
-                                                    "SOME_VALUE".into(),
-                                                    SchemaField::new(schema.infer::<String>()),
-                                                ),
-                                            ]),
-                                        );
-                                        item.partialize();
-                                        item
-                                    }),
-                                ),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "other-variant",
+                                Some({
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "SOME_VALUE".into(),
+                                                SchemaField::new(schema.infer::<String>()),
+                                            ),
+                                        ]),
+                                    );
+                                    item.partialize();
+                                    item
+                                }),
+                            ),
                         ),
                     ),
                 ],

@@ -9,56 +9,60 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "None".into(),
-                        schematic::internal::schema::tagged_unit(
-                            "kind",
-                            {
-                                let mut field = SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("None".into())),
-                                );
-                                field.env_var = Some("AUTH_KIND".into());
-                                field
-                            },
-                        ),
+                        {
+                            let mut tagged = TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "kind".into(),
+                                    content: "value".into(),
+                                },
+                                "None",
+                                None,
+                            );
+                            tagged.env_var = Some("AUTH_KIND".into());
+                            Schema::tagged(tagged)
+                        },
                     ),
                     (
                         "Token".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "kind",
-                            {
-                                let mut field = SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Token".into())),
-                                );
-                                field.env_var = Some("AUTH_KIND".into());
-                                field
-                            },
-                            "value",
-                            {
-                                let mut item = Schema::structure(
-                                    StructType::new([
-                                        (
-                                            "token".into(),
-                                            {
-                                                let mut field = SchemaField::new(schema.infer::<String>());
-                                                field.env_var = Some("AUTH_TOKEN".into());
-                                                field
-                                            },
-                                        ),
-                                    ]),
-                                );
-                                item.partialize();
-                                item
-                            },
-                        ),
+                        {
+                            let mut tagged = TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "kind".into(),
+                                    content: "value".into(),
+                                },
+                                "Token",
+                                Some({
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "token".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<String>());
+                                                    field.env_var = Some("AUTH_TOKEN".into());
+                                                    field
+                                                },
+                                            ),
+                                        ]),
+                                    );
+                                    item.partialize();
+                                    item
+                                }),
+                            );
+                            tagged.env_var = Some("AUTH_KIND".into());
+                            Schema::tagged(tagged)
+                        },
                     ),
                     (
                         "Path".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "kind",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Path".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "kind".into(),
+                                    content: "value".into(),
+                                },
+                                "Path",
+                                Some(schema.infer::<String>()),
                             ),
-                            "value",
-                            schema.infer::<String>(),
                         ),
                     ),
                 ],

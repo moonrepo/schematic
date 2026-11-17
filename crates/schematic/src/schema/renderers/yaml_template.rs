@@ -185,7 +185,7 @@ impl SchemaRenderer<String> for YamlTemplateRenderer {
     }
 
     fn render(&mut self, schemas: IndexMap<String, Schema>) -> RenderResult {
-        self.schemas = schemas;
+        self.schemas = super::expand_tagged(schemas);
 
         let root = validate_root(&self.schemas)?;
         let mut template = self.render_schema_without_reference(&root)?;
