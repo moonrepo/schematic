@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-#### 💥 Breaking
+#### 🚀 Updates
 
 - Added `SchemaType::Tagged`, a `TaggedType`, as the schema of a tagged enum variant. It holds the
   variant's `TagFormat` (external, internal, or adjacent), its name, and its value, untouched, apart
@@ -10,8 +10,8 @@
   tag and value, or its value with the tag added, so code matching `SchemaType` exhaustively must
   handle it, and a renderer reading a union's variants finds a `Tagged` there. An externally tagged
   unit variant is still a literal, and an untagged variant its value.
-  - `SchemaRenderer::render_tagged` renders the struct serde writes for the variant by default,
-    from `TaggedType::to_schema`, so a custom renderer that only renders structs keeps its output.
+  - `SchemaRenderer::render_tagged` renders the struct serde writes for the variant by default, from
+    `TaggedType::to_schema`, so a custom renderer that only renders structs keeps its output.
   - `Schema::expand_tagged` replaces every tagged variant within a schema with that struct, for a
     renderer that reads the shape of structs. The Pkl, API docs, and template renderers do so.
   - A serialized schema writes a tagged variant as `{ "type": "Tagged", ... }`.
@@ -21,10 +21,10 @@
 #### 🐞 Fixes
 
 - Fixed an internally tagged variant that holds a named struct inlining that struct's fields, rather
-  than referencing it. TypeScript renders `({ type: 'git' } & GitSource) | ...` rather than an object
-  literal per variant, and the struct is defined once, without the tag.
-- Fixed `TypeScriptRenderer` leaving out a flattened field of a struct that's rendered in place, like
-  a named enum variant's, and `ApiDocsRenderer` rendering it as a key of its own. Each is now
+  than referencing it. TypeScript renders `({ type: 'git' } & GitSource) | ...` rather than an
+  object literal per variant, and the struct is defined once, without the tag.
+- Fixed `TypeScriptRenderer` leaving out a flattened field of a struct that's rendered in place,
+  like a named enum variant's, and `ApiDocsRenderer` rendering it as a key of its own. Each is now
   intersected with the struct's own fields.
 - Fixed an adjacently or externally tagged variant taking the description of the named type it
   holds, which left that type's definition without one, and repeated it on the field that holds it.
@@ -38,16 +38,16 @@
   directly no longer applies them, a named variant's fields included: load the partial with
   `ConfigLoader::partial` instead. The hidden `finalize_nested` was removed, and a hand-written
   partial implements `finalize` for its transforms.
-- Updated `PartialConfig::default_values` and `env_values` to take `&self`, the partial they go under
-  or over, so that they hold what applies to what the sources set, like the variant an enum's
+- Updated `PartialConfig::default_values` and `env_values` to take `&self`, the partial they go
+  under or over, so that they hold what applies to what the sources set, like the variant an enum's
   sources picked. Read a config's own defaults with `T::default().default_values(&context)`, and add
   `&self` to a hand-written partial's, and to the hidden `env_values_with_prefix`. The derive no
   longer overrides `Config::default_partial`, which is now that call with a default context.
 - Updated `ConfigLoadResult.layers` to begin with the default values and end with environment
   variables, so an index into it shifts by one.
-- Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it, or
-  `..Default::default()`. A type that only derives `Schematic` now follows serde, so its schema is
-  open unless `#[serde(deny_unknown_fields)]`.
+- Added `StructType.allow_unknown_fields`, so a `StructType` written as a struct literal needs it,
+  or `..Default::default()`. A type that only derives `Schematic` now follows serde, so its schema
+  is open unless `#[serde(deny_unknown_fields)]`.
 - Updated `#[derive(Config)]` to fail to compile when a config flattens a config that flattens a
   setting of its own, unless both have `#[config(allow_unknown_fields)]`. It already failed to load
   every setting of the flattened config, as serde can't deny unknown fields through it. The error
@@ -57,15 +57,14 @@
   - `#[setting(fallback)]` on a `Config` enum variant, which only a `ConfigEnum` uses.
   - `#[default]` on a `Config` enum variant, which was copied to the partial and failed to compile.
     Use `#[setting(default)]`.
-  - `env_prefix` or `allow_unknown_fields` on an enum without named variants, which has no fields
-    to read environment variables into or to deny, unless a tag gives `env_prefix` a variant to
-    pick.
+  - `env_prefix` or `allow_unknown_fields` on an enum without named variants, which has no fields to
+    read environment variables into or to deny, unless a tag gives `env_prefix` a variant to pick.
   - `tag` or `untagged` on a `Config` enum of only unit variants, which is written as strings.
   - `skip_deserializing_if`, which serde has no such attribute for.
   - `env` or `parse_env` on a `nested` setting, as a nested config reads its own variables. Use
     `env_prefix` instead.
-  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, which
-    a parent's prefix doesn't apply to. This fails to compile, through a hidden
+  - `#[setting(nested, env_prefix)]` for a nested config without an `env_prefix` of its own, which a
+    parent's prefix doesn't apply to. This fails to compile, through a hidden
     `PartialConfig::HAS_ENV_PREFIX` const, which a hand-written partial that reads the prefix sets.
 - Updated `#[derive(Config)]` to panic on `#[serde(transparent)]`, which was ignored, as the partial
   is still written as a map. Derive `Schematic` for a transparent type, and use it as a setting.
@@ -129,9 +128,9 @@
   `validate`. Two layers picking the same variant are merged field by field, and a layer picking
   another replaces it. The defaults and environment variables of a variant's fields are applied
   whenever it's picked, as the layers are read for the variant the sources picked, and
-  `ConfigLoadResult.layers` reports them. A field's validation errors are reported under the variant, like
-  `source.url.address`. Untagged and internally tagged named variants are supported too, and each is
-  a struct in the schema.
+  `ConfigLoadResult.layers` reports them. A field's validation errors are reported under the
+  variant, like `source.url.address`. Untagged and internally tagged named variants are supported
+  too, and each is a struct in the schema.
   - The fields take the variant's `#[serde(rename_all)]`, or the enum's `rename_all_fields`.
   - An enum with a named variant denies unknown fields, so it now accepts
     `#[config(allow_unknown_fields)]`.
@@ -151,8 +150,8 @@
   variant, a named variant, or one holding nested configs can be picked, and the key is reported on
   the tag in the schema, so TypeScript renders `@env`.
 - Added the default values and environment variables to `ConfigLoadResult.layers`, as
-  `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can be
-  traced to the layer that set it. They're the layers that were merged, so a default handler that
+  `Source::Defaults` first and `Source::EnvVars` last, each when it sets something, so a value can
+  be traced to the layer that set it. They're the layers that were merged, so a default handler that
   isn't idempotent, like one finding an unused port, reports the value that was used. Both are read
   against the sources, so they hold those of the variant an enum's sources picked, and of an
   optional nested config only when it's present. The variables are read first, as a tag's variable
@@ -160,10 +159,10 @@
   together, so a later layer picking a variant gets its defaults.
 - Updated schemas to describe what serde accepts more closely:
   - An `Option` field is optional, as serde fills in an omitted one with `None`, so it's no longer
-    in JSON Schema's `required`, and TypeScript renders it as `name?: T | null`. api_docs tags it
-    as optional as well as nullable.
-  - A `#[setting(required)]` `Option` field is described by the type it holds, as it must be given
-    a value, which `null` isn't.
+    in JSON Schema's `required`, and TypeScript renders it as `name?: T | null`. api_docs tags it as
+    optional as well as nullable.
+  - A `#[setting(required)]` `Option` field is described by the type it holds, as it must be given a
+    value, which `null` isn't.
   - A struct that accepts unknown fields, a config with `#[config(allow_unknown_fields)]` or a
     `Schematic` type without `#[serde(deny_unknown_fields)]`, no longer renders
     `additionalProperties: false` in JSON Schema.
@@ -179,8 +178,8 @@
 - Added `#[config(validate = func)]`, which validates a config as a whole, after its settings, for
   rules across settings, like a minimum that must be below a maximum. It receives the partial, and
   works on structs and enums.
-- Updated a `ValidateError` at the root of a config, like one from `#[config(validate)]`, to render as
-  only its message, rather than `.: message`.
+- Updated a `ValidateError` at the root of a config, like one from `#[config(validate)]`, to render
+  as only its message, rather than `.: message`.
 - Added `Path::is_empty`.
 - Added `ConfigLoader::partial`, which adds a partial that's already in memory, like one parsed from
   CLI arguments, as a layer, without first serializing it into a format for `code`. It's merged in
@@ -198,9 +197,9 @@
 - Added `MergeList<T>`, a list setting whose sources each choose how it merges. A source writes a
   list to replace the previous items, or a map with any of `prepend`, `append`, and `replace` to
   merge with them. The derive merges it with the new `merge::merge_list` without a `merge` of its
-  own, knowing the type by name, so an alias needs `#[setting(merge = merge::merge_list)]`. It derefs
-  to a slice, the length validators accept it, and its schema is a union of both forms. Items are
-  plain values, not nested configs.
+  own, knowing the type by name, so an alias needs `#[setting(merge = merge::merge_list)]`. It
+  derefs to a slice, the length validators accept it, and its schema is a union of both forms. Items
+  are plain values, not nested configs.
 - Updated `merge::merge_hashmap` and `merge::merge_hashset` to support any hasher, like
   `FxHashMap`'s, and `merge::merge_btreemap` and `merge::merge_btreeset` to no longer require
   `Hash`.
@@ -208,9 +207,9 @@
   as `a.json` extending `b.json` which extends `a.json`, rather than overflowing the stack. It lists
   every source in the cycle.
 - Added `SchemaField.default`, the default of a field, which takes precedence over a default within
-  the schema of its type. `SchemaField::get_default` returns either. A literal
-  `#[setting(default)]` is now recorded here, rather than in the schema of the field's type, which a
-  named type shares with every field that uses it.
+  the schema of its type. `SchemaField::get_default` returns either. A literal `#[setting(default)]`
+  is now recorded here, rather than in the schema of the field's type, which a named type shares
+  with every field that uses it.
 - Updated a string literal `#[setting(default)]` to also accept a type that only implements
   `FromStr`, like `IpAddr` and `SocketAddr`, when it doesn't implement `TryFrom<&str>`.
 - Updated `#[setting(nested)]` to resolve the nested config by the path it was written as, so a
@@ -232,9 +231,9 @@
   `Both(#[setting(nested)] Child, bool)`, so a variant can hold a nested config alongside plain
   values. Previously it could only mark the whole variant, and panicked on any value that wasn't a
   config. It also takes `context` there.
-- Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including
-  within an `Option` or a collection, and a type parameter that is a config itself. Previously the
-  derive looked inside the type arguments for the config, and panicked on `String`.
+- Updated `#[setting(nested)]` to support a generic config, like `Wrapper<String>`, including within
+  an `Option` or a collection, and a type parameter that is a config itself. Previously the derive
+  looked inside the type arguments for the config, and panicked on `String`.
 - Updated `#[setting(nested)]` to support a config that holds its own type, like
   `next: Option<Box<Self>>`, which keeps the `Box` in the partial. Without a `Box` or a collection,
   the derive panics, as the type would have an infinite size.
@@ -265,8 +264,8 @@
   compiled with the `config` feature (and `miette` with `schema`), and `convert_case` only with
   `config` or the TypeScript and Pkl renderers. A build without features compiles 22 crates rather
   than 40, and one with only `schema`, 29 rather than 42.
-- Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only apply
-  to configs, and compiled their dependencies for nothing without it.
+- Updated the `env`, `extends`, `url`, and `validate` features to enable `config`, as they only
+  apply to configs, and compiled their dependencies for nothing without it.
 - Made `schematic_macros` optional, so it's only compiled with `config` or `schema`, the features
   that re-export its derives. Cargo 1.100's `unused_dependencies` lint warned about it without them.
 
@@ -287,8 +286,8 @@
 
 - Fixed a config with a flattened map, like `#[setting(flatten)] extra: HashMap<String, String>`,
   rejecting every key the map collects, unless `#[config(allow_unknown_fields)]`. Its partial no
-  longer denies unknown fields, as the map collects them. An explicit `#[serde(deny_unknown_fields)]`
-  is still respected.
+  longer denies unknown fields, as the map collects them. An explicit
+  `#[serde(deny_unknown_fields)]` is still respected.
 - Fixed config templates leaving out the settings of a flattened struct. They're now rendered
   alongside the struct's own, including those of a flattened struct within another. TOML, which
   rendered a flattened struct as a table of its own, failed to load.
@@ -315,17 +314,17 @@
   - The hidden `env_values_with_prefix` now defaults to `env_values`, and `env_values` defaults to
     none, so a hand-written partial that implemented only `env_values_with_prefix` must implement
     `env_values` too.
-- Fixed the default values and environment variables of a nested config being applied again by
-  every config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
+- Fixed the default values and environment variables of a nested config being applied again by every
+  config above it, which a merge that appends, like `merge::append_vec`, repeated. A setting
   defaulting to `["d"]` within a nested config loaded as `["d", "d"]`, and once more for each level
   of nesting. They're now applied once, by the outermost config. Items of a nested collection are
   still finalized in full, as no layer holds their defaults.
-- Fixed `rename_all` casing an enum variant differently to serde when it holds consecutive
-  capitals, as serde splits before every one. `MacOS` in kebab case is now `mac-o-s`, like serde
-  accepts, rather than `mac-os`, which is what `Display`, `FromStr`, and schemas used before. A
-  `ConfigEnum` with `before_parse` still parses the loosely cased form.
-- Fixed a raw identifier, like `r#type`, keeping its `r#` in the setting's name, env var,
-  validation path, and schema.
+- Fixed `rename_all` casing an enum variant differently to serde when it holds consecutive capitals,
+  as serde splits before every one. `MacOS` in kebab case is now `mac-o-s`, like serde accepts,
+  rather than `mac-os`, which is what `Display`, `FromStr`, and schemas used before. A `ConfigEnum`
+  with `before_parse` still parses the loosely cased form.
+- Fixed a raw identifier, like `r#type`, keeping its `r#` in the setting's name, env var, validation
+  path, and schema.
 - Fixed a source extended more than once, like a base that two other sources extend, being loaded
   once for each of them. It's now loaded once, where it's first extended.
 - Fixed RON sources requiring every setting to be written as `Some(..)`.
@@ -340,16 +339,16 @@
   both were set.
 - Fixed `Config::settings()` overflowing the stack for a config that holds its own type. A nested
   config already being collected is left without its settings.
-- Fixed a field-level `#[serde(default = "fn")]` being ignored when loading, while still marking
-  the setting optional in schemas. The function is now its default.
+- Fixed a field-level `#[serde(default = "fn")]` being ignored when loading, while still marking the
+  setting optional in schemas. The function is now its default.
 - Fixed `#[serde(with)]` and `#[serde(deserialize_with)]` on a setting being silently dropped from
   the partial, which then used the type's default encoding. These now panic, unless the partial is
   given its own with `#[setting(partial(serde(...)))]`, as the partial holds an `Option`.
 - Fixed `Default` of an enum whose default variant holds a nested config skipping that config's
   default values.
 - Fixed `#[setting(required)]` on a variant holding values of different types failing to compile.
-- Fixed the validation path of a flattened nested config naming the field that holds it, which
-  isn't in the input, rather than the settings as they're written.
+- Fixed the validation path of a flattened nested config naming the field that holds it, which isn't
+  in the input, rather than the settings as they're written.
 - Fixed a wrapper around `Path`, `OsStr`, or `CStr`, like `Box<Path>`, being stripped from the
   partial, which left an unsized type.
 - Fixed a string literal default converting into the innermost type of a setting, rather than the
@@ -406,8 +405,8 @@
   type, like `"local" | "remote" | boolean`. Mark the variants that hold a value with
   `#[serde(untagged)]`, and leave the enum itself tagged.
   - A `Config` enum written this way lists the named values it expected when nothing matches, such
-    as `- expected one of "local", "remote", found "qux"`, instead of serde's "data did not match any
-    variant".
+    as `- expected one of "local", "remote", found "qux"`, instead of serde's "data did not match
+    any variant".
   - `ConfigEnum` now supports untagged tuple variants, which `FromStr` parses with the inner type's
     own `FromStr` after every named value, so the setting can be read from an environment variable.
 - Updated `#[setting(default)]` on an enum variant that holds a single value to accept that value,
@@ -420,9 +419,9 @@
 
 #### 🐞 Fixes
 
-- Fixed a nested setting holding collections of collections, like `HashMap<String, Vec<T>>`,
-  failing to compile when validating. Every collection now extends the path an item is reported at,
-  such as `groups.name[0]`.
+- Fixed a nested setting holding collections of collections, like `HashMap<String, Vec<T>>`, failing
+  to compile when validating. Every collection now extends the path an item is reported at, such as
+  `groups.name[0]`.
 - Fixed an untagged enum attempting to deserialize a variant marked `skip` or `skip_deserializing`.
 - Fixed the TypeScript renderer dropping the doc comment and deprecation of a type exported as an
   alias, like a union.
