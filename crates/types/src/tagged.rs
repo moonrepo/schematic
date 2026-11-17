@@ -82,6 +82,12 @@ impl TaggedType {
     ///
     /// A value keeps its description, as a field holding it is created with
     /// [`SchemaField::new`].
+    ///
+    /// A struct created around a value that is, or holds, a partial config is
+    /// marked partial, as serde reads the value through it as part of the
+    /// partial, so a renderer that follows how a type is held, like Pkl's,
+    /// still finds the value held as a partial. The tag itself is a literal,
+    /// which serde always requires.
     pub fn to_schema(&self) -> Schema {
         let name = Schema::literal_value(LiteralValue::String(self.name.clone()));
 
@@ -96,9 +102,17 @@ impl TaggedType {
         };
 
         let value = value.as_ref().clone();
+        let partial = holds_partial(&value);
+
+        let wrap = |structure: StructType| {
+            Schema::structure(StructType {
+                partial,
+                ..structure
+            })
+        };
 
         match &self.format {
-            TagFormat::External => Schema::structure(StructType::new([(
+            TagFormat::External => wrap(StructType::new([(
                 self.name.clone(),
                 SchemaField::new(value),
             )])),
@@ -134,9 +148,9 @@ impl TaggedType {
                 let mut structure = StructType::new([(tag.to_owned(), tag_field), (key, field)]);
                 structure.allow_unknown_fields = allow_unknown_fields;
 
-                Schema::structure(structure)
+                wrap(structure)
             }
-            TagFormat::Adjacent { tag, content } => Schema::structure(StructType::new([
+            TagFormat::Adjacent { tag, content } => wrap(StructType::new([
                 (tag.to_owned(), self.create_tag_field(name)),
                 (content.to_owned(), SchemaField::new(value)),
             ])),
@@ -153,5 +167,19 @@ impl TaggedType {
 impl fmt::Display for TaggedType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.to_schema())
+    }
+}
+
+/// Return true if the schema is a partial config, or holds one as the items
+/// of a list, map, or tuple, as [`Schema::partialize`] marks them.
+fn holds_partial(schema: &Schema) -> bool {
+    match &schema.ty {
+        SchemaType::Array(inner) => holds_partial(&inner.items_type),
+        SchemaType::Object(inner) => holds_partial(&inner.value_type),
+        SchemaType::Reference { partial, .. } => *partial,
+        SchemaType::Struct(inner) => inner.partial,
+        SchemaType::Tuple(inner) => inner.items_types.iter().any(|item| holds_partial(item)),
+        SchemaType::Union(inner) => inner.partial,
+        _ => false,
     }
 }

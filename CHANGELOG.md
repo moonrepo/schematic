@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed `PklSchemaRenderer` rendering the module of a nested config that an internally tagged
+  variant holds as a full type, which made every property required and dropped its aliases, with
+  `mark_struct_fields_required: false` too. The variant's class also declared the config's
+  properties itself, in full, so a module amending one had to set them all. The class now extends
+  the config's module, like `class TemplateVariableBoolean extends TemplateVariableBoolSetting {
+  type: "boolean" }`, and the module is `open`.
+  - A class that flattens a named struct extends its module in general, rather than declaring its
+    properties again.
+  - A nested config that an externally or adjacently tagged variant holds is rendered as a partial
+    too, which it always should have been.
+- Updated `TaggedType::to_schema` to mark the struct it creates around a value as `partial` when
+  the value is, or holds, a partial config.
+
 ## 0.21.1
 
 #### 🚀 Updates
