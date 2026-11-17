@@ -10,13 +10,15 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     (
                         "Text".into(),
                         {
-                            let mut item = schematic::internal::schema::adjacently_tagged(
-                                "type",
-                                SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Text".into())),
+                            let mut item = Schema::tagged(
+                                TaggedType::new(
+                                    TagFormat::Adjacent {
+                                        tag: "type".into(),
+                                        content: "value".into(),
+                                    },
+                                    "Text",
+                                    Some(schema.infer::<String>()),
                                 ),
-                                "value",
-                                schema.infer::<String>(),
                             );
                             item.description = Some("Docs.".into());
                             item
@@ -24,106 +26,118 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                     ),
                     (
                         "List".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("List".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "List",
+                                Some(schema.infer::<Vec<String>>()),
                             ),
-                            "value",
-                            schema.infer::<Vec<String>>(),
                         ),
                     ),
                     (
                         "Pair".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Pair".into())),
-                            ),
-                            "value",
-                            Schema::tuple(
-                                TupleType::new([
-                                    schema.infer::<usize>(),
-                                    schema.infer::<bool>(),
-                                ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "Pair",
+                                Some(
+                                    Schema::tuple(
+                                        TupleType::new([
+                                            schema.infer::<usize>(),
+                                            schema.infer::<bool>(),
+                                        ]),
+                                    ),
+                                ),
                             ),
                         ),
                     ),
                     (
                         "Inner".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Inner".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "Inner",
+                                Some({
+                                    let mut item = schema.infer_as_nested::<NestedConfig>();
+                                    item.partialize();
+                                    item
+                                }),
                             ),
-                            "value",
-                            {
-                                let mut item = schema.infer_as_nested::<NestedConfig>();
-                                item.partialize();
-                                item
-                            },
                         ),
                     ),
                     (
                         "InnerOpt".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(
-                                    LiteralValue::String("InnerOpt".into()),
-                                ),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "InnerOpt",
+                                Some({
+                                    let mut item = schema
+                                        .infer_as_nested::<Option<NestedConfig>>();
+                                    item.partialize();
+                                    item
+                                }),
                             ),
-                            "value",
-                            {
-                                let mut item = schema
-                                    .infer_as_nested::<Option<NestedConfig>>();
-                                item.partialize();
-                                item
-                            },
                         ),
                     ),
                     (
                         "InnerList".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(
-                                    LiteralValue::String("InnerList".into()),
-                                ),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "InnerList",
+                                Some({
+                                    let mut item = schema
+                                        .infer_as_nested::<Vec<NestedConfig>>();
+                                    item.partialize();
+                                    item
+                                }),
                             ),
-                            "value",
-                            {
-                                let mut item = schema
-                                    .infer_as_nested::<Vec<NestedConfig>>();
-                                item.partialize();
-                                item
-                            },
                         ),
                     ),
                     (
                         "InnerMap".into(),
-                        schematic::internal::schema::adjacently_tagged(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(
-                                    LiteralValue::String("InnerMap".into()),
-                                ),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "InnerMap",
+                                Some({
+                                    let mut item = schema
+                                        .infer_as_nested::<HashMap<String, CustomConfig>>();
+                                    item.partialize();
+                                    item
+                                }),
                             ),
-                            "value",
-                            {
-                                let mut item = schema
-                                    .infer_as_nested::<HashMap<String, CustomConfig>>();
-                                item.partialize();
-                                item
-                            },
                         ),
                     ),
                     (
                         "Unit".into(),
-                        schematic::internal::schema::tagged_unit(
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Unit".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Adjacent {
+                                    tag: "type".into(),
+                                    content: "value".into(),
+                                },
+                                "Unit",
+                                None,
                             ),
                         ),
                     ),

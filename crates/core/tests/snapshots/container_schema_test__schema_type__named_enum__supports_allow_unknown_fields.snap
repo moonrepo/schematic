@@ -9,23 +9,22 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "A".into(),
-                        Schema::structure(
-                            StructType::new([
-                                (
-                                    "A".into(),
-                                    SchemaField::new({
-                                        let mut item = {
-                                            let mut structure = StructType::new([
-                                                ("a".into(), SchemaField::new(schema.infer::<String>())),
-                                            ]);
-                                            structure.allow_unknown_fields = true;
-                                            Schema::structure(structure)
-                                        };
-                                        item.partialize();
-                                        item
-                                    }),
-                                ),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "A",
+                                Some({
+                                    let mut item = {
+                                        let mut structure = StructType::new([
+                                            ("a".into(), SchemaField::new(schema.infer::<String>())),
+                                        ]);
+                                        structure.allow_unknown_fields = true;
+                                        Schema::structure(structure)
+                                    };
+                                    item.partialize();
+                                    item
+                                }),
+                            ),
                         ),
                     ),
                 ],

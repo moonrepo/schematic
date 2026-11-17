@@ -94,10 +94,12 @@ impl<T> schematic::Schematic for Example<T> {
                     [
                         (
                             "Value".into(),
-                            Schema::structure(
-                                StructType::new([
-                                    ("Value".into(), SchemaField::new(schema.infer::<T>())),
-                                ]),
+                            Schema::tagged(
+                                TaggedType::new(
+                                    TagFormat::External,
+                                    "Value",
+                                    Some(schema.infer::<T>()),
+                                ),
                             ),
                         ),
                         (

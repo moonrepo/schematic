@@ -10,6 +10,7 @@ mod schema_builder;
 mod schema_type;
 mod strings;
 mod structs;
+mod tagged;
 mod tuples;
 mod unions;
 
@@ -24,6 +25,7 @@ pub use schema_builder::*;
 pub use schema_type::*;
 pub use strings::*;
 pub use structs::*;
+pub use tagged::*;
 pub use tuples::*;
 pub use unions::*;
 

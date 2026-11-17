@@ -76,6 +76,17 @@ pub trait SchemaRenderer<O = String> {
         unsupported::<Self, O>("a struct")
     }
 
+    /// Render a [`TaggedType`], an enum variant that serde writes with its
+    /// name, to a string. Defaults to rendering the struct serde writes for it
+    /// ([`TaggedType::to_schema`]), so a renderer only implements this to
+    /// shape each tag format itself.
+    fn render_tagged(&mut self, _tagged: &TaggedType, schema: &Schema) -> RenderResult<O> {
+        let mut expanded = schema.clone();
+        expanded.expand_tagged();
+
+        self.render_schema_without_reference(&expanded)
+    }
+
     /// Render a [`TupleType`] to a string.
     fn render_tuple(&mut self, _tuple: &TupleType, _schema: &Schema) -> RenderResult<O> {
         unsupported::<Self, O>("a tuple")
@@ -118,6 +129,7 @@ pub trait SchemaRenderer<O = String> {
             SchemaType::Object(object) => self.render_object(object, schema),
             SchemaType::Struct(structure) => self.render_struct(structure, schema),
             SchemaType::String(string) => self.render_string(string, schema),
+            SchemaType::Tagged(tagged) => self.render_tagged(tagged, schema),
             SchemaType::Tuple(tuple) => self.render_tuple(tuple, schema),
             SchemaType::Union(uni) => self.render_union(uni, schema),
             SchemaType::Reference { name, .. } => self.render_reference(name, schema),

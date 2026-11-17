@@ -149,10 +149,13 @@ fn is_union(schema: &Schema) -> bool {
 }
 
 /// Whether the struct is an intersection of its own fields and the types it
-/// flattens, or of several flattened types.
+/// flattens, or of several flattened types. A tagged variant is rendered as
+/// the struct serde writes for it, which may be one.
 fn is_intersection(schema: &Schema) -> bool {
-    let SchemaType::Struct(structure) = &schema.ty else {
-        return false;
+    let structure = match &schema.ty {
+        SchemaType::Struct(structure) => structure,
+        SchemaType::Tagged(tagged) => return is_intersection(&tagged.to_schema()),
+        _ => return false,
     };
 
     match get_flattened_schemas(structure).len() {

@@ -31,6 +31,7 @@
     - [Objects](./schema/object.md)
     - [Strings](./schema/string.md)
     - [Structs](./schema/struct.md)
+    - [Tagged variants](./schema/tagged.md)
     - [Tuples](./schema/tuple.md)
     - [Unions](./schema/union.md)
     - [Unknown](./schema/unknown.md)

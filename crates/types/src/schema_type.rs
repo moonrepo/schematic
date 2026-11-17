@@ -8,6 +8,7 @@ use crate::objects::*;
 use crate::schema::*;
 use crate::strings::*;
 use crate::structs::*;
+use crate::tagged::*;
 use crate::tuples::*;
 use crate::unions::*;
 use std::fmt;
@@ -40,6 +41,7 @@ pub enum SchemaType {
     },
     Struct(Box<StructType>),
     String(Box<StringType>),
+    Tagged(Box<TaggedType>),
     Tuple(Box<TupleType>),
     Union(Box<UnionType>),
 }
@@ -186,6 +188,7 @@ impl fmt::Display for SchemaType {
                 Self::Reference { name, .. } => name.to_owned(),
                 Self::Struct(inner) => inner.to_string(),
                 Self::String(inner) => inner.to_string(),
+                Self::Tagged(inner) => inner.to_string(),
                 Self::Tuple(inner) => inner.to_string(),
                 Self::Union(inner) => inner.to_string(),
             }

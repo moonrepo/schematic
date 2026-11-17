@@ -9,71 +9,74 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "None".into(),
-                        schematic::internal::schema::tagged_unit(
-                            "type",
-                            {
-                                let mut field = SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("None".into())),
-                                );
-                                field.env_var = Some("AUTH_TYPE".into());
-                                field
-                            },
-                        ),
+                        {
+                            let mut tagged = TaggedType::new(
+                                TagFormat::Internal {
+                                    tag: "type".into(),
+                                },
+                                "None",
+                                None,
+                            );
+                            tagged.env_var = Some("AUTH_TYPE".into());
+                            Schema::tagged(tagged)
+                        },
                     ),
                     (
                         "Token".into(),
-                        schematic::internal::schema::internally_tagged(
-                            {
-                                let mut item = Schema::structure(
-                                    StructType::new([
-                                        (
-                                            "token".into(),
-                                            {
-                                                let mut field = SchemaField::new(schema.infer::<String>());
-                                                field.env_var = Some("AUTH_TOKEN".into());
-                                                field
-                                            },
-                                        ),
-                                    ]),
-                                );
-                                item.partialize();
-                                item
-                            },
-                            "type",
-                            {
-                                let mut field = SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Token".into())),
-                                );
-                                field.env_var = Some("AUTH_TYPE".into());
-                                field
-                            },
-                        ),
+                        {
+                            let mut tagged = TaggedType::new(
+                                TagFormat::Internal {
+                                    tag: "type".into(),
+                                },
+                                "Token",
+                                Some({
+                                    let mut item = Schema::structure(
+                                        StructType::new([
+                                            (
+                                                "token".into(),
+                                                {
+                                                    let mut field = SchemaField::new(schema.infer::<String>());
+                                                    field.env_var = Some("AUTH_TOKEN".into());
+                                                    field
+                                                },
+                                            ),
+                                        ]),
+                                    );
+                                    item.partialize();
+                                    item
+                                }),
+                            );
+                            tagged.env_var = Some("AUTH_TYPE".into());
+                            Schema::tagged(tagged)
+                        },
                     ),
                     (
                         "Nested".into(),
-                        schematic::internal::schema::internally_tagged(
-                            {
-                                let mut item = schema.infer_as_nested::<NestedConfig>();
-                                item.partialize();
-                                item
-                            },
-                            "type",
-                            {
-                                let mut field = SchemaField::new(
-                                    Schema::literal_value(LiteralValue::String("Nested".into())),
-                                );
-                                field.env_var = Some("AUTH_TYPE".into());
-                                field
-                            },
-                        ),
+                        {
+                            let mut tagged = TaggedType::new(
+                                TagFormat::Internal {
+                                    tag: "type".into(),
+                                },
+                                "Nested",
+                                Some({
+                                    let mut item = schema.infer_as_nested::<NestedConfig>();
+                                    item.partialize();
+                                    item
+                                }),
+                            );
+                            tagged.env_var = Some("AUTH_TYPE".into());
+                            Schema::tagged(tagged)
+                        },
                     ),
                     (
                         "Path".into(),
-                        schematic::internal::schema::internally_tagged(
-                            schema.infer::<String>(),
-                            "type",
-                            SchemaField::new(
-                                Schema::literal_value(LiteralValue::String("Path".into())),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::Internal {
+                                    tag: "type".into(),
+                                },
+                                "Path",
+                                Some(schema.infer::<String>()),
                             ),
                         ),
                     ),

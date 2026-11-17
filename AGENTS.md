@@ -259,9 +259,8 @@ Each piece is separately callable, which is what the snapshot tests do.
   and an untagged `Deserialize` is a run of `UntaggedManager` attempts (`variant`, `unit`,
   `literal`) ending in `into_error`, so the generated code never formats a message or holds the
   errors itself. Likewise `ValidateManager::missing_nested` (and its `_with`/`flattened` forms)
-  checks `finalizing` for a missing bare nested config, `internal::schema` wraps a tagged
-  variant's schema (`tagged_unit`, `internally_tagged`, `adjacently_tagged`) and builds the
-  partial's (`build_partial_schema`), and `config_enum::parse_fallback` converts a `ConfigEnum`'s
+  checks `finalizing` for a missing bare nested config, `internal::schema` builds the partial's
+  schema (`build_partial_schema`), and `config_enum::parse_fallback` converts a `ConfigEnum`'s
   fallback. A default or transform that fails is converted with the setting's path, which the
   generated code passes (`defaults::handle_default_result`, `parse_default`,
   `transform::handle_transform_result`), from `Field::get_error_path`: the serde name, or
@@ -556,17 +555,20 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
 - All three derives declare `serde` as a helper attribute, so `#[serde(...)]` is accepted on a type
   that derives only `Config`. Two derives declaring the same helper is fine — serde's own
   `Serialize`/`Deserialize` pair does it.
-- `Schema::partialize()` on a tagged enum variant marks the **value**, never the `{tag, content}`
-  struct synthesized around it. Marking the wrapper makes the runtime nullify the tag, so the
-  partial schema claims `{"type": null}` is valid. A named variant that's internally tagged can't
-  avoid it, as its tag is a field of the struct of its fields, so `partialize_schema` leaves a
-  `Literal` field alone, treating it as the tag, as the Pkl renderer already did.
-- An internally tagged variant holding a **named** struct never adds the tag to it, as that schema
-  is shared by every field that holds the type, and the first one registered wins, so the tag leaks
-  into all of them. `internal::schema::internally_tagged` builds `{ tag, <Name>: value }` instead,
-  with the value as a `flatten` field, which renderers reference (`{ type: 'git' } & GitSource`).
-  The same goes for anything else written onto a variant's value: wrap it in a field with
-  `SchemaField::new`, never `From<Schema>`, which takes the type's description off the shared copy.
+- A tagged enum variant is a `SchemaType::Tagged`, a `TaggedType` holding its `TagFormat`, its
+  name, the tag's `env_var`, and its value, untouched. The derive never builds a struct around the
+  value, as a named type's schema is shared by every type that holds it, and the first one
+  registered wins, so a tag or docs written onto it leak into all of them. An externally tagged unit
+  is still a `Literal`, and an untagged variant its value. `partialize()` and `partialize_schema`
+  only reach the value, as the tag is always written, so no struct field is mistaken for a tag.
+- `TaggedType::to_schema` is the struct serde writes, which `render_tagged` renders by default. An
+  internally tagged named struct becomes `{ tag, <Name>: value }`, with the value as a `flatten`
+  field (`{ type: 'git' } & GitSource`), and a struct of its own gets the tag added. Renderers that
+  read struct shapes (Pkl, API docs, the templates) call `Schema::expand_tagged` on every schema up
+  front (`renderers::expand_tagged`), so they never see a `Tagged`. TypeScript and JSON Schema
+  render through the default, so a TypeScript check of a union member's shape, like
+  `is_intersection`, has to look through a `Tagged`. Pkl still treats a literal property as a tag,
+  as it sees the expanded struct.
 - A renderer handles a `flatten` field wherever a struct is rendered, not only for a named one at the
   root: a variant's struct holds one for the tag above, as a named variant may for its own fields.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants

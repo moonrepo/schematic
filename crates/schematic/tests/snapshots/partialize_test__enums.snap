@@ -919,26 +919,12 @@ expression: "create_diff::<Enums>()"
 🟩                                            "PartialTupleEnum",
 🟩                                        ),
 ⬛️                                        nullable: false,
-🟥                                        ty: Struct(
-🟥                                            StructType {
-🟥                                                allow_unknown_fields: false,
-🟥                                                fields: {
-🟥                                                    "A": SchemaField {
-🟥                                                        aliases: [],
-🟥                                                        comment: None,
-🟥                                                        schema: Schema {
-🟥                                                            deprecated: None,
-🟥                                                            description: None,
-🟥                                                            name: Some(
-🟥                                                                "Empty",
-🟥                                                            ),
-🟥                                                            nullable: false,
-🟥                                                            ty: Struct(
-🟥                                                                StructType {
-🟥                                                                    allow_unknown_fields: false,
-🟥                                                                    fields: {},
-🟥                                                                    partial: true,
-🟥                                                                    required: None,
+🟥                                        ty: Tagged(
+🟥                                            TaggedType {
+🟥                                                format: External,
+🟥                                                name: "A",
+🟥                                                env_var: None,
+🟥                                                value: Some(
 🟩                                        ty: Union(
 🟩                                            UnionType {
 🟩                                                default_index: None,
@@ -951,155 +937,113 @@ expression: "create_diff::<Enums>()"
 🟩                                                    ],
 🟩                                                ),
 🟩                                                variants_types: [
-🟩                                                    Schema {
-🟩                                                        deprecated: None,
-🟩                                                        description: None,
-🟩                                                        name: None,
-🟩                                                        nullable: false,
-🟩                                                        ty: Struct(
-🟩                                                            StructType {
-🟩                                                                allow_unknown_fields: false,
-🟩                                                                fields: {
-🟩                                                                    "A": SchemaField {
-🟩                                                                        aliases: [],
-🟩                                                                        comment: None,
-🟩                                                                        schema: Schema {
-🟩                                                                            deprecated: None,
-🟩                                                                            description: None,
-🟩                                                                            name: Some(
-🟩                                                                                "PartialEmpty",
-🟩                                                                            ),
-🟩                                                                            nullable: false,
-🟩                                                                            ty: Struct(
-🟩                                                                                StructType {
-🟩                                                                                    allow_unknown_fields: false,
-🟩                                                                                    fields: {},
-🟩                                                                                    partial: true,
-🟩                                                                                    required: None,
-🟩                                                                                },
-🟩                                                                            ),
-🟩                                                                        },
-🟩                                                                        default: None,
-🟩                                                                        deprecated: None,
-🟩                                                                        env_var: None,
-🟩                                                                        flatten: false,
-🟩                                                                        hidden: false,
-🟩                                                                        nullable: false,
-🟩                                                                        optional: false,
-🟩                                                                        read_only: false,
-🟩                                                                        write_only: false,
-🟩                                                                    },
-⬛️                                                                },
-🟥                                                            ),
-🟥                                                        },
-🟥                                                        default: None,
-🟩                                                                partial: false,
-🟩                                                                required: None,
-🟩                                                            },
-🟩                                                        ),
-🟩                                                    },
-🟩                                                    Schema {
+⬛️                                                    Schema {
 ⬛️                                                        deprecated: None,
-🟥                                                        env_var: None,
-🟥                                                        flatten: false,
-🟥                                                        hidden: false,
-🟩                                                        description: None,
+⬛️                                                        description: None,
+🟥                                                        name: Some(
+🟥                                                            "Empty",
+🟥                                                        ),
 🟩                                                        name: None,
 ⬛️                                                        nullable: false,
-🟥                                                        optional: false,
-🟥                                                        read_only: false,
-🟥                                                        write_only: false,
-🟩                                                        ty: Struct(
-🟩                                                            StructType {
-🟩                                                                allow_unknown_fields: false,
-🟩                                                                fields: {
-🟩                                                                    "B": SchemaField {
-🟩                                                                        aliases: [],
-🟩                                                                        comment: None,
-🟩                                                                        schema: Schema {
-🟩                                                                            deprecated: None,
-🟩                                                                            description: None,
-🟩                                                                            name: Some(
-🟩                                                                                "PartialEmpty",
-🟩                                                                            ),
-🟩                                                                            nullable: false,
-🟩                                                                            ty: Struct(
-🟩                                                                                StructType {
-🟩                                                                                    allow_unknown_fields: false,
-🟩                                                                                    fields: {},
-🟩                                                                                    partial: true,
-🟩                                                                                    required: None,
-🟩                                                                                },
-🟩                                                                            ),
-🟩                                                                        },
-🟩                                                                        default: None,
+🟥                                                        ty: Struct(
+🟥                                                            StructType {
+🟥                                                                allow_unknown_fields: false,
+🟥                                                                fields: {},
+🟥                                                                partial: true,
+🟥                                                                required: None,
+🟩                                                        ty: Tagged(
+🟩                                                            TaggedType {
+🟩                                                                format: External,
+🟩                                                                name: "A",
+🟩                                                                env_var: None,
+🟩                                                                value: Some(
+🟩                                                                    Schema {
 🟩                                                                        deprecated: None,
-🟩                                                                        env_var: None,
-🟩                                                                        flatten: false,
-🟩                                                                        hidden: false,
+🟩                                                                        description: None,
+🟩                                                                        name: Some(
+🟩                                                                            "PartialEmpty",
+🟩                                                                        ),
 🟩                                                                        nullable: false,
-🟩                                                                        optional: false,
-🟩                                                                        read_only: false,
-🟩                                                                        write_only: false,
+🟩                                                                        ty: Struct(
+🟩                                                                            StructType {
+🟩                                                                                allow_unknown_fields: false,
+🟩                                                                                fields: {},
+🟩                                                                                partial: true,
+🟩                                                                                required: None,
+🟩                                                                            },
+🟩                                                                        ),
 🟩                                                                    },
-🟩                                                                },
-🟩                                                                partial: false,
-🟩                                                                required: None,
-🟩                                                            },
-🟩                                                        ),
+🟩                                                                ),
+⬛️                                                            },
+⬛️                                                        ),
 ⬛️                                                    },
-🟥                                                },
-🟥                                                partial: false,
-🟥                                                required: None,
+🟥                                                ),
+🟥                                            },
+🟥                                        ),
+🟥                                    },
+🟥                                    Schema {
+🟥                                        deprecated: None,
+🟥                                        description: None,
+🟥                                        name: None,
+🟥                                        nullable: false,
+🟥                                        ty: Tagged(
+🟥                                            TaggedType {
+🟥                                                format: External,
+🟥                                                name: "B",
+🟥                                                env_var: None,
+🟥                                                value: Some(
+⬛️                                                    Schema {
+⬛️                                                        deprecated: None,
+⬛️                                                        description: None,
+🟥                                                        name: Some(
+🟥                                                            "Empty",
+🟥                                                        ),
+🟩                                                        name: None,
+⬛️                                                        nullable: false,
+🟥                                                        ty: Struct(
+🟥                                                            StructType {
+🟥                                                                allow_unknown_fields: false,
+🟥                                                                fields: {},
+🟥                                                                partial: true,
+🟥                                                                required: None,
+🟩                                                        ty: Tagged(
+🟩                                                            TaggedType {
+🟩                                                                format: External,
+🟩                                                                name: "B",
+🟩                                                                env_var: None,
+🟩                                                                value: Some(
+🟩                                                                    Schema {
+🟩                                                                        deprecated: None,
+🟩                                                                        description: None,
+🟩                                                                        name: Some(
+🟩                                                                            "PartialEmpty",
+🟩                                                                        ),
+🟩                                                                        nullable: false,
+🟩                                                                        ty: Struct(
+🟩                                                                            StructType {
+🟩                                                                                allow_unknown_fields: false,
+🟩                                                                                fields: {},
+🟩                                                                                partial: true,
+🟩                                                                                required: None,
+🟩                                                                            },
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                ),
+⬛️                                                            },
+⬛️                                                        ),
+⬛️                                                    },
+🟥                                                ),
 🟩                                                ],
 ⬛️                                            },
 ⬛️                                        ),
 ⬛️                                    },
-⬛️                                    Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-🟥                                        ty: Struct(
-🟥                                            StructType {
-🟥                                                allow_unknown_fields: false,
-🟥                                                fields: {
-🟥                                                    "B": SchemaField {
-🟥                                                        aliases: [],
-🟥                                                        comment: None,
-🟥                                                        schema: Schema {
-🟥                                                            deprecated: None,
-🟥                                                            description: None,
-🟥                                                            name: Some(
-🟥                                                                "Empty",
-🟥                                                            ),
-🟥                                                            nullable: false,
-🟥                                                            ty: Struct(
-🟥                                                                StructType {
-🟥                                                                    allow_unknown_fields: false,
-🟥                                                                    fields: {},
-🟥                                                                    partial: true,
-🟥                                                                    required: None,
-🟥                                                                },
-🟥                                                            ),
-🟥                                                        },
-🟥                                                        default: None,
-🟥                                                        deprecated: None,
-🟥                                                        env_var: None,
-🟥                                                        flatten: false,
-🟥                                                        hidden: false,
-🟥                                                        nullable: false,
-🟥                                                        optional: false,
-🟥                                                        read_only: false,
-🟥                                                        write_only: false,
-🟥                                                    },
-🟥                                                },
-🟥                                                partial: false,
-🟥                                                required: None,
-🟥                                            },
-🟥                                        ),
+🟩                                    Schema {
+🟩                                        deprecated: None,
+🟩                                        description: None,
+🟩                                        name: None,
+🟩                                        nullable: false,
 🟩                                        ty: Null,
-⬛️                                    },
+🟩                                    },
 ⬛️                                ],
 ⬛️                            },
 ⬛️                        ),
@@ -1156,43 +1100,30 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        description: None,
 ⬛️                                                        name: None,
 ⬛️                                                        nullable: false,
-⬛️                                                        ty: Struct(
-⬛️                                                            StructType {
-⬛️                                                                allow_unknown_fields: false,
-⬛️                                                                fields: {
-⬛️                                                                    "A": SchemaField {
-⬛️                                                                        aliases: [],
-⬛️                                                                        comment: None,
-⬛️                                                                        schema: Schema {
-⬛️                                                                            deprecated: None,
-⬛️                                                                            description: None,
-⬛️                                                                            name: Some(
-🟥                                                                                "Empty",
-🟩                                                                                "PartialEmpty",
-⬛️                                                                            ),
-⬛️                                                                            nullable: false,
-⬛️                                                                            ty: Struct(
-⬛️                                                                                StructType {
-⬛️                                                                                    allow_unknown_fields: false,
-⬛️                                                                                    fields: {},
-⬛️                                                                                    partial: true,
-⬛️                                                                                    required: None,
-⬛️                                                                                },
-⬛️                                                                            ),
-⬛️                                                                        },
-⬛️                                                                        default: None,
+⬛️                                                        ty: Tagged(
+⬛️                                                            TaggedType {
+⬛️                                                                format: External,
+⬛️                                                                name: "A",
+⬛️                                                                env_var: None,
+⬛️                                                                value: Some(
+⬛️                                                                    Schema {
 ⬛️                                                                        deprecated: None,
-⬛️                                                                        env_var: None,
-⬛️                                                                        flatten: false,
-⬛️                                                                        hidden: false,
+⬛️                                                                        description: None,
+⬛️                                                                        name: Some(
+🟥                                                                            "Empty",
+🟩                                                                            "PartialEmpty",
+⬛️                                                                        ),
 ⬛️                                                                        nullable: false,
-⬛️                                                                        optional: false,
-⬛️                                                                        read_only: false,
-⬛️                                                                        write_only: false,
+⬛️                                                                        ty: Struct(
+⬛️                                                                            StructType {
+⬛️                                                                                allow_unknown_fields: false,
+⬛️                                                                                fields: {},
+⬛️                                                                                partial: true,
+⬛️                                                                                required: None,
+⬛️                                                                            },
+⬛️                                                                        ),
 ⬛️                                                                    },
-⬛️                                                                },
-⬛️                                                                partial: false,
-⬛️                                                                required: None,
+⬛️                                                                ),
 ⬛️                                                            },
 ⬛️                                                        ),
 ⬛️                                                    },
@@ -1201,43 +1132,30 @@ expression: "create_diff::<Enums>()"
 ⬛️                                                        description: None,
 ⬛️                                                        name: None,
 ⬛️                                                        nullable: false,
-⬛️                                                        ty: Struct(
-⬛️                                                            StructType {
-⬛️                                                                allow_unknown_fields: false,
-⬛️                                                                fields: {
-⬛️                                                                    "B": SchemaField {
-⬛️                                                                        aliases: [],
-⬛️                                                                        comment: None,
-⬛️                                                                        schema: Schema {
-⬛️                                                                            deprecated: None,
-⬛️                                                                            description: None,
-⬛️                                                                            name: Some(
-🟥                                                                                "Empty",
-🟩                                                                                "PartialEmpty",
-⬛️                                                                            ),
-⬛️                                                                            nullable: false,
-⬛️                                                                            ty: Struct(
-⬛️                                                                                StructType {
-⬛️                                                                                    allow_unknown_fields: false,
-⬛️                                                                                    fields: {},
-⬛️                                                                                    partial: true,
-⬛️                                                                                    required: None,
-⬛️                                                                                },
-⬛️                                                                            ),
-⬛️                                                                        },
-⬛️                                                                        default: None,
+⬛️                                                        ty: Tagged(
+⬛️                                                            TaggedType {
+⬛️                                                                format: External,
+⬛️                                                                name: "B",
+⬛️                                                                env_var: None,
+⬛️                                                                value: Some(
+⬛️                                                                    Schema {
 ⬛️                                                                        deprecated: None,
-⬛️                                                                        env_var: None,
-⬛️                                                                        flatten: false,
-⬛️                                                                        hidden: false,
+⬛️                                                                        description: None,
+⬛️                                                                        name: Some(
+🟥                                                                            "Empty",
+🟩                                                                            "PartialEmpty",
+⬛️                                                                        ),
 ⬛️                                                                        nullable: false,
-⬛️                                                                        optional: false,
-⬛️                                                                        read_only: false,
-⬛️                                                                        write_only: false,
+⬛️                                                                        ty: Struct(
+⬛️                                                                            StructType {
+⬛️                                                                                allow_unknown_fields: false,
+⬛️                                                                                fields: {},
+⬛️                                                                                partial: true,
+⬛️                                                                                required: None,
+⬛️                                                                            },
+⬛️                                                                        ),
 ⬛️                                                                    },
-⬛️                                                                },
-⬛️                                                                partial: false,
-⬛️                                                                required: None,
+⬛️                                                                ),
 ⬛️                                                            },
 ⬛️                                                        ),
 ⬛️                                                    },

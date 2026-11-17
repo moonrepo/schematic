@@ -88,6 +88,11 @@ impl Schema {
         Self::new(SchemaType::Struct(Box::new(value)))
     }
 
+    /// Create a tagged enum variant schema.
+    pub fn tagged(value: TaggedType) -> Self {
+        Self::new(SchemaType::Tagged(Box::new(value)))
+    }
+
     /// Create a tuple schema.
     pub fn tuple(value: TupleType) -> Self {
         Self::new(SchemaType::Tuple(Box::new(value)))
@@ -162,6 +167,12 @@ impl Schema {
             SchemaType::Struct(inner) => {
                 inner.partial = true;
             }
+            // Only the value can be a partial, as the tag is always written
+            SchemaType::Tagged(inner) => {
+                if let Some(value) = &mut inner.value {
+                    value.partialize();
+                }
+            }
             SchemaType::Union(inner) => {
                 inner.partial = true;
 
@@ -175,6 +186,61 @@ impl Schema {
                             item.partialize();
                         }
                     }
+                }
+            }
+            _ => {}
+        };
+    }
+
+    /// Replace every tagged variant within the schema, and the schema itself,
+    /// with the struct serde writes for it ([`TaggedType::to_schema`]), for a
+    /// renderer that renders that struct rather than each tag format. The
+    /// variant's docs replace the value's, as they would on the struct.
+    pub fn expand_tagged(&mut self) {
+        match &mut self.ty {
+            SchemaType::Array(inner) => inner.items_type.expand_tagged(),
+            SchemaType::Enum(inner) => {
+                for variant in inner.variants.iter_mut().flat_map(|v| v.values_mut()) {
+                    variant.schema.expand_tagged();
+                }
+            }
+            SchemaType::Object(inner) => {
+                inner.key_type.expand_tagged();
+                inner.value_type.expand_tagged();
+            }
+            SchemaType::Struct(inner) => {
+                for field in inner.fields.values_mut() {
+                    field.schema.expand_tagged();
+                }
+            }
+            SchemaType::Tagged(inner) => {
+                let mut expanded = inner.to_schema();
+                expanded.expand_tagged();
+
+                if self.name.is_some() {
+                    expanded.name = self.name.take();
+                }
+
+                if self.description.is_some() {
+                    expanded.description = self.description.take();
+                }
+
+                if self.deprecated.is_some() {
+                    expanded.deprecated = self.deprecated.take();
+                }
+
+                expanded.nullable |= self.nullable;
+
+                *self = expanded;
+            }
+            SchemaType::Tuple(inner) => {
+                for item in inner.items_types.iter_mut() {
+                    item.expand_tagged();
+                }
+            }
+            SchemaType::Union(inner) => {
+                for variant in inner.variants_types.iter_mut() {
+                    variant.expand_tagged();
                 }
             }
             _ => {}

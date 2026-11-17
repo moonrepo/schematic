@@ -29,39 +29,15 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Struct(
-⬛️                        StructType {
-⬛️                            allow_unknown_fields: false,
-⬛️                            fields: {
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "Foo",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
+⬛️                    ty: Tagged(
+⬛️                        TaggedType {
+⬛️                            format: Adjacent {
+⬛️                                tag: "type",
+⬛️                                content: "content",
 ⬛️                            },
-⬛️                            partial: false,
-⬛️                            required: None,
+⬛️                            name: "Foo",
+⬛️                            env_var: None,
+⬛️                            value: None,
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },
@@ -70,63 +46,27 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Struct(
-⬛️                        StructType {
-⬛️                            allow_unknown_fields: false,
-⬛️                            fields: {
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "Bar",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                "content": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Boolean(
-⬛️                                            BooleanType {
-⬛️                                                default: None,
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
+⬛️                    ty: Tagged(
+⬛️                        TaggedType {
+⬛️                            format: Adjacent {
+⬛️                                tag: "type",
+⬛️                                content: "content",
 ⬛️                            },
-⬛️                            partial: false,
-⬛️                            required: None,
+⬛️                            name: "Bar",
+⬛️                            env_var: None,
+⬛️                            value: Some(
+⬛️                                Schema {
+⬛️                                    deprecated: None,
+⬛️                                    description: None,
+⬛️                                    name: None,
+⬛️                                    nullable: false,
+⬛️                                    ty: Boolean(
+⬛️                                        BooleanType {
+⬛️                                            default: None,
+⬛️                                        },
+⬛️                                    ),
+⬛️                                },
+⬛️                            ),
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },
@@ -135,71 +75,35 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Struct(
-⬛️                        StructType {
-⬛️                            allow_unknown_fields: false,
-⬛️                            fields: {
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "Baz",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                "content": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Integer(
-⬛️                                            IntegerType {
-⬛️                                                default: None,
-⬛️                                                enum_values: None,
-⬛️                                                format: None,
-⬛️                                                kind: Usize,
-⬛️                                                max: None,
-⬛️                                                max_exclusive: None,
-⬛️                                                min: None,
-⬛️                                                min_exclusive: None,
-⬛️                                                multiple_of: None,
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
+⬛️                    ty: Tagged(
+⬛️                        TaggedType {
+⬛️                            format: Adjacent {
+⬛️                                tag: "type",
+⬛️                                content: "content",
 ⬛️                            },
-⬛️                            partial: false,
-⬛️                            required: None,
+⬛️                            name: "Baz",
+⬛️                            env_var: None,
+⬛️                            value: Some(
+⬛️                                Schema {
+⬛️                                    deprecated: None,
+⬛️                                    description: None,
+⬛️                                    name: None,
+⬛️                                    nullable: false,
+⬛️                                    ty: Integer(
+⬛️                                        IntegerType {
+⬛️                                            default: None,
+⬛️                                            enum_values: None,
+⬛️                                            format: None,
+⬛️                                            kind: Usize,
+⬛️                                            max: None,
+⬛️                                            max_exclusive: None,
+⬛️                                            min: None,
+⬛️                                            min_exclusive: None,
+⬛️                                            multiple_of: None,
+⬛️                                        },
+⬛️                                    ),
+⬛️                                },
+⬛️                            ),
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },
@@ -208,133 +112,97 @@ expression: "create_diff::<AdjacentTagged>()"
 ⬛️                    description: None,
 ⬛️                    name: None,
 ⬛️                    nullable: false,
-⬛️                    ty: Struct(
-⬛️                        StructType {
-⬛️                            allow_unknown_fields: false,
-⬛️                            fields: {
-⬛️                                "type": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: None,
-⬛️                                        nullable: false,
-⬛️                                        ty: Literal(
-⬛️                                            LiteralType {
-⬛️                                                value: String(
-⬛️                                                    "Qux",
-⬛️                                                ),
-⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
+⬛️                    ty: Tagged(
+⬛️                        TaggedType {
+⬛️                            format: Adjacent {
+⬛️                                tag: "type",
+⬛️                                content: "content",
+⬛️                            },
+⬛️                            name: "Qux",
+⬛️                            env_var: None,
+⬛️                            value: Some(
+⬛️                                Schema {
 ⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
+⬛️                                    description: None,
+⬛️                                    name: Some(
+🟥                                        "Basic",
+🟩                                        "PartialBasic",
+⬛️                                    ),
 ⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
-⬛️                                },
-⬛️                                "content": SchemaField {
-⬛️                                    aliases: [],
-⬛️                                    comment: None,
-⬛️                                    schema: Schema {
-⬛️                                        deprecated: None,
-⬛️                                        description: None,
-⬛️                                        name: Some(
-🟥                                            "Basic",
-🟩                                            "PartialBasic",
-⬛️                                        ),
-⬛️                                        nullable: false,
-⬛️                                        ty: Struct(
-⬛️                                            StructType {
-⬛️                                                allow_unknown_fields: false,
-⬛️                                                fields: {
-⬛️                                                    "field": SchemaField {
-⬛️                                                        aliases: [],
-⬛️                                                        comment: None,
-⬛️                                                        schema: Schema {
-⬛️                                                            deprecated: None,
-⬛️                                                            description: None,
-⬛️                                                            name: None,
-🟥                                                            nullable: false,
-🟥                                                            ty: String(
-🟥                                                                StringType {
-🟥                                                                    default: None,
-🟥                                                                    enum_values: None,
-🟥                                                                    format: None,
-🟥                                                                    max_length: None,
-🟥                                                                    min_length: None,
-🟥                                                                    pattern: None,
-🟩                                                            nullable: true,
-🟩                                                            ty: Union(
-🟩                                                                UnionType {
-🟩                                                                    default_index: None,
-🟩                                                                    partial: false,
-🟩                                                                    operator: AnyOf,
-🟩                                                                    variants_names: None,
-🟩                                                                    variants_types: [
-🟩                                                                        Schema {
-🟩                                                                            deprecated: None,
-🟩                                                                            description: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: false,
-🟩                                                                            ty: String(
-🟩                                                                                StringType {
-🟩                                                                                    default: None,
-🟩                                                                                    enum_values: None,
-🟩                                                                                    format: None,
-🟩                                                                                    max_length: None,
-🟩                                                                                    min_length: None,
-🟩                                                                                    pattern: None,
-🟩                                                                                },
-🟩                                                                            ),
-🟩                                                                        },
-🟩                                                                        Schema {
-🟩                                                                            deprecated: None,
-🟩                                                                            description: None,
-🟩                                                                            name: None,
-🟩                                                                            nullable: false,
-🟩                                                                            ty: Null,
-🟩                                                                        },
-🟩                                                                    ],
-⬛️                                                                },
-⬛️                                                            ),
-⬛️                                                        },
-⬛️                                                        default: None,
+⬛️                                    ty: Struct(
+⬛️                                        StructType {
+⬛️                                            allow_unknown_fields: false,
+⬛️                                            fields: {
+⬛️                                                "field": SchemaField {
+⬛️                                                    aliases: [],
+⬛️                                                    comment: None,
+⬛️                                                    schema: Schema {
 ⬛️                                                        deprecated: None,
-⬛️                                                        env_var: None,
-⬛️                                                        flatten: false,
-⬛️                                                        hidden: false,
+⬛️                                                        description: None,
+⬛️                                                        name: None,
 🟥                                                        nullable: false,
-🟥                                                        optional: false,
+🟥                                                        ty: String(
+🟥                                                            StringType {
+🟥                                                                default: None,
+🟥                                                                enum_values: None,
+🟥                                                                format: None,
+🟥                                                                max_length: None,
+🟥                                                                min_length: None,
+🟥                                                                pattern: None,
 🟩                                                        nullable: true,
-🟩                                                        optional: true,
-⬛️                                                        read_only: false,
-⬛️                                                        write_only: false,
+🟩                                                        ty: Union(
+🟩                                                            UnionType {
+🟩                                                                default_index: None,
+🟩                                                                partial: false,
+🟩                                                                operator: AnyOf,
+🟩                                                                variants_names: None,
+🟩                                                                variants_types: [
+🟩                                                                    Schema {
+🟩                                                                        deprecated: None,
+🟩                                                                        description: None,
+🟩                                                                        name: None,
+🟩                                                                        nullable: false,
+🟩                                                                        ty: String(
+🟩                                                                            StringType {
+🟩                                                                                default: None,
+🟩                                                                                enum_values: None,
+🟩                                                                                format: None,
+🟩                                                                                max_length: None,
+🟩                                                                                min_length: None,
+🟩                                                                                pattern: None,
+🟩                                                                            },
+🟩                                                                        ),
+🟩                                                                    },
+🟩                                                                    Schema {
+🟩                                                                        deprecated: None,
+🟩                                                                        description: None,
+🟩                                                                        name: None,
+🟩                                                                        nullable: false,
+🟩                                                                        ty: Null,
+🟩                                                                    },
+🟩                                                                ],
+⬛️                                                            },
+⬛️                                                        ),
 ⬛️                                                    },
+⬛️                                                    default: None,
+⬛️                                                    deprecated: None,
+⬛️                                                    env_var: None,
+⬛️                                                    flatten: false,
+⬛️                                                    hidden: false,
+🟥                                                    nullable: false,
+🟥                                                    optional: false,
+🟩                                                    nullable: true,
+🟩                                                    optional: true,
+⬛️                                                    read_only: false,
+⬛️                                                    write_only: false,
 ⬛️                                                },
-⬛️                                                partial: true,
-⬛️                                                required: None,
 ⬛️                                            },
-⬛️                                        ),
-⬛️                                    },
-⬛️                                    default: None,
-⬛️                                    deprecated: None,
-⬛️                                    env_var: None,
-⬛️                                    flatten: false,
-⬛️                                    hidden: false,
-⬛️                                    nullable: false,
-⬛️                                    optional: false,
-⬛️                                    read_only: false,
-⬛️                                    write_only: false,
+⬛️                                            partial: true,
+⬛️                                            required: None,
+⬛️                                        },
+⬛️                                    ),
 ⬛️                                },
-⬛️                            },
-⬛️                            partial: false,
-⬛️                            required: None,
+⬛️                            ),
 ⬛️                        },
 ⬛️                    ),
 ⬛️                },

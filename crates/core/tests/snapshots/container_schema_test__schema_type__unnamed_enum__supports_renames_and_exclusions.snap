@@ -9,26 +9,32 @@ fn build_schema(mut schema: SchemaBuilder) -> Schema {
                 [
                     (
                         "text".into(),
-                        Schema::structure(
-                            StructType::new([
-                                ("text".into(), SchemaField::new(schema.infer::<String>())),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "text",
+                                Some(schema.infer::<String>()),
+                            ),
                         ),
                     ),
                     (
                         "number".into(),
-                        Schema::structure(
-                            StructType::new([
-                                ("number".into(), SchemaField::new(schema.infer::<usize>())),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "number",
+                                Some(schema.infer::<usize>()),
+                            ),
                         ),
                     ),
                     (
                         "Last".into(),
-                        Schema::structure(
-                            StructType::new([
-                                ("Last".into(), SchemaField::new(schema.infer::<bool>())),
-                            ]),
+                        Schema::tagged(
+                            TaggedType::new(
+                                TagFormat::External,
+                                "Last",
+                                Some(schema.infer::<bool>()),
+                            ),
                         ),
                     ),
                 ],

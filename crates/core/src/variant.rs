@@ -752,11 +752,10 @@ impl Variant {
         };
 
         // Mark a nested value so that it resolves to its partial. Only the
-        // value itself is marked, never a struct synthesized around it for
-        // tagging, as that struct is not a partial config -- its tag is a
-        // literal that is always present. When only some values are nested,
-        // each was marked by `infer_as_nested` already, and marking the tuple
-        // would mark the others too.
+        // value itself is marked, never the tag around it, as the tag is
+        // always present. When only some values are nested, each was marked
+        // by `infer_as_nested` already, and marking the tuple would mark the
+        // others too.
         //
         // A named variant's struct is the partial itself, as its settings are
         // each optional within a config's partial, so it's marked like a
@@ -782,18 +781,27 @@ impl Variant {
         let partial_inner = wrap(inner.clone());
 
         let unit = self.is_unit_variant();
-        let name_literal = quote! { Schema::literal_value(LiteralValue::String(#name.into())) };
 
-        // A tag reports the variable that picks its variant, like a setting
-        let tag_field = match tag_env_var {
-            Some(key) => quote! {
-                {
-                    let mut field = SchemaField::new(#name_literal);
-                    field.env_var = Some(#key.into());
-                    field
-                }
-            },
-            None => quote! { SchemaField::new(#name_literal) },
+        // A tagged variant holds its value apart from its tag, which renderers
+        // shape per format. A tag reports the variable that picks its variant,
+        // like a setting.
+        let tagged = |format: TokenStream| {
+            let value = if unit {
+                quote! { None }
+            } else {
+                quote! { Some(#partial_inner) }
+            };
+
+            match tag_env_var {
+                Some(key) => quote! {
+                    {
+                        let mut tagged = TaggedType::new(#format, #name, #value);
+                        tagged.env_var = Some(#key.into());
+                        Schema::tagged(tagged)
+                    }
+                },
+                None => quote! { Schema::tagged(TaggedType::new(#format, #name, #value)) },
+            }
         };
 
         let mut schema = if let SerdeTagFormat::Unit = tag_format {
@@ -827,47 +835,18 @@ impl Variant {
         } else {
             match tag_format {
                 SerdeTagFormat::Unit | SerdeTagFormat::Untagged => unreachable!(),
-                // "name" | { "name": value }
-                SerdeTagFormat::External => {
-                    if unit {
-                        inner
-                    } else {
-                        // The value keeps its description, as a named type's
-                        // schema is shared by every field that holds it
-                        quote! {
-                            Schema::structure(StructType::new([
-                                (#name.into(), SchemaField::new(#partial_inner)),
-                            ]))
-                        }
-                    }
-                }
+                // "name", as a unit is written as its name alone
+                SerdeTagFormat::External if unit => inner,
+                // { "name": value }
+                SerdeTagFormat::External => tagged(quote! { TagFormat::External }),
                 // { "tag": "name", ...value }
-                SerdeTagFormat::Internal(tag) => {
-                    if unit {
-                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
-                    } else {
-                        // The value is marked rather than the struct around
-                        // it, which is only its own when the value has no name
-                        quote! {
-                            schematic::internal::schema::internally_tagged(#partial_inner, #tag, #tag_field)
-                        }
-                    }
-                }
+                SerdeTagFormat::Internal(tag) => tagged(quote! {
+                    TagFormat::Internal { tag: #tag.into() }
+                }),
                 // { "tag": "name" } | { "tag": "name", "content": value }
-                SerdeTagFormat::Adjacent(tag, content) => {
-                    if unit {
-                        quote! { schematic::internal::schema::tagged_unit(#tag, #tag_field) }
-                    } else {
-                        quote! {
-                            schematic::internal::schema::adjacently_tagged(
-                                #tag,
-                                #tag_field,
-                                #content,
-                                #partial_inner,
-                            )
-                        }
-                    }
-                }
+                SerdeTagFormat::Adjacent(tag, content) => tagged(quote! {
+                    TagFormat::Adjacent { tag: #tag.into(), content: #content.into() }
+                }),
             }
         };
 
