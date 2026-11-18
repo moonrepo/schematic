@@ -1496,6 +1496,30 @@ mod pkl_schema {
         adjacent: Option<AdjacentTagged>,
     }
 
+    /// Configuration for a variable.
+    #[derive(Clone, Config)]
+    pub struct BoolVariable {
+        /// The value when none is provided.
+        #[serde(alias = "defaultValue")]
+        default: bool,
+        internal: bool,
+        prompt: Option<String>,
+    }
+
+    #[derive(Clone, Config)]
+    #[serde(tag = "type")]
+    enum Variable {
+        /// A boolean variable.
+        #[setting(nested)]
+        Boolean(BoolVariable),
+    }
+
+    #[derive(Clone, Config)]
+    struct VariablesConfig {
+        #[setting(nested)]
+        variables: std::collections::BTreeMap<String, Variable>,
+    }
+
     #[derive(Clone, Config)]
     struct IdentifiersConfig {
         #[setting(rename = "class")]
@@ -1757,25 +1781,55 @@ mod pkl_schema {
             vec!["ExternalTaggedConfig.pkl", "TaggedConfig.pkl"]
         );
         assert_snapshot!(modules.get("TaggedConfig.pkl").unwrap());
+        // The internally tagged variant's class extends it
+        assert!(
+            modules
+                .get("ExternalTaggedConfig.pkl")
+                .unwrap()
+                .contains("\nopen module ExternalTaggedConfig\n")
+        );
     }
 
-    // A partial nullifies every field of the struct a variant holds, which
-    // includes the tag an internally tagged variant adds to it, but serde
-    // still requires the tag
+    // A partial nullifies every field of the struct a variant holds, but
+    // serde still requires the tag, which the variant's class declares
     #[test]
     fn keeps_tags_of_partial_variants() {
         let mut generator = SchemaGenerator::default();
-        // Registers the struct the variant holds without the tag
         generator.add::<PartialTaggedConfig>();
         generator.add::<PartialInternalTagged>();
 
-        let output = render(generator, PklSchemaOptions::default());
+        let modules = render_all(&generator, PklSchemaOptions::default());
 
+        // The alias is declared by the config that uses it
+        assert!(modules.get("PartialTaggedConfig.pkl").unwrap().contains(
+            "class PartialInternalTaggedQux extends PartialExternalTaggedConfig {\n  type: \"Qux\"\n}"
+        ));
         assert!(
-            output.contains(
-                "class PartialInternalTaggedQux {\n  name: String?\n\n  type: \"Qux\"\n}"
-            )
+            modules
+                .get("PartialExternalTaggedConfig.pkl")
+                .unwrap()
+                .contains("\nname: String?\n")
         );
+    }
+
+    // An internally tagged variant extends the module of the struct it holds,
+    // which a nested config holds as a partial, so a module amending the
+    // config only outputs what it sets, aliases and all
+    #[test]
+    fn tagged_variants_extend_the_partial_they_hold() {
+        let mut generator = SchemaGenerator::default();
+        generator.add::<VariablesConfig>();
+
+        let modules = render_all(
+            &generator,
+            PklSchemaOptions {
+                mark_struct_fields_required: false,
+                ..PklSchemaOptions::default()
+            },
+        );
+
+        assert_snapshot!(modules.get("VariablesConfig.pkl").unwrap());
+        assert_snapshot!(modules.get("BoolVariable.pkl").unwrap());
     }
 
     #[test]

@@ -569,6 +569,16 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   render through the default, so a TypeScript check of a union member's shape, like
   `is_intersection`, has to look through a `Tagged`. Pkl still treats a literal property as a tag,
   as it sees the expanded struct.
+- The struct `to_schema` builds around a value is marked `partial` when the value is, or holds, a
+  partial (`holds_partial`), though the derive only ever marks the value. Pkl decides which modules
+  are full by walking how each type is held, and treats a struct that isn't partial as full along
+  with everything in it, so without the mark an internally tagged nested config's module came out
+  full: every property required and its aliases dropped.
+- A Pkl class that flattens a named struct `extends` that struct's module (`render_class`, and
+  `collect_class_bases` opens it), as a module flattening one does, so an internally tagged
+  variant is `class SourceGit extends GitSource { type: "git" }`. Folding the fields in would declare
+  them as a class does, in full, which a partial can't satisfy. Pkl lets a class extend an `open
+  module`.
 - A renderer handles a `flatten` field wherever a struct is rendered, not only for a named one at the
   root: a variant's struct holds one for the tag above, as a named variant may for its own fields.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants

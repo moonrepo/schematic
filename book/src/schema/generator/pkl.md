@@ -124,6 +124,25 @@ type, so this only happens when no other type refers to the struct.
 A module can only extend one other, so any further flattened structs have their fields declared
 directly.
 
+A class extends the module of a struct it flattens in the same way. An internally tagged variant
+holding a struct is written as that struct with the tag beside it, so its class extends the struct's
+module, and only declares the tag itself.
+
+```pkl
+import "FileSource.pkl"
+import "GitSource.pkl"
+
+typealias Source = SourceGit | SourceFile
+
+class SourceGit extends GitSource {
+  type: "git"
+}
+
+class SourceFile extends FileSource {
+  type: "file"
+}
+```
+
 ### Other settings
 
 A flattened map collects every setting a struct doesn't declare, such as the configuration of a
@@ -290,7 +309,8 @@ This only applies to structs that are loaded as partials, which is what makes th
 optional. A struct that's loaded in full, such as the value of a setting that isn't nested, or a
 type that doesn't derive `Config`, can't take null for a field that isn't an `Option`, so it's
 always rendered as declared. Classes, such as the variants of an enum, are too, as their value is
-only valid in full.
+only valid in full, though a class that extends a struct's module inherits its properties as that
+module declares them.
 
 Rendering [partial types](../../config/partial.md) has the same effect, as every field of a partial
 is optional, but names every module after its partial type.

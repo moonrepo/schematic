@@ -29,7 +29,9 @@ pub struct PklSchemaOptions {
     /// When disabled, every property of a struct's module is nullable and has
     /// no default, so that a module amending it only outputs the settings it
     /// sets. Classes, such as the payload of an enum variant, are unaffected,
-    /// as their value is only valid in full.
+    /// as their value is only valid in full, though a class that extends a
+    /// struct's module, like an internally tagged variant's, inherits the
+    /// module's properties as the module declares them.
     pub mark_struct_fields_required: bool,
 }
 
@@ -216,6 +218,35 @@ fn to_class_part(name: &str) -> String {
         .collect()
 }
 
+/// The schemas that a schema holds directly, such as a struct's fields,
+/// without those that are hidden, as they're never rendered.
+fn child_schemas(schema: &Schema) -> Vec<&Schema> {
+    match &schema.ty {
+        SchemaType::Array(inner) => vec![inner.items_type.as_ref()],
+        SchemaType::Enum(inner) => inner
+            .variants
+            .iter()
+            .flat_map(|variants| variants.values())
+            .filter(|variant| !variant.hidden)
+            .map(|variant| &variant.schema)
+            .collect(),
+        SchemaType::Object(inner) => vec![inner.key_type.as_ref(), inner.value_type.as_ref()],
+        SchemaType::Struct(inner) => inner
+            .fields
+            .values()
+            .filter(|field| !field.hidden)
+            .map(|field| &field.schema)
+            .collect(),
+        SchemaType::Tuple(inner) => inner.items_types.iter().map(|item| item.as_ref()).collect(),
+        SchemaType::Union(inner) => inner
+            .variants_types
+            .iter()
+            .map(|variant| variant.as_ref())
+            .collect(),
+        _ => vec![],
+    }
+}
+
 /// How a struct's module inherits the struct it flattens.
 #[derive(Clone, Debug)]
 struct Inheritance {
@@ -395,6 +426,14 @@ impl PklSchemaRenderer {
 
             self.inheritance.insert(name, inherit);
         }
+
+        let mut class_bases = HashSet::new();
+
+        for schema in self.schemas.values() {
+            self.collect_class_bases(schema, &mut class_bases);
+        }
+
+        self.open.extend(class_bases);
 
         self.declared_in = self.find_declarations(&referenced, root)?;
 
@@ -605,42 +644,36 @@ impl PklSchemaRenderer {
     /// whether each is referred to as a partial, such as a nested setting.
     fn collect_references(&self, schema: &Schema) -> Vec<(String, bool)> {
         let mut references = vec![];
-        let mut visit = |child: &Schema| self.collect_reference(child, &mut references);
 
-        match &schema.ty {
-            SchemaType::Array(inner) => visit(&inner.items_type),
-            SchemaType::Enum(inner) => {
-                for variant in inner.variants.iter().flat_map(|variants| variants.values()) {
-                    if !variant.hidden {
-                        visit(&variant.schema);
-                    }
-                }
-            }
-            SchemaType::Object(inner) => {
-                visit(&inner.key_type);
-                visit(&inner.value_type);
-            }
-            SchemaType::Struct(inner) => {
-                for field in inner.fields.values() {
-                    if !field.hidden {
-                        visit(&field.schema);
-                    }
-                }
-            }
-            SchemaType::Tuple(inner) => {
-                for item in &inner.items_types {
-                    visit(item);
-                }
-            }
-            SchemaType::Union(inner) => {
-                for variant in &inner.variants_types {
-                    visit(variant);
-                }
-            }
-            _ => {}
-        };
+        for child in child_schemas(schema) {
+            self.collect_reference(child, &mut references);
+        }
 
         references
+    }
+
+    /// Names of the structs whose module a class within the schema extends,
+    /// which is the struct a class flattens, as for a module. A reference is
+    /// left out, as its schema is walked on its own.
+    fn collect_class_bases(&self, schema: &Schema, bases: &mut HashSet<String>) {
+        for child in child_schemas(schema) {
+            if self.get_reference(child).is_some() {
+                continue;
+            }
+
+            if let SchemaType::Struct(structure) = &child.ty {
+                // Neither is declared as a class
+                if is_duration(structure) || self.is_open(structure) {
+                    continue;
+                }
+
+                if let Some((_, base)) = self.find_base(structure) {
+                    bases.insert(base);
+                }
+            }
+
+            self.collect_class_bases(child, bases);
+        }
     }
 
     fn collect_reference(&self, schema: &Schema, references: &mut Vec<(String, bool)>) {
@@ -693,6 +726,27 @@ impl PklSchemaRenderer {
         self.schemas
             .get(name)
             .is_some_and(|schema| schema.is_struct())
+    }
+
+    /// The name of the module that a schema is rendered as a reference to, if
+    /// any. A named struct with fields that its module lacks is a different
+    /// shape to it, so it is declared as a class of its own instead.
+    fn get_reference<'a>(&self, schema: &'a Schema) -> Option<&'a str> {
+        let name = schema.name.as_deref()?;
+
+        if !self.is_reference(name) {
+            return None;
+        }
+
+        let is_extended = match (&schema.ty, self.schemas.get(name).map(|other| &other.ty)) {
+            (SchemaType::Struct(inner), Some(SchemaType::Struct(other))) => inner
+                .fields
+                .keys()
+                .any(|key| !other.fields.contains_key(key)),
+            _ => false,
+        };
+
+        (!is_extended).then_some(name)
     }
 
     /// The first flattened field that refers to another struct, which the
@@ -1120,9 +1174,19 @@ impl PklSchemaRenderer {
         let is_full = self.module.full || !structure.partial;
         let full = mem::replace(&mut self.module.full, is_full);
 
+        // A class that flattens a struct extends its module, as a module does,
+        // so that the struct's properties are declared as its module declares
+        // them, which a partial makes nullable, like an internally tagged
+        // variant's `{ type: "git" }` around the struct it holds. A module
+        // can't hold a class that extends the module itself.
+        let inherit = self
+            .find_base(structure)
+            .filter(|(_, base)| *base != self.module.name);
+
         let mut members = vec![];
 
-        let properties = self.collect_properties(structure, None);
+        let properties =
+            self.collect_properties(structure, inherit.as_ref().map(|(field, _)| field.as_str()));
 
         for (property, field) in &properties {
             members.push(self.render_property(property, field, &properties, false)?);
@@ -1132,13 +1196,18 @@ impl PklSchemaRenderer {
         self.module.full = full;
         self.module.depth = 0;
 
+        let extends = match &inherit {
+            Some((_, base)) => format!(" extends {}", self.import(base)),
+            None => String::new(),
+        };
+
         let mut class =
             self.render_docs(schema.description.as_deref(), schema.deprecated.as_deref());
 
         class.push(if members.is_empty() {
-            format!("class {name}")
+            format!("class {name}{extends}")
         } else {
-            format!("class {name} {{\n{}\n}}", members.join("\n\n"))
+            format!("class {name}{extends} {{\n{}\n}}", members.join("\n\n"))
         });
 
         self.module.depth = depth;
@@ -1183,26 +1252,10 @@ impl SchemaRenderer<PklType> for PklSchemaRenderer {
     }
 
     fn render_schema(&mut self, schema: &Schema) -> RenderResult<PklType> {
-        if let Some(name) = &schema.name
-            && self.is_reference(name)
-        {
-            // An internally tagged variant adds its tag to the struct it
-            // holds, which is then a different shape to the struct's module,
-            // so it is declared as a class of its own instead
-            let is_extended = match (&schema.ty, self.schemas.get(name).map(|other| &other.ty)) {
-                (SchemaType::Struct(inner), Some(SchemaType::Struct(other))) => inner
-                    .fields
-                    .keys()
-                    .any(|key| !other.fields.contains_key(key)),
-                _ => false,
-            };
-
-            if !is_extended {
-                return self.render_reference(name, schema);
-            }
+        match self.get_reference(schema) {
+            Some(name) => self.render_reference(name, schema),
+            None => self.render_schema_without_reference(schema),
         }
-
-        self.render_schema_without_reference(schema)
     }
 
     fn render_array(&mut self, array: &ArrayType, _schema: &Schema) -> RenderResult<PklType> {

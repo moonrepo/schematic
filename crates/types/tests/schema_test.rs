@@ -1541,6 +1541,43 @@ mod tagged {
         assert!(fields(tagged.value.as_ref().unwrap()).partial);
     }
 
+    // Serde reads a partial value through the struct around it, so that
+    // struct is part of the partial, while the tag stays required
+    #[test]
+    fn marks_the_struct_around_a_partial_value_partial() {
+        let adjacent = TagFormat::Adjacent {
+            tag: "type".into(),
+            content: "content".into(),
+        };
+        let list = Schema::array(ArrayType::new(named_struct("Git")));
+
+        for (format, value) in [
+            (TagFormat::External, named_struct("Git")),
+            (internal("type"), named_struct("Git")),
+            (adjacent.clone(), named_struct("Git")),
+            (adjacent, list),
+        ] {
+            let mut tagged = TaggedType::new(format, "git", Some(value.clone()));
+
+            assert!(!fields(&tagged.to_schema()).partial);
+
+            tagged.value.as_mut().unwrap().partialize();
+
+            assert!(fields(&tagged.to_schema()).partial);
+        }
+    }
+
+    #[test]
+    fn leaves_the_struct_around_a_full_value_full() {
+        let value = Schema::tuple(TupleType::new([
+            Schema::boolean(BooleanType::default()),
+            named_struct("Git"),
+        ]));
+        let schema = TaggedType::new(TagFormat::External, "git", Some(value)).to_schema();
+
+        assert!(!fields(&schema).partial);
+    }
+
     // The variant's docs are the struct's, and the value keeps its own
     #[test]
     fn expands_every_variant_into_its_struct() {
