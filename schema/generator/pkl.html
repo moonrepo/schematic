@@ -35,7 +35,7 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-1ba08fb3.js";
+            window.path_to_searchindex_js = "../../searchindex-ee88b164.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-6a672408.js"></script>
@@ -279,6 +279,22 @@ flattens, so its module amends that module instead. Pkl can’t use a module tha
 type, so this only happens when no other type refers to the struct.</p>
 <p>A module can only extend one other, so any further flattened structs have their fields declared
 directly.</p>
+<p>A class extends the module of a struct it flattens in the same way. An internally tagged variant
+holding a struct is written as that struct with the tag beside it, so its class extends the struct’s
+module, and only declares the tag itself.</p>
+<pre><code class="language-pkl">import "FileSource.pkl"
+import "GitSource.pkl"
+
+typealias Source = SourceGit | SourceFile
+
+class SourceGit extends GitSource {
+  type: "git"
+}
+
+class SourceFile extends FileSource {
+  type: "file"
+}
+</code></pre>
 <h3 id="other-settings"><a class="header" href="#other-settings">Other settings</a></h3>
 <p>A flattened map collects every setting a struct doesn’t declare, such as the configuration of a
 plugin. A typed Pkl object only accepts the properties its type declares, so no type can hold such a
@@ -419,7 +435,8 @@ host: String?
 optional. A struct that’s loaded in full, such as the value of a setting that isn’t nested, or a
 type that doesn’t derive <code>Config</code>, can’t take null for a field that isn’t an <code>Option</code>, so it’s
 always rendered as declared. Classes, such as the variants of an enum, are too, as their value is
-only valid in full.</p>
+only valid in full, though a class that extends a struct’s module inherits its properties as that
+module declares them.</p>
 <p>Rendering <a href="../../config/partial.html">partial types</a> has the same effect, as every field of a partial
 is optional, but names every module after its partial type.</p>
 
