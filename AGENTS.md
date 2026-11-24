@@ -583,6 +583,12 @@ These were deliberated and settled. If something looks wrong, it probably isn't.
   root: a variant's struct holds one for the tag above, as a named variant may for its own fields.
 - Unit enums must stay externally tagged — `#[serde(untagged)]` on a unit-only enum makes variants
   deserializable only from `null`.
+- Serde deserializes a flattened `Option` with `T::deserialize(..).ok()`, so any error becomes
+  `None`, which every partial setting is. A flattened map's partial goes through
+  `internal::flatten::deserialize_map` instead, which keeps the error (prefixed with the failing
+  key), as a map is only ever empty, never absent. A flattened struct or enum still goes through
+  serde, as it may be absent, and an internally tagged enum's absence is itself an error, so its
+  invalid values still load as nothing.
 - A **literal union** (`Container::is_literal_union`) is an externally tagged `Config` enum whose
   tagged variants are all units and which has at least one untagged variant: `"a" | "b" | boolean`.
   Its partial gets the same hand-written `Deserialize` as an untagged enum, matching the unit names

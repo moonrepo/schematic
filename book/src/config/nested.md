@@ -82,6 +82,11 @@ struct ServerConfig {
 }
 ```
 
+A value in a flattened map that fails to deserialize fails the load, prefixed with its key, like
+``foo.version: invalid type: integer `2`, expected a string``. Serde discards the error of any other
+flattened setting, as it may be absent, so a flattened struct holding an invalid value is loaded as
+if it held nothing.
+
 ## Bare structs
 
 For structs that _do not_ implement the [`Config`][config] trait, you can use them as-is without the

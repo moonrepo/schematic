@@ -556,6 +556,25 @@ impl Field {
 
         if self.args.flatten || self.serde_args.flatten {
             meta.push(quote! { flatten });
+
+            // Serde discards the error of a flattened `Option`, as a flattened
+            // type may be absent, but a map is only ever empty, so its error is
+            // kept. Unless `partial(serde(...))` deserializes it already
+            if self.value.is_outer_map()
+                && !self.args.skip
+                && !self.serde_args.skip
+                && !self.args.skip_deserializing
+                && !self.serde_args.skip_deserializing
+                && !self
+                    .args
+                    .partial
+                    .iter()
+                    .any(|partial| partial.has_serde_arg(&["deserialize_with", "with"]))
+            {
+                meta.push(quote! {
+                    deserialize_with = "schematic::internal::flatten::deserialize_map"
+                });
+            }
         }
 
         // Setting attributes take precedence over serde attributes

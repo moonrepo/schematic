@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a flattened map loading as empty, without an error, when any of its values failed to
+  deserialize, like a `null` or a value of the wrong type, as serde discards the error of a
+  flattened `Option`, which every partial setting is. Its error is now returned, prefixed with the
+  key of the value that failed, like ``foo.version: invalid type: integer `2`, expected a string``.
+  A flattened struct, or any other flattened setting, still loads as if it held nothing, as it may
+  be absent.
+
 ## 0.21.2
 
 #### 🐞 Fixes

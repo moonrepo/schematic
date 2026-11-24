@@ -1,0 +1,25 @@
+---
+source: crates/core/tests/container_flatten_test.rs
+expression: pretty(container.impl_partial_type())
+---
+#[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+struct PartialExample {
+    #[serde(
+        flatten,
+        deserialize_with = "schematic::internal::flatten::deserialize_map",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub values: Option<HashMap<String, String>>,
+    #[serde(
+        flatten,
+        deserialize_with = "schematic::internal::flatten::deserialize_map",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub plugins: Option<BTreeMap<String, <Plugin as schematic::Config>::Partial>>,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub child: Option<<Child as schematic::Config>::Partial>,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(deserialize_with = "custom")]
+    pub custom: Option<HashMap<String, String>>,
+}

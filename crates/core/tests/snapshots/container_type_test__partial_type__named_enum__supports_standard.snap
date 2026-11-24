@@ -30,7 +30,12 @@ pub enum PartialExample {
         #[serde(skip_serializing_if = "Option::is_none", default)]
         #[serde(alias = "dee")]
         d: Option<String>,
-        #[serde(flatten, skip_serializing_if = "Option::is_none", default)]
+        #[serde(
+            flatten,
+            deserialize_with = "schematic::internal::flatten::deserialize_map",
+            skip_serializing_if = "Option::is_none",
+            default
+        )]
         e: Option<HashMap<String, String>>,
     },
     D {},

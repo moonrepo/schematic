@@ -11,7 +11,12 @@ struct PartialExample {
     /// Field docs.
     #[serde(default)]
     pub a: Option<bool>,
-    #[serde(alias = "bb", flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        alias = "bb",
+        flatten,
+        deserialize_with = "schematic::internal::flatten::deserialize_map",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub b: Option<HashMap<String, String>>,
     #[serde(skip)]
     pub c: Option<usize>,
