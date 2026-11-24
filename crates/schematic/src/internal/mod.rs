@@ -15,6 +15,10 @@ pub mod defaults;
 #[cfg(all(feature = "config", feature = "env"))]
 pub mod env;
 
+/// Deserializing flattened settings.
+#[cfg(feature = "config")]
+pub mod flatten;
+
 /// Applying the default and environment layers of a config.
 #[cfg(feature = "config")]
 pub mod layers;

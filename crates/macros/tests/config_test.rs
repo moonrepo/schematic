@@ -2921,6 +2921,43 @@ mod flattened_loading {
         assert_eq!(config.plugins["bar"].version, "2");
     }
 
+    #[test]
+    fn loads_a_flattened_map_without_keys() {
+        let config = load::<WithPlugins>(r#"{ "own": "x" }"#).unwrap();
+
+        assert!(config.plugins.is_empty());
+    }
+
+    // Serde discards the error of a flattened `Option`, which left the whole
+    // map empty, as if nothing was configured
+    #[test]
+    fn errors_for_an_invalid_value_in_a_flattened_map() {
+        let error = load::<WithValues>(r#"{ "own": "x", "a": "1", "b": 2 }"#).unwrap_err();
+
+        assert!(
+            error.contains("b: invalid type: integer `2`, expected a string"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn errors_for_an_invalid_config_in_a_flattened_map() {
+        let error = load::<WithPlugins>(r#"{ "own": "x", "foo": {}, "bar": { "version": 2 } }"#)
+            .unwrap_err();
+
+        assert!(
+            error.contains("bar.version: invalid type: integer `2`, expected a string"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn errors_for_a_null_config_in_a_flattened_map() {
+        let error = load::<WithPlugins>(r#"{ "own": "x", "foo": {}, "bar": null }"#).unwrap_err();
+
+        assert!(error.contains("bar: invalid type: "), "{error}");
+    }
+
     #[derive(Debug, Config)]
     pub struct Child {
         child_flag: bool,

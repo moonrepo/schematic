@@ -53,6 +53,29 @@ fn asserts_a_flattened_config_can_be_loaded() {
     assert_snapshot!(pretty(container.impl_partial_checks()));
 }
 
+// Serde discards the error of a flattened `Option`, as a flattened type may be
+// absent, but a map is only ever empty, so its partial keeps the error, unless
+// `partial(serde(...))` deserializes it already
+#[test]
+fn keeps_the_errors_of_a_flattened_map() {
+    let container = Container::from(parse_quote! {
+        #[derive(Config)]
+        #[config(allow_unknown_fields)]
+        struct Example {
+            #[setting(flatten)]
+            values: HashMap<String, String>,
+            #[setting(flatten, nested)]
+            plugins: Option<BTreeMap<String, Plugin>>,
+            #[setting(flatten, nested)]
+            child: Child,
+            #[setting(flatten, partial(serde(deserialize_with = "custom")))]
+            custom: HashMap<String, String>,
+        }
+    });
+
+    assert_snapshot!(pretty(container.impl_partial_type()));
+}
+
 // A flattened collection of configs is a map, which the config's items don't
 // read keys from, and a generic config's constant couldn't name its parameters
 #[test]

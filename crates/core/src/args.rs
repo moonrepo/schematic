@@ -200,6 +200,21 @@ impl PartialArg {
             .map(|meta| quote! { #[#meta] })
             .collect()
     }
+
+    // Whether a `serde(...)` attribute sets any of these arguments
+    pub fn has_serde_arg(&self, names: &[&str]) -> bool {
+        self.meta.iter().any(|meta| match meta {
+            NestedMeta::Meta(syn::Meta::List(list)) if list.path.is_ident("serde") => list
+                .parse_args_with(
+                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+                )
+                .is_ok_and(|args| {
+                    args.iter()
+                        .any(|arg| names.iter().any(|name| arg.path().is_ident(name)))
+                }),
+            _ => false,
+        })
+    }
 }
 
 impl ToTokens for PartialArg {
